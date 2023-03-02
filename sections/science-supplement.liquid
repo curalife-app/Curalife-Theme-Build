@@ -1,7 +1,15 @@
 
   <div class="suppliments">
      <div class="container" >
-       
+       <div id="screen1" class="screen">
+           <h1>Screen 1</h1>
+           <button onclick="showScreen('screen2')">Go to Screen 2</button>
+       </div>
+
+       <div id="screen2" class="screen" style="display:none">
+           <h1>Screen 2</h1>
+           <button onclick="showScreen('screen1')">Go to Screen 1</button>
+       </div>
     
      </div>
   </div>
@@ -15,6 +23,18 @@
     margin: 0 auto;
     padding: 0 15px;
   }
+</style>
+
+<style>
+    .screen {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        background-color: #f5f5f5;
+    }
+
 </style>
   
 
@@ -60,6 +80,18 @@
     }]
 }
 {% endschema %}
+
+
+<script>
+    function showScreen(screenId) {
+        var screens = document.getElementsByClassName("screen");
+        for (var i = 0; i < screens.length; i++) {
+            screens[i].style.display = "none";
+        }
+        document.getElementById(screenId).style.display = "flex";
+    }
+
+</script>
 
 
 
