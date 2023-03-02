@@ -1,15 +1,18 @@
 
   <div class="suppliments">
      <div class="container" >
-       <div id="screen1" class="screen">
-           <h1>Screen 1</h1>
-           <button onclick="showScreen('screen2')">Go to Screen 2</button>
-       </div>
+      <div id="button-container">
+          <button id="button1" class="active" onclick="showScreen('screen1')">Screen 1</button>
+          <button id="button2" onclick="showScreen('screen2')">Screen 2</button>
+      </div>
 
-       <div id="screen2" class="screen" style="display:none">
-           <h1>Screen 2</h1>
-           <button onclick="showScreen('screen1')">Go to Screen 1</button>
-       </div>
+      <div id="screen1" class="screen">
+          <h1>Screen 1</h1>
+      </div>
+
+      <div id="screen2" class="screen" style="display:none">
+          <h1>Screen 2</h1>
+      </div>
     
      </div>
   </div>
@@ -26,14 +29,28 @@
 </style>
 
 <style>
-    .screen {
+    #button-container {
         display: flex;
-        flex-direction: column;
-        align-items: center;
         justify-content: center;
-        height: 100vh;
+        align-items: center;
+        padding: 10px;
         background-color: #f5f5f5;
     }
+
+    button {
+        padding: 10px;
+        margin: 0 10px;
+        background-color: #ddd;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    button.active {
+        background-color: #aaa;
+        color: #fff;
+    }
+
 
 </style>
   
@@ -83,14 +100,25 @@
 
 
 <script>
-    function showScreen(screenId) {
-        var screens = document.getElementsByClassName("screen");
-        for (var i = 0; i < screens.length; i++) {
-            screens[i].style.display = "none";
-        }
-        document.getElementById(screenId).style.display = "flex";
-    }
+   function showScreen(screenId) {
+       var screens = document.getElementsByClassName("screen");
+       for (var i = 0; i < screens.length; i++) {
+           screens[i].style.display = "none";
+       }
+       document.getElementById(screenId).style.display = "flex";
 
+       var buttons = document.getElementsByTagName("button");
+       for (var i = 0; i < buttons.length; i++) {
+           if (buttons[i].id == "button1" && screenId == "screen1") {
+               buttons[i].classList.add("active");
+           } else if (buttons[i].id == "button2" && screenId == "screen2") {
+               buttons[i].classList.add("active");
+           } else {
+               buttons[i].classList.remove("active");
+           }
+       }
+   }
+    
 </script>
 
 
