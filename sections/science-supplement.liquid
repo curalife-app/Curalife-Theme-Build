@@ -422,7 +422,7 @@
     
 </script>
 
-<script>
+{% comment %} <script>
     document.addEventListener("DOMContentLoaded", function() {
       const tabs = document.querySelectorAll(".tabs a");
 
@@ -448,7 +448,45 @@
 
   
 
+</script> {% endcomment %}
+
+
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const tabs = document.querySelectorAll(".tabs a");
+
+    tabs.forEach(function(tab) {
+      tab.addEventListener("click", function(event) {
+        event.preventDefault();
+        const target = this.getAttribute("href");
+        const items = document.querySelectorAll(".content .item");
+
+        tabs.forEach(function(tab) {
+          tab.classList.remove("active");
+        });
+
+        items.forEach(function(item) {
+          item.classList.remove("active");
+        });
+
+        if (window.innerWidth <= 768) { // Check screen size
+          if (this.classList.contains("active")) { // Check if already active
+            this.classList.remove("active");
+            document.querySelector(target).classList.remove("active");
+          } else {
+            this.classList.add("active");
+            document.querySelector(target).classList.add("active");
+          }
+        } else {
+          this.classList.add("active");
+          document.querySelector(target).classList.add("active");
+        }
+      });
+    });
+  });
 </script>
+
 
 
 
