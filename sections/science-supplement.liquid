@@ -429,6 +429,30 @@
       });
     });
 
+    const tabs = document.querySelectorAll('.tabbed-content.mobile-version .tabs a');
+    const items = document.querySelectorAll('.tabbed-content.mobile-version .content .item');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = e.target.getAttribute('href');
+        const targetItem = document.querySelector(target);
+
+        // hide all items
+        items.forEach(item => item.classList.remove('active'));
+
+        // show the clicked item
+        targetItem.classList.add('active');
+
+        // remove active class from all tabs
+        tabs.forEach(tab => tab.classList.remove('active'));
+
+        // add active class to the clicked tab
+        e.target.classList.add('active');
+      });
+    });
+
+
 </script>
 
 
