@@ -486,8 +486,21 @@
 
       if (window.innerWidth <= 768) { // Check screen size
         // Add toggle functionality for mobile
+        let touchStartX = null;
+        let touchStartY = null;
+        let touchEndX = null;
+        let touchEndY = null;
+
         tab.addEventListener("touchstart", function(event) {
-          if (!this.classList.contains("active")) {
+          touchStartX = event.changedTouches[0].clientX;
+          touchStartY = event.changedTouches[0].clientY;
+        });
+
+        tab.addEventListener("touchend", function(event) {
+          touchEndX = event.changedTouches[0].clientX;
+          touchEndY = event.changedTouches[0].clientY;
+
+          if (Math.abs(touchEndX - touchStartX) < 5 && Math.abs(touchEndY - touchStartY) < 5 && !this.classList.contains("active")) {
             // Prevent touchstart event from triggering click event
             event.preventDefault();
 
@@ -500,6 +513,7 @@
     });
   });
 </script>
+
 
 
 
