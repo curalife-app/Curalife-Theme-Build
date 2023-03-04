@@ -8,7 +8,80 @@
       </div>
 
       <div id="screen1" class="screen">
-          <h1>Supplement</h1>
+        <div class="tabbed-content tabs-side">
+            <nav class="tabs">
+              <ul>
+                <li><a href="#highlights-{{ index }}" class="active">Product Highlights <i>></i></a></li>
+                <li><a href="#instructions-{{ index }}">Usage Instructions <i>></i></a></li>
+                {% if product.metafields.custom.ingredients.value %}
+                  <li><a href="#ingredients-{{ index }}">Ingredients <i>></i></a></li>
+                {% endif %}
+                <li><a href="#facts-{{ index }}">Supplement Facts <i>></i></a></li>
+                <li><a href="#reviews">Reviews <i>></i></a></li>
+              </ul>
+            </nav>
+
+            <div class="content">
+              <div id="highlights-{{ index }}" class="item active always-active" data-title="Product Highlights">
+                <div class="highlights item-content">
+                  {% for highlight in product.metafields.custom.product-highlights.value %}
+                    <div class="highlight">
+                      <div class="highlight-icon"><i class="icofont-check"></i></div>
+                      <p><b>{{ highlight.title }}</b><br>{{ highlight.subtitle }}</p>
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+
+              <div id="instructions-{{ index }}" class="item" data-title="Usage Instructions">
+                <div class="instructions item-content">
+                  {% for step in product.metafields.custom.instructions.value %}
+                    <div class="step">
+                      <h3>{{ step.title }}</h3>
+
+                      <div class="capsules">
+                        {% for item in (1..step.capsules) %}
+                          {% if product.tags contains "gummies" %}
+                            <img class="gummies" src="{{ "onboarding-gummy.png" | asset_url }}" width="20" height="31" alt="Capsule Pill" loading="lazy">
+                          {% else %}
+                            <img class="caps" src="{{ "onboarding-capsule.png" | asset_url }}" width="20" height="31" alt="Capsule Pill" loading="lazy" style="min-width: 35px">
+                          {% endif %}
+                        {% endfor %}
+                      </div>
+                      <p>{{ step.subtitle }} <br> {{ step.text }} <br> {{ step.text_2 }}</p>
+
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+
+              {% if product.metafields.custom.ingredients.value %}
+                <div id="ingredients-{{ index }}" class="item" data-title="Ingredients">
+                  <div class="ingredients item-content">
+                    {% for ingredient in product.metafields.custom.ingredients.value %}
+                      <div class="ingredient">
+                        {% assign ingredient_handle = ingredient | downcase | replace: ' ', '-' %}
+                        <img src="{{ "product-supplement-pack-info-ingredient-icon-" | append: ingredient_handle | append: ".png" | asset_url }}" alt="Ingredient" loading="lazy">
+                        <p>{{ ingredient }}</p>
+                      </div>
+                    {% endfor %}
+                  </div>
+                </div>
+              {% endif %}
+
+              <div id="facts-{{ index }}" class="item" data-title="Supplement Facts">
+                <div class="facts item-content">
+                    <img src="{{ product.metafields.custom.supplement_fact | img_url: 'original' }}" alt="Supplement Facts" loading="lazy">
+                </div>
+              </div>
+
+              <div id="reviews-{{ index }}" class="item" data-title="Reviews">
+                <div class="reviews item-content">
+                  {% render 'product-supplement-pack-info-reviews', reviews: reviews %}
+                </div>
+              </div>
+            </div>
+          </div>
       </div>
 
       <div id="screen2" class="screen" style="display:none">
