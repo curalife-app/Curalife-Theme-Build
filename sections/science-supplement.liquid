@@ -269,14 +269,35 @@
     .content .item.active {
       display: flex;
     }
-
-
+	
+    //mobile//
     @media screen and (max-width: 768px) {
         .tabbed-content {
             flex-direction: column;
         }
+        
+        .tabs {
+            position: relative;
+        }
+        
+        .tabs li {
+            position: relative;
+        }
+        
+        .content .item {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            z-index: -1;
+        }
+        
+        .content .item.active {
+            position: relative;
+            display: block;
+            z-index: 1;
+        }
     }
-
 </style>
   
 
@@ -348,29 +369,55 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-      const tabs = document.querySelectorAll(".tabs a");
-
-      tabs.forEach(function(tab) {
-        tab.addEventListener("click", function(event) {
-          event.preventDefault();
-          const target = this.getAttribute("href");
-          const items = document.querySelectorAll(".content .item");
-
-          tabs.forEach(function(tab) {
-            tab.classList.remove("active");
-          });
-
-          items.forEach(function(item) {
-            item.classList.remove("active");
-          });
-
-          this.classList.add("active");
-          document.querySelector(target).classList.add("active");
+        const tabs = document.querySelectorAll(".tabs a");
+        const content = document.querySelector(".content");
+        let activeTabContent = document.querySelector(".content .item.active");
+        
+        // Append active tab content to its own tab
+        if (window.innerWidth <= 768) {
+            activeTabContent.style.display = "block";
+            activeTabContent.style.position = "relative";
+            tabs.forEach(function(tab) {
+                if (tab.classList.contains("active")) {
+                    const tabContent = document.querySelector(tab.getAttribute("href"));
+                    tabContent.style.display = "block";
+                    tabContent.style.position = "relative";
+                    tab.parentNode.appendChild(tabContent);
+                }
+            });
+        }
+        
+        tabs.forEach(function(tab) {
+            tab.addEventListener("click", function(event) {
+                event.preventDefault();
+                const target = this.getAttribute("href");
+                const items = document.querySelectorAll(".content .item");
+        
+                tabs.forEach(function(tab) {
+                    tab.classList.remove("active");
+                });
+        
+                items.forEach(function(item) {
+                    item.classList.remove("active");
+                });
+        
+                this.classList.add("active");
+                document.querySelector(target).classList.add("active");
+                
+                // Append active tab content to its own tab
+                if (window.innerWidth <= 768) {
+                    activeTabContent.style.display = "none";
+                    activeTabContent.style.position = "absolute";
+                    activeTabContent = document.querySelector(target);
+                    activeTabContent.style.display = "block";
+                    activeTabContent.style.position = "relative";
+                    content.appendChild(activeTabContent);
+                }
+            });
         });
-      });
     });
-
 </script>
+
 
 
 
