@@ -43,7 +43,7 @@
           <nav class="tabs">
             <ul>
               <li><a href="#tab11" class="active"><span>1</span> Start with a need</a></li>
-              <div class="invisible border-green"> </div>
+              <div class=" border-green"> </div>
              <div class="content">
              <div id="tab11" class="item active">
                <p>Personalized care, patient engagement and habit forming are crucial for successfully managing chronic metabolic disorders, yet the current healthcare system is failing to deliver on these fronts. By fostering greater engagement and empowerment and by approaching patients as people first, we can help them effectively manage their conditions and improve their quality of life.</p>
@@ -414,10 +414,6 @@
            width: 89vw;
         }
 
-        .border-green.invisible {
-            display: none;
-        }
-
         .tabs a {
             display: flex;
             font-size: 5vw;
@@ -575,73 +571,57 @@
 
 
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      const tabs = document.querySelectorAll(".tabs a");
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        const tabs = document.querySelectorAll(".tabs a");
 
-      tabs.forEach(function(tab) {
-        tab.addEventListener("click", function(event) {
-          event.preventDefault();
-          const target = this.getAttribute("href");
-          const items = document.querySelectorAll(".content .item");
-          const borders = document.querySelectorAll(".border-green");
+        tabs.forEach(function(tab) {
+          tab.addEventListener("click", function(event) {
+            event.preventDefault();
+            const target = this.getAttribute("href");
+            const items = document.querySelectorAll(".content .item");
 
-          tabs.forEach(function(tab) {
-            tab.classList.remove("active");
-          });
+            tabs.forEach(function(tab) {
+              tab.classList.remove("active");
+            });
 
-          items.forEach(function(item) {
-            item.classList.remove("active");
-          });
+            items.forEach(function(item) {
+              item.classList.remove("active");
+            });
 
-          borders.forEach(function(border) {
-            border.classList.remove("invisible"); // Show all borders first
-          });
-
-          if (window.innerWidth <= 768) { // Check screen size
-            if (this.classList.contains("active")) { // Check if already active
-              this.classList.remove("active");
-              document.querySelector(target).classList.remove("active");
-
-              // Show all borders again
-              borders.forEach(function(border) {
-                border.classList.remove("invisible");
-              });
+            if (window.innerWidth <= 768) { // Check screen size
+              if (this.classList.contains("active")) { // Check if already active
+                this.classList.remove("active");
+                document.querySelector(target).classList.remove("active");
+                document.querySelector(".border-green").style.display = "block"; // Show the green border
+              } else {
+                this.classList.add("active");
+                document.querySelector(target).classList.add("active");
+                document.querySelector(".border-green").style.display = "none"; // Hide the green border
+              }
             } else {
               this.classList.add("active");
               document.querySelector(target).classList.add("active");
-
-              // Hide the border of the active tab
-              const activeBorder = this.nextElementSibling;
-              if (activeBorder.classList.contains("border-green")) {
-                activeBorder.classList.add("invisible");
-              }
-            }
-          } else {
-            this.classList.add("active");
-            document.querySelector(target).classList.add("active");
-          }
-        });
-
-        if (window.innerWidth <= 768) { // Check screen size
-          // Add toggle functionality for mobile
-          tab.addEventListener("touchstart", function(event) {
-            if (this.classList.contains("active")) {
-              // Prevent touchstart event from triggering click event
-              event.preventDefault();
-
-              // Remove active class
-              this.classList.remove("active");
-              document.querySelector(this.getAttribute("href")).classList.remove("active");
-
-              // Show all borders again
-              borders.forEach(function(border) {
-                border.classList.remove("invisible");
-              });
             }
           });
-        }
+
+          if (window.innerWidth <= 768) { // Check screen size
+            // Add toggle functionality for mobile
+            tab.addEventListener("touchstart", function(event) {
+              if (this.classList.contains("active")) {
+                // Prevent touchstart event from triggering click event
+                event.preventDefault();
+
+                // Remove active class
+                this.classList.remove("active");
+                document.querySelector(this.getAttribute("href")).classList.remove("active");
+                document.querySelector(".border-green").style.display = "block"; // Show the green border
+              }
+            });
+          }
+        });
       });
-    });
+    </script>
 
 </script>
 
