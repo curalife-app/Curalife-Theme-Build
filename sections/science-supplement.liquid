@@ -18,7 +18,7 @@
                 <ul>
                   <li><a href="#highlights-{{ index }}" class="active">1 Start with a need</a></li>
                   <li><a href="#instructions-{{ index }}">2 Driven by research</a></li>
-                    <li><a href="#ingredients-{{ index }}">3 Our commitment to excellence</a></li>
+                  <li><a href="#ingredients-{{ index }}">3 Our commitment to excellence</a></li>
                   <li><a href="#facts-{{ index }}">4 What you see is what you get </a></li>
                 </ul>
               </nav>
@@ -645,42 +645,27 @@
 </script>
 
 <script>
-    $(document).ready(function() {
-      tabControl();
-    });
-
-    $(window).on('resize', function(e) {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(function() {
-        tabControl();
-      }, 250);
-    });
-
     function tabControl() {
       var index = "{{ index }}";
       var tabs = $('.pack-info-section.instance-' + index + ' .tabbed-content').find('.tabs');
+      var items = $('.pack-info-section.instance-' + index + ' .tabbed-content').find('.item');
+
       if (tabs.is(':visible')) {
         tabs.find('a').on('click', function(event) {
           event.preventDefault();
           var target = $(this).attr('href'),
-              tabs = $(this).parents('.tabs'),
-              buttons = tabs.find('a'),
-              item = tabs.parents('.pack-info-section.instance-' + index + ' .tabbed-content').find('.item');
+              buttons = tabs.find('a');
           buttons.removeClass('active');
-          item.removeClass('active');
           $(this).addClass('active');
+          items.removeClass('active');
           $(target).addClass('active');
         });
       } else {
-        $('.item').on('click', function() {
-          var container = $(this).parents('.tabbed-content'),
-              currId = $(this).attr('id'),
-              items = container.find('.item');
-              console.log(items);
-          container.find('.tabs a').removeClass('active');
+        items.on('click', function() {
+          var currId = $(this).attr('id');
           items.removeClass('active');
           $(this).addClass('active');
-          container.find('.tabs a[href$="#'+ currId +'"]').addClass('active');
+          tabs.find('a[href$="#'+ currId +'"]').click();
         });
       }
     }
