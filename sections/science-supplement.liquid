@@ -570,68 +570,76 @@
 </script> {% endcomment %}
 
 
-
 <script>
-  document.addEventListener("DOMContentLoaded", function() {
-    const tabs = document.querySelectorAll(".tabs a");
+    document.addEventListener("DOMContentLoaded", function() {
+      const tabs = document.querySelectorAll(".tabs a");
 
-    tabs.forEach(function(tab) {
-      tab.addEventListener("click", function(event) {
-        event.preventDefault();
-        const target = this.getAttribute("href");
-        const items = document.querySelectorAll(".content .item");
+      tabs.forEach(function(tab) {
+        tab.addEventListener("click", function(event) {
+          event.preventDefault();
+          const target = this.getAttribute("href");
+          const items = document.querySelectorAll(".content .item");
+          const borders = document.querySelectorAll(".border-green");
 
-        tabs.forEach(function(tab) {
-          tab.classList.remove("active");
-        });
+          tabs.forEach(function(tab) {
+            tab.classList.remove("active");
+          });
 
-        items.forEach(function(item) {
-          item.classList.remove("active");
-        });
+          items.forEach(function(item) {
+            item.classList.remove("active");
+          });
 
-        if (window.innerWidth <= 768) { // Check screen size
-          if (this.classList.contains("active")) { // Check if already active
-            this.classList.remove("active");
-            document.querySelector(target).classList.remove("active");
-            const border = this.parentNode.nextElementSibling;
-            if (border.classList.contains("border-green")) {
-              border.style.display = "none";
+          borders.forEach(function(border) {
+            border.classList.remove("invisible"); // Show all borders first
+          });
+
+          if (window.innerWidth <= 768) { // Check screen size
+            if (this.classList.contains("active")) { // Check if already active
+              this.classList.remove("active");
+              document.querySelector(target).classList.remove("active");
+
+              // Show all borders again
+              borders.forEach(function(border) {
+                border.classList.remove("invisible");
+              });
+            } else {
+              this.classList.add("active");
+              document.querySelector(target).classList.add("active");
+
+              // Hide the border of the active tab
+              const activeBorder = this.nextElementSibling;
+              if (activeBorder.classList.contains("border-green")) {
+                activeBorder.classList.add("invisible");
+              }
             }
           } else {
             this.classList.add("active");
             document.querySelector(target).classList.add("active");
-            const border = this.parentNode.nextElementSibling;
-            if (border.classList.contains("border-green")) {
-              border.style.display = "block";
-            }
-          }
-        } else {
-          this.classList.add("active");
-          document.querySelector(target).classList.add("active");
-        }
-      });
-
-      if (window.innerWidth <= 768) { // Check screen size
-        // Add toggle functionality for mobile
-        tab.addEventListener("touchstart", function(event) {
-          if (this.classList.contains("active")) {
-            // Prevent touchstart event from triggering click event
-            event.preventDefault();
-            
-            // Remove active class
-            this.classList.remove("active");
-            document.querySelector(this.getAttribute("href")).classList.remove("active");
-            const border = this.parentNode.nextElementSibling;
-            if (border.classList.contains("border-green")) {
-              border.style.display = "none";
-            }
           }
         });
-      }
-    });
-  });
-</script>
 
+        if (window.innerWidth <= 768) { // Check screen size
+          // Add toggle functionality for mobile
+          tab.addEventListener("touchstart", function(event) {
+            if (this.classList.contains("active")) {
+              // Prevent touchstart event from triggering click event
+              event.preventDefault();
+
+              // Remove active class
+              this.classList.remove("active");
+              document.querySelector(this.getAttribute("href")).classList.remove("active");
+
+              // Show all borders again
+              borders.forEach(function(border) {
+                border.classList.remove("invisible");
+              });
+            }
+          });
+        }
+      });
+    });
+
+</script>
 
 
 
