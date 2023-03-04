@@ -572,56 +572,64 @@
 
 
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      const tabs = document.querySelectorAll(".tabs a");
+  document.addEventListener("DOMContentLoaded", function() {
+    const tabs = document.querySelectorAll(".tabs a");
 
-      tabs.forEach(function(tab) {
-        tab.addEventListener("click", function(event) {
-          event.preventDefault();
-          const target = this.getAttribute("href");
-          const items = document.querySelectorAll(".content .item");
+    tabs.forEach(function(tab) {
+      tab.addEventListener("click", function(event) {
+        event.preventDefault();
+        const target = this.getAttribute("href");
+        const items = document.querySelectorAll(".content .item");
 
-          tabs.forEach(function(tab) {
-            tab.classList.remove("active");
-          });
+        tabs.forEach(function(tab) {
+          tab.classList.remove("active");
+        });
 
-          items.forEach(function(item) {
-            item.classList.remove("active");
-          });
+        items.forEach(function(item) {
+          item.classList.remove("active");
+        });
 
-          if (window.innerWidth <= 768) { // Check screen size
-            if (this.classList.contains("active")) { // Check if already active
-              this.classList.remove("active");
-              document.querySelector(target).classList.remove("active");
-              document.querySelector(target).previousElementSibling.classList.remove("border-green"); // remove border-green
-            } else {
-              this.classList.add("active");
-              document.querySelector(target).classList.add("active");
-              document.querySelector(target).previousElementSibling.classList.add("border-green"); // add border-green
+        if (window.innerWidth <= 768) { // Check screen size
+          if (this.classList.contains("active")) { // Check if already active
+            this.classList.remove("active");
+            document.querySelector(target).classList.remove("active");
+            const border = this.parentNode.nextElementSibling;
+            if (border.classList.contains("border-green")) {
+              border.style.display = "none";
             }
           } else {
             this.classList.add("active");
             document.querySelector(target).classList.add("active");
-          }
-        });
-
-        if (window.innerWidth <= 768) { // Check screen size
-          // Add toggle functionality for mobile
-          tab.addEventListener("touchstart", function(event) {
-            if (this.classList.contains("active")) {
-              // Prevent touchstart event from triggering click event
-              event.preventDefault();
-
-              // Remove active class
-              this.classList.remove("active");
-              document.querySelector(this.getAttribute("href")).classList.remove("active");
-              document.querySelector(this.getAttribute("href")).previousElementSibling.classList.remove("border-green"); // remove border-green
+            const border = this.parentNode.nextElementSibling;
+            if (border.classList.contains("border-green")) {
+              border.style.display = "block";
             }
-          });
+          }
+        } else {
+          this.classList.add("active");
+          document.querySelector(target).classList.add("active");
         }
       });
-    });
 
+      if (window.innerWidth <= 768) { // Check screen size
+        // Add toggle functionality for mobile
+        tab.addEventListener("touchstart", function(event) {
+          if (this.classList.contains("active")) {
+            // Prevent touchstart event from triggering click event
+            event.preventDefault();
+            
+            // Remove active class
+            this.classList.remove("active");
+            document.querySelector(this.getAttribute("href")).classList.remove("active");
+            const border = this.parentNode.nextElementSibling;
+            if (border.classList.contains("border-green")) {
+              border.style.display = "none";
+            }
+          }
+        });
+      }
+    });
+  });
 </script>
 
 
