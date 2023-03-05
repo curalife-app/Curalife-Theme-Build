@@ -504,29 +504,47 @@
 
 
 <script>
-  $(function() {
-    var taeb = $(".taeb-switch");
-    taeb.find(".taeb").on("click", function() {
-      var $this = $(this);
+  <div class="wrapper">
+    <div class="taeb-switch left text-center">
+      <div class="taeb active" taeb-direction="left">List</div><!--
+   --><div class="taeb" taeb-direction="right">Map</div>
+    </div>
+  </div>
 
-      if ($this.hasClass("active")) return;
+  <div id="screen1" class="screen screen1">Screen1</div>
+  <div id="screen2" class="screen screen2" style="display:none;">Screen2</div>
 
-      var direction = $this.attr("taeb-direction");
+  <script>
+    // Get the List and Map buttons
+    var listBtn = document.querySelector('.taeb-switch .taeb[taeb-direction="left"]');
+    var mapBtn = document.querySelector('.taeb-switch .taeb[taeb-direction="right"]');
 
-      taeb.removeClass("left right").addClass(direction);
-      taeb.find(".taeb.active").removeClass("active");
-      $this.addClass("active");
+    // Get the screens
+    var screen1 = document.getElementById('screen1');
+    var screen2 = document.getElementById('screen2');
 
-      // Switch between screens
-      if (direction === "left") {
-        $("#screen1").show();
-        $("#screen2").hide();
-      } else {
-        $("#screen2").show();
-        $("#screen1").hide();
-      }
+    // Add click event listeners to the buttons
+    listBtn.addEventListener('click', function() {
+      // Set the List button to active
+      listBtn.classList.add('active');
+      mapBtn.classList.remove('active');
+
+      // Show screen1 and hide screen2
+      screen1.style.display = 'block';
+      screen2.style.display = 'none';
     });
-  });
+
+    mapBtn.addEventListener('click', function() {
+      // Set the Map button to active
+      mapBtn.classList.add('active');
+      listBtn.classList.remove('active');
+
+      // Show screen2 and hide screen1
+      screen2.style.display = 'block';
+      screen1.style.display = 'none';
+    });
+  </script>
+
 </script>
 
 
