@@ -2,12 +2,12 @@
 <div class="suppliments">
      <div class="container" >
   <div class="suppliment-tech-wrapper">
-    <div class="wrapper">
-       <div class="taeb-switch left text-center">
-         <div class="taeb active" taeb-direction="left">List</div><!--
-      --><div class="taeb" taeb-direction="right">Map</div>
-       </div>
-     </div>
+    <div class="wrapper taeb-switch">
+      <div class="taeb-switch left text-center">
+        <div class="taeb active" taeb-direction="left">List</div><!--
+        --><div class="taeb" taeb-direction="right">Map</div>
+      </div>
+    </div>
     
        
      
@@ -196,21 +196,8 @@
  </div>
 
 
-<style>
+ <style>
   /* taeb-switch styles */
-
-  .container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    width: 100%;
-    height: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 15px;
-  }
 
   .taeb-switch {
     position: relative;
@@ -255,7 +242,7 @@
     color: #ffffff;
   }
 
- 
+
   .wrapper {
     border-radius: 37px;
     background-color: #f4f4f4;
@@ -461,90 +448,38 @@
 }
 {% endschema %}
 
-{% comment %} 
+
+
+
 <script>
-   function showScreen(screenId) {
-       var screens = document.getElementsByClassName("screen");
-       for (var i = 0; i < screens.length; i++) {
-           screens[i].style.display = "none";
-       }
-       document.getElementById(screenId).style.display = "flex";
+  // Get the List and Map buttons
+  var listBtn = document.querySelector('.taeb-switch .taeb[taeb-direction="left"]');
+  var mapBtn = document.querySelector('.taeb-switch .taeb[taeb-direction="right"]');
 
-       var buttons = document.getElementsByTagName("button");
-       for (var i = 0; i < buttons.length; i++) {
-           if (buttons[i].id == "button1" && screenId == "screen1") {
-               buttons[i].classList.add("active-button");
-           } else if (buttons[i].id == "button2" && screenId == "screen2") {
-               buttons[i].classList.add("active-button");
-           } else {
-               buttons[i].classList.remove("active-button");
-           }
-       }
-   }
-    
-</script> {% endcomment %}
+  // Get the screens
+  var screen1 = document.getElementById('screen1');
+  var screen2 = document.getElementById('screen2');
 
-{% comment %} <script>
-  const switchButton = document.getElementById("switch");
-  const screen1 = document.querySelector(".screen1");
-  const screen2 = document.querySelector(".screen2");
+  // Add click event listeners to the buttons
+  listBtn.addEventListener('click', function() {
+    // Set the List button to active
+    listBtn.classList.add('active');
+    mapBtn.classList.remove('active');
 
-  switchButton.addEventListener("change", () => {
-    if (switchButton.checked) {
-      screen1.classList.remove("active");
-      screen2.classList.add("active");
-    } else {
-      screen1.classList.add("active");
-      screen2.classList.remove("active");
-    }
+    // Show screen1 and hide screen2
+    screen1.style.display = 'block';
+    screen2.style.display = 'none';
   });
 
+  mapBtn.addEventListener('click', function() {
+    // Set the Map button to active
+    mapBtn.classList.add('active');
+    listBtn.classList.remove('active');
 
-</script> {% endcomment %}
-
-
-<script>
-  <div class="wrapper">
-    <div class="taeb-switch left text-center">
-      <div class="taeb active" taeb-direction="left">List</div><!--
-   --><div class="taeb" taeb-direction="right">Map</div>
-    </div>
-  </div>
-
-  <div id="screen1" class="screen screen1">Screen1</div>
-  <div id="screen2" class="screen screen2" style="display:none;">Screen2</div>
-
-  <script>
-    // Get the List and Map buttons
-    var listBtn = document.querySelector('.taeb-switch .taeb[taeb-direction="left"]');
-    var mapBtn = document.querySelector('.taeb-switch .taeb[taeb-direction="right"]');
-
-    // Get the screens
-    var screen1 = document.getElementById('screen1');
-    var screen2 = document.getElementById('screen2');
-
-    // Add click event listeners to the buttons
-    listBtn.addEventListener('click', function() {
-      // Set the List button to active
-      listBtn.classList.add('active');
-      mapBtn.classList.remove('active');
-
-      // Show screen1 and hide screen2
-      screen1.style.display = 'block';
-      screen2.style.display = 'none';
-    });
-
-    mapBtn.addEventListener('click', function() {
-      // Set the Map button to active
-      mapBtn.classList.add('active');
-      listBtn.classList.remove('active');
-
-      // Show screen2 and hide screen1
-      screen2.style.display = 'block';
-      screen1.style.display = 'none';
-    });
-  </script>
-
+    // Show screen2 and hide screen1
+    screen2.style.display = 'block';
+    screen1.style.display = 'none';
+  });
 </script>
 
 
