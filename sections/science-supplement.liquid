@@ -2,13 +2,13 @@
 <div class="suppliments">
      <div class="container" >
   <div class="suppliment-tech-wrapper">
-  <div class="wrapper">
-    <div class="taeb-switch left">
-      <div class="taeb active-button" taeb-direction="left">Suppliment</div>
-      <div class="taeb" taeb-direction="right">Tech</div>
-      <div class="taeb-switch-indicator"></div>
-    </div>
-  </div>
+ 
+ <div class="wrapper">
+   <div class="taeb-switch left">
+     <div class="taeb active-button" taeb-direction="left">Suppliment</div>
+     <div class="taeb" taeb-direction="right">Tech</div>
+   </div>
+ </div>
     
 
     
@@ -222,7 +222,7 @@
     display: flex;
   }
 
-  .taeb-switch-indicator {
+  .taeb-switch:after {
     content: "";
     position: absolute;
     width: 50%;
@@ -235,21 +235,23 @@
     background: #404733;
   }
 
-  .taeb-switch.left .taeb-switch-indicator {
+  .taeb-switch.left:after {
     left: 0;
   }
 
-  .taeb-switch.right .taeb-switch-indicator {
+  .taeb-switch.right:after {
     left: 50%;
   }
 
-  .taeb-switch.left.active-button .taeb-switch-indicator {
+  .taeb-switch.left.active-button:after {
     left: 50%;
   }
 
-  .taeb-switch.right.active-button .taeb-switch-indicator {
+  .taeb-switch.right.active-button:after {
     left: 0;
   }
+
+
 
   .taeb-switch .taeb {
     display: inline-block;
@@ -269,7 +271,7 @@
   }
 
   .taeb-switch .taeb.active-button {
-    color: #9EB069;
+    color: #9EB069; 
   }
 
 
@@ -278,12 +280,14 @@
     border: 1px solid #404733;
     width: 100%;
     max-width: 509px;
-    margin: 40px auto;
+    margin:40px auto;
   }
 
   .text-center {
     text-align: center;
   }
+
+
 
   @media screen and (max-width: 768px) {
     .wrapper {
@@ -492,21 +496,29 @@
 
 
 <script>
- $(function() {
-   var taeb = $(".taeb-switch");
-   taeb.find(".taeb").on("click", function() {
-     var $this = $(this);
+ <script>
+   document.addEventListener("DOMContentLoaded", function() {
+     var taeb = document.querySelector(".taeb-switch");
+     var taebButtons = taeb.querySelectorAll(".taeb");
 
-     if ($this.hasClass("active-button")) return;
+     taebButtons.forEach(function(button) {
+       button.addEventListener("click", function() {
+         if (this.classList.contains("active-button")) return;
 
-     var direction = $this.attr("taeb-direction");
+         var direction = this.getAttribute("taeb-direction");
+         taeb.classList.remove("left", "right");
+         taeb.classList.add(direction);
 
-     taeb.removeClass("left right").addClass(direction);
-     taeb.find(".taeb.active-button").removeClass("active-button");
-     taeb.find(":after").removeClass("left right").addClass(direction); // <-- added this line
-     $this.addClass("active-button");
+         taebButtons.forEach(function(btn) {
+           btn.classList.remove("active-button");
+         });
+
+         this.classList.add("active-button");
+       });
+     });
    });
- });
+ </script>
+  
 </script>
 
 <script>
