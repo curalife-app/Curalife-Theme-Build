@@ -2,13 +2,14 @@
 <div class="suppliments">
      <div class="container" >
   <div class="suppliment-tech-wrapper">
-     
-        <div class="switch">
-          <input type="checkbox" id="switch" />
-          <label for="switch"></label>
-          <span class="label-left">Left</span>
-          <span class="label-right">Right</span>
-        </div>
+    <div class="wrapper">
+       <div class="taeb-switch left text-center">
+         <div class="taeb active" taeb-direction="left">List</div><!--
+      --><div class="taeb" taeb-direction="right">Map</div>
+       </div>
+     </div>
+    
+       
      
       <div id="screen1" class="screen screen1 active">
         <div class="tabbed-content desktop-version">
@@ -193,7 +194,11 @@
      </div>
    </div>
  </div>
+
+
 <style>
+  /* taeb-switch styles */
+
   .container {
     display: flex;
     flex-direction: column;
@@ -207,249 +212,110 @@
     padding: 0 15px;
   }
 
-  .screen {
-    display: none;
-    text-align: center;
-  }
-
-  .screen.active {
-    display: block;
-  }
-
-  .switch {
+  .taeb-switch {
     position: relative;
+  }
+
+  .taeb-switch:after {
+    content: "";
+    position: absolute;
+    width: 50%;
+    top: 0;
+    transition: left cubic-bezier(.88, -.35, .565, 1.35) .4s;
+    border-radius: 27.5px;
+    box-shadow: 0 2px 15px 0 rgba(0, 0, 0, .1);
+    background-color: #3d90ef;
+    height: 100%;
+    z-index: 0;
+  }
+
+  .taeb-switch.left:after {
+    left: 0;
+  }
+
+  .taeb-switch.right:after {
+    left: 50%;
+  }
+
+  .taeb-switch .taeb {
+    display: inline-block;
+    width: 50%;
+    padding: 12px 0;
+    z-index: 1;
+    position: relative;
+    cursor: pointer;
+    transition: color 200ms;
+    font-size: 16px;
+    font-weight: bold;
+    line-height: normal;
+    user-select: none;
+  }
+
+  .taeb-switch .taeb.active {
+    color: #ffffff;
+  }
+
+  /* other styles */
+  html {
+    box-sizing: border-box;
+  }
+
+  *,
+  *:after,
+  *:before {
+    box-sizing: inherit;
+  }
+
+  * {
+    outline: 0;
+  }
+
+  html,
+  body {
+    min-height: 100%;
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: #ffffff;
+    color: #3d90ef;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 30px auto;
-    max-width: 509px;
-    height: 71px;
   }
 
-  .switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-  }
-
-  .switch label {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: 50px;
-    background-color: #ccc;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-
-  .switch .label-left,
-  .switch .label-right {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    margin: auto;
-    color: #999;
-    font-size: 16px;
-    font-weight: bold;
-    text-transform: uppercase;
+  .text-center {
     text-align: center;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
   }
 
-  .switch .label-left {
-    opacity: 1;
-  }
-
-  .switch .label-right {
-    opacity: 0;
-  }
-
-  .switch input:checked + label {
-    background-color: #2196F3;
-  }
-
-  .switch input:checked + label .label-left {
-    opacity: 0;
-  }
-
-  .switch input:checked + label .label-right {
-    opacity: 1;
-  }
-
-  .switch input:checked + label:after {
-    content: "";
+  h1 {
+    font-size: 38px;
+    font-weight: bold;
     display: block;
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 46px;
-    height: 46px;
-    background-color: white;
-    transition: transform 0.3s ease;
-    border-radius: 50%;
+    width: 100%;
+    line-height: normal;
+    margin-top: 0;
+    margin-bottom: 40px;
   }
 
-  .switch input:checked + label:after {
-    transform: translateX(60px);
+  main {
+    width: 100%;
+  }
+
+  .wrapper {
+    border-radius: 37px;
+    background-color: #f4f4f4;
+    padding: 8px;
+    width: 100%;
+    max-width: 316px;
+    margin-left: auto;
+    margin-right: auto;
   }
 
 </style>
-
-{% comment %}   
-<style>
-    .container {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 15px;
-    }
-    .suppliment-tech-wrapper {
-        margin: 50px auto;
-        background: #FFFFFF;
-        border: 1px solid #E8E8B0;
-        box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.15);
-        border-radius: 20px;
-    }
-
-    .button-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 30px;
-        max-width: 510px;
-        margin: 20px auto;
-    }
-
-    .button-container button {
-        position: relative;
-        width: 100%;
-        padding: 2px 40px;
-        background: #FFFFFF;
-        border: 1px solid #404733;
-        border-radius: 80px;  
-        cursor: pointer;
-        font-family: 'PP Radio Grotesk';
-        font-weight: 700;
-        font-size: 30px;
-        line-height: 69px;
-        letter-spacing: -0.01em;
-        color: #404733;
-        text-align: right;
-    }
-
-
-    .button-container button.active-button {
-        display: flex;
-        justify-content: center;
-        text-align: center;
-        max-width: 20%;
-        position: absolute;
-        z-index: 1;
-        background-color: #404733;
-        color: #FFFFFF;
-
-    }
-
-    .tech {
-        position: relative;
-        left: -66px;
-    }
-
-    .button-container button.active-button .tech {
-        position: unset;
-    }
-
-    .supl {
-        
-    }
-
-    @media screen and ( max-width: 900px ) {
-       .button-container button.active-button {
-        min-width: 27vw;
-       }
-    }
-
-   
-
-    @media screen and ( max-width: 768px ) {
-        .suppliment-tech-wrapper {
-            margin: 2vw 0;
-            box-shadow: unset;
-            border-radius: 10px;
-        }
-
-        .button-container button {
-            font-size: 3vw;
-            line-height: 4vw;
-            padding: 1vw 4vw;
-        }
-
-        .button-container button.active-button {
-            max-width: 37vw;
-        }
-    }
-
-
-    @media screen and (max-width: 740px) {
-        .supl {
-            position: relative;
-            left: -2vw;
-        }
-
-        .button-container button.active-button .supl {
-            position: unset;
-        }
-
-    }
-
-    @media screen and (max-width: 700px) {
-        .supl {
-            position: relative;
-            left: -4vw;
-        }
-
-
-    }
-
-
-    @media screen and (max-width: 670px) {
-        .supl {
-            position: relative;
-            left: -6vw;
-        }
-
-    }
-
-    @media screen and (max-width: 630px) {
-        .supl {
-            position: relative;
-            left: -8vw;
-        }
-
-    }
-
-    @media screen and (max-width: 590px) {
-        .supl {
-            position: relative;
-            left: -10vw;
-        }
-
-        .tech {
-            position: relative;
-            left: -15vw;
-        }
-
-    }
-
-
-</style> {% endcomment %}
 
 <style>
     .tabbed-content.desktop-version {
@@ -667,7 +533,7 @@
     
 </script> {% endcomment %}
 
-<script>
+{% comment %} <script>
   const switchButton = document.getElementById("switch");
   const screen1 = document.querySelector(".screen1");
   const screen2 = document.querySelector(".screen2");
@@ -682,6 +548,34 @@
     }
   });
 
+
+</script> {% endcomment %}
+
+
+<script>
+  $(function() {
+    var taeb = $(".taeb-switch");
+    taeb.find(".taeb").on("click", function() {
+      var $this = $(this);
+
+      if ($this.hasClass("active")) return;
+
+      var direction = $this.attr("taeb-direction");
+
+      taeb.removeClass("left right").addClass(direction);
+      taeb.find(".taeb.active").removeClass("active");
+      $this.addClass("active");
+
+      // Switch between screens
+      if (direction === "left") {
+        $("#screen1").show();
+        $("#screen2").hide();
+      } else {
+        $("#screen2").hide();
+        $("#screen1").show();
+      }
+    });
+  });
 
 </script>
 
