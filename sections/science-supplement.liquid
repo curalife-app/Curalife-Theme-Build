@@ -3,13 +3,12 @@
      <div class="container" >
   <div class="suppliment-tech-wrapper">
  
-  <div class="wrapper">
-    <div class="taeb-switch left">
-      <div class="taeb active-button" taeb-direction="left">Suppliment</div>
-      <div class="taeb" taeb-direction="right">Tech</div>
-      <div class="taeb-switch-indicator"></div>
-    </div>
-  </div>
+ <div class="wrapper">
+   <div class="taeb-switch left">
+     <div class="taeb active-button" taeb-direction="left">Suppliment</div>
+     <div class="taeb" taeb-direction="right">Tech</div>
+   </div>
+ </div>
     
 
     
@@ -215,7 +214,6 @@
       border-radius: 20px;
   }
 </style>
-
 <style>
   /* taeb-switch styles */
 
@@ -245,13 +243,15 @@
     left: 50%;
   }
 
-  .taeb-switch.left.active-button:after {
-    left: 50%;
-  }
+ .taeb-switch.left.active-button:after {
+   left: 50%;
+ }
 
-  .taeb-switch.right.active-button:after {
-    left: 0;
-  }
+ .taeb-switch.right.active-button:after {
+   left: 0;
+ }
+  
+
 
   .taeb-switch .taeb {
     display: inline-block;
@@ -271,27 +271,23 @@
   }
 
   .taeb-switch .taeb.active-button {
-    color: #ffffff;
+    color: #9EB069; 
   }
 
-  .taeb-switch .taeb-switch-indicator {
-    position: absolute;
-    top: 0;
-    left: 0;
+
+  .wrapper {
+    border-radius: 37px;
+    border: 1px solid #404733;
     width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    max-width: 509px;
+    margin:40px auto;
   }
 
-  .taeb-switch .taeb-switch-indicator span {
-    color: #ffffff;
-    font-size: 24px;
-    font-weight: 700;
+  .text-center {
+    text-align: center;
   }
 
-  /* Responsive styles */
+
 
   @media screen and (max-width: 768px) {
     .wrapper {
@@ -302,6 +298,7 @@
       padding: 2vw;
     }
   }
+
 </style>
 
 <style>
@@ -498,7 +495,6 @@
 {% endschema %}
 
 
-
 <script>
   document.addEventListener("DOMContentLoaded", function() {
     var taeb = document.querySelector(".taeb-switch");
@@ -509,11 +505,8 @@
         if (this.classList.contains("active-button")) return;
 
         var direction = this.getAttribute("taeb-direction");
-        taeb.classList.remove("left", "right");
-        taeb.classList.add(direction);
-
-        var indicator = taeb.querySelector(".taeb-switch-indicator");
-        indicator.innerHTML = '<span>' + this.innerHTML + '</span>';
+        taeb.classList.remove("left", "right", "active-button");
+        taeb.classList.add(direction, "active-button");
 
         taebButtons.forEach(function(btn) {
           btn.classList.remove("active-button");
@@ -523,9 +516,10 @@
       });
     });
   });
+
+
+
 </script>
-
-
 <script>
   // Get the List and Map buttons
   var suplBtn = document.querySelector('.taeb-switch .taeb[taeb-direction="left"]');
