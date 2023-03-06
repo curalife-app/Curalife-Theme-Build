@@ -218,6 +218,93 @@
    });
  </script>
 
+ <script>
+   // Get the List and Map buttons
+   var suplBtn = document.querySelector('.taeb-switch .taeb[taeb-direction="left"]');
+   var techBtn = document.querySelector('.taeb-switch .taeb[taeb-direction="right"]');
+
+   // Get the screens
+   var screen1 = document.getElementById('screen1');
+   var screen2 = document.getElementById('screen2');
+
+   // Add click event listeners to the buttons
+   suplBtn.addEventListener('click', function() {
+     // Set the List button to active
+     suplBtn.classList.add('active-button');
+     techBtn.classList.remove('active-button');
+
+     // Show screen1 and hide screen2
+     screen1.style.display = 'block';
+     screen2.style.display = 'none';
+   });
+
+   techBtn.addEventListener('click', function() {
+     // Set the Map button to active
+     techBtn.classList.add('active-button');
+     suplBtn.classList.remove('active-button');
+
+     // Show screen2 and hide screen1
+     screen2.style.display = 'block';
+     screen1.style.display = 'none';
+   });
+ </script>
+
+
+
+  <script>
+   document.addEventListener("DOMContentLoaded", function() {
+     const tabs = document.querySelectorAll(".tabs a");
+
+     tabs.forEach(function(tab) {
+       tab.addEventListener("click", function(event) {
+         event.preventDefault();
+         const target = this.getAttribute("href");
+         const items = document.querySelectorAll(".content .item");
+
+
+         tabs.forEach(function(tab) {
+           tab.classList.remove("active");
+         });
+
+         items.forEach(function(item) {
+           item.classList.remove("active");
+         });
+
+         if (window.innerWidth <= 768) { // Check screen size
+           if (this.classList.contains("active")) { // Check if already active
+             this.classList.remove("active");
+             document.querySelector(target).classList.remove("active");
+           } else {
+             this.classList.add("active");
+             document.querySelector(target).classList.add("active");
+           }
+         } else {
+           this.classList.add("active");
+           document.querySelector(target).classList.add("active");
+         }
+       });
+
+       if (window.innerWidth <= 768) { // Check screen size
+         // Add toggle functionality for mobile
+         tab.addEventListener("touchstart", function(event) {
+           if (this.classList.contains("active")) {
+             // Prevent touchstart event from triggering click event
+             event.preventDefault();
+             document.querySelector(".border-green").style.display = "none";
+
+
+             // Remove active class
+             this.classList.remove("active");
+             document.querySelector(this.getAttribute("href")).classList.remove("active");
+
+
+           }
+         });
+       }
+     });
+   });
+ </script>  
+
 <style>
   .container {
       position: relative;
@@ -542,92 +629,7 @@
 </script> {% endcomment %}
 
 
-<script>
-  // Get the List and Map buttons
-  var suplBtn = document.querySelector('.taeb-switch .taeb[taeb-direction="left"]');
-  var techBtn = document.querySelector('.taeb-switch .taeb[taeb-direction="right"]');
 
-  // Get the screens
-  var screen1 = document.getElementById('screen1');
-  var screen2 = document.getElementById('screen2');
-
-  // Add click event listeners to the buttons
-  suplBtn.addEventListener('click', function() {
-    // Set the List button to active
-    suplBtn.classList.add('active-button');
-    techBtn.classList.remove('active-button');
-
-    // Show screen1 and hide screen2
-    screen1.style.display = 'block';
-    screen2.style.display = 'none';
-  });
-
-  techBtn.addEventListener('click', function() {
-    // Set the Map button to active
-    techBtn.classList.add('active-button');
-    suplBtn.classList.remove('active-button');
-
-    // Show screen2 and hide screen1
-    screen2.style.display = 'block';
-    screen1.style.display = 'none';
-  });
-</script>
-
-
-
- <script>
-  document.addEventListener("DOMContentLoaded", function() {
-    const tabs = document.querySelectorAll(".tabs a");
-
-    tabs.forEach(function(tab) {
-      tab.addEventListener("click", function(event) {
-        event.preventDefault();
-        const target = this.getAttribute("href");
-        const items = document.querySelectorAll(".content .item");
-        
-
-        tabs.forEach(function(tab) {
-          tab.classList.remove("active");
-        });
-
-        items.forEach(function(item) {
-          item.classList.remove("active");
-        });
-
-        if (window.innerWidth <= 768) { // Check screen size
-          if (this.classList.contains("active")) { // Check if already active
-            this.classList.remove("active");
-            document.querySelector(target).classList.remove("active");
-          } else {
-            this.classList.add("active");
-            document.querySelector(target).classList.add("active");
-          }
-        } else {
-          this.classList.add("active");
-          document.querySelector(target).classList.add("active");
-        }
-      });
-
-      if (window.innerWidth <= 768) { // Check screen size
-        // Add toggle functionality for mobile
-        tab.addEventListener("touchstart", function(event) {
-          if (this.classList.contains("active")) {
-            // Prevent touchstart event from triggering click event
-            event.preventDefault();
-            document.querySelector(".border-green").style.display = "none";
-            
-            
-            // Remove active class
-            this.classList.remove("active");
-            document.querySelector(this.getAttribute("href")).classList.remove("active");
-            
-            
-          }
-        });
-      }
-    });
-  });
-</script>  
 
 
 
