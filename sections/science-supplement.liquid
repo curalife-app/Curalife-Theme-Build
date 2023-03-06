@@ -497,9 +497,9 @@
 {% endschema %}
 
 
-<script>
+{% comment %} <script>
   document.addEventListener("DOMContentLoaded", function() {
-    var taeb = document.querySelector(".taeb-switch");
+    var taeb = document.querySelectorAll(".taeb-switch");
     var taebButtons = taeb.querySelectorAll(".taeb");
 
     taebButtons.forEach(function(button) {
@@ -516,6 +516,24 @@
 
         this.classList.add("active-button");
       });
+    });
+  });
+
+</script> {% endcomment %}
+
+<script>
+  $(function() {
+    var taeb = $(".taeb-switch");
+    taeb.find(".taeb").on("click", function() {
+      var $this = $(this);
+
+      if ($this.hasClass("active-button")) return;
+
+      var direction = $this.attr("taeb-direction");
+
+      taeb.removeClass("left right").addClass(direction);
+      taeb.find(".taeb.active-button").removeClass("active-button");
+      $this.addClass("active-button");
     });
   });
 
