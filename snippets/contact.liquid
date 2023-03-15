@@ -1,126 +1,233 @@
-<section class="contact-us-section" id="contact-us-section">
-  {% if box_link %}<a href="{{ box_link }}">{% endif %}
+<div class="contact-page bottom-line">
   <div class="container">
-    <h2>{{ title }}</h2>
-    <div class="contact-options">
-      <div class="contact-option">
-        <div class="img-wrapper"><img src="{{ "icon-live-chat.png" | asset_url }}" alt="" loading="lazy"></div>
-        <p>Live Chat</p>
-      </div>
-      <div class="contact-option">
-        <div class="img-wrapper"><img src="{{ "icon-phone-support.png" | asset_url }}" alt="" loading="lazy"></div>
-        <p>Phone Support</p>
-      </div>
-      <div class="contact-option">
-        <div class="img-wrapper"><img src="{{ "icon-email.png" | asset_url }}" alt="" loading="lazy"></div>
-        <p>Email</p>
-      </div>
-    </div>
-    <div class="phone-numbers">
-      <div class="phone-number">
-        <img src="{{ "icon-flag-uk.png" | asset_url }}" width="32" height="32" alt="" loading="lazy">
-        <a href="tel:+448000869122"><p>UK-Toll-Free: +44 800 086 9122</p></a>
-      </div>
-      <div class="phone-number">
-        <img src="{{ "icon-flag-us.png" | asset_url }}" width="32" height="32" alt="" loading="lazy">
-        <a href="tel:+18882867307"><p>US-Toll-Free: +1 888 286 7307</p></a>
-      </div>
-      <div class="phone-number">
-          <img src="{{ "icon-flag-au.png" | asset_url }}" alt="" loading="lazy">
-          <a href="tel:+611800942961"><p>AU-Toll-Free: +61 1800 942 961</p></a>
+    <div class="white-bg">
+      <div class="mini-wrap">
+        <div class="contact-data">
+          <div class="info-wrap">
+            <div class="contacts-bar">
+              <div class="sub-title">
+                <h1>24/7 Customer Support</h1>
+              </div>
+              <div class="support-contacts">
+                <ul>
+                  {% for block in section.blocks %}
+                  {% if block.type == 'contact' %}
+                  <li>
+                  <div class="phone-title">
+                    {% if block.settings.cntphn_img != blank %}
+                    <span>
+                       <img src="{{block.settings.cntphn_img | img_url: width: 32 }}" width="20px" height="20px" alt="">
+                    </span>
+                    {% endif %}
+                    {{ block.settings.cntphn_title }}
+                  </div>
+                  <div class="show-phone">
+                    <div class="show-phone-btn"><i class="icofont-phone"></i> Show Phone</div>
+                    <div class="show-phone-content">
+                      <a href="tel:{{ block.settings.cntphn_numbr }}">{{ block.settings.cntphn_numbr }}</a>
+                    </div>
+                  </div>
+                  </li>
+                  {% endif %}
+                  {% endfor %}
+                  {% if section.settings.cstmr_emil !=blank %}
+                  <li class="mail-me">
+                      E-mail: <a href="mailto:{{ section.settings.cstmr_emil }}">
+                    <i class="icon-envelope"></i> {{ section.settings.cstmr_emil }}</a>
+                  </li>
+                  {% endif %}
+                </ul>
+              </div>
+            </div>
+            <div class="social-bar">
+              <h3>{{ section.settings.flow_titl }}</h3>
+              <ul>
+                {% for block in section.blocks %}
+                {% if block.type == 'social' %}
+                <li><a href="{{ block.settings.cntsocil_link }}" target="_blank"><i class="{{ block.settings.cntsocil_icn }}"></i></a></li>
+                 {% endif %}
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+          <div class="contact-form">
+            <div class="sub-title">
+              <h2>{{ section.settings.cntnt_titl }}</h2>
+            </div>
+
+            {% form 'contact' %}
+              {{ form.errors | default_errors }}
+              <input type="hidden" name="return_to" value="/pages/thank-you?type=contact-us">
+              <div class="form-fields">
+                  <label for="first-name" class="full-size">
+                    <input  id="first-name" maxlength="80" name="contact[first_name]" size="20" type="text" placeholder="First Name" />
+                  </label>
+
+                <label for="last-name" class="full-size">
+                  <input  id="last-name" maxlength="80" name="contact[last_name]" size="20" type="text" placeholder="Last Name" />
+                </label>
+
+                <label for="subject" class="full-size">
+                  <input  id="subject" maxlength="80" name="contact[information_id]" size="20" type="text" placeholder="Subject" />
+                </label>
+
+                <label for="phone" class="full-size">
+                  <input  id="phone" maxlength="40" name="contact[phone]" size="20" type="tel" placeholder="Phone" />
+                </label>
+
+                <label for="email" class="full-size">
+                  <input  id="email" maxlength="80" name="contact[email]" size="20" type="text" placeholder="Email" />
+                </label>
+
+                <label for="body" class="full-size">
+                    <textarea name="contact[body]" placeholder="Message"></textarea>
+                </label>
+              </div>
+
+
+              <div class="submit-form">
+                <button type="submit"  value="{{ 'contact.form.send' | t }}" class="main-btn">Submit</button>
+              </div>
+            {% endform %}
+
+            <div class="social-bar">
+              <h3>{{ section.settings.flow_titl }}</h3>
+              <ul>
+                 {% for block in section.blocks %}
+                {% if block.type == 'social' %}
+                <li><a href="{{ block.settings.cntsocil_link }}" target="_blank"><i class="{{ block.settings.cntsocil_icn }}"></i></a></li>
+                {% endif %}
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
-  {% if box_link %}</a>{% endif %}
-</section>
+</div>
+{% schema %}
+  {
+  "name": "Contact Us",
+  "class":"contact-us",
+  "settings": [
+    {
+      "type": "header",
+      "content": "24/7 Customer Success Section Start"
+    },
+    {
+      "type": "text",
+      "id": "cstmr_emil",
+      "label": "Email",
+      "default": "Enter Email"
+    },
+    {
+      "type": "header",
+      "content": "Contact Us Form Section Start"
+    },
+    {
+      "type": "text",
+      "id": "cntnt_titl",
+      "label": "Title",
+      "default": "Enter Title"
+    },
+    {
+      "type": "header",
+      "content": "Follow Us Section Start"
+    },
+    {
+      "type": "text",
+      "id": "flow_titl",
+      "label": "Title",
+      "default": "Enter Title"
+    }
+  ],
+  "blocks": [
 
+    {
+      "type": "contact",
+      "name": "Contact Numbers",
+      "settings": [
+        {
+        "type": "image_picker",
+        "id": "cntphn_img",
+        "label": "Select Image"
+        },
+        {
+        "type": "text",
+        "id": "cntphn_title",
+        "label": "Title",
+        "default": "Enter Title"
+        },
+        {
+        "type": "text",
+        "id": "cntphn_numbr",
+        "label": "Contact Number",
+        "default": " Enter Phone Number "
+        }
+
+      ]
+      },
+      {
+      "type": "social",
+      "name": "Social Media",
+      "settings": [
+        {
+        "type": "text",
+        "id": "cntsocil_icn",
+        "label": "Phone Icon",
+        "default": "icon-tel"
+        },
+        {
+        "type": "text",
+        "id": "cntsocil_title",
+        "label": "Title",
+        "default": "Enter Title"
+        },
+        {
+        "id": "cntsocil_link",
+        "type": "url",
+        "label": "Add Link"
+        }
+
+      ]
+      }
+
+
+  ],
+  "presets":[
+    {
+    "name": "Contact Us",
+    "category": "Contact"
+    }
+  ]
+  }
+{% endschema %}
+
+{% style %}
+.support-contacts .phone-title {
+  line-height: 2.5;
+  }
+
+  .support-contacts .show-phone-btn {
+  background: white;
+  border-radius: 10px;
+  cursor: pointer;
+  color: var(--green);
+  padding: 3px 10px;
+  margin-left: 5px;
+  }
+
+  .support-contacts .show-phone-content {
+  display: none;
+  }
+{% endstyle %}
+
+{% javascript %}
+{% endjavascript %}
 <style>
-.contact-us-section .container h2 {
-    text-align: center;
-    font-weight: 600;
-    font-size: 40px;
-}
-
-.contact-us-section .container .contact-options {
-    display: flex;
-    justify-content: center;
-    gap: 100px;
-    margin-top: 80px;
-}
-
-.contact-us-section .container .contact-options .contact-option {
-    text-align: center;
-    font-size: 18px;
-}
-
-.contact-us-section .container .contact-options .contact-option .img-wrapper {
-    border-radius: 50%;
-    background-color: var(--light-green);
-    padding: 20px;
-    width: 100px;
-    height: 100px;
-    display: flex;
-    align-items: center;
-    margin: auto;
-}
-
-.contact-us-section .container .contact-options .contact-option .img-wrapper img {
-    object-fit: contain;
-}
-
-.contact-us-section .container .phone-numbers {
-    display: flex;
-    flex-direction: column;
-    max-width: 340px;
-    margin: 30px auto auto;
-    align-items: center;
-}
-
-.contact-us-section .container .phone-numbers .phone-number {
-    display: flex;
-    align-items: center;
-}
-
-.contact-us-section .container .phone-numbers .phone-number img {
-    width: 25px;
-}
-
-.contact-us-section .container .phone-numbers .phone-number p {
-    font-size: 18px;
-    margin: 10px;
-    color: black;
-}
-
-@media screen and (max-width:768px) {
-    .contact-us-section .container h2 {
-        font-size: 6vw;
-        text-align: center;
-        max-width: unset;
-        margin-bottom: 10px;
-    }
-
-    .contact-us-section .container .contact-options {
-        gap: 10vw;
-        margin-top: 40px;
-    }
-
-    .contact-us-section .container .contact-options .contact-option .img-wrapper {
-        width: 20vw;
-        height: 20vw;
-        padding: 15px;
-    }
-
-    .contact-us-section .container .phone-numbers .phone-number a p {
-        font-size: 4vw;
-    }
-}
+  #contact_form {
+    width: 100%;
+    padding: 0;
+  }
 </style>
-
-<script>
-  //Phone-click
-  $('.phone-number').click(function() {
-    woopra.track('Phone Click Event', {
-      phone_number: $(this).find("a").find("p").text()
-    });
-    });
-</script>
