@@ -1,5 +1,3 @@
-{% assign disorders_amount = 0 %}
-
 <section class="disorders-box-section">
   <h2>{{ section.settings.title }}</h2>
   <div class="container">
@@ -14,7 +12,6 @@
 
       <div class="content">
         {% for disorder in collection.metafields.custom.disorders.value %}
-          {% assign disorders_amount = disorders_amount | plus: 1 %}
           <div id="item-{{ forloop.index }}" class="item {% if forloop.first %}active always-active{% endif %}" data-title="{{ disorder.name }}">
             <div class="item-content flex">
               <div class="content-column disorder-info">
@@ -26,14 +23,9 @@
 
               <div class="content-column ingredient-info">
                 <p>How we tackle it</p>
-                {% if disorder.ingredient.value %}
-                  <h6>{{ disorder.ingredient.value.name }}</h6>
-                  <img src="{{ disorder.ingredient.value.image.value.src | image_url }}" alt="{{ disorder.ingredient.name }}">
-                  <p class="font-bold">{{ disorder.ingredient.value.description }}</p>
-                {% else %}
-                  <img src="{{ disorder.solution_image.value.src | image_url }}" alt="{{ disorder.name }}">
-                  <p class="font-bold">{{ disorder.solution_description }}</p>
-                {% endif %}
+                <h6>{{ disorder.ingredient.value.name }}</h6>
+                <img src="{{ disorder.ingredient.value.image.value.src | img_url: 'original' }}" alt="{{ disorder.ingredient.name }}">
+                <p class="font-bold">{{ disorder.ingredient.value.description }}</p>
               </div>
             </div>
           </div>
@@ -55,14 +47,10 @@
     overflow: hidden;
   }
 
-  .disorders-box-section .tabbed-content .tabs {
-    box-shadow: 0 25px 54px -35px rgb(0 0 0 / .25);
-  }
-
   .disorders-box-section .tabs ul li {
     text-align: center;
-    height: calc(550px / {% if disorders_amount > 0 %}{{ disorders_amount }}{% else %}5{% endif %});
-    border-bottom: 1px solid #d2d2d2;
+    height: 110px;
+    border-bottom: 1px solid;
   }
 
   .disorders-box-section .tabs ul li a {
@@ -70,7 +58,6 @@
     align-items: center;
     display: flex;
     justify-content: center;
-    transition: all 0.2s;
   }
 
   .disorders-box-section .tabs ul li a i {
@@ -82,7 +69,6 @@
 
   .disorders-box-section .tabs ul li a:hover,
   .disorders-box-section .tabs ul li a.active {
-    background-color: #f9f9f9;
     color: {{ collection.metafields.custom.color }};
     font-weight: bold;
   }
@@ -127,6 +113,10 @@
     height: 550px;
   }
 
+  .disorders-box-section .item-content .content-column.disorder-info {
+    background: #f6f6f6;
+  }
+
   .disorders-box-section .item-content .content-column.disorder-info img {
     height: 300px;
     margin-bottom: 20px;
@@ -136,7 +126,6 @@
 
   .disorders-box-section .item-content .content-column.ingredient-info {
     background-color: {{ collection.metafields.custom.collection_bg_color }};
-    box-shadow: inset 12px 1px 20px 0px rgb(0 0 0 / .02);
   }
 
   .disorders-box-section .item-content .content-column.ingredient-info img {
@@ -234,12 +223,9 @@
       flex-direction: column;
     }
 
-    .disorders-box-section .item-content .content-column {
-      height: unset;
-    }
-
     .disorders-box-section .arrow {
-      display: none;
+      top: calc(50% - 10px);
+      writing-mode: vertical-rl;
     }
 
     .disorders-box-section .tabbed-content .item.active .item-content .content-column {
