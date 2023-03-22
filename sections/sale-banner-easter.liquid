@@ -2,13 +2,11 @@
  <div class="sale-banner">
   <div class="container">
     <div class="logo-wrapper">
-      {% if logoFileName %}<img class="logo" src="{{ logoFileName | asset_url }}" width="164" height="45" alt="logo">{% endif %}
+     <img class="logo" src="{{ section.settings.bg_image | image_url }}" width="164" height="45" alt="logo">
     </div>
 
-    <p class="title">{{ title }}</p>
-
     <div class="cta-wrapper">
-      {% if ctaTitle == "25" %}
+   
       <div class="twenty-percent-off">
             <div class="up-to">
                 UP TO
@@ -20,30 +18,18 @@
                 <div class="off-mobile">OFF</div>
             </div>
         </div>
-        {% elsif ctaTitle == "flash" %}
-          <div class="twenty-percent-off">
-              <div class="up-to">
-                  UP TO
-              </div>
-              <div class="off"> 30% OFF</div>
-              <div class="twenty">30</div>
-              <div class="percent-off">
-                  <div class="percent">%</div>
-                  <div class="off-mobile">OFF</div>
-              </div>
-          </div>
-      {% else %}
-        <div class="off-container">
-          <div class="percents-off">{{ ctaTitle }}</div>
-        </div>
-      {% endif %}
-
-      <a class="main-btn" id='main-cta-btn' href="{{ ctaButtonLink }}">{{ ctaButtonTitle }}</a>
+   
+       
+    
+      <a class="main-btn" id='main-cta-btn' href="{{ section.settings.button_link }}">{{ ctaButtonTitle }}</a>
     </div>
   </div>
 </div>
 
 <style>
+  section {
+    padding: unset !important;
+  }
   .sale-banner {
     background-image: url("{{ 'sticky-banner.png' | asset_url }}");
     background-size: cover;
@@ -84,11 +70,7 @@
   }
 
   @media screen and (max-width: 768px) {
-    {% if mobileContent == 'none' %}
-      .sale-banner {
-        display: none;
-      }
-    {% endif %}
+
     .up-to {
       margin-top: 10px;
       width: 20px;
@@ -135,47 +117,12 @@
 
 </style>
 
-<style>
-  .middle-flash-sale {
-    padding: 0 20px;
-    z-index: 5;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
 
-  .flash-sale-mobile {
-    display: none;
-  }
-
-  @media screen and (max-width: 768px) {
-      .flash-sale-desktop {
-        display: none;
-    }
-
-    .flash-sale-mobile {
-      display: block;
-    }
-
-    .part-60 {
-      width: 60%;
-    }
-  }
-</style>
 
 <style>
+  
   .sale-banner {
-    top: 0;
-    {% if desktopContent == 'none' %}display: none;{% endif %}
-  }
-
-  .sale-banner.{{ instance_id }} {
-    background: {{ bgColor }};
-  }
-
-  .sale-banner.{{ instance_id }} {
-    {% if isFixed %}position: fixed;{% endif %}
+    position: fixed;
   }
 
   .sale-banner.{{ instance_id }} img.logo {
@@ -391,6 +338,99 @@
     "groups": ["footer"]
   },
   "settings": [
+    {
+      "type": "color",
+      "id": "bg_color",
+      "label": "Background Color"
+    },
+    {
+      "type": "image_picker",
+      "id": "bg_image",
+      "label": "Background Image"
+    },
+    {
+      "type": "image_picker",
+      "id": "bg_image_mobile",
+      "label": "Background Image on Mobile"
+    },
+    {
+      "type": "text",
+      "id": "small_title",
+      "label": "Small Title"
+    },
+    {
+      "type": "text",
+      "id": "big_title",
+      "label": "Big Title"
+    },
+    {
+      "type": "header",
+      "content": "Options"
+    },
+    {
+      "type": "select",
+      "id": "mobile_alignment",
+      "label": "Content Align on Mobile",
+      "options": [
+        {
+          "value": "start",
+          "label": "Top"
+        },
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "end",
+          "label": "Bottom"
+        }
+      ],
+      "default": "start"
+    },
+    {
+      "type": "color",
+      "id": "title_color",
+      "label": "Title Color"
+    },
+    {
+      "type": "checkbox",
+      "id": "is_title_right",
+      "label": "Place Title Right"
+    },
+    {
+      "type": "checkbox",
+      "id": "is_title_shadow",
+      "label": "Title Shadow"
+    },
+    {
+      "type": "header",
+      "content": "Button"
+    },
+    {
+      "type": "text",
+      "id": "button_title",
+      "label": "Button Title"
+    },
+    {
+      "type": "text",
+      "id": "button_link",
+      "label": "Button Link"
+    },
+    {
+      "type": "text",
+      "id": "button_link2",
+      "label": "Button Link 2"
+    },
+    {
+      "type": "color",
+      "id": "button_color",
+      "label": "Button Color"
+    },
+    {
+      "type": "color",
+      "id": "button_title_color",
+      "label": "Button Title Color"
+    }
   ],
   "presets": [
     {
