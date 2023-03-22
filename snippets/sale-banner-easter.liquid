@@ -88,9 +88,11 @@
   }
 
   @media screen and (max-width: 768px) {
-    .sale-banner {
-      display: {% if isNotMobile %}none{% endif %};
-    }
+    {% if mobileContent == 'none' %}
+      .sale-banner {
+        display: none;
+      }
+    {% endif %}
     .up-to {
       margin-top: 10px;
       width: 20px;
@@ -211,11 +213,11 @@
   {% endunless %}
 
   @media screen and (max-width: 768px) {
-    {% if desktopContent == 'none' %}
+    {% comment %} {% if desktopContent == 'none' %}
       .sale-banner {
         display: block;
       }
-    {% endif %}
+    {% endif %} {% endcomment %}
 
     {% if mobileContent contains ',' %}
       .sale-banner.{{ instance_id }} .container {
