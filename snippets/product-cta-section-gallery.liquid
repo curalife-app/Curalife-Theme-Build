@@ -6,7 +6,7 @@
           <div id="product-main-slider-sc" class="swiper">
             <div class="swiper-wrapper">
               {% if isCuralinContent %}
-                {% for i in (1..5) %}
+                {% for i in (1..6) %}
                   <div class="swiper-slide">
                     {% unless forloop.index == 1 %}<img class="main-slider-vector-bg" src="{{ 'product-aio-vector-product-slider.png' | asset_url }}" width="534" height="342" alt="">{% endunless %}
 
@@ -156,10 +156,6 @@
 
     .cta-section .save-title p {
       background-image: url("{{ 'title-bg.svg' | asset_url }}");
-      background-size: contain;
-      background-repeat: no-repeat;
-      background-position: center;
-      padding: 5px;
       width: 235px;
       font-size: 35px;
       font-weight: bold;
@@ -191,10 +187,8 @@
       text-align: center
     }
 
-
     .product-thumbnails .product-slider .main-slider .swiper-slide .img-wrap img {
-      max-height: 400px;
-      object-fit: contain;
+      max-height: 400px
     }
 
     .product-thumbnails .product-slider .main-slider .swiper-slide .product-video iframe {
@@ -210,6 +204,7 @@
       position: relative;
       display: flex;
       margin-top: 30px;
+      width: 95%;
       margin-left: auto;
       margin-right: auto;
       padding-left: 3em;
@@ -397,10 +392,7 @@
   </script>
 {% else %}
   <img src="{{ product.images[0].src | image_url }}" alt="{{ product.images[0].alt }}" class="product-image" loading="lazy">
-  {% assign variantQuantity = product.variants | size %}
-  {% if variantQuantity > 1 %}
-    <p class="multiplier"></p>
-  {% endif %}
+  <p class="multiplier"></p>
 
   {% comment %} If Curalin is in the product, render the sale badge {% endcomment %}
     {% if var.metafields.custom.badge_image %}

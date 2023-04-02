@@ -12,7 +12,6 @@
   <link rel="stylesheet" href="{{ 'component-mega-menu.css' | asset_url }}" media="print" onload="this.media='all'">
   <noscript>{{ 'component-mega-menu.css' | asset_url | stylesheet_tag }}</noscript>
 {%- endif -%}
-
 {%- if settings.cart_type == "drawer" -%}
   {{ 'component-cart-drawer.css' | asset_url | stylesheet_tag }}
   {{ 'component-cart.css' | asset_url | stylesheet_tag }}
@@ -38,6 +37,12 @@
     max-width: {{ settings.logo_width }}px;
   }
 
+  {%- if section.settings.sticky_header_type == 'reduce-logo-size' -%}
+    .scrolled-past-header .header__heading-logo {
+      width: 75%;
+    }
+  {%- endif -%}
+
   @media screen and (min-width: 990px) {
     header-drawer {
       display: none;
@@ -60,11 +65,10 @@
   }
 
   summary.list-menu__item {
-    padding-right: 2rem;
+    padding-right: 2.7rem;
   }
 
   .list-menu__item {
-    font-size: 16px;
     display: flex;
     align-items: center;
     line-height: calc(1 + 0.3 / var(--font-body-scale));
@@ -210,11 +214,6 @@
                     {%- endfor -%}
                   </ul>
                 </nav>
-
-                {% if shop.name == 'CuraLife' %}
-                  <a class="quiz-button mobile" href="/pages/product-recommendation-quiz"><button class="btn-cta">TAKE THE QUIZ!</button></a>
-                {% endif %}
-
                 <div class="menu-drawer__utility-links">
                   {%- if shop.customer_accounts_enabled -%}
                     <a href="{%- if customer -%}{{ routes.account_url }}{%- else -%}{{ routes.account_login_url }}{%- endif -%}" class="menu-drawer__account link focus-inset h5">
@@ -426,12 +425,11 @@
               <li>
                 {%- if link.links != blank -%}
                   <header-menu>
-                    <details class="header-menu-item-object" id="Details-HeaderMenu-{{ forloop.index }}">
+                    <details id="Details-HeaderMenu-{{ forloop.index }}">
                       <summary class="header__menu-item list-menu__item link focus-inset">
-                        <a href="{{ link.url }}"><span {%- if link.child_active %} class="header__active-menu-item"{% endif %}>{{ link.title | escape }}</span></a>
+                        <span {%- if link.child_active %} class="header__active-menu-item"{% endif %}>{{ link.title | escape }}</span>
                         {% render 'icon-caret' %}
                       </summary>
-
                       <ul id="HeaderMenu-MenuList-{{ forloop.index }}" class="header__submenu list-menu list-menu--disclosure gradient caption-large motion-reduce global-settings-popup" role="list" tabindex="-1">
                         {%- for childlink in link.links -%}
                           <li>
@@ -542,18 +540,14 @@
       {%- endif -%}
     {%- endif -%}
 
-    {% if shop.name == 'CuraLife' %}
-      <a class="quiz-button desktop" href="/pages/product-recommendation-quiz"><button class="btn-cta">TAKE THE QUIZ!</button></a>
-    {% endif %}
-
     <div class="header__icons">
       <details-modal class="header__search">
         <details>
           <summary class="header__icon header__icon--search header__icon--summary link focus-inset modal__toggle" aria-haspopup="dialog" aria-label="{{ 'general.search.search' | t }}">
             <span>
-              {% comment %} <svg class="modal__toggle-open icon icon-search" aria-hidden="true" focusable="false">
+              <svg class="modal__toggle-open icon icon-search" aria-hidden="true" focusable="false">
                 <use href="#icon-search">
-              </svg> {% endcomment %}
+              </svg>
               <svg class="modal__toggle-close icon icon-close" aria-hidden="true" focusable="false">
                 <use href="#icon-close">
               </svg>
@@ -695,46 +689,13 @@
     transform-origin: bottom left;
   }
 
-  details:hover > .header__submenu {
+  .header__menu-item:hover + .header__submenu {
     background: white;
     animation: animateMenuOpen var(--duration-default) ease;
     animation-fill-mode: forwards;
     z-index: 1;
   }
-
-  .quiz-button {
-    grid-area: quiz;
-  }
-
-  .quiz-button button {
-    background: var(--orange);
-    padding: 10px 20px;
-    border-radius: 5px;
-    font-size: 14px;
-  }
-
-  @media (max-width: 990px) {
-    .quiz-button {
-      margin: auto;
-    }
-
-    .quiz-button button {
-      font-size: 6vw;
-    }
-
-    .list-menu__item {
-      font-size: 5vw;
-    }
-  }
 </style>
-
-<script>
-  $(".header-menu-item-object").mouseenter(function() {
-      $(this).attr('open','');
-  }).mouseleave(function() {
-       $(this).removeAttr('open');
-  });
-</script>
 
 {% javascript %}
   class StickyHeader extends HTMLElement {

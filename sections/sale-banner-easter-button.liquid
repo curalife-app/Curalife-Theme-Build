@@ -18,10 +18,14 @@
                 <div class="off-mobile">{{ section.settings.text_3_mb }}</div>
             </div>
         </div>
-     
-     <a class="main-btn" id='main-cta-btn' href="#product-catalog-section">{{ section.settings.text_button }}</a>
+   
+       
+     {% if shop.name == "Curalife" %}
+      <a class="main-btn" id='main-cta-btn' href="{{ section.settings.button_link }}">{{ section.settings.text_button }}</a>
+    {% else %}
+     <a class="main-btn" id='main-cta-btn' href="{{ section.settings.button_link2 }}">{{ section.settings.text_button }}</a>
     </div>
-
+   {% endif %}
   </div>
 </div>
 
@@ -78,13 +82,9 @@
     box-shadow: 0px 5px 12px rgba(0, 0, 0, 0.15);
   }
 
-  .main-btn:hover {
-    background: {{ section.settings.button_hover_color }}
-  }
-
   @media screen and (max-width: 768px) {
     .sale-banner-easter-button {
-       display: {% if page.url contains 'glucose-support-lp01n-v2' %}none{% endif %};
+      display: none;
     }
 
    .up-to { 
@@ -299,15 +299,7 @@ section {
   }
 </style>
 
-<script>
-  $(document).on('click', 'a[href^="#product-catalog-section"]', function (event) {
-      event.preventDefault();
 
-      $('html, body').animate({
-          scrollTop: $($.attr(this, 'href')).offset().top
-      }, 500);
-  });
-</script>
 {% if isHidden %}
   <script>
     let queryParam = window.location.search;
@@ -396,11 +388,6 @@ section {
       "type": "color",
       "id": "button_color",
       "label": "Button Color"
-    },
-    {
-      "type": "color",
-      "id": "button_hover_color",
-      "label": "Button Hover Color"
     },
     {
       "type": "color",

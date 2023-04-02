@@ -1,8 +1,5 @@
 <div class="product-actions">
-  {% assign variantQuantity = product.variants | size %}
-  {% if variantQuantity > 1 %}
-    <div class="cta-title">{{ title }}</div>
-  {% endif %}
+  <p class="cta-title">{{ title }}</p>
 
   <div class="variants">
     {% for var in product.variants %}
@@ -52,6 +49,7 @@
 
   .product-actions .submit-wrap {
     display: flex;
+    border: 1px solid {{ ctaColor }};
   }
 
   .product-actions .submit-wrap button {
@@ -94,7 +92,7 @@
     }
 
     .product-actions .submit-wrap button span:first-child {
-      font-size: 5vw;
+      font-size: 4vw;
     }
 
     .submit-wrap .qty-data .qty-control {
@@ -105,11 +103,7 @@
 
 <script>
   $( document ).ready(function() {
-    {% if variantQuantity > 1 %}
       $(".variant-box").{% if defaultSelectionIndex %}eq({{ defaultSelectionIndex | minus: 1 }}){% else %}last(){% endif %}.trigger( "click" );
-    {% else %}
-      $(".variant-box").first().trigger( "click" );
-    {% endif %}
   });
 
   // On Quantity Change
