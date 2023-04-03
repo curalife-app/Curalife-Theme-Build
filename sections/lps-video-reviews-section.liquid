@@ -11,54 +11,20 @@
     <div class="video-reviews swiper">
       <div class="swiper-button-prev"></div>
       <div class="swiper-wrapper">
+        {% for block in section.blocks %}
         <div class="swiper-slide">
           <div class="video-review">
             <div class="review-video">
-              <iframe src="https://player.vimeo.com/video/662207384?h=d512ec6cd1&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="C - Jo R Testimonial"></iframe>
+              <iframe src="{{ block.settings.vidURL | escape }}?background=1&amp;autoplay=1&amp;loop=1&amp;title=0&amp;byline=0&amp;portrait=0" width="640" height="640" frameborder="0" allow="autoplay; fullscreen" allowfullscreen="" class="fluidvids-item" data-fluidvids="loaded" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="{{ block.settings.video_title }}"></iframe>
             </div>
             <div class="review-quote">
-              <img src="{{ 'icon-quote.png' | asset_url }}" alt="" loading="lazy">
-              <p class="quote-content">From the first bottle it has been amazing. I feel rewarded for my hard work</p>
-              <p class="quote-author">Jo R.</p>
+              <img src="{{ section.settings.quote_image | img_url }}" alt="" loading="lazy">
+              <p class="quote-content">{{ block.settings.quote_content }}</p>
+              <p class="quote-author">{{ block.settings.quote_author }}</p>
             </div>
           </div>
         </div>
-        <div class="swiper-slide">
-          <div class="video-review">
-            <div class="review-video">
-              <iframe src="https://player.vimeo.com/video/770733369?h=fd73eeaa72&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="compliant_-_d&#039;gaye_curalin_testimonial (1080p).mp4"></iframe>
-            </div>
-            <div class="review-quote">
-              <img src="{{ 'icon-quote.png' | asset_url }}" alt="" loading="lazy">
-              <p class="quote-content">CuraLin sounded too good to be true. But it works. Oh man, it works.</p>
-              <p class="quote-author">D’Gaye</p>
-            </div>
-          </div>
-        </div>
-        <div class="swiper-slide">
-          <div class="video-review">
-            <div class="review-video">
-              <iframe src="https://player.vimeo.com/video/770743565?h=f39297466f&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="compliant_-_Denise_CuraLin_Testimony.mp4"></iframe>
-            </div>
-            <div class="review-quote">
-              <img src="{{ 'icon-quote.png' | asset_url }}" alt="" loading="lazy">
-              <p class="quote-content">Curalin has really helped me. It’s a wonderful tool in my toolbox</p>
-              <p class="quote-author">Denise R.</p>
-            </div>
-          </div>
-        </div>
-        <div class="swiper-slide">
-          <div class="video-review">
-            <div class="review-video">
-              <iframe src="https://player.vimeo.com/video/662208879?h=2a85cd00e8&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="C - Sherry L Testimonial"></iframe>
-            </div>
-            <div class="review-quote">
-              <img src="{{ 'icon-quote.png' | asset_url }}" alt="" loading="lazy">
-              <p class="quote-content">I thought ‘well, let’s give it a try'. And I did. And I was amazed. My doctor was totally amazed.</p>
-              <p class="quote-author">Sherry L.</p>
-            </div>
-          </div>
-        </div>
+      {% endfor %}
       </div>
       <div class="swiper-button-next"></div>
     </div>
@@ -302,41 +268,45 @@ color: {% if isSecondLP %} var(--dark-green){% endif %};
       "id": "bg_color",
       "label": "Background Color"
     },
-    {
-      "type": "color",
-      "id": "bg_color_bottom",
-      "label": "Background Bottom Color",
-      "default": "#DCD9D9"
-    },
-    {
-      "type": "color_background",
-      "id": "ticker_background_before",
-      "label": "Ticker Background Before",
-      "default": "linear-gradient(90deg, #F7F7F7 0%, rgba(255, 255, 255, .76) 49.3%, rgba(255, 255, 255, 0) 100%)"
-    },
-    {
-      "type": "color_background",
-      "id": "ticker_background_after",
-      "label": "Ticker Background After",
-      "default": "linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, .76) 49.3%, #F7F7F7 100%)"
-    },
+  
     {
       "type": "text",
       "id": "title",
       "label": "Title",
       "default": "Customers Reviews Of CuraLin"
-    }
+    },
+    {
+      "type": "image_picker",
+      "id": "quote_image",
+      "label": "Quote Image"
+    }   
   ],
   "blocks": [
     {
       "type": "slide",
-      "name": "Slide",
+      "name": "Video Slide",
       "settings": [
         {
-          "type": "image_picker",
-          "id": "featured_image",
-          "label": "Featured Image"
-        }   
+          "type": "text",
+          "id": "vidURL",
+          "label": "Video URL"
+        },
+
+        {
+          "type": "text",
+          "id": "video_title",
+          "label": "Video Title"
+        },
+        {
+          "type": "text",
+          "id": "quote_content",
+          "label": "Quote Content"
+        },
+        {
+          "type": "text",
+          "id": "quote_author",
+          "label": "Quote Author"
+        }  
       ]
     }
   ],
