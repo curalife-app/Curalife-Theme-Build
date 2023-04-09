@@ -539,7 +539,7 @@
 
 {% endif %}
 
- <script>
+ {% comment %} <script>
   function showvideo() {
     document.querySelector('.testimonials-video_part').classList.add('show-video');   
     document.getElementById('iframe_overlay').classList.add('active');        
@@ -547,5 +547,24 @@
 
    document.querySelector('.iframe_overlay').addEventListener('click', showvideo);
   
-</script>  
+</script>   {% endcomment %}
+
+
+<script>
+  var iframe = document.querySelector('iframe');
+  var player = new Vimeo.Player(iframe);
+
+  player.on('play', function() {
+  $(".player.vp-controls.play").click(function(){
+  $(".iframe_overlay").addClass('active');
+      });
+  });
+
+  player.getVideoTitle().then(function(title) {
+      console.log('title:', title);
+  });
+      player.on('play', function(data) {
+  $(".iframe_overlay").addClass('active');
+      });
+</script>
 
