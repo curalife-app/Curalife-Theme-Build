@@ -6,7 +6,7 @@
                     <div class="testimonials_iframe">
                       <iframe src="https://player.vimeo.com/video/384752311?h=2138211f99&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;" title="CuraLin - Dr Sarah Brewer - SL1"></iframe>
                     </div>
-                    <div class="iframe_overlay" id="playbutton">
+                    <div class="iframe_overlay">
                        
                     </div>
                 </div>
@@ -50,15 +50,7 @@
     </div>
 </div>
 
-<style>
-  .hideme {
-    visibility:hidden;
-  }
 
-  .showme {
-    visibility:visible;
-  }
-</style>
 
 
 {% if isLP %}
@@ -548,45 +540,12 @@
 </style>
 
 {% endif %}
-
-  {% comment %} <script>
+<script>
   function showvideo() {
     this.classList.add('show-video');
   }
   document.querySelector('.iframe_overlay').closest(".testimonials-video_part").addEventListener('click', showvideo)
   
-</script>   {% endcomment %}
+</script> 
 
 
-<script>
-  $(function() {
-    document.getElementById("playbutton").disabled = true;
-    var player = $('iframe');
-    var playerOrigin = '*';
-    // Listen for messages from the player
-    if (window.addEventListener) {
-      window.addEventListener('message', onMessageReceived, false);
-    } else {
-      window.attachEvent('onmessage', onMessageReceived, false);
-    }
-
-    function onMessageReceived(event) {
-      var data = JSON.parse(event.data);
-      console.log(data.event);
-      if (data.event === "ready") {
-        //attach ready function to the image
-        document.getElementById("playbutton").disabled = false;
-
-        $('#playbutton').click(function() {
-          player[0].contentWindow.postMessage({
-            "method": "play"
-          }, playerOrigin);
-          //$(this).remove();
-
-          $(this).parent().toggleClass( "hideme" );
-        });
-
-      }
-    }
-  });
-</script>
