@@ -7,7 +7,7 @@
                     <div class="testimonials_iframe">
                       <iframe src="{{ section.settings.vidURL | escape }}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;" title="{{ section.settings.testimonials_title }}"></iframe>
                     </div>
-                    <div class="iframe_overlay active">
+                    <div class="iframe_overlay" id="iframe_overlay">
                       <img class="img-overlay" src="{{ section.settings.testimonials_img | img_url: 'master'  }}" width="434" height="437" alt="" loading="lazy">
                     </div>
                 </div>
@@ -234,14 +234,19 @@
 </style>
 
 
- <script>
+ {% comment %} <script>
   function showvideo() {
     this.classList.add('show-video');
   }
   document.querySelector('.iframe_overlay').closest(".testimonials-video_part").addEventListener('click', showvideo())
   
-</script>  
-
+</script>   {% endcomment %}
+ <script>
+  var event = document.getElementById('iframe_overlay')
+  document.addEventListener('click', function handleClick(event) {
+    event.target.classList.add('active');
+  });
+ </script>
 
 
 
