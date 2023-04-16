@@ -12,8 +12,10 @@
 
   <div class="container">
     <div class="product-list" id="product-list-section">
-        
-      {% for prod in Prods %}
+    {% assign product_from_list = section.blocks | where: 'type', 'products_catalog' %}
+    {% for block in product_from_list %}
+        {% assign prod  = block.settings.product_catalog %} 
+    
         {% if request.page_type == 'collection' %}
           {% assign product = prod %}
         {% else %}
