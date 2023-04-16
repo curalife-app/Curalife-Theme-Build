@@ -3,37 +3,31 @@
   <div class="satisfaction-survey-bg">
     <div class="container">
       <div class="data-wrap">
-        <div class="sub-title">
-          <h3><b>{{ section.settings.title_1 }}</b> {{ section.settings.title_2 }}</h3>
-        </div>
+        <div class="sub-title"><h3>{{ section.settings.title }}</h3></div>
         
         <div class="success-list">
           <ul>
-           {% for block in section.blocks %}
-            <li>
-              <div class="percentage">
-                <p><span data-count="{{ block.settings.data_count_text }}">0</span>%</p>
-              </div>
-              <div class="title">
-                <h4>{{ block.settings.people_text }}</h4>
-              </div>
-              <div class="line">
-                <span></span>
-              </div>
-            </li>
-           {% endfor %}
+            {% for block in section.blocks %}
+              <li>
+                <div class="percentage">
+                  <p><span data-count="{{ block.settings.data_count_text }}">0</span>%</p>
+                </div>
+
+                <div class="title">
+                  <h4>{{ block.settings.people_text }}</h4>
+                </div>
+
+                <div class="line">
+                  <span></span>
+                </div>
+              </li>
+            {% endfor %}
           </ul>
         </div>
       </div>
     </div>
   </div>
-  {% comment %} these two divs are the line for the scroll script - do not delete! {% endcomment %}
-    <div class="data-wrap">
-      <div class="survey-button">  
-      </div>
-    </div>
 </section>
-
 
 <style>
   .satisfaction-survey .satisfaction-survey-bg {
@@ -42,7 +36,6 @@
     padding-bottom: 10rem;
     overflow: hidden
   }
-
 
   .satisfaction-survey .data-wrap {
     padding-left: .9375rem
@@ -57,7 +50,6 @@
     max-width: 100%;
     text-align: center
   }
-
 
   .satisfaction-survey .success-list {
     max-width: 48.9375rem;
@@ -135,7 +127,6 @@
       margin-top: 1.875rem
     }
 
-   
     .satisfaction-survey .success-list ul li .percentage p {
       font-size: 2rem
     }
@@ -153,18 +144,17 @@
       margin-bottom: .9375rem
     }
 
-    
     .satisfaction-survey .satisfaction-survey-bg {
       padding-top: 2.8125rem;
       padding-bottom: 6.25rem;
     }
+
     .satisfaction-survey .data-wrap {
       padding: 0;
     }
   }
 
   @media screen and (max-width: 768px) {
-
     .satisfaction-survey .satisfaction-survey-bg {
       padding-top: 0
     }
@@ -174,12 +164,12 @@
     }
 
     .satisfaction-survey .success-list ul li .percentage p {
-      font-size: 1.25rem
+      font-size: 1.25rem;
     }
 
     .satisfaction-survey .success-list ul li .percentage {
       position: static;
-      min-width: 4.375rem
+      min-width: 4.375rem;
     }
 
     .satisfaction-survey .success-list ul li {
@@ -224,38 +214,35 @@
   }
 </style>
 
-
 <script>
+  const counters = document.querySelectorAll('.satisfaction-survey .success-list ul li .percentage p span');
+  const countingSpeed = 6000;
+  let animateCounters = true;
 
-const counters = document.querySelectorAll('.satisfaction-survey .success-list ul li .percentage p span');
-const countingSpeed = 6000;
-let animateCounters = true;
+  window.addEventListener('scroll', (e) => {
+    let last_known_scroll_position = window.scrollY;
+      if (counters && animateCounters && window.innerHeight > document.querySelector('.satisfaction-survey').getBoundingClientRect().top && window.innerHeight < document.querySelector('.satisfaction-survey').getBoundingClientRect().top + document.querySelector('.satisfaction-survey').getBoundingClientRect().top) {
+      animateCounters = false;
+      counters.forEach(counter => {
+        const animate = () => {
+          const value = parseFloat(+counter.getAttribute('data-count'));
+          const dataLine = counter.closest('li').querySelector('.line span');
+          const data = +counter.innerText;
+          const time = value / countingSpeed;
 
-window.addEventListener('scroll', (e) => {
-  let last_known_scroll_position = window.scrollY;
-   if (counters && animateCounters && window.innerHeight > document.querySelector('.satisfaction-survey').getBoundingClientRect().top && window.innerHeight < document.querySelector('.satisfaction-survey').getBoundingClientRect().top + document.querySelector('.satisfaction-survey').getBoundingClientRect().top) {
-    animateCounters = false;
-    counters.forEach(counter => {
-      const animate = () => {
-        const value = parseFloat(+counter.getAttribute('data-count'));
-        const dataLine = counter.closest('li').querySelector('.line span');
-        const data = +counter.innerText;
-
-        const time = value / countingSpeed;
-        if (data < value) {
-          counter.innerText = Math.ceil(data + time);
-          dataLine.style.width = Math.ceil(data + time) + '%';
-          setTimeout(animate, 0.1);
-        } else {
-          counter.innerText = value;
-          dataLine.style.width = value + '%';
+          if (data < value) {
+            counter.innerText = Math.ceil(data + time);
+            dataLine.style.width = Math.ceil(data + time) + '%';
+            setTimeout(animate, 0.1);
+          } else {
+            counter.innerText = value;
+            dataLine.style.width = value + '%';
+          }
         }
-      }
-      animate();
-    });
-  }
-});
-
+        animate();
+      });
+    }
+  });
 </script>
 
 {% schema %}
@@ -272,7 +259,6 @@ window.addEventListener('scroll', (e) => {
       "id": "bg_color",
       "label": "Background Color"
     },
-
     {
       "type": "text",
       "id": "title_1",
@@ -285,7 +271,6 @@ window.addEventListener('scroll', (e) => {
       "label": "Title 2",
       "default": " of CuraLin Customers"
     },
-
     {
       "type": "color_background",
       "id": "servey_background",
@@ -298,7 +283,6 @@ window.addEventListener('scroll', (e) => {
       "label": "Servey Background Reverse",
       "default": "-o-linear-gradient(359.95deg, rgba(238, 208, 195, .5) 0%, rgba(208, 125, 91, .5) 100%)"
     }
-  
   ],
   "blocks": [
     {
