@@ -1,18 +1,18 @@
 <section id="title-section-{{ section.id }}" class="title-section">
-  {% if "{{ section.settings.is_left }}" %}
-  <div class="container text-left">
-      <{{ section.settings.title_tag }} class="title">{{ section.settings.title }}</{{ section.settings.title_tag }}>
-      <p>{{ section.settings.subtitle }}</p>
-    </div>
-  {% else %}
+
   <div class="container text-center">
     <{{ section.settings.title_tag }} class="title">{{ section.settings.title }}</{{ section.settings.title_tag }}>
     <p>{{ section.settings.subtitle }}</p>
   </div>
-{% endif %}
+
 </section>
 
 <style>
+  {% if section.settings.is_left %}
+  #title-section-{{ section.id }} .title {
+    text-align: left;
+  }
+  {% endif %}
   {% if section.settings.title_swoosh_color %}
     #title-section-{{ section.id }} .title strong {
       background-image: url('{{ 'title-swoosh-' | append: section.settings.title_swoosh_color | append: '.svg' | asset_url }}');
