@@ -9,8 +9,10 @@
   <div class="md:gap-4 container static flex items-center {% if is_image_overlap and image_position == 'left' %}justify-end{% else %}justify-between{% endif %} gap-16">
     {% if is_image_middle_mobile %}
       <div class="mobile-title md:block md:text-center hidden justify-{{ alignment }} md:justify-{{ mobile_alignment }}"><{{ title_tag }}>{{ title }}</{{ title_tag }}></div>
-      <div class="font-normal mobile-title  md:block md:text-center hidden justify-{{ alignment }} md:justify-{{ mobile_alignment }}">{{ subtitle }}</div>
-
+    {% endif %}
+    {% if subtitle %}
+    <div class="subtitle">{{ subtitle }}</div>
+      
     {% endif %}
 
     <div class="image-wrapper {% if image_position == 'right' or image_position == 'left' %}max-w-1/2{% endif %} {% if is_image_bottom %}self-end md:self-auto{% endif %}">
@@ -68,6 +70,12 @@
   {% if bg_color %}
     section.text-image-{{ section_id }} {
       background-color: {{ bg_color }};
+    }
+  {% endif %}
+
+  {% if subtitle %}
+    section.text-image-{{ section_id }} .subtitle {
+      font-weight: 400;
     }
   {% endif %}
 
