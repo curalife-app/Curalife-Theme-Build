@@ -2,35 +2,31 @@
   <div class="container">
       <div class="natural-ingredients_mainpanel">
         <div class="ingredients_mainpanel-img">
-          <img src="{{ 'lp-aio-capsula.png' | file_url}}" width="676" height="203" alt="">
+          <img src="{{ section.settings.main_image | img_url: 'master'}}" width="676" height="203" alt="">
           <div class="ingredients_mainpanel-img_notice">
-            *consult your doctor before taking CuraLin
+            {{ section.settings.small_text }}
           </div>
         </div>
         <div class="ingredients-mainpanel">
-          {% for natural_ingredient in natural_ingredients %}
+          {% for block in section.blocks %}
           <div class="ingredients-mainpanel_card">
             <div class="card-icon_overlay">
               <div class="card-icon">
-                <img src="{{ natural_ingredient | split: ':' | first | file_url }}" height="59" width="58" alt="">
+                <img src="{{ block.settings.badge_image | img_url: 'medium' }}" height="59" width="58" alt="">
               </div>
             </div>
             <div class="card-description">
-              <p>{{ natural_ingredient | split: ':' | last }}</p>
+              <p>{{ block.settings.badge_name }}</p>
             </div>
           </div>
           {% endfor %}
         </div>
-      </div>
-    
+      </div>    
   </div>
 </section>
 
 <style>
 
-   .natural-ingredients {
-    font-family: "Poppins", sans-serif;
-  }
   .card-description {
     font-size: 1.0rem;
     line-height: 1.1;
@@ -128,7 +124,7 @@
     position: absolute;
     left: -12.75rem;
     top: -2.75rem;
-    background-image:url({{'lp-aio-natural-ingredients_back.png' | file_url }});
+    background-image:url({{ section.settings.bg_image | img_url: 'master'  }});
     background-repeat: no-repeat;
     background-position: left;
     background-size: contain;
@@ -280,7 +276,40 @@
             ]
           },
           "settings": [
-            
+            {
+              "type": "image_picker",
+              "id": "bg_image",
+              "label": "Background Image"
+            },
+            {
+              "type": "image_picker",
+              "id": "main_image",
+              "label": "Main Image"
+            },
+            {
+                "type": "text",
+                "id": "small_text",
+                "label": "Small Text",
+                "info": "*consult your doctor before taking CuraLin"
+            }
+          ],
+          "blocks": [
+            {
+              "type": "badge",
+              "name": "Badge",
+              "settings": [
+                {
+                  "type": "image_picker",
+                  "id": "badge_image",
+                  "label": "Badge Image"
+                },
+                {
+                  "type": "text",
+                  "id": "badge_name",
+                  "label": "Badge Name"
+                }
+              ]
+            }
           ],
           "presets": [
           {
