@@ -1,6 +1,6 @@
 <section id="items-collection-{{ section.id }}">
   <div class="container">
-    <{% if section.settings.is_slider %}swiper-container{% else %}div{% endif %} class="items lg:flex items-start md:flex-wrap justify-center overflow-visible" {% if section.settings.is_slider %}slides-per-view="auto" auto-height="true" navigation="true" pagination="true" pagination-clickable="true" lazy="true"{% endif %}>
+    <{% if section.settings.is_slider %}swiper-container{% else %}div{% endif %} class="items md:flex-col flex justify-center overflow-visible" {% if section.settings.is_slider %}slides-per-view="auto" auto-height="true" navigation="true" pagination="true" pagination-clickable="true" lazy="true"{% endif %}>
       {% for block in section.blocks %}
         <{% if section.settings.is_slider %}swiper-slide{% else %}div{% endif %} class="item md:max-w-full flex flex-col items-center p-4 text-center">
           <img class="max-h-250px" src="{{ block.settings.image | image_url }}" alt="{{ blovariantsettings.title }}" loading="lazy">
@@ -29,6 +29,24 @@
     background-color: {{ section.settings.bg_color }};
   }
 
+ {% if section.settings.is_flex %}
+ #items-collection-{{ section.id }} .items {   
+    display: flex;    
+    flex-wrap: wrap;
+    padding-top: 1.125rem;
+    margin: 0 -2.1875rem
+  }
+  #items-collection-{{ section.id }} .item {   
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+    flex: 0 0 33.3333333333%;
+    max-width: 33.3333333333%;
+    padding-right: .625rem;
+    padding-left: .625rem;
+    width: 32.86%;
+  }
+ {% endif %}
+
   #items-collection-{{ section.id }} .item {
     max-width: calc(100% / {{ section.blocks.size }});
   }
@@ -54,6 +72,11 @@
       "type": "checkbox",
       "id": "is_slider",
       "label": "Slider Functionality"
+    },
+    {
+      "type": "checkbox",
+      "id": "is_flex",
+      "label": "Flex Functionality"
     },
     {
       "type": "select",
