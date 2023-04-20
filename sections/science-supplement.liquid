@@ -11,7 +11,7 @@
       <div id="screen1" class="screen screen1">
         <div class="tabbed-content desktop-version">
           <nav class="tabs">
-            {% assign desktop_left = section.blocks | where: 'type', 'slides_desktopl' %}
+            {% assign desktop_left = section.blocks | where: 'type', 'slds_desktopl' %}
               <ul>
                 {% for block in desktop_left %}
                 <li><span>{{ block.settings.number_desktopl }}</span><h6><a href="{{ block.settings.link_desktopl }}" class="{% if forloop.first %}active{% endif %}">{{ block.settings.title_desktopl }}</a></h6></li>
@@ -32,9 +32,9 @@
 
       <div class="tabbed-content mobile-version">
           <nav class="tabs">
-            {% assign slides_ml = section.blocks | where: 'type', 'slides_ml' %}
+            {% assign slds_ml = section.blocks | where: 'type', 'slds_ml' %}
             <ul>
-              {% for block in slides_ml %}
+              {% for block in slds_ml %}
               <li><span>{{ block.settings.number_ml }}</span><h6><a href="{{ block.settings.link_ml }}" class="{% if forloop.first %}active{% endif %}">{{ block.settings.title_ml }}</a></h6></li>
               <div class="content">
                 <div id="{{ block.settings.linked_idml }}" class="item">
@@ -51,7 +51,7 @@
       <div id="screen2" class="screen screen2" style="display:none;">
         <div class="tabbed-content desktop-version">
             <nav class="tabs">
-              {% assign desktop_right = section.blocks | where: 'type', 'slides_desktopr' %}
+              {% assign desktop_right = section.blocks | where: 'type', 'slds_desktopr' %}
               <ul>
                 {% for block in desktop_right %}
                 <li><span>{{ block.settings.number_desktopr }}</span><h6><a href="{{ block.settings.link_desktopr }}" class="{% if forloop.first %}active{% endif %}">{{ block.settings.title_desktopr }}</a></h6></li>
@@ -71,7 +71,19 @@
           </div>
         <div class="tabbed-content mobile-version">
           <nav class="tabs">
-          
+            {% assign slds = section.blocks | where: 'type', 'slds' %}
+              <ul>
+                {% for block in slds %}
+                <li><span>{{ block.settings.number }}</span><h6><a href="{{ block.settings.lnk }}" class="{% if forloop.first %}active{% endif %}">{{ block.settings.ttl }}</a></h6></li>
+                <div class="content">
+                  <div id="{{ block.settings.linked_idml }}" class="item">
+                    <p>{{ block.settings.cnt }}</p>
+                    <img class="mobile-img" src="{{ block.settings.imgmr | img_url: 'master'  }}" width="464" height="468" alt="">
+                  </div>
+                </div>
+                {% endfor %}   
+              </ul>
+ 
           </nav>
         </div>
       </div>
@@ -441,7 +453,7 @@
    "blocks":[
       {
          "name":"Slides Left Screen",
-         "type":"slides_desktopl",
+         "type":"slds_desktopl",
          "settings":[
             {
                "type":"text",
@@ -483,7 +495,7 @@
       },
       {
          "name":"Slides Right Screen",
-         "type":"slides_desktopr",
+         "type":"slds_desktopr",
          "settings":[
             {
                "type":"text",
@@ -525,7 +537,7 @@
       },
       {
          "name":"Slides Left Screen Mobile",
-         "type":"slides_ml",
+         "type":"slds_ml",
          "settings":[
             {
                "type":"text",
@@ -560,22 +572,22 @@
          ]
       },
       {
-         "name":"Slides Right Screen Mobile",
-         "type":"slides",
+         "name":"Slides Right Mobile",
+         "type":"slds",
          "settings":[
             {
                "type":"text",
-               "id":"link_mr",
+               "id":"lnk",
                "label":"Link Mobile Right"
             },
             {
                "type":"text",
-               "id":"number_mr",
+               "id":"number",
                "label":"Number Mobile Right"
             },
             {
                "type":"text",
-               "id":"title_mr",
+               "id":"ttl",
                "label":"Title Mobile Right"
             },
             {
@@ -585,12 +597,12 @@
             },
             {
                "type":"richtext",
-               "id":"content_mr",
+               "id":"cnt",
                "label":"Content Mobile Right"
             },
             {
                "type":"image_picker",
-               "id":"image_mr",
+               "id":"imgmr",
                "label":"Image Mobile Right"
             }
          ]
