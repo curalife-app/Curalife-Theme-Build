@@ -11,30 +11,21 @@
       <div id="screen1" class="screen screen1">
         <div class="tabbed-content desktop-version">
           <nav class="tabs">
-            <ul>
-              <li><span>1</span><h6><a href="#tab1" class="active">Start With A Need</a></h6></li>
-              <li><span>2</span><h6><a href="#tab2">Driven By Research</a></h6></li>
-              <li><span>3</span><h6><a href="#tab3">Our Commitment To Excellence</a></h6></li>
-              <li><span>4</span><h6><a href="#tab4">What You See Is What You Get</a></h6></li>
-            </ul>
-          </nav>
+            {% assign desktop_left = section.blocks | where: 'type', 'slides_desktop_left_screen' %}
+            {% for block in desktop_left %}
+              <ul>
+                <li><span>{{ block.settings.number_desktop_left }}</span><h6><a href="{{ block.settings.link_desktop_left }}"class="{% if forloop.first %}active{% endif %}">{{ block.settings.title_desktop_left }}</a></h6></li>
+              </ul>
+            {% endfor %}
           <div class="content">
-            <div id="tab1" class="item active">
-              <p>Managing metabolic disorders can be a challenging and overwhelming experience and can have a significant impact on your quality of life. When you’re able to get your conditions under control, however, the benefits are immeasurable! You'll experience improvements in physical health, like better blood sugar control and lower blood pressure, and a boost in mental and emotional well-being. Plus, with all that extra energy, you'll be able to take on the world and enjoy life to the fullest!</p>
-              <img class="desktop-img" src="{{'science-page-start-img-1.png' | asset_url }}" width="464" height="468" alt="">
-            </div>
-            <div id="tab2" class="item">
-              <p>We believe in the power of nature and ancient knowledge to provide healing and wellness. We are constantly exploring the natural world for potent ingredients and incorporating ancient techniques and remedies into our products and formulations. While some of the scientific terms and concepts may be unfamiliar to some, we trust in the expertise and research from our team to bring you the most effective and natural solutions possible.</p>
-              <img class="desktop-img" src="{{'science-page-start-img-2.png' | asset_url }}" width="390" height="468" alt="">
-            </div>
-            <div id="tab3" class="item">
-              <p>There are no hidden secrets or surprises in our formulas - what you see is exactly what you get. We prioritize transparency so you can feel confident and comfortable with what you're putting into your body. We're proud to offer ingredients that are clinically tested, non-GMO, vegan, vegetarian, and gluten-free, so you can feel at ease.</p>
-              <img class="desktop-img" src="{{'science-page-start-img-3.png' | asset_url }}" width="388" height="468" alt="">
-            </div>
-            <div id="tab4" class="item">
-              <p>We take pride in the quality and safety of our products. Our products are manufactured in facilities that meet the highest requirements for transparency and traceability and have been regulated by the FDA and certified by third parties to be in compliance with current Good Manufacturing Practices (cGMPs). Each capsule is carefully formulated to meet our specifications for purity, and potency, and is rigorously tested to ensure that it meets all label claims and free from contaminants. We prioritize the quality and safety of our products, and are committed to providing our customers with the best possible health and wellness solutions.</p>
-              <img class="desktop-img" src="{{'science-page-start-img-4.png' | asset_url }}" width="311" height="468" alt="">
-            </div>
+            {% assign content_desktop_left = section.blocks | where: 'type', 'content_desktop_left_screen' %}
+            {% for block in content_desktop_left %}
+              <div id="{{ block.settings.linked_id_desktop_left }}" class="item {% if forloop.first %} active {% endif %}">
+                <p>{{ block.settings.content_desktop_left }}</p>
+                <img class="desktop-img" src="{{ block.settings.image_desktop_left | img_url: 'master'  }}" width="464" height="468" alt="">
+              </div>
+            {% endfor %}
+              
           </div>
         </div>
 
@@ -540,26 +531,189 @@
     ],
     "blocks": [
       {
-        "type": "slides",
-        "name": "Slides",
+        "name": "Slides Left Screen",
+        "type": "slides_desktop_left_screen",  
         "settings": [
           {
-            "type": "image_picker",
-            "id": "image",
-            "label": "Image"
+            "type": "text",
+            "id": "link_desktop_left",
+            "label": "Link Desktop Left"
           },
           {
             "type": "text",
-            "id": "title",
-            "label": "Title"
+            "id": "number_desktop_left",
+            "label": "Number Desktop Left"
+          },
+          {
+            "type": "text",
+            "id": "title_desktop_left",
+            "label": "Title Desktop Left"
+          }
+         
+        ]
+      },
+      {
+        "name": "Content Left Screen",
+        "type": "content_desktop_left_screen",  
+        "settings": [
+          {
+            "type": "text",
+            "id": "linked_id_desktop_left",
+            "label": "Linked ID Desktop Left"
+
           },
           {
             "type": "richtext",
-            "id": "content",
-            "label": "Content"
+            "id": "content_desktop_left",
+            "label": "Content Desktop Left"
+          },
+          
+          {
+            "type": "image_picker",
+            "id": "image_desktop_left",
+            "label": "Image Desktop Left"
+          }
+
+        ]
+      },
+      {
+        "name": "Slides Left Screen Mobile",
+        "type": "slides_mobile_left_screen",  
+        "settings": [
+          {
+            "type": "text",
+            "id": "link_mobile_left",
+            "label": "Link Mobile Left"
+          },
+          {
+            "type": "text",
+            "id": "number_mobile_left",
+            "label": "Number Mobile Left"
+          },
+          {
+            "type": "text",
+            "id": "title_mobile_left",
+            "label": "Title Mobile Left"
+          }
+
+        ]
+      },
+      {
+        "name": "Content Left Screen Mobile",
+        "type": "content_mobile_left_screen",  
+        "settings": [
+          {
+            "type": "text",
+            "id": "linked_id_mobile_left",
+            "label": "Linked ID Mobile Left"
+
+          },
+          {
+            "type": "richtext",
+            "id": "content_mobile_left",
+            "label": "Content Mobile Left"
+          },
+
+          {
+            "type": "image_picker",
+            "id": "image_mobile_left",
+            "label": "Image Mobile Left"
+          }
+
+        ]
+      },
+
+      {
+        "name": "Slides Left Screen",
+        "type": "slides_desktop_left_screen",  
+        "settings": [
+          {
+            "type": "text",
+            "id": "link_desktop_left",
+            "label": "Link Desktop Left"
+          },
+          {
+            "type": "text",
+            "id": "number_desktop_left",
+            "label": "Number Desktop Left"
+          },
+          {
+            "type": "text",
+            "id": "title_desktop_left",
+            "label": "Title Desktop Left"
+          }
+
+        ]
+      },
+      {
+        "name": "Content Right Screen",
+        "type": "content_desktop_right_screen",  
+        "settings": [
+          {
+            "type": "text",
+            "id": "linked_id_desktop_right",
+            "label": "Linked ID Desktop Right"
+
+          },
+          {
+            "type": "richtext",
+            "id": "content_desktop_right",
+            "label": "Content Desktop Right"
+          },
+
+          {
+            "type": "image_picker",
+            "id": "image_desktop_right",
+            "label": "Image Desktop Right"
+          }
+
+        ]
+      },
+      {
+        "name": "Slides Right Screen Mobile",
+        "type": "slides_mobile_right_screen",  
+        "settings": [
+          {
+            "type": "text",
+            "id": "link_mobile_right",
+            "label": "Link Mobile Right"
+          },
+          {
+            "type": "text",
+            "id": "number_mobile_right",
+            "label": "Number Mobile Right"
+          },
+          {
+            "type": "text",
+            "id": "title_mobile_right",
+            "label": "Title Mobile Right"
+          }
+
+        ]
+      },
+      {
+        "name": "Content Right Screen Mobile",
+        "type": "content_mobile_right_screen",  
+        "settings": [
+          {
+            "type": "text",
+            "id": "linked_id_mobile_right",
+            "label": "Linked ID Mobile Right"
+
+          },
+          {
+            "type": "richtext",
+            "id": "content_mobile_right",
+            "label": "Content Mobile Right"
+          },
+
+          {
+            "type": "image_picker",
+            "id": "image_mobile_right",
+            "label": "Image Mobile Right"
           }
         ]
-      }
+      }   
     ],
     "presets": [{
         "name": "Supplements"
