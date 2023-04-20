@@ -5,25 +5,23 @@
   {% assign section_id = section.id %}
 {% endif %}
 
-<section class="text-image text-image-{{ section_id }} {% unless is_dynamic_height %}min-h-400px{% endunless %} {% if is_remove_padding_top %}pt-0{% endif %} {% if is_remove_padding_bottom %}pb-0{% endif %}">
-  <div class="md:gap-4 container static flex items-center gap-x-16 gap-y-4 {% if is_image_overlap and image_position == 'left' %}justify-end{% else %}justify-between{% endif %}">
-    {% if is_image_middle_mobile and title != blank %}
-      <div class="mobile-title md:block md:text-center hidden justify-{{ alignment }} md:justify-{{ mobile_alignment }}"><{{ title_tag }}>{{ title }}</{{ title_tag }}></div>
+<section class="text-image text-image-{{ section_id }} h-680 {% if link_url_1 != blank %}md:pb-0{% endif %} {% if is_remove_padding_top %}pt-0{% endif %} {% if is_remove_padding_bottom %}pb-0{% endif %}">
+  <div class="md:gap-4 container static flex items-center {% if is_image_overlap and image_position == 'left' %}justify-end{% else %}justify-between{% endif %} gap-16">
+    {% if is_image_middle_mobile %}
+      <div class="mobile-title md:block md:text-center hidden justify-{{ alignment }} md:justify-{{ mobile_alignment }}"><{{ title_tag }}>{{ title }}<br><span class="font-light subtitle">{{ subtitle }}</span></{{ title_tag }}></div>
     {% endif %}
+    
 
     <div class="image-wrapper {% if image_position == 'right' or image_position == 'left' %}max-w-1/2{% endif %} {% if is_image_bottom %}self-end md:self-auto{% endif %}">
       <img class="{% if is_limit_image_size %}max-h-500px{% endif %} relative z-auto object-contain {% if main_mobile_image %}desktop{% endif %} {% if is_image_overlap %}md:!min-h-350px{% endif %}" src="{{ main_image | image_url }}" alt="{{ title }}" loading="lazy">
 
       {% if main_mobile_image %}
-        <img class="mobile relative z-auto object-contain" src="{{ main_mobile_image | image_url }}" alt="{{ title }}" loading="lazy">
+        <img class="relative z-auto object-contain mobile" src="{{ main_mobile_image | image_url }}" alt="{{ title }}" loading="lazy">
       {% endif %}
     </div>
 
     <div class="content-wrapper md:py-0 md:!w-full text-{{ alignment }} md:text-{{ mobile_alignment }} {% if image_position == 'right' or image_position == 'left' %}w-45%{% else %}w-70%{% endif %}">
-      {% if title != blank %}
-        <{{ title_tag }} class="title {% if is_image_middle_mobile %}md:hidden{% endif %} {% if is_remove_padding_top %}md:mt-5{% endif %}">{{ title }}</{{ title_tag }}>
-      {% endif %}
-
+      <{{ title_tag }} class="title {% if is_image_middle_mobile %}md:hidden{% endif %} {% if is_remove_padding_top %}md:mt-5{% endif %}">{{ title }}<br><span class="font-light subtitle">{{ subtitle }}</span></{{ title_tag }}>
       <p>{{ content }}</p>
 
       {% if link_url_1 != blank %}
@@ -37,9 +35,9 @@
         </div>
       {% endif %}
 
-      {% unless button_link == blank %}
+      {% unless button_title == blank %}
         <a href="{{ button_link }}" {% if is_button_link_new_window %}target="_blank"{% endif %}>
-          <button class="md:w-full flex justify-center gap-4">
+          <button class="flex justify-center gap-4 md:w-full">
             {{ button_title }}
             {% if button_icon %}<i class="{{ button_icon }}"></i>{% endif %}
           </button>
@@ -68,7 +66,19 @@
 
   {% if bg_color %}
     section.text-image-{{ section_id }} {
-      background-color: {{ bg_color }};
+       background-color: {{ bg_color }};
+    }
+  {% endif %}
+
+  {% if subtitle %}
+    section.text-image-{{ section_id }} .title.subtitle {
+      font-weight: 300;
+    }
+  {% endif %}
+
+  {% if bg_color_gradient %}
+    section.text-image-{{ section_id }} {
+      background-color: {{ bg_color_gradient }};
     }
   {% endif %}
 
@@ -118,7 +128,9 @@
     {% endif %}
     }
 
+
     @media (max-width: 768px) {
+     
       section.text-image-{{ section_id }} .image-wrapper img {
         min-width: 100vw;
         min-height: 450px;
@@ -171,6 +183,11 @@
   }
 
   @media (max-width: 768px) {
+    {% if bg_color_change %}
+       section.text-image-{{ section_id }} {
+         background-color: unset;
+      }
+    {% endif %}
     section.text-image {
       max-height: unset !important;
     }

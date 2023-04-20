@@ -9,7 +9,7 @@
   <div class="container">
     <div class="section-titles">
       <h2 class="title">{% if product.metafields.my_fields.alternative_title %}{{ product.metafields.my_fields.alternative_title }}{% else %}{{ product.title }}{% endif %}</h2>
-      <div class="subtitle">{{ product.description }}</div>
+      <p class="subtitle">{{ product.description }}</p>
     </div>
 
     <div class="tabbed-content tabs-side">
@@ -27,12 +27,12 @@
       <div class="content">
         <div id="health-benefits" class="content-item active always-active" data-title="Benefits/Description">
           <div class="health-benefits item-content">
-            {% for benefit in product.metafields.custom.benefits_images.value %}
-              <div class="health-benefit">
-                <img src="{{ benefit.src | image_url }}" alt="health benefit" loading="lazy">
-                <p>{{ benefit.alt }}</p>
-              </div>
-            {% endfor %}
+          {% for benefit in product.metafields.custom.benefits_images.value %}
+            <div class="health-benefit">
+              <img src="{{ benefit.src | image_url }}" alt="health benefit" loading="lazy">
+              <p>{{ benefit.alt }}</p>
+            </div>
+          {% endfor %}
           </div>
         </div>
 
@@ -97,7 +97,6 @@
     text-align: left;
     display: flex;
     gap: 30px;
-    justify-content: center;
   }
 
   #curalin-pack-info-section:nth-of-type(even) {
@@ -109,6 +108,10 @@
     bottom: -120px;
     right: 0;
     pointer-events: none;
+  }
+
+  #curalin-pack-info-section:nth-of-type(even) .tabbed-content {
+    margin-left: 30%;
   }
 
   #curalin-pack-info-section:nth-of-type(even) .product-image-wrapper,
@@ -191,7 +194,6 @@
 
   #curalin-pack-info-section .instructions .step .capsules {
     min-width: 80px;
-    display: flex;
   }
 
   #curalin-pack-info-section .ingredients {
@@ -296,6 +298,8 @@
   }
 
   #curalin-pack-info-section .tabbed-content .content-item.active .item-content {
+    display: flex;
+    justify-content: center;
     opacity: 1;
     visibility: visible;
     height: auto;
@@ -349,6 +353,76 @@
     }
   }
 
+  @media screen and (max-width: 1130px) {
+    #supplement-page section h2 {
+        font-size: 7vw;
+        text-align: center;
+    }
+    #curalin-pack-info-section .section-titles {
+      gap: unset;
+      margin-bottom: 5vw;
+      flex-wrap: wrap;
+    }
+
+    #curalin-pack-info-section .tabbed-content {
+      display: block;
+      margin-left: unset !important;
+    }
+
+    #curalin-pack-info-section .content-item::after {
+      content: "+";
+      font-size: 30px;
+      position: absolute;
+      top: 5px;
+      right: 2vw;
+      border: 2px solid var(--light-green);
+      border-radius: 50%;
+      width: 3vw;
+      height: 3vw;
+      font-size: 3vw;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--light-green);
+    }
+
+    #curalin-pack-info-section .content-item.active::after {
+      content: "-";
+    }
+
+    #curalin-pack-info-section .product-image-wrapper {
+      bottom: 0;
+      width: 100%;
+      position: relative;
+      text-align: center;
+      margin-top: 10vw;
+    }
+
+    #curalin-pack-info-section .product-image-wrapper .product-image {
+      right: unset;
+      text-align: center;
+    }
+
+    #curalin-pack-info-section .product-image-wrapper .number {
+      top: -15vw;
+      font-size: 70vw !important;
+      right: 13vw;
+    }
+
+    #curalin-pack-info-section .tabbed-content .content-item.active .item-content {
+      padding: 5vw 0;
+    }
+
+
+    #curalin-pack-info-section .instructions .step {
+      gap: 2vw;
+    }
+
+    #curalin-pack-info-section .instructions .step h3 {
+      min-width: 20vw;
+    }
+  }
+
   @media screen and (max-width: 768px) {
     #curalin-pack-info-section .health-benefits .health-benefit {
       width: 40%;
@@ -363,69 +437,6 @@
       text-align: center;
      }
 
-     #curalin-pack-info-section .section-titles {
-       gap: unset;
-       margin-bottom: 5vw;
-       flex-wrap: wrap;
-     }
-
-     #curalin-pack-info-section .tabbed-content {
-       display: block;
-       margin-left: unset !important;
-     }
-
-     #curalin-pack-info-section .content-item::after {
-       content: "+";
-       font-size: 30px;
-       position: absolute;
-       top: 5px;
-       right: 2vw;
-       border: 2px solid var(--light-green);
-       border-radius: 50%;
-       width: 3vw;
-       height: 3vw;
-       font-size: 3vw;
-       display: flex;
-       align-items: center;
-       justify-content: center;
-       color: var(--light-green);
-     }
-
-     #curalin-pack-info-section .content-item.active::after {
-       content: "-";
-     }
-
-     #curalin-pack-info-section .product-image-wrapper {
-       bottom: 0;
-       width: 100%;
-       position: relative;
-       text-align: center;
-       margin-top: 10vw;
-     }
-
-     #curalin-pack-info-section .product-image-wrapper .product-image {
-       right: unset;
-       text-align: center;
-     }
-
-     #curalin-pack-info-section .product-image-wrapper .number {
-       top: -15vw;
-       font-size: 70vw !important;
-       right: 45vw;
-     }
-
-     #curalin-pack-info-section .tabbed-content .content-item.active .item-content {
-       padding: 5vw 0;
-     }
-
-
-     #curalin-pack-info-section .instructions .step {
-       gap: 2vw;
-     }
-
-     #curalin-pack-info-section .instructions .step h3 {
-       min-width: 20vw;
-     }
     }
 
     @media screen and (max-width: 500px) {
@@ -435,7 +446,7 @@
           height: 5vw;
           font-size: 5vw;
       }
-
+    
   }
 </style>
 

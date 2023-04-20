@@ -1,7 +1,6 @@
-{% assign blog_categories = "Awareness Dates,CuraFood Recipes,Health Education,Healthy Living" %}
-
 <div class="blog-page">
   <div class="container">
+    <div class="mini-wrap">
       {% paginate blog.articles by 9 %}
       <div class="page-title">
         <div class="subtitle text-center">
@@ -16,15 +15,13 @@
                 <ul>
                   <li  {% if current_tags == blank  %} class="active" {% endif%} ><a href="{{ blog.url }}">All</a></li>
                   {% for tag in blog.all_tags %}
-                    {% if blog_categories contains tag %}
-                        {% assign crTag = tag  %}
-                        {% if current_tags contains crTag  %}
-                        {% assign cls="active" %}
-                        {% else %}
-                        {% assign cls="" %}
-                        {% endif %}
-                        <li class="{{cls}}"  > <a href="{{ blog.url }}/tagged/{{ tag | handleize }}">{{ tag }}</a></li>
-                    {% endif %}
+                  {% assign crTag = tag  %}
+                  {% if current_tags contains crTag  %}
+                  {% assign cls="active" %}
+                  {% else %}
+                  {% assign cls="" %}
+                  {% endif %}
+                  <li class="{{cls}}"  > <a href="{{ blog.url }}/tagged/{{ tag | handleize }}">{{ tag }}</a></li>
                   {% endfor %}
                 </ul>
               </div>
@@ -47,6 +44,7 @@
           {% render 'blog-pagination', paginate: paginate, totalPage:totalPage %}
         {%- endif -%}
       {% endpaginate %}
+    </div>
   </div>
 </div>
 

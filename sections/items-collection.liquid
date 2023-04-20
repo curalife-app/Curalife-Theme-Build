@@ -4,8 +4,8 @@
       {% for block in section.blocks %}
         <{% if section.settings.is_slider %}swiper-slide{% else %}div{% endif %} class="item md:max-w-full flex flex-col items-center p-4 text-center">
           <img class="max-h-250px" src="{{ block.settings.image | image_url }}" alt="{{ blovariantsettings.title }}" loading="lazy">
-          <{{ section.settings.title_tag }} class="mt-4">{{ block.settings.title }}</{{ section.settings.title_tag }}>
-          <p>{{ block.settings.description }}</p>
+          <{{ section.settings.title_tag }} class="description mt-4">{{ block.settings.title }}</{{ section.settings.title_tag }}>
+          <p class="small-description">{{ block.settings.description }}</p>
         </{% if section.settings.is_slider %}swiper-slide{% else %}div{% endif %}>
       {% endfor %}
     </{% if section.settings.is_slider %}swiper-container{% else %}div{% endif %}>
@@ -29,11 +29,46 @@
     background-color: {{ section.settings.bg_color }};
   }
 
+ {% if section.settings.is_flex %}
+ #items-collection-{{ section.id }} .items {   
+    display: flex;    
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-around;
+  }
+  #items-collection-{{ section.id }} .item {     
+    max-width: 30% !important; 
+  }
+
+  #items-collection-{{ section.id }} .small-description {
+    text-align: center;
+  }
+
+ {% endif %}
+
   #items-collection-{{ section.id }} .item {
     max-width: calc(100% / {{ section.blocks.size }});
   }
 
   @media screen and (max-width: 768px) {
+
+  {% if section.settings.is_flex %}
+  #items-collection-{{ section.id }} .items {   
+     flex-direction: column;
+     align-items: center;
+     justify-content: center;
+    
+   }
+   #items-collection-{{ section.id }} .item { 
+     max-width: unset !important;  
+     width: 100%
+   }
+
+   #items-collection-{{ section.id }} .small-description {
+     font-size: 3vw;
+   }
+
+  {% endif %}
     #items-collection-{{ section.id }} .item {
       max-width: 100%;
     }
@@ -54,6 +89,11 @@
       "type": "checkbox",
       "id": "is_slider",
       "label": "Slider Functionality"
+    },
+    {
+      "type": "checkbox",
+      "id": "is_flex",
+      "label": "Flex Functionality"
     },
     {
       "type": "select",

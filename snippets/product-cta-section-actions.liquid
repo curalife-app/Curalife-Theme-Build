@@ -7,9 +7,9 @@
   <div class="variants">
     {% for var in product.variants %}
       {% if forloop.last %}
-        {% render 'product-cta-section-actions-variant-box', ctaTextType: ctaTextType, isVariantNotice: isVariantNotice, var: var, index: forloop.index, isHighlightSubtitle: isHighlightSubtitle, isUpdateSaveTitle: true, pricePer: pricePer, challenge_value: challenge_value, curaeats_value: curaeats_value, isLastRender: true %}
+        {% render 'product-cta-section-actions-variant-box', ctaTextType: ctaTextType, isVariantNotice: isVariantNotice, var: var, index: forloop.index, isHighlightSubtitle: isHighlightSubtitle, isUpdateSaveTitle: true, isPricePerUnit: isPricePerUnit, challenge_value: challenge_value, curaeats_value: curaeats_value, isLastRender: true %}
       {% else %}
-        {% render 'product-cta-section-actions-variant-box', ctaTextType: ctaTextType, isVariantNotice: isVariantNotice, var: var, index: forloop.index, isHighlightSubtitle: isHighlightSubtitle, isUpdateSaveTitle: true, pricePer: pricePer, challenge_value: challenge_value, curaeats_value: curaeats_value %}
+        {% render 'product-cta-section-actions-variant-box', ctaTextType: ctaTextType, isVariantNotice: isVariantNotice, var: var, index: forloop.index, isHighlightSubtitle: isHighlightSubtitle, isUpdateSaveTitle: true, isPricePerUnit: isPricePerUnit, challenge_value: challenge_value, curaeats_value: curaeats_value %}
       {% endif %}
     {% endfor %}
   </div>
@@ -78,7 +78,7 @@
   .product-actions .submit-wrap button span.save {
     font-weight: 100;
     border-left: 1px solid white;
-    {% if isRetention %}padding-left: 10px;{% endif %}
+    padding-left: {% if isRetention %}10px{% endif %};
   }
 
   .product-actions .submit-wrap .qty-data .qty-control {
@@ -104,8 +104,12 @@
 </style>
 
 <script>
-  $(document).ready(function() {
-    $(".variant-box").{% if product.variants.size == 1 %}first(){% elsif defaultSelectionIndex %}eq({{ defaultSelectionIndex | minus: 1 }}){% else %}first(){% endif %}.trigger( "click" );
+  $( document ).ready(function() {
+    {% if variantQuantity > 1 %}
+      $(".variant-box").{% if defaultSelectionIndex %}eq({{ defaultSelectionIndex | minus: 1 }}){% else %}last(){% endif %}.trigger( "click" );
+    {% else %}
+      $(".variant-box").first().trigger( "click" );
+    {% endif %}
   });
 
   // On Quantity Change
@@ -143,7 +147,7 @@
         currency: '{{ shop.currency }}',
         item_brand: 'CuraLife',
         item_category: 'CuraLin',
-        quantity: $(".qty-control input").length ? parseInt($(".qty-control input").val()) : 1
+        quantity: parseInt($(".qty-control input").val())
       }]
       },
       email: '{{ customer.email }}',
