@@ -13,7 +13,9 @@
           <nav class="tabs">
               <ul>
                 {% for block in section.blocks %}
-                <li><span>{{ block.settings.number }}</span><h6><a href="#{{ block.settings.link_id }}" class="{% if forloop.first %}active{% endif %}">{{ block.settings.title }}</a></h6></li>
+                  {% if block.settings.block_tab == "supplement" %}
+                    <li><span>{{ block.settings.number }}</span><h6><a href="#{{ block.settings.link_id }}" class="{% if forloop.first %}active{% endif %}">{{ block.settings.title }}</a></h6></li>
+                  {% endif %}
                 {% endfor %}
               </ul>
            
@@ -31,13 +33,15 @@
           <nav class="tabs">
             <ul>
               {% for block in section.blocks %}
-              <li><span>{{ block.settings.number_ml }}</span><h6><a href="{{ block.settings.link_id }}" class="{% if forloop.first %}active{% endif %}">{{ block.settings.title }}</a></h6></li>
-              <div class="content">
-                <div id="{{ block.settings.link_id }}" class="item">
-                  <p>{{ block.settings.content_ml }}</p>
-                  <img class="mobile-img" src="{{ block.settings.img | img_url: 'master' }}" width="464" height="468" alt="">
-                </div>
-              </div>
+              {% if block.settings.block_tab == "supplement" %}
+              <li><span>{{ block.settings.number }}</span><h6><a href="#{{ block.settings.link_id }}" class="{% if forloop.first %}active{% endif %}">{{ block.settings.title }}</a></h6></li>
+                  <div class="content">
+                    <div id="{{ block.settings.link_id }}" class="item">
+                      <p>{{ block.settings.content }}</p>
+                      <img class="mobile-img" src="{{ block.settings.img | img_url: 'master' }}" width="464" height="468" alt="">
+                    </div>
+                  </div>
+                {% endif %}
               {% endfor %}   
             </ul>
           </nav>
@@ -49,7 +53,9 @@
             <nav class="tabs">
               <ul>
                 {% for block in section.blocks %}
-                  <li><span>{{ block.settings.number }}</span><h6><a href="{{ block.settings.link_id }}" class="{% if forloop.first %}active{% endif %}">{{ block.settings.title }}</a></h6></li>
+                  {% if block.settings.block_tab == "tech" %}
+                    <li><span>{{ block.settings.number }}</span><h6><a href="{{ block.settings.link_id }}" class="{% if forloop.first %}active{% endif %}">{{ block.settings.title }}</a></h6></li>
+                  {% endif %}
                 {% endfor %}
               </ul>
             </nav>
@@ -66,13 +72,15 @@
           <nav class="tabs">
               <ul>
                 {% for block in section.blocks %}
-                  <li><span>{{ block.settings.number }}</span><h6><a href="{{ block.settings.link_id }}" class="{% if forloop.first %}active{% endif %}">{{ block.settings.title }}</a></h6></li>
+                  {% if block.settings.block_tab == "tech" %}
+                    <li><span>{{ block.settings.number }}</span><h6><a href="{{ block.settings.link_id }}" class="{% if forloop.first %}active{% endif %}">{{ block.settings.title }}</a></h6></li>
                     <div class="content">
                       <div id="{{ block.settings.link_id }}" class="item">
                         <p>{{ block.settings.content }}</p>
                           <img class="mobile-img" src="{{ block.settings.img | img_url: 'master'  }}" width="464" height="468" alt="">
                       </div>
                     </div>
+                  {% endif %}
                 {% endfor %}   
               </ul>
           </nav>
@@ -479,7 +487,23 @@
       {
          "name":"Science Block",
          "type": "science_block",
-         "settings":[
+         "settings": [
+            {
+              "type":"select",
+              "id": "block_tab",
+              "label": "Block Tab",
+              "options": [
+                {
+                  "label": "supplement",
+                  "value": "Supplement"
+                },
+                {
+                  "label": "tech",
+                  "value": "Tech"
+                }
+              ],
+              "default": "supplement"
+            },
             {
                "type":"text",
                "id":"link_id",
