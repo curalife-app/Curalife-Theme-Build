@@ -393,7 +393,7 @@
   });
 </script>
 
-<script>
+{% comment %} <script>
   $(document).ready(function() {
     const tabs = $(".tabs a");
     const items = $(".content .item");
@@ -425,6 +425,48 @@
       }
     });
   });
+</script> {% endcomment %}
+
+<script>
+  $(document).ready(function() {
+    const tabs = $(".tabs a");
+    const items = $(".content .item");
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+
+    // Toggle active class on click
+    tabs.on("click", function(event) {
+      event.preventDefault();
+      const target = $($(this).attr("href"));
+      const isActive = target.hasClass("active");
+
+      tabs.removeClass("active");
+      items.removeClass("active");
+
+      if (!isActive) {
+        $(this).addClass("active");
+        target.addClass("active");
+      }
+    });
+
+    // Add toggle behavior for mobile devices
+    if (isMobile) {
+      // Hide items by default
+      items.hide();
+
+      // Show/hide items on click
+      tabs.on("click", function(event) {
+        const target = $($(this).attr("href"));
+
+        if (target.hasClass("active")) {
+          target.slideUp();
+        } else {
+          items.slideUp();
+          target.slideDown();
+        }
+      });
+    }
+  });
+
 </script>
 
 {% schema %}
