@@ -8,8 +8,8 @@
 <section id="curalin-pack-info-section">
   <div class="container">
     <div class="section-titles">
-      <h2 class="title">{% if product.metafields.my_fields.alternative_title %}{{ product.metafields.my_fields.alternative_title }}{% else %}{{ product.title }}{% endif %}</h2>
-      <p class="subtitle">{{ product.description }}</p>
+      <h2 class="title">{{ section.settings.title }}</h2>
+      <p class="subtitle">{{ section.settings.description }}</p>
     </div>
 
     <div class="tabbed-content tabs-side">
@@ -491,3 +491,102 @@
     }
   }
 </script>
+
+
+{% schema %}
+{
+   "name":"Curalin Pack Info",
+   "disabled_on":{
+      "groups":[
+         "header",
+         "footer"
+      ]
+   },
+   "settings":[
+      {
+         "type":"color",
+         "id":"bg_color",
+         "label":"Background Color"
+      },
+    
+      {
+        "type": "text",
+        "id": "title",
+        "label": "Product Title"
+      },
+      {
+        "type": "text",
+        "id": "description",
+        "label": "Product Description"
+      }
+     
+
+   ],
+   "blocks": [
+      {
+         "name": "Ingredient Block",
+         "type": "ingredient_block",
+         "settings": [
+          {
+            "type":"text",
+            "id":"title",
+            "label":"Title"
+          },
+          {
+            "type":"text",
+            "id":"ingr",
+            "label":"Ingredient",
+            "default": "Ingredient:"
+          },
+          {
+            "type":"text",
+            "id":"imp_ttl",
+            "label":"Impact",
+            "default": "Impact:"
+          },
+          {
+            "type":"richtext",
+            "id":"impact",
+            "label":"Impact Content"
+          },
+          {
+            "type":"text",
+            "id":"comp_ttl",
+            "label":"Compound",
+            "default": "Active compound:"
+          },
+          {
+            "type":"richtext",
+            "id":"compound",
+            "label":"Compound Content"
+          },
+          {
+            "type":"text",
+            "id":"res_ttl",
+            "label":"Research"  
+          },
+          {
+            "type":"richtext",
+            "id":"research",
+            "label":"Research Content"
+          },
+          {
+            "type":"image_picker",
+            "id":"img",
+            "label":"Image"
+          },
+          {
+            "type":"image_picker",
+            "id":"img_mol",
+            "label":"Molecule Image"
+          }
+         ]
+      }
+   ],
+   "presets": [
+      {
+         "name":"Curalin Pack Info"
+      }
+   ]
+}
+{% endschema %}
