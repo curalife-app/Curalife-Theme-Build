@@ -15,12 +15,10 @@
     <div class="tabbed-content tabs-side">
       <nav class="tabs">
         <ul>
-          <li><a href="#health-benefits" class="active">Benefits/Description <i>></i></a></li>
-          <li><a href="#instructions">Usage Instructions <i>></i></a></li>
-          {% if product.metafields.custom.ingredients_data.value %}
-            <li><a href="#ingredients">Ingredients <i>></i></a></li>
-          {% endif %}
-          <li><a href="#reviews">Reviews <i>></i></a></li>
+        {% assign tab_block = section.blocks | where: 'type', 'tab_block' %}
+         {% for block in tab_block %}
+            <li><a href="#{{ block.settings.tab_id }}" {% if forloop.first %}class="active"{% endif %}>{{ block.settings.tab_name }}&#x3e;</a></li> 
+         {% endfor %}
         </ul>
       </nav>
 
@@ -524,61 +522,18 @@
    ],
    "blocks": [
       {
-         "name": "Ingredient Block",
-         "type": "ingredient_block",
+         "name": "Tab",
+         "type": "tab_block",
          "settings": [
           {
             "type":"text",
-            "id":"title",
-            "label":"Title"
+            "id":"tab_id",
+            "label":"Tab ID"
           },
           {
             "type":"text",
-            "id":"ingr",
-            "label":"Ingredient",
-            "default": "Ingredient:"
-          },
-          {
-            "type":"text",
-            "id":"imp_ttl",
-            "label":"Impact",
-            "default": "Impact:"
-          },
-          {
-            "type":"richtext",
-            "id":"impact",
-            "label":"Impact Content"
-          },
-          {
-            "type":"text",
-            "id":"comp_ttl",
-            "label":"Compound",
-            "default": "Active compound:"
-          },
-          {
-            "type":"richtext",
-            "id":"compound",
-            "label":"Compound Content"
-          },
-          {
-            "type":"text",
-            "id":"res_ttl",
-            "label":"Research"  
-          },
-          {
-            "type":"richtext",
-            "id":"research",
-            "label":"Research Content"
-          },
-          {
-            "type":"image_picker",
-            "id":"img",
-            "label":"Image"
-          },
-          {
-            "type":"image_picker",
-            "id":"img_mol",
-            "label":"Molecule Image"
+            "id":"tab_name",
+            "label":"Tab Name"
           }
          ]
       }
