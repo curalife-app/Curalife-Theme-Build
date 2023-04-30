@@ -91,50 +91,56 @@
           <div id="product-main-slider-nav-next" class="swiper-button-next nav"></div>
         </div>
 
-        {% unless product.metafields.custom.is_hide_thumbs %}
-          <div class="thumbs-slider">
-            <div id="product-thumbs-slider-sc" class="swiper">
-              <div class="swiper-wrapper">
-                {% if isCuralinContent %}
-                  {% for i in (1..6) %}
-                    <div class="swiper-slide">
-                      <div class="thumbs-img">
+        <div class="thumbs-slider">
+          <div id="product-thumbs-slider-sc" class="swiper">
+            <div class="swiper-wrapper">
+              {% if isCuralinContent %}
+                {% for i in (1..6) %}
+                  <div class="swiper-slide">
+                    <div class="thumbs-img">
+                      <div class="img-wrap">
                         <img src="{{ "product-aio-product-thumbnail-" | append: i | append: ".png" | asset_url }}" width="588" height="453" alt="" loading="lazy">
                       </div>
                     </div>
-                  {% endfor %}
+                  </div>
+                {% endfor %}
 
-                  <div class="swiper-slide">
-                    <div class="thumbs-img video-thumbnail">
+                <div class="swiper-slide">
+                  <div class="thumbs-img video-thumbnail">
+                    <div class="img-wrap">
                       <img src="{{ "product-aio-product-video-thumbnail.png" | asset_url }}" width="720" height="680" alt="" loading="lazy">
                     </div>
                   </div>
-                {% endif %}
+                </div>
+              {% endif %}
 
-                {% if product.variants.size > 1 %}
-                  {% for var in product.variants %}
-                    <div class="swiper-slide">
-                      <div class="thumbs-img">
+              {% if product.variants.size > 1 %}
+                {% for var in product.variants %}
+                  <div class="swiper-slide">
+                    <div class="thumbs-img">
+                      <div class="img-wrap">
                         <img src="{{ var.featured_image | image_url }}" alt="{{ var.featured_image.alt | escape }}" loading="lazy">
                       </div>
                     </div>
-                  {% endfor %}
-                {% else %}
-                  {% for img in product.images %}
-                    <div class="swiper-slide">
-                      <div class="thumbs-img">
+                  </div>
+                {% endfor %}
+              {% else %}
+                {% for img in product.images %}
+                  <div class="swiper-slide">
+                    <div class="thumbs-img">
+                      <div class="img-wrap">
                         <img src="{{ img.src | image_url }}" alt="{{ img.alt | escape }}" loading="lazy">
                       </div>
                     </div>
-                  {% endfor %}
-                {% endif %}
-              </div>
+                  </div>
+                {% endfor %}
+              {% endif %}
             </div>
-
-            <div id="product-thumbs-slider-nav-prev" class="swiper-button-prev"></div>
-            <div id="product-thumbs-slider-nav-next" class="swiper-button-next"></div>
           </div>
-        {% endunless %}
+
+          <div id="product-thumbs-slider-nav-prev" class="swiper-button-prev"></div>
+          <div id="product-thumbs-slider-nav-next" class="swiper-button-next"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -145,7 +151,7 @@
       z-index: 2;
       text-align: center;
       width: 100%;
-      top: 50%;
+      top: 150px;
       }
 
     .cta-section .save-title p {
@@ -260,6 +266,7 @@
         bottom: 0;
         z-index: -1;
         transform: translate(50%);
+        background: #f8f8f8;
         pointer-events: none;
       }
 
@@ -318,29 +325,27 @@
   </style>
 
   <script>
-    {% unless product.metafields.custom.is_hide_thumbs %}
-      productThumbsAllInOne = new Swiper('#product-thumbs-slider-sc', {
-        slidesPerView: 'auto',
-        spaceBetween: 10,
-        watchSlidesVisibility: true,
-        grabCursor: true,
-        loop: false,
-        navigation: {
-          nextEl: '#product-thumbs-slider-nav-next',
-          prevEl: '#product-thumbs-slider-nav-prev',
-          disabledClass: 'disabled'
+    productThumbsAllInOne = new Swiper('#product-thumbs-slider-sc', {
+      slidesPerView: 'auto',
+      spaceBetween: 10,
+      watchSlidesVisibility: true,
+      grabCursor: true,
+      loop: false,
+      navigation: {
+        nextEl: '#product-thumbs-slider-nav-next',
+        prevEl: '#product-thumbs-slider-nav-prev',
+        disabledClass: 'disabled'
+      },
+      breakpoints: {
+        760: {
+          slidesPerView: 3,
+          freemode: true
         },
-        breakpoints: {
-          760: {
-            slidesPerView: 3,
-            freemode: true
-          },
-          1200: {
-            slidesPerView: 5
-          }
+        1200: {
+          slidesPerView: 5
         }
-      });
-    {% endunless %}
+      }
+    });
 
     productSliderAllInOne = new Swiper('#product-main-slider-sc', {
       slidesPerView: 1,
@@ -350,9 +355,7 @@
       loop: false,
       grabCursor: true,
       slideToClickedSlide: true,
-      {% unless product.metafields.custom.is_hide_thumbs %}
-        thumbs: {swiper: productThumbsAllInOne},
-      {% endunless %}
+      thumbs: {swiper: productThumbsAllInOne},
       breakpoints: {
         0: {
           pagination: {

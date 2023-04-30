@@ -1,10 +1,10 @@
-<div class="supplements">
+<section class="supplements">
   <div class="container" >
     <div class="supplement-tech-wrapper">
       <div class="wrapper">
         <div class="taeb-switch left">
-          <div class="taeb active-button" taeb-direction="left">Supplement</div>
-          <div class="taeb" taeb-direction="right">Tech</div>
+          <div class="taeb active-button" taeb-direction="left">{{ section.settings.button_left_text }}</div>
+          <div class="taeb" taeb-direction="right">{{ section.settings.button_right_text }}</div>
         </div>
       </div>
 
@@ -12,177 +12,91 @@
         <div class="tabbed-content desktop-version">
           <nav class="tabs">
             <ul>
-              <li><span>1</span><h6><a href="#tab1" class="active">Start With A Need</a></h6></li>
-              <li><span>2</span><h6><a href="#tab2">Driven By Research</a></h6></li>
-              <li><span>3</span><h6><a href="#tab3">Our Commitment To Excellence</a></h6></li>
-              <li><span>4</span><h6><a href="#tab4">What You See Is What You Get</a></h6></li>
+              {% for block in section.blocks %}
+                {% if block.settings.block_tab == "supplement" %}
+                  <li><span>{{ block.settings.number }}</span><h6><a href="#{{ block.settings.link_id }}" class="{% if forloop.first %}active{% endif %}">{{ block.settings.title }}</a></h6></li>
+                {% endif %}
+              {% endfor %}
             </ul>
           </nav>
           <div class="content">
-            <div id="tab1" class="item active">
-              <p>Managing metabolic disorders can be a challenging and overwhelming experience and can have a significant impact on your quality of life. When you’re able to get your conditions under control, however, the benefits are immeasurable! You'll experience improvements in physical health, like better blood sugar control and lower blood pressure, and a boost in mental and emotional well-being. Plus, with all that extra energy, you'll be able to take on the world and enjoy life to the fullest!</p>
-              <img class="desktop-img" src="{{'science-page-start-img-1.png' | asset_url }}" width="464" height="468" alt="">
-            </div>
-            <div id="tab2" class="item">
-              <p>We believe in the power of nature and ancient knowledge to provide healing and wellness. We are constantly exploring the natural world for potent ingredients and incorporating ancient techniques and remedies into our products and formulations. While some of the scientific terms and concepts may be unfamiliar to some, we trust in the expertise and research from our team to bring you the most effective and natural solutions possible.</p>
-              <img class="desktop-img" src="{{'science-page-start-img-2.png' | asset_url }}" width="390" height="468" alt="">
-            </div>
-            <div id="tab3" class="item">
-              <p>There are no hidden secrets or surprises in our formulas - what you see is exactly what you get. We prioritize transparency so you can feel confident and comfortable with what you're putting into your body. We're proud to offer ingredients that are clinically tested, non-GMO, vegan, vegetarian, and gluten-free, so you can feel at ease.</p>
-              <img class="desktop-img" src="{{'science-page-start-img-3.png' | asset_url }}" width="388" height="468" alt="">
-            </div>
-            <div id="tab4" class="item">
-              <p>We take pride in the quality and safety of our products. Our products are manufactured in facilities that meet the highest requirements for transparency and traceability and have been regulated by the FDA and certified by third parties to be in compliance with current Good Manufacturing Practices (cGMPs). Each capsule is carefully formulated to meet our specifications for purity, and potency, and is rigorously tested to ensure that it meets all label claims and free from contaminants. We prioritize the quality and safety of our products, and are committed to providing our customers with the best possible health and wellness solutions.</p>
-              <img class="desktop-img" src="{{'science-page-start-img-4.png' | asset_url }}" width="311" height="468" alt="">
-            </div>
+              {% for block in section.blocks %}
+                {% if block.settings.block_tab == "supplement" %}
+                  <div id="{{ block.settings.link_id }}" class="item {% if forloop.first %} active {% endif %}">
+                    <p class="relative z-40">{{ block.settings.content }}</p>
+                      <img class="absolute z-0 desktop-img" src="{{ block.settings.img | img_url: 'master'  }}" width="" height="" loading="lazy" alt="">
+                  </div>
+                {% endif %}
+              {% endfor %}  
           </div>
         </div>
 
         <div class="tabbed-content mobile-version">
           <nav class="tabs">
             <ul>
-              <li><span>1</span><h6><a href="#tab11">Start With a Need</a></h6></li>
-
-              <div class="content">
-                <div id="tab11" class="item">
-                  <p>Personalized care, patient engagement and habit forming are crucial for successfully managing chronic metabolic disorders, yet the current healthcare system is failing to deliver on these fronts. By fostering greater engagement and empowerment and by approaching patients as people first, we can help them effectively manage their conditions and improve their quality of life.</p>
-                  <img class="mobile-img" src="{{'science-page-start-img-1.png' | asset_url }}" width="464" height="468" alt="">
-                </div>
-              </div>
-
-              <li><span>2</span><h6><a href="#tab12">Driven by Research</a></h6></li>
-
-              <div class="content">
-                  <div id="tab12" class="item">
-                    <p>We believe in the power of nature and ancient knowledge to provide healing and wellness. We are constantly exploring the natural world for potent ingredients and incorporating ancient techniques and remedies into our products and formulations. While some of the scientific terms and concepts may be unfamiliar to some, we trust in the expertise and research from our team to bring you the most effective and natural solutions possible.</p>
-                    <img class="mobile-img" src="{{'science-page-start-img-2.png' | asset_url }}" width="390" height="468" alt="">
+              {% for block in section.blocks %}
+              {% if block.settings.block_tab == "supplement" %}
+              <li><span>{{ block.settings.number }}</span><h6><a href="#{{ block.settings.link_id }}-mb" class="{% if forloop.first %}active{% endif %}">{{ block.settings.title }}</a></h6></li>
+                  <div class="content">
+                    <div id="{{ block.settings.link_id }}-mb" class="item">
+                      <p>{{ block.settings.content }}</p>
+                      <img class="mobile-img" src="{{ block.settings.img | img_url: 'master' }}" width="" height="" loading="lazy" alt="">
+                    </div>
                   </div>
-              </div>
-              <li><span>3</span><h6><a href="#tab13">Our Commitment to Excellence</a></h6></li>
-
-              <div class="content">
-                  <div id="tab13" class="item">
-                    <p>There are no hidden secrets or surprises in our formulas - what you see is exactly what you get. We prioritize transparency so you can feel confident and comfortable with what you're putting into your body. We're proud to offer ingredients that are clinically tested, non-GMO, vegan, vegetarian, and gluten-free, so you can feel at ease.</p>
-                    <img class="mobile-img" src="{{'science-page-start-img-3.png' | asset_url }}" width="388" height="468" alt="">
-                  </div>
-              </div>
-              <li><span>4</span><h6><a href="#tab14">What You See Is What You Get</a></h6></li>
-
-              <div class="content">
-                  <div id="tab14" class="item">
-                    <p>We take pride in the quality and safety of our products. Our products are manufactured in facilities that meet the highest requirements for transparency and traceability and have been regulated by the FDA and certified by third parties to be in compliance with current Good Manufacturing Practices (cGMPs). Each capsule is carefully formulated to meet our specifications for purity, and potency, and is rigorously tested to ensure that it meets all label claims and free from contaminants. We prioritize the quality and safety of our products, and are committed to providing our customers with the best possible health and wellness solutions.</p>
-                    <img class="mobile-img" src="{{'science-page-start-img-4.png' | asset_url }}" width="311" height="468" alt="">
-                  </div>
-              </div>
+                {% endif %}
+              {% endfor %}   
             </ul>
           </nav>
-        </div>
+        </div> 
       </div>
 
       <div id="screen2" class="screen screen2" style="display:none;">
         <div class="tabbed-content desktop-version">
             <nav class="tabs">
               <ul>
-                <li><span>1</span><h6><a href="#tab5" class="active">Start With A Need</a></h6></li>
-                <li><span>2</span><h6><a href="#tab6">How We Do What We Do</a></h6></li>
-                <li><span>3</span><h6><a href="#tab7">Technology</a></h6></li>
-                <li><span>4</span><h6><a href="#tab8">Innovation</a></h6></li>
-                <li><span>5</span><h6><a href="#tab9">Human Experience</a></h6></li>
-                <li><span>6</span><h6><a href="#tab10">Your Data Is Secured</a></h6></li>
+                {% for block in section.blocks %}
+                  {% if block.settings.block_tab == "tech" %}
+                    <li><span>{{ block.settings.number }}</span><h6><a href="#{{ block.settings.link_id }}" class="{% if forloop.first %}active{% endif %}">{{ block.settings.title }}</a></h6></li>
+                  {% endif %}
+                {% endfor %}
               </ul>
             </nav>
             <div class="content">
-              <div id="tab5" class="item active">
-                <p>Personalized care, patient engagement and habit forming are crucial for successfully managing chronic metabolic disorders, yet the current healthcare system is failing to deliver on these fronts. By fostering greater engagement and empowerment and by approaching patients as people first, we can help them effectively manage their conditions and improve their quality of life.</p>
-                <img class="desktop-img" src="{{'science-page-start-img-5.png' | asset_url }}" width="558" height="499" alt="">
-              </div>
-              <div id="tab6" class="item">
-                <p>Healthcare should be an empowering experience for patients. That's why we've created a platform that puts patients in control of their healthcare decisions and uses engaging techniques like gamification to make the process enjoyable. We are passionate about innovation that makes healthcare more accessible, affordable, and convenient for all. By empowering patients as customers, we can revolutionize the healthcare industry and improve the lives of people everywhere.</p>
-                <img class="desktop-img" src="{{'science-page-start-img-6.png' | asset_url }}" width="343" height="501" alt="">
-              </div>
-              <div id="tab7" class="item">
-                <p>We're on a mission to bring healthcare within reach for everyone. Equality in care is at the base of everything we do. We know that superior clinical outcomes are rooted in personalizing care programs that actually work for people. Why? Because getting patients involved in their own care makes all the difference. And the best part? By doing all this, we are partnering with patients and providers, making this whole thing called health actually work ;)</p>
-                <img class="desktop-img" src="{{'science-page-start-img-7.png' | asset_url }}" width="764" height="499" alt="">
-              </div>
-              <div id="tab8" class="item">
-                <p>Healthcare is expensive. It’s expensive for those without insurance, of course, but also for those who don't have enough coverage and even those with ‘good’ coverage. We use digital first innovation to cut costs, and connect between therapeutics and digital therapeutics that form habits that stick, and health that lasts. We aren't shy with reinventing and challenging the status quo, working with patients, providers and medical professionals alike.</p>
-                <img class="desktop-img" src="{{'science-page-start-img-8.png' | asset_url }}" width="730" height="499" alt="">
-              </div>
-              <div id="tab9" class="item">
-                <p>Technology can be as disruptive, as advanced as going to mars, but when it's about your health, you first need tech that you understand and that understands you. That you can use comfortably without asking your grandson’s help. We make sure the screens you see, the buttons you press and the overall experience you have with our tech is awesome.</p>
-                <img class="desktop-img" src="{{'science-page-start-img-9.png' | asset_url }}" width="730" height="499" alt="">
-              </div>
-              <div id="tab10" class="item">
-                <p>Patient data security is of the utmost importance. We follow all HIPAA and GDPR regulations to ensure that your personal information is kept confidential. In addition, we have implemented robust cyber protocols to protect against any unauthorized access or breaches. Rest assured that your data is in good hands and we take every precaution to keep it secure. Your trust is important to us, and we are committed to upholding the highest standards of data protection.</p>
-                <img class="desktop-img" src="{{'science-page-start-img-10.png' | asset_url }}" width="730" height="499" alt="">
-              </div>
+                {% for block in section.blocks %}
+                  {% if block.settings.block_tab == "tech" %}
+                    <div id="{{ block.settings.link_id }}" class="item {% if forloop.first %} active {% endif %}">
+                      <p class="relative z-40">{{ block.settings.content }}</p>
+                        <img class="absolute z-0 desktop-img" src="{{ block.settings.img | img_url: 'master'  }}" width="" height="" loading="lazy" alt="">
+                    </div>
+                  {% endif %}
+                {% endfor %}  
             </div>
           </div>
         <div class="tabbed-content mobile-version">
           <nav class="tabs">
-            <ul>
-              <li><span>1</span><h6><a href="#tab15">Start With a Need</a></h6></li>
-
-              <div class="content">
-              <div id="tab15" class="item">
-                <p>Personalized care, patient engagement and habit forming are crucial for successfully managing chronic metabolic disorders, yet the current healthcare system is failing to deliver on these fronts. By fostering greater engagement and empowerment and by approaching patients as people first, we can help them effectively manage their conditions and improve their quality of life.</p>
-                <img class="mobile-img" src="{{'science-page-start-img-5.png' | asset_url }}" width="558" height="499" alt="">
-              </div>
-              </div>
-
-              <li><span>2</span><h6><a href="#tab16">How We Do What We Do</a></h6></li>
-
-              <div class="content">
-                <div id="tab16" class="item">
-                  <p>Healthcare should be an empowering experience for patients. That's why we've created a platform that puts patients in control of their healthcare decisions and uses engaging techniques like gamification to make the process enjoyable. We are passionate about innovation that makes healthcare more accessible, affordable, and convenient for all. By empowering patients as customers, we can revolutionize the healthcare industry and improve the lives of people everywhere.</p>
-                  <img class="mobile-img" src="{{'science-page-start-img-6.png' | asset_url }}" width="343" height="501" alt="">
-                </div>
-              </div>
-              <li><span>3</span><h6><a href="#tab17">Technology</a></h6></li>
-
-              <div class="content">
-                <div id="tab17" class="item">
-                  <p>We're on a mission to bring healthcare within reach for everyone. Equality in care is at the base of everything we do. We know that superior clinical outcomes are rooted in personalizing care programs that actually work for people. Why? Because getting patients involved in their own care makes all the difference. And the best part? By doing all this, we are partnering with patients and providers, making this whole thing called health actually work ;)</p>
-                  <img class="mobile-img" src="{{'science-page-start-img-7.png' | asset_url }}" width="764" height="499" alt="">
-                </div>
-              </div>
-              <li><span>4</span><h6><a href="#tab18">Innovation</a></h6></li>
-
-              <div class="content">
-                <div id="tab18" class="item">
-                  <p>Healthcare is expensive. It’s expensive for those without insurance, of course, but also for those who don't have enough coverage and even those with ‘good’ coverage. We use digital first innovation to cut costs, and connect between therapeutics and digital therapeutics that form habits that stick, and health that lasts. We aren't shy with reinventing and challenging the status quo, working with patients, providers and medical professionals alike.</p>
-                  <img class="mobile-img" src="{{'science-page-start-img-8.png' | asset_url }}" width="730" height="499" alt="">
-                </div>
-              </div>
-
-            <li><span>5</span><h6><a href="#tab19">Human Experience</a></h6></li>
-
-            <div class="content">
-              <div id="tab19" class="item">
-                <p>Technology can be as disruptive, as advanced as going to mars, but when it's about your health, you first need tech that you understand and that understands you. That you can use comfortably without asking your grandson’s help. We make sure the screens you see, the buttons you press and the overall experience you have with our tech is awesome.</p>
-                <img class="mobile-img" src="{{'science-page-start-img-9.png' | asset_url }}" width="730" height="499" alt="">
-              </div>
-            </div>
-
-            <li><span>6</span><h6><a href="#tab20">Your Data is Secured</a></h6></li>
-
-            <div class="content">
-              <div id="tab20" class="item">
-                <p>Patient data security is of the utmost importance. We follow all HIPAA and GDPR regulations to ensure that your personal information is kept confidential. In addition, we have implemented robust cyber protocols to protect against any unauthorized access or breaches. Rest assured that your data is in good hands and we take every precaution to keep it secure. Your trust is important to us, and we are committed to upholding the highest standards of data protection.</p>
-                <img class="mobile-img" src="{{'science-page-start-img-10.png' | asset_url }}" width="730" height="499" alt="">
-              </div>
-            </div>
-            </ul>
+              <ul>
+                {% for block in section.blocks %}
+                  {% if block.settings.block_tab == "tech" %}
+                    <li><span>{{ block.settings.number }}</span><h6><a href="#{{ block.settings.link_id }}-mb" class="{% if forloop.first %}active{% endif %}">{{ block.settings.title }}</a></h6></li>
+                    <div class="content">
+                      <div id="{{ block.settings.link_id }}-mb" class="item">
+                        <p>{{ block.settings.content }}</p>
+                          <img class="mobile-img" src="{{ block.settings.img | img_url: 'master'  }}" width="" height="" loading="lazy" alt="">
+                      </div>
+                    </div>
+                  {% endif %}
+                {% endfor %}   
+              </ul>
           </nav>
         </div>
       </div>
     </div>
   </div>
-</div>
+</section>
 
 <style>
   .supplement-tech-wrapper {
-    border: 1px solid #E8E8B0;
+    border: 1px solid {{ section.settings.suppl_bcolor }};
     box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.15);
     border-radius: 20px;
     overflow: hidden;
@@ -205,10 +119,10 @@
     top: 0;
     transition: left cubic-bezier(.88, -.35, .565, 1.35) .4s;
     border-radius: 37px;
-    border: 1px solid #404733;
+    border: 1px solid {{ section.settings.actbord_color }};
     height: 100%;
     z-index: 0;
-    background: #404733;
+    background: {{ section.settings.actbutt_color }};
   }
 
   .taeb-switch.left:after {
@@ -242,7 +156,7 @@
   }
 
   .taeb-switch .taeb.active-button {
-    color: #ffffff;
+    color: {{ section.settings.acttext_color }};
   }
 
   .wrapper {
@@ -311,12 +225,12 @@
   }
 
   .tabs a.active {
-      color: #9EB069;
+      color: {{ section.settings.active_tab }};
       font-weight: bold;
   }
 
   .content {
-    background: #F9F9F9;
+    background: {{ section.settings.content_bg }};
     display: flex;
     padding: 20px;
     width: 100%;
@@ -332,6 +246,7 @@
 
   .content p {
     max-width: 400px;
+    z-index: 5;
     margin: 0;
     padding: 40px 0;
   }
@@ -408,12 +323,12 @@
       right: 5vw;
       content: "+";
       font-size: 7vw;
-      color: #9EB069;
+      color: {{ section.settings.active_tab }};
       transition: transform 0.5s;
     }
 
     .tabs a.active::after {
-      color: #9EB069;
+      color: {{ section.settings.active_tab }};
       transform: rotate(45deg);
     }
 
@@ -450,13 +365,14 @@
   // Get the List and Map buttons
   var suplBtn = document.querySelector('.taeb-switch .taeb[taeb-direction="left"]');
   var techBtn = document.querySelector('.taeb-switch .taeb[taeb-direction="right"]');
-
   // Get the screens
   var screen1 = document.getElementById('screen1');
   var screen2 = document.getElementById('screen2');
-
+  
   // Add click event listeners to the buttons
   suplBtn.addEventListener('click', function() {
+    $('.screen1').find('.tabs li a').first().addClass('active');  
+    $('.screen1').find('.content .item').first().addClass('active');  
     // Set the List button to active
     suplBtn.classList.add('active-button');
     techBtn.classList.remove('active-button');
@@ -467,6 +383,8 @@
   });
 
   techBtn.addEventListener('click', function() {
+    $('.screen2').find('.tabs li a').first().addClass('active');  
+    $('.screen2').find('.content .item').first().addClass('active');  
     // Set the Map button to active
     techBtn.classList.add('active-button');
     suplBtn.classList.remove('active-button');
@@ -476,6 +394,8 @@
     screen1.style.display = 'none';
   });
 </script>
+
+
 
 <script>
   $(document).ready(function() {
@@ -512,40 +432,121 @@
 
 {% schema %}
 {
-    "name": "Supplements",
-    "tag": "section",
-    "class": "supplements",
-    "disabled_on": {
-        "groups": [
-            "header",
-            "footer"
-        ]
-    },
-    "blocks": [
+   "name":"Science Page Widget",
+   "disabled_on":{
+      "groups":[
+         "header",
+         "footer"
+      ]
+   },
+   "settings":[
       {
-        "type": "slides",
-        "name": "Slides",
-        "settings": [
+         "type":"color",
+         "id":"bg_color",
+         "label":"Background Color"
+      },
+      {
+         "type":"text",
+         "id":"button_left_text",
+         "label":"Button 1",
+         "default":"Supplement"
+      },
+      {
+         "type":"text",
+         "id":"button_right_text",
+         "label":"Button 2",
+         "default":"Tech"
+      },
+      {
+        "type": "color",
+        "id": "suppl_bcolor",
+        "label": "Suppliment Wrapper border",
+        "default": "#E8E8B0"
+      },
+     {
+       "type": "color",
+       "id": "actbord_color",
+       "label": "Active Border Color",
+       "default": "#404733"
+     },
+     {
+       "type": "color",
+       "id": "actbutt_color",
+       "label": "Active Button Color",
+       "default": "#404733"
+     },
+     {
+       "type": "color",
+       "id": "acttext_color",
+       "label": "Active Button Text",
+       "default": "#fff"
+     },
+     {
+      "type": "color",
+      "id": "active_tab",
+      "label": "Active Tabs Color",
+      "default": "#9EB069"
+     },
+     {
+      "type": "color",
+      "id": "content_bg",
+      "label": "Content Background Color",
+      "default": "#F9F9F9"
+     }
+   ],
+   "blocks": [
+      {
+         "name": "Science Block",
+         "type": "science_block",
+         "settings": [
           {
-            "type": "image_picker",
-            "id": "image",
-            "label": "Image"
+            "type": "select",
+            "id": "block_tab",
+            "label": "Block Tab",
+            "options": [
+              {
+                "value": "supplement",
+                "label": "Supplement"
+              },
+              {
+                "value": "tech",
+                "label": "Tech"
+              }
+            ],
+            "default": "supplement"
           },
           {
-            "type": "text",
-            "id": "title",
-            "label": "Title"
+            "type":"text",
+            "id":"link_id",
+            "label":"Link"
           },
           {
-            "type": "richtext",
-            "id": "content",
-            "label": "Content"
+            "type":"text",
+            "id":"number",
+            "label":"Number"
+          },
+          {
+            "type":"text",
+            "id":"title",
+            "label":"Title"
+          },
+          {
+            "type":"richtext",
+            "id":"content",
+            "label":"Content"
+          },
+          {
+            "type":"image_picker",
+            "id":"img",
+            "label":"Image"
           }
-        ]
+         ]
       }
-    ],
-    "presets": [{
-        "name": "Supplements"
-    }]
+   ],
+   "presets": [
+      {
+         "name":"Science Page Widget"
+      }
+   ]
 }
 {% endschema %}

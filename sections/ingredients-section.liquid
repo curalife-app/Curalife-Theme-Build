@@ -1,11 +1,12 @@
-<section class="ingredients-section">
+
   <div class="container no-padding">
     <div class="ingredients-sliders">
       <div class="ingredients-thumbs-slider swiper">
         <div class="ingredients swiper-wrapper">
-          {% for block in section.blocks %}
+          {% assign image_small = section.blocks | where: 'type', 'category_image' %}
+          {% for block in image_small %}
             <div class="ingredient swiper-slide">
-              <img src="{{ block.settings.ingredient_image | img_url }}" width="316" height="296" alt="" loading="lazy">
+              <img src="{{ block.settings.small_image | img_url }}" width="316" height="296" alt="" loading="lazy">
             </div>
           {% endfor %}
         </div>
@@ -15,13 +16,14 @@
         <div class="swiper-button-prev swiper-nav"></div>
 
         <div class="ingredients swiper-wrapper">
-          {% for block in section.blocks %}
+          {% assign image_big = section.blocks | where: 'type', 'category_image2' %}
+          {% for block in image_big %}
             <div class="swiper-slide">
               <div class="ingredient">
-                <img src="{{ block.settings.ingredient_image | image_url }}" width="316" height="296" alt="" loading="lazy">
+                <img src="{{ block.settings.big_image | image_url }}" width="316" height="296" alt="" loading="lazy">
                 <div class="ingredient-content">
-                    <p class="ingredient-title">{{ block.settings.ingredient_title }}</p>
-                    <p class="ingredient-description">{{ block.settings.ingredient_description }}</p>
+                    <p class="ingredient-title">{{ block.settings.category_title }}</p>
+                    <p class="ingredient-description">{{ block.settings.category_description }}</p>
                 </div>
               </div>
             </div>
@@ -33,7 +35,7 @@
       </div>
     </div>
   </div>
-</section>
+
 
 <style>
   .swiper-button-prev,
@@ -162,8 +164,9 @@
 
 {% schema %}
 {
-  "name": "Ingredients",
-  "class": "ingredients-section-wrapper",
+  "name": "Ingredients Section",
+  "tag": "section",
+  "class": "ingredients-section",
   "disabled_on": {
     "groups": ["header", "footer"]
   },
@@ -172,34 +175,45 @@
       "type": "color",
       "id": "bg_color",
       "label": "Background Color"
-    }
+    }  
   ],
   "blocks":[
     {
-      "name":"Ingredient",
-      "type":"ingredient",
+      "name":"Category Image",
+      "type":"category_image",
       "settings":[
         {
           "type":"image_picker",
-          "id":"ingredient_image",
-          "label":"Ingredient Image"
+          "id":"small_image",
+          "label":"Image 1"
+        }
+      ]
+    },
+    {
+      "name":"Category Image 2",
+      "type":"category_image2",
+      "settings":[
+        {
+          "type":"image_picker",
+          "id":"big_image",
+          "label":"Image 2"
         },
         {
           "type":"text",
-          "id":"ingredient_title",
-          "label":"Ingredient Title"
+          "id":"category_title",
+          "label":"Category Title"
         },
         {
           "type":"text",
-          "id":"ingredient_description",
-          "label":"Ingredient Description"
+          "id":"category_description",
+          "label":"Category Description"
         }
       ]
     }
   ],
   "presets": [
     {
-      "name": "Ingredients"
+      "name": "Ingredients Section"
     }
   ]
 }

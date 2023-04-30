@@ -409,9 +409,9 @@ video {
     --light-pink: #FFF1E8;
   }
   *,
-  *:before,
-  *:after {
-    box-sizing: border-box;
+  *::before,
+  *::after {
+    box-sizing: inherit;
   }
   html {
     font-family: "DM Sans", sans-serif;
@@ -432,7 +432,7 @@ video {
     padding: 0 15px;
   }
   section {
-    padding: 50px 0;
+    padding: 30px 0;
     overflow: hidden;
     position: relative;
   }
@@ -489,6 +489,9 @@ video {
   .swiper-pagination-bullet {
     background: var(--light-brown);
     opacity: 1;
+  }
+  .swiper-pagination-bullet-active {
+    background: var(--brown);
   }
   @media (max-width: 768px) {
     body {
@@ -639,8 +642,14 @@ video {
 .isolate {
   isolation: isolate;
 }
+.z-0 {
+  z-index: 0;
+}
 .z-10 {
   z-index: 10;
+}
+.z-40 {
+  z-index: 40;
 }
 .z-auto {
   z-index: auto;
@@ -651,18 +660,11 @@ video {
 .m-auto {
   margin: auto;
 }
-.my-2 {
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
-}
 .mb-16 {
   margin-bottom: 4rem;
 }
 .mb-5 {
   margin-bottom: 1.25rem;
-}
-.ml-2 {
-  margin-left: 0.5rem;
 }
 .mt-4 {
   margin-top: 1rem;
@@ -688,23 +690,14 @@ video {
 .hidden {
   display: none;
 }
-.h-6 {
-  height: 1.5rem;
-}
-.h-\[500px\] {
-  height: 500px;
-}
 .max-h-250px {
   max-height: 250px;
 }
-.max-h-500px {
-  max-height: 500px;
-}
-.max-h-\[448px\] {
+.max-h-448px {
   max-height: 448px;
 }
-.min-h-400px {
-  min-height: 400px;
+.max-h-500px {
+  max-height: 500px;
 }
 .\!w-full {
   width: 100% !important;
@@ -714,9 +707,6 @@ video {
 }
 .w-45\% {
   width: 45%;
-}
-.w-6 {
-  width: 1.5rem;
 }
 .w-70\% {
   width: 70%;
@@ -757,6 +747,9 @@ video {
 .justify-between {
   justify-content: space-between;
 }
+.gap-16 {
+  gap: 4rem;
+}
 .gap-4 {
   gap: 1rem;
 }
@@ -765,13 +758,6 @@ video {
 }
 .gap-8 {
   gap: 2rem;
-}
-.gap-x-16 {
-  -moz-column-gap: 4rem;
-       column-gap: 4rem;
-}
-.gap-y-4 {
-  row-gap: 1rem;
 }
 .self-end {
   align-self: flex-end;
@@ -842,23 +828,11 @@ video {
 .text-start {
   text-align: start;
 }
-.text-base {
-  font-size: 18px;
-  line-height: 24px;
-}
-.text-lg {
-  font-size: 20px;
-  line-height: 28px;
-}
-.text-xs {
-  font-size: 12px;
-  line-height: 16px;
-}
 .font-bold {
   font-weight: 700;
 }
-.font-medium {
-  font-weight: 500;
+.font-light {
+  font-weight: 300;
 }
 .font-thin {
   font-weight: 100;
@@ -876,12 +850,9 @@ video {
   --tw-text-opacity: 1;
   color: rgb(158 176 105 / var(--tw-text-opacity));
 }
-.text-yellow-400 {
-  --tw-text-opacity: 1;
-  color: rgb(250 204 21 / var(--tw-text-opacity));
-}
 .underline {
-  text-decoration-line: underline;
+  -webkit-text-decoration-line: underline;
+          text-decoration-line: underline;
 }
 .antialiased {
   -webkit-font-smoothing: antialiased;
@@ -922,9 +893,9 @@ video {
           backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
 }
 .transition {
-  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, -webkit-backdrop-filter;
+  transition-property: color, background-color, border-color, fill, stroke, opacity, box-shadow, transform, filter, -webkit-text-decoration-color, -webkit-backdrop-filter;
   transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
-  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-backdrop-filter;
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-text-decoration-color, -webkit-backdrop-filter;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
 }
@@ -951,10 +922,6 @@ video {
     margin-bottom: 2rem;
   }
 
-  .md\:mt-0 {
-    margin-top: 0px;
-  }
-
   .md\:mt-5 {
     margin-top: 1.25rem;
   }
@@ -965,6 +932,10 @@ video {
 
   .md\:hidden {
     display: none;
+  }
+
+  .md\:h-56 {
+    height: 14rem;
   }
 
   .md\:h-fit {
@@ -1035,6 +1006,10 @@ video {
     padding-bottom: 0px;
   }
 
+  .md\:pb-0 {
+    padding-bottom: 0px;
+  }
+
   .md\:pb-4 {
     padding-bottom: 1rem;
   }
@@ -1043,13 +1018,9 @@ video {
     text-align: center;
   }
 
-  .md\:text-start {
-    text-align: start;
-  }
-
   .md\:text-sm {
-    font-size: 16px;
-    line-height: 20px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
   }
 
   .md\:shadow-xl {

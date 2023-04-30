@@ -9,7 +9,7 @@
 {% if isVariantNotice %}
   {% if var.title contains "CuraEats" and product.title != "CuraEats App" %}
     {% assign bundle_value = challenge_value | plus: curaeats_value %}
-    <div class="variant-notice"><p><b>Bonus</b> - 30 Day Life Changing Program <b>(<span class="no-letters rounded">{{ bundle_value | times: 100 | money_with_currency | replace: ".00", "" | replace: "GBP", "" | replace: "AUD", "" | replace: "CAD", "" }}</span> value)</b></p></div>
+    <div class="variant-notice"><p><b>Bonus</b> - 30 Day Life Changing Program <b>(<span class="rounded no-letters">{{ bundle_value | times: 100 | money_with_currency | replace: ".00", "" | replace: "GBP", "" | replace: "AUD", "" | replace: "CAD", "" }}</span> value)</b></p></div>
   {% else %}
     {% assign bundle_value = 0 %}
   {% endif %}
@@ -43,27 +43,22 @@
     </div>
   </div>
 
-  <script>console.log("price_per: {{ pricePer }}")</script>
-
-
-  {% if pricePer != "dont_split" %}
-    <div class="price">
-      <div class="calculations">
-        {% if original_item_cap_total > var.price %}
-          <p class="compared-at-price"><strike class="no-letters rounded">{{ original_item_cap_total | money_without_trailing_zeros }}</strike></p>
-        {% endif %}
-
-        <p class="real-price no-letters rounded">{{ item_price | money_without_trailing_zeros }}</p>
-      </div>
-
-      <p class="per-month">Per {{ pricePer | capitalize }}</p>
+  {% if isPricePerUnit %}
+  <div class="price">
+    <div class="calculations">
+      {% if original_item_cap_total > var.price %}
+        <p class="compared-at-price"><strike class="rounded no-letters">{{ original_item_cap_total | money_without_trailing_zeros }}</strike></p>
+      {% endif %}
+      <p class="rounded real-price no-letters">{{ item_price | money_without_trailing_zeros }}</p>
+    </div>
+      <p class="per-month">Per Month</p>
     </div>
   {% else %}
     <div class="price">
       {% if original_item_cap_total_with_bundle > var.price %}
-        <p class="compared-at-price"><strike class="no-letters rounded">{{ original_item_cap_total_with_bundle | money_without_trailing_zeros }}</strike></p>
+        <p class="compared-at-price"><strike class="rounded no-letters">{{ original_item_cap_total_with_bundle | money_without_trailing_zeros }}</strike></p>
       {% endif %}
-      <p class="real-price no-letters rounded">{{ var.price | money_without_trailing_zeros }}</p>
+      <p class="rounded real-price no-letters">{{ var.price | money_without_trailing_zeros }}</p>
     </div>
   {% endif %}
 </div>
@@ -97,8 +92,6 @@
       filter: drop-shadow(0px 4px 4px rgba(47, 47, 47, 0.1));
       transition: all .5s;
       position: relative;
-      border-radius: 10px;
-      border-color: var(--light-green);
     }
 
     .variant-box:hover {
@@ -241,12 +234,7 @@
     function updateCTA() {
       {% if ctaTextType %}
         {% if ctaTextType == "save" %}
-          if ($('input[name=pack]:checked').attr('data-discount') == 0) {
-            let ctaText = "";
-          }
-          else {
-            let ctaText = "You Save " + "{{ cart.currency.symbol }}" + $('input[name=pack]:checked').attr('data-discount');
-          }
+          let ctaText = "You Save " + "{{ cart.currency.symbol }}" + $('input[name=pack]:checked').attr('data-discount');
         {% elsif ctaTextType == "total" %}
           let ctaText = "Total " + "{{ cart.currency.symbol }}" + $('input[name=pack]:checked').attr('data-price');
         {% endif %}
@@ -273,6 +261,8 @@
 
       // Slide to Variant Image
       {% if product.variants.size > 1 and product.images.size > 1 %}
+      console.log('productSliderAllInOne.slides.length ' + productSliderAllInOne.slides.length);
+      console.log('data-index' + $('input[name=pack]:checked').attr('data-index'));
         let slideIndex = productSliderAllInOne.slides.length - $('input[name=pack]:checked').attr('data-index');
         productSliderAllInOne.slideTo(slideIndex);
       {% endif %}
