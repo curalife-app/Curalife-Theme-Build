@@ -19,10 +19,10 @@
                 <div class="menu">
                     <h4>Find us on</h4>
                     <div class="social-links">
-                        <a href="https://www.facebook.com/curalife"><i class="fa-brands fa-facebook-f"></i></a>
-                        <a href="https://www.instagram.com/curalife"><i class="fa-brands fa-instagram"></i></a>
-                        <a href="https://www.twitter.com/curalife"><i class="fa-brands fa-twitter"></i></a>
-                        <a href="https://www.linkedin.com/company/curalife-ltd"><i class="fa-brands fa-linkedin"></i></a>
+                        {% assign soc_lnk = section.blocks | where: 'type', 'soc_lnk' %}
+                        {% for block in soc_lnk %}
+                          <a href="{{ block.settings.soc_link }}"><i class="{{ block.settings.soc_icon }}"></i></a>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
@@ -170,24 +170,19 @@
       ]
     },
     {
-      "type": "contact",
-      "name": "Contact Numbers",
+      "type": "soc_lnk",
+      "name": "Social Link",
         "settings": [
-          {
-            "type": "image_picker",
-            "id": "flag_img",
-            "label": "Country Flag Image"
-          },
-          {
-            "type": "text",
-            "id": "phone_title",
-            "label": "Title"
-          },
-          {
-            "type": "text",
-            "id": "phone_number",
-            "label": "Phone Number"
-          }
+         {
+           "type": "url",
+           "id": "soc_link",
+           "label": "Social Link"
+         },
+         {
+           "type": "text",
+           "id": "soc_icon",
+           "label": "Social Icon"
+         }
         ]
       },
       {
