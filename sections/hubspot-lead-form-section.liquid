@@ -4,30 +4,14 @@
       {% form 'contact' %}
         {{ form.errors | default_errors }}
         <input type="hidden" name="return_to" value="/pages/thank-you?type=contact-us">
+        {% assign column1 = section.blocks | where: 'type', 'column1' %}
+        {% for block in column1 %}
         <div class="form-fields">
             <label for="first-name" class="full-size">
               <input  id="first-name" maxlength="80" name="contact[first_name]" size="20" type="text" placeholder="First Name" />
             </label>
-
-          <label for="last-name" class="full-size">
-            <input  id="last-name" maxlength="80" name="contact[last_name]" size="20" type="text" placeholder="Last Name" />
-          </label>
-
-          <label for="subject" class="full-size">
-            <input  id="subject" maxlength="80" name="contact[information_id]" size="20" type="text" placeholder="Subject" />
-          </label>
-
-          <label for="phone" class="full-size">
-            <input  id="phone" maxlength="40" name="contact[phone]" size="20" type="tel" placeholder="Phone" />
-          </label>
-
-          <label for="email" class="full-size">
-            <input  id="email" maxlength="80" name="contact[email]" size="20" type="text" placeholder="Email" />
-          </label>
-
         </div>
-
-
+        {% endfor %}
         <div class="submit-form">
           <button type="submit"  value="{{ 'contact.form.send' | t }}" class="main-btn">Submit</button>
         </div>
@@ -47,25 +31,29 @@
   "blocks": [
 
     {
-      "type": "contact",
-      "name": "Contact Numbers",
+      "type": "column1",
+      "name": "Column 1",
       "settings": [
         {
-        "type": "image_picker",
-        "id": "cntphn_img",
-        "label": "Select Image"
+        "type": "text",
+        "id": "label_id",
+        "label": "Label"
+        
         },
         {
         "type": "text",
-        "id": "cntphn_title",
-        "label": "Title",
-        "default": "Enter Title"
+        "id": "id_id",
+        "label": "Id"   
         },
         {
         "type": "text",
-        "id": "cntphn_numbr",
-        "label": "Contact Number",
-        "default": " Enter Phone Number "
+        "id": "id_name",
+        "label": "Name"   
+        },
+        {
+        "type": "text",
+        "id": "placeh",
+        "label": "Placeholder"   
         }
       ]
       }
