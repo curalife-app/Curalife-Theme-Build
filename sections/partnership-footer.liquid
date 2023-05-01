@@ -30,8 +30,10 @@
         <div class="footer-bottom">
             <p class="copyrights">© 2022 CuraLife Global</p>
             <div class="policies">
-                <a class="policy" href="/pages/privacy-policy">Privacy Policy</a>
-                <a class="policy" href="/pages/terms-of-service">Terms of Service</a>
+                {% assign policy = section.blocks | where: 'type', 'policy' %}
+                {% for block in policy %}
+                    <a class="policy" href="{{ block.settings.policy_link }}">{{ block.settings.policy_name }}</a>
+                {% endfor %}
             </div>
         </div>
     </div>
@@ -186,32 +188,22 @@
         ]
       },
       {
-        "type": "social",
-        "name": "Social Media",
+        "type": "policy",
+        "name": "Policy",
         "settings": [
+          
           {
-            "type": "text",
-            "id": "social_icon_class",
-            "label": "Social Icon Class"
+            "id": "policy_link",
+            "type": "url",
+            "label": "Policy Link"
           },
           {
-            "id": "social_link",
-            "type": "url",
-            "label": "Social Icon Link"
+            "type": "text",
+            "id": "policy_name",
+            "label": "Policy name"
           }
         ]
-      },
-      {
-      "type": "payment",
-      "name": "Payment Images",
-      "settings": [
-        {
-          "type": "image_picker",
-          "id": "payment_img",
-          "label": "Select Payment Image"
-        }
-      ]
-    }
+      }    
   ],
   "presets": [
     {
