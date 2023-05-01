@@ -4,12 +4,10 @@
             <div class="column"> 
                 <div class="menu">
                     <h4>Navigation</h4>
-                    <a href="#hero-section"><p><span><i class="fa-solid fa-chevron-right"></i></span> Home</p></a> 
-                    <a href="#info-section"><p><span><i class="fa-solid fa-chevron-right"></i></span> About Us</p></a>
-                    <a href="#curalin-section"><p><span><i class="fa-solid fa-chevron-right"></i></span> Nutraceuticals</p></a>
-                    <a href="#scientific-section"><p><span><i class="fa-solid fa-chevron-right"></i></span> Science</p></a>
-                    <a href="#app-section"><p><span><i class="fa-solid fa-chevron-right"></i></span> Technology</p></a> 
-                    <a href="#program-cta-section"><p><span><i class="fa-solid fa-chevron-right"></i></span> PSP</p></a>
+                    {% assign navigation = section.blocks | where: 'type', 'navigation' %}
+                    {% for block in navigation %}
+                     <a href="{{ block.settings.nav_link }}"><p><span><i class="fa-solid fa-chevron-right"></i></span>{{ block.settings.nav_ttl }}</p></a> 
+                    {% endfor %}
                 </div>
             </div>
             <div class="column">
@@ -152,41 +150,23 @@
         "id": "brd_clr",
         "label": "Border Color",
         "default": "rgba(255, 255, 255, 0.25)"
-    },
-    {
-      "type": "image_picker",
-      "id": "logo_img",
-      "label": "Logo image"
-    },
-    {
-      "type": "header",
-      "content": "Bottom Menu"
-    },
-    {
-      "type": "text",
-      "id": "bottom_menu_title",
-      "label": "Bottom Menu Title"
-    },
-    {
-      "type": "link_list",
-      "id": "bottom_linklist",
-      "label": "Bottom Menu"
     }
+  
   ],
   "blocks": [
     {
-      "type": "menu",
-      "name": "Menu",
+      "type": "navigation",
+      "name": "Navigation",
       "settings": [
         {
           "type": "text",
-          "id": "menu_title",
-          "label": "Heading"
+          "id": "nav_link",
+          "label": "Navigation Link"
         },
         {
-          "type": "link_list",
-          "id": "footer_linklist",
-          "label": "Menu"
+          "type": "text",
+          "id": "nav_ttl",
+          "label": "Navigation Title"
         }
       ]
     },
