@@ -70,34 +70,48 @@
     opacity:{{ opacity }};
   }
 
-
-
 {% if lim_height %}
   section.text-image-section,
   section.text-image-{{ section_id }} {
     overflow: visible;
-
   }
+
   html {
     --elheight: {{ height_num }}px; 
   }
- section.text-image-{{ section_id }} .container {
-  max-height: var(--elheight);
- }
- section.text-image-{{ section_id }} .image-wrapper {
-  margin-bottom: calc(var(--elheight) * 0.1);
- }
 
+  section.text-image-{{ section_id }} .container {
+    max-height: var(--elheight);
+  }
+
+  section.text-image-{{ section_id }} .image-wrapper {
+    margin-bottom: calc(var(--elheight) * 0.1);
+  }
+
+  @media screen and (max-width: 768px) {
+    section.text-image-section,
+    section.text-image-{{ section_id }} {
+      overflow: hidden;
+    }
+
+    section.text-image-{{ section_id }} .container {
+      max-height: unset !important;
+    }
+
+    section.text-image-{{ section_id }} .image-wrapper {
+      margin-bottom: unset !important;
+    }
+  }
 {% endif %}
 
-  section.text-image-{{ section_id }} .image-content-wrapper{
+  section.text-image-{{ section_id }} .image-content-wrapper {
     display: flex;
     justify-content: center;
     gap:20px;
     
   }
 
-  section.text-image-{{ section_id }} .add-number{
+  section.text-image-{{ section_id }} .add-number {
     font-size: 150px;
     font-family: 'PP Radio Grotesk';
     text-align: start;   
@@ -105,10 +119,6 @@
     margin-top: -40px;
     opacity: 0.5;
   }
-
-  
-
-
 
   {% if text_color %}
   section.text-image-{{ section_id }} {
@@ -183,28 +193,6 @@
     height: 100%;
   {% endif %}
   }
-
- @media screen and (max-width: 768px) {
-  {% if lim_height %}
-    section.text-image-section,
-    section.text-image-{{ section_id }} {
-      overflow: hidden;
-    }
-    section.text-image-{{ section_id }} .container {
-      max-height: unset !important;
-    }
-    section.text-image-{{ section_id }} .image-wrapper {
-      margin-bottom: unset !important;
-    }
-  {% endif %}
-
-  section.text-image-{{ section_id }} .decor-img {
-    top: unset;
-    top: {{ mobile_top }}%;
-    left: unset;
-    left: {{ mobile_left }}%;
-  }
- }
 
   @media (max-width: 768px) {
     section.text-image-{{ section_id }} .image-wrapper img {
