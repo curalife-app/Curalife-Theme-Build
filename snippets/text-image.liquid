@@ -98,9 +98,12 @@
   }
 {% endif %}
 
+{% if lim_height %}
  section.text-image-{{ section_id }} {
-  overflow: {% if lim_height %}visible{% endif %};
+    overflow: visible;
+    max-height: {{ height_num }};
  }
+{% endif %}
 section.text-image-{{ section_id }} .added_bg {
     background-color: {{ added_clr }};
     display: flex;
@@ -216,9 +219,13 @@ section.text-image-{{ section_id }} .added_bg {
 
     @media (max-width: 768px) {
 
-    section.text-image-{{ section_id }} {
-       overflow: {% if lim_height %}unset{% endif %};
-      }
+    {% if lim_height %}
+     section.text-image-{{ section_id }} {
+        overflow: unset;
+        max-height: unset;
+     }
+    {% endif %}
+
     
       section.text-image-{{ section_id }} .image-wrapper img {
         min-width: 100vw;
