@@ -6,25 +6,23 @@
 
   <div class="top-bg"></div>
 
-  <div class="no-padding">
+  <div class="no-padding container">
     <h2>Customer Reviews</h2>
 
     <div class="prev slider-nav swiper-button-prev"></div>
     <div class="reviews swiper">
       <div class="swiper-wrapper">
         {% for reviewsItem in reviewsItems %}
-          <div class="swiper-slide">
-            <div class="review">
-              <div class="review-top">
-                <p class="review-content"> {{ reviewsItem | split: ":" | first }}</p>
-              </div>
-
-              <div class="review-bottom">
-                <p class="review-author"> {{ reviewsItem | split: ":" | last }}</p>
-                <img src="{{ 'product-aio-review-stars-5.png' | asset_url }}" width="280" height="40" alt="" class="reviews-stars" loading="lazy">
-              </div>
-            </div>
+        <div class="review swiper-slide">
+          <div class="review-top">
+            <p class="review-content"> {{ reviewsItem | split: ":" | first }}</p>
           </div>
+
+          <div class="review-bottom">
+            <p class="review-author"> {{ reviewsItem | split: ":" | last }}</p>
+            <img src="{{ 'product-aio-review-stars-5.png' | asset_url }}" width="280" height="40" alt="" class="reviews-stars" loading="lazy">
+          </div>
+        </div>
     {% endfor %}
       </div>
     </div>
@@ -91,8 +89,8 @@
   }
 
   .reviews-section .reviews .review {
-    width: 300px;
-    height: 300px;
+    max-width: 250px;
+    height: 250px;
     background-color: #fff;
     text-align: center;
     padding: 20px;
@@ -132,10 +130,6 @@
     color: grey;
     transition: opacity .5s;
   }
-
-  .reviews-section .white-fade {
-    display: none;
-  }
 </style>
 
 <script>
@@ -147,22 +141,24 @@
 </script>
 
 <script>
-  reviewsSliderAllInOne = new Swiper('.reviews-section .swiper', {
-      slidesPerView: 1,
-      centeredSlides: true,
+  reviewsSliderAllInOne = new Swiper(' .reviews-section .swiper', {
+      slidesPerView: 'auto',
       spaceBetween: 30,
+      watchSlidesVisibility: false,
+      centeredSlides: true,
       loop: true,
+      slideToClickedSlide: true,
       navigation: {
           nextEl: '.reviews-section .swiper-button-next',
           prevEl: '.reviews-section .swiper-button-prev',
           disabledClass: 'disabled'
       },
       breakpoints: {
-          768: {
-              slidesPerView: 3,
+          760: {
+              slidesPerView: 1,
           },
           1200: {
-              slidesPerView: 5,
+              slidesPerView: 3,
           }
       }
   });

@@ -19,8 +19,7 @@
 |"It is so wonderful to find something that really works. I feel so much better!":Leanne Anderson
 |"I&apos;ve started on my second bottle and this is the best thing I&apos;ve ever taken! I would recommend to anyone.": Debra Doss
 |"Have been taking CuraLin over the last four months and am beyond pleased with the results.":Michael Edwards
-|"Amazing results in such a short time. Thank you!":Meryl Hill
-'
+|"Amazing results in such a short time. Thank you!":Meryl Hill'
 | split: '|' %}
 
 {% assign faqItems = "How much CuraLin do I need to take?:The recommended usage of CuraLin is to take 1-2 capsules 30 minutes after each meal. Maximum 6 capsules per day. CuraLin is easy to take.
@@ -35,17 +34,19 @@
 
 {% render 'script.round-converted-currency' %}
 
-
 <div class="product-template-all-in-one">
-  {% comment %} {% render 'sale-banner', isHidden: true, isFlash: true, desktopContent: "logo,ctaTitle", mobileContent: "logo,ctaTitle", bgColor: "#F59E80", logoFileName: "logo-black-friday.svg", ctaTitle: "flash", isLogoSmall: true %} {% endcomment %}
-  {% render 'product-cta-section', ctaTextType: "save", isCuralinContent: true, isReviews: true, title: "Select Your Deal:", badgesPosition: "bottom", badgesContent: "free-shipping,money-back,secure-checkout", ctaColor: "var(--orange)", bottomLineColor: "black", isSaveTitle: true, challenge_value: challenge_value, curaeats_value: curaeats_value %}
-  {% comment %} {% render 'bundle-gifts-section', challenge_value: challenge_value, curaeats_value: curaeats_value %} {% endcomment %}
+  {% comment %} <div class="welcome-message">
+    <p id="welcome" style="text-align: center;max-width: 1200px;margin: auto;"></p>
+  </div> {% endcomment %}
+
+  {% comment %} {% render 'sale-banner', isHidden: true, isFlash: true, desktopContent: "logo,ctaTitle", mobileContent: "logo,ctaTitle", bgColor: "#F59E80", logoFileName: "logo-black-friday.svg", ctaTitle: "flash" %} {% endcomment %}
+  {% render 'product-all-in-one-cta-section', ctaColor: "#FFB22D", isCuralinContent: true, isReviews: true, isBuyQuantity: true, title: "Select Your Deal:", badgesPosition: "bottom", isSaveTitle: true, badgesContent: "free-shipping,money-back,secure-checkout", bottomLineColor: "black", challenge_value: challenge_value, curaeats_value: curaeats_value %}
   {% render 'product-all-in-one-how-to-section' %}
   {% render 'product-all-in-one-reviews-section', reviewsItems: reviewsItems %}
-  {% render 'lps-ingredients-slider', bgColor: '#f0f0f0', maintitle: '<b>9 Powerful Ingredients </b>Combined Into One Capsule'%}
+  {% render 'lps-video-reviews', maintitle: 'Customers Reviews Of CuraLin' %}
+  {% render 'lps-ingredients-slider', maintitle: '<b>9 Powerful Ingredients </b>Combined Into One Capsule'%}
   {% render 'product-all-in-one-badges-section' %}
   {% render 'product-all-in-one-return-policy-section' %}
-  {% comment %} {% render 'product-all-in-one-free-shipping-section' %} {% endcomment %}
   {% render 'faq-section', faqItems: faqItems, isAllowOneOpen: true, titleVersion: "light" %}
   {% render 'contact-us-section', title: 'We’re here for you 24/7. <br>Get in touch any time.', icons-background-color: 'var(--light-green)', border: false %}
   {% render 'product-back-to-top-button' %}
@@ -84,3 +85,40 @@
     user_agent: navigator.userAgent
   });
 </script>
+
+{% comment %} <script>
+  let open_ai_response;
+
+  openai_test();
+
+  async function openai_test() {
+
+    var url = "https://api.openai.com/v1/engines/text-davinci-002/completions";
+
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", url);
+
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.setRequestHeader("Authorization", "Bearer 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");
+
+    xhr.onreadystatechange = function () {
+       if (xhr.readyState === 4) {
+          console.log(xhr.status);
+          console.log(xhr.responseText);
+          open_ai_response = JSON.parse(xhr.responseText);
+          $('#welcome').html('"'+open_ai_response["choices"][0]["text"]+'"');
+       }};
+
+    var data = `{
+      "prompt": "generate a really convertive review for curalife, a herbal supplement that helps people with balancing their blood sugar levels.",
+      "temperature": 0.7,
+      "max_tokens": 256,
+      "top_p": 1,
+      "frequency_penalty": 0.75,
+      "presence_penalty": 0
+    }`;
+
+    xhr.send(data);
+  }
+
+</script> {% endcomment %}

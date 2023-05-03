@@ -1,4 +1,4 @@
-<a id="back-to-top-btn">{% if isThirtyDay %}{{ ctaTitle }}{% else %}Try Curalin{% endif %}</a>
+<a id="back-to-top-btn">{% if isThirtyDay %}{{ ctaTitle }}{% else %}Try CuraLin{% endif %}</a>
 
 <style>
   #back-to-top-btn {
@@ -7,11 +7,18 @@
     color:{% if isThirtyDay %}#ffffff {% else %}#ffffff{% endif %};
   }
 
+  #back-to-top-btn:hover {
+    background: {% if isThirtyDay %}linear-gradient(#5d8448, var(--dark-green)){% elsif isFlash %}#FFB22D {% else %}#404733{% endif %};
+    border: {% if isThirtyDay %}#468734{% elsif isFlash %}#FFB22D {% else %}#404733{% endif %};
+  }
+
   #back-to-top-btn {
+    font-size: clamp(20px 2vw 30px);
+    padding: {% if isThirtyDay %}20px 100px {% else %} 0 20px {% endif %};
     font-weight: bold;
+    height: {% unless isThirtyDay %}50px {% endunless %};
     text-align: center;
-    cursor: pointer;
-    border-radius: 30px;
+    border-radius: {% unless isThirtyDay %} 30px {% endunless %};
     position: fixed;
     bottom: 30px;
     left: 30px;
@@ -21,7 +28,17 @@
     visibility: hidden;
     z-index: 99;
     font-size: 25px;
-    padding: 10px 40px;
+    padding:{% if isThirtyDay %}7px 40px {% else %} 4px 40px {% endif %};
+  }
+
+  #back-to-top-btn:hover {
+    cursor: pointer;
+    background: {% if isThirtyDay %}#FFB22D{% elsif isFlash %}#FFB22D{% else %} #404733 {% endif %};
+    border: {% if isThirtyDay %}#FFB22D{% elsif isFlash %}#FFB22D{% else %} #404733 {% endif %};
+  }
+
+  #back-to-top-btn:active {
+    background-color: {% if isThirtyDay %}#FFB22D{% elsif isFlash %}#FFB22D{% else %}#404733{% endif %};
   }
 
   #back-to-top-btn.show {

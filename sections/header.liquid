@@ -38,7 +38,7 @@
     max-width: {{ settings.logo_width }}px;
   }
 
-  @media screen and (min-width: 768px) {
+  @media screen and (min-width: 990px) {
     header-drawer {
       display: none;
     }
@@ -102,7 +102,7 @@
     }
   }
 
-  @media screen and (min-width: 768px) {
+  @media screen and (min-width: 990px) {
     .header {
       padding-top: {{ section.settings.padding_top }}px;
       padding-bottom: {{ section.settings.padding_bottom }}px;
@@ -149,6 +149,9 @@
               <div class="menu-drawer__navigation-container">
                 <nav class="menu-drawer__navigation">
                   <ul class="menu-drawer__menu has-submenu list-menu" role="list">
+                    <li>
+                      {% render 'dropdown-images' %}
+                    </li>
                     {%- for link in section.settings.menu.links -%}
                       <li>
                         {%- if link.links != blank -%}
@@ -395,7 +398,9 @@
     {%- endif -%}
 
     {%- if section.settings.logo_position != 'middle-center' -%}
-        <div class="header__heading">
+      {%- if request.page_type == 'index' -%}
+        <h1 class="header__heading">
+      {%- endif -%}
           <a href="{{ routes.root_url }}" class="header__heading-link link link--text focus-inset">
             {%- if settings.logo != blank -%}
               {%- assign logo_alt = settings.logo.alt | default: shop.name | escape -%}
@@ -411,7 +416,9 @@
               <span class="h2">{{ shop.name }}</span>
             {%- endif -%}
           </a>
-        </div>
+      {%- if request.page_type == 'index' -%}
+        </h1>
+      {%- endif -%}
     {%- endif -%}
 
     {%- if section.settings.menu != blank -%}
@@ -515,7 +522,9 @@
     {%- endif -%}
 
     {%- if section.settings.logo_position == 'middle-center' -%}
-        <div class="header__heading">
+      {%- if request.page_type == 'index' -%}
+        <h1 class="header__heading">
+      {%- endif -%}
           <a href="{{ routes.root_url }}" class="header__heading-link link link--text focus-inset">
             {%- if settings.logo != blank -%}
               {%- assign logo_alt = settings.logo.alt | default: shop.name | escape -%}
@@ -531,7 +540,9 @@
               <span class="h2">{{ shop.name }}</span>
             {%- endif -%}
           </a>
-        </div>
+      {%- if request.page_type == 'index' -%}
+        </h1>
+      {%- endif -%}
     {%- endif -%}
 
     {% if shop.name == 'CuraLife' %}
@@ -664,6 +675,11 @@
 {%- endif -%}
 
 <style>
+  .menu-drawer__menu li:first-child {
+    display: none;
+  }
+</style>
+<style>
   .header__menu-item span {
     display: inline-block;
     position: relative;
@@ -705,7 +721,7 @@
     font-size: 14px;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 990px) {
     .quiz-button {
       margin: auto;
     }
@@ -741,7 +757,7 @@
 
       this.setHeaderHeight();
 
-      window.matchMedia('(max-width: 768px)').addEventListener('change', this.setHeaderHeight.bind(this));
+      window.matchMedia('(max-width: 990px)').addEventListener('change', this.setHeaderHeight.bind(this));
 
       if (this.headerIsAlwaysSticky) {
         this.header.classList.add('shopify-section-header-sticky');
@@ -831,16 +847,14 @@
       this.disclosures.forEach(disclosure => disclosure.close());
     }
 
-    // closeSearchModal() {
-    //   this.searchModal = this.searchModal || this.header.querySelector('details-modal');
-    //   this.searchModal.close(false);
-    // }
+    closeSearchModal() {
+      this.searchModal = this.searchModal || this.header.querySelector('details-modal');
+      this.searchModal.close(false);
+    }
   }
 
   customElements.define('sticky-header', StickyHeader);
 {% endjavascript %}
-
-<script>$('.header__search').remove()</script>
 
 <script type="application/ld+json">
   {

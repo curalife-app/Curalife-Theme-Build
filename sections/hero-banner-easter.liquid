@@ -1,55 +1,75 @@
 <div class="hero-banner-easter">
-  <div class="hero-img desktop">
+  <div class="hero-img">
+    {% if shop.name == "CuraLife" %}
+    <a href="{{ section.settings.button_link }}">
+      <img src="{{ section.settings.bg_image | image_url }}" width="1113" height="639" alt="">
+    </a>
+    {% else %}
+    <a href="{{ section.settings.button_link2 }}">
+      <img src="{{ section.settings.bg_image | image_url }}" width="1113" height="639" alt="">
+    </a>
+  {% endif %}
+    </div>
+    <div class="hero-img-mb">
     {% if shop.name == "CuraLife" %}
       <a href="{{ section.settings.button_link }}">
-        <img src="{{ section.settings.bg_image | image_url }}" width="1113" height="639" alt="">
+        <img src="{{ section.settings.bg_image_mobile | image_url }}" width="343" height="568" alt="">
       </a>
-    {% else %}
+      {% else %}
       <a href="{{ section.settings.button_link2 }}">
-        {% if section.settings.bg_image_mobile_global %}
-          <img src="{{ section.settings.bg_image_global | image_url }}" width="1113" height="639" alt="">
-        {% else %}
-          <img src="{{ section.settings.bg_image | image_url }}" width="343" height="568" alt="" style="width:100%" class="hero-mobile-img">
-        {% endif %}
+        <img src="{{ section.settings.bg_image_mobile | image_url }}" width="343" height="568" alt="">
       </a>
     {% endif %}
-  </div>
-
-  <div class="hero-img-mb mobile">
-    {% if shop.name == "CuraLife" %}
-      <a href="{{ section.settings.button_link }}">
-        <img src="{{ section.settings.bg_image_mobile | image_url }}" width="343" height="568" alt="" style="width:100%" class="hero-mobile-img">
-      </a>
-    {% else %}
-      <a href="{{ section.settings.button_link2 }}">
-        {% if section.settings.bg_image_mobile_global %}
-          <img src="{{ section.settings.bg_image_mobile_global | image_url }}" width="343" height="568" alt="" style="width:100%" class="hero-mobile-img">
-        {% else %}
-          <img src="{{ section.settings.bg_image_mobile | image_url }}" width="343" height="568" alt="" style="width:100%" class="hero-mobile-img">
-        {% endif %}
-      </a>
-    {% endif %}
-  </div>
+    </div>
+ 
 </div>
 
 <style>
+
+  section.hero-banner-easter  {
+   padding: unset;
+  }
   .hero-banner-easter {
+    {% comment %} margin-top: {% if page.url contains 'glucose-support-' %}50px{% endif %}; {% endcomment %}
     background: {{ section.settings.bg_color }};
     overflow: hidden;
   }
 
+   .hero-img {
+    display: block;
+    margin-bottom: {% if page.url contains '/pages/curalin-advanced-glucose-support' %}-20px{% endif %};
+  }
+
+   .hero-img-mb {
+    display: none;
+  }
+
+ 
   @media (max-width: 768px) {
-    .hero-mobile-img {
-      width: 100%;
+    section.hero-banner-easter  {
+     padding: unset;
     }
+    .hero-banner-easter {
+      margin-top: {% unless page.url contains 'glucose-support-curalin-pack-v3' %}unset{% endunless %};
+    }
+   
+  .hero-img {
+      display: none;
+    }
+     .hero-img-mb {
+      display: block;
+    }
+    
   }
 </style>
+
+
 
 {% schema %}
 {
   "name": "Hero Banner Easter",
   "tag": "section",
-  "class": "hero-banner-easter no-padding",
+  "class": "hero-banner-easter",
   "disabled_on": {
     "groups": ["header", "footer"]
   },
@@ -68,16 +88,6 @@
       "type": "image_picker",
       "id": "bg_image_mobile",
       "label": "Background Image on Mobile"
-    },
-    {
-      "type": "image_picker",
-      "id": "bg_image_global",
-      "label": "Background Image on Global"
-    },
-    {
-      "type": "image_picker",
-      "id": "bg_image_mobile_global",
-      "label": "Background Image on Global Mobile"
     },
     {
       "type": "text",
