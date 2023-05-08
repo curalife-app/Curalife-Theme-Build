@@ -35,7 +35,7 @@
 
 <style>
   #hero-section {
-    padding-top: {% if isFlash %}100px{% else %} 50px{% endif %};
+    padding-top: {% if section.settings.is_flash %}100px{% else %} 50px{% endif %};
   }
 
   #hero-section:before {
@@ -97,10 +97,10 @@
   }
 
   #hero-section .brand-welcome-text * {
-    color: white;
+    color: {{ section.settings.wlcm_txt }};
     line-height: 1.2;
     font-size: clamp(6vw, 4vw, 80px);
-    background: var(--green);
+    background: {{ section.settings.wlcm_bg }};
     width: max-content;
   }
 
@@ -147,7 +147,7 @@
 
       #hero-section .brand-welcome-text * {
         font-size: 8vw;
-        color: var(--dark-green);
+        color: {{ section.settings.wlc_mbtxt }};
         background: unset;
       }
 
@@ -186,9 +186,9 @@
       }
 
       #hero-section {
-        min-height:{% if isFlash %} 150vw {% else %} 135vw{% endif %};
+        min-height:{% if section.settings.is_flash %} 150vw {% else %} 135vw{% endif %};
         overflow: visible;
-        padding-top: {% if isFlash %}100px {% else %}5vw{% endif %};
+        padding-top: {% if section.settings.is_flash %}100px {% else %}5vw{% endif %};
       }
     }
   }
@@ -278,33 +278,38 @@
       },
       {
         "type": "color",
-        "id": "wlcm_clr",
-        "label": "Welome Text Color",
+        "id": "wlcm_bg",
+        "label": "Welcome Background",
         "default": "#404733"
       },
       {
         "type": "color",
-        "id": "ingr_color",
-        "label": "Ingredients Background",
-        "default": "#FFF1E8"
+        "id": "wlcm_txt",
+        "label": "Welcome Text",
+        "default": "#fff"
       },
       {
         "type": "color",
-        "id": "spn_clr",
-        "label": "Bold Span Color",
-        "default": "#191A1E"
+        "id": "wlc_mbtxt",
+        "label": "Welcome Mobile Text",
+        "default": "#404733"
       },
       {
-        "type": "color",
-        "id": "itm_clr",
-        "label": "Item Decoration Color",
-        "default": "#9eb069"
+        "type": "checkbox",
+        "id": "is_flash",
+        "label": "Flash Header"       
       },
       {
         "type": "text",
         "id": "ttl_txt",
         "label": "Title",
         "default": "Natural & Effective Blood Sugar Support"
+      },
+      {
+        "type": "text",
+        "id": "sub_txt",
+        "label": "Welcome Subtitle",
+        "default": "So you can"
       }
    ],
    "blocks": [
