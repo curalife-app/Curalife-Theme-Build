@@ -18,7 +18,8 @@
   </div>
 </section>
 
-
+<link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css">
+<script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
 
 <style>
   {% if section.settings.is_remove_padding_top %}
@@ -34,8 +35,8 @@
   {% endif %}
 
   #featured-section {
-      border-bottom: 1px solid {{ section.settings.bg_color_bottom }};
-      background-color: {{ section.settings.bg_color }};
+    border-bottom: 1px solid {{ section.settings.bg_color_bottom }};
+    background-color: {{ section.settings.bg_color }};
   }
 
   #featured-section h4 {
@@ -75,7 +76,7 @@
 
   #featured-section .partners-wrapper .ticker-wrap:after {
     right: 0;
-    background: {{ section.settings.ticker_background_after }}
+    background: {{ section.settings.ticker_background_after }};
   }
 
   #featured-section .partners-wrapper .ticker-wrap .ticker-col {
@@ -106,7 +107,9 @@
   }
 </style>
 
- {% comment %} <script>
+
+{% comment %} 
+ <script>
   let brandsTicker = new Swiper('#featured-section .swiper', {
     spaceBetween: 30,
     speed: 6000,
@@ -116,23 +119,26 @@
     loop: true,
     slidesPerView:'auto',
     allowTouchMove: false,
-    disableOnInteraction: true
+    disableOnInteraction: false
     });
 </script>  {% endcomment %}
-
 <script>
-  let brandsTicker = new Swiper('#featured-section .swiper', {
-    spaceBetween: 30,
-    speed: 6000,
-    autoplay: {
-      delay: 0
-    },
-    loop: true, // Set loop to true for infinite slides
-    slidesPerView: 'auto',
-    allowTouchMove: false,
-    disableOnInteraction: false // Set disableOnInteraction to false to prevent stopping on interaction
+  document.addEventListener("DOMContentLoaded", function () {
+    var swiper = new Swiper("#ticker-wrap", {
+      spaceBetween: 30,
+      speed: 6000,
+      autoplay: {
+        delay: 0
+      },
+      loop: true,
+      slidesPerView: "auto",
+      allowTouchMove: false,
+      disableOnInteraction: false
+    });
   });
 </script>
+
+
 
 {% schema %}
 {
