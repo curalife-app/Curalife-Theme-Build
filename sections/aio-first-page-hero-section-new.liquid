@@ -1,10 +1,10 @@
 <section id="hero-section">
   <div class="container">
-    {% if isLogo %}
-      <img class="logo" src="{{ "logo-new.svg" | asset_url }}" width='264'  height="61" alt="logo">
+    {% if section.settings.logo != blank %}
+      <img class="logo" src="{{ section.settings.logo | img_url  }}" width='264'  height="61" alt="logo">
     {% endif %}
 
-    <h1>Natural & Effective Blood Sugar Support</h1>
+    <h1>{{ section.settings.ttl_txt }}</h1>
     <div class="brand-welcome-text">
       <h2 class="v3">So you can
         <span class="title-text">eat well</span>
@@ -46,7 +46,7 @@
     height: 120%;
     left: -20vw;
     z-index: -5;
-    background: #e8e8e8;
+    background: {{ section.settings.bg_color }};
   }
 
   #hero-section img.logo {
@@ -265,16 +265,22 @@
       ]
    },
    "settings":[
+       {
+           "type":"image_picker",
+           "id":"logo",
+           "label":"Logo"
+        },
       {
          "type":"color",
          "id":"bg_color",
-         "label":"Background Color"
+         "label":"Background Color",
+         "default": "#e8e8e8"
       },
       {
         "type": "color",
-        "id": "ttlimp_clr",
-        "label": "Title Impact Color",
-        "default": "#5E8F8F"
+        "id": "wlcm_clr",
+        "label": "Welome Text Color",
+        "default": "#404733"
       },
       {
         "type": "color",
@@ -295,9 +301,10 @@
         "default": "#9eb069"
       },
       {
-        "type": "checkbox",
-        "id": "italic",
-        "label": "Italic"
+        "type": "text",
+        "id": "ttl_txt",
+        "label": "Title",
+        "default": "Natural & Effective Blood Sugar Support"
       }
    ],
    "blocks": [
