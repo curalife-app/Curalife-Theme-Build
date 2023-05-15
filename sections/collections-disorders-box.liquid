@@ -1,34 +1,37 @@
 {% assign disorders_amount = 0 %}
 
 <section class="disorders-box-section">
+  
   <div class="container">
     <div class="tabbed-content tabs-side shadow-2xl">
       <nav class="tabs">
         <ul>
-          {% for block in section.blocks %}
-            <li><a href="#item-{{ forloop.index }}" {% if forloop.first %}class="active"{% endif %}>{{ block.settings.name }} <i>></i></a></li>
+          {% for disorder in collection.metafields.custom.disorders.value %}
+            <li><a href="#item-{{ forloop.index }}" {% if forloop.first %}class="active"{% endif %}>{{ disorder.name }} <i>></i></a></li>
           {% endfor %}
         </ul>
       </nav>
       <div class="content">
-        {% for block in section.blocks %}
+        {% for disorder in collection.metafields.custom.disorders.value %}
           {% assign disorders_amount = disorders_amount | plus: 1 %}
-          <div id="item-{{ forloop.index }}" class="item {% if forloop.first %}active always-active{% endif %}" data-title="{{ block.settings.name }}">
+          <div id="item-{{ forloop.index }}" class="item {% if forloop.first %}active always-active{% endif %}" data-title="{{ disorder.name }}">
             <div class="item-content flex">
               <div class="content-column disorder-info">
-                <img src="{{ block.settings.image | img_url: 'original' }}" alt="{{ block.settings.name }}">
-                <p>{{ block.settings.description }}</p>
+                <img src="{{ disorder.image.value.src | img_url: 'original' }}" alt="{{ disorder.name }}">
+                <p>{{ disorder.description  }}</p>
               </div>
+
               <div class="arrow">></div>
+
               <div class="content-column ingredient-info">
                 <p>How we tackle it</p>
-                {% if block.settings.ingredient %}
-                  <h6>{{ block.settings.ingredient.name }}</h6>
-                  <img src="{{ block.settings.ingredient.image | image_url }}" alt="{{ block.settings.ingredient.name }}">
-                  <p class="font-bold">{{ block.settings.ingredient.description }}</p>
+                {% if disorder.ingredient.value %}
+                  <h6>{{ disorder.ingredient.value.name }}</h6>
+                  <img src="{{ disorder.ingredient.value.image.value.src | image_url }}" alt="{{ disorder.ingredient.name }}">
+                  <p class="font-bold">{{ disorder.ingredient.value.description }}</p>
                 {% else %}
-                  <img src="{{ block.settings.solution_image | image_url }}" alt="{{ block.settings.name }}">
-                  <p class="font-bold">{{ block.settings.solution_description }}</p>
+                  <img src="{{ disorder.solution_image.value.src | image_url }}" alt="{{ disorder.name }}">
+                  <p class="font-bold">{{ disorder.solution_description }}</p>
                 {% endif %}
               </div>
             </div>
