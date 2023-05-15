@@ -162,7 +162,7 @@
                       </div>
                     </div>
                   {% endfor %}
-                {% endif %} {% endcomment %}
+                {% endif %}  {% endcomment %}
               </div>
             </div>
             <div id="product-thumbs-slider-nav-prev" class="swiper-button-prev"></div>
@@ -426,22 +426,33 @@
 {% else %}
     {% if isImageFromSection %}
      <img src="{{ imageSection | image_url }}" width="583" height="557" alt="image-section" class="product-image" loading="lazy">
-     {% if products.size > 0 %}
-       {% for product in products %}
-         <div class="swiper-slide">
-           <div class="thumbs-img">
-             <img src="{{ product.product_img | image_url }}" width="588" height="453" alt="Product Image" loading="lazy">
-           </div>
+     <div class="thumbs-slider">
+       <div id="product-thumbs-slider-sc" class="swiper">
+         <div class="swiper-wrapper">
+           {% if products.size > 0 %}
+             {% for product in products %}
+               <div class="swiper-slide">
+                 <div class="thumbs-img">
+                   <img src="{{ product.product_img | image_url }}" width="588" height="453" alt="Product Image" loading="lazy">
+                 </div>
+               </div>
+             {% endfor %}
+           {% endif %} 
          </div>
-       {% endfor %}
-     {% endif %}
+       </div>
+       <div id="product-thumbs-slider-nav-prev" class="swiper-button-prev"></div>
+       <div id="product-thumbs-slider-nav-next" class="swiper-button-next"></div>
+     </div>
    {% else %}
      <img src="{{ product.images[0].src | image_url }}" alt="{{ product.images[0].alt }}" class="product-image" loading="lazy">
  {% endif %}
-  {% assign variantQuantity = product.variants | size %}
+ 
+ {% unless products.size > 0 %}
+ {% assign variantQuantity = product.variants | size %}
   {% if variantQuantity > 1 %}
     <p class="multiplier"></p>
   {% endif %}
+ {% endunless %}
 
   {% comment %} If Curalin is in the product, render the sale badge {% endcomment %}
     {% if var.metafields.custom.badge_image %}
