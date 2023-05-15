@@ -1,4 +1,4 @@
-{% if product.images.size > 1 or products.size > 0 %}
+{% if product.images.size > 1 %}
   <div class="product-thumbnails">
     <div class="product-slider">
       <div class="sliders-group">
@@ -23,16 +23,6 @@
                     <iframe id="product-video-iframe" src="https://player.vimeo.com/video/365492409?playsinline=0" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen loading="lazy"></iframe>
                   </div>
                 </div>
-              {% endif %}
-
-              {% if products.size > 0 %}
-                {% for prod in products %}
-                  <div class="swiper-slide">
-                    <div class="thumbs-img">
-                      <img src="{{ prod.settings.product_img | image_url }}" width="200" height="200" alt="Product Image" loading="lazy">
-                    </div>
-                  </div>
-                {% endfor %}
               {% endif %}
 
               {% if product.variants.size > 1 %}
@@ -103,7 +93,49 @@
           <div id="product-main-slider-nav-next" class="swiper-button-next nav"></div>
         </div>
 
-        {% unless product.metafields.custom.is_hide_thumbs %}        
+        {% unless product.metafields.custom.is_hide_thumbs %}
+          {% comment %} <div class="thumbs-slider">
+            <div id="product-thumbs-slider-sc" class="swiper">
+              <div class="swiper-wrapper">
+                {% if isCuralinContent %}
+                  {% for i in (1..6) %}
+                    <div class="swiper-slide">
+                      <div class="thumbs-img">
+                        <img src="{{ "product-aio-product-thumbnail-" | append: i | append: ".png" | asset_url }}" width="588" height="453" alt="" loading="lazy">
+                      </div>
+                    </div>
+                  {% endfor %}
+
+                  <div class="swiper-slide">
+                    <div class="thumbs-img video-thumbnail">
+                      <img src="{{ "product-aio-product-video-thumbnail.png" | asset_url }}" width="720" height="680" alt="" loading="lazy">
+                    </div>
+                  </div>
+                {% endif %}
+
+                {% if product.variants.size > 1 %}
+                  {% for var in product.variants %}
+                    <div class="swiper-slide">
+                      <div class="thumbs-img">
+                        <img src="{{ var.featured_image | image_url }}" alt="{{ var.featured_image.alt | escape }}" loading="lazy">
+                      </div>
+                    </div>
+                  {% endfor %}
+                {% else %}
+                  {% for img in product.images %}
+                    <div class="swiper-slide">
+                      <div class="thumbs-img">
+                        <img src="{{ img.src | image_url }}" alt="{{ img.alt | escape }}" loading="lazy">
+                      </div>
+                    </div>
+                  {% endfor %}
+                {% endif %}
+              </div>
+            </div>
+
+            <div id="product-thumbs-slider-nav-prev" class="swiper-button-prev"></div>
+            <div id="product-thumbs-slider-nav-next" class="swiper-button-next"></div>
+          </div> {% endcomment %}
           <div class="thumbs-slider">
             <div id="product-thumbs-slider-sc" class="swiper">
               <div class="swiper-wrapper">
@@ -121,10 +153,16 @@
                     </div>
                   </div>
                 {% endif %}
-                {% if condition %}
-                  
-                {% endif %}
 
+                {% comment %} {% if products.size > 0 %}
+                  {% for product in products %}
+                    <div class="swiper-slide">
+                      <div class="thumbs-img">
+                        <img src="{{ product.product_img | image_url }}" width="588" height="453" alt="Product Image" loading="lazy">
+                      </div>
+                    </div>
+                  {% endfor %}
+                {% endif %}  {% endcomment %}
               </div>
             </div>
             <div id="product-thumbs-slider-nav-prev" class="swiper-button-prev"></div>
@@ -388,7 +426,23 @@
 {% else %}
     {% if isImageFromSection %}
      <img src="{{ imageSection | image_url }}" width="583" height="557" alt="image-section" class="product-image" loading="lazy">
-    
+     <div class="thumbs-slider">
+       <div id="product-thumbs-slider-sc" class="swiper">
+         <div class="swiper-wrapper">
+          {% if products.size > 0 %}
+             {% for prod in products %}
+               <div class="swiper-slide">
+                 <div class="thumbs-img">
+                   <img src="{{ prod.product_img | image_url }}" width="200" height="200" alt="Product Image" loading="lazy">
+                 </div>
+               </div>
+             {% endfor %}
+           {% endif %}
+         </div>
+       </div>
+       <div id="product-thumbs-slider-nav-prev" class="swiper-button-prev"></div>
+       <div id="product-thumbs-slider-nav-next" class="swiper-button-next"></div>
+     </div>
    {% else %}
      <img src="{{ product.images[0].src | image_url }}" alt="{{ product.images[0].alt }}" class="product-image" loading="lazy">
  {% endif %}
