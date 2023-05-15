@@ -32,6 +32,8 @@
                       <img class="main-slider-vector-bg" src="{{ 'product-aio-vector-product-slider.png' | asset_url }}" width="534" height="342" alt="">
                     {% endif %}
 
+
+
                     <div class="product-img">
                       <div class="img-wrap">
                         <img src="{{ var.featured_image | image_url }}" alt="{{ var.featured_image.alt | escape }}" loading="lazy">
@@ -92,7 +94,7 @@
         </div>
 
         {% unless product.metafields.custom.is_hide_thumbs %}
-          <div class="thumbs-slider">
+          {% comment %} <div class="thumbs-slider">
             <div id="product-thumbs-slider-sc" class="swiper">
               <div class="swiper-wrapper">
                 {% if isCuralinContent %}
@@ -133,7 +135,40 @@
 
             <div id="product-thumbs-slider-nav-prev" class="swiper-button-prev"></div>
             <div id="product-thumbs-slider-nav-next" class="swiper-button-next"></div>
+          </div> {% endcomment %}
+          <div class="thumbs-slider">
+            <div id="product-thumbs-slider-sc" class="swiper">
+              <div class="swiper-wrapper">
+                {% if isCuralinContent %}
+                  {% for i in (1..6) %}
+                    <div class="swiper-slide">
+                      <div class="thumbs-img">
+                        <img src="{{ "product-aio-product-thumbnail-" | append: i | append: ".png" | asset_url }}" width="588" height="453" alt="" loading="lazy">
+                      </div>
+                    </div>
+                  {% endfor %}
+                  <div class="swiper-slide">
+                    <div class="thumbs-img video-thumbnail">
+                      <img src="{{ "product-aio-product-video-thumbnail.png" | asset_url }}" width="720" height="680" alt="" loading="lazy">
+                    </div>
+                  </div>
+                {% endif %}
+
+                {% if products.size > 0 %}
+                  {% for product in products %}
+                    <div class="swiper-slide">
+                      <div class="thumbs-img">
+                        <img src="{{ product.product_img | image_url }}" width="588" height="453" alt="Product Image" loading="lazy">
+                      </div>
+                    </div>
+                  {% endfor %}
+                {% endif %}
+              </div>
+            </div>
+            <div id="product-thumbs-slider-nav-prev" class="swiper-button-prev"></div>
+            <div id="product-thumbs-slider-nav-next" class="swiper-button-next"></div>
           </div>
+
         {% endunless %}
       </div>
     </div>
