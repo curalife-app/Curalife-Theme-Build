@@ -17,6 +17,12 @@
 {% endif %}
 
 <style>
+  {% if section.settings.is_two_items_in_row %}
+  #items-collection-{{ section.id }} .item {
+      width: calc(100% /2);
+      max-width: unset;
+    }
+  {% endif %}
   .items {
     --swiper-theme-color: #000;
     --swiper-pagination-bottom: -9%;
@@ -32,12 +38,7 @@
   #items-collection-{{ section.id }} .item {
     max-width: calc(100% / {{ section.blocks.size }});
   }
-  {% if section.settings.is_two_rows %}
-  #items-collection-{{ section.id }} .item {
-      width: calc(100% /2);
-      max-width: unset;
-    }
-  {% endif %}
+ 
 
   @media screen and (max-width: 768px) {
     #items-collection-{{ section.id }} .item {
@@ -64,8 +65,8 @@
     },
     {
       "type": "checkbox",
-      "id": "is_two_rows",
-      "label": "Two Rows"
+      "id": "is_two_items_in_row",
+      "label": "Two Items In Row"
 
     },
     {
