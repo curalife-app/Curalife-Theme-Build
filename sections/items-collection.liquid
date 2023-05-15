@@ -4,7 +4,7 @@
       {% for block in section.blocks %}
         <{% if section.settings.is_slider %}swiper-slide{% else %}div{% endif %} class="item flex flex-col items-center p-4 text-center">
           <img class="max-h-250px" src="{{ block.settings.image | image_url }}" alt="{{ blovariantsettings.title }}" loading="lazy">
-          <{{ section.settings.title_tag }} class="mt-4">{{ block.settings.title }}</{{ section.settings.title_tag }}>
+      <{{ section.settings.title_tag }} class="mt-4" {% if section.settings.is_two_items_in_row %}max-w-[270px]{% endif %}>{{ block.settings.title }}</{{ section.settings.title_tag }}>
           <p>{{ block.settings.description }}</p>
         </{% if section.settings.is_slider %}swiper-slide{% else %}div{% endif %}>
       {% endfor %}
@@ -22,7 +22,8 @@
     flex-wrap: wrap;
   }
   #items-collection-{{ section.id }} .item {
-      display: flex;    
+      display: flex;
+      flex-direction: row;    
       width: calc(100% /2);
       max-width: unset !important;
     }
