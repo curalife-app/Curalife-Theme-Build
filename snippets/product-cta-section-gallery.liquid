@@ -283,7 +283,7 @@
 <script>
   {% unless isHideThumbs %}
    productThumbsAllInOne = new Swiper('#product-thumbs-slider-sc', {
-     slidesPerView: 'auto',
+     slidesPerView: {% if isThumbsVertical %}5{% else %}'auto'{% endif %},
      spaceBetween: 10,
      {% if isThumbsVertical %}direction: 'vertical',{% endif %}
      watchSlidesVisibility: true,
@@ -294,6 +294,7 @@
        prevEl: '#product-thumbs-slider-nav-prev',
        disabledClass: 'disabled'
      },
+     {% unless isThumbsVertical %}
      breakpoints: {
        760: {
          slidesPerView: 3,
@@ -303,6 +304,7 @@
          slidesPerView: 5
        }
      }
+     {% endunless %}
    });
   {% endunless %}
 
