@@ -1,4 +1,4 @@
-{% if product.images.size > 1 %}
+{% if products.size > 1 %}
   <div class="product-thumbnails">
     <div class="product-slider">
       <div class="sliders-group">
@@ -6,13 +6,13 @@
           <div id="product-main-slider-sc" class="swiper">
             <div class="swiper-wrapper">
               {% if isCuralinContent %}
-                {% for i in (1..5) %}
+                {% for prod in products %}
                   <div class="swiper-slide">
                     {% unless forloop.index == 1 %}<img class="main-slider-vector-bg" src="{{ 'product-aio-vector-product-slider.png' | asset_url }}" width="534" height="342" alt="">{% endunless %}
 
                     <div class="product-img">
                       <div class="img-wrap">
-                        <img src="{{ "product-aio-product-thumbnail-" | append: i | append: ".png" | asset_url }}" width="588" height="453" alt="" loading="lazy">
+                        <img src="{{ prod.settings.product_img | image_url }}" width="588" height="453" alt="" loading="lazy">
                       </div>
                     </div>
                   </div>
