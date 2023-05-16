@@ -1,4 +1,3 @@
-{% if product.images.size > 0 %}
   <div class="product-thumbnails">
     <div class="product-slider">
       <div class="sliders-group">
@@ -28,6 +27,13 @@
 
                       <div class="save-title"><p>SAVE {{ save_price | money_without_trailing_zeros }}</p></div>
                     {% endif %}
+
+                    {% unless product_images.size > 1 %}
+                    {% assign variantQuantity = product.variants | size %}
+                      {% if variantQuantity > 1 %}
+                        <p class="multiplier"></p>
+                      {% endif %}
+                    {% endunless %}
 
                     {% comment %} If Curalin is in the product, render the sale badge {% endcomment %}
                     {% if badgeImage %}
@@ -95,8 +101,6 @@
       </div>
     </div>
   </div>
-
- 
 
   <style>
     .cta-section .save-title {
@@ -275,11 +279,11 @@
       }
     }
   </style>
+
 <script>
   {% unless isHideThumbs %}
     productThumbsAllInOne = new Swiper('#product-thumbs-slider-sc', {
       slidesPerView: 'auto',
-     
       watchSlidesVisibility: true,
       grabCursor: true,
       loop: false,
@@ -302,13 +306,11 @@
 
   productSliderAllInOne = new Swiper('#product-main-slider-sc', {
     slidesPerView: 1,
-   
     centeredSlides: true,
     watchSlidesVisibility: true,
     loop: false,
     grabCursor: true,
     slideToClickedSlide: true,
-   
     breakpoints: {
       0: {
         pagination: {
@@ -329,8 +331,6 @@
     }
   });
 
-
-
   $('.thumbs-img').click(function() {
     woopra.track('Product Image Click', {});
   });
@@ -340,43 +340,3 @@
     woopra.track('Arrow Click', { section: "Product" });
   });
 </script>
-{% else %}
-   
-  <img src="{{ product.images[0].src | image_url }}" alt="{{ product.images[0].alt }}" class="product-image" loading="lazy">
- 
- 
- {% unless product_images.size > 1 %}
-  {% assign variantQuantity = product.variants | size %}
-    {% if variantQuantity > 1 %}
-      <p class="multiplier"></p>
-    {% endif %}
-  {% endunless %}
-
-  {% comment %} If Curalin is in the product, render the sale badge {% endcomment %}
-  {% if badgeImage %}
-    <img src="{{ badgeImage | image_url }}" width="200" height="200" alt="Curalin" class="sale-badge" loading="lazy">
-
-    <style>
-      .cta-section .product-image {
-        max-height: 500px;
-      }
-
-      .sale-badge {
-        position: absolute;
-        top: 100px;
-        right: 130px;
-        width: 100px;
-        z-index: 1;
-      }
-
-      @media screen and (max-width: 768px) {
-        .sale-badge {
-          top: 10vw;
-          right: 0;
-          width: 25vw;
-        }
-      }
-    </style>
-  {% endif %}
-{% endif %}
-
