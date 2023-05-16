@@ -282,58 +282,59 @@
 
 <script>
   {% unless isHideThumbs %}
-    productThumbsAllInOne = new Swiper('#product-thumbs-slider-sc', {
-      slidesPerView: 'auto',
-      watchSlidesVisibility: true,
-      grabCursor: true,
-      loop: false,
-      navigation: {
-        nextEl: '#product-thumbs-slider-nav-next',
-        prevEl: '#product-thumbs-slider-nav-prev',
-        disabledClass: 'disabled'
-      },
-      breakpoints: {
-        760: {
-          slidesPerView: 3,
-          freemode: true
-        },
-        1200: {
-          slidesPerView: 5
-        }
-      }
-    });
+   productThumbsAllInOne = new Swiper('#product-thumbs-slider-sc', {
+     slidesPerView: 'auto',
+     spaceBetween: 10,
+     watchSlidesVisibility: true,
+     grabCursor: true,
+     loop: false,
+     navigation: {
+       nextEl: '#product-thumbs-slider-nav-next',
+       prevEl: '#product-thumbs-slider-nav-prev',
+       disabledClass: 'disabled'
+     },
+     breakpoints: {
+       760: {
+         slidesPerView: 3,
+         freemode: true
+       },
+       1200: {
+         slidesPerView: 5
+       }
+     }
+   });
   {% endunless %}
 
-  productSliderAllInOne = new Swiper('#product-main-slider-sc', {
-    slidesPerView: 1,
-    spaceBetween: 15,
-    centeredSlides: true,
-    watchSlidesVisibility: true,
-    loop: false,
-    grabCursor: true,
-    slideToClickedSlide: true,
-    {% unless product.metafields.custom.is_hide_thumbs %}
-      thumbs: {swiper: productThumbsAllInOne},
-    {% endunless %}
-    breakpoints: {
-      0: {
-        pagination: {
-          el: '.swiper-pagination',
-          clickable: 'true',
-          type: 'bullets',
-        },
-        navigation: {
-          nextEl: '#product-main-slider-nav-next',
-          prevEl: '#product-main-slider-nav-prev',
-          disabledClass: 'disabled'
-        }
-      },
-      760: {
-        pagination: {},
-        navigation: {}
-      }
-    }
-  });
+ productSliderAllInOne = new Swiper('#product-main-slider-sc', {
+   slidesPerView: 1,
+   spaceBetween: 15,
+   centeredSlides: true,
+   watchSlidesVisibility: true,
+   loop: false,
+   grabCursor: true,
+   slideToClickedSlide: true,
+   {% unless product.metafields.custom.is_hide_thumbs %}
+     thumbs: {swiper: productThumbsAllInOne},
+   {% endunless %}
+   breakpoints: {
+     0: {
+       pagination: {
+         el: '.swiper-pagination',
+         clickable: 'true',
+         type: 'bullets',
+       },
+       navigation: {
+         nextEl: '#product-main-slider-nav-next',
+         prevEl: '#product-main-slider-nav-prev',
+         disabledClass: 'disabled'
+       }
+     },
+     760: {
+       pagination: {},
+       navigation: {}
+     }
+   }
+ });
 
   $('.thumbs-img').click(function() {
     woopra.track('Product Image Click', {});
