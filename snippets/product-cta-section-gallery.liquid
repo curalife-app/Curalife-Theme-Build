@@ -5,16 +5,14 @@
         <div class="main-slider">
           <div id="product-main-slider-sc" class="swiper">
             <div class="swiper-wrapper">
-              {% if isCuralinContent %}            
               {% if products.size > 0 %}
-                  {% for prod in products %}
-                    <div class="swiper-slide">
-                      <div class="thumbs-img">
-                        <img src="{{ prod.settings.product_img | image_url }}" width="291" height="278" alt="Product Image" loading="lazy">
-                      </div>
+                {% for prod in products %}
+                  <div class="swiper-slide">
+                    <div class="thumbs-img">
+                      <img src="{{ prod.settings.product_img | image_url }}" width="291" height="278" alt="Product Image" loading="lazy">
                     </div>
-                  {% endfor %}
-                {% endif %}
+                  </div>
+                {% endfor %}
               {% endif %}
 
               {% if product.variants.size > 0 %}
@@ -409,11 +407,11 @@
     }
   });
 
-  {% if isCuralinContent %}
+ 
     productSliderAllInOne.on('slideChange', function () {
       $('iframe#product-video-iframe').attr( 'src', function ( i, val ) { return val; });
     });
-  {% endif %}
+
 
   $('.thumbs-img').click(function() {
     woopra.track('Product Image Click', {});
