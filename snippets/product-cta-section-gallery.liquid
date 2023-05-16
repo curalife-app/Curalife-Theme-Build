@@ -1,4 +1,4 @@
-{% if products.size > 1 %}
+{% if product.images.size > 1 %}
   <div class="product-thumbnails">
     <div class="product-slider">
       <div class="sliders-group">
@@ -6,17 +6,17 @@
           <div id="product-main-slider-sc" class="swiper">
             <div class="swiper-wrapper">
               {% if isCuralinContent %}
-              {% for prod in products %}
+                {% for i in (1..5) %}
                   <div class="swiper-slide">
+                    {% unless forloop.index == 1 %}<img class="main-slider-vector-bg" src="{{ 'product-aio-vector-product-slider.png' | asset_url }}" width="534" height="342" alt="">{% endunless %}
 
                     <div class="product-img">
                       <div class="img-wrap">
-                        <img src="{{ prod.settings.product_img  | img_url }}" width="291" height="278" alt="" loading="lazy">
+                        <img src="{{ "product-aio-product-thumbnail-" | append: i | append: ".png" | asset_url }}" width="588" height="453" alt="" loading="lazy">
                       </div>
                     </div>
                   </div>
                 {% endfor %}
-                {% endif %}
 
                 <div class="swiper-slide">
                   <div class="product-video">
@@ -28,9 +28,15 @@
               {% if product.variants.size > 1 %}
                 {% for var in product.variants %}
                   <div class="swiper-slide">
+                    {% if shop.name == "CuraLife Global" or request.path contains 'curalin-pack-t' %}
+                      <img class="main-slider-vector-bg" src="{{ 'product-aio-vector-product-slider.png' | asset_url }}" width="534" height="342" alt="">
+                    {% endif %}
+
+
+
                     <div class="product-img">
                       <div class="img-wrap">
-                        <img src="{{ imageSection | image_url }}" width="583" height="557" alt="Product Image" loading="lazy">
+                        <img src="{{ var.featured_image | image_url }}" alt="{{ var.featured_image.alt | escape }}" loading="lazy">
                       </div>
                     </div>
                     {% if isSaveTitle %}
@@ -64,11 +70,15 @@
                   </div>
                 {% endfor %}
               {% else %}
-                {% for prod in products %}
+                {% for img in product.images %}
                   <div class="swiper-slide">
+                    {% if shop.name == "CuraLife Global" or request.path contains 'curalin-pack-t' %}
+                      <img class="main-slider-vector-bg" src="{{ 'product-aio-vector-product-slider.png' | asset_url }}" width="534" height="342" alt="">
+                    {% endif %}
+
                     <div class="product-img">
                       <div class="img-wrap">
-                        <img src="{{ prod.settings.product_img | image_url }}" width="583" height="557" alt="Product Image" loading="lazy">
+                        <img src="{{ img.src | image_url }}" alt="{{ img.alt | escape }}" loading="lazy">
                       </div>
                     </div>
                   </div>
@@ -290,7 +300,7 @@
       }
     }
   </style>
-
+{% else %}
     {% if isImageFromSection %}
     <div class="wrapper-img">
       <div class="thumbs-slider">
@@ -362,7 +372,7 @@
 
   {% comment %} If Curalin is in the product, render the sale badge {% endcomment %}
     {% if var.metafields.custom.badge_image %}
-    <img src="{{ product.metafields.custom.badge_image | image_url: 'master' }}" width="200" height="200" alt="Curalin" class="sale-badge" loading="lazy">
+    <img src="{{ product.metafields.custom.badge_image | image_url }}" width="200" height="200" alt="Curalin" class="sale-badge" loading="lazy">
 
     <style>
       .cta-section .product-image {
@@ -386,7 +396,7 @@
       }
     </style>
   {% endif %}
-
+{% endif %}
 
 <script>
   {% unless product.metafields.custom.is_hide_thumbs %}
