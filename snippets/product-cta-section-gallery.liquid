@@ -145,12 +145,10 @@
                        <div class="save-title"><p>SAVE {{ save_price | money_without_trailing_zeros }}</p></div>
                      {% endif %}
 
-                     {% unless product_images.size > 1 %}
-                     {% assign variantQuantity = product.variants | size %}
-                       {% if variantQuantity > 1 %}
-                         <p class="multiplier"></p>
-                       {% endif %}
-                     {% endunless %}
+                   {% assign first_variant = product.variants | first %}
+                   {% if product.variants.size > 0 and first_variant.image != blank %}
+                       <p class="multiplier"></p>
+                   {% endif %}
                    </div>
                  {% endfor %}
                {% else %}
