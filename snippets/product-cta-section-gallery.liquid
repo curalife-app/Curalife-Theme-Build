@@ -1,3 +1,12 @@
+{% assign variantQuantity = product.variants | size %}
+{% assign firstVariant = product.variants | first %}
+
+{% if variantQuantity > 1 %}
+  {% unless firstVariant.image.src %}
+    {% assign isShowMultiplier = true %}
+  {% endunless %}
+{% endif %}
+
 {% if isThumbsVertical %}
 <div class="product-thumbnails">
     <div class="product-slider">
@@ -12,6 +21,10 @@
                     <div class="thumbs-img">
                       <img src="{{ img.settings.product_img | image_url }}" width="291" height="278" alt="Product Image" loading="lazy">
                     </div>
+
+                    {% if badgeImage %}
+                      <img src="{{ badgeImage | image_url }}" width="61" height="61" alt="Curalin" class="sale-badge" loading="lazy">
+                    {% endif %}
                   </div>
                 {% endfor %}
               {% endif %}
@@ -23,6 +36,16 @@
         <div class="main-slider">
           <div id="product-main-slider-sc" class="swiper">
             <div class="swiper-wrapper">
+              {% for img in product.images %}
+                <div class="swiper-slide">
+                  <div class="product-img">
+                    <div class="img-wrap">
+                      <img src="{{ img.src | image_url }}" alt="{{ img.alt | escape }}" width="" height="" loading="lazy">
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+
               {% if product_images.size > 0 %}
                 {% for img in product_images %}
                   <div class="swiper-slide">
@@ -33,6 +56,7 @@
                 {% endfor %}
               {% endif %}
 
+              {% comment %} Render Vaiants {% endcomment %}
               {% assign first_variant = product.variants | first %}
               {% if product.variants.size > 1 and first_variant.image != blank  %}
                 {% for var in product.variants %}
@@ -50,53 +74,15 @@
                     {% endif %}
                   </div>
                 {% endfor %}
-              {% else %}
-                {% for img in product.images %}
-                  <div class="swiper-slide">
-                    <div class="product-img">
-                      <div class="img-wrap">
-                        <img src="{{ img.src | image_url }}" alt="{{ img.alt | escape }}" width="" height="" loading="lazy">
-                      </div>
-                    </div>
-                  </div>
-                {% endfor %}
               {% endif %}
             </div>
 
-            {% comment %} If Curalin is in the product, render the sale badge {% endcomment %}
-              {% if badgeImage %}
+            {% if badgeImage %}
               <img src="{{ badgeImage | image_url }}" alt="Curalin" class="sale-badge" loading="lazy">
-
-              <style>
-                .sale-badge {
-                   position: absolute;
-                   top: 100px;
-                   right: 130px;
-                   width: 100px;
-                   z-index: 10;
-                }
-
-                @media screen and (max-width: 768px) {
-                  .sale-badge {
-                    top: 10vw;
-                    right: 0;
-                    width: 25vw;
-                  }
-                }
-              </style>
             {% endif %}
 
-            {% assign variantQuantity = product.variants | size %}
-            {% assign firstVariant = product.variants | first %}
-            <script>
-              console.log("img {{ firstVariant.image.src }}")
-              console.log("quantity: {{ variantQuantity }}")
-            </script>
-
-            {% if variantQuantity > 1 %}
-              {% unless firstVariant.image.src %}
+            {% if isShowMultiplier %}
                 <p class="multiplier"></p>
-              {% endunless %}
             {% endif %}
 
             <div class="swiper-pagination"></div>
@@ -151,26 +137,8 @@
                         <div class="save-title"><p>SAVE {{ save_price | money_without_trailing_zeros }}</p></div>
                       {% endif %}
 
-                      {% comment %} If Curalin is in the product, render the sale badge {% endcomment %}
                       {% if badgeImage %}
                         <img src="{{ badgeImage | image_url }}" width="61" height="61" alt="Curalin" class="sale-badge" loading="lazy">
-                        <style>
-                          .sale-badge {
-                            position: absolute;
-                            top: 100px;
-                            right: 130px;
-                            width: 100px;
-                            z-index: 1;
-                          }
-
-                          @media screen and (max-width: 768px) {
-                            .sale-badge {
-                              top: 10vw;
-                              right: 0;
-                              width: 25vw;
-                            }
-                          }
-                        </style>
                       {% endif %}
                     </div>
                   {% endfor %}
@@ -187,18 +155,9 @@
                 {% endif %}
               </div>
 
-              {% assign variantQuantity = product.variants | size %}
-            {% assign firstVariant = product.variants | first %}
-            <script>
-              console.log("img {{ firstVariant.image.src }}")
-              console.log("quantity: {{ variantQuantity }}")
-            </script>
-
-            {% if variantQuantity > 1 %}
-              {% unless firstVariant.image.src %}
+              {% if isShowMultiplier %}
                 <p class="multiplier"></p>
-              {% endunless %}
-            {% endif %}
+              {% endif %}
 
               <div class="swiper-pagination"></div>
             </div>
@@ -230,8 +189,25 @@
     </div>
 {% endif %}
 
-
   <style>
+    {% if badgeImage %}
+      .sale-badge {
+        position: absolute;
+        top: 100px;
+        right: 130px;
+        width: 100px;
+        z-index: 1;
+      }
+
+      @media screen and (max-width: 768px) {
+        .sale-badge {
+          top: 10vw;
+          right: 0;
+          width: 25vw;
+        }
+      }
+    {% endif %}
+
     .cta-section .save-title {
       position: absolute;
       z-index: 2;
@@ -289,7 +265,7 @@
     }
 
     .product-thumbnails .product-slider .main-slider .nav {
-       display: none;
+      display: none;
     }
 
     .product-thumbnails .product-slider .main-slider .nav::after {
