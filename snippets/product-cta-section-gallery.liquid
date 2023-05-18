@@ -2,7 +2,7 @@
 <div class="product-thumbnails">
     <div class="product-slider">
       <div class="sliders-group">
-       <div class="noa-wrap  relative">
+       <div class="noa-wrap relative">
         <div class="thumbs-slider absolute top-0 left-0 max-h-full">
           <div id="product-thumbs-slider-sc" class="swiper">
             <div class="swiper-wrapper">
@@ -34,7 +34,7 @@
               {% endif %}
 
               {% assign first_variant = product.variants | first %}
-              {% if product.variants.size > 0 and first_variant.image != blank  %}
+              {% if product.variants.size > 1 and first_variant.image != blank  %}
                 {% for var in product.variants %}
                   <div class="swiper-slide">
                     <div class="product-img">
@@ -49,12 +49,11 @@
                       <div class="save-title"><p>SAVE {{ save_price | money_without_trailing_zeros }}</p></div>
                     {% endif %}
 
-                    {% unless product_images.size > 1 %}
                     {% assign variantQuantity = product.variants | size %}
-                      {% if variantQuantity > 1 %}
-                        <p class="multiplier"></p>
-                      {% endif %}
-                    {% endunless %}
+                    {% assign firstVariant == product.variants | first %}
+                    {% if variantQuantity > 1 and firstVariant.image = "blank" %}
+                      <p class="multiplier"></p>
+                    {% endif %}
                   </div>
                 {% endfor %}
               {% else %}
@@ -145,12 +144,11 @@
                         <div class="save-title"><p>SAVE {{ save_price | money_without_trailing_zeros }}</p></div>
                       {% endif %}
 
-                      {% unless product_images.size > 1 %}
                       {% assign variantQuantity = product.variants | size %}
-                        {% if variantQuantity > 1 %}
-                          <p class="multiplier"></p>
-                        {% endif %}
-                      {% endunless %}
+                      {% assign firstVariant == product.variants | first %}
+                      {% if variantQuantity > 1 and firstVariant.image = "blank" %}
+                        <p class="multiplier"></p>
+                      {% endif %}
 
                       {% comment %} If Curalin is in the product, render the sale badge {% endcomment %}
                       {% if badgeImage %}
