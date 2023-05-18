@@ -88,13 +88,15 @@
 
             {% assign variantQuantity = product.variants | size %}
             {% assign firstVariant = product.variants | first %}
-            <script> console.log("img {{ firstVariant.image.src }}")
-            console.log("quantity: {{ variantQuantity }}")
-
+            <script>
+              console.log("img {{ firstVariant.image.src }}")
+              console.log("quantity: {{ variantQuantity }}")
             </script>
 
-            {% if variantQuantity > 1 and firstVariant.image.src == "blank" %}
-              <p class="multiplier"></p>
+            {% if variantQuantity > 1 %}
+              {% unless firstVariant.image.src %}
+                <p class="multiplier"></p>
+              {% endunless %}
             {% endif %}
 
             <div class="swiper-pagination"></div>
@@ -186,10 +188,17 @@
               </div>
 
               {% assign variantQuantity = product.variants | size %}
-              {% assign firstVariant = product.variants | first %}
-              {% if variantQuantity > 1 and firstVariant.image.src == "blank" %}
+            {% assign firstVariant = product.variants | first %}
+            <script>
+              console.log("img {{ firstVariant.image.src }}")
+              console.log("quantity: {{ variantQuantity }}")
+            </script>
+
+            {% if variantQuantity > 1 %}
+              {% unless firstVariant.image.src %}
                 <p class="multiplier"></p>
-              {% endif %}
+              {% endunless %}
+            {% endif %}
 
               <div class="swiper-pagination"></div>
             </div>
