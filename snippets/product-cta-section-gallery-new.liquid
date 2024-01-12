@@ -10,6 +10,8 @@
   {% endif %}
 {% endif %}
 
+{%- assign first_3d_model = product.media | where: 'media_type', 'model' | first -%}
+
 <div id="product-thumbnails-{{ section_id }}" class="product-thumbnails">
   <div class="product-slider">
     <div class="sliders-group">
@@ -37,6 +39,12 @@
                     </div>
                   {% endif %}
                 {% endfor %}
+
+                {%- if first_3d_model -%}
+                  <div class="swiper-slide cursor-pointer !h-auto">
+                    <img src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/single_supp.png?v=1704621391" width="291" height="278" alt="Product Image" loading="lazy">
+                  </div>
+                {%- endif -%}
 
                 {% comment %} Render Vaiants on Thumbs Slider {% endcomment %}
                 {% comment %} {% unless isMultiplierVariants %}
@@ -85,7 +93,6 @@
                 {% endif %}
               {% endfor %}
 
-              {%- assign first_3d_model = product.media | where: 'media_type', 'model' | first -%}
               {%- if first_3d_model -%}
                 <div class="swiper-slide">
                   <model-viewer class="w-full h-[500px]" alt="Curalin" src="{{ first_3d_model.sources.first.url }}" shadow-intensity="1" camera-controls></model-viewer>
