@@ -102,27 +102,14 @@
                   media="print"
                   onload="this.media='all'"
                 >
-              {%- endif -%}
 
-              {% render 'product-media', media: first_3d_model %}
+                {% render 'product-media', media: first_3d_model %}
 
-              {%- if first_3d_model -%}
-                <button
-                  class="button button--full-width product__xr-button"
-                  type="button"
-                  aria-label="{{ 'products.product.xr_button_label' | t }}"
-                  data-shopify-xr
-                  data-shopify-model3d-id="{{ first_3d_model.id }}"
-                  data-shopify-title="{{ product.title | escape }}"
-                  data-shopify-xr-hidden
-                >
+                <button class="button button--full-width product__xr-button" type="button" aria-label="{{ 'products.product.xr_button_label' | t }}" data-shopify-xr data-shopify-model3d-id="{{ first_3d_model.id }}" data-shopify-title="{{ product.title | escape }}" data-shopify-xr-hidden>
                   {% render 'icon-3d-model' %}
                   {{ 'products.product.xr_button' | t }}
                 </button>
-              {%- endif -%}
 
-
-              {%- if first_3d_model -%}
                 <script type="application/json" id="ProductJSON-{{ product.id }}">
                   {{ product.media | where: 'media_type', 'model' | json }}
                 </script>
