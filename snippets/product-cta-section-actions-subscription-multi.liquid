@@ -173,12 +173,14 @@
       parentBox.find(isSubscriptionSelected ? '.subscription' : '.buy-once').addClass('selected');
       togglePriceDisplay(parentBox, isSubscriptionSelected);
 
-      var optionSubtitleToHide = isSubscriptionSelected ? '.option-subtitle.buy-once' : '.option-subtitle.subscription';
-      var optionSubtitleToShow = isSubscriptionSelected ? '.option-subtitle.subscription' : '.option-subtitle.buy-once';
+      {% unless pricePer == 'month' %}
+        var optionSubtitleToHide = isSubscriptionSelected ? '.option-subtitle.buy-once' : '.option-subtitle.subscription';
+        var optionSubtitleToShow = isSubscriptionSelected ? '.option-subtitle.subscription' : '.option-subtitle.buy-once';
 
-      parentBox.find(optionSubtitleToHide).fadeOut('fast', function() {
-        parentBox.find(optionSubtitleToShow).fadeIn('fast');
-      });
+        parentBox.find(optionSubtitleToHide).fadeOut('fast', function() {
+          parentBox.find(optionSubtitleToShow).fadeIn('fast');
+        });
+      {% endunless %}
 
       // Toggle subscription info
       if (isSubscriptionSelected) {
