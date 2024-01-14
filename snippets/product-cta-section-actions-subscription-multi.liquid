@@ -172,22 +172,20 @@
       parentBox.find(isSubscriptionSelected ? '.subscription' : '.buy-once').addClass('selected');
       togglePriceDisplay(parentBox, isSubscriptionSelected);
 
-      {% unless pricePer == 'month' %}
-        var optionSubtitleToHide = isSubscriptionSelected ? '.option-subtitle.buy-once' : '.option-subtitle.subscription';
-        var optionSubtitleToShow = isSubscriptionSelected ? '.option-subtitle.subscription' : '.option-subtitle.buy-once';
+      var optionSubtitleToHide = isSubscriptionSelected ? '.option-subtitle.buy-once' : '.option-subtitle.subscription';
+      var optionSubtitleToShow = isSubscriptionSelected ? '.option-subtitle.subscription' : '.option-subtitle.buy-once';
 
-        parentBox.find(optionSubtitleToHide).fadeOut('fast', function() {
-          parentBox.find(optionSubtitleToShow).fadeIn('fast');
-        });
-      {% endunless %}
+      parentBox.find(optionSubtitleToHide).fadeOut('fast', function() {
+        parentBox.find(optionSubtitleToShow).fadeIn('fast');
+      });
 
       // Toggle subscription info
       if (isSubscriptionSelected) {
         parentBox.find('.subscription-info').slideDown('fast');
-        parentBox.find('.per-month').show(); // Show the "per month" title when subscription is selected
+        {% unless pricePer == 'month' %}parentBox.find('.per-month').show();{% endunless %} // Show the "per month" title when subscription is selected
       } else {
         parentBox.find('.subscription-info').slideUp('fast');
-        parentBox.find('.per-month').hide(); // Hide the "per month" title when subscription is not selected
+        {% unless pricePer == 'month' %}parentBox.find('.per-month').hide();{% endunless %} // Hide the "per month" title when subscription is not selected
       }
 
       adjustMaxHeight(parentBox);
