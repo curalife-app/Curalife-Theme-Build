@@ -37,30 +37,27 @@
 {% comment %} for sliding animation {% endcomment %}
   <style>
   .disorder-info, .ingredient-info {
-    transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
     transform: translateX(-100%);
     opacity: 0;
+    visibility: hidden;
+    transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
   }
 
   .item.active .disorder-info {
     opacity: 1;
     transform: translateX(0);
+    visibility: visible;
   }
 
   .item.active .disorder-info + .ingredient-info {
-    display: block;
-    animation: slideIn 0.5s ease forwards 0.5s;
+    /* Delay the animation start for ingredient-info */
+    transition-delay: 0.5s;
   }
 
-  @keyframes slideIn {
-    from {
-      transform: translateX(-100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
+  .item.active .ingredient-info {
+    opacity: 1;
+    transform: translateX(0);
+    visibility: visible;
   }
 </style>
 
