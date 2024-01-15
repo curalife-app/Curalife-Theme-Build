@@ -34,6 +34,25 @@
   </div>
 </section>
 
+{% comment %} for sliding animation {% endcomment %}
+<style>
+  .disorder-info, .ingredient-info {
+  transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+  opacity: 0;
+  transform: translateX(-100%);
+}
+
+.item.active .disorder-info {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.item.active .disorder-info + .ingredient-info {
+  transition-delay: 0.3s; /* Delays the start of the ingredient-info animation */
+  opacity: 1;
+  transform: translateX(0);
+}
+</style>
 
 <style>
   .disorders-box-section {
@@ -285,6 +304,9 @@
       $('html, body').animate({
           scrollTop: $this.offset().top
       }, 200);
+      setTimeout(function() {
+        $('.item.active .disorder-info').next('.ingredient-info').addClass('slide-in');
+      }, 300);
     });
 
     function tabControl() {
