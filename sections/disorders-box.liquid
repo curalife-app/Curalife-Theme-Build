@@ -257,46 +257,41 @@
 </style>
 
 <script>
-  // Function to handle tab clicks in tabbed content
-  function handleTabClick(event) {
-    event.preventDefault();
-    var target = $(this).attr('href'),
-        tabs = $(this).closest('.tabs'),
-        buttons = tabs.find('a'),
-        item = tabs.closest('.disorders-box-section .tabbed-content').find('.item');
-    buttons.removeClass('active');
-    item.removeClass('active');
-    $(this).addClass('active');
-    $(target).addClass('active');
-  }
-
-  // Function to handle item clicks in tabbed content
-  function handleItemClick() {
-    var container = $(this).closest('.tabbed-content'),
-        currId = $(this).attr('id'),
-        items = container.find('.item');
-    container.find('.tabs a').removeClass('active');
-    items.removeClass('active');
-    $(this).addClass('active');
-    container.find('.tabs a[href$="#' + currId + '"]').addClass('active');
-    $('html, body').animate({
-        scrollTop: $(this).offset().top
-    }, 200);
-  }
-
-  // Function to control tabs based on visibility
-  function tabControl() {
-    var tabs = $('.disorders-box-section .tabbed-content').find('.tabs');
-    if (tabs.is(':visible')) {
-      tabs.find('a').off('click').on('click', handleTabClick);
-    } else {
-      $(".item").off('click').on('click', handleItemClick);
-    }
-  }
-
-  // Document ready function
   $(document).ready(function() {
     var resizeTimer;
+
+    $('.disorders-box-section').on('click', '.tabs a', function(event) {
+      event.preventDefault();
+      var $this = $(this),
+          target = $this.attr('href'),
+          $tabs = $this.closest('.tabs'),
+          $items = $this.closest('.disorders-box-section').find('.item');
+      $tabs.find('a').removeClass('active');
+      $items.removeClass('active');
+      $this.addClass('active');
+      $(target).addClass('active');
+    });
+
+    $('.disorders-box-section').on('click', '.item', function() {
+      var $this = $(this),
+          container = $this.closest('.tabbed-content'),
+          currId = $this.attr('id'),
+          $tabs = container.find('.tabs a'),
+          $items = container.find('.item');
+      $tabs.removeClass('active');
+      $items.removeClass('active');
+      $this.addClass('active');
+      container.find('.tabs a[href$="#' + currId + '"]').addClass('active');
+      $('html, body').animate({
+          scrollTop: $this.offset().top
+      }, 200);
+    });
+
+    function tabControl() {
+      var tabs = $('.disorders-box-section .tabbed-content').find('.tabs');
+      tabs.toggleClass('visible', tabs.is(':visible'));
+    }
+
     $(window).on('resize', function() {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(tabControl, 250);
