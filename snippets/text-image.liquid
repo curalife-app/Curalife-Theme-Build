@@ -33,7 +33,7 @@
       <div class="content-wrapper break-word z-[1] flex md:py-0 md:!w-full gap-12 md:gap-4 md:m-auto {% if alignment == 'center' %}justify-center m-auto{% endif %} {% if itemsDirection == 'horizontal' %}w-45%{% else %}w-70%{% endif %}" {% if content_animation != 'none'%}data-aos="{{ content_animation }}" data-aos-duration="{{ animation_duration }}"{% endif %}>
         <div class="content flex flex-col justify-center gap-4 md:w-full text-{{ alignment }} md:text-{{ mobile_alignment }} items-{{ alignment }} md:items-{{ mobile_alignment }} {% unless main_image %}w-full{% endunless %}">
           {% if title != blank %}
-            <{% if title_tag == 'h1' %}h1{% else %}h2{% endif %} class="title {{ title_tag }} w-full {% if is_image_middle_mobile %}md:hidden{% endif %} {% if is_line_seperator %}m-0{% endif %}">
+            <{% if title_tag == 'h1' %}h1{% else %}h2{% endif %} class="title {% if subtitle != blank %}mb-0{% endif %} {{ title_tag }} w-full {% if is_image_middle_mobile %}md:hidden{% endif %} {% if is_line_seperator %}m-0{% endif %}">
               {% if title_icon != blank %}<i class="{{ title_icon }} mr-2"></i>{% endif %}
               {{ title }}
             </{%    if title_tag == 'h1' %}h1{% else %}h2{% endif %}>
@@ -150,21 +150,6 @@
   {% if padding_top == 0 and padding_bottom == 0 %}
     #section-{{ section_id }} .content {
       margin: 50px 0;
-    }
-  {% endif %}
-  #section-{{ section_id }} .content .title {
-    {% if subtitle != blank %}margin-bottom: 0;{% endif %}
-  }
-
-  {% if title_swoosh_color %}
-    #section-{{ section_id }} .content-wrapper .title strong,
-    #section-{{ section_id }} .mobile-title strong {
-      {% if title_highlight_color %}color: {{ title_highlight_color }};{% endif %}
-      {% unless title_swoosh_color == 'none' %}padding: {% if title_swoosh_color == 'dark-green' %}8px{% else %}30px 10px{% endif %};{% endunless %}
-      {% unless title_swoosh_color == 'none' %}background-image: url('{{ 'title-swoosh-' | append: title_swoosh_color | append: '.svg' | asset_url }}');{% endunless %}
-      background-size: contain;
-      background-repeat: no-repeat;
-      background-position: center;
     }
   {% endif %}
 
