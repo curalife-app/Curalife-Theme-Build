@@ -6,7 +6,7 @@
   {% assign disorders = product.metafields.custom.disorders.value %}
 {% endif %}
 
-{% assign disorders_amount = 0 %}
+{% assign disorders_amount = disorders | size %}
 
 <section id="info" class="disorders-box-section text-center">
   {% render 'title', title: "Uncovering the Root<br>Triggers of Glucose Levels", section_id: section.id %}
@@ -21,7 +21,6 @@
 
       <div class="content">
         {% for disorder in disorders %}
-          {% assign disorders_amount = disorders_amount | plus: 1 %}
           <div id="item-{{ forloop.index }}" class="item {% if forloop.first and section.settings.is_open_first %}active always-active{% endif %}" data-title="{{ disorder.name }}">
             <div class="item-content flex">
               <div class="content-column disorder-info">
