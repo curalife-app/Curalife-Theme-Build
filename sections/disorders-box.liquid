@@ -78,7 +78,7 @@
     box-shadow: 0 25px 54px -35px rgb(0 0 0 / .25);
     background: white;
     display: none;
-    z-index: 10;
+    z-index: 20;
     margin-bottom: unset;
   }
 
@@ -113,6 +113,7 @@
 
   .disorders-box-section .item {
     position: relative;
+    z-index: 10px;
   }
 
   .disorders-box-section .item::before {
@@ -306,12 +307,33 @@
       $tabs.find('a').removeClass('active');
       $items.removeClass('active');
       $this.addClass('active');
+      $(target).css('z-index','15');
       $(target).addClass('active');
 
       setTimeout(function() {
-        $('.item .arrow').removeClass('fade-in');
         $('.item.active .arrow').addClass('fade-in');
-      }, 500);
+      }, 300);
+
+      setTimeout(function() {
+        $('.item .arrow').removeClass('fade-in');
+        $(target).css('z-index','10');
+        $('.item.active .arrow').addClass('fade-in');
+      }, 700);
+    });
+
+    $('.disorders-box-section').on('click', '.item', function() {
+      var $this = $(this),
+          container = $this.closest('.tabbed-content'),
+          currId = $this.attr('id'),
+          $tabs = container.find('.tabs a'),
+          $items = container.find('.item');
+      $tabs.removeClass('active');
+      $items.removeClass('active');
+      $this.addClass('active');
+      container.find('.tabs a[href$="#' + currId + '"]').addClass('active');
+      $('html, body').animate({
+          scrollTop: $this.offset().top
+      }, 200);
     });
 
     function tabControl() {
