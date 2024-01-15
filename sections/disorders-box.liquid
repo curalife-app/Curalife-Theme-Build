@@ -313,15 +313,19 @@
       var $this = $(this),
           target = $this.attr('href'),
           $tabs = $this.closest('.tabs'),
-          $items = $this.closest('.disorders-box-section').find('.item');
+          $items = $this.closest('.disorders-box-section').find('.item'),
+          $activeItem = $items.filter('.active');
+
+      // Remove active class and wait for animation to complete
+      $activeItem.removeClass('active').one('transitionend', function() {
+        $(target).addClass('active');
+      });
 
       $tabs.find('a').removeClass('active');
-      $items.removeClass('active');
       $this.addClass('active');
-      $(target).addClass('active');
 
+      $('.item .arrow').removeClass('fade-in');
       setTimeout(function() {
-        $('.item .arrow').removeClass('fade-in');
         $('.item.active .arrow').addClass('fade-in');
       }, 200);
     });
