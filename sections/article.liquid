@@ -17,6 +17,30 @@
           {% endunless %}
         {% endif %}
 
+        {% if article.metafields.custom.audio_file %}
+          <script src="https://cdn.jsdelivr.net/npm/shikwasa@2.2.1/dist/shikwasa.min.js"></script>
+          <link href="https://cdn.jsdelivr.net/npm/shikwasa@2.2.1/dist/style.min.css" rel="stylesheet">
+
+          <div class="audio-player"></div>
+
+          <script>
+            const player = new Player({
+              container: () => document.querySelector('.audio-player'),
+              audio: {
+                title: 'Winning Type 2 Together Podcast - Episode 1',
+                artist: 'Curalife FM',
+                cover: '{{ 'meta-thumbnail.png' | asset_url }}',
+                src: '{{ article.metafields.custom.audio_file }}',
+              },
+            })
+
+            // The library has also exposed a global variable `Shikwasa` in the UMD and IIFE build.
+            // Then the usage would be:
+            const { Player } = window.Shikwasa
+            const player = new Player({ ... })
+          </script>
+        {% endif %}
+
         <div class="text text-[20px]">{{ article.content }}</div>
 
         {% if article.tags contains 'recipe' and article.metafields.recipe.ingredients.value %}
