@@ -9,34 +9,17 @@
       </div>
 
       <div class="content w-[60%] md:w-full pb-4">
+        {% if article.metafields.custom.audio_file %}
+          {% assign coverImage = 'meta-thumbnail.png' | asset_url %}
+          {% render 'audio-widget', audio_file: article.metafields.custom.audio_file, cover_image: coverImage, title: 'Winning Type 2 Together Podcast - Episode 1' %}
+        {% endif %}
+
         {% if article.image %}
           {% unless article.metafields.custom.hide_article_image == true %}
             <div class="picture-container mb-[30px]">
               <img class="!p-0 h-[400px] md:h-[250px] w-full" id="featured-image" src="{{ article.image | image_url }}" alt="{{ article.title }}" height="400">
             </div>
           {% endunless %}
-        {% endif %}
-
-        {% if article.metafields.custom.audio_file %}
-          <script src="https://cdn.jsdelivr.net/npm/shikwasa@2.2.1/dist/shikwasa.min.js"></script>
-          <link href="https://cdn.jsdelivr.net/npm/shikwasa@2.2.1/dist/style.min.css" rel="stylesheet">
-
-          <div class="audio-player"></div>
-
-          <script>
-            const { Player } = window.Shikwasa
-            const player = new Player({
-              container: () => document.querySelector('.audio-player'),
-              audio: {
-                title: 'Winning Type 2 Together Podcast - Episode 1',
-                artist: 'Curalife FM',
-                cover: '{{ 'meta-thumbnail.png' | asset_url }}',
-                src: '{{ article.metafields.custom.audio_file }}',
-              },
-              theme: 'light',
-              themeColor: '#3A7684'
-            })
-          </script>
         {% endif %}
 
         <div class="text text-[20px]">{{ article.content }}</div>
