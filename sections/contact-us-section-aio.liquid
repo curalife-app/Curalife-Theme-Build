@@ -6,7 +6,13 @@
     <div class="contact-options">
       {% assign contacts = section.blocks | where: 'type', 'contact_options' %}
         {% for block in contacts %}
-          {% if block.settings.link != blank %}<a href="{{ block.settings.link }}">{% endif %}
+          {% if shop.name == 'CuraLife' %}
+            {% assign theLink = block.settings.link_us %}
+          {% elsif shop.name == "CuraLife Global" %}
+            {% assign theLink = block.settings.link_global %}
+          {% endif %}
+
+          {% if block.settings.link != blank %}<a href="{{ theLink }}">{% endif %}
           <div class="contact-option">
             <i class="{{ block.settings.icon_option }}"></i>
             <p>{{ block.settings.text_option }}</p>
@@ -182,7 +188,12 @@
            {
             "type":"url",
             "id":"link",
-            "label":"Link"
+            "label":"Link US"
+           },
+           {
+            "type":"url",
+            "id":"link",
+            "label":"Link Global"
            }
         ]
      },
