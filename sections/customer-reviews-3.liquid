@@ -2,12 +2,11 @@
   <div class="container relative">
     <h2 class="text-center relative z-10 text-[#3A7684]">Hear from our happy customers</h2>
 
-    {% comment %} <img class="pb-6 m-auto" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/Group_1597877255.png?v=1695042350" alt="customers avatars" loading="lazy"> {% endcomment %}
-
     <div class="reviews swiper overflow-visible max-w-[80%]">
       <div class="swiper-wrapper">
         {% for review in section.blocks %}
-          <div class="review swiper-slide p-6 bg-[#E7F8EC] md:min-h-[90vw] border-cyan-700 border shadow-xl rounded-xl min-h-[250px]">
+          <div class="review swiper-slide p-6 bg-[--light-blue] h-[600px] w-[330px] border-cyan-700 border shadow-xl rounded-xl min-h-[250px]">
+
             <div class="stars pb-6 text-center">{% for star in (1..5) %}<i class="fa-sharp fa-solid fa-star text-[#FFB22D] mr-1"></i>{% endfor %}</div>
             <div class="quote text-black">{{ review.settings.quote }}</div>
             <div class="name absolute bottom-6 font-bold text-[#3A7684]">{{ review.settings.name }}</div>
@@ -16,7 +15,7 @@
       </div>
       <div class="swiper-nav swiper-button-prev"></div>
       <div class="swiper-nav swiper-button-next"></div>
-      <div class="swiper-pagination"></div>
+      {% comment %} <div class="swiper-pagination"></div> {% endcomment %}
     </div>
   </div>
 </section>
@@ -92,10 +91,10 @@
       nextEl: '.customer-reviews .swiper-button-next',
       prevEl: '.customer-reviews .swiper-button-prev',
     },
-    pagination: {
-        el: '.customer-reviews .swiper-pagination',
-        clickable: true
-    },
+    // pagination: {
+    //     el: '.customer-reviews .swiper-pagination',
+    //     clickable: true
+    // },
     autoplay: { delay: 5000 }
   });
 
@@ -128,6 +127,11 @@
       "type": "text",
       "name": "Review",
       "settings": [
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Customer Image"
+        },
         {
           "type": "text",
           "id": "name",
