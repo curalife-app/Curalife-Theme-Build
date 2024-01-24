@@ -89,6 +89,22 @@
     </script>
   {% endif %}
 
+  <script>
+    function adjustImageWrapperHeight() {
+      var maxHeight = 0;
+      document.querySelectorAll('.img-wrapper img').forEach(function(img) {
+        maxHeight = Math.max(maxHeight, img.offsetHeight);
+      });
+
+      document.querySelectorAll('.img-wrapper').forEach(function(wrapper) {
+        wrapper.style.height = maxHeight + 'px';
+      });
+    }
+
+    window.onload = adjustImageWrapperHeight;
+    window.onresize = adjustImageWrapperHeight;
+  </script>
+
 
   <style>
     #section-{{ section.id }} .items {
