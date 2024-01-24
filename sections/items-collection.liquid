@@ -90,26 +90,34 @@
   {% endif %}
 
   <script>
-    function adjustElementHeightByAttribute(selector, attribute) {
+    function getMaxHeightOfElements(selector) {
       var maxHeight = 0;
       document.querySelectorAll(selector).forEach(function(element) {
-        var attrHeight = parseInt(element.getAttribute(attribute));
-        if (!isNaN(attrHeight)) {
-          maxHeight = Math.max(maxHeight, attrHeight);
-        }
+        maxHeight = Math.max(maxHeight, element.offsetHeight);
       });
+      return maxHeight;
+    }
 
+    function setHeightOfElements(selector, height) {
       document.querySelectorAll(selector).forEach(function(element) {
-        element.style.height = maxHeight + 'px';
+        element.style.height = height + 'px';
       });
     }
 
     function adjustTitleHeight() {
-      adjustElementHeightByAttribute('.title-tag', 'offsetHeight');
+      var titleMaxHeight = getMaxHeightOfElements('.title-tag');
+      setHeightOfElements('.title-tag', titleMaxHeight);
     }
 
     function adjustImageWrapperHeight() {
-      adjustElementHeightByAttribute('.img-wrapper img', 'height');
+      var imageMaxHeight = 0;
+      document.querySelectorAll('.img-wrapper img').forEach(function(img) {
+        var attrHeight = parseInt(img.getAttribute('height'));
+        if (!isNaN(attrHeight)) {
+          imageMaxHeight = Math.max(imageMaxHeight, attrHeight);
+        }
+      });
+      setHeightOfElements('.img-wrapper', imageMaxHeight);
     }
 
     adjustTitleHeight();
