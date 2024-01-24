@@ -90,10 +90,13 @@
   {% endif %}
 
   <script>
-    function adjustElementHeight(selector) {
+    function adjustElementHeightByAttribute(selector, attribute) {
       var maxHeight = 0;
       document.querySelectorAll(selector).forEach(function(element) {
-        maxHeight = Math.max(maxHeight, element.offsetHeight);
+        var attrHeight = parseInt(element.getAttribute(attribute));
+        if (!isNaN(attrHeight)) {
+          maxHeight = Math.max(maxHeight, attrHeight);
+        }
       });
 
       document.querySelectorAll(selector).forEach(function(element) {
@@ -101,13 +104,21 @@
       });
     }
 
-    function adjustLayout() {
-      adjustElementHeight('.img-wrapper img');
-      adjustElementHeight('.title-tag');
+    function adjustTitleHeight() {
+      adjustElementHeightByAttribute('.title-tag', 'offsetHeight');
     }
 
-    window.onload = adjustLayout;
-    window.onresize = adjustLayout;
+    function adjustImageWrapperHeight() {
+      adjustElementHeightByAttribute('.img-wrapper img', 'height');
+    }
+
+    adjustTitleHeight();
+    adjustImageWrapperHeight();
+
+    window.onresize = function() {
+      adjustTitleHeight();
+      adjustImageWrapperHeight();
+    };
   </script>
 
   <style>
