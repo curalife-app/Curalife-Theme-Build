@@ -90,21 +90,25 @@
   {% endif %}
 
   <script>
-    function adjustImageWrapperHeight() {
+    function adjustElementHeight(selector) {
       var maxHeight = 0;
-      document.querySelectorAll('.img-wrapper img').forEach(function(img) {
-        maxHeight = Math.max(maxHeight, img.offsetHeight);
+      document.querySelectorAll(selector).forEach(function(element) {
+        maxHeight = Math.max(maxHeight, element.offsetHeight);
       });
 
-      document.querySelectorAll('.img-wrapper').forEach(function(wrapper) {
-        wrapper.style.height = maxHeight + 'px';
+      document.querySelectorAll(selector).forEach(function(element) {
+        element.style.height = maxHeight + 'px';
       });
     }
 
-    window.onload = adjustImageWrapperHeight;
-    window.onresize = adjustImageWrapperHeight;
-  </script>
+    function adjustLayout() {
+      adjustElementHeight('.img-wrapper img');
+      adjustElementHeight('.title-tag');
+    }
 
+    window.onload = adjustLayout;
+    window.onresize = adjustLayout;
+  </script>
 
   <style>
     #section-{{ section.id }} .items {
