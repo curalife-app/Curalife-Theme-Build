@@ -56,11 +56,14 @@
 <script>
   $(document).ready(function() {
     $('.supplement-info .tab').click(function() {
+      var index = $(this).index();
       $('.supplement-info .tab').removeClass('active');
       $(this).addClass('active');
 
-      $('.supplement-info .content').removeClass('active');
-      $('.supplement-info .content').eq($(this).index()).addClass('active');
+      $('.supplement-info .content').fadeOut(300, function() {
+        $('.supplement-info .content').removeClass('active');
+        $('.supplement-info .content').eq(index).fadeIn(300).addClass('active');
+      });
     });
   });
 </script>
@@ -73,6 +76,7 @@
       margin-bottom: 2rem;
 
       .tab {
+        transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
         text-align: center;
         padding: 1rem;
         background-color: var(--light-blue);
@@ -97,6 +101,7 @@
 
     .content-wrapper {
       .content {
+        transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
         display: none;
         position: relative;
 
