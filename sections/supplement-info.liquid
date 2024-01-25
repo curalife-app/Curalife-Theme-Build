@@ -1,13 +1,13 @@
 <section class="supplement-info">
   <div class="container">
     <div class="tabs">
-      <div class="tab">Overview <i class="fa-light fa-angle-right"></i></div>
+      <div class="tab active">Overview <i class="fa-light fa-angle-right"></i></div>
       <div class="tab">Ingredients <i class="fa-light fa-angle-right"></i></div>
       <div class="tab">FAQ <i class="fa-light fa-angle-right"></i></div>
     </div>
 
-    <div class="content">
-      <div class="overview">
+    <div class="content-wrapper">
+      <div class="content overview active">
         <div class="overview-wrapper w-[60%]">
 
           <div class="supplement-wrapper flex gap-8">
@@ -33,11 +33,11 @@
         <img src="{{ section.settings.overview_image | img_url: 'master' }}" alt="Overview" class="overview-image">
       </div>
 
-      <div class="ingredients">
+      <div class="content ingredients">
         <img src="{{ section.settings.ingredients_image | img_url: 'master' }}" alt="Ingredients" class="ingredients-image">
       </div>
 
-      <div class="faq">
+      <div class="content faq">
         {% render 'product-faq-section',
           bgColor: section.settings.bg_color,
           titles_color: section.settings.titles_color,
@@ -90,17 +90,25 @@
       }
     }
 
-    .content {
-      .overview {
-        .supplement-wrapper {
-          .supplement-benefits {
-            ul {
-              li {
-                color: var(--bronze);
-                font-weight: bold;
+    .content-wrapper {
+      .content {
+        display: none;
 
-                &:before {
-                  background: var(--bronze);
+        &.active {
+          display: block;
+        }
+
+        .overview {
+          .supplement-wrapper {
+            .supplement-benefits {
+              ul {
+                li {
+                  color: var(--bronze);
+                  font-weight: bold;
+
+                  &:before {
+                    background: var(--bronze);
+                  }
                 }
               }
             }
