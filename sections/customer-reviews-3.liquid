@@ -18,8 +18,8 @@
       </div>
     </div>
 
-    <div class="swiper-nav swiper-button-prev"></div>
-    <div class="swiper-nav swiper-button-next"></div>
+    <div class="swiper-nav swiper-button-prev desktop"></div>
+    <div class="swiper-nav swiper-button-next desktop"></div>
     <div class="swiper-pagination mobile"></div>
   </div>
 </section>
@@ -80,35 +80,28 @@
 </style>
 
 <script>
-  const swiper = new Swiper('.customer-reviews .swiper', {
-    grabCursor: true,
-    slidesPerView: 3,
-    loop: true,
-    spaceBetween: 30,
-    autoplay: { delay: 5000 },
-    navigation: window.innerWidth < 768 ? false : {
-      nextEl: '.customer-reviews .swiper-button-next',
-      prevEl: '.customer-reviews .swiper-button-prev',
-    },
-    pagination: window.innerWidth > 768 ? false : {
-      el: '.customer-reviews .swiper-pagination',
-      clickable: true
-    },
-    autoHeight: window.innerWidth > 768 ? false : true
+  document.addEventListener('DOMContentLoaded', () => {
+    const swiper = new Swiper('.customer-reviews .swiper', {
+      grabCursor: true,
+      slidesPerView: 3,
+      loop: true,
+      spaceBetween: 30,
+      autoplay: { delay: 5000 },
+      navigation: {
+        nextEl: '.customer-reviews .swiper-button-next',
+        prevEl: '.customer-reviews .swiper-button-prev',
+      },
+      pagination: {
+        el: '.customer-reviews .swiper-pagination',
+        clickable: true
+      },
+      breakpoints: {
+        320: { slidesPerView: 1, spaceBetween: 10, autoHeight: true },
+        501: { slidesPerView: 2, spaceBetween: 20 },
+        725: { slidesPerView: 3, spaceBetween: 30 }
+      }
+    });
   });
-
-  window.onresize = queryResizer;
-  queryResizer();
-  function queryResizer() {
-    if (window.innerWidth >= 725) {
-        swiper.params.slidesPerView = 3;
-    } else if (window.innerWidth >= 501 && window.innerWidth < 725) {
-        swiper.params.slidesPerView = 2;
-    } else if (window.innerWidth < 501) {
-        swiper.params.slidesPerView = 1;
-    }
-    swiper.update();
-}
 </script>
 
 {% schema %}
