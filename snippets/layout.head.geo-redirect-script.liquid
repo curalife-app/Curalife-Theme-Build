@@ -45,8 +45,6 @@
 
 {% unless admin %}
   <script>
-    console.log("Redirection script initialized");
-
     (function checkBodyAndInitialize() {
       if (document.body) {
         initRedirectionScript();
@@ -192,15 +190,14 @@
       }
 
       function handleGeoParameter() {
-        const geoParam = getQueryParam('geo').toUpperCase();
+        const geoParam = getQueryParam('geo');
         if (geoParam) {
-          setCookie('country', geoParam, 12); // Set the 'country' cookie for 12 hours
+          setCookie('country', geoParam.toUpperCase(), 12); // Set the 'country' cookie for 12 hours
         }
       }
 
       const userAgent = navigator.userAgent;
       const isRobot = detectRobot(userAgent);
-      console.log("Is Robot:", isRobot);
 
       handleGeoParameter();
 
