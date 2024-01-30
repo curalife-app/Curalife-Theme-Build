@@ -45,6 +45,8 @@
 
 {% unless admin %}
   <script>
+    console.log("Redirection script initialized");
+
     (function checkBodyAndInitialize() {
       if (document.body) {
         initRedirectionScript();
@@ -103,6 +105,7 @@
       }
 
       function redirectTo(url, keepPath) {
+        console.log("Redirecting to URL:", url, " | Keep Path:", keepPath);
         let redirectUrl = url;
 
         if (keepPath) {
@@ -121,6 +124,7 @@
       }
 
       function detectRobot(userAgent) {
+        console.log("Detecting robot - User Agent:", userAgent);
         const combinedRobotRegex = /bot|spider|crawl|APIs-Google|AdsBot|Googlebot|mediapartners|Google Favicon|FeedFetcher|Google-Read-Aloud|DuplexWeb-Google|googleweblight|bing|yandex|baidu|duckduck|yahoo|ecosia|ia_archiver|facebook|instagram|pinterest|reddit|slack|twitter|whatsapp|youtube|semrush/;
 
         return combinedRobotRegex.test(userAgent);
@@ -145,6 +149,7 @@
       }
 
       function getCountryFromService() {
+        console.log("Fetching country from service");
         return fetch('https://geo.curalife.com/')
           .then(response => response.json())
           .then(data => {
@@ -159,6 +164,7 @@
       }
 
       function handleRedirectionForCountry(country) {
+        console.log("Handling redirection for country:", country);
         const host = location.hostname === 'global.curalife.com' ? 'Global' : 'USA';
         const countriesUs = ['US', 'PR', 'CA', 'AU', 'BR'];
         const countryUrls = {
