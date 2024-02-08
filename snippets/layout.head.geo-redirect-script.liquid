@@ -22,7 +22,6 @@
 {% assign isBlog = false %}
 {% if request.path contains '/blogs/' %}
   {% assign isBlog = true %}
-  {% assign admin = true %}
   <script>console.log("Redirect Disabled For Blog")</script>
 {% endif %}
 
@@ -55,6 +54,11 @@
     })();
 
     function initRedirectionScript() {
+      if ({{ isBlog }}) {
+        console.log("On a blog page - skipping redirection.");
+        return; // Stop the script from proceeding further
+      }
+
       function createRedirectOverlay() {
         // Create the overlay div
         var overlay = document.createElement('div');
