@@ -62,7 +62,7 @@
         {% if var.metafields.gifts.amount %}
         <div class="gifts">
             {% for i in (1..var.metafields.gifts.amount) %}
-              <div class="mt-2">Choose <span class="gifts-amount">{{ var.metafields.gifts.amount }}</span> gift{% if var.metafields.gifts.amount > 1 %}s{% endif %}:</div>
+              <div class="mt-2">Choose a gift:</div>
               <div class="gift-products flex gap-2" data-selectable-gift="{{ var.metafields.gifts.amount }}">
                 {% for prodHandle in giftBundlesProductHandles %}
                   {% assign prod = all_products[prodHandle] %}
@@ -138,12 +138,11 @@
       const productActions = $("#product-actions-{{ section_id }}");
       productActions.on('click', '.gift-product', function() {
         const giftsElement = $(this).closest('.gift-products');
-        const maxSelectableGifts = parseInt(giftsElement.attr('data-selectable-gift'));
         const currentlySelectedGifts = giftsElement.find('.gift-product.selected');
 
         if ($(this).hasClass('selected')) {
           $(this).removeClass('selected');
-        } else if (currentlySelectedGifts.length < maxSelectableGifts) {
+        } else {
           $(this).addClass('selected');
         }
 
