@@ -58,7 +58,7 @@
           <div class="per-month font-bold">Per Month</div>
         </div>
 
-        {% assign giftBundlesProductHandles = "curalin-joint-care,curalin-resful-sleep,curalin-magnesium,curalin-immune-booster" | split: ',' %}
+        {% assign giftBundlesProductHandles = "joint-care,resful-sleep,magnesium-glycinate,immune-care" | split: ',' %}
         {% if var.metafields.gifts.amount %}
         <div class="mt-2">Choose <span class="gifts-amount">{{ var.metafields.gifts.amount }}</span> gift{% if var.metafields.gifts.amount > 1 %}s{% endif %}:</div>
           <div class="gift-products flex gap-2" data-selectable-gift="{{ var.metafields.gifts.amount }}">
@@ -133,8 +133,9 @@
     function handleGiftSelection() {
       const productActions = $("#product-actions-{{ section_id }}");
       productActions.on('click', '.gift-product', function() {
-        const maxSelectableGifts = parseInt($(this).closest('.gift-products').attr('data-selectable-gift'));
-        const currentlySelectedGifts = $(this).closest('.gift-products').find('.gift-product.selected');
+        const giftsElement = $(this).closest('.gift-products');
+        const maxSelectableGifts = parseInt(giftsElement.attr('data-selectable-gift'));
+        const currentlySelectedGifts = giftsElement.find('.gift-product.selected');
 
         if ($(this).hasClass('selected')) {
           $(this).removeClass('selected');
@@ -142,12 +143,18 @@
           $(this).addClass('selected');
         }
 
-        let selectableGiftsProductIDs = $(this).closest('.gift-products').find('.gift-product.selected').map(function() {
+        let selectableGiftsProductIDs = giftsElement.find('.gift-product.selected').map(function() {
           return $(this).attr('data-product-id');
         }).get();
 
         if (selectableGiftsProductIDs.length === maxSelectableGifts) {
           console.log('Selected gifts:', selectableGiftsProductIDs);
+        }
+
+        if (selectableGiftsProductIDs.length === 1) {
+          if (selectableGiftsProductIDs.includes("8122558742679")) {
+            giftsElement.attr('data-bundle-product-id', "8122558742679");
+          }
         }
       });
     }
