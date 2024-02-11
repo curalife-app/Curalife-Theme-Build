@@ -109,6 +109,7 @@
     const productActions = $("#product-actions-{{ section_id }}");
     const purchaseOptionBoxes = productActions.find('.purchase-option-box');
 
+    handleGiftSelection();
     initializePurchaseOptions();
     setupMutationObserver();
     attachEventHandlers();
@@ -119,6 +120,22 @@
         togglePurchaseType(box, box.find('.purchase-type .subscription').hasClass('selected'));
         box.css('max-height', index === 0 ? this.scrollHeight + 'px' : '54px')
           .find("input[type='radio']").prop('checked', index === 0);
+      });
+    }
+
+    function handleGiftSelection() {
+      const productActions = $("#product-actions-{{ section_id }}");
+      productActions.on('click', '.gift-product', function() {
+        const maxSelectableGifts = parseInt($(this).closest('.gift-products').attr('data-selectable-gift'));
+        const currentlySelectedGifts = $(this).closest('.gift-products').find('.gift-product.selected').length;
+
+        if ($(this).hasClass('selected')) {
+          // Deselect if already selected
+          $(this).removeClass('selected');
+        } else if (currentlySelectedGifts < maxSelectableGifts) {
+          // Select if under limit
+          $(this).addClass('selected');
+        }
       });
     }
 
