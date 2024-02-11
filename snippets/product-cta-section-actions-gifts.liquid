@@ -150,12 +150,39 @@
 
         console.log('Selected gifts:', selectableGiftsProductIDs);
 
+        const singleSelectionMapping = {
+          "7896199463063": "8122558742679",
+          "7896197660823": "8122155991191",
+          "8009619243159": "8191410438295",
+          "7911564345495": "8125198270615"
+        };
+
+        const handleTwoSelections = (ids) => {
+          const combinations = {
+            "7896199463063_7896197660823": "8122558742679",
+            "7896199463063_8009619243159": "8122558742679",
+            "7896199463063_7911564345495": "8122558742679",
+            "7896197660823_8009619243159": "8122155991191",
+            "7896197660823_7911564345495": "8122155991191",
+            "8009619243159_7911564345495": "8191410438295"
+          };
+          // Sort ids to ensure the order doesn't affect the outcome
+          ids.sort();
+          return combinations[ids.join('_')];
+        };
+
         if (selectableGiftsProductIDs.length === 1) {
-          if (selectableGiftsProductIDs.includes("7896199463063")) {
-            giftsElement.attr('data-bundle-product-id', "8122558742679");
+          const bundleProductID = singleSelectionMapping[selectableGiftsProductIDs[0]];
+          if (bundleProductID) {
+            giftsElement.attr('data-bundle-product-id', bundleProductID);
+          }
+        } else if (selectableGiftsProductIDs.length === 2) {
+          const bundleProductID = handleTwoSelections(selectableGiftsProductIDs);
+          if (bundleProductID) {
+            giftsElement.attr('data-bundle-product-id', bundleProductID);
           }
         }
-      });
+      }
     }
 
     function setupMutationObserver() {
