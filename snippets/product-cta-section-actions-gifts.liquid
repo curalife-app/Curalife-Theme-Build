@@ -324,7 +324,13 @@
       if (isSubscriptionSelected()) {
         buySubscription(variant_id, 1, subscription_selling_plan_id);
       } else {
-        redirectToCheckout(variant_id);
+        let giftProductID = buttonElement.closest('gift-products').attr('data-bundle-product-id');
+        if (giftProductID){
+          redirectToCheckout(giftProductID);
+        }
+        else {
+          redirectToCheckout(variant_id);
+        }
       }
     }
 
