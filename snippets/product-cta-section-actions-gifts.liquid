@@ -59,15 +59,17 @@
         </div>
 
         {% assign giftBundlesProductHandles = "curalin-joint-care,curalin-resful-sleep" | split: ',' %}
-        <div class="mt-2">Choose <span class="gifts-amount">1</span> gift:</div>
-        <div class="gift-products flex gap-2">
-          {% for prodHandle in giftBundlesProductHandles %}
-            {% assign prod = all_products[prodHandle] %}
-            <div class="gift-product active:bg-[--light-blue] w-[100px] border-[--blue] rounded-md" data-product-id="{{ prod.id }}">
-              <img src="{{ prod.images.first.src | image_url }}" alt="{{ prod.title }}">
-            </div>
-          {% endfor %}
-        </div>
+        {% if var.metafields.gifts.amount %}
+          <div class="mt-2">Choose <span class="gifts-amount">1</span> gift:</div>
+          <div class="gift-products flex gap-2" data-selectable-gift="{{ var.metafields.gifts.amount }}">
+            {% for prodHandle in giftBundlesProductHandles %}
+              {% assign prod = all_products[prodHandle] %}
+              <div class="gift-product active:bg-[--light-blue] w-[100px] border-[--blue] rounded-md" data-product-id="{{ prod.id }}">
+                <img src="{{ prod.images.first.src | image_url }}" alt="{{ prod.title }}">
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
 
         <div class="submit-wrap flex flex-col w-full mt-4">
           <button class="main-btn p-0 bg-[--orange] hover:bg-[--dark-orange] min-h-[50px]" id="buy-button">
