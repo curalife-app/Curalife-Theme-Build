@@ -134,14 +134,20 @@
       const productActions = $("#product-actions-{{ section_id }}");
       productActions.on('click', '.gift-product', function() {
         const maxSelectableGifts = parseInt($(this).closest('.gift-products').attr('data-selectable-gift'));
-        const currentlySelectedGifts = $(this).closest('.gift-products').find('.gift-product.selected').length;
+        const currentlySelectedGifts = $(this).closest('.gift-products').find('.gift-product.selected');
 
         if ($(this).hasClass('selected')) {
-          // Deselect if already selected
           $(this).removeClass('selected');
-        } else if (currentlySelectedGifts < maxSelectableGifts) {
-          // Select if under limit
+        } else if (currentlySelectedGifts.length < maxSelectableGifts) {
           $(this).addClass('selected');
+        }
+
+        let selectableGiftsProductIDs = $(this).closest('.gift-products').find('.gift-product.selected').map(function() {
+          return $(this).attr('data-product-id');
+        }).get();
+
+        if (selectableGiftsProductIDs.length === maxSelectableGifts) {
+          console.log('Selected gifts:', selectableGiftsProductIDs);
         }
       });
     }
