@@ -329,7 +329,12 @@
     function redirectToCheckout(variant_id, dc) {
       let checkoutLink = "https://" + location.hostname + "/cart/" + variant_id + ":1"
       if (dc) {checkoutLink += "?discount=" + atob(dc);}
-      window.location.href = checkoutLink;
+
+      {% if customer.email == 'yotam@curalife.com' %}
+        console.log(checkoutLink);
+      {% else %}
+        window.location.href = checkoutLink;
+      {% endif %}
     }
 
     function toggleButtonLoading(buttonElement, isLoading) {
