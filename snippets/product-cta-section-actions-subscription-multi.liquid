@@ -318,7 +318,14 @@
         buySubscription(variant_id, 1, subscription_selling_plan_id);
       } else {
         let dc = $(buttonElement).closest('.purchase-option-box').data('dc');
-        redirectToCheckout(variant_id, dc);
+        let giftProductID = buttonElement.parent().siblings('.gifts').attr('data-bundle-product-id');
+
+        if (giftProductID){
+          redirectToCheckout(giftProductID, dc);
+        }
+        else {
+          redirectToCheckout(variant_id, dc);
+        }
       }
     }
 
