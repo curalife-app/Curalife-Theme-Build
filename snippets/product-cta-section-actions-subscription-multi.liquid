@@ -109,13 +109,24 @@
 {% render 'script.round-converted-currency' %}
 
 <script>
-  const optionTitles = document.querySelectorAll('.option-title');
-  optionTitles.forEach(title => {
-    title = insertBefore(title, '+', '<span class="text-[--bronze]">');
-    title = title.concat('</span>');
-  });
+  // Function to colorize text after the '+' character
+  function colorizeAfterPlus(inputString) {
+    const plusIndex = inputString.indexOf('+');
+    if (plusIndex !== -1) {
+      const beforePlus = inputString.substring(0, plusIndex + 1);
+      const afterPlus = inputString.substring(plusIndex + 1);
+      return `${beforePlus}<span class="colorize">${afterPlus}</span>`;
+    }
+    return inputString;
+  }
 
-
+  // Apply the colorize function to all elements with the class 'option-title'
+  window.onload = function() { // Ensure DOM is fully loaded
+    const optionTitles = document.querySelectorAll('.option-title');
+    optionTitles.forEach((element) => {
+      element.innerHTML = colorizeAfterPlus(element.textContent);
+    });
+  };
 </script>
 
 <script>
