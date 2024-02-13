@@ -104,23 +104,25 @@
 
 {% render 'script.round-converted-currency' %}
 
-<script>
-  // Function to colorize text after the '+' character
-  function colorizeAfterPlus(inputString) {
-    const plusIndex = inputString.indexOf('+');
-    if (plusIndex !== -1) {
-      const beforePlus = inputString.substring(0, plusIndex);
-      const afterPlus = inputString.substring(plusIndex);
-      return `${beforePlus}<span class="text-[--bronze]">${afterPlus}</span>`;
+{% if product.handle == 'curalin-gifts' %}
+  <script>
+    // Function to colorize text after the '+' character
+    function colorizeAfterPlus(inputString) {
+      const plusIndex = inputString.indexOf('+');
+      if (plusIndex !== -1) {
+        const beforePlus = inputString.substring(0, plusIndex);
+        const afterPlus = inputString.substring(plusIndex);
+        return `${beforePlus}<span class="text-[--bronze]">${afterPlus}</span>`;
+      }
+      return inputString;
     }
-    return inputString;
-  }
 
-  const optionTitles = document.querySelectorAll('.option-title');
-  optionTitles.forEach((element) => {
-    element.innerHTML = colorizeAfterPlus(element.textContent);
-  });
-</script>
+    const optionTitles = document.querySelectorAll('.option-title');
+    optionTitles.forEach((element) => {
+      element.innerHTML = colorizeAfterPlus(element.textContent);
+    });
+  </script>
+{% endif %}
 
 <script>
   $(document).ready(function() {
