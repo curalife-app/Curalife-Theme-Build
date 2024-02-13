@@ -62,7 +62,7 @@
           <button class="main-btn p-0 bg-[--orange] hover:bg-[--dark-orange] min-h-[50px]" id="buy-button">
             <div class="button-text flex justify-center md:text-[5vw]">
               <span class="w-1/2 {% if product.handle contains 'curalin' %}border-r-2 border-white{% endif %}">SHOP NOW</span>
-              {% if product.handle contains 'curalin' %}
+              {% if product.metafields.custom.price_per == 'month' %}
                 <span class="total-price subscription w-1/2">Total <span class="floor rounded">{{ subscription_total_price | money_without_trailing_zeros }}</span></span>
                 <span class="total-price buy-once hidden w-1/2">Total <span class="floor rounded">{{ var.price | money_without_trailing_zeros }}</span></span>
               {% endif %}
@@ -199,10 +199,10 @@
       // Toggle subscription info
       if (isSubscriptionSelected) {
         parentBox.find('.subscription-info').slideDown('fast');
-        {% unless pricePer == 'month' %}parentBox.find('.per-month').show();{% endunless %} // Show the "per month" title when subscription is selected
+        {% unless product.metafields.custom.price_per == 'month' %}parentBox.find('.per-month').show();{% endunless %} // Show the "per month" title when subscription is selected
       } else {
         parentBox.find('.subscription-info').slideUp('fast');
-        {% unless pricePer == 'month' %}parentBox.find('.per-month').hide();{% endunless %} // Hide the "per month" title when subscription is not selected
+        {% unless product.metafields.custom.price_per == 'month' %}parentBox.find('.per-month').hide();{% endunless %} // Hide the "per month" title when subscription is not selected
       }
 
       // Yotpo Widget Points Amount Change
