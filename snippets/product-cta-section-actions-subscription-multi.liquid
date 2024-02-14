@@ -181,9 +181,16 @@
             "7911564345495_7911564345495": "43683642081431"
           };
 
-          ids.sort();
-          console.log('Sorted IDs:', ids);
-          return combinations[ids.join('_')];
+          // Generate both possible keys
+          const key1 = `${ids[0]}_${ids[1]}`;
+          const key2 = `${ids[1]}_${ids[0]}`;
+
+          // Check for existence and return the bundleProductID
+          if (combinations[key1]) {
+            return combinations[key1];
+          } else if (combinations[key2]) {
+            return combinations[key2];
+          }
         };
 
         if (selectableGiftsProductIDs.length === 1) {
