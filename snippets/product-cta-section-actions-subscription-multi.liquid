@@ -146,6 +146,7 @@
     function handleGiftSelection() {
       const productActions = $("#product-actions-{{ section_id }}");
       productActions.on('click', '.gift-product', function() {
+        console.log('Gift product clicked');
         const giftsElement = $(this).closest('.gifts');
         const currentlySelectedGifts = giftsElement.find('.gift-product.selected');
 
@@ -156,6 +157,8 @@
           return $(this).attr('data-product-id');
         }).get();
 
+        console.log('Selectable Gifts Product IDs:', selectableGiftsProductIDs);
+
         const singleSelectionMapping = {
           "7896199463063": "43683670327447",
           "7896197660823": "43683661316247",
@@ -164,6 +167,7 @@
         };
 
         const handleTwoSelections = (ids) => {
+          console.log('Handling two selections with IDs:', ids);
           const combinations = {
             "7896199463063_7896197660823": "43680615202967",
             "7896199463063_8009619243159": "43680725139607",
@@ -178,16 +182,21 @@
           };
 
           ids.sort();
+          console.log('Sorted IDs:', ids);
           return combinations[ids.join('_')];
         };
 
         if (selectableGiftsProductIDs.length === 1) {
+          console.log('Single selection processing');
           const bundleProductID = singleSelectionMapping[selectableGiftsProductIDs[0]];
+          console.log('Bundle Product ID for single selection:', bundleProductID);
           if (bundleProductID) {
             giftsElement.attr('data-bundle-product-id', bundleProductID);
           }
         } else if (selectableGiftsProductIDs.length === 2) {
+          console.log('Two selections processing');
           const bundleProductID = handleTwoSelections(selectableGiftsProductIDs);
+          console.log('Bundle Product ID for two selections:', bundleProductID);
           if (bundleProductID) {
             giftsElement.attr('data-bundle-product-id', bundleProductID);
           }
