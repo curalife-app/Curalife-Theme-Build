@@ -1,9 +1,7 @@
-{% if product.tags contains 'subscription' %}
-  {% if product.metafields.custom.subscription_product_id or product.selling_plan_groups[0].selling_plans[0].id %}
-    {% unless customer.tags contains 'B2B' %}
-      {% assign isSubscription = true %}
-    {% endunless %}
-  {% endif %}
+{% if product.tags contains 'subscription' or product.metafields.custom.subscription_product_id or product.selling_plan_groups[0].selling_plans[0].id %}
+  {% unless customer.tags contains 'B2B' %}
+    {% assign isSubscription = true %}
+  {% endunless %}
 {% endif %}
 
 <section class="cta-section cta-section-{{ section.id }} overflow-visible {% if isSubscription %}subscription{% endif %} pb-0" id="cta-section-anchor">
