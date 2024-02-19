@@ -27,7 +27,7 @@
     </div>
   </div>
 
-  {% if product.metafields.custom.price_per != "dont_split" %}
+  {% if product.metafields.custom.is_price_per_month %}
     <div class="price">
       <div class="calculations gap-1">
         {% if original_item_cap_total > var.price %}
@@ -37,7 +37,9 @@
         <p class="real-price no-letters rounded">{{ item_price | money }}</p>
       </div>
 
-      <p class="per-month">Per {{ product.metafields.custom.price_per | capitalize }}</p>
+      {% if product.metafields.custom.is_price_per_month %}
+        <p class="per-month">Per Month</p>
+      {% endif %}
     </div>
   {% else %}
     <div class="price">
@@ -128,14 +130,14 @@
       display: flex;
       min-width: 70px;
       margin-right: 10px;
-      {% if product.metafields.custom.price_per == 'dont_split' %}
-        align-items: center;
-        justify-content: end;
-        flex-wrap: wrap;
-      {% else %}
+      {% if product.metafields.custom.is_price_per_month %}
         flex-direction: column;
         align-items: end;
         gap: unset;
+      {% else %}
+        align-items: center;
+        justify-content: end;
+        flex-wrap: wrap;
       {% endif %}
     }
 
