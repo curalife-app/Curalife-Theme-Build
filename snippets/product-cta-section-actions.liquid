@@ -234,11 +234,6 @@
 
   <script>
     $(".product-actions .variant-box").click(function() {
-      {% if product.metafields.custom.price_per == 'month' %}
-        console.log($(this).data('price'));
-        $('.total-price .total-price-amount').text($(this).data('price'));
-      {% endif %}
-
       if ($(this).find('input[name=pack]:checked').attr('data-sku') == "Curalin180") {
         $(".qty").addClass("qty_expanded");
         $(".submit-wrap button").css("width", "unset");
@@ -247,6 +242,15 @@
         $(".qty").removeClass("qty_expanded");
         $(".submit-wrap button").css("width", "100%");
       }
+    });
+  </script>
+{% endif %}
+
+{% if product.metafields.custom.price_per == 'month' %}
+  <script>
+    $(".product-actions .variant-box").click(function() {
+      console.log($(this).data('price'));
+      $('.total-price .total-price-amount').text($(this).data('price'));
     });
   </script>
 {% endif %}
