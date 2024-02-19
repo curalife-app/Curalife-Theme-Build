@@ -234,8 +234,10 @@
 
   <script>
     $(".product-actions .variant-box").click(function() {
-      let variantPrice = $(this).data('price');
-      $('.total-price .total-price-amount').text(variantPrice);
+      {% if product.metafields.custom.price_per == 'month' %}
+        let variantPrice = $(this).data('price');
+        $('.total-price .total-price-amount').text(variantPrice);
+      {% endif %}
 
       if ($(this).find('input[name=pack]:checked').attr('data-sku') == "Curalin180") {
         $(".qty").addClass("qty_expanded");
