@@ -46,7 +46,7 @@
 
         <div class="price-wrapper">
           {% if product.metafields.custom.is_price_per_month %}
-            <div class="total-price mb-1 text-[14px]">
+            <div class="total-price mb-1 text-[14px text-[--dark-blue]">
               {% if subscription_total_price > subscription_item_price %}
                 <span class="subscription">Total <span class="floor rounded">{{ subscription_total_price | money }}</span></span>
               {% endif %}
@@ -306,14 +306,6 @@
     function togglePurchaseType(parentBox, isSubscriptionSelected) {
       parentBox.find('.purchase-type button').removeClass('selected');
       parentBox.find(isSubscriptionSelected ? '.subscription' : '.buy-once').addClass('selected');
-      togglePriceDisplay(parentBox, isSubscriptionSelected);
-
-      var optionSubtitleToHide = isSubscriptionSelected ? '.option-subtitle.buy-once' : '.option-subtitle.subscription';
-      var optionSubtitleToShow = isSubscriptionSelected ? '.option-subtitle.subscription' : '.option-subtitle.buy-once';
-
-      parentBox.find(optionSubtitleToHide).fadeOut('fast', function() {
-        parentBox.find(optionSubtitleToShow).fadeIn('fast');
-      });
 
       // Toggle subscription info
       if (isSubscriptionSelected) {
@@ -321,22 +313,31 @@
         {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').show();{% endunless %}
         parentBox.find('.checkout-button').show();
         parentBox.find('.add-to-cart-button').hide();
+        parentBox.find('.total-price.subscription').show();
+        parentBox.find('.total-price.buy-once').hide();
       } else {
         parentBox.find('.subscription-info').slideUp('fast');
         {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').hide();{% endunless %}
         parentBox.find('.add-to-cart-button').show();
         parentBox.find('.checkout-button').hide();
+        parentBox.find('.total-price.buy-once').show();
+        parentBox.find('.total-price.subscription').hide();
       }
 
-      // Yotpo Widget Points Amount Change
-      parentBox.find('.reward-points-widget .current-price').html(
-        isSubscriptionSelected
-        ? Math.floor(Number(parentBox.data('subscription-item-price')) / 100)
-        : Math.floor(Number(parentBox.data('item-price')) / 100)
-      );
-
+      updateYotpoPointsWidget(parentBox, isSubscriptionSelected);
+      toggleOptionSubtitles(parentBox, isSubscriptionSelected);
+      togglePriceDisplay(parentBox, isSubscriptionSelected);
       adjustMaxHeight(parentBox);
       updateComparedAtPriceDisplay(parentBox);
+    }
+
+    function toggleOptionSubtitles(parentBox, isSubscriptionSelected) {
+      var optionSubtitleToHide = isSubscriptionSelected ? '.option-subtitle.buy-once' : '.option-subtitle.subscription';
+      var optionSubtitleToShow = isSubscriptionSelected ? '.option-subtitle.subscription' : '.option-subtitle.buy-once';
+
+      parentBox.find(optionSubtitleToHide).fadeOut('fast', function() {
+        parentBox.find(optionSubtitleToShow).fadeIn('fast');
+      });
     }
 
     function togglePriceDisplay(parentBox, isSubscriptionSelected) {
@@ -346,6 +347,14 @@
       parentBox.find(pricesToHide).fadeOut('fast', function() {
         parentBox.find(pricesToShow).fadeIn('fast').css("display","inline-block");
       });
+    }
+
+    function updateYotpoPointsWidget(parentBox, isSubscriptionSelected) {
+      var newPoints = isSubscriptionSelected
+        ? Math.floor(Number(parentBox.data('subscription-item-price')) / 100)
+        : Math.floor(Number(parentBox.data('item-price')) / 100);
+
+      parentBox.find('.reward-points-widget .current-price').html(newPoints);
     }
 
     function updateSelection(element) {
@@ -388,12 +397,7 @@
     function redirectToCheckout(variant_id, dc) {
       let checkoutLink = "https://" + location.hostname + "/cart/" + variant_id + ":1"
       if (dc) {checkoutLink += "?discount=" + atob(dc);}
-
-      {% if customer.email == 'yotam1@curalife.com' %}
-        console.log(checkoutLink);
-      {% else %}
-        window.location.href = checkoutLink;
-      {% endif %}
+      window.location.href = checkoutLink;
     }
 
     function toggleButtonLoading(buttonElement, isLoading) {
