@@ -46,13 +46,13 @@
 
         <div class="price-wrapper">
           {% if product.metafields.custom.is_price_per_month %}
-            <div class="total-price mb-1 text-[14px] text-[--dark-blue]">
+            <div class="total-price-wrapper mb-1 text-[14px] text-[--dark-blue]">
               {% if subscription_total_price > subscription_item_price %}
-                <span class="subscription">Total <span class="floor rounded">{{ subscription_total_price | money }}</span></span>
+                <span class="total-price subscription">Total <span class="floor rounded">{{ subscription_total_price | money }}</span></span>
               {% endif %}
 
               {% if var.price > item_price %}
-                <span class="buy-once hidden">Total <span class="floor rounded">{{ var.price | money }}</span></span>
+                <span class="total-price buy-once hidden">Total <span class="floor rounded">{{ var.price | money }}</span></span>
               {% endif %}
             </div>
           {% endif %}
@@ -343,11 +343,11 @@
       parentBox.find('.real-price, .total-price').stop().fadeOut('fast', function() {
         // Determine which prices to show based on the selected purchase option
         if (isSubscriptionSelected) {
-          parentBox.find('.real-price.subscription, .total-price .subscription').fadeIn('fast');
-          parentBox.find('.real-price.buy-once, .total-price .buy-once').hide();
+          parentBox.find('.real-price.subscription, .total-price.subscription').fadeIn('fast');
+          parentBox.find('.real-price.buy-once, .total-price.buy-once').hide();
         } else {
-          parentBox.find('.real-price.buy-once, .total-price .buy-once').fadeIn('fast');
-          parentBox.find('.real-price.subscription, .total-price .subscription').hide();
+          parentBox.find('.real-price.buy-once, .total-price.buy-once').fadeIn('fast');
+          parentBox.find('.real-price.subscription, .total-price.subscription').hide();
         }
       });
     }
