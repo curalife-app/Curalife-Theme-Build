@@ -247,7 +247,9 @@
 
     function handlePurchaseTypeClick(event, button) {
       event.stopPropagation();
-      togglePurchaseType(button.closest('.purchase-option-box'), button.hasClass('subscription'));
+      const parentBox = button.closest('.purchase-option-box');
+      const isSubscriptionSelected = button.hasClass('subscription');
+      togglePurchaseType(parentBox, isSubscriptionSelected);
     }
 
     function handleMainButtonClick(event, button) {
@@ -313,15 +315,11 @@
         {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').show();{% endunless %}
         parentBox.find('.checkout-button').show();
         parentBox.find('.add-to-cart-button').hide();
-        parentBox.find('.total-price .subscription').show();
-        parentBox.find('.total-price .buy-once').hide();
       } else {
         parentBox.find('.subscription-info').slideUp('fast');
         {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').hide();{% endunless %}
         parentBox.find('.add-to-cart-button').show();
         parentBox.find('.checkout-button').hide();
-        parentBox.find('.total-price .buy-once').show();
-        parentBox.find('.total-price .subscription').hide();
       }
 
       updateYotpoPointsWidget(parentBox, isSubscriptionSelected);
@@ -341,11 +339,16 @@
     }
 
     function togglePriceDisplay(parentBox, isSubscriptionSelected) {
-      var pricesToHide = isSubscriptionSelected ? '.real-price.buy-once, .total-price.buy-once' : '.real-price.subscription, .total-price.subscription';
-      var pricesToShow = isSubscriptionSelected ? '.real-price.subscription, .total-price.subscription' : '.real-price.buy-once, .total-price.buy-once';
-
-      parentBox.find(pricesToHide).fadeOut('fast', function() {
-        parentBox.find(pricesToShow).fadeIn('fast').css("display","inline-block");
+      // Hide all prices initially to prepare for toggle animation
+      parentBox.find('.real-price, .total-price').stop().fadeOut('fast', function() {
+        // Determine which prices to show based on the selected purchase option
+        if (isSubscriptionSelected) {
+          parentBox.find('.real-price.subscription, .total-price.subscription').fadeIn('fast');
+          parentBox.find('.real-price.buy-once, .total-price.buy-once').hide();
+        } else {
+          parentBox.find('.real-price.buy-once, .total-price.buy-once').fadeIn('fast');
+          parentBox.find('.real-price.subscription, .total-price.subscription').hide();
+        }
       });
     }
 
