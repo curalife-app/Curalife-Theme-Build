@@ -46,13 +46,15 @@
 
         <div class="price-wrapper">
           {% if product.metafields.custom.is_price_per_month %}
-            {% if subscription_total_price > subscription_item_price %}
-              <span class="total-price subscription">Total <span class="floor rounded">{{ subscription_total_price | money }}</span></span>
-            {% endif %}
+            <div class="total-price mb-1 text-[14px]">
+              {% if subscription_total_price > subscription_item_price %}
+                <span class="subscription">Total <span class="floor rounded">{{ subscription_total_price | money }}</span></span>
+              {% endif %}
 
-            {% if var.price > item_price %}
-              <span class="total-price buy-once hidden">Total <span class="floor rounded">{{ var.price | money }}</span></span>
-            {% endif %}
+              {% if var.price > item_price %}
+                <span class="buy-once hidden">Total <span class="floor rounded">{{ var.price | money }}</span></span>
+              {% endif %}
+            </div>
           {% endif %}
           <div class="calculations flex items-center gap-2 font-bold leading-10">
             <div class="real-price no-letters text-[40px] subscription"><span class="floor rounded">{% if product.metafields.custom.is_price_per_month %}{{ subscription_item_price | money }}{% else %}{{ subscription_total_price | money }}{% endif %}</span></div>
