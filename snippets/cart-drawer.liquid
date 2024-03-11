@@ -13,7 +13,7 @@
       <cart-drawer-items {% if cart == empty %}class="is-empty"{% endif %}>
         <form action="{{ routes.cart_url }}" id="CartDrawer-Form" class="cart__contents cart-drawer__form" method="post">
           <div id="CartDrawer-CartItems" class="drawer__contents js-contents">
-            {%- if cart != empty -%}
+
               <div class="drawer__cart-items-wrapper">
                 <table class="cart-items" role="table">
                   <thead role="rowgroup">
@@ -33,6 +33,7 @@
                     </tr>
                   </thead>
 
+                  {%- if cart != empty -%}
                   <tbody role="rowgroup">
                     {%- for item in cart.items -%}
                       <tr id="CartDrawer-Item-{{ item.index | plus: 1 }}" class="cart-item" role="row">
@@ -196,9 +197,10 @@
                       </tr>
                     {%- endfor -%}
                   </tbody>
+                {%- endif -%}
                 </table>
               </div>
-            {%- endif -%}
+
             <p id="CartDrawer-LiveRegionText" class="visually-hidden" role="status"></p>
             <p id="CartDrawer-LineItemStatus" class="visually-hidden" aria-hidden="true" role="status">{{ 'accessibility.loading' | t }}</p>
           </div>
