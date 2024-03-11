@@ -1,10 +1,6 @@
 {% comment %} disable recharge link from login page {% endcomment %}
 <script>window.rcLoginAccessLink = {disableInjection: true};</script>
 
-{% comment %} {% if shop.name == 'CuraLife' %}
-  {% assign isKrakenFunctionality = true %}
-{% endif %} {% endcomment %}
-
 {{ 'customer.css' | asset_url | stylesheet_tag }}
 
 <section class="customer login">
@@ -54,7 +50,7 @@
       {%- endif -%}
 
       {%- form 'customer_login', novalidate: 'novalidate' -%}
-        {% unless isKrakenFunctionality %} {%- if form.errors -%}
+        {%- if form.errors -%}
           <h2 class="form__message" tabindex="-1" autofocus>
             <span class="visually-hidden">{{ 'accessibility.error' | t }} </span>
             <svg aria-hidden="true" focusable="false" viewBox="0 0 13 13">
@@ -67,7 +63,6 @@
           </h2>
           {{ form.errors | default_errors }}
         {%- endif -%}
-      {% endunless %}
 
         <div class="field">
           <input type="email" name="customer[email]" id="CustomerEmail" autocomplete="email" autocorrect="off" autocapitalize="off" {% if form.errors contains 'form' %}aria-invalid="true"{% endif %} placeholder="{{ 'customer.login_page.email' | t }}">
@@ -75,7 +70,7 @@
         </div>
 
         {%- if form.password_needed -%}
-          <div class="field" {% if isKrakenFunctionality %}style="display: none;"{% endif %}>
+          <div class="field">
             <input type="password" value="" name="customer[password]" id="CustomerPassword" autocomplete="current-password" {% if form.errors contains 'form' %}aria-invalid="true"{% endif %} placeholder="{{ 'customer.login_page.password' | t }}">
             <label for="CustomerPassword">{{ 'customer.login_page.password' | t }}</label>
           </div>
