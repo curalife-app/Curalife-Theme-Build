@@ -1,10 +1,6 @@
 <script src="{{ 'cart.js' | asset_url }}" defer="defer"></script>
 
-<style>
-  .drawer {
-    visibility: hidden;
-  }
-</style>
+<style>.drawer {visibility: hidden;}</style>
 
 <cart-drawer class="drawer{% if cart == empty %} is-empty{% endif %}">
   <div id="CartDrawer" class="cart-drawer">
@@ -66,6 +62,9 @@
                             {% comment %} Leave empty space due to a:empty CSS display: none rule {% endcomment %}
                             <a href="{{ item.url }}" class="cart-item__link" tabindex="-1" aria-hidden="true"> </a>
                             <img class="cart-item__image" src="{{ item.image | image_url: width: 300 }}" alt="{{ item.image.alt | escape }}" loading="lazy" width="150" height="{{ 150 | divided_by: item.image.aspect_ratio | ceil }}">
+                            {% if item.selling_plan_allocation %}
+                              <div class="subscription-badge">Subscription</div>
+                            {% endif %}
                           {% endif %}
                         </td>
 
