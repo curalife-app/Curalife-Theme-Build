@@ -146,14 +146,14 @@
 
                         <td class="cart-item__quantity" role="cell" headers="CartDrawer-ColumnQuantity">
                           <div class="cart-item__quantity-wrapper">
-                            {% unless item.selling_plan_allocation %}
                               <quantity-input class="quantity cart-quantity">
-                                <button class="quantity__button no-js-hidden" name="minus" type="button">
-                                  <span class="visually-hidden">
-                                    {{- 'products.product.quantity.decrease' | t: product: item.product.title | escape -}}
-                                  </span>
-                                  {% render 'icon-minus' %}
-                                </button>
+                                {% unless item.selling_plan_allocation %}
+                                  <button class="quantity__button no-js-hidden" name="minus" type="button">
+                                    <span class="visually-hidden">{{- 'products.product.quantity.decrease' | t: product: item.product.title | escape -}}</span>
+                                    {% render 'icon-minus' %}
+                                  </button>
+                                {% endunless %}
+
                                 <input
                                   class="quantity__input"
                                   type="number"
@@ -169,14 +169,14 @@
                                   aria-label="{{ 'products.product.quantity.input_label' | t: product: item.product.title | escape }}"
                                   id="Drawer-quantity-{{ item.index | plus: 1 }}"
                                   data-index="{{ item.index | plus: 1 }}">
-                                <button class="quantity__button no-js-hidden" name="plus" type="button">
-                                  <span class="visually-hidden">
-                                    {{- 'products.product.quantity.increase' | t: product: item.product.title | escape -}}
-                                  </span>
-                                  {% render 'icon-plus' %}
-                                </button>
+
+                                {% unless item.selling_plan_allocation %}
+                                  <button class="quantity__button no-js-hidden" name="plus" type="button">
+                                    <span class="visually-hidden">{{- 'products.product.quantity.increase' | t: product: item.product.title | escape -}}</span>
+                                    {% render 'icon-plus' %}
+                                  </button>
+                                {% endunless %}
                               </quantity-input>
-                            {% endunless %}
 
                             <cart-remove-button id="CartDrawer-Remove-{{ item.index | plus: 1 }}" data-index="{{ item.index | plus: 1 }}">
                               <button type="button" class="not-button" aria-label="{{ 'sections.cart.remove_title' | t: title: item.title }}">{% render 'icon-remove' %}</button>
