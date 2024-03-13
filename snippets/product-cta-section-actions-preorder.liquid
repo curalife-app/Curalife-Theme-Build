@@ -76,11 +76,11 @@
       togglePurchaseType(parentBox, isSubscriptionSelected);
     }
 
-    // function handleMainButtonClick(event, button) {
-    //   event.stopPropagation();
-    //   const parentBox = button.closest('.purchase-option-box');
-    //   buyButtonHandler(parentBox.data('variant'), parentBox.data('subscription-selling-plan-id'), button);
-    // }
+    function handleMainButtonClick(event, button) {
+      event.stopPropagation();
+      const parentBox = button.closest('.purchase-option-box');
+      buyButtonHandler({{ product.first_available_variant.id }}, parentBox.data('subscription-selling-plan-id'), button);
+    }
 
     function adjustMaxHeight(element) {
       var openHeight = $(element).get(0).scrollHeight;
@@ -195,22 +195,10 @@
       return window.productSliderAllInOne{{ shortSectionID }}.slides.length - ({{ product.variants.size | plus: 1 }} - $(element).attr('data-index'));
     }
 
-    // function buyButtonHandler(variant_id, subscription_selling_plan_id, buttonElement) {
-    //   toggleButtonLoading(buttonElement, true);
-    //   if (isSubscriptionSelected() || true) {
-    //     buySubscription(variant_id, 1, subscription_selling_plan_id);
-    //   } else {
-    //     let dc = $(buttonElement).closest('.purchase-option-box').data('dc');
-    //     let giftProductID = buttonElement.parent().siblings('.gifts').attr('data-bundle-product-id');
-
-    //     if (giftProductID){
-    //       redirectToCheckout(giftProductID, dc);
-    //     }
-    //     else {
-    //       redirectToCheckout(variant_id, dc);
-    //     }
-    //   }
-    // }
+    function buyButtonHandler(variant_id, subscription_selling_plan_id, buttonElement) {
+      toggleButtonLoading(buttonElement, true);
+      redirectToCheckout(variant_id, dc);
+    }
 
     function isSubscriptionSelected() {
       return $('#product-actions-{{ section_id }} .purchase-option-box.selected').find('.purchase-type .subscription.selected').length > 0;
