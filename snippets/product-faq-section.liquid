@@ -49,11 +49,19 @@
     transform: rotate(45deg);
   }
 
-  #faq-{{ section_id }} .faq-item .answer {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height .2s ease-out;
-  }
+  .faq-item .answer {
+  overflow: hidden;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  height: auto; /* Set the actual height to auto */
+  transform: scaleY(0);
+  opacity: 0;
+  transform-origin: top; /* Ensures the scaling is from the top */
+}
+
+.faq-item .answer.active {
+  transform: scaleY(1);
+  opacity: 1;
+}
 
   @media screen and (max-width:768px) {
     #faq-{{ section_id }} .faq-item .question {
@@ -70,26 +78,23 @@
 <script>
   let accordionItemHeadersObject = document.querySelectorAll(".question");
 
-  accordionItemHeadersObject.forEach(accordionItemHeader => {
-    accordionItemHeader.addEventListener("click", event => {
-      {% if is_allow_one_open %}
-        let currentlyActiveAccordionItemHeader = document.querySelector(".question.active");
-        if (currentlyActiveAccordionItemHeader && currentlyActiveAccordionItemHeader!==accordionItemHeader) {
-          currentlyActiveAccordionItemHeader.classList.toggle("active");
-          currentlyActiveAccordionItemHeader.nextElementSibling.style.maxHeight = 0;
-        }
-      {% endif %}
+  document.querySelectorAll(".question").forEach(accordionItemHeader => {
+  accordionItemHeader.addEventListener("click", () => {
+    const answerEl = accordionItemHeader.nextElementSibling;
 
-      accordionItemHeader.classList.toggle("active");
-      let accordionItemBody = accordionItemHeader.nextElementSibling;
-      if (accordionItemHeader.classList.contains("active")) {
-        accordionItemBody.style.maxHeight = accordionItemBody.scrollHeight + "px";
-      }
-      else {
-        accordionItemBody.style.maxHeight = 0;
-      }
-    });
+    // Toggle active class on answer element
+    answerEl.classList.toggle("active");
+
+    // Optionally, handle one accordion open at a time
+    if ({{ is_allow_one_open }}) {
+      document.querySelectorAll(".faq-item .answer").forEach(el => {
+        if (el !== answerEl) {
+          el.classList.remove("active");
+        }
+      });
+    }
   });
+});
 
   {% if is_ingredients_feature %}
     faqIngredientsMainSliderAllInOne = new Swiper('.faq-section .ingredients-main-slider.swiper', {
