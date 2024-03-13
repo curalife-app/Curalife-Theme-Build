@@ -52,7 +52,7 @@
   #faq-{{ section_id }} .faq-item .answer {
     max-height: 0;
     overflow: hidden;
-    transition: height .4s ease-in-out;
+    transition: max-height .2s ease-out;
   }
 
   @media screen and (max-width:768px) {
@@ -68,63 +68,28 @@
 </style>
 
 <script>
-  document.querySelectorAll(".question").forEach(accordionItemHeader => {
-    accordionItemHeader.addEventListener("click", event => {
-      const isAllowOneOpen = {{ is_allow_one_open }}; // Assuming you're setting this variable in your template
+  let accordionItemHeadersObject = document.querySelectorAll(".question");
 
-      if (isAllowOneOpen) {
-        const currentlyActiveAccordionItemHeader = document.querySelector(".question.active");
-        if (currentlyActiveAccordionItemHeader && currentlyActiveAccordionItemHeader !== accordionItemHeader) {
-          currentlyActiveAccordionItemHeader.classList.remove("active");
-          updateAccordionItemBodyHeight(currentlyActiveAccordionItemHeader.nextElementSibling, true);
+  accordionItemHeadersObject.forEach(accordionItemHeader => {
+    accordionItemHeader.addEventListener("click", event => {
+      {% if is_allow_one_open %}
+        let currentlyActiveAccordionItemHeader = document.querySelector(".question.active");
+        if (currentlyActiveAccordionItemHeader && currentlyActiveAccordionItemHeader!==accordionItemHeader) {
+          currentlyActiveAccordionItemHeader.classList.toggle("active");
+          currentlyActiveAccordionItemHeader.nextElementSibling.style.maxHeight = 0;
         }
-      }
+      {% endif %}
 
       accordionItemHeader.classList.toggle("active");
-      const accordionItemBody = accordionItemHeader.nextElementSibling;
-      updateAccordionItemBodyHeight(accordionItemBody, accordionItemHeader.classList.contains("active"));
+      let accordionItemBody = accordionItemHeader.nextElementSibling;
+      if (accordionItemHeader.classList.contains("active")) {
+        accordionItemBody.style.maxHeight = accordionItemBody.scrollHeight + "px";
+      }
+      else {
+        accordionItemBody.style.maxHeight = 0;
+      }
     });
   });
-
-  function updateAccordionItemBodyHeight(accordionItemBody, isOpening) {
-    if (isOpening) {
-      accordionItemBody.style.height = `${accordionItemBody.scrollHeight}px`;
-    } else {
-      accordionItemBody.style.height = '0';
-    }
-
-    // Ensure a smooth transition by dynamically removing the fixed height after the transition ends.
-    accordionItemBody.addEventListener('transitionend', () => {
-      if (isOpening) {
-        accordionItemBody.style.height = 'auto';
-      }
-    }, { once: true });
-  }
-</script>
-
-<script>
-  // let accordionItemHeadersObject = document.querySelectorAll(".question");
-
-  // accordionItemHeadersObject.forEach(accordionItemHeader => {
-  //   accordionItemHeader.addEventListener("click", event => {
-  //     {% if is_allow_one_open %}
-  //       let currentlyActiveAccordionItemHeader = document.querySelector(".question.active");
-  //       if (currentlyActiveAccordionItemHeader && currentlyActiveAccordionItemHeader!==accordionItemHeader) {
-  //         currentlyActiveAccordionItemHeader.classList.toggle("active");
-  //         currentlyActiveAccordionItemHeader.nextElementSibling.style.maxHeight = 0;
-  //       }
-  //     {% endif %}
-
-  //     accordionItemHeader.classList.toggle("active");
-  //     let accordionItemBody = accordionItemHeader.nextElementSibling;
-  //     if (accordionItemHeader.classList.contains("active")) {
-  //       accordionItemBody.style.maxHeight = accordionItemBody.scrollHeight + "px";
-  //     }
-  //     else {
-  //       accordionItemBody.style.maxHeight = 0;
-  //     }
-  //   });
-  // });
 
   {% if is_ingredients_feature %}
     faqIngredientsMainSliderAllInOne = new Swiper('.faq-section .ingredients-main-slider.swiper', {
