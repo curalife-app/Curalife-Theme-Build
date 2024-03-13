@@ -45,31 +45,10 @@
     const productActions = $("#product-actions-{{ section_id }}");
     const purchaseOptionBoxes = productActions.find('.purchase-option-box');
 
-    setupMutationObserver();
     attachEventHandlers();
 
-    function setupMutationObserver() {
-      const observer = new MutationObserver(mutations => {
-        mutations.forEach(({ target }) => {
-          const targetBox = $(target).closest('.purchase-option-box');
-          if (targetBox.hasClass('selected')) adjustMaxHeight(targetBox);
-        });
-      });
-
-      purchaseOptionBoxes.each((_, element) => observer.observe(element, { attributes: true, childList: true, subtree: true }));
-    }
-
     function attachEventHandlers() {
-      productActions.on('click', '.purchase-option-box', event => togglePurchaseBox($(event.currentTarget)))
-                    .on('click', '.purchase-type button', event => handlePurchaseTypeClick(event, $(event.currentTarget)));
-                    //.on('click', '.main-btn', event => handleMainButtonClick(event, $(event.currentTarget)));
-    }
-
-    function handlePurchaseTypeClick(event, button) {
-      event.stopPropagation();
-      const parentBox = button.closest('.purchase-option-box');
-      const isSubscriptionSelected = button.hasClass('subscription');
-      togglePurchaseType(parentBox, isSubscriptionSelected);
+      productActions.on('click', '.main-btn', event => handleMainButtonClick(event, $(event.currentTarget)));
     }
 
     function handleMainButtonClick(event, button) {
@@ -81,30 +60,6 @@
     function adjustMaxHeight(element) {
       var openHeight = $(element).get(0).scrollHeight;
       $(element).css('max-height', openHeight + 'px');
-    }
-
-    function updateComparedAtPriceDisplay(parentBox) {
-      let isSubscriptionSelected = parentBox.find('.purchase-type .subscription').hasClass('selected');
-
-      let itemPrice = parseFloat(parentBox.data('item-price'));
-      let subscriptionItemPrice = parseFloat(parentBox.data('subscription-item-price'));
-      let originalItemCap = parseFloat(parentBox.data('original-item-cap'));
-
-      let currentPrice = isSubscriptionSelected ? subscriptionItemPrice : itemPrice;
-
-      let comparedAtPriceElement = parentBox.find('.compared-at-price');
-      if (originalItemCap > currentPrice) {
-        comparedAtPriceElement.fadeIn();
-      } else {
-        comparedAtPriceElement.fadeOut();
-      }
-    }
-
-    function updateSelection(element) {
-      let container = $("#product-actions-{{ section_id }}");
-      container.find(".purchase-option-box").removeClass("selected");
-      container.find(".purchase-option-box input[type='radio']").prop('checked', false);
-      $(element).addClass("selected").find('input').prop('checked', true);
     }
 
     function buyButtonHandler(variant_id, subscription_selling_plan_id, buttonElement) {
@@ -175,56 +130,6 @@
     }
   });
 </script>
-
-<style>
-  .gift-product.selected img {
-    background-color: var(--light-blue);
-    border-width: 2px;
-  }
-
-  .purchase-type button {
-    border-radius: 5px;
-    font-size: 16px;
-    min-width: 49%;
-    padding: 0.5rem;
-  }
-
-  .purchase-type button:not(.selected) {
-    background: unset;
-    border: 1px solid var(--blue);
-    color: var(--blue);
-  }
-</style>
-
-<style>
-  .cta-section-{{ section_id }} .purchase-option-box .radio-box input[type='radio'] {
-      display: none;
-  }
-
-  .cta-section-{{ section_id }} .purchase-option-box .radio-box label {
-      cursor: pointer;
-      width: 19px;
-      height: 19px;
-      border: 1px solid var(--blue);
-      border-radius: 50%;
-      position: relative;
-  }
-
-  /* This will only apply the style when the variant box is selected and the radio button is checked */
-  .cta-section-{{ section_id }} .purchase-option-box.selected .radio-box input[type='radio']:checked + label:after {
-      content: '\2713';
-      position: absolute;
-      top: -2px;
-      left: -2px;
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: var(--blue);
-      text-align: center;
-      line-height: 22px;
-      color: #fff;
-  }
-</style>
 
 <style>
   .cta-section-{{ section_id }} .product-actions {
