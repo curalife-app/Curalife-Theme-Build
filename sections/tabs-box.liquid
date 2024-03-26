@@ -1,6 +1,6 @@
 {% assign tabs_amount = section.blocks.size %}
 
-<section id="info" class="tabs-box-section admin-hidden text-center">
+<section id="tab-box-{{ section.id }}" class="tabs-box-section admin-hidden text-center">
   <div class="container pt-4">
     <div class="tabbed-content tabs-side shadow-2xl">
       <nav class="tabs min-w-[300px] xl:min-w-fit">
@@ -13,11 +13,11 @@
         {% for tab_block in section.blocks %}
           <div id="item-{{ forloop.index }}" class="item {% if forloop.first %}active always-active{% endif %}" data-title="{{ tab_block.settings.tab_name }}">
             <div class="item-content flex gap-4">
-              <img src="{{ tab_block.settings.tab_image.src | image_url }}" alt="{{ tab_block.settings.tab_name }}" loading="lazy">
+              <img src="{{ tab_block.settings.tab_image | img_url: 'master' }}" alt="{{ tab_block.settings.tab_name }}" loading="lazy">
               <div class="content">
                 <p class="h5 font-bold">How we help</p>
                 <p>{{ tab_block.settings.tab_description }}</p>
-                <a href="{{ tab_block.settings.tab_link }}">Learn More</a>
+                <a href="{{ tab_block.settings.tab_link }}" class="btn">Learn More</a>
               </div>
             </div>
           </div>
@@ -93,28 +93,6 @@
   .tabs-box-section .item.active .item-content {
     background-color: var(--light-blue);
     transition: opacity 0.8s ease-in-out;
-  }
-
-  .tabs-box-section .arrow {
-    width: 50px;
-    height: 50px;
-    font-size: 40px;
-    border-radius: 50%;
-    position: absolute;
-    left: calc(50% - 25px);
-    top: calc(50% - 25px);
-    z-index: 10;
-    background: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 0.5s ease-in-out;
-  }
-
-  .tabs-box-section .item.active .arrow {
-    opacity: 1;
-    transition-delay: 0.75s;
   }
 
   .tabs-box-section .tabbed-content .item {
@@ -233,48 +211,28 @@
 </style>
 
 <script>
-  $(document).ready(function() {
-    var resizeTimer;
+  document.addEventListener('DOMContentLoaded', function() {
+    const tabBox = document.querySelector('#tab-box-{{ section.id }}');
+    if (!tabBox) return;
 
-    $('.tabs-box-section').on('click', '.tabs a', function(event) {
+    tabBox.addEventListener('click', function(event) {
+      const target = event.target;
+      if (target.tagName !== 'A') return;
+
       event.preventDefault();
-      var $this = $(this),
-          target = $this.attr('href'),
-          $tabs = $this.closest('.tabs'),
-          $items = $this.closest('.tabs-box-section').find('.item');
+      const href = target.getAttribute('href');
+      const targetItem = document.querySelector(href);
+      if (!targetItem) return;
 
-      $tabs.find('a').removeClass('active');
-      $items.removeClass('active');
-      $this.addClass('active');
-      $(target).addClass('active');
+      const tabs = tabBox.querySelectorAll('.tabs a');
+      const items = tabBox.querySelectorAll('.item');
+
+      tabs.forEach(tab => tab.classList.remove('active'));
+      items.forEach(item => item.classList.remove('active'));
+
+      target.classList.add('active');
+      targetItem.classList.add('active');
     });
-
-    $('.tabs-box-section').on('click', '.item', function() {
-      var $this = $(this),
-          container = $this.closest('.tabbed-content'),
-          currId = $this.attr('id'),
-          $tabs = container.find('.tabs a'),
-          $items = container.find('.item');
-      $tabs.removeClass('active');
-      $items.removeClass('active');
-      $this.addClass('active');
-      container.find('.tabs a[href$="#' + currId + '"]').addClass('active');
-      $('html, body').animate({
-          scrollTop: $this.offset().top
-      }, 200);
-    });
-
-    function tabControl() {
-      var tabs = $('.tabs-box-section .tabbed-content').find('.tabs');
-      tabs.toggleClass('visible', tabs.is(':visible'));
-    }
-
-    $(window).on('resize', function() {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(tabControl, 250);
-    });
-
-    tabControl();
   });
 </script>
 
@@ -302,6 +260,11 @@
             "type": "text",
             "id": "tab_description",
             "label": "Tab Description"
+          },
+          {
+            "type": "url",
+            "id": "tab_link",
+            "label": "Tab Link URL"
           }
         ]
       }
