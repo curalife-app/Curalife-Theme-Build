@@ -1,6 +1,6 @@
 {% assign disorders_amount = section.blocks.size %}
 
-<section id="info" class="disorders-box-section text-center">
+<section id="disorders-box-section-{{ section.id }}" class="disorders-box-section text-center">
   <div class="container pt-4">
     <div class="tabbed-content tabs-side shadow-2xl">
       <nav class="tabs min-w-[300px] xl:min-w-fit">
@@ -313,12 +313,12 @@
   $(document).ready(function() {
     var resizeTimer;
 
-    $('.disorders-box-section').on('click', '.tabs a', function(event) {
+    $('#disorders-box-section-{{ section.id }}').on('click', '.tabs a', function(event) {
       event.preventDefault();
       var $this = $(this),
           target = $this.attr('href'),
           $tabs = $this.closest('.tabs'),
-          $items = $this.closest('.disorders-box-section').find('.item');
+          $items = $this.closest('#disorders-box-section-{{ section.id }}').find('.item');
 
       $tabs.find('a').removeClass('active');
       $items.removeClass('active');
@@ -326,7 +326,7 @@
       $(target).addClass('active');
     });
 
-    $('.disorders-box-section').on('click', '.item', function() {
+    $('#disorders-box-section-{{ section.id }}').on('click', '.item', function() {
       var $this = $(this),
           container = $this.closest('.tabbed-content'),
           currId = $this.attr('id'),
@@ -342,7 +342,7 @@
     });
 
     function tabControl() {
-      var tabs = $('.disorders-box-section .tabbed-content').find('.tabs');
+      var tabs = $('#disorders-box-section-{{ section.id }} .tabbed-content').find('.tabs');
       tabs.toggleClass('visible', tabs.is(':visible'));
     }
 
