@@ -134,13 +134,38 @@
     };
   </script>
 
-  <style>
-    {% if section.settings.is_ticker %}
-      .swiper-wrapper {
-        transition-timing-function: linear !important;
-      }
-    {% endif %}
+{% if section.settings.is_ticker %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        injectStylesIntoSwiperShadowDOM();
+    });
 
+    // Option 2: Using 'MutationObserver' for dynamic content
+    let observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.addedNodes.length) {
+                injectStylesIntoSwiperShadowDOM();
+            }
+        });
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
+    function injectStylesIntoSwiperShadowDOM() {
+        const shadowHost = document.querySelector('.swiper-container')?.shadowRoot;
+        if (shadowHost) {
+            var style = document.createElement('style');
+            style.textContent = '.swiper-wrapper { transition-timing-function: linear !important; }';
+            shadowHost.appendChild(style);
+        }
+    }
+  </script>
+{% endif %}
+
+  <style>
     #section-{{ section.id }} .items {
       --swiper-theme-color: var(--blue);
       --swiper-navigation-size: 18px;
