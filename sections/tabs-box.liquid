@@ -118,14 +118,16 @@
     if (!tabBox) return;
 
     tabBox.addEventListener('click', function(event) {
-      const target = event.target;
-      if (target.tagName !== 'A') return;
+      let target = event.target;
 
-      // Check if the clicked link is a "Learn More" link
-      if (target.classList.contains('learn-more')) return; // Allow default behavior for "Learn More" links
+      if (target.tagName !== 'A' || !target.closest('.tab')) return;
 
-      event.preventDefault();
+      event.preventDefault(); // Prevent default only for tab control clicks
+
       const href = target.getAttribute('href');
+
+      if (!href.startsWith('#')) return;
+
       const targetItem = document.querySelector(href);
       if (!targetItem) return;
 
