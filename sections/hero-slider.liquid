@@ -1,30 +1,32 @@
 <section class="hero-banner admin-hidden">
-  <h1 class="hidden">Curalife - Clean, natural, effective products you can trust</h1>
+  <div class="container">
+    <h1 class="hidden">Curalife - Clean, natural, effective products you can trust</h1>
 
-  <div class="slides-container">
-    {% for block in section.blocks %}
-      <div class="slide flex items-center" style="background-color: {{ block.settings.slide_bg_color }};">
-        <div class="slide-content">
-          {% if block.settings.title %}
-            <span class="small-title">{{ block.settings.title }}</span>
-          {% endif %}
+    <div class="slides-container">
+      {% for block in section.blocks %}
+        <div class="slide flex items-center" style="background-color: {{ block.settings.slide_bg_color }};">
+          <div class="slide-content">
+            {% if block.settings.title %}
+              <span class="small-title">{{ block.settings.title }}</span>
+            {% endif %}
 
-          {% if block.settings.subtitle %}
-            <h2>{{ block.settings.subtitle }}</h2>
-          {% endif %}
+            {% if block.settings.subtitle %}
+              <h2>{{ block.settings.subtitle }}</h2>
+            {% endif %}
 
-          {% if block.settings.slide_button_title and block.settings.slide_button_link %}
-            <a href="{{ block.settings.slide_button_link }}" {% if block.settings.slide_is_button_link_new_window %}target="_blank"{% endif %}>
-              <button>{{ block.settings.slide_button_title }}</button>
-            </a>
+            {% if block.settings.slide_button_title and block.settings.slide_button_link %}
+              <a href="{{ block.settings.slide_button_link }}" {% if block.settings.slide_is_button_link_new_window %}target="_blank"{% endif %}>
+                <button>{{ block.settings.slide_button_title }}</button>
+              </a>
+            {% endif %}
+          </div>
+
+          {% if block.settings.image %}
+            {% render 'responsive-image', img: block.settings.image, img_mobile: block.settings.image_mobile, classes: "mbl:w-full" %}
           {% endif %}
         </div>
-
-        {% if block.settings.image %}
-          {% render 'responsive-image', img: block.settings.image, img_mobile: block.settings.image_mobile, classes: "mbl:w-full" %}
-        {% endif %}
-      </div>
-    {% endfor %}
+      {% endfor %}
+    </div>
   </div>
 </section>
 
