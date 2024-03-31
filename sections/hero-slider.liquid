@@ -1,14 +1,16 @@
 <section class="hero-banner">
+  <h1 class="hidden">Curalife - Clean, natural, effective products you can trust</h1>
+
   <div class="slides-container">
     {% for block in section.blocks %}
-      <div class="slide" style="background-image: url('{{ block.settings.image | image_url }}');">
-        <div class="slide-content">
+      <div class="slide" style="background-color: {{ block.settings.slide_bg_color }};">
+        <div class="slide-content flex items-center">
           {% if block.settings.title %}
             <span class="small-title">{{ block.settings.title }}</span>
           {% endif %}
 
           {% if block.settings.subtitle %}
-            <h1>{{ block.settings.subtitle }}</h1>
+            <h2>{{ block.settings.subtitle }}</h2>
           {% endif %}
 
           {% if block.settings.slide_button_title and block.settings.slide_button_link %}
@@ -17,6 +19,10 @@
             </a>
           {% endif %}
         </div>
+
+        {% if block.settings.image %}
+          <img src="{{ block.settings.image | img_url: 'master' }}" alt="{{ block.settings.title }}">
+        {% endif %}
       </div>
     {% endfor %}
   </div>
@@ -94,6 +100,11 @@ document.addEventListener("DOMContentLoaded", function() {
       "type": "slide",
       "name": "Slide",
       "settings": [
+        {
+          "type": "color",
+          "id": "slide_bg_color",
+          "label": "Slide Background Color"
+        },
         {
           "type": "image_picker",
           "id": "image",
