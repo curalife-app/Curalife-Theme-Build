@@ -4,17 +4,17 @@
       <div class="swiper-wrapper">
         {% for review in section.blocks %}
           <div class="review swiper-slide {% unless review.settings.image %}no-image{% endunless %}">
-            <div class="review-wrapper flex flex-col text-center p-6 bg-[--light-blue] !h-[600px] mbl:!h-[160vw] rounded-xl md:m-auto md:w-[90%]">
+            <div class="review-wrapper flex flex-col p-6 bg-[--light-blue] !h-[600px] mbl:!h-[160vw] rounded-xl md:m-auto md:w-[90%]">
               {% comment %} {% if review.settings.image %}
                 <img class="my-4" src="{{ review.settings.image | img_url: 'master' }}" alt="{{ review.settings.name }}">
               {% endif %} {% endcomment %}
-              <i class="fa-sharp fa-solid fa-quote-left text-[--orange]"></i>
+              <i class="fa-sharp fa-solid fa-quote-left text-[--orange] w-fit mb-4"></i>
               {% comment %} <div class="name text-[26px] text-[#3A7684] mb-4">{{ review.settings.name }}</div> {% endcomment %}
-              <div class="title font-italic mb-4 font-bold text-[--blue]">{{ review.settings.title }}</div>
+              <div class="title text-[30px] font-italic mb-4 font-bold text-[--blue] min-h-[100px]">{{ review.settings.title }}</div>
               <blockquote class="quote p-0 text-black border-0">{{ review.settings.quote }}</blockquote>
             </div>
 
-            <div class="taking-badge">Taking: {{ review.settings.product }}</div>
+            <div class="taking-badge absolute">Taking: {{ review.settings.product }}</div>
           </div>
         {% endfor %}
       </div>
@@ -44,6 +44,15 @@
   #customer-reviews-{{ section.id }} .review.no-image .name {
     margin-top: 60px;
     font-size: 26px;
+  }
+
+  #customer-reviews-{{ section.id }} .review .taking-badge {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    padding: 5px 20px;
+    background: #aec8d0;
+    border-radius: 50px;
   }
 
   #customer-reviews-{{ section.id }} .review.no-image .quote {
