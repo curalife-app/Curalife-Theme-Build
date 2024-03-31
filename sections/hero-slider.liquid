@@ -1,14 +1,8 @@
 <section class="hero-banner bg-{{ section.settings.bg_position }}">
   <div class="background absolute w-full h-full">
-    <div class="images left">
-      {% for block in section.blocks %}
-        <img class="absolute h-full w-1/2 object-cover" src="{{ block.settings.left_image | image_url }}" alt="">
-      {% endfor %}
-    </div>
-
     <div class="images right">
       {% for block in section.blocks %}
-        <img class="absolute h-full w-1/2 left-1/2 object-cover" src="{{ block.settings.right_image | image_url }}" alt="">
+        <img class="left-1/2 absolute object-cover w-1/2 h-full" src="{{ block.settings.right_image | image_url }}" alt="">
       {% endfor %}
     </div>
   </div>
@@ -40,10 +34,6 @@
 
   {% assign delay = 0 %}
   {% for block in section.blocks %}
-    .hero-banner .background .images.left img:nth-child({{ forloop.index }}) {
-      animation-delay: {{ delay }}s;
-    }
-
     .hero-banner .background .images.right img:nth-child({{ forloop.index }}) {
       animation-delay: {{ delay | plus: 1 }}s;
     }
@@ -330,11 +320,6 @@
           "type": "image_picker",
           "id": "right_image",
           "label": "Right Image"
-        },
-        {
-          "type": "image_picker",
-          "id": "left_image",
-          "label": "Left Image"
         }
       ]
     }
