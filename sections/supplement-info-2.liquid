@@ -1,0 +1,139 @@
+<section class="supplement-info">
+  <div class="container">
+    <div class="tabs">
+      <div class="tab active">Overview <i class="fa-light fa-angle-right"></i></div>
+      <div class="tab">Ingredients <i class="fa-light fa-angle-right"></i></div>
+    </div>
+
+    <div class="content-wrapper">
+      <div class="content overview active">
+        <p>Experience the clinically proven power of Curalin for healthy blood sugar and optimal health.</p>
+
+        <ul>
+          <li><b>Keep Sugar in Check:</b> Keep your blood sugar healthy with Curalin's support.*</li>
+          <li><b>Reduce Cravings for Sugars & Carbs:</b> Curb your sugar and carb cravings supported by Curalin.*</li>
+          <li><b>Metabolic Harmony:</b> Boost your body's efficiency for a balanced approach to health and weight management.*</li>
+          <li><b>Elevate Energy:</b> Power through your day with sustained, natural energy.*</li>
+          <li><b>Feel Good Factor:</b> Feel fresh every day with Curalin’s holistic support.*</li>
+        </ul>
+      </div>
+
+      <div class="content ingredients">
+        {% render 'responsive-image', img: section.settings.ingredients_image, img_mobile: section.settings.ingredients_image_mobile, classes: "mbl:w-full" %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  $(document).ready(function() {
+      $('.supplement-info .tab').click(function() {
+          var index = $(this).index();
+          $('.supplement-info .tab').removeClass('active');
+          $(this).addClass('active');
+
+          $('.supplement-info .content.active').fadeOut(300, function() {
+              $(this).removeClass('active');
+
+              $('.supplement-info .content').eq(index).fadeIn(300).addClass('active');
+          });
+      });
+  });
+</script>
+
+<style>
+  .supplement-info {
+    .tabs {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 2rem;
+
+      .tab {
+        transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+        text-align: center;
+        padding: 1rem;
+        background-color: var(--light-blue);
+        width: 250px;
+        border-radius: 30px;
+        transition: background-color 0.3s ease-in-out;
+
+        &.active,
+        &:hover {
+          cursor: pointer;
+          background-color: var(--blue);
+          color: white;
+          font-weight: bold;
+        }
+      }
+    }
+
+    .content-wrapper {
+      .content {
+        transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+        display: none;
+        position: relative;
+
+        &.active {
+          display: block;
+        }
+
+        &.overview {
+          .supplement-wrapper {
+            .supplement-benefits {
+              ul {
+                li {
+                  color: var(--bronze);
+                  font-weight: bold;
+
+                  &:before {
+                    background: var(--bronze);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  @media screen and (max-width: 768px) {
+    .supplement-info {
+      .tabs {
+        gap: 0.5rem;
+
+        .tab {
+          font-size: 4vw;
+        }
+      }
+    }
+  }
+</style>
+
+{% schema %}
+  {
+      "name": "Supplement Info 2",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "overview_image",
+          "label": "Overview Image"
+        },
+        {
+          "type": "image_picker",
+          "id": "ingredients_image",
+          "label": "Ingredients Image"
+        },
+        {
+          "type": "image_picker",
+          "id": "ingredients_image_mobile",
+          "label": "Ingredients Image Mobile"
+        }
+      ],
+      "presets": [
+      {
+          "name": "Supplement Info 2"
+      }
+    ]
+  }
+{% endschema %}
