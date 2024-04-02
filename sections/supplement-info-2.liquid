@@ -4,7 +4,7 @@
   {% assign titleTag = 'h2' %}
 {% endif %}
 
-<section class="supplement-info overflow-visible">
+<section id="supplement-info-{{ section.id }}" class="supplement-info overflow-visible">
   <div class="container">
     <div class="titles mbl:text-center">
       <{{ titleTag }} class="mb-2 text-white">Curalin</{{ titleTag }}>
@@ -51,22 +51,22 @@
 
 <script>
   $(document).ready(function() {
-      $('.supplement-info .tab').click(function() {
+      $('#supplement-info-{{ section.id }} .tab').click(function() {
           var index = $(this).index();
-          $('.supplement-info .tab').removeClass('active');
+          $('#supplement-info-{{ section.id }} .tab').removeClass('active');
           $(this).addClass('active');
 
-          $('.supplement-info .content.active').fadeOut(300, function() {
+          $('#supplement-info-{{ section.id }} .content.active').fadeOut(300, function() {
               $(this).removeClass('active');
 
-              $('.supplement-info .content').eq(index).fadeIn(300).addClass('active');
+              $('#supplement-info-{{ section.id }} .content').eq(index).fadeIn(300).addClass('active');
           });
       });
   });
 </script>
 
 <style>
-  .supplement-info {
+  #supplement-info-{{ section.id }} {
     background-color: {{ section.settings.background_color }};
     color: {{ section.settings.text_color }};
 
@@ -136,7 +136,7 @@
   }
 
   @media screen and (max-width: 768px) {
-    .supplement-info {
+    #supplement-info-{{ section.id }} {
       .tabs {
         gap: 0.5rem;
 
