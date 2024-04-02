@@ -68,12 +68,12 @@
 </style>
 
 <script>
-  let accordionItemHeadersObject = document.querySelectorAll("#faq-{{ section_id }} .question");
+  var accordionItemHeadersObject = document.querySelectorAll("#faq-{{ section_id }} .question");
 
   accordionItemHeadersObject.forEach(accordionItemHeader => {
     accordionItemHeader.addEventListener("click", event => {
       {% if is_allow_one_open %}
-        let currentlyActiveAccordionItemHeader = document.querySelector("#faq-{{ section_id }} .question.active");
+        var currentlyActiveAccordionItemHeader = document.querySelector("#faq-{{ section_id }} .question.active");
         if (currentlyActiveAccordionItemHeader && currentlyActiveAccordionItemHeader!==accordionItemHeader) {
           currentlyActiveAccordionItemHeader.classList.toggle("active");
           currentlyActiveAccordionItemHeader.nextElementSibling.style.maxHeight = 0;
@@ -81,7 +81,7 @@
       {% endif %}
 
       accordionItemHeader.classList.toggle("active");
-      let accordionItemBody = accordionItemHeader.nextElementSibling;
+      var accordionItemBody = accordionItemHeader.nextElementSibling;
       if (accordionItemHeader.classList.contains("active")) {
         accordionItemBody.style.maxHeight = accordionItemBody.scrollHeight + "px";
       }
