@@ -12,7 +12,19 @@
   </div>
 
 
-  <script>
+  {% comment %} <script>
+    function attachEventHandlers() {
+      productActions.on('click', '.purchase-option-box', event => togglePurchaseBox($(event.currentTarget)))
+                    .on('click', '.purchase-type button', event => handlePurchaseTypeClick(event, $(event.currentTarget)))
+                    .on('click', '.main-btn', event => handleMainButtonClick(event, $(event.currentTarget)));
+    }
+
+    function handleMainButtonClick(event, button) {
+      event.stopPropagation();
+      const parentBox = button.closest('.purchase-option-box');
+      buyButtonHandler(parentBox.data('variant'), parentBox.data('subscription-selling-plan-id'), button);
+    }
+
     function buyButtonHandler(variant_id, subscription_selling_plan_id, buttonElement) {
       toggleButtonLoading(buttonElement, true);
       if (isSubscriptionSelected()) {
@@ -86,7 +98,7 @@
         });
       });
     }
-  </script>
+  </script> {% endcomment %}
 {% else %}
   <script src="{{ 'product-info.js' | asset_url }}" defer="defer"></script>
   <script src="{{ 'product-form.js' | asset_url }}" defer="defer"></script>
