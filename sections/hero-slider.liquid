@@ -86,18 +86,31 @@
 </style>
 
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-  const slides = document.querySelectorAll(".hero-banner .slide");
-  let currentSlide = 0;
+  document.addEventListener("DOMContentLoaded", function() {
+    const slides = document.querySelectorAll(".hero-banner .slide");
+    const slidesContainer = document.querySelector(".hero-banner .slides-container");
+    let maxHeight = 0;
 
-  function changeSlide() {
-    slides[currentSlide].style.opacity = 0;
-    currentSlide = (currentSlide + 1) % slides.length;
-    slides[currentSlide].style.opacity = 1;
-  }
+    // Find the tallest slide
+    slides.forEach(slide => {
+      const slideHeight = slide.offsetHeight;
+      if (slideHeight > maxHeight) {
+        maxHeight = slideHeight;
+      }
+    });
 
-  setInterval(changeSlide, 5000); // Change slide every 5 seconds
-});
+    // Set the slides container to the tallest slide's height
+    slidesContainer.style.height = `${maxHeight}px`;
+
+    let currentSlide = 0;
+    function changeSlide() {
+      slides[currentSlide].style.opacity = 0;
+      currentSlide = (currentSlide + 1) % slides.length;
+      slides[currentSlide].style.opacity = 1;
+    }
+
+    setInterval(changeSlide, 5000); // Change slide every 5 seconds
+  });
 </script>
 
 {% schema %}
