@@ -3,7 +3,7 @@
 
   <div class="slides-container">
     {% for block in section.blocks %}
-      <div class="slide" style="background-color: {{ block.settings.slide_bg_color }};">
+      <div class="slide" id="slide-{{ block.id }}" style="background-color: {{ block.settings.slide_bg_color }};">
         <div class="mbl:flex-col-reverse mbl:p-0 container flex items-center">
           <div class="slide-content text-start mbl:text-center max-w-[35%] mbl:max-w-full mbl:px-4">
             <h2 style="color: {{ block.settings.slide_title_color }}">{{ block.settings.title }}</h2>
@@ -23,6 +23,8 @@
           {% endif %}
         </div>
       </div>
+
+      <style>#slide-{{ block.id }} button {color: {% if section.settings.button_text_color %}{{ section.settings.button_text_color }}{% else %}var(--blue){% endif %}}</style>
     {% endfor %}
   </div>
 </section>
@@ -54,7 +56,7 @@
 
   .hero-banner a button {
     background-color: white;
-    color: {% if section.settings.button_text_color %}{{ section.settings.button_text_color }}{% else %}var(--blue){% endif %};
+    color: var(--blue);
     font-weight: bold;
   }
 
