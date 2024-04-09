@@ -103,10 +103,19 @@
       {% case block.type %}
         {% when 'variant' %}
           {% assign referenced_variant_product = block.settings.prod %}
-          <script>console.log("- product: {{referenced_variant_product.title}}")</script>
-          {% assign referenced_variant = referenced_variant_product.variants | where: 'id', block.settings.variant_id | first %}
-          <script>console.log("var title: {{referenced_variant.title}}")</script>
-          {% render 'product-cta-section-actions-variant-2024', prod: referenced_variant_product, var: referenced_variant %}
+          {% assign referenced_variant = blank %}
+          {% for vari in referenced_variant_product.variants %}
+            {% if vari.id == block.settings.variant_id %}
+              {% assign referenced_variant = variant %}
+              {% break %}
+            {% endif %}
+          {% endfor %}
+
+        {% comment %} {% assign referenced_variant = referenced_variant_product.variants | where: 'id', block.settings.variant_id | first %} {% endcomment %}
+
+          {% if referenced_variant != blank %}
+            {% render 'product-cta-section-actions-variant-2024', prod: referenced_variant_product, var: referenced_variant %}
+          {% endif %}
       {% endcase %}
     {% endfor %}
 
