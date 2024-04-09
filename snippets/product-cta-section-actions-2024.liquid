@@ -108,8 +108,10 @@
           <script>console.log("var: {{vari.title}}")</script>
           {% for vari in referenced_variant_product.variants %}
             <script>console.log("var: {{vari.title}}")</script>
-            <script>console.log("{{ vari.id }}=={{ block.settings.variant_id }}")</script>
-            {% if vari.id == block.settings.variant_id %}
+            {% assign currVarID = vari.id %}
+            {% assign blockVarID = block.settings.variant_id %}
+            <script>console.log("{{ currVarID }}=={{ blockVarID }}")</script>
+            {% if currVarID == blockVarID %}
               {% assign referenced_variant = vari %}
               <script>console.log("var chosen: {{referenced_variant}}")</script>
             {% endif %}
