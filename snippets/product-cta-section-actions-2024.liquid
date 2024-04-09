@@ -105,15 +105,11 @@
           {% assign referenced_variant_product = block.settings.prod %}
 
           {% assign referenced_variant = blank %}
-          <script>console.log("var: {{vari.title}}")</script>
+          {% assign blockVarID = block.settings.variant_id | plus: 0 %}
           {% for vari in referenced_variant_product.variants %}
-            <script>console.log("var: {{vari.title}}")</script>
             {% assign currVarID = vari.id | plus: 0 %}
-            {% assign blockVarID = block.settings.variant_id | plus: 0 %}
-            <script>console.log("{{ currVarID }}=={{ blockVarID }}")</script>
             {% if currVarID == blockVarID %}
               {% assign referenced_variant = vari %}
-              <script>console.log("var chosen: {{referenced_variant}}")</script>
             {% endif %}
           {% endfor %}
 
