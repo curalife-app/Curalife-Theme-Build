@@ -103,7 +103,6 @@
       {% case block.type %}
         {% when 'variant' %}
           {% assign referenced_variant_product = block.settings.prod %}
-
           {% assign referenced_variant = blank %}
           {% assign blockVarID = block.settings.variant_id | plus: 0 %}
           {% for vari in referenced_variant_product.variants %}
@@ -112,9 +111,6 @@
               {% assign referenced_variant = vari %}
             {% endif %}
           {% endfor %}
-
-
-        {% comment %} {% assign referenced_variant = referenced_variant_product.variants | where: 'id', block.settings.variant_id | first %} {% endcomment %}
 
           {% if referenced_variant != blank %}
             {% render 'product-cta-section-actions-variant-2024', prod: referenced_variant_product, var: referenced_variant %}
