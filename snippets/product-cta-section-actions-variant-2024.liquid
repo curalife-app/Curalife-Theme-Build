@@ -9,8 +9,8 @@
 {% assign subscription_item_price = original_item_cap | minus: subscription_item_price_save %}
 {% assign subscription_total_price = subscription_item_price | times: bottle_quantity %}
 {% if var.metafields.custom.referenced_variant_product_handle %}
-  {% assign prod = all_products[var.metafields.custom.referenced_variant_product_handle] %}
-  {% assign referenced_variant = prod.variants | where: 'id', variant_id | first %}
+  {% assign referenced_product = all_products[var.metafields.custom.referenced_variant_product_handle] %}
+  {% assign referenced_variant = referenced_product.variants | where: 'id', variant_id | first %}
   {% assign selling_plan_id = referenced_variant.metafields.subscription.selling_plan_id %}
 {% else %}
   {% assign selling_plan_id = var.metafields.subscription.selling_plan_id %}
@@ -43,7 +43,7 @@
   {% endif %}
 
   <div class="price-wrapper">
-    {% if prod.metafields.custom.is_price_per_month and var.price > item_price %}
+    {% if referenced_product.metafields.custom.is_price_per_month and var.price > item_price %}
       <div class="total-price-wrapper mb-1 text-[14px] text-[--dark-blue]">
         <span class="total-price subscription">Total <span class="floor rounded">{{ subscription_total_price | money }}</span></span>
         <span class="total-price buy-once hidden">Total <span class="floor rounded">{{ var.price | money }}</span></span>
@@ -51,9 +51,9 @@
     {% endif %}
 
     <div class="calculations flex items-center gap-2 font-bold leading-10">
-      <div class="real-price no-letters text-[40px] subscription"><span class="floor rounded">{% if prod.metafields.custom.is_price_per_month %}{{ subscription_item_price | money }}{% else %}{{ subscription_total_price | money }}{% endif %}</span></div>
-      <div class="real-price no-letters text-[40px] buy-once hidden"><span class="floor rounded">{% if prod.metafields.custom.is_price_per_month %}{{ item_price | money }}{% else %}{{ var.price | money }}{% endif %}</span></div>
-      <div class="compared-at-price rounded line-through text-[30px] font-normal text-[#baced5]">{% if prod.metafields.custom.is_price_per_month %}{{ original_item_cap | money }}{% else %}{{ original_item_cap_total | money }}{% endif %}</div>
+      <div class="real-price no-letters text-[40px] subscription"><span class="floor rounded">{% if referenced_product.metafields.custom.is_price_per_month %}{{ subscription_item_price | money }}{% else %}{{ subscription_total_price | money }}{% endif %}</span></div>
+      <div class="real-price no-letters text-[40px] buy-once hidden"><span class="floor rounded">{% if referenced_product.metafields.custom.is_price_per_month %}{{ item_price | money }}{% else %}{{ var.price | money }}{% endif %}</span></div>
+      <div class="compared-at-price rounded line-through text-[30px] font-normal text-[#baced5]">{% if referenced_product.metafields.custom.is_price_per_month %}{{ original_item_cap | money }}{% else %}{{ original_item_cap_total | money }}{% endif %}</div>
     </div>
 
     <div class="per-month font-bold">Per Month</div>
@@ -78,8 +78,8 @@
   {% endif %} {% endcomment %}
 
   <div class="submit-wrap flex flex-col w-full mt-4">
-    <div class="add-to-cart-button buy-once hidden">{% render 'buy-buttons', product: prod, variant: variant_id, product_form_id: product_form_id, buyType: buyType, section_id: section.id %}</div>
-    <div class="checkout-button subscription">{% render 'buy-buttons', product: prod, variant: variant_id, selling_plan_id: selling_plan_id , product_form_id: product_form_id, buyType: buyType, section_id: section.id %}</div>
+    <div class="add-to-cart-button buy-once hidden">{% render 'buy-buttons', product: referenced_product, variant: variant_id, product_form_id: product_form_id, buyType: buyType, section_id: section.id %}</div>
+    <div class="checkout-button subscription">{% render 'buy-buttons', product: referenced_product, variant: variant_id, selling_plan_id: selling_plan_id , product_form_id: product_form_id, buyType: buyType, section_id: section.id %}</div>
   </div>
 
   {% if customer %}
