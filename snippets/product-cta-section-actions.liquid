@@ -493,7 +493,9 @@
     if (window.didClickVariant) {
       {% unless customer.b2b? %}
         // Slide to Variant Image
-        {% if product.variants.size > 1 and product.images.size > 1 %}
+        {% assign variantsAmount = product.variants.size | plus: product.metafields.custom.additional_variants.value.size %}
+        console.log("variants amount: " + {{ variantsAmount }})
+        {% if variantsAmount > 1 %}
           let slideIndex = window.productSliderAllInOne{{ shortSectionID }}.slides.length - $(this).find('input[name=pack]:checked').attr('data-index');
           window.productSliderAllInOne{{ shortSectionID }}.slideTo(slideIndex);
         {% endif %}
