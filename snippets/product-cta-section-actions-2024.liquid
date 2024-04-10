@@ -67,19 +67,9 @@
     const purchaseOptionBoxes = productActions.find('.purchase-option-box');
 
     // handleGiftSelection();
+    attachEventHandlers();
     initializePurchaseOptions();
     setupMutationObserver();
-    attachEventHandlers();
-
-    let urlParams = new URLSearchParams(window.location.search);
-    let defaultVariant = urlParams.get('default-variant');
-
-    if (defaultVariant) {
-      purchaseOptionBoxes.eq(defaultVariant - 1).trigger("click");
-    }
-    else {
-      purchaseOptionBoxes.{% if variantsAmount == 1 %}first(){% elsif defaultSelectionIndex %}eq({{ defaultSelectionIndex | minus: 1 }}){% else %}first(){% endif %}.trigger( "click" );
-    }
 
     function initializePurchaseOptions() {
       purchaseOptionBoxes.each(function(index) {
@@ -87,6 +77,16 @@
         togglePurchaseType(box, box.find('.purchase-type .subscription').hasClass('selected'));
         box.css('max-height', '54px');
       });
+
+      let urlParams = new URLSearchParams(window.location.search);
+      let defaultVariant = urlParams.get('default-variant');
+
+      if (defaultVariant) {
+        purchaseOptionBoxes.eq(defaultVariant - 1).trigger("click");
+      }
+      else {
+        purchaseOptionBoxes.{% if variantsAmount == 1 %}first(){% elsif defaultSelectionIndex %}eq({{ defaultSelectionIndex | minus: 1 }}){% else %}first(){% endif %}.trigger( "click" );
+      }
     }
 
     // function handleGiftSelection() {
