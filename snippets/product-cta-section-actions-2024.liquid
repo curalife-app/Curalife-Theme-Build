@@ -2,7 +2,7 @@
 {% assign sectionIDParts = section_id | split: '-' %}
 {% assign shortSectionID = sectionIDParts[-1] %}
 
-{% assign variantQuantity = product.variants | size %}
+{% assign variantsAmount = product.variants.size | plus: product.metafields.custom.additional_variants.value.size %}
 
 <div id="product-actions-{{ section_id }}" class="product-actions">
   <div class="purchase-options md:p-2 flex flex-col gap-2">
@@ -216,7 +216,7 @@
       $(element).find("input[type='radio']").prop('checked', true);
       $(element).find('.toggle-icon').show(); // Show the 'v' icon in the expanded box
 
-      {% if product.variants.size > 1 and product.images.size > 1 %}
+      {% if variantsAmount > 1 %}
         updateVariantImage(element);
       {% endif %}
     }
