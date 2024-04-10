@@ -202,91 +202,6 @@
     }
   </style>
 
-  <script>
-    function incrementQty() {
-      var value = document.querySelector('input[name="quantity"]').value;
-      var cardQty = document.querySelector(".cart-qty");
-      value = isNaN(value) ? 1 : value;
-      value++;
-      document.querySelector('input[name="quantity"]').value = value;
-      cardQty.innerHTML = value;
-      cardQty.classList.add("rotate-x");
-    }
-
-    function decrementQty() {
-      var value = document.querySelector('input[name="quantity"]').value;
-      var cardQty = document.querySelector(".cart-qty");
-      value = isNaN(value) ? 1 : value;
-      value > 1 ? value-- : value;
-      document.querySelector('input[name="quantity"]').value = value;
-      cardQty.innerHTML = value;
-      cardQty.classList.add("rotate-x");
-    }
-  </script>
-
-  <script>
-    $(".product-actions .variant-box").click(function() {
-      if ($(this).find('input[name=pack]:checked').attr('data-sku') == "Curalin180") {
-        $(".qty").addClass("qty_expanded");
-        $(".submit-wrap button").css("width", "unset");
-      }
-      else {
-        $(".qty").removeClass("qty_expanded");
-        $(".submit-wrap button").css("width", "100%");
-      }
-    });
-  </script>
-{% endif %}
-
-{% if product.metafields.custom.is_price_per_month %}
-  <script>
-    $(".product-actions .variant-box").click(function() {
-      let variantTotalPrice = $(this).find('input[name=pack]:checked').data('price');
-      console.log(variantTotalPrice);
-      $('.total-price .total-price-amount').text(variantTotalPrice);
-    });
-  </script>
-{% endif %}
-
-<script>
-  $(document).ready(function() {
-    let urlParams = new URLSearchParams(window.location.search);
-    let defaultVariant = urlParams.get('default-variant');
-
-    if (defaultVariant) {
-      $("#product-actions-{{ section_id }} .variant-box").eq(defaultVariant - 1).trigger("click");
-    }
-    else {
-      $("#product-actions-{{ section_id }} .variant-box").{% if product.variants.size == 1 or request.path contains 'prime' %}first(){% elsif defaultSelectionIndex %}eq({{ defaultSelectionIndex | minus: 1 }}){% else %}first(){% endif %}.trigger( "click" );
-    }
-  });
-
-  // On Buy Button Click
-  const buyButton = document.querySelector('#product-actions-{{ section_id }} #buy-button');
-  buyButton.addEventListener('click', function() {
-    try {
-      let checkedVariantInput = document.querySelector('#product-actions-{{ section_id }} input[name=pack]:checked');
-
-      let packValue = checkedVariantInput?.value;
-      packValue = checkedVariantInput.getAttribute("data-ref-variant") || packValue;
-      if (!packValue) throw new Error('No pack selected');
-
-      // Handle alternative checkout link
-      let checkoutLink = checkedVariantInput.getAttribute("data-checkout-link");
-      if (checkoutLink) {
-        window.location.href = checkoutLink;
-        return;
-      }
-
-      let quantityValue = {% if isBuyQuantity %}document.querySelector('#product-actions-{{ section_id }} input[name=quantity]')?.value || 1{% else %}1{% endif %};
-      window.location.href = `https://${location.hostname}/cart/${packValue}:${quantityValue}`;
-    } catch (error) {
-      console.error(error);
-      alert("Something went wrong! Please contact our support team.");
-    }
-  });
-</script>
-
 <style>
   .variant-notice p {
     background: var(--blue);;
@@ -452,6 +367,91 @@
 </style>
 
 <script>
+    function incrementQty() {
+      var value = document.querySelector('input[name="quantity"]').value;
+      var cardQty = document.querySelector(".cart-qty");
+      value = isNaN(value) ? 1 : value;
+      value++;
+      document.querySelector('input[name="quantity"]').value = value;
+      cardQty.innerHTML = value;
+      cardQty.classList.add("rotate-x");
+    }
+
+    function decrementQty() {
+      var value = document.querySelector('input[name="quantity"]').value;
+      var cardQty = document.querySelector(".cart-qty");
+      value = isNaN(value) ? 1 : value;
+      value > 1 ? value-- : value;
+      document.querySelector('input[name="quantity"]').value = value;
+      cardQty.innerHTML = value;
+      cardQty.classList.add("rotate-x");
+    }
+  </script>
+
+  <script>
+    $(".product-actions .variant-box").click(function() {
+      if ($(this).find('input[name=pack]:checked').attr('data-sku') == "Curalin180") {
+        $(".qty").addClass("qty_expanded");
+        $(".submit-wrap button").css("width", "unset");
+      }
+      else {
+        $(".qty").removeClass("qty_expanded");
+        $(".submit-wrap button").css("width", "100%");
+      }
+    });
+  </script>
+{% endif %}
+
+{% if product.metafields.custom.is_price_per_month %}
+  <script>
+    $(".product-actions .variant-box").click(function() {
+      let variantTotalPrice = $(this).find('input[name=pack]:checked').data('price');
+      console.log(variantTotalPrice);
+      $('.total-price .total-price-amount').text(variantTotalPrice);
+    });
+  </script>
+{% endif %}
+
+<script>
+  $(document).ready(function() {
+    let urlParams = new URLSearchParams(window.location.search);
+    let defaultVariant = urlParams.get('default-variant');
+
+    if (defaultVariant) {
+      $("#product-actions-{{ section_id }} .variant-box").eq(defaultVariant - 1).trigger("click");
+    }
+    else {
+      $("#product-actions-{{ section_id }} .variant-box").{% if product.variants.size == 1 or request.path contains 'prime' %}first(){% elsif defaultSelectionIndex %}eq({{ defaultSelectionIndex | minus: 1 }}){% else %}first(){% endif %}.trigger( "click" );
+    }
+  });
+
+  // On Buy Button Click
+  const buyButton = document.querySelector('#product-actions-{{ section_id }} #buy-button');
+  buyButton.addEventListener('click', function() {
+    try {
+      let checkedVariantInput = document.querySelector('#product-actions-{{ section_id }} input[name=pack]:checked');
+
+      let packValue = checkedVariantInput?.value;
+      packValue = checkedVariantInput.getAttribute("data-ref-variant") || packValue;
+      if (!packValue) throw new Error('No pack selected');
+
+      // Handle alternative checkout link
+      let checkoutLink = checkedVariantInput.getAttribute("data-checkout-link");
+      if (checkoutLink) {
+        window.location.href = checkoutLink;
+        return;
+      }
+
+      let quantityValue = {% if isBuyQuantity %}document.querySelector('#product-actions-{{ section_id }} input[name=quantity]')?.value || 1{% else %}1{% endif %};
+      window.location.href = `https://${location.hostname}/cart/${packValue}:${quantityValue}`;
+    } catch (error) {
+      console.error(error);
+      alert("Something went wrong! Please contact our support team.");
+    }
+  });
+</script>
+
+<script>
   function updateCTA() {
     {% if ctaTextType %}
       let checkedInputElement = $('#variant-box-{{ section_id }} input[name=pack]:checked');
@@ -485,10 +485,10 @@
     updateSelectedVariantInformation('data-quantity', '.multiplier');
     updateSelectedVariantInformation('data-save', '.save-badge');
 
-    {% assign collection_products_amount = var.product.collections.last.products | size %}
-    {% if collection_products_amount == 1 and var.product.tags contains 'supplement' %}
-      window.didClickVariant = true;
-    {% endif %}
+    // {% assign collection_products_amount = var.product.collections.last.products | size %}
+    // {% if collection_products_amount == 1 and var.product.tags contains 'supplement' %}
+    //   window.didClickVariant = true;
+    // {% endif %}
 
     if (window.didClickVariant) {
       {% unless customer.b2b? %}
