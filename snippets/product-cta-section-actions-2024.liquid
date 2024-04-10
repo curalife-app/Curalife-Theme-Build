@@ -220,8 +220,12 @@
       $(element).find('.toggle-icon').show(); // Show the 'v' icon in the expanded box
 
       {% if variantsAmount > 1 %}
-        updateVariantImage(element);
+        if (window.isFirstToggle) {
+          updateVariantImage(element);
+        }
       {% endif %}
+
+      window.isFirstToggle = true
     }
 
     function togglePurchaseType(parentBox, isSubscriptionSelected) {
