@@ -2,8 +2,7 @@
 {% assign sectionIDParts = section_id | split: '-' %}
 {% assign shortSectionID = sectionIDParts[-1] %}
 
-{% assign additionalVariantsAmount = product.metafields.custom.additional_variants.value.size %}
-{% assign variantsAmount = product.variants.size | plus: additionalVariantsAmount %}
+{% assign variantsAmount = product.variants.size %}
 
 <div id="product-actions-{{ section_id }}" class="product-actions">
   <div class="purchase-options md:p-2 flex flex-col gap-2">
@@ -13,6 +12,7 @@
 
     {% if customer.email == 'ana@curalife.com' or customer.email == 'yotam@curalife.com' %}
       {% for additionalVariant in product.metafields.custom.additional_variants.value %}
+        {% assign variantsAmount = variantsAmount | plus: 1 %}
         {% render 'product-cta-section-actions-variant-2024', prod: additionalVariant.product, var: additionalVariant %}
       {% endfor %}
 
@@ -71,7 +71,7 @@
     setupMutationObserver();
     attachEventHandlers();
 
-    console.log("addvariantsAmount: {{ additionalVariantsAmount }}");
+    console.log("variantsAmount: {{ variantsAmount }}");
     purchaseOptionBoxes.{% if variantsAmount == 1 %}first(){% elsif defaultSelectionIndex %}eq({{ defaultSelectionIndex | minus: 1 }}){% else %}first(){% endif %}.trigger( "click" );
 
     function initializePurchaseOptions() {
