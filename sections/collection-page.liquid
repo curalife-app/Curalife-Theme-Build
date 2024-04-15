@@ -1,5 +1,16 @@
 <section class="collection-page">
   <div class="container flex gap-4">
+    <div class="collection-hero">
+      <img class="left-img" src="{{ collection.metafields.hero.left_img | image_url }}" alt="{{ collection.metafields.hero.left_img.alt | escape }}" />
+
+      <div class="titles">
+        <h1>{{ collectiom.title }}</h1>
+        <div>{{ collection.metafields.hero.subtitle }}</div>
+      </div>
+
+      <img class="right-img" src="{{ collection.metafields.hero.right_img | image_url }}" alt="{{ collection.metafields.hero.right_img.alt | escape }}" />
+    </div>
+
     <div class="collections-menu side-menu">
       {% for collectionItem in section.settings.collection_list %}
         <div class="menu-item {% if collectionItem.handle == collection.handle %}active{% endif %}"><a href="{{ collectionItem.url }}">{{ collectionItem.title }}</a></div>
@@ -9,6 +20,13 @@
     {% render 'collection', collection_handle: collection.handle, isDescription: true, isNoTitle: false, isNoPrices: false, isLinkToCollection: false, isCentered: customer.b2b?, isNoBundles: false, isLastCollectionRender: isLastCollectionRender %}
   </div>
 </section>
+
+<style>
+  .collection-hero {
+    background-color: {{ collection.metafields.hero.background_color }};
+    color: {{ collection.metafields.hero.text_color }};
+  }
+</style>
 
 {% schema %}
   {
