@@ -385,6 +385,16 @@
         </span>
       </a> {% endcomment %}
 
+      //show support icon only if theres a url parameter chat=true
+      <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const chat = urlParams.get('chat');
+        if (chat) {
+          document.write('<button onclick="window.Webchat.startSession(\'expert\', \'Navigation bar\')"><i class="fa-sharp fa-thin fa-headset"></i></button>');
+        }
+      </script>
+      {% comment %} <button onclick="window.Webchat.startSession('expert', 'Navigation bar')"><i class="fa-sharp fa-thin fa-headset"></i></button> {% endcomment %}
+
       <a href="{{ routes.cart_url }}" class="header__icon header__icon--cart link focus-inset" id="cart-icon-bubble">
         {%- liquid
           if cart == empty
