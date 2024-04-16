@@ -16,7 +16,7 @@
 
   <section class="collection-page-wrapper">
     <div class="container flex gap-4">
-      <div class="collections-menu side-menu">
+      <div class="collections-menu side-menu desktop">
         {% comment %} <div class="menu-item {% if template.name == 'collection-list' %}active{% endif %}"><a href="/collections">Shop All</a></div> {% endcomment %}
 
         {% for collectionItem in section.settings.collection_list %}
@@ -24,10 +24,24 @@
         {% endfor %}
       </div>
 
+      <div class="account-menu-mobile-dropdown mobile w-full">
+        <select id="mobile-dropdown">
+          {% for collectionItem in section.settings.collection_list %}
+            <option value="{{ collectionItem.url }}" {% if collectionItem.handle == collection.handle %}selected{% endif %}>{{ collectionItem.title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
       {% render 'collection', collection_handle: collection.handle, isDescription: false, isNoTitle: true, isNoPrices: false, isLinkToCollection: false, isCentered: customer.b2b?, isNoBundles: false, isLastCollectionRender: isLastCollectionRender %}
     </div>
   </section>
 </div>
+
+<script>
+  document.getElementById("mobile-dropdown").addEventListener('change', event => {
+    window.location.href = event.target.value;
+  });
+</script>
 
 <style>
   .breadcrumbs {
