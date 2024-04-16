@@ -1,10 +1,12 @@
+{% if collection.handle == 'all' %}{% assign heroTitle = 'Explore Our Products' %}{% else %}{% assign heroTitle = collection.title %}{% endif %}
+
 <div class="collection-page">
   <div class="collection-hero">
     <div class="container flex items-center justify-between h-full">
       <img class="left-img desktop" src="{{ collection.metafields.hero.left_img | image_url }}" alt="{{ collection.metafields.hero.left_img.alt | escape }}" />
 
       <div class="titles w-f flex flex-col text-center">
-        <h1>{{ collection.title }}</h1>
+        <h1>{{ heroTitle }}</h1>
         <div class="subtitle">{{ collection.metafields.hero.subtitle }}</div>
       </div>
 
@@ -18,7 +20,6 @@
         {% comment %} <div class="menu-item {% if template.name == 'collection-list' %}active{% endif %}"><a href="/collections">Shop All</a></div> {% endcomment %}
 
         {% for collectionItem in section.settings.collection_list %}
-          <script>console.log("Collection Render: {{ collectionItem.title }}")</script>
           <div class="menu-item {% if collectionItem.handle == collection.handle %}active{% endif %}"><a href="{{ collectionItem.url }}">{{ collectionItem.title }}</a></div>
         {% endfor %}
       </div>
