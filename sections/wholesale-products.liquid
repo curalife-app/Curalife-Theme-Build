@@ -1,3 +1,7 @@
+{% if section.settings.wholesale_products.size == 1 %}
+  {% assign isSingleProduct = true %}
+{% endif %}
+
 {% if product.handle == 'curalin-wholesale' %}
   <section id="wholesale-products-{{ section.id }}">
     <div class="container">
@@ -136,12 +140,32 @@
     #wholesale-products-{{ section.id }} .submit-wrap .qty {
       transition: width 0.3s ease;
       width: -webkit-fill-available;
+      flex-basis: content;
     }
 
     #wholesale-products-{{ section.id }} .submit-wrap .qty_inc_dec {
       transition: opacity 0.3s ease;
     }
   </style>
+
+{% if isSingleProduct %}
+  <style>
+    #wholesale-products-{{ section.id }} .product {
+      width: 600px;
+      height: 250px;
+
+      .left {
+        width: 45%;
+      }
+
+      .right {
+        h6 {
+          font-size: 30px;
+        }
+      }
+    }
+  </style>
+{% endif %}
 
 <script>
   function updateQuantity(action) {
