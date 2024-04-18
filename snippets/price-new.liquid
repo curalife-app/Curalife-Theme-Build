@@ -1,14 +1,14 @@
 <script>console.log("prod: {{prod.title}}")</script>
-{% if prod.metafields.custom.original_item_variant.value %}
+{% if productType == "variant" %}
+  <script>console.log("variant")</script>
+  {% assign quantity = prod.metafields.my_fields.pack_bottles_quantity | default: 1 %}
+  {% assign original_item_cap = prod.compare_at_price | divided_by: quantity %}
+{% elsif prod.metafields.custom.original_item_variant.value %}
   <script>console.log("variant original item")</script>
   {% assign original_item_cap = prod.metafields.custom.original_item_variant.value.compare_at_price %}
   {% assign quantity = prod.metafields.my_fields.pack_items_quantity %}
-{% elsif productType == "variant" %}
-  <script>console.log("variant")</script>
-  {% assign original_item_cap = prod.compare_at_price %}
-  {% assign quantity = prod.metafields.my_fields.pack_bottles_quantity %}
 {% else %}
-  <script>console.log("product")</script>
+  <script>console.log("variant")</script>
   {% assign original_item_cap = prod.compare_at_price %}
   {% assign quantity = prod.metafields.my_fields.pack_items_quantity | default: 1 %}
 {% endif %}
