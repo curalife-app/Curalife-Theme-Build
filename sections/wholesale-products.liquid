@@ -1,9 +1,3 @@
-{% assign productsAmount = section.settings.wholesale_products.value.size %}
-<script>console.log("amount: {{ productsAmount }}")</script>
-{% if productsAmount == 1 %}
-  {% assign isSingleProduct = true %}
-{% endif %}
-
 {% if product.handle == 'curalin-wholesale' %}
   <section id="wholesale-products-{{ section.id }}">
     <div class="container">
@@ -150,24 +144,22 @@
     }
   </style>
 
-{% if isSingleProduct %}
-  <style>
-    #wholesale-products-{{ section.id }} .product {
-      width: 600px;
-      height: 250px;
+<style>
+  #wholesale-products-{{ section.id }} .product:only-child {
+    width: 600px;
+    height: 250px;
 
-      .left {
-        width: 45%;
-      }
+    .left {
+      width: 45%;
+    }
 
-      .right {
-        h6 {
-          font-size: 30px;
-        }
+    .right {
+      h6 {
+        font-size: 30px;
       }
     }
-  </style>
-{% endif %}
+  }
+</style>
 
 <script>
   function updateQuantity(action) {
