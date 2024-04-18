@@ -49,6 +49,54 @@
             </div>
           </div>
         {% endfor %}
+
+        {% for block in section.blocks %}
+          {% assign prod = block.settings.prod %}
+          <div class="product flex w-[400px] gap-4 p-2 items-center" data-product-id="{{ prod.id }}">
+            <div class="left w-[25%]">
+              <img src="{{ prod.featured_image | img_url: 'medium' }}" alt="{{ prod.title }}">
+            </div>
+
+            <div class="right w-[75%] mbl:w-fit">
+              <h6>{{ prod.title }}</h6>
+              <div class="subtitle">{{ block.settings.subtitle }}</div>
+              <p>{{ prod.price | money }}</p>
+
+              <div class="submit-wrap flex flex-col gap-2">
+                <script src="{{ 'product-info.js' | asset_url }}" defer="defer"></script>
+                <script src="{{ 'product-form.js' | asset_url }}" defer="defer"></script>
+
+                <product-form class="product-form" data-hide-errors="false" data-section-id="{{ section.id }}">
+                  {%- form 'product', prod, id: prod.id, class: 'form', novalidate: 'novalidate', data-type: 'add-to-cart-form' -%}
+                    <input type="hidden" name="id" value="{{ prod.selected_or_first_available_variant.id }}" disabled class="product-variant-id">
+
+                    <div class="product-form__buttons main-submit-wrapper flex">
+                      <div class="qty">
+                        <input type="text" name="quantity" maxlength="100" value="{{ prod.variants.first.quantity_rule.min }}" title="" class="input-text" />
+                        <div class="qty_inc_dec">
+                          <i class="increment" onclick="updateQuantity('+')">+</i>
+                          <i class="decrement" onclick="updateQuantity('-')">-</i>
+                        </div>
+                      </div>
+                      <button id="ProductSubmitButton-{{ section_id }}" type="submit" name="add" class="product-form__submit button button--full-width button--primary">
+                        <span class="submit-title">Add To Cart</span>
+                        <div class="loading-overlay__spinner hidden">
+                          <svg aria-hidden="true" focusable="false" class="spinner" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
+                            <circle class="path" fill="none" stroke-width="6" cx="33" cy="33" r="30"></circle>
+                          </svg>
+                        </div>
+                      </button>
+                    </div>
+                  {%- endform -%}
+                </product-form>
+
+                {% if prod.metafields.custom.file_url != blank %}
+                  <a href="{{ prod.metafields.custom.file_url }}"><button class="secondary">Download PDF</button></a>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
       </div>
     </div>
   </section>
@@ -194,6 +242,25 @@
         "id": "wholesale_products",
         "label": "Select Wholesale Products"
       }
+    ],
+    "blocks": [
+      {
+        "type": "product",
+        "name": "Product",
+        "settings": [
+          {
+            "type": "product",
+            "id": "prod",
+            "label": "Product"
+          },
+          {
+            "type": "text",
+            "id": "subtitle",
+            "label": "Subtitle"
+          }
+        ]
+      }
+
     ],
     "presets": [
       {
