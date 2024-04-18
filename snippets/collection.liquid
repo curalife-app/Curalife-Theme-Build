@@ -8,14 +8,8 @@
 
 <div id="{{ collection_handle }}-collection-section" class="collection-section xl:w-full {% if currentCollection.products.size < 3 %}w-[48%]{% else %}w-full{% endif %} {% if shop.name == 'Curalife Global' or customer.tags contains 'B2B' %}max-w-[800px] m-auto{% endif %}" data-product-collections="{{ collection_handle }}" >
   {% unless isNoTitle %}
-    {% if currentCollection.metafields.custom.alternative_title %}
-      {% assign collection_title = currentCollection.metafields.custom.alternative_title %}
-    {% else %}
-      {% assign collection_title = currentCollection.title %}
-    {% endif %}
-
     <div class="title-wrapper border-b-[1px] border-black">
-      <h2 class="relative mb-0 text-[40px] font-thin top-1 w-fit bg-white pr-3">{{ collection_title }}</h2>
+      <h2 class="relative mb-0 text-[40px] font-thin top-1 w-fit bg-white pr-3">{{ currentCollection.metafields.custom.alternative_title | default: currentCollection.title }}</h2>
     </div>
   {% endunless %}
 
