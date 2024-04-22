@@ -61,13 +61,9 @@
     {% endif %}
 
     {% for additionalVar in currentCollection.metafields.custom.additional_variants.value %}
-      <script>console.log("var: {{ additionalVar.title }}")</script>
-      <script>console.log("prod: {{ additionalVar.product.title }}")</script>
       {% for vari in additionalVar.product.variants %}
-        <script>console.log("{{vari.id}} == {{ additionalVar.id }}?")</script>
         {% if vari.id == additionalVar.id %}
           {% assign varIndex = forloop.index %}
-          <script>console.log("yes!")</script>
           {% break %}
         {% endif %}
       {% endfor %}
@@ -75,7 +71,6 @@
       {% if additionalVar.product.variants.size == 1 %}
         {% render 'product-card', product: additionalVar.product, isLastRender: isLastCardRender, isNoPrices: isNoPrices, isLinkToCollection: isLinkToCollection %}
       {% else %}
-      <script>console.log("varIndex: {{ varIndex }}")</script>
         {% render 'variant-card', variant: additionalVar, variantIndex: varIndex, productCollections: product_collections, isLastRender: isLastCardRender, isNoPrices: isNoPrices, isLinkToCollection: isLinkToCollection %}
       {% endif %}
     {% endfor %}
