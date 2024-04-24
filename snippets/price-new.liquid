@@ -2,6 +2,7 @@
   {% assign original_item = prod.metafields.custom.original_item.value %}
   {% assign quantity = prod.metafields.my_fields.pack_bottles_quantity | default: 1 %}
   {% assign original_item_cap = original_item.compare_at_price %}
+  {% assign subscription_price = prod.metafields.subscription.price %}
 {% elsif prod.metafields.custom.original_item_variant.value %}
   {% assign original_item_cap = prod.metafields.custom.original_item_variant.value.compare_at_price %}
   {% assign quantity = prod.metafields.my_fields.pack_items_quantity %}
@@ -19,7 +20,7 @@
 <div class="price-wrapper min-h-[30px]">
   <div>
     {% if prod.compare_at_price > prod.price %}<strike class="no-letters text-gray-400 text-[0.8em] mbl:block">{{ original_item_cap | money_with_currency | replace: "GBP", "" | replace: "AUD", "" | replace: "CAD", "" }}</strike>{% endif %}
-    <span class="new-price font-bold">{{ item_price | money | replace: "GBP", "" }}</span>
+    <span class="new-price font-bold">{{ subscription_price | default: item_price | money | replace: "GBP", "" }}</span>
     {% if quantity > 1 %}<span class="per-bottle font-bold"> Per Bottle</span>{% endif %}
   </div>
 
