@@ -52,7 +52,7 @@
         <div id="product-main-slider-sc-{{ section_id }}" class="swiper">
           <div class="swiper-wrapper">
             {% comment %} Render Product Images on Main Slider {% endcomment %}
-            <div class="swiper-slide">
+            <div class="swiper-slide product-image-slide">
               <img src="{{ product.images | first | image_url }}" alt="{{ img.alt | escape }}">
             </div>
 
@@ -63,11 +63,11 @@
             {% comment %} Render Section Images on Main Slider {% endcomment %}
             {% for block in blocks %}
               {% if block.type == 'image' %}
-                <div class="swiper-slide">
+                <div class="swiper-slide image-block-slide">
                   <img src="{{ block.settings.product_img | image_url }}" alt="Product Image" loading="lazy">
                 </div>
                 {% elsif block.type == 'video' %}
-                  <div class="swiper-slide">
+                  <div class="swiper-slide video-block-slide">
                     <div class="product-video">
                       <iframe id="product-video-iframe" src="https://player.vimeo.com/video/{{ block.settings.vimeo_video_id }}?playsinline=0" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen loading="lazy"></iframe>
                     </div>
@@ -76,14 +76,14 @@
             {% endfor %}
 
             {%- if first_3d_model -%}
-              <div class="swiper-slide">
+              <div class="swiper-slide 3d-image-slide">
                 <model-viewer class="w-full h-[500px] md:h-[80vw]" alt="Curalin" src="{{ first_3d_model.sources.first.url }}" poster="//curalife.com/cdn/shop/files/curalinsdsdv.png?v=1704651801" shadow-intensity="1" camera-controls camera-orbit="300deg 80deg" auto-rotate></model-viewer>
               </div>
             {%- endif -%}
 
             {% comment %} Render Vaiants on Main Slider {% endcomment %}
             {% for var in product.variants %}
-              <div class="swiper-slide">
+              <div class="swiper-slide variant-image-slide">
                 <img src="{{ var.image | image_url | default: "" }}" alt="{{ var.image.alt | escape }}">
 
                 {% if isSaveTitle %}
