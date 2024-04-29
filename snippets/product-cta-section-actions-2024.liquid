@@ -10,34 +10,32 @@
       {% render 'product-cta-section-actions-variant-2024', prod: product, var: var, index: forloop.index %}
     {% endfor %}
 
-    {% if customer.email == 'ana@curalife.com' or customer.email == 'yotam@curalife.com' %}
-      {% for additionalVariant in product.metafields.custom.additional_variants.value %}
-        {% assign variantsAmount = variantsAmount | plus: 1 %}
-        {% render 'product-cta-section-actions-variant-2024', prod: additionalVariant.product, var: additionalVariant, index: variantsAmount %}
-      {% endfor %}
+    {% for additionalVariant in product.metafields.custom.additional_variants.value %}
+      {% assign variantsAmount = variantsAmount | plus: 1 %}
+      {% render 'product-cta-section-actions-variant-2024', prod: additionalVariant.product, var: additionalVariant, index: variantsAmount %}
+    {% endfor %}
 
-      {% for block in blocks %}
-        {% case block.type %}
-          {% when 'variant' %}
-            {% assign pathsToReveal = block.settings.reveal_on_paths | split: "," %}
-            {% if pathsToReveal contains request.path or pathsToReveal == blank %}
-              {% assign referenced_variant_product = block.settings.prod %}
-              {% assign referenced_variant = blank %}
-              {% assign blockVarID = block.settings.variant_id | plus: 0 %}
-              {% for vari in referenced_variant_product.variants %}
-                {% assign currVarID = vari.id | plus: 0 %}
-                {% if currVarID == blockVarID %}
-                  {% assign referenced_variant = vari %}
-                {% endif %}
-              {% endfor %}
-
-              {% if referenced_variant != blank %}
-                {% render 'product-cta-section-actions-variant-2024', prod: referenced_variant_product, var: referenced_variant %}
+    {% for block in blocks %}
+      {% case block.type %}
+        {% when 'variant' %}
+          {% assign pathsToReveal = block.settings.reveal_on_paths | split: "," %}
+          {% if pathsToReveal contains request.path or pathsToReveal == blank %}
+            {% assign referenced_variant_product = block.settings.prod %}
+            {% assign referenced_variant = blank %}
+            {% assign blockVarID = block.settings.variant_id | plus: 0 %}
+            {% for vari in referenced_variant_product.variants %}
+              {% assign currVarID = vari.id | plus: 0 %}
+              {% if currVarID == blockVarID %}
+                {% assign referenced_variant = vari %}
               {% endif %}
+            {% endfor %}
+
+            {% if referenced_variant != blank %}
+              {% render 'product-cta-section-actions-variant-2024', prod: referenced_variant_product, var: referenced_variant %}
             {% endif %}
-        {% endcase %}
-      {% endfor %}
-    {% endif %}
+          {% endif %}
+      {% endcase %}
+    {% endfor %}
   </div>
 </div>
 
