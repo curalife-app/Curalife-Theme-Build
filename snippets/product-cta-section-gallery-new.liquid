@@ -102,21 +102,23 @@
               {% endfor %}
             {% endif %}
 
-            {% for additionalVariant in product.metafields.custom.additional_variants.value %}
-              <div class="swiper-slide">
-                <img src="{{ additionalVariant.image | image_url }}" alt="{{ additionalVariant.image.alt | escape }}">
+            {% if customer.email == 'ana@curalife.com' or customer.email == 'yotam@curalife.com' %}
+              {% for additionalVariant in product.metafields.custom.additional_variants.value %}
+                <div class="swiper-slide">
+                  <img src="{{ additionalVariant.image | image_url }}" alt="{{ additionalVariant.image.alt | escape }}">
 
-                {% if isSaveTitle %}
-                  {% assign save_price = additionalVariant.compare_at_price | minus: additionalVariant.price %}
+                  {% if isSaveTitle %}
+                    {% assign save_price = additionalVariant.compare_at_price | minus: additionalVariant.price %}
 
-                  <div class="save-title"><p>SAVE {{ save_price | money_without_trailing_zeros }}</p></div>
-                {% endif %}
+                    <div class="save-title"><p>SAVE {{ save_price | money_without_trailing_zeros }}</p></div>
+                  {% endif %}
 
-                {% if badgeImage %}
-                  <img src="{{ badgeImage | image_url }}" alt="Curalin" class="sale-badge" loading="lazy">
-                {% endif %}
-              </div>
-            {% endfor %}
+                  {% if badgeImage %}
+                    <img src="{{ badgeImage | image_url }}" alt="Curalin" class="sale-badge" loading="lazy">
+                  {% endif %}
+                </div>
+              {% endfor %}
+            {% endif %}
           </div>
 
           <div class="swiper-pagination"></div>
