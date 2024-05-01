@@ -3,9 +3,10 @@
 {% assign shortSectionID = sectionIDParts[-1] %}
 
 {% assign bottle_quantity = var.metafields.my_fields.pack_bottles_quantity %}
-{% assign original_item_cap = var.metafields.custom.original_item.value.compare_at_price %}
+{% assign original_item = var.metafields.custom.original_item.value | default: var %}
+{% assign original_item_cap = original_item.compare_at_price %}
 {% assign original_item_cap_total = original_item_cap | times: bottle_quantity %}
-{% assign original_item_price = var.metafields.custom.original_item.value.price %}
+{% assign original_item_price = original_item.price %}
 {% assign item_price = var.price | divided_by: bottle_quantity %}
 {% assign save_price = original_item_price | minus: item_price | times: quantity %}
 
