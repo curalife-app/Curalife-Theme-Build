@@ -2,8 +2,16 @@
 {% assign sectionIDParts = section_id | split: '-' %}
 {% assign shortSectionID = sectionIDParts[-1] %}
 
+{% if var.metafields.custom.original_item.value %}
+  {% assign original_item = var.metafields.custom.original_item.value %}
+{% else %}
+  {% if var.product.variants.size == 1 %}
+    {% assign original_item = product %}
+  {% else %}
+    {% assign original_item = var %}
+  {% endif %}
+{% endif %}
 {% assign bottle_quantity = var.metafields.my_fields.pack_bottles_quantity %}
-{% assign original_item = var.metafields.custom.original_item.value | default: var %}
 {% assign original_item_cap = original_item.compare_at_price %}
 {% assign original_item_cap_total = original_item_cap | times: bottle_quantity %}
 {% assign original_item_price = original_item.price %}
