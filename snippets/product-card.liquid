@@ -31,7 +31,7 @@
                       <i class="decrement" onclick="updateQuantity('-')">-</i>
                     </div>
                   </div>
-                  <button id="ProductSubmitButton-{{ section_id }}" type="submit" name="add" class="product-form__submit button button--full-width button--primary">
+                  <button id="ProductSubmitButton-{{ section_id }}" type="submit" name="add" onclick="resetQuantity()" class="product-form__submit button button--full-width button--primary">
                     <span class="submit-title">Add To Cart</span>
                     <div class="loading-overlay__spinner hidden">
                       <svg aria-hidden="true" focusable="false" class="spinner" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
@@ -134,28 +134,11 @@
               quantityField.val(value);
             }
 
-            document.addEventListener('DOMContentLoaded', function() {
-              const submitButtons = document.querySelector('#UpcartPopupBackDrop');
-              submitButtons.forEach(button => {
-                button.addEventListener('click', function(event) {
-                  console.log("Added to cart click");
-
-                  const form = this.closest('.product-form');
-                  if (!form) {
-                    console.error('Form not found for the button');
-                    return;
-                  }
-
-                  const quantityField = form.querySelector('input[name="quantity"]');
-                  if (!quantityField) {
-                    console.error('Quantity field not found in the form');
-                    return;
-                  }
-
-                  console.log('Quantity:', quantityField.value);
-                });
-              });
-            });
+            function resetQuantity() {
+              var qty_element = $(event.target).closest('.qty');
+              var quantityField = qty_element.find('input[name="quantity"]');
+              quantityField.val(1);
+            }
           </script>
         {% endif %}
 
