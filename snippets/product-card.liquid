@@ -141,35 +141,40 @@
               quantityField.val(1);
             }
 
-            (function() {
-              var originalPush = window.dataLayer.push;
-              window.dataLayer.push = function() {
-                  var returnValue = originalPush.apply(this, arguments);
-                  var eventData = arguments[0];
+            console.log("Script to override dataLayer.push is running");
 
-                  if (eventData.event) {
-                      // Dispatch a custom event whenever something is pushed to the dataLayer
-                      var event = new CustomEvent('DataLayerEvent', { detail: eventData });
-                      window.dispatchEvent(event);
-                  }
+if (!window.dataLayer || !Array.isArray(window.dataLayer)) {
+    window.dataLayer = [];
+    console.log("Initialized dataLayer as it was not present.");
+}
 
-                  return returnValue;
-              };
-          })();
+var originalPush = window.dataLayer.push;
+window.dataLayer.push = function() {
+    console.log("Overridden push method called", arguments[0]);
+    var returnValue = originalPush.apply(this, arguments);
+    var eventData = arguments[0];
 
-          // Listen for the custom event
-          window.addEventListener('DataLayerEvent', function(e) {
-              if (e.detail.event === 'add_to_cart') {
-                  console.log('Custom Event for Add to Cart:', e.detail);
-                  // Your function here
-                  handleAddToCart(e.detail);
-              }
-          });
+    if (eventData.event) {
+        var event = new CustomEvent('DataLayerEvent', { detail: eventData });
+        window.dispatchEvent(event);
+    }
 
-          function handleAddToCart(data) {
-              // Your custom logic here
-              console.log("Handling add to cart:", data);
-          }
+    return returnValue;
+};
+
+window.addEventListener('DataLayerEvent', function(e) {
+    console.log('DataLayerEvent triggered:', e.detail);
+    if (e.detail.event === 'add_to_cart') {
+        handleAddToCart(e.detail);
+    }
+});
+
+function handleAddToCart(data) {
+    console.log("Handling add to cart:", data);
+}
+
+// Test the setup by manually pushing to the dataLayer
+dataLayer.push({event: 'add_to_cart', product: 'Example Product'});
           </script>
         {% endif %}
 
