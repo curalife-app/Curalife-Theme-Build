@@ -134,22 +134,23 @@
               quantityField.val(value);
             }
 
-            document.addEventListener('DOMContentLoaded', function() {
-              document.addEventListener('click', function(event) {
-                  if (event.target.matches('.product-form__submit')) {
-                      console.log("added to cart Click");
+            document.querySelector('.product-form__submit').addEventListener('click', function(event) {
+              console.log("added to cart Click");
 
-                      // Find the closest parent form of the clicked button
-                      var form = event.target.closest('.product-form');
+              const form = event.target.closest('.product-form');
+              if (!form) {
+                  console.error('Form not found for the button');
+                  return;
+              }
 
-                      // Find the quantity input within the form
-                      var quantityField = form.querySelector('input[name="quantity"]');
+              const quantityField = form.querySelector('input[name="quantity"]');
+              if (!quantityField) {
+                  console.error('Quantity field not found in the form');
+                  return;
+              }
 
-                      // Set the value of the quantity input to 1
-                      quantityField.value = 1;
-                  }
-              });
-          });
+              quantityField.value = 1;
+            });
           </script>
         {% endif %}
 
