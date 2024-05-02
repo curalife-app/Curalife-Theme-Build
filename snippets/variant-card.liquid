@@ -34,12 +34,12 @@
       {% if customer.email == 'yotam@curalife.com' or customer.b2b? %}
         <div class="submit-wrap flex flex-col gap-2 mb-1">
           <product-form class="product-form" data-hide-errors="false" data-section-id="{{ section.id }}">
-            {%- form 'product', product, id: product.id, class: 'form', novalidate: 'novalidate', data-type: 'add-to-cart-form' -%}
-              <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}" disabled class="product-variant-id">
+            {%- form 'product', variant.product, id: variant.product.id, class: 'form', novalidate: 'novalidate', data-type: 'add-to-cart-form' -%}
+              <input type="hidden" name="id" value="{{ variant.id }}" disabled class="product-variant-id">
 
               <div class="product-form__buttons main-submit-wrapper flex">
                 <div class="qty">
-                  <input type="text" name="quantity" maxlength="100" value="{{ product.variants.first.quantity_rule.min }}" title="" class="input-text" />
+                  <input type="text" name="quantity" maxlength="100" value="{{ variant.quantity_rule.min }}" title="" class="input-text" />
                   <div class="qty_inc_dec">
                     <i class="increment" onclick="updateQuantity('+')">+</i>
                     <i class="decrement" onclick="updateQuantity('-')">-</i>
@@ -56,10 +56,6 @@
               </div>
             {%- endform -%}
           </product-form>
-
-          {% if product.metafields.custom.file_url != blank %}
-            <a href="{{ product.metafields.custom.file_url }}"><button class="secondary">Download PDF</button></a>
-          {% endif %}
         </div>
       {% endif %}
 
