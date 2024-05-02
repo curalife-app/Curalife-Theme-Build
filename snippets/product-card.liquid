@@ -142,26 +142,34 @@
             }
 
             (function() {
-              var lastLength = window.dataLayer.length; // Store the initial length of the dataLayer
+              var originalPush = window.dataLayer.push;
+              window.dataLayer.push = function() {
+                  var returnValue = originalPush.apply(this, arguments);
+                  var eventData = arguments[0];
 
-              setInterval(function() {
-                  if (window.dataLayer.length > lastLength) { // Check if new items have been added to the dataLayer
-                      for (var i = lastLength; i < window.dataLayer.length; i++) {
-                          if (window.dataLayer[i].event === 'add_to_cart') {
-                              console.log('Add to Cart event detected:', window.dataLayer[i]);
-                              // Call your custom function here
-                              handleAddToCart(window.dataLayer[i]);
-                          }
-                      }
-                      lastLength = window.dataLayer.length; // Update lastLength to the new length of the dataLayer
+                  if (eventData.event) {
+                      // Dispatch a custom event whenever something is pushed to the dataLayer
+                      var event = new CustomEvent('DataLayerEvent', { detail: eventData });
+                      window.dispatchEvent(event);
                   }
-              }, 500); // Check every 500 milliseconds
 
-              function handleAddToCart(data) {
-                  // Your custom logic here
-                  console.log("Handling add to cart:", data);
-              }
+                  return returnValue;
+              };
           })();
+
+          // Listen for the custom event
+          window.addEventListener('DataLayerEvent', function(e) {
+              if (e.detail.event === 'add_to_cart') {
+                  console.log('Custom Event for Add to Cart:', e.detail);
+                  // Your function here
+                  handleAddToCart(e.detail);
+              }
+          });
+
+          function handleAddToCart(data) {
+              // Your custom logic here
+              console.log("Handling add to cart:", data);
+          }
           </script>
         {% endif %}
 
