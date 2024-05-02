@@ -15,9 +15,7 @@
           {% endunless %}
         </div>
 
-        {% if customer.email == 'yotam@curalife.com' %}
-          <script src="{{ 'product-info.js' | asset_url }}" defer="defer"></script>
-          <script src="{{ 'product-form.js' | asset_url }}" defer="defer"></script>
+        {% if customer.email == 'yotam@curalife.com' or customer.b2b? %}
           <div class="submit-wrap flex flex-col gap-2 mb-1">
             <product-form class="product-form" data-hide-errors="false" data-section-id="{{ section.id }}">
               {%- form 'product', product, id: product.id, class: 'form', novalidate: 'novalidate', data-type: 'add-to-cart-form' -%}
@@ -175,6 +173,7 @@
     }
   </style>
 
+{% if customer.email == 'yotam@curalife.com' or customer.b2b? %}
   <style>
     .product-card .submit-wrap button {
       background-color: var(--orange);
@@ -250,6 +249,9 @@
       transition: opacity 0.3s ease;
     }
   </style>
+
+  <script src="{{ 'product-info.js' | asset_url }}" defer="defer"></script>
+  <script src="{{ 'product-form.js' | asset_url }}" defer="defer"></script>
 
   <script>
     function updateQuantity(action) {
