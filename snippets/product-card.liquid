@@ -119,37 +119,44 @@
           </style>
 
           <script>
-            function updateQuantity(action) {
-              var qty_element = $(event.target).closest('.qty');
-              var quantityField = qty_element.find('input[name="quantity"]');
-              var value = parseInt(quantityField.val(), 10);
-              value = isNaN(value) ? 1 : value;
+            document.addEventListener('DOMContentLoaded', function() {
+              function updateQuantity(action) {
+                var qty_element = $(event.target).closest('.qty');
+                var quantityField = qty_element.find('input[name="quantity"]');
+                var value = parseInt(quantityField.val(), 10);
+                value = isNaN(value) ? 1 : value;
 
-              if (action === "+") {
-                value++;
-              } else if (action === "-") {
-                value = Math.max(1, value - 1);
+                if (action === "+") {
+                  value++;
+                } else if (action === "-") {
+                  value = Math.max(1, value - 1);
+                }
+
+                quantityField.val(value);
               }
 
-              quantityField.val(value);
-            }
+              const submitButtons = document.querySelectorAll('.product-form__submit');
+              submitButtons.forEach(button => {
+                button.addEventListener('click', function(event) {
+                  event.preventDefault(); // If you don't want to submit the form traditionally
+                  console.log("Added to cart click");
 
-            document.querySelector('.product-form__submit').addEventListener('click', function(event) {
-              console.log("added to cart Click");
+                  const form = this.closest('.product-form');
+                  if (!form) {
+                    console.error('Form not found for the button');
+                    return;
+                  }
 
-              const form = event.target.closest('.product-form');
-              if (!form) {
-                  console.error('Form not found for the button');
-                  return;
-              }
+                  const quantityField = form.querySelector('input[name="quantity"]');
+                  if (!quantityField) {
+                    console.error('Quantity field not found in the form');
+                    return;
+                  }
 
-              const quantityField = form.querySelector('input[name="quantity"]');
-              if (!quantityField) {
-                  console.error('Quantity field not found in the form');
-                  return;
-              }
-
-              quantityField.value = 1;
+                  // Perform your AJAX here if applicable, or let the form submit naturally
+                  // For demo purposes, let's just log the quantity
+                  console.log('Quantity:', quantityField.value);
+                });
             });
           </script>
         {% endif %}
