@@ -119,22 +119,22 @@
           </style>
 
           <script>
-            document.addEventListener('DOMContentLoaded', function() {
-              function updateQuantity(action) {
-                var qty_element = $(event.target).closest('.qty');
-                var quantityField = qty_element.find('input[name="quantity"]');
-                var value = parseInt(quantityField.val(), 10);
-                value = isNaN(value) ? 1 : value;
+            function updateQuantity(action) {
+              var qty_element = $(event.target).closest('.qty');
+              var quantityField = qty_element.find('input[name="quantity"]');
+              var value = parseInt(quantityField.val(), 10);
+              value = isNaN(value) ? 1 : value;
 
-                if (action === "+") {
-                  value++;
-                } else if (action === "-") {
-                  value = Math.max(1, value - 1);
-                }
-
-                quantityField.val(value);
+              if (action === "+") {
+                value++;
+              } else if (action === "-") {
+                value = Math.max(1, value - 1);
               }
 
+              quantityField.val(value);
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
               const submitButtons = document.querySelectorAll('.product-form__submit');
               submitButtons.forEach(button => {
                 button.addEventListener('click', function(event) {
