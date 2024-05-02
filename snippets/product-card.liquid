@@ -140,6 +140,28 @@
               var quantityField = qty_element.find('input[name="quantity"]');
               quantityField.val(1);
             }
+
+            (function() {
+              var lastLength = window.dataLayer.length; // Store the initial length of the dataLayer
+
+              setInterval(function() {
+                  if (window.dataLayer.length > lastLength) { // Check if new items have been added to the dataLayer
+                      for (var i = lastLength; i < window.dataLayer.length; i++) {
+                          if (window.dataLayer[i].event === 'add_to_cart') {
+                              console.log('Add to Cart event detected:', window.dataLayer[i]);
+                              // Call your custom function here
+                              handleAddToCart(window.dataLayer[i]);
+                          }
+                      }
+                      lastLength = window.dataLayer.length; // Update lastLength to the new length of the dataLayer
+                  }
+              }, 500); // Check every 500 milliseconds
+
+              function handleAddToCart(data) {
+                  // Your custom logic here
+                  console.log("Handling add to cart:", data);
+              }
+          })();
           </script>
         {% endif %}
 
