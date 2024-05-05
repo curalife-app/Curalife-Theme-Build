@@ -31,33 +31,29 @@
       </div>
     {% endif %}
 
-    <div class="product-cards">
-      {% for product in currentCollection.products %}
-        {% if forloop.last and isLastCollectionRender %}
-          {% assign isLastCardRender = true %}
-        {% endif %}
+    {% for product in currentCollection.products %}
+      {% if forloop.last and isLastCollectionRender %}
+        {% assign isLastCardRender = true %}
+      {% endif %}
 
-        {% render 'product-card', product: product, isLastRender: isLastCardRender, isNoPrices: isNoPrices %}
-        {% if isLastCardRender %}{% assign isLastCardRendered = true %}{% endif %}
-      {% endfor %}
-    </div>
+      {% render 'product-card', product: product, isLastRender: isLastCardRender, isNoPrices: isNoPrices %}
+      {% if isLastCardRender %}{% assign isLastCardRendered = true %}{% endif %}
+    {% endfor %}
 
-    <div class="additional-variant-cards">
-      {% for additionalVar in currentCollection.metafields.custom.additional_variants.value %}
-        {% for vari in additionalVar.product.variants %}
-          {% if vari.id == additionalVar.id %}
-            {% assign varIndex = forloop.index %}
-            {% break %}
-          {% endif %}
-        {% endfor %}
-
-        {% if additionalVar.product.variants.size == 1 %}
-          {% render 'product-card', product: additionalVar.product, isLastRender: isLastCardRender, isNoPrices: isNoPrices %}
-        {% else %}
-          {% render 'variant-card', variant: additionalVar, variantIndex: varIndex, productCollections: product_collections, isLastRender: isLastCardRender, isNoPrices: isNoPrices %}
+    {% for additionalVar in currentCollection.metafields.custom.additional_variants.value %}
+      {% for vari in additionalVar.product.variants %}
+        {% if vari.id == additionalVar.id %}
+          {% assign varIndex = forloop.index %}
+          {% break %}
         {% endif %}
       {% endfor %}
-    </div>
+
+      {% if additionalVar.product.variants.size == 1 %}
+        {% render 'product-card', product: additionalVar.product, isLastRender: isLastCardRender, isNoPrices: isNoPrices %}
+      {% else %}
+        {% render 'variant-card', variant: additionalVar, variantIndex: varIndex, productCollections: product_collections, isLastRender: isLastCardRender, isNoPrices: isNoPrices %}
+      {% endif %}
+    {% endfor %}
 
     {% if isLastCardRendered != true %}
       {% render 'product-card', isOnlyScriptsAndStyles: true, isNoPrices: isNoPrices %}
