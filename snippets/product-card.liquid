@@ -1,10 +1,22 @@
+{% if product.metafields.custom.file_url != blank %}
+  {% assign isDigitalProduct = true %}
+{% endif %}
+
 <div id="{{ product.handle }}" class="product-card {% if isRecommended %}recommended{% endif %}" id="product-card-section">
-  <a class="product-link" href="{{ product.url }}"><img class="product-image" src="{{ product.featured_image.src | image_url }}" width="512" height="475" alt="" loading="lazy"></a>
+  {% if isDigitalProduct %}
+    <img class="product-image" src="{{ product.featured_image.src | image_url }}" width="512" height="475" alt="" loading="lazy">
+  {% else %}
+    <a class="product-link" href="{{ product.url }}"><img class="product-image" src="{{ product.featured_image.src | image_url }}" width="512" height="475" alt="" loading="lazy"></a>
+  {% endif %}
 
   <div class="info w-full text-center">
     <div class="main">
       <div class="product-titles min-h-[50px] mb-2">
-        <a class="product-link" href="{{ product.url }}"><h3 class="text-[22px] m-0">{{ product.metafields.my_fields.alternative_title.value | default: product.title }}</h3></a>
+        {% if isDigitalProduct %}
+          <h3 class="text-[22px] m-0">{{ product.metafields.my_fields.alternative_title.value | default: product.title }}</h3>
+        {% else %}
+          <a class="product-link" href="{{ product.url }}"><h3 class="text-[22px] m-0">{{ product.metafields.my_fields.alternative_title.value | default: product.title }}</h3></a>
+        {% endif %}
         {% if product.handle == 'curaslim' %}<p class="subtitle text-[--bronze]">Pre-Order!</p>{% endif %}
       </div>
 
@@ -39,13 +51,13 @@
           {%- endform -%}
         </product-form>
 
-        {% if product.metafields.custom.file_url != blank %}
+        {% if isDigitalProduct %}
           <a href="{{ product.metafields.custom.file_url }}"><button class="secondary">Download PDF</button></a>
         {% endif %}
       </div>
     {% endif %}
 
-    {% unless product.metafields.custom.file_url != blank %}
+    {% unless isDigitalProduct %}
       <a class="product-link" href="{{ product.url }}"><button class="main-btn" title="{{ product.title }}" prod-sku="{{ product.selected_or_first_available_variant.sku }}" prod-id="{{ product.variants.first.id }}" price="{{ product.selected_or_first_available_variant.price | money_without_currency }}" discount="{% if product.compare_at_price > product.price %}{{ product.compare_at_price | minus: product.price | times: 0.01 }}{% else %}0{% endif %}"></i>SHOP NOW</button></a>
     {% endunless %}
   </div>
