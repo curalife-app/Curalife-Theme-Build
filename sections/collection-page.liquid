@@ -41,6 +41,16 @@
 {% if customer.email == 'yotam@curalife.com' %}
   <div id="map" style="width: 600px; height: 400px;"></div>
   <script>
+    var data = '{{ 'leaflet_data.csv' | asset_url }}'; // Path to your CSV file
+    var lines = data.split("\n");
+    var markers = [];
+
+    for (var i = 1; i < lines.length; i++) {
+        var row = lines[i].split(",");
+        var marker = L.marker([parseFloat(row[1]), parseFloat(row[2])])
+            .bindPopup(row[0]); // Use the title from the CSV as the popup content
+        markers.push(marker);
+    }
 
     const map = L.map('map').setView([32.07590875446296, 34.81429050162211], 13);
 
@@ -56,13 +66,6 @@
       .setLatLng([51.513, -0.09])
       .setContent('I am a standalone popup.')
       .openOn(map);
-
-    function onMapClick(e) {
-      popup
-        .setLatLng(e.latlng)
-        .setContent(`You clicked the map at ${e.latlng.toString()}`)
-        .openOn(map);
-    }
 
     map.on('click', onMapClick);
 
