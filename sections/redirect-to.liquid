@@ -1,4 +1,10 @@
-{% if section.settings.url %}
+{% if customer.b2b? %}
+  {% if section.settings.b2b_url %}
+      <script>window.location.replace({{ section.settings.b2b_url }});</script>
+  {% else %}
+    <script>window.location.replace({{ section.settings.url }});</script>
+  {% endif %}
+{% elsif section.settings.url %}
   <script>window.location.replace({{ section.settings.url }});</script>
 {% endif %}
 
@@ -13,6 +19,11 @@
         "type": "url",
         "id": "url",
         "label": "Redirect To"
+      },
+      {
+        "type": "url",
+        "id": "b2b_url",
+        "label": "Redirect To - on B2B Channel"
       }
     ],
     "presets": [
