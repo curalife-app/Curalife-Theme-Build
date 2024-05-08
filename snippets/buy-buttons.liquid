@@ -68,7 +68,7 @@
     };
 
     var _learnq = _learnq || [];
-    _learnq.push(['track', 'Added to Cart', item]);
+    _learnq.push(['track', 'Added to Cart', {"id": variant_id,"quantity": 1}]);
 
     console.log("Klaviyo - Added to Cart", item)
   }
@@ -78,4 +78,27 @@
     trackKlaviyoAddToCart(variant_id);
     console.log("Added to Cart"  + variant_id)
   });
+
+  analytics.subscribe('product_added_to_cart', event => {
+  const cartLine = event.data.cartLine;
+  dataLayer.push({
+    event: 'add_to_cart',
+    fired_from: 'Shopify',
+    page_location: event.context.document.location.href,
+    ecommerce: {
+    items: [{
+      item_name: event.data.cartLine.merchandise.product.title,
+      item_id: event.data.cartLine.merchandise.sku,
+      price: cartLine.cost.totalAmount.amount,
+      currency: cartLine.cost.totalAmount.currencyCode,
+      item_variant: event.data.cartLine.merchandise.title,
+      quantity: 1
+    }]
+    }
+  });
+
+  // Track Kalviyo Add To Cart Event
+  var _learnq = _learnq || [];
+  _learnq.push(['track', 'Added to Cart', {"id": event.data.cartLine.merchandise.id,"quantity": 1}]);
+});
 </script>
