@@ -7,7 +7,7 @@
 {% assign subscription_save_percents = var.metafields.subscription.save_percents %}
 {% assign subscription_item_price_save = original_item_cap | times: subscription_save_percents | divided_by: 100 %}
 {% assign subscription_item_price = original_item_cap | minus: subscription_item_price_save %}
-{% assign subscription_total_price = subscription_item_price | times: bottle_quantity %}
+{% assign subscription_total_price = var.metafields.subscription.price | default: subscription_item_price | times: bottle_quantity %}
 {% if var.metafields.custom.referenced_variant_product_handle %}
   {% assign prod = all_products[var.metafields.custom.referenced_variant_product_handle] %}
   {% assign referenced_variant = prod.variants | where: 'id', variant_id | first %}
