@@ -59,3 +59,26 @@
     </product-form>
   </div>
 {% endif %}
+
+<script>
+  function trackKlaviyoAddToCart(variant_id) {
+    var item = {
+      "id": variant_id,
+      "quantity": 1
+    };
+
+    var _learnq = _learnq || [];
+    _learnq.push(['track', 'Added to Cart', item]);
+  }
+
+  //on load document
+  document.addEventListener('DOMContentLoaded', function() {
+    var productSubmitButton = document.querySelector('.product-form__submit');
+
+    productForm.addEventListener('submit', function(event) {
+      productSubmitButton.addEventListener('click', function() {
+        let variant_id = {{ variant.id }};
+        trackKlaviyoAddToCart(variant_id);
+      });
+    });
+</script>
