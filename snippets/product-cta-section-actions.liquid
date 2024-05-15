@@ -476,10 +476,10 @@
 
     {% assign collection_products_amount = var.product.collections.last.products | size %}
     {% if collection_products_amount == 1 and var.product.tags contains 'supplement' %}
-      window.didClickVariant = true;
+      window.didClickVariant{{ shortSectionID }} = true;
     {% endif %}
 
-    if (window.didClickVariant) {
+    if (window.didClickVariant{{ shortSectionID }}) {
       {% unless customer.b2b? %}
         // Slide to Variant Image
         {% assign variantsAmount = product.variants.size | plus: product.metafields.custom.additional_variants.value.size %}
@@ -514,7 +514,7 @@
       })
     }
     else {
-      window.didClickVariant = true;
+      window.didClickVariant{{ shortSectionID }} = true;
     }
   });
 </script>
