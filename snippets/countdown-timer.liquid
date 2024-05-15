@@ -69,8 +69,69 @@
       }
   }
 </style>
+{% if urgencyMinutes %}
+  <script>
+      (function() {
+          const second = 1000,
+                minute = second * 60,
+                hour = minute * 60,
+                duration = 15 * minute; // 15 minutes in milliseconds
 
-<script>
+          function getCookie(name) {
+              let dc = document.cookie;
+              let prefix = name + "=";
+              let begin = dc.indexOf("; " + prefix);
+              if (begin === -1) {
+                  begin = dc.indexOf(prefix);
+                  if (begin !== 0) return null;
+              } else {
+                  begin += 2;
+              }
+              let end = document.cookie.indexOf(";", begin);
+              if (end === -1) {
+                  end = dc.length;
+              }
+              return decodeURI(dc.substring(begin + prefix.length, end));
+          }
+
+          function setCookie(name, value, seconds) {
+              let expires = "";
+              if (seconds) {
+                  let date = new Date();
+                  date.setTime(date.getTime() + seconds * 1000);
+                  expires = "; expires=" + date.toUTCString();
+              }
+              document.cookie = name + "=" + (value || "") + expires + "; path=/";
+          }
+
+          let countDown;
+          let existingTime = getCookie('countdownEndTime');
+          if (!existingTime) {
+              countDown = new Date().getTime() + duration;
+              setCookie('countdownEndTime', countDown, duration / 1000);
+          } else {
+              countDown = parseInt(existingTime, 10);
+          }
+
+          let x = setInterval(function() {
+              var now = new Date().getTime();
+              var distance = countDown - now;
+
+              document.getElementById("hours-{{ section_id }}").innerText = Math.floor(distance / hour).pad(),
+              document.getElementById("minutes-{{ section_id }}").innerText = Math.floor((distance % hour) / minute).pad(),
+              document.getElementById("seconds-{{ section_id }}").innerText = Math.floor((distance % minute) / second).pad();
+
+              if (distance < 0) {
+                  clearInterval(x);
+                  setCookie('countdownEndTime', null, -1); // Delete the cookie
+                  countDown = new Date().getTime() + duration;
+                  setCookie('countdownEndTime', countDown, duration / 1000);
+              }
+          }, 1000);
+      })();
+  </script>
+{% else %}
+  <script>
     (function() {
         // Timer
         Number.prototype.pad = function() {
@@ -100,4 +161,5 @@
             }
         }, 0)
     })();
-</script>
+  </script>
+{% endif %}
