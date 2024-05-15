@@ -302,13 +302,6 @@
     justify-content: right;
   }
 
-  /* .variant-box .price .calculations p::after {
-    content: "00";
-    font-size: 0.6rem;
-    vertical-align: super;
-    margin-right: 5px;
-  } */
-
   .variant-box .price .calculations p.compared-at-price::after {
     font-size: 0.3rem;
   }
@@ -398,19 +391,14 @@
       $(".qty").removeClass("qty_expanded");
       $(".submit-wrap button").css("width", "100%");
     }
-  });
-</script>
 
-{% if product.metafields.custom.is_price_per_month %}
-  <script>
-    $("#product-actions-{{ section_id }} .variant-box").click(function() {
+    {% if product.metafields.custom.is_price_per_month %}
       let inputElement = $(this).find('input[name=pack]');
       let variantTotalPrice = inputElement.data('price');
-      console.log("variant total: " + variantTotalPrice);
       $('.total-price .total-price-amount').text(variantTotalPrice);
-    });
-  </script>
-{% endif %}
+    {% endif %}
+  });
+</script>
 
 <script>
   $(document).ready(function() {
@@ -426,8 +414,7 @@
   });
 
   // On Buy Button Click
-  const buyButton = document.querySelector('#product-actions-{{ section_id }} #buy-button');
-  buyButton.addEventListener('click', function() {
+  document.querySelector('#product-actions-{{ section_id }} #buy-button').addEventListener('click', function() {
     try {
       let checkedVariantInput = document.querySelector('#product-actions-{{ section_id }} input[name=pack]:checked');
 
@@ -451,7 +438,6 @@
   });
 
   function updateCTA() {
-    console.log("update CTA")
     {% if ctaTextType %}
       let checkedInputElement = $('#variant-box-{{ section_id }} input[name=pack]:checked');
 
@@ -493,7 +479,7 @@
       {% unless customer.b2b? %}
         // Slide to Variant Image
         {% assign variantsAmount = product.variants.size | plus: product.metafields.custom.additional_variants.value.size %}
-        {% if variantsAmount > 1 %}
+        {% if variantsAmount > 1 and product.variants.first.image %}
           let slideIndex = window.productSliderAllInOne{{ shortSectionID }}.slides.length - $(this).find('input[name=pack]:checked').attr('data-index');
           window.productSliderAllInOne{{ shortSectionID }}.slideTo(slideIndex);
         {% endif %}
