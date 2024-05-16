@@ -6,6 +6,11 @@
 
 <div id="product-actions-{{ section_id }}" class="product-actions">
   <div class="purchase-options md:p-2 flex flex-col gap-2">
+    <div class="purchase-type-options flex-nowrap flex w-full gap-2 mt-4">
+      <button class="subscription selected">Subscribe & Save</button>
+      <button class="buy-once">Buy Once</button>
+    </div>
+
     {% for var in product.variants %}
       {% render 'product-cta-section-actions-variant-2024-new', prod: product, var: var, index: forloop.index %}
     {% endfor %}
@@ -90,16 +95,26 @@
 
     function attachEventHandlers() {
       productActions.on('click', '.purchase-option-box', event => togglePurchaseBox($(event.currentTarget)))
-                    .on('click', '.purchase-type button', event => handlePurchaseTypeClick(event, $(event.currentTarget)))
+                    .on('click', '.purchase-type-options button', event => handlePurchaseTypeClick(event, $(event.currentTarget)))
                     .on('click', '.checkout-button.subscription', event => handleMainButtonClick(event, $(event.currentTarget)))
                     .on('click', '.add-to-cart-button.buy-once', event => handleMainButtonClick(event, $(event.currentTarget)));
     }
 
     function handlePurchaseTypeClick(event, button) {
       event.stopPropagation();
-      const parentBox = button.closest('.purchase-option-box');
       const isSubscriptionSelected = button.hasClass('subscription');
-      togglePurchaseType(parentBox, isSubscriptionSelected);
+
+      $('.purchase-type-options button').removeClass('selected');
+      button.addClass('selected');
+
+      togglePurchaseTypeAllVariants(isSubscriptionSelected);
+    }
+
+    function togglePurchaseTypeAllVariants(isSubscriptionSelected) {
+      purchaseOptionBoxes.each(function() {
+        const parentBox = $(this);
+        togglePurchaseType(parentBox, isSubscriptionSelected);
+      });
     }
 
     function handleMainButtonClick(event, button) {
