@@ -38,28 +38,13 @@
         {% endcase %}
       {% endfor %}
     {% endif %}
+
+    <div class="submit-wrap flex flex-col w-full mt-4">
+      <div class="add-to-cart-button buy-once hidden">{% render 'buy-buttons', product: prod, variant: variant_id, product_form_id: product_form_id, buyType: buyType, section_id: section.id %}</div>
+      <div class="checkout-button subscription">{% render 'buy-buttons', product: prod, variant: variant_id, selling_plan_id: selling_plan_id , product_form_id: product_form_id, buyType: buyType, section_id: section.id %}</div>
+    </div>
   </div>
 </div>
-
-{% comment %} {% if product.handle == 'curalin-gifts' %}
-  <script>
-    // Function to colorize text after the '+' character
-    function colorizeAfterPlus(inputString) {
-      const plusIndex = inputString.indexOf('+');
-      if (plusIndex !== -1) {
-        const beforePlus = inputString.substring(0, plusIndex);
-        const afterPlus = inputString.substring(plusIndex);
-        return `${beforePlus}<span class="text-[--bronze]">${afterPlus}</span>`;
-      }
-      return inputString;
-    }
-
-    const optionTitles = document.querySelectorAll('.option-title');
-    optionTitles.forEach((element) => {
-      element.innerHTML = colorizeAfterPlus(element.textContent);
-    });
-  </script>
-{% endif %} {% endcomment %}
 
 <script>
   $(document).ready(function() {
@@ -89,74 +74,6 @@
       }
     }
 
-    // function handleGiftSelection() {
-    //   const productActions = $("#product-actions-{{ section_id }}");
-    //   productActions.on('click', '.gift-product', function() {
-    //     console.log('Gift product clicked');
-    //     const giftsElement = $(this).closest('.gifts');
-    //     const currentlySelectedGifts = giftsElement.find('.gift-product.selected');
-
-    //     $(this).siblings('.selected').removeClass('selected');
-    //     $(this).addClass('selected');
-
-    //     let selectableGiftsProductIDs = giftsElement.find('.gift-product.selected').map(function() {
-    //       return $(this).attr('data-product-id');
-    //     }).get();
-
-    //     console.log('Selectable Gifts Product IDs:', selectableGiftsProductIDs);
-
-    //     const singleSelectionMapping = {
-    //       "7896199463063": "43685308366999",
-    //       "7896197660823": "43685309743255",
-    //       "8009619243159": "43685309022359",
-    //       "7911564345495": "43685305188503"
-    //     };
-
-    //     const handleTwoSelections = (ids) => {
-    //       console.log('Handling two selections with IDs:', ids);
-    //       const combinations = {
-    //         "7896199463063_7896197660823": "43680615202967",
-    //         "7896199463063_8009619243159": "43680725139607",
-    //         "7896199463063_7911564345495": "43680725401751",
-    //         "7896197660823_8009619243159": "43680726319255",
-    //         "7896197660823_7911564345495": "43680726024343",
-    //         "8009619243159_7911564345495": "43680726450327",
-    //         "7896199463063_7896199463063": "43685308465303",
-    //         "7896197660823_7896197660823": "43685309841559",
-    //         "8009619243159_8009619243159": "43685309120663",
-    //         "7911564345495_7911564345495": "43685305286807"
-    //       };
-
-    //       // Generate both possible keys
-    //       const key1 = `${ids[0]}_${ids[1]}`;
-    //       const key2 = `${ids[1]}_${ids[0]}`;
-
-    //       // Check for existence and return the bundleProductID
-    //       if (combinations[key1]) {
-    //         return combinations[key1];
-    //       } else if (combinations[key2]) {
-    //         return combinations[key2];
-    //       }
-    //     };
-
-    //     if (selectableGiftsProductIDs.length === 1) {
-    //       console.log('Single selection processing');
-    //       const bundleProductID = singleSelectionMapping[selectableGiftsProductIDs[0]];
-    //       console.log('Bundle Product ID for single selection:', bundleProductID);
-    //       if (bundleProductID) {
-    //         giftsElement.attr('data-bundle-product-id', bundleProductID);
-    //       }
-    //     } else if (selectableGiftsProductIDs.length === 2) {
-    //       console.log('Two selections processing');
-    //       const bundleProductID = handleTwoSelections(selectableGiftsProductIDs);
-    //       console.log('Bundle Product ID for two selections:', bundleProductID);
-    //       if (bundleProductID) {
-    //         giftsElement.attr('data-bundle-product-id', bundleProductID);
-    //       }
-    //     }
-    //   });
-    // }
-
     function setupMutationObserver() {
       const observer = new MutationObserver(mutations => {
         mutations.forEach(({ target }) => {
@@ -171,7 +88,8 @@
     function attachEventHandlers() {
       productActions.on('click', '.purchase-option-box', event => togglePurchaseBox($(event.currentTarget)))
                     .on('click', '.purchase-type button', event => handlePurchaseTypeClick(event, $(event.currentTarget)))
-                    .on('click', '.main-btn', event => handleMainButtonClick(event, $(event.currentTarget)));
+                    .on('click', '.checkout-button.subscription', event => handleMainButtonClick(event, $(event.currentTarget)))
+                    .on('click', '.add-to-cart-button.buy-once', event => handleMainButtonClick(event, $(event.currentTarget)));
     }
 
     function handlePurchaseTypeClick(event, button) {
@@ -183,8 +101,10 @@
 
     function handleMainButtonClick(event, button) {
       event.stopPropagation();
-      const parentBox = button.closest('.purchase-option-box');
-      buyButtonHandler(parentBox.data('variant'), parentBox.data('subscription-selling-plan-id'), button);
+      const parentBox = $('.purchase-option-box.selected');
+      if (parentBox.length) {
+        buyButtonHandler(parentBox.data('variant'), parentBox.data('subscription-selling-plan-id'), button);
+      }
     }
 
     function adjustMaxHeight(element) {
