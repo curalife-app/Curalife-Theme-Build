@@ -74,7 +74,10 @@
       if (defaultVariant) {
         purchaseOptionBoxes.eq(defaultVariant - 1).trigger("click");
       } else {
-        purchaseOptionBoxes.{% if variantsAmount == 1 %}first(){% elsif defaultSelectionIndex %}eq({{ defaultSelectionIndex | minus: 1 }}){% else %}first(){% endif %}.trigger("click");
+        let initialBox = purchaseOptionBoxes.{% if variantsAmount == 1 %}first(){% elsif defaultSelectionIndex %}eq({{ defaultSelectionIndex | minus: 1 }}){% else %}first(){% endif %};
+        initialBox.trigger("click");
+        let isSubscriptionSelected = initialBox.find('.purchase-type .subscription').hasClass('selected');
+        togglePurchaseType(initialBox, isSubscriptionSelected);
       }
     }
 
