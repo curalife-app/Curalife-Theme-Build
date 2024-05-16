@@ -194,11 +194,11 @@
         {% if isSlideOnLoad %}
           updateVariantImage(element);
         {% else %}
-          if (window.isFirstToggle) {
+          if (window.hasInitialImageUpdateHappened) {
             updateVariantImage(element);
           }
 
-          window.isFirstToggle = true
+          window.hasInitialImageUpdateHappened = true
         {% endif %}
       {% endif %}
     }
@@ -261,7 +261,7 @@
     }
 
     function redirectToCheckout(variant_id, dc) {
-      let checkoutLink = "https://" + location.hostname + "/cart/" + variant_id + ":1"
+      let checkoutLink = `https://${location.hostname}/cart/${variant_id}:1`
       if (dc) {checkoutLink += "?discount=" + atob(dc);}
       window.location.href = checkoutLink;
     }
