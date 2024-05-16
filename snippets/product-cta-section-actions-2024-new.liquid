@@ -118,40 +118,33 @@
     }
 
     function togglePurchaseType(parentBox, isSubscriptionSelected) {
-      const $parentBox = $(parentBox); // Ensure jQuery object once and use it throughout
-      const $buttons = $parentBox.find('.purchase-type button');
-      const $subscriptionInfo = $parentBox.find('.subscription-info');
-      const $perMonth = $parentBox.find('.per-month');
-      const $checkoutButton = $parentBox.find('.checkout-button');
-      const $addToCartButton = $parentBox.find('.add-to-cart-button');
-      const $submitSellingPlanId = $('.submit-selling-plan-id');
+      parentBox.find('.purchase-type button').removeClass('selected');
+      parentBox.find(isSubscriptionSelected ? '.subscription' : '.buy-once').addClass('selected');
 
-      // Toggle classes efficiently
-      $buttons.removeClass('selected').filter(isSubscriptionSelected ? '.subscription' : '.buy-once').addClass('selected');
-
-      // Conditional rendering with minimum DOM manipulation
+      // Toggle subscription info
       if (isSubscriptionSelected) {
-        $subscriptionInfo.stop(true, true).slideDown('fast');
-        $perMonth.toggle(!product.metafields.custom.is_price_per_month);
-        $checkoutButton.show();
-        $addToCartButton.hide();
-        $submitSellingPlanId.val($parentBox.data('subscription-selling-plan-id'));
+        parentBox.find('.subscription-info').slideDown('fast');
+        {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').show();{% endunless %}
+        parentBox.find('.checkout-button').show();
+        parentBox.find('.add-to-cart-button').hide();
+        let sellingPlanId = parentBox.data('subscription-selling-plan-id');
+        $('.submit-selling-plan-id').val(sellingPlanId);
       } else {
-        $subscriptionInfo.stop(true, true).slideUp('fast');
-        $perMonth.hide();
-        $checkoutButton.hide();
-        $addToCartButton.show();
-        $submitSellingPlanId.val('');
+        parentBox.find('.subscription-info').slideUp('fast');
+        {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').hide();{% endunless %}
+        parentBox.find('.add-to-cart-button').show();
+        parentBox.find('.checkout-button').hide();
+        $('.submit-selling-plan-id').val('');
       }
 
-      updateDisplayElements($parentBox, isSubscriptionSelected); // Pass jQuery object directly
+      updateDisplayElements(parentBox, isSubscriptionSelected);
     }
 
-    function updateDisplayElements($parentBox, isSubscriptionSelected) {
-      updateYotpoPointsWidget($parentBox, isSubscriptionSelected);
-      toggleOptionSubtitles($parentBox, isSubscriptionSelected);
-      togglePriceDisplay($parentBox, isSubscriptionSelected);
-      updateComparedAtPriceDisplay($parentBox);
+    function updateDisplayElements(parentBox, isSubscriptionSelected) {
+      updateYotpoPointsWidget(parentBox, isSubscriptionSelected);
+      toggleOptionSubtitles(parentBox, isSubscriptionSelected);
+      togglePriceDisplay(parentBox, isSubscriptionSelected);
+      updateComparedAtPriceDisplay(parentBox);
     }
 
     function handleMainButtonClick(event, button) {
