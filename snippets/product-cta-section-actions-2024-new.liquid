@@ -75,7 +75,8 @@
         purchaseOptionBoxes.eq(defaultVariant - 1).trigger("click");
       } else {
         let initialBox = purchaseOptionBoxes.{% if variantsAmount == 1 %}first(){% elsif defaultSelectionIndex %}eq({{ defaultSelectionIndex | minus: 1 }}){% else %}first(){% endif %};
-        initialBox.trigger("click");
+        initialBox.addClass('selected');
+        initialBox.find('input[type="radio"]').prop('checked', true);
         let isSubscriptionSelected = initialBox.find('.purchase-type .subscription').hasClass('selected');
         togglePurchaseType(initialBox, isSubscriptionSelected);
       }
