@@ -124,6 +124,9 @@
         {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').show();{% endunless %}
         parentBox.find('.checkout-button').show();
         parentBox.find('.add-to-cart-button').hide();
+        let parentBox = $('.purchase-option-box.selected');
+        let sellingPlanId = parentBox.data('subscription-selling-plan-id');
+        $('.submit-selling-plan-id').val(sellingPlanId);
       } else {
         parentBox.find('.subscription-info').slideUp('fast');
         {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').hide();{% endunless %}
@@ -140,17 +143,7 @@
 
     function handleMainButtonClick(event, button) {
       event.stopPropagation();
-      const parentBox = $('.purchase-option-box.selected');
-      if (parentBox.length) {
-        const variantId = parentBox.data('variant');
-        const sellingPlanId = parentBox.data('subscription-selling-plan-id');
-        console.log("Variant ID: ", variantId, "Selling Plan ID: ", sellingPlanId);
-
-        $('.submit-variant-id').val(variantId);
-        $('.submit-selling-plan-id').val(sellingPlanId);
-
-        //button.closest('form').submit();
-      }
+      button.closest('form').submit();
     }
 
     function adjustMaxHeight(element) {
@@ -186,6 +179,10 @@
         $(this).css('max-height', '54px');
         $(this).find('.toggle-icon').hide();
       });
+
+      let parentBox = $('.purchase-option-box.selected');
+      let variantId = parentBox.data('variant');
+      $('.submit-variant-id').val(variantId);
 
       $(element).addClass('selected');
       adjustMaxHeight(element);
