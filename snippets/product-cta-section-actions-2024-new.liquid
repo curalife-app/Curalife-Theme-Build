@@ -117,6 +117,29 @@
       });
     }
 
+    function togglePurchaseType(parentBox, isSubscriptionSelected) {
+      parentBox.find('.purchase-type button').removeClass('selected');
+      parentBox.find(isSubscriptionSelected ? '.subscription' : '.buy-once').addClass('selected');
+
+      // Toggle subscription info
+      if (isSubscriptionSelected) {
+        parentBox.find('.subscription-info').slideDown('fast');
+        {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').show();{% endunless %}
+        parentBox.find('.checkout-button').show();
+        parentBox.find('.add-to-cart-button').hide();
+      } else {
+        parentBox.find('.subscription-info').slideUp('fast');
+        {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').hide();{% endunless %}
+        parentBox.find('.add-to-cart-button').show();
+        parentBox.find('.checkout-button').hide();
+      }
+
+      updateYotpoPointsWidget(parentBox, isSubscriptionSelected);
+      toggleOptionSubtitles(parentBox, isSubscriptionSelected);
+      togglePriceDisplay(parentBox, isSubscriptionSelected);
+      updateComparedAtPriceDisplay(parentBox);
+    }
+
     function handleMainButtonClick(event, button) {
       event.stopPropagation();
       const parentBox = $('.purchase-option-box.selected');
@@ -181,30 +204,6 @@
           window.isFirstToggle = true
         {% endif %}
       {% endif %}
-    }
-
-    function togglePurchaseType(parentBox, isSubscriptionSelected) {
-      parentBox.find('.purchase-type button').removeClass('selected');
-      parentBox.find(isSubscriptionSelected ? '.subscription' : '.buy-once').addClass('selected');
-
-      // Toggle subscription info
-      if (isSubscriptionSelected) {
-        parentBox.find('.subscription-info').slideDown('fast');
-        {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').show();{% endunless %}
-        parentBox.find('.checkout-button').show();
-        parentBox.find('.add-to-cart-button').hide();
-      } else {
-        parentBox.find('.subscription-info').slideUp('fast');
-        {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').hide();{% endunless %}
-        parentBox.find('.add-to-cart-button').show();
-        parentBox.find('.checkout-button').hide();
-      }
-
-      updateYotpoPointsWidget(parentBox, isSubscriptionSelected);
-      toggleOptionSubtitles(parentBox, isSubscriptionSelected);
-      togglePriceDisplay(parentBox, isSubscriptionSelected);
-      adjustMaxHeight(parentBox);
-      updateComparedAtPriceDisplay(parentBox);
     }
 
     function toggleOptionSubtitles(parentBox, isSubscriptionSelected) {
