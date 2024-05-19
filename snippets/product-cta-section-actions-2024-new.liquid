@@ -124,6 +124,7 @@
 
       // Toggle subscription info
       if (isSubscriptionSelected) {
+        let saveDiscount = parentBox.data('subscription-discount');
         parentBox.find('.subscription-info').slideDown('fast');
         {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').show();{% endunless %}
         parentBox.find('.checkout-button').show();
@@ -131,12 +132,15 @@
         let sellingPlanId = parentBox.data('subscription-selling-plan-id');
         $('.submit-selling-plan-id').val(sellingPlanId);
       } else {
+        let saveDiscount = parentBox.data('subscription-discount');
         parentBox.find('.subscription-info').slideUp('fast');
         {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').hide();{% endunless %}
         parentBox.find('.add-to-cart-button').show();
         parentBox.find('.checkout-button').hide();
         $('.submit-selling-plan-id').val('');
       }
+
+      parentBox.find('.save-title .percents').text(saveDiscount);
 
       updateYotpoPointsWidget(parentBox, isSubscriptionSelected);
       toggleOptionSubtitles(parentBox, isSubscriptionSelected);
