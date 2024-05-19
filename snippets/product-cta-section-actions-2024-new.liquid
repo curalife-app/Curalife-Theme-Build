@@ -200,13 +200,20 @@
     }
 
     function togglePriceDisplay(parentBox, isSubscriptionSelected) {
-      parentBox.find('.subscription-content, .buy-once-content').fadeOut('fast', function() {
-        const contentToShow = isSubscriptionSelected ? '.subscription-content' : '.buy-once-content';
-        parentBox.find(contentToShow).fadeIn('fast');
-        parentBox.find(isSubscriptionSelected ? '.buy-once-content' : '.subscription-content').hide();
-      });
-    }
+        // Define selectors based on the condition upfront
+        const selectorToShow = isSubscriptionSelected ? '.subscription-content' : '.buy-once-content';
+        const selectorToHide = isSubscriptionSelected ? '.buy-once-content' : '.subscription-content';
 
+        // Fade out both elements and upon complete, handle each as needed
+        parentBox.find('.subscription-content, .buy-once-content').fadeOut('fast', function() {
+            // This callback will be called twice, but the operations inside will only process relevant elements
+            if ($(this).is(selectorToShow)) {
+                $(this).fadeIn('fast');
+            } else if ($(this).is(selectorToHide)) {
+                $(this).hide();
+            }
+        });
+    }
 
     function updateYotpoPointsWidget(parentBox, isSubscriptionSelected) {
       var newPoints = isSubscriptionSelected
