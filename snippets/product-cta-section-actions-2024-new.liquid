@@ -140,13 +140,17 @@
         $('.submit-selling-plan-id').val('');
       }
 
-      let saveDiscount = isSubscriptionSelected ? parentBox.data('subscription-discount') : parentBox.data('buy-once-discount');
-      parentBox.find('.save-title .percents').text(saveDiscount);
-
+      updateSavePercents(parentBox, isSubscriptionSelected);
       updateYotpoPointsWidget(parentBox, isSubscriptionSelected);
       toggleOptionSubtitles(parentBox, isSubscriptionSelected);
       togglePriceDisplay(parentBox, isSubscriptionSelected);
       updateComparedAtPriceDisplay(parentBox);
+    }
+
+    function updateSavePercents(parentBox, isSubscriptionSelected) {
+      let saveDiscount = isSubscriptionSelected ? parentBox.data('subscription-discount') : parentBox.data('buy-once-discount');
+      saveDiscount ? parentBox.find('.save-title').show() : parentBox.find('.save-title').hide();
+      parentBox.find('.save-title .percents').text(saveDiscount);
     }
 
     function handleMainButtonClick(event, button) {
