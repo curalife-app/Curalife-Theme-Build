@@ -140,17 +140,10 @@
         $('.submit-selling-plan-id').val('');
       }
 
-      updateSavePercents(parentBox, isSubscriptionSelected);
       updateYotpoPointsWidget(parentBox, isSubscriptionSelected);
       toggleOptionSubtitles(parentBox, isSubscriptionSelected);
       togglePriceDisplay(parentBox, isSubscriptionSelected);
       updateComparedAtPriceDisplay(parentBox);
-    }
-
-    function updateSavePercents(parentBox, isSubscriptionSelected) {
-      let saveDiscount = isSubscriptionSelected ? parentBox.data('subscription-discount') : parentBox.data('buy-once-discount');
-      saveDiscount ? parentBox.find('.save-title').show() : parentBox.find('.save-title').hide();
-      parentBox.find('.save-title .percents').text(saveDiscount);
     }
 
     function handleMainButtonClick(event, button) {
@@ -225,11 +218,11 @@
     function togglePriceDisplay(parentBox, isSubscriptionSelected) {
       parentBox.find('.real-price, .total-price').stop().fadeOut('fast', function() {
         if (isSubscriptionSelected) {
-          parentBox.find('.real-price.subscription, .total-price.subscription').fadeIn('fast');
-          parentBox.find('.real-price.buy-once, .total-price.buy-once').hide();
+          parentBox.find('.real-price.subscription, .total-price.subscription, .save-percents.subscription').fadeIn('fast');
+          parentBox.find('.real-price.buy-once, .total-price.buy-once, .save-percents.buy-once').hide();
         } else {
-          parentBox.find('.real-price.buy-once, .total-price.buy-once').fadeIn('fast');
-          parentBox.find('.real-price.subscription, .total-price.subscription').hide();
+          parentBox.find('.real-price.buy-once, .total-price.buy-once, .save-percents.buy-once').fadeIn('fast');
+          parentBox.find('.real-price.subscription, .total-price.subscription, .save-percents.subscription').hide();
         }
       });
     }
