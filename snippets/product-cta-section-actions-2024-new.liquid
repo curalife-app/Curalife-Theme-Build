@@ -200,18 +200,21 @@
     }
 
     function togglePriceDisplay(parentBox, isSubscriptionSelected) {
-        // Define selectors based on the condition upfront
-        const selectorToShow = isSubscriptionSelected ? '.subscription-content' : '.buy-once-content';
-        const selectorToHide = isSubscriptionSelected ? '.buy-once-content' : '.subscription-content';
+        // Store references to both contents
+        const subscriptionContent = parentBox.find('.subscription-content');
+        const buyOnceContent = parentBox.find('.buy-once-content');
 
-        // Fade out both elements and upon complete, handle each as needed
-        parentBox.find('.subscription-content, .buy-once-content').fadeOut('fast', function() {
-            // This callback will be called twice, but the operations inside will only process relevant elements
-            if ($(this).is(selectorToShow)) {
-                $(this).fadeIn('fast');
-            } else if ($(this).is(selectorToHide)) {
-                $(this).hide();
-            }
+        // Determine which content to show and which to hide
+        const contentToShow = isSubscriptionSelected ? subscriptionContent : buyOnceContent;
+        const contentToHide = isSubscriptionSelected ? buyOnceContent : subscriptionContent;
+
+        // Ensure only one fade out and fade in operation is active at a time by stopping current animations
+        subscriptionContent.stop();
+        buyOnceContent.stop();
+
+        // Fade out the content to hide, then fade in the content to show
+        contentToHide.fadeOut('fast', function() {
+            contentToShow.fadeIn('fast');
         });
     }
 
