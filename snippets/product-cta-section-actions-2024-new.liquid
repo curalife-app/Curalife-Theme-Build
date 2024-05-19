@@ -200,22 +200,17 @@
     }
 
     function togglePriceDisplay(parentBox, isSubscriptionSelected) {
-        // Store references to both contents
-        const subscriptionContent = parentBox.find('.subscription-content');
-        const buyOnceContent = parentBox.find('.buy-once-content');
+      const subscriptionContent = parentBox.find('.subscription-content');
+      const buyOnceContent = parentBox.find('.buy-once-content');
+      const contentToShow = isSubscriptionSelected ? subscriptionContent : buyOnceContent;
+      const contentToHide = isSubscriptionSelected ? buyOnceContent : subscriptionContent;
 
-        // Determine which content to show and which to hide
-        const contentToShow = isSubscriptionSelected ? subscriptionContent : buyOnceContent;
-        const contentToHide = isSubscriptionSelected ? buyOnceContent : subscriptionContent;
+      subscriptionContent.stop();
+      buyOnceContent.stop();
 
-        // Ensure only one fade out and fade in operation is active at a time by stopping current animations
-        subscriptionContent.stop();
-        buyOnceContent.stop();
-
-        // Fade out the content to hide, then fade in the content to show
-        contentToHide.fadeOut('fast', function() {
-            contentToShow.fadeIn('fast');
-        });
+      contentToHide.fadeOut('fast', function() {
+        contentToShow.fadeIn('fast');
+      });
     }
 
     function updateYotpoPointsWidget(parentBox, isSubscriptionSelected) {
