@@ -10,18 +10,18 @@
   <div class="purchase-options md:p-2 flex flex-col gap-2">
     <div class="purchase-type flex-nowrap flex w-full gap-2">
       {% assign subscriptionFeatures = "Save on every order,Guaranteed delivery,Make changes anytime,VIP support,New subscribers gifs" | split: ',' %}
-      <button class="subscription selected flex justify-center gap-2" aria-label="Subscribe & Save">Subscribe & Save{% render 'tooltip', section_id: SID, linkTitle: '<i class="fa-duotone fa-circle-info text-[18px]"></i>', title: 'Subscription Details', description: '', features: subscriptionFeatures %}</button>
+      <button class="subscription selected flex justify-center gap-2" aria-label="Subscribe & Save">Subscribe & Save{% render 'tooltip', SID: SID, linkTitle: '<i class="fa-duotone fa-circle-info text-[18px]"></i>', title: 'Subscription Details', description: '', features: subscriptionFeatures %}</button>
       <button class="buy-once" aria-label="Buy Once">Buy Once</button>
     </div>
 
     {% for var in product.variants %}
-      {% render 'product-cta-section-actions-variant-2024-new', prod: product, var: var, index: forloop.index %}
+      {% render 'product-cta-section-actions-variant-2024-new', SID: SID, prod: product, var: var, index: forloop.index %}
     {% endfor %}
 
     {% if customer.email == 'yotam@curalife.com' and false %}
       {% for additionalVariant in product.metafields.custom.additional_variants.value %}
         {% assign variantsAmount = variantsAmount | plus: 1 %}
-        {% render 'product-cta-section-actions-variant-2024-new', prod: additionalVariant.product, var: additionalVariant, index: variantsAmount %}
+        {% render 'product-cta-section-actions-variant-2024-new', SID: SID, prod: additionalVariant.product, var: additionalVariant, index: variantsAmount %}
       {% endfor %}
 
       {% for block in blocks %}
@@ -40,7 +40,7 @@
               {% endfor %}
 
               {% if referenced_variant != blank %}
-                {% render 'product-cta-section-actions-variant-2024', prod: referenced_variant_product, var: referenced_variant %}
+                {% render 'product-cta-section-actions-variant-2024-new', SID: SID, prod: referenced_variant_product, var: referenced_variant %}
               {% endif %}
             {% endif %}
         {% endcase %}
