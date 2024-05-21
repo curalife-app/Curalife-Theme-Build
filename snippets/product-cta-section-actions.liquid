@@ -14,12 +14,12 @@
 
   <div class="variants">
     {% for var in product.variants %}
-      {% render 'product-cta-section-actions-variant-box', section_id: section_id, shortSectionID: shortSectionID, ctaTextType: ctaTextType, isVariantNotice: isVariantNotice, var: var, index: forloop.index, isHighlightSubtitle: isHighlightSubtitle, isUpdateSaveTitle: true, pricePer: pricePer %}
+      {% render 'product-cta-section-actions-variant-box', shortSectionID: shortSectionID, ctaTextType: ctaTextType, isVariantNotice: isVariantNotice, var: var, index: forloop.index, isHighlightSubtitle: isHighlightSubtitle, isUpdateSaveTitle: true, pricePer: pricePer %}
     {% endfor %}
 
     {% if request.path == '/products/curaslim-pack' or customer.email == 'ana@curalife.com' or customer.email == 'yotam@curalife.com' %}
       {% for additionalVariant in product.metafields.custom.additional_variants.value %}
-        {% render 'product-cta-section-actions-variant-box', ctaTextType: ctaTextType, isVariantNotice: isVariantNotice, var: additionalVariant, index: forloop.index, isHighlightSubtitle: isHighlightSubtitle, isUpdateSaveTitle: true, isPricePerUnit: isPricePerUnit, challenge_value: challenge_value, curaeats_value: curaeats_value %}
+        {% render 'product-cta-section-actions-variant-box', shortSectionID: shortSectionID, ctaTextType: ctaTextType, isVariantNotice: isVariantNotice, var: additionalVariant, index: forloop.index, isHighlightSubtitle: isHighlightSubtitle, isUpdateSaveTitle: true, isPricePerUnit: isPricePerUnit, challenge_value: challenge_value, curaeats_value: curaeats_value %}
       {% endfor %}
     {% endif %}
   </div>
@@ -442,7 +442,7 @@
 
   function updateCTA() {
     {% if ctaTextType %}
-      let checkedInputElement = $('#variant-box-{{ section_id }} input[name=pack{{ shortSectionID }}]:checked');
+      let checkedInputElement = $('#variant-box-{{ shortSectionID }} input[name=pack{{ shortSectionID }}]:checked');
 
       {% if ctaTextType == "save" %}
         if (checkedInputElement.attr('data-discount') == 0) {
@@ -460,7 +460,7 @@
   }
 
   function updateSelectedVariantInformation(infoAttributeName, targetElementToUpdate) {
-    let varIndex = $('#variant-box-{{ section_id }} input[name=pack{{ shortSectionID }}]:checked').attr(infoAttributeName);
+    let varIndex = $('#variant-box-{{ shortSectionID }} input[name=pack{{ shortSectionID }}]:checked').attr(infoAttributeName);
 
     $(targetElementToUpdate).fadeOut(300, function () {
       varIndex > 1 ? $(targetElementToUpdate).text("X" + varIndex) : $(targetElementToUpdate).text("");
