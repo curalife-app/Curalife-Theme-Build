@@ -131,6 +131,9 @@
         } else {
           parentBox.attr('inert', '');
           parentBox.removeClass('selected');
+          // find the next available subscription box that doesnt have inert attribute and trigger click on it
+          let nextSubscriptionBox = $purchaseOptionBoxes.filter(':not([inert])').find('.subscription').first();
+          nextSubscriptionBox.trigger('click');
         }
       } else {
         {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').hide();{% endunless %}
