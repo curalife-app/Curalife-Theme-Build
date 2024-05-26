@@ -107,23 +107,24 @@
       togglePurchaseTypeAllVariants();
     }
 
-    function togglePurchaseTypeAllVariants() {
+    function togglePurchaseTypeAllVariants(isSubscriptionSelected) {
       $purchaseOptionBoxes.each(function() {
         const parentBox = $(this);
-        togglePurchaseType(parentBox);
+        togglePurchaseType(parentBox, isSubscriptionSelected);
       });
     }
 
 
-    function togglePurchaseType(parentBox) {
+    function togglePurchaseType(parentBox, isSubscriptionSelected) {
       $('#product-actions-{{ SID }} .purchase-type button').removeClass('selected');
       console.log("Parent box: ", parentBox)
       let isButtonSubscription = parentBox.find('.purchase-type button').hasClass('subscription');
+      console.log("isButtonSubscription: ", parentBox.find('.purchase-type button'));
       console.log("has class subscription: ", isButtonSubscription);
 
-      isButtonSubscription ? $('#product-actions-{{ SID }} .purchase-type button.subscription').addClass('selected') : $('#product-actions-{{ SID }} .purchase-type button.buy-once').addClass('selected');
+      isSubscriptionSelected ? $('#product-actions-{{ SID }} .purchase-type button.subscription').addClass('selected') : $('#product-actions-{{ SID }} .purchase-type button.buy-once').addClass('selected');
 
-      if (isButtonSubscription) {
+      if (isSubscriptionSelected) {
         {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').show();{% endunless %}
         let sellingPlanId = parentBox.data('subscription-selling-plan-id');
         if (sellingPlanId > 0) {
