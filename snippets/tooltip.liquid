@@ -89,42 +89,48 @@
 </style>
 
 <script>
-  document.querySelectorAll('.subscription-details').forEach(subscriptionDetails => {
-    let tooltip = subscriptionDetails.querySelector('.tooltip');
-    let closeButton = subscriptionDetails.querySelector('.close');
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.subscription-details').forEach(subscriptionDetails => {
+      let tooltip = subscriptionDetails.querySelector('.tooltip');
+      let closeButton = subscriptionDetails.querySelector('.close');
 
-    let shouldStayOpen = false;
-
-    subscriptionDetails.addEventListener('mouseover', function() {
-      if (!shouldStayOpen) {
-        tooltip.style.display = 'block';
+      if (!tooltip || !closeButton) {
+        console.error('Tooltip or close button not found within subscription details element.');
+        return;
       }
-    });
 
-    subscriptionDetails.addEventListener('mouseout', function() {
-      if (!shouldStayOpen) {
-        tooltip.style.display = 'none';
-      }
-    });
+      let shouldStayOpen = false;
 
-    subscriptionDetails.addEventListener('click', function(event) {
-      event.stopPropagation();
-      shouldStayOpen = !shouldStayOpen;
-      tooltip.style.display = shouldStayOpen ? 'block' : 'none';
-    });
+      subscriptionDetails.addEventListener('mouseover', function() {
+        if (!shouldStayOpen) {
+          tooltip.style.display = 'block';
+        }
+      });
 
-    closeButton.addEventListener('click', function(event) {
-      event.stopPropagation();
-      shouldStayOpen = false;
-      tooltip.style.display = 'none';
-    });
+      subscriptionDetails.addEventListener('mouseout', function() {
+        if (!shouldStayOpen) {
+          tooltip.style.display = 'none';
+        }
+      });
 
-    document.addEventListener('click', function() {
-      if (shouldStayOpen) {
+      subscriptionDetails.addEventListener('click', function(event) {
+        event.stopPropagation();
+        shouldStayOpen = !shouldStayOpen;
+        tooltip.style.display = shouldStayOpen ? 'block' : 'none';
+      });
+
+      closeButton.addEventListener('click', function(event) {
+        event.stopPropagation();
         shouldStayOpen = false;
         tooltip.style.display = 'none';
-      }
+      });
+
+      document.addEventListener('click', function() {
+        if (shouldStayOpen) {
+          shouldStayOpen = false;
+          tooltip.style.display = 'none';
+        }
+      });
     });
   });
-</script>
 </script>
