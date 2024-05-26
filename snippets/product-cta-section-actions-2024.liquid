@@ -305,8 +305,10 @@
     }
 
     function buyButtonHandler(variant_id, subscription_selling_plan_id, buttonElement) {
+      let isSubscriptionSelected = parentBox.find('.purchase-type .subscription').hasClass('selected');
       toggleButtonLoading(buttonElement, true);
-      if (isSubscriptionSelected()) {
+
+      if (isSubscriptionSelected) {
         buySubscription(variant_id, 1, subscription_selling_plan_id);
       } else {
         let dc = $(buttonElement).closest('.purchase-option-box').data('dc');
@@ -319,10 +321,6 @@
           redirectToCheckout(variant_id, dc);
         }
       }
-    }
-
-    function isSubscriptionSelected() {
-      return $('#product-actions-{{ section.id }} .purchase-option-box.selected').find('.purchase-type .subscription.selected').length > 0;
     }
 
     function redirectToCheckout(variant_id, dc) {
