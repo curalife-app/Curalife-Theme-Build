@@ -16,7 +16,7 @@
 </div>
 
 <style>
-  #tooltip {
+  #shopify-section-{{ section.id }} #tooltip {
     position: absolute;
     background-color: var(--lighter-brown);
     color: black;
@@ -89,39 +89,42 @@
 </style>
 
 <script>
-  let subscriptionDetails = document.querySelector("#subscription-details-{{ SID }}");
-  let tooltip = document.querySelector("#subscription-details-{{ SID }} #tooltip");
-  let closeButton = document.querySelector("#subscription-details-{{ SID }} #close");
+  document.querySelectorAll('.subscription-details').forEach(subscriptionDetails => {
+    let tooltip = subscriptionDetails.querySelector('.tooltip');
+    let closeButton = subscriptionDetails.querySelector('.close');
 
-  let shouldStayOpen = false;
+    let shouldStayOpen = false;
 
-  subscriptionDetails.addEventListener("mouseover", function() {
-    if (!shouldStayOpen) {
-      tooltip.style.display = "block";
-    }
-  });
-  subscriptionDetails.addEventListener("mouseout", function() {
-    if (!shouldStayOpen) {
-      tooltip.style.display = "none";
-    }
-  });
+    subscriptionDetails.addEventListener('mouseover', function() {
+      if (!shouldStayOpen) {
+        tooltip.style.display = 'block';
+      }
+    });
 
-  subscriptionDetails.addEventListener("click", function(event) {
-    event.stopPropagation();
-    shouldStayOpen = !shouldStayOpen;
-    tooltip.style.display = shouldStayOpen ? "block" : "none";
-  });
+    subscriptionDetails.addEventListener('mouseout', function() {
+      if (!shouldStayOpen) {
+        tooltip.style.display = 'none';
+      }
+    });
 
-  closeButton.addEventListener("click", function(event) {
-    event.stopPropagation();
-    shouldStayOpen = false;
-    tooltip.style.display = "none";
-  });
+    subscriptionDetails.addEventListener('click', function(event) {
+      event.stopPropagation();
+      shouldStayOpen = !shouldStayOpen;
+      tooltip.style.display = shouldStayOpen ? 'block' : 'none';
+    });
 
-  document.addEventListener("click", function() {
-    if (shouldStayOpen) {
+    closeButton.addEventListener('click', function(event) {
+      event.stopPropagation();
       shouldStayOpen = false;
-      tooltip.style.display = "none";
-    }
+      tooltip.style.display = 'none';
+    });
+
+    document.addEventListener('click', function() {
+      if (shouldStayOpen) {
+        shouldStayOpen = false;
+        tooltip.style.display = 'none';
+      }
+    });
   });
+</script>
 </script>
