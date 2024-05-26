@@ -70,11 +70,6 @@
     }
 
     function initializePurchaseOptions() {
-      // $purchaseOptionBoxes.each(function(index) {
-      //   $(this).find('input[type="radio"]').prop('checked', true);
-      //   togglePurchaseType($(this));
-      // });
-
       let urlParams = new URLSearchParams(window.location.search);
       let defaultVariant = urlParams.get('default-variant');
 
@@ -82,16 +77,6 @@
 
       InitialDefaultVariant = defaultVariant ? defaultVariant - 1 : 1;
       $purchaseOptionBoxes.eq(InitialDefaultVariant);
-
-      // if (defaultVariant) {
-      //   $purchaseOptionBoxes.eq(defaultVariant - 1).trigger("click");
-      // } else {
-      //   let initialBox = $purchaseOptionBoxes.{% if variantsAmount == 1 %}first(){% elsif defaultSelectionIndex %}eq({{ defaultSelectionIndex | minus: 1 }}){% else %}first(){% endif %};
-      //   initialBox.addClass('selected');
-      //   initialBox.find('input[type="radio"]').prop('checked', true);
-
-      //   togglePurchaseType(initialBox, true);
-      // }
     }
 
     function setupMutationObserver() {
@@ -131,9 +116,7 @@
 
     function togglePurchaseType(parentBox) {
       $('#product-actions-{{ SID }} .purchase-type button').removeClass('selected');
-      let purchaseTypeButtonSelector = isSubscriptionSelected() ? '.subscription' : '.buy-once';
-      console.log("Purchase type button selector: ", purchaseTypeButtonSelector);
-      $('#product-actions-{{ SID }} .purchase-type button' + purchaseTypeButtonSelector).addClass('selected');
+      parentBox.find('.purchase-type button').hasClass('subscription') ? $('#product-actions-{{ SID }} .purchase-type button.subscription').addClass('selected') : $('#product-actions-{{ SID }} .purchase-type button.buy-once').addClass('selected');
 
       if (isSubscriptionSelected()) {
         {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').show();{% endunless %}
