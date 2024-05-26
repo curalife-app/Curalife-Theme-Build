@@ -123,8 +123,9 @@
     }
 
     function togglePurchaseType(parentBox) {
-      parentBox.find('#product-actions-{{ SID }} .purchase-type button').removeClass('selected');
-      parentBox.find(isSubscriptionSelected() ? '.subscription' : '.buy-once').addClass('selected');
+      $('#product-actions-{{ SID }} .purchase-type button').removeClass('selected');
+      let purchaseTypeButtonSelector = isSubscriptionSelected() ? '.subscription' : '.buy-once';
+      $('#product-actions-{{ SID }} .purchase-type ' + purchaseTypeButtonSelector).addClass('selected');
 
       if (isSubscriptionSelected()) {
         {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').show();{% endunless %}
