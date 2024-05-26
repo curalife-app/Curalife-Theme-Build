@@ -78,15 +78,23 @@
       let urlParams = new URLSearchParams(window.location.search);
       let defaultVariant = urlParams.get('default-variant');
 
+      $('#product-actions-{{ SID }} .purchase-type .subscription').addClass('selected');
+
       if (defaultVariant) {
         $purchaseOptionBoxes.eq(defaultVariant - 1).trigger("click");
       } else {
-        let initialBox = $purchaseOptionBoxes.{% if variantsAmount == 1 %}first(){% elsif defaultSelectionIndex %}eq({{ defaultSelectionIndex | minus: 1 }}){% else %}first(){% endif %};
-        initialBox.addClass('selected');
-        initialBox.find('input[type="radio"]').prop('checked', true);
-        $('#product-actions-{{ SID }} .purchase-type .subscription').addClass('selected');
-        togglePurchaseType(initialBox, true);
+        $purchaseOptionBoxes.first().trigger("click");
       }
+
+      // if (defaultVariant) {
+      //   $purchaseOptionBoxes.eq(defaultVariant - 1).trigger("click");
+      // } else {
+      //   let initialBox = $purchaseOptionBoxes.{% if variantsAmount == 1 %}first(){% elsif defaultSelectionIndex %}eq({{ defaultSelectionIndex | minus: 1 }}){% else %}first(){% endif %};
+      //   initialBox.addClass('selected');
+      //   initialBox.find('input[type="radio"]').prop('checked', true);
+
+      //   togglePurchaseType(initialBox, true);
+      // }
     }
 
     function setupMutationObserver() {
