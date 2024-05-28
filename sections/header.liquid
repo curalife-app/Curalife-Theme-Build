@@ -515,13 +515,18 @@
 
     const chatButton = document.querySelectorAll('.chatbot-link');
     console.log("chatButton: ", chatButton)
+
     if (chatButton) {
       if (window.Webchat && typeof window.Webchat.startSession === 'function') {
-        chatButton.addEventListener('click', function() {
-          window.Webchat.startSession('expert', 'Navigation bar');
+        chatButton.forEach((button) => {
+          button.addEventListener('click', function() {
+            window.Webchat.startSession('expert', 'Navigation bar');
+          });
         });
       } else {
-        chatButton.remove();
+        chatButton.forEach((button) => {
+          button.remove();
+        });
       }
     }
   });
