@@ -116,7 +116,7 @@
     }
 
 
-    function togglePurchaseType(parentBox, isSubscriptionSelected) {
+    function togglePurchaseType(parentBox) {
       $('#product-actions-{{ SID }} .purchase-type button').removeClass('selected');
       isSubscriptionSelected() ? $('#product-actions-{{ SID }} .purchase-type button.subscription').addClass('selected') : $('#product-actions-{{ SID }} .purchase-type button.buy-once').addClass('selected');
 
@@ -124,6 +124,8 @@
         {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').show();{% endunless %}
         let selectedBox = $('#product-actions-{{ SID }} .purchase-option-box.selected');
         let sellingPlanId = selectedBox.data('subscription-selling-plan-id');
+        console.log("selectedBox: ", selectedBox)
+        console.log("sellingPlanId: ", sellingPlanId)
         if (sellingPlanId > 0) {
           $('#product-actions-{{ SID }} .submit-selling-plan-id').val(sellingPlanId);
         } else {
