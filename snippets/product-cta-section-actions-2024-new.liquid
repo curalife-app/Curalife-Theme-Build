@@ -121,6 +121,7 @@
       isSubscriptionSelected() ? $('#product-actions-{{ SID }} .purchase-type button.subscription').addClass('selected') : $('#product-actions-{{ SID }} .purchase-type button.buy-once').addClass('selected');
 
       if (isSubscriptionSelected()) {
+        console.log("isSubscriptionSelected: true")
         {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').show();{% endunless %}
         let selectedBox = $('#product-actions-{{ SID }} .purchase-option-box.selected');
         let sellingPlanId = selectedBox.data('subscription-selling-plan-id');
@@ -135,6 +136,7 @@
           $purchaseOptionBoxes.filter(':not([inert])').first().trigger('click');
         }
       } else {
+        console.log("isSubscriptionSelected: false")
         {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').hide();{% endunless %}
         $('.submit-selling-plan-id').val('');
         parentBox.removeAttr('inert');
