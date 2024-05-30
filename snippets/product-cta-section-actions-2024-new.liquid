@@ -82,13 +82,17 @@
 
     function setupMutationObserver() {
       const observer = new MutationObserver(mutations => {
-        mutations.forEach(({ target }) => {
-          const targetBox = $(target).closest('.purchase-option-box');
-          if (targetBox.hasClass('selected')) adjustMaxHeight(targetBox);
+        mutations.forEach(mutation => {
+          if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+            const targetBox = $(mutation.target).closest('.purchase-option-box');
+            if (targetBox.hasClass('selected')) adjustMaxHeight(targetBox);
+          }
         });
       });
 
-      $purchaseOptionBoxes.each((_, element) => observer.observe(element, { attributes: true, childList: true, subtree: true }));
+      $purchaseOptionBoxes.each((_, element) => {
+        observer.observe(element, { attributes: true, attributeFilter: ['class'] });
+      });
     }
 
     function attachEventHandlers() {
@@ -117,17 +121,15 @@
 
 
     function togglePurchaseType(parentBox) {
-      let isSubscriptionSelectedValue = isSubscriptionSelected();
+      let isSubscription = isSubscriptionSelected();
       $('#product-actions-{{ SID }} .purchase-type button').removeClass('selected');
 
-      if (isSubscriptionSelectedValue) {
-        console.log("isSubscriptionSelected: true")
+      if (isSubscription) {
         $('#product-actions-{{ SID }} .purchase-type button.subscription').addClass('selected');
         {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').show();{% endunless %}
         let selectedBox = $('#product-actions-{{ SID }} .purchase-option-box.selected');
         let sellingPlanId = selectedBox.data('subscription-selling-plan-id');
-        console.log("selectedBox: ", selectedBox)
-        console.log("sellingPlanId: ", sellingPlanId)
+
         if (sellingPlanId > 0) {
           $('#product-actions-{{ SID }} .submit-selling-plan-id').val(sellingPlanId);
         } else {
@@ -137,7 +139,6 @@
           $purchaseOptionBoxes.filter(':not([inert])').first().trigger('click');
         }
       } else {
-        console.log("isSubscriptionSelected: false")
         $('#product-actions-{{ SID }} .purchase-type button.buy-once').addClass('selected');
         {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').hide();{% endunless %}
         $('.submit-selling-plan-id').val('');
@@ -175,7 +176,7 @@
     }
 
     function togglePurchaseBox(element) {
-      var isSubscriptionSelectedValue = isSubscriptionSelected();
+      var isSubscription = isSubscriptionSelected();
       var wasSelected = $(element).hasClass('selected');
 
       if (wasSelected) {
@@ -187,7 +188,7 @@
         $(this).find('.toggle-icon').hide();
       });
 
-      $('#product-actions-{{ SID }} .submit-selling-plan-id').val(isSubscriptionSelectedValue ? element.data('subscription-selling-plan-id') : '');
+      $('#product-actions-{{ SID }} .submit-selling-plan-id').val(isSubscription ? element.data('subscription-selling-plan-id') : '');
       $('#product-actions-{{ SID }} .submit-variant-id').val(element.data('variant'));
 
       $(element).addClass('selected');
