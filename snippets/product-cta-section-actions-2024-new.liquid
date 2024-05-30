@@ -175,6 +175,7 @@
     }
 
     function togglePurchaseBox(element) {
+      var isSubscriptionSelectedValue = isSubscriptionSelected();
       var wasSelected = $(element).hasClass('selected');
 
       if (wasSelected) {
@@ -186,7 +187,7 @@
         $(this).find('.toggle-icon').hide();
       });
 
-      $('#product-actions-{{ SID }} .submit-selling-plan-id').val(element.data('subscription-selling-plan-id'));
+      $('#product-actions-{{ SID }} .submit-selling-plan-id').val(isSubscriptionSelectedValue ? element.data('subscription-selling-plan-id') : '');
       $('#product-actions-{{ SID }} .submit-variant-id').val(element.data('variant'));
 
       $(element).addClass('selected');
