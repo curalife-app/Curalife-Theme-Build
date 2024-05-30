@@ -71,12 +71,12 @@
     }
 
     function initializePurchaseOptions() {
-      let urlParams = new URLSearchParams(window.location.search);
-      let defaultVariant = urlParams.get('default-variant');
+      const urlParams = new URLSearchParams(window.location.search);
+      const defaultVariant = urlParams.get('default-variant');
 
       $('#product-actions-{{ SID }} .purchase-type .subscription').addClass('selected');
 
-      InitialDefaultVariant = defaultVariant ? defaultVariant - 1 : 0;
+      const InitialDefaultVariant = defaultVariant ? defaultVariant - 1 : 0;
       $purchaseOptionBoxes.eq(InitialDefaultVariant).trigger('click').find("input[type='radio']").prop('checked', true);
     }
 
@@ -121,14 +121,14 @@
 
 
     function togglePurchaseType(parentBox) {
-      let isSubscription = isSubscriptionSelected();
+      const isSubscription = isSubscriptionSelected();
       $('#product-actions-{{ SID }} .purchase-type button').removeClass('selected');
 
       if (isSubscription) {
         $('#product-actions-{{ SID }} .purchase-type button.subscription').addClass('selected');
         {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').show();{% endunless %}
-        let selectedBox = $('#product-actions-{{ SID }} .purchase-option-box.selected');
-        let sellingPlanId = selectedBox.data('subscription-selling-plan-id');
+        const selectedBox = $('#product-actions-{{ SID }} .purchase-option-box.selected');
+        const sellingPlanId = selectedBox.data('subscription-selling-plan-id');
 
         if (sellingPlanId > 0) {
           $('#product-actions-{{ SID }} .submit-selling-plan-id').val(sellingPlanId);
@@ -176,8 +176,8 @@
     }
 
     function togglePurchaseBox(element) {
-      var isSubscription = isSubscriptionSelected();
-      var wasSelected = $(element).hasClass('selected');
+      const isSubscription = isSubscriptionSelected();
+      const wasSelected = $(element).hasClass('selected');
 
       if (wasSelected) {
           return;
