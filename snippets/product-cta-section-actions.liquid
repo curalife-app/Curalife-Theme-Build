@@ -472,7 +472,7 @@
         // Slide to Variant Image
         {% assign variantsAmount = product.variants.size | plus: product.metafields.custom.additional_variants.value.size %}
         {% if variantsAmount > 1 and product.variants.first.featured_image.src != blank %}
-          let slideIndex = window.productSliderAllInOne{{ SID }}.slides.length - $(this).find('input[name=pack{{ SID }}]:checked').attr('data-index');
+          let slideIndex = window.productSliderAllInOne{{ SID }}.slides.length - ({{ variantsAmount | plus: 1 }} - $(element).attr('data-index'));
           window.productSliderAllInOne{{ SID }}.slideTo(slideIndex);
         {% endif %}
       {% endunless %}
