@@ -1,23 +1,57 @@
-
 <section class="life-changes">
   <div class="container">
     <h2 class="text-center">{{ section.settings.title }}</h2>
 
-    <div class="video-wrapper">
-      {% for block in section.blocks %}
-        <div class="video-block-item-overlay-col">
-          <div class="video-block-item">
-            <div class="video-player">
-              <iframe src="{{ block.settings.vidURL | escape }}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="{{ block.settings.video_title }}"></iframe>
+    <div class="swiper-container">
+      <div class="swiper-wrapper">
+        {% for block in section.blocks %}
+          <div class="swiper-slide">
+            <div class="video-block-item">
+              <div class="video-player">
+                <iframe src="{{ block.settings.vidURL | escape }}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="{{ block.settings.video_title }}"></iframe>
+              </div>
+              <div class="video-headline"><p>"{{ block.settings.video_description }}"</p></div>
             </div>
-
-            <div class="video-headline"><p>"{{ block.settings.video_description }}"</p></div>
           </div>
-        </div>
-      {% endfor %}
+        {% endfor %}
+      </div>
+
+      <div class="swiper-pagination"></div>
+      <div class="swiper-button-next"></div>
+      <div class="swiper-button-prev"></div>
     </div>
   </div>
 </section>
+
+<script>
+  const swiper = new Swiper('.swiper-container', {
+    slidesPerView: 1,
+    spaceBetween: 10,
+    loop: true,
+    pagination: {
+      el: '.swiper-pagination',
+      clickable: true,
+    },
+    navigation: {
+      nextEl: '.swiper-button-next',
+      prevEl: '.swiper-button-prev',
+    },
+    breakpoints: {
+      640: {
+        slidesPerView: 1,
+        spaceBetween: 20,
+      },
+      768: {
+        slidesPerView: 2,
+        spaceBetween: 30,
+      },
+      1024: {
+        slidesPerView: 3,
+        spaceBetween: 40,
+      },
+    },
+  });
+</script>
 
 <style>
   .life-changes {
