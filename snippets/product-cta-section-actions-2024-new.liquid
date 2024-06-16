@@ -123,6 +123,8 @@
         {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').show();{% endunless %}
         const selectedBox = $('#product-actions-{{ SID }} .purchase-option-box.selected');
         const sellingPlanId = selectedBox.data('subscription-selling-plan-id');
+        parentBox.find('.subtitle.buy-once').hide();
+        parentBox.find('.subtitle.subscription').show();
 
         if (sellingPlanId > 0) {
           $('#product-actions-{{ SID }} .submit-selling-plan-id').val(sellingPlanId);
@@ -137,6 +139,8 @@
         {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').hide();{% endunless %}
         $('.submit-selling-plan-id').val('');
         parentBox.removeAttr('inert');
+        parentBox.find('.subtitle.buy-once').show();
+        parentBox.find('.subtitle.subscription').hide();
       }
 
       updateYotpoPointsWidget(parentBox);
