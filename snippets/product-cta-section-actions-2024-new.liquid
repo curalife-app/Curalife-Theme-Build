@@ -114,8 +114,10 @@
     }
 
 
-    function togglePurchaseType(parentBox, isSubscriptionSelected) {
+    function togglePurchaseType(parentBox) {
       const isSubscription = isSubscriptionSelected();
+      $('#product-actions-{{ SID }} .purchase-type button').removeClass('selected');
+
       const buyOnceSubtitle = parentBox.find('.subtitle.buy-once');
       const subscriptionSubtitle = parentBox.find('.subtitle.subscription');
 
@@ -143,15 +145,6 @@
           parentBox.removeAttr('style');
           $purchaseOptionBoxes.filter(':not([inert])').first().trigger('click');
         }
-
-        $purchaseOptionBoxes.each(function() {
-          const box = $(this);
-          const boxSellingPlanId = box.data('subscription-selling-plan-id');
-          if (boxSellingPlanId == 0) {
-            box.attr('inert', '');
-          }
-        });
-
       } else {
         $('#product-actions-{{ SID }} .purchase-type button.buy-once').addClass('selected');
         {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').hide();{% endunless %}
@@ -167,11 +160,6 @@
         } else if (buyOnceSubtitle.length) {
           buyOnceSubtitle.fadeIn(200);
         }
-
-        $purchaseOptionBoxes.each(function() {
-          const box = $(this);
-          box.removeAttr('inert');
-        });
       }
 
       updateYotpoPointsWidget(parentBox);
