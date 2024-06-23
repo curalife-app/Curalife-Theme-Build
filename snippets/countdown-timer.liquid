@@ -84,6 +84,7 @@
             const second = 1000,
                   minute = second * 60,
                   hour = minute * 60,
+                  day = hour * 24,
                   duration = {{ urgencyMinutes }} * minute;
 
             function getCookie(name) {
@@ -126,7 +127,10 @@
                 var now = new Date().getTime();
                 var distance = countDown - now;
 
-                document.getElementById("hours-{{ section_id }}").innerText = Math.floor(distance / hour).pad(),
+                {% if isShowDays %}
+                document.getElementById("days-{{ section_id }}").innerText = Math.floor(distance / day).pad(),
+                {% endif %}
+                document.getElementById("hours-{{ section_id }}").innerText = Math.floor((distance % day) / hour).pad(),
                 document.getElementById("minutes-{{ section_id }}").innerText = Math.floor((distance % hour) / minute).pad(),
                 document.getElementById("seconds-{{ section_id }}").innerText = Math.floor((distance % minute) / second).pad();
 
@@ -142,7 +146,8 @@
         (function() {
             const second = 1000,
                   minute = second * 60,
-                  hour = minute * 60;
+                  hour = minute * 60,
+                  day = hour * 24;
             let birthday = "{{ month }} {{ day }}, {{ year }} {{ hour }}:{{ minute }}:00";
             let countDown = new Date(birthday).getTime();
 
@@ -150,7 +155,10 @@
                 var now = new Date().getTime();
                 var distance = countDown - now;
 
-                document.getElementById("hours-{{ section_id }}").innerText = Math.floor(distance / hour).pad(),
+                {% if isShowDays %}
+                document.getElementById("days-{{ section_id }}").innerText = Math.floor(distance / day).pad(),
+                {% endif %}
+                document.getElementById("hours-{{ section_id }}").innerText = Math.floor((distance % day) / hour).pad(),
                 document.getElementById("minutes-{{ section_id }}").innerText = Math.floor((distance % hour) / minute).pad(),
                 document.getElementById("seconds-{{ section_id }}").innerText = Math.floor((distance % minute) / second).pad();
 
@@ -159,7 +167,7 @@
                     document.getElementById("section-{{ section_id }}").parentElement.remove();
                     document.querySelector('.shopify-section').firstChild.style.marginTop = '0';
                 }
-            }, 0)
+            }, 1000)
         })();
     {% endif %}
 </script>
