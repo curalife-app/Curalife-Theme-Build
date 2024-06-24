@@ -7,6 +7,10 @@
   {% assign isGlucoseGlobal = true %}
 {% endif %}
 
+{% if customer.b2b? or customer.email contains "@curalife.com" %}
+  {% assign isAddToCart = true %}
+{% endif %}
+
 <div id="{{ collection_handle }}-collection-section" class="collection-section xl:w-full {% if collection_total_items_amount < 3 and template.name == 'list-collections' %}w-[48%]{% else %}w-full{% endif %} {% if shop.name == 'Curalife Global' or customer.tags contains 'B2B' %}max-w-[800px] m-auto{% endif %}" data-product-collections="{{ collection_handle }}" >
   {% unless isNoTitle %}
     <div class="title-wrapper border-b-[1px] border-black">
@@ -162,7 +166,7 @@
   }
 </style>
 
-{% if customer.b2b? or customer.email contains "@curalife.com" %}
+{% if isAddToCart %}
   <style>
     .product-card .submit-wrap button {
       background-color: var(--orange);

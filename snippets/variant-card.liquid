@@ -6,6 +6,10 @@
   {% assign variantTitle = "Curalin 6 Pack" %}
 {% endif %}
 
+{% if customer.b2b? or customer.email contains "@curalife.com" %}
+  {% assign isAddToCart = true %}
+{% endif %}
+
 {% if variant.metafields.subscription.price and request.path contains '/collections/subscribe-save' %}
   {% assign isSubscription = true %}
 {% endif %}
@@ -37,7 +41,7 @@
   </div>
 
   <div class="submit-wrapper w-full">
-    {% if customer.b2b? or customer.email contains '@curalife.com' %}
+    {% if isAddToCart %}
       <div class="submit-wrap flex flex-col gap-2 mb-1">
         <product-form class="product-form" data-hide-errors="false" data-section-id="{{ section.id }}">
           {%- form 'product', variant.product, id: variant.product.id, class: 'form', novalidate: 'novalidate', data-type: 'add-to-cart-form' -%}
