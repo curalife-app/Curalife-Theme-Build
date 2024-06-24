@@ -41,13 +41,16 @@
             {% if variant.metafields.subscription.price %}<input class="submit-selling-plan-id" type="hidden" name="selling_plan" value="{{ variant.metafields.subscription.selling_plan_id }}">{% endif %}
 
             <div class="product-form__buttons main-submit-wrapper flex">
-              <div class="qty">
-                <input type="text" name="quantity" maxlength="100" value="{{ variant.quantity_rule.min }}" title="" class="input-text" />
-                <div class="qty_inc_dec">
-                  <i class="increment" onclick="updateQuantity('+')">+</i>
-                  <i class="decrement" onclick="updateQuantity('-')">-</i>
+              {% unless variant.metafields.subscription.price %}
+                <div class="qty">
+                  <input type="text" name="quantity" maxlength="100" value="{{ variant.quantity_rule.min }}" title="" class="input-text" />
+                  <div class="qty_inc_dec">
+                    <i class="increment" onclick="updateQuantity('+')">+</i>
+                    <i class="decrement" onclick="updateQuantity('-')">-</i>
+                  </div>
                 </div>
-              </div>
+              {% endunless %}
+
               <button id="ProductSubmitButton-{{ section_id }}" type="submit" name="add" onclick="resetQuantity()" class="product-form__submit button button--full-width button--primary">
                 <span class="submit-title">Add To Cart</span>
                 <div class="loading-overlay__spinner hidden">
