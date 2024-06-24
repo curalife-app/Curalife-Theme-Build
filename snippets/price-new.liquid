@@ -11,21 +11,15 @@
   {% assign quantity = prod.metafields.my_fields.pack_items_quantity | default: 1 %}
 {% endif %}
 
-<script>console.log("{{prod.title}}")</script>
-<script>console.log("{{prod.price}}")</script>
-
 {% if prod.price > 0 %}
   {% assign item_price = prod.price | divided_by: quantity %}
-  <script>console.log("quantity: {{quantity}}")</script>
-  <script>console.log(">0: {{item_price}}")</script>
 {% else %}
   {% assign item_price = prod.metafields.custom.original_item_variant.value.price | divided_by: quantity %}
-  <script>console.log("0: {{item_price}}")</script>
 {% endif %}
 
 <div class="price-wrapper">
   {% if prod.compare_at_price > prod.price %}<strike class="no-letters text-gray-400 text-[0.8em] mbl:block">{{ original_item_cap | money_with_currency | replace: "GBP", "" | replace: "AUD", "" | replace: "CAD", "" }}</strike>{% endif %}
-  <span class="new-price font-bold">{% if isSubscription %}{{ subscription_price.value | money_with_currency }}{% else %}{% if item_price == 0 %}<span class="text-[--bronze] font-normal">Order Free</span>{% else %}{{ item_price | money | replace: "GBP", "" }}{% endif %}{% endif %}</span>
+  <span class="new-price font-bold">{% if isSubscription %}{{ subscription_price.value | divided_by: quantity | money_with_currency }}{% else %}{% if item_price == 0 %}<span class="text-[--bronze] font-normal">Order Free</span>{% else %}{{ item_price | money | replace: "GBP", "" }}{% endif %}{% endif %}</span>
   {% if quantity > 1 %}<span class="per-bottle font-bold"> Per Bottle</span>{% endif %}
   {% if isSubscription %}<div class="subtitle text-[--bronze]">Subscription Price!</div>{% endif %}
 
