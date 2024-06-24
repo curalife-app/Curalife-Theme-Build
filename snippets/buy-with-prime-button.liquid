@@ -13,7 +13,12 @@
 
 <script>
   $(".product-actions .variant-box").click(function() {
-    if ($(this).find('input').attr('data-sku') == "{{ productSKU }}") {
+    let acceptableSKUs = ["Curalin180", "Curalin180x2", "Curalin180x3", "Curalin180x6"];
+    let variantSKU = $(this).find('input').attr('data-sku');
+
+    $("#amzn-buy-now").attr('data-sku', variantSKU);
+
+    if (acceptableSKUs.includes(variantSKU)) {
       $(".buy-with-prime-button").fadeTo(300, 1).removeClass('hide');
     } else {
       $(".buy-with-prime-button").fadeTo(300, 0).addClass('hide');
