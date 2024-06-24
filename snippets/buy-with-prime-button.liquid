@@ -31,13 +31,19 @@
     // Re-initialize Buy with Prime button
     if (window.BuyWithPrime) {
       console.log("BuyWithPrime object exists, loading button");
-      window.BuyWithPrime.loadButton('#amzn-buy-now');
+      setTimeout(() => {
+        window.BuyWithPrime.loadButton('#amzn-buy-now');
+      }, 1000); // Adding a slight delay to ensure the new div is rendered
     } else {
       console.log("BuyWithPrime object does not exist, reloading script");
       const script = document.createElement('script');
       script.src = 'https://code.buywithprime.amazon.com/bwp.v1.js';
       script.async = true;
       script.fetchpriority = 'high';
+      script.onload = () => {
+        console.log("BuyWithPrime script loaded, initializing button");
+        window.BuyWithPrime.loadButton('#amzn-buy-now');
+      };
       document.body.appendChild(script);
     }
   }
