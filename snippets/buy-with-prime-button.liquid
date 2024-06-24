@@ -13,6 +13,7 @@
 
 <script>
   function reloadIframe(newSku) {
+    console.log("Reloading iframe with new SKU:", newSku);
     let buyNowDiv = $("#amzn-buy-now");
     buyNowDiv.attr('data-sku', newSku);
 
@@ -24,12 +25,15 @@
       'data-sku': newSku
     });
 
+    console.log("Replacing old div with new one");
     buyNowDiv.replaceWith(newBuyNowDiv);
 
     // Re-initialize Buy with Prime button
     if (window.BuyWithPrime) {
+      console.log("BuyWithPrime object exists, loading button");
       window.BuyWithPrime.loadButton('#amzn-buy-now');
     } else {
+      console.log("BuyWithPrime object does not exist, reloading script");
       const script = document.createElement('script');
       script.src = 'https://code.buywithprime.amazon.com/bwp.v1.js';
       script.async = true;
@@ -41,11 +45,14 @@
   $(".product-actions .variant-box").click(function() {
     let acceptableSKUs = ["Curalin180", "Curalin180x2", "Curalin180x3", "Curalin180x6"];
     let variantSKU = $(this).find('input').attr('data-sku');
+    console.log("Variant clicked:", variantSKU);
 
     if (acceptableSKUs.includes(variantSKU)) {
+      console.log("SKU is acceptable:", variantSKU);
       $(".buy-with-prime-button").fadeTo(300, 1).removeClass('hide');
       reloadIframe(variantSKU);
     } else {
+      console.log("SKU is not acceptable:", variantSKU);
       $(".buy-with-prime-button").fadeTo(300, 0).addClass('hide');
     }
   });
