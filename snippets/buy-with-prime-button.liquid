@@ -4,7 +4,6 @@
 {% assign productSKU = 'Curalin180' %}
 
 <div class="buy-with-prime-button mt-[-10px]">
-  <script async fetchpriority='high' src='https://code.buywithprime.amazon.com/bwp.v1.js'></script>
   <div id="amzn-bwp-cart" data-site-id="{{ siteID }}" data-widget-id="{{ widgetID }}"></div>
   <div id="amzn-buy-now" data-site-id="{{ siteID }}" data-widget-id="{{ widgetID }}" data-sku="{{ productSKU }}"></div>
 </div>
@@ -28,24 +27,16 @@
     console.log("Replacing old div with new one");
     buyNowDiv.replaceWith(newBuyNowDiv);
 
-    // Re-initialize Buy with Prime button
-    if (window.BuyWithPrime) {
-      console.log("BuyWithPrime object exists, loading button");
-      setTimeout(() => {
-        window.BuyWithPrime.loadButton('#amzn-buy-now');
-      }, 1000); // Adding a slight delay to ensure the new div is rendered
-    } else {
-      console.log("BuyWithPrime object does not exist, reloading script");
-      const script = document.createElement('script');
-      script.src = 'https://code.buywithprime.amazon.com/bwp.v1.js';
-      script.async = true;
-      script.fetchpriority = 'high';
-      script.onload = () => {
-        console.log("BuyWithPrime script loaded, initializing button");
-        window.BuyWithPrime.loadButton('#amzn-buy-now');
-      };
-      document.body.appendChild(script);
-    }
+    // Remove the old script tag and add a new one to force reload
+    $('script[src="https://code.buywithprime.amazon.com/bwp.v1.js"]').remove();
+    const script = document.createElement('script');
+    script.src = 'https://code.buywithprime.amazon.com/bwp.v1.js';
+    script.async = true;
+    script.fetchpriority = 'high';
+    script.onload = () => {
+      console.log("BuyWithPrime script loaded, initializing button");
+    };
+    document.body.appendChild(script);
   }
 
   $(".product-actions .variant-box").click(function() {
@@ -62,4 +53,11 @@
       $(".buy-with-prime-button").fadeTo(300, 0).addClass('hide');
     }
   });
+
+  // Initial load of the script
+  const initialScript = document.createElement('script');
+  initialScript.src = 'https://code.buywithprime.amazon.com/bwp.v1.js';
+  initialScript.async = true;
+  initialScript.fetchpriority = 'high';
+  document.body.appendChild(initialScript);
 </script>
