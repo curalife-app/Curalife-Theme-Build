@@ -13,21 +13,16 @@
 <script>
   function reloadIframe(newSku) {
     console.log("Reloading iframe with new SKU:", newSku);
-    let buyNowDiv = $("#amzn-buy-now");
 
-    // Remove the old div
-    buyNowDiv.remove();
+    // Remove the existing iframe if it exists
+    const existingIframe = document.getElementById('bwpFrame');
+    if (existingIframe) {
+      existingIframe.remove();
+    }
 
-    // Create a new div with updated SKU
-    let newBuyNowDiv = $('<div>', {
-      id: 'amzn-buy-now',
-      'data-site-id': '{{ siteID }}',
-      'data-widget-id': '{{ widgetID }}',
-      'data-sku': newSku
-    });
-
-    console.log("Replacing old div with new one");
-    $(".buy-with-prime-button").append(newBuyNowDiv);
+    // Update the SKU on the div
+    const buyNowDiv = $("#amzn-buy-now");
+    buyNowDiv.attr('data-sku', newSku);
 
     // Remove old script tag if it exists
     $('script[src="https://code.buywithprime.amazon.com/bwp.v1.js"]').remove();
