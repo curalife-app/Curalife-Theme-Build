@@ -16,7 +16,7 @@
     let buyNowDiv = $("#amzn-buy-now");
     buyNowDiv.attr('data-sku', newSku);
 
-    // Remove the iframe by removing the div and recreating it
+    // Remove the old div and create a new one with updated SKU
     let newBuyNowDiv = $('<div>', {
       id: 'amzn-buy-now',
       'data-site-id': '{{ siteID }}',
@@ -26,12 +26,16 @@
 
     buyNowDiv.replaceWith(newBuyNowDiv);
 
-    // Reload the Buy with Prime script
-    const script = document.createElement('script');
-    script.src = 'https://code.buywithprime.amazon.com/bwp.v1.js';
-    script.async = true;
-    script.fetchpriority = 'high';
-    document.body.appendChild(script);
+    // Re-initialize Buy with Prime button
+    if (window.BuyWithPrime) {
+      window.BuyWithPrime.loadButton('#amzn-buy-now');
+    } else {
+      const script = document.createElement('script');
+      script.src = 'https://code.buywithprime.amazon.com/bwp.v1.js';
+      script.async = true;
+      script.fetchpriority = 'high';
+      document.body.appendChild(script);
+    }
   }
 
   $(".product-actions .variant-box").click(function() {
