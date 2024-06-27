@@ -1,45 +1,42 @@
-{% assign CuralinBannerURL = 'https://cdn.shopify.com/s/files/1/0452/2459/1511/files/article-banner-curalin-curalim.png?v=1719329896' %}
-{% assign CuraslimBannerURL = 'https://cdn.shopify.com/s/files/1/0452/2459/1511/files/article-banner-curaslim.png?v=1719329896' %}
-{% assign CuralinCuraslimBannerURL = 'https://cdn.shopify.com/s/files/1/0452/2459/1511/files/article-banner-curalin-curalim.png?v=1719329896' %}
+{% assign banner_urls = "https://cdn.shopify.com/s/files/1/0452/2459/1511/files/article-banner-curalin-curalim.png?v=1719329896,https://cdn.shopify.com/s/files/1/0452/2459/1511/files/article-banner-curaslim.png?v=1719329896" | split: "," %}
 
-{% assign relatedCuralinKeywords = "Curalin,Glucose Support,Diabetes,Blood Sugar,Metabolic Health,Insulin Sensitivity,Healthy Diet,Wellness,Supplements,Holistic Health,Natural Remedies,Herbal Supplements,Type 2 Diabetes,Nutritional Support,Health Maintenance,Wellbeing,Healthy Lifestyle,Diabetic Support,Insulin Resistance,Healthy Living,Natural Health,Diabetes Support,Glucose Metabolism,Endocrine Health,Blood Glucose,Pancreatic Health,Diabetic Care,Low Glycemic Diet,Diabetic Nutrition,Glucose Regulation,Herbal Medicine,Health Optimization,Insulin Management,Endocrine Support,Diabetic Wellness,Metabolic Support,Glucose Homeostasis,Plant-Based Supplements,Sugar Management,Holistic Wellness,Herbal Health" | split: "," %}
-{% assign relatedCuralinTags = "curalin,blood-sugar,glucose-support" | split: "," %}
+{% assign curalin_keywords = "Curalin,Glucose Support,Diabetes,Blood Sugar,Metabolic Health,Insulin Sensitivity,Healthy Diet,Wellness,Supplements,Holistic Health,Natural Remedies,Herbal Supplements,Type 2 Diabetes,Nutritional Support,Health Maintenance,Wellbeing,Healthy Lifestyle,Diabetic Support,Insulin Resistance,Healthy Living,Natural Health,Diabetes Support,Glucose Metabolism,Endocrine Health,Blood Glucose,Pancreatic Health,Diabetic Care,Low Glycemic Diet,Diabetic Nutrition,Glucose Regulation,Herbal Medicine,Health Optimization,Insulin Management,Endocrine Support,Diabetic Wellness,Metabolic Support,Glucose Homeostasis,Plant-Based Supplements,Sugar Management,Holistic Wellness,Herbal Health" | split: "," %}
 
-{% assign relatedCuraslimKeywords = "Curaslim,Weight Loss,Appetite Control,Carb Blocker,Metabolism Boost,Fat Burner,Dietary Supplement,Calorie Burning,Body Fat Reduction,Slimming,Healthy Weight,Weight Management,Natural Weight Loss,Herbal Weight Loss,Satiety Support,Carb Inhibitor,Fat Metabolism,Weight Control,Diet Support,Herbal Slimming,Appetite Suppressant,Thermogenic Support,Calorie Control,Weight Reduction,Lean Body Support,Natural Appetite Suppressant,Herbal Appetite Control,Weight Wellness,Healthy Dieting,Herbal Diet Aid,Weight Balance,Fat Control" | split: "," %}
-{% assign relatedCuraslimTags = "curaslim, nutrition, recipe, nutrition, food, bread, carbs, dessert, desserts, fasting, fitness, high carb, low carb, moderate card, pasta, recipes, snack, snacking, snacks, sweet, sweet tooth, sweeteners, weight, workout" | split: "," %}
+{% assign curaslim_keywords = "Curaslim,Weight Loss,Appetite Control,Carb Blocker,Metabolism Boost,Fat Burner,Dietary Supplement,Calorie Burning,Body Fat Reduction,Slimming,Healthy Weight,Weight Management,Natural Weight Loss,Herbal Weight Loss,Satiety Support,Carb Inhibitor,Fat Metabolism,Weight Control,Diet Support,Herbal Slimming,Appetite Suppressant,Thermogenic Support,Calorie Control,Weight Reduction,Lean Body Support,Natural Appetite Suppressant,Herbal Appetite Control,Weight Wellness,Healthy Dieting,Herbal Diet Aid,Weight Balance,Fat Control" | split: "," %}
 
-{% assign articleTags = article.tags | join: "," | split: "," %}
+{% assign curalin_tags = "curalin,blood-sugar,glucose-support" | split: "," %}
+{% assign curaslim_tags = "curaslim,nutrition,recipe,food,bread,carbs,dessert,desserts,fasting,fitness,high carb,low carb,moderate card,pasta,recipes,snack,snacking,snacks,sweet,sweet tooth,sweeteners,weight,workout" | split: "," %}
 
-{% assign contentMatchesCuralin = false %}
-{% assign contentMatchesCuraslim = false %}
+{% assign chosen_banner = 2 %}
 
-{% for keyword in relatedCuralinKeywords %}
+{% for keyword in curalin_keywords %}
   {% if article.content contains keyword %}
-    {% assign contentMatchesCuralin = true %}
+    {% assign chosen_banner = 0 %}
     {% break %}
   {% endif %}
 {% endfor %}
 
-{% for keyword in relatedCuraslimKeywords %}
-  {% if article.content contains keyword %}
-    {% assign contentMatchesCuraslim = true %}
-    {% break %}
-  {% endif %}
-{% endfor %}
+{% if chosen_banner == 2 %}
+  {% for keyword in curaslim_keywords %}
+    {% if article.content contains keyword %}
+      {% assign chosen_banner = 1 %}
+      {% break %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
 
-{% if contentMatchesCuralin %}
-  {% assign ChosenBannerURL = CuralinBannerURL %}
-{% elsif contentMatchesCuraslim %}
-  {% assign ChosenBannerURL = CuraslimBannerURL %}
-{% elsif articleTags contains relatedCuralinTags %}
-  {% assign ChosenBannerURL = CuralinBannerURL %}
-{% elsif articleTags contains relatedCuraslimTags %}
-  {% assign ChosenBannerURL = CuraslimBannerURL %}
-{% else %}
-  {% assign ChosenBannerURL = CuralinCuraslimBannerURL %}
+{% if chosen_banner == 2 %}
+  {% for tag in article.tags %}
+    {% if curalin_tags contains tag %}
+      {% assign chosen_banner = 0 %}
+      {% break %}
+    {% elsif curaslim_tags contains tag %}
+      {% assign chosen_banner = 1 %}
+      {% break %}
+    {% endif %}
+  {% endfor %}
 {% endif %}
 
 <div class="sidebar-banner mb-10">
-  <img class="w-full" src="{{ ChosenBannerURL }}" alt="sidebar banner" width="300" height="250" loading="lazy">
-  {% comment %} <div class="email-signup-form"></div> {% endcomment %}
+  <img class="w-full" src="{{ banner_urls[chosen_banner] }}" alt="sidebar banner" width="300" height="250" loading="lazy">
 </div>
