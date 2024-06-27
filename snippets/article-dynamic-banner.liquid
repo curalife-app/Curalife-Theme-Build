@@ -2,7 +2,21 @@
 {% assign CuraslimBannerURL = 'https://cdn.shopify.com/s/files/1/0452/2459/1511/files/article-banner-curaslim.png?v=1719329896' %}
 {% assign CuralinCuraslimBannerURL = 'https://cdn.shopify.com/s/files/1/0452/2459/1511/files/article-banner-curalin-curalim.png?v=1719329896' %}
 
-{% assign ChosenBannerURL = CuralinBannerURL %}
+{% assign relatedCuralinKeywords = "Curalin,Glocose Support,Diabetes,Blood Sugar" | split: "," %}
+{% assign relatedCuralinTags = "curalin,blood-sugar,glucose-support" | split: "," %}
+
+{% assign relatedCuraslimKeywords = "Curaslim,Weight Loss,Appetite Control,Carb Blocker" | split: "," %}
+{% assign relatedCuraslimTags = "curaslim,weight-loss,appetite-control,carb-blocker" | split: "," %}
+
+{% assign articleTags = article.tags | join: "," | split: "," %}
+
+{% if articleTags contains relatedCuralinTags %}
+  {% assign ChosenBannerURL = CuralinBannerURL %}
+{% elsif articleTags contains relatedCuraslimTags %}
+  {% assign ChosenBannerURL = CuraslimBannerURL %}
+{% else %}
+  {% assign ChosenBannerURL = CuralinCuraslimBannerURL %}
+{% endif %}
 
 <div class="sidebar-banner mb-10">
   <img class="w-full" src="{{ ChosenBannerURL }}" alt="sidebar banner" width="300" height="250" loading="lazy">
