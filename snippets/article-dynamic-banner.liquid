@@ -2,7 +2,7 @@
 {% assign CuraslimBannerURL = 'https://cdn.shopify.com/s/files/1/0452/2459/1511/files/article-banner-curaslim.png?v=1719329896' %}
 {% assign CuralinCuraslimBannerURL = 'https://cdn.shopify.com/s/files/1/0452/2459/1511/files/article-banner-curalin-curalim.png?v=1719329896' %}
 
-{% assign relatedCuralinKeywords = "Curalin,Glocose Support,Diabetes,Blood Sugar" | split: "," %}
+{% assign relatedCuralinKeywords = "Curalin,Glucose Support,Diabetes,Blood Sugar" | split: "," %}
 {% assign relatedCuralinTags = "curalin,blood-sugar,glucose-support" | split: "," %}
 
 {% assign relatedCuraslimKeywords = "Curaslim,Weight Loss,Appetite Control,Carb Blocker" | split: "," %}
@@ -10,7 +10,28 @@
 
 {% assign articleTags = article.tags | join: "," | split: "," %}
 
-{% if articleTags contains relatedCuralinTags %}
+{% assign contentMatchesCuralin = false %}
+{% assign contentMatchesCuraslim = false %}
+
+{% for keyword in relatedCuralinKeywords %}
+  {% if article.content contains keyword %}
+    {% assign contentMatchesCuralin = true %}
+    {% break %}
+  {% endif %}
+{% endfor %}
+
+{% for keyword in relatedCuraslimKeywords %}
+  {% if article.content contains keyword %}
+    {% assign contentMatchesCuraslim = true %}
+    {% break %}
+  {% endif %}
+{% endfor %}
+
+{% if contentMatchesCuralin %}
+  {% assign ChosenBannerURL = CuralinBannerURL %}
+{% elsif contentMatchesCuraslim %}
+  {% assign ChosenBannerURL = CuraslimBannerURL %}
+{% elsif articleTags contains relatedCuralinTags %}
   {% assign ChosenBannerURL = CuralinBannerURL %}
 {% elsif articleTags contains relatedCuraslimTags %}
   {% assign ChosenBannerURL = CuraslimBannerURL %}
