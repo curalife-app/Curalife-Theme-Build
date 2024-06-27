@@ -277,11 +277,15 @@
       window.productSliderAllInOne{{ SID }}.slideTo(slideIndex);
     }
 
-    function buyButtonHandler(variant_id, subscription_selling_plan_id, buttonElement) {
+    function buyButtonHandler(subscription_selling_plan_id, buttonElement) {
+      const selectedBox = $('#product-actions-{{ SID }} .purchase-option-box.selected');
       toggleButtonLoading(buttonElement, true);
+
       if (isSubscriptionSelected()) {
+        let variant_id = selectedBox.data('original-variant');
         buySubscription(variant_id, 1, subscription_selling_plan_id);
       } else {
+        let variant_id = selectedBox.data('variant');
         let dc = $(buttonElement).closest('.purchase-option-box').data('dc');
         let giftProductID = buttonElement.parent().siblings('.gifts').attr('data-bundle-product-id');
 
