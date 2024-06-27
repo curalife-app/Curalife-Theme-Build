@@ -8,10 +8,12 @@
 {% assign curaslim_tags = "curaslim,nutrition,recipe,food,bread,carbs,dessert,desserts,fasting,fitness,high carb,low carb,moderate card,pasta,recipes,snack,snacking,snacks,sweet,sweet tooth,sweeteners,weight,workout" | split: "," %}
 
 {% assign chosen_banner = 2 %}
+{% assign debug_message = "Initial chosen_banner: " | append: chosen_banner %}
 
 {% for keyword in curalin_keywords %}
   {% if article.content contains keyword %}
     {% assign chosen_banner = 0 %}
+    {% assign debug_message = debug_message | append: ", Curalin keyword matched: " | append: keyword %}
     {% break %}
   {% endif %}
 {% endfor %}
@@ -20,6 +22,7 @@
   {% for keyword in curaslim_keywords %}
     {% if article.content contains keyword %}
       {% assign chosen_banner = 1 %}
+      {% assign debug_message = debug_message | append: ", Curaslim keyword matched: " | append: keyword %}
       {% break %}
     {% endif %}
   {% endfor %}
@@ -29,14 +32,22 @@
   {% for tag in article.tags %}
     {% if curalin_tags contains tag %}
       {% assign chosen_banner = 0 %}
+      {% assign debug_message = debug_message | append: ", Curalin tag matched: " | append: tag %}
       {% break %}
     {% elsif curaslim_tags contains tag %}
       {% assign chosen_banner = 1 %}
+      {% assign debug_message = debug_message | append: ", Curaslim tag matched: " | append: tag %}
       {% break %}
     {% endif %}
   {% endfor %}
 {% endif %}
 
+{% assign debug_message = debug_message | append: ", Final chosen_banner: " | append: chosen_banner %}
+
 <div class="sidebar-banner mb-10">
   <img class="w-full" src="{{ banner_urls[chosen_banner] }}" alt="sidebar banner" width="300" height="250" loading="lazy">
 </div>
+
+<script>
+  console.log("{{ debug_message }}");
+</script>
