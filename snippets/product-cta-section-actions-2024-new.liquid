@@ -210,6 +210,8 @@
     function togglePurchaseBox(element) {
       const isSubscription = isSubscriptionSelected();
       const wasSelected = $(element).hasClass('selected');
+      const subscriptionPlanID = isSubscription ? element.data('subscription-selling-plan-id') : '';
+      const variantID = isSubscriptionSelected() ? $(element).data('original-variant') : $(element).data('variant');
 
       if (wasSelected) {
           return;
@@ -220,8 +222,8 @@
         $(this).find('.toggle-icon').hide();
       });
 
-      $('#product-actions-{{ SID }} .submit-selling-plan-id').val(isSubscription ? element.data('subscription-selling-plan-id') : '');
-      $('#product-actions-{{ SID }} .submit-variant-id').val(element.data('variant'));
+      $('#product-actions-{{ SID }} .submit-selling-plan-id').val(subscriptionPlanID);
+      $('#product-actions-{{ SID }} .submit-variant-id').val(variantID);
 
       $(element).addClass('selected');
       adjustMaxHeight(element);
