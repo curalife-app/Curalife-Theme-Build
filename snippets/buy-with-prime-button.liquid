@@ -3,8 +3,10 @@
 {% comment %} {% assign productSKU = prodSKU | default: product.sku | default: product.selected_or_first_available_variant.sku | default: 'Curalin180' %} {% endcomment %}
 {% assign productSKU = ProdSKU | default: 'Curalin180' %}
 
-<script defer src='https://code.buywithprime.amazon.com/default.variant.selector.shopify.js'></script>
-<script async fetchpriority='high' src='https://code.buywithprime.amazon.com/bwp.v1.js'></script>
+{% unless isNoScript %}
+  <script defer src='https://code.buywithprime.amazon.com/default.variant.selector.shopify.js'></script>
+  <script async fetchpriority='high' src='https://code.buywithprime.amazon.com/bwp.v1.js'></script>
+{% endunless %}
 
 <div id="bwp-{{ productSKU }}" class="buy-with-prime-button mt-[-10px]" style="min-height: 250px;">
   <div id="amzn-bwp-cart" data-site-id="{{ siteID }}" data-widget-id="{{ widgetID }}"></div>

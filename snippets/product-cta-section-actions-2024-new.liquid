@@ -45,11 +45,14 @@
       <div class="checkout-button">{% render 'buy-buttons', product: product, variant: '', selling_plan_id: selling_plan_id , product_form_id: product_form_id, buyType: buyType %}</div>
 
       {% if customer.email == 'yotam@curalife.com' %}
-      <div class="buy-with-prime-buttons">
-        {% for var in product.variants %}
-          {% render 'buy-with-prime-button', ProdSKU: var.sku %}
-        {% endfor %}
-      </div>
+        <script defer src='https://code.buywithprime.amazon.com/default.variant.selector.shopify.js'></script>
+        <script async fetchpriority='high' src='https://code.buywithprime.amazon.com/bwp.v1.js'></script>
+
+        <div class="buy-with-prime-buttons">
+          {% for var in product.variants %}
+            {% render 'buy-with-prime-button', ProdSKU: var.sku, isNoScript: True %}
+          {% endfor %}
+        </div>
       {% endif %}
     </div>
   </div>
