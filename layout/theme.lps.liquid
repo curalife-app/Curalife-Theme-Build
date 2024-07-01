@@ -1,3 +1,7 @@
+{% if request.path == 'products/curalin-pack' %}
+  {% assign isRenderCartDrawer = true %}
+{% endif %}
+
 <!doctype html>
 <html class="no-js" lang="{{ request.locale.iso_code }}">
   <head>
@@ -54,7 +58,7 @@
       {% render 'layout.head.microsoft-clarity' %}
     {% endunless %}
 
-    {% if request.path == 'products/curalin-pack' %}
+    {% if isRenderCartDrawer %}
       <link rel="stylesheet" href="{{ 'component-cart-items.css' | asset_url }}" media="print" onload="this.media='all'">
       {{ 'component-cart-drawer.css' | asset_url | stylesheet_tag }}
       {{ 'component-cart.css' | asset_url | stylesheet_tag }}
@@ -64,7 +68,7 @@
   </head>
 
   <body {% if customer.email == 'yotam@curalife.com' or customer.email == 'ana@curalife.com' %}class="admin"{% endif %}>
-    {% if request.path == 'products/curalin-pack' %}
+    {% if isRenderCartDrawer %}
       {%- render 'cart-drawer' -%}
     {% endif %}
 
