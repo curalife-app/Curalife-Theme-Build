@@ -9,7 +9,6 @@
 {% endif %}
 
 <script>console.log("isDigitalProduct: {{isDigitalProduct}}")</script>
-<script>console.log("isAddToCart: {{isAddToCart}}")</script>
 
 <div id="{{ product.handle }}" class="product-card" id="product-card-section">
   {% if isDigitalProduct %}
@@ -35,6 +34,7 @@
   </div>
 
   <div class="submit-wrapper w-full">
+    <script>console.log("isAddToCart: {{isAddToCart}}")</script>
     {% if isAddToCart %}
       <div class="submit-wrap add-to-cart-button flex flex-col gap-2 mb-1 {% unless customer.b2b %}hidden{% endunless %}">
         <product-form class="product-form" data-hide-errors="false" data-section-id="{{ section.id }}">
@@ -51,6 +51,7 @@
                   </div>
                 </div>
               {% endif %}
+
               <button id="ProductSubmitButton-{{ section_id }}" type="submit" name="add" onclick="resetQuantity()" class="product-form__submit button button--full-width button--primary">
                 <span class="submit-title">Add To Cart</span>
                 <div class="loading-overlay__spinner hidden">
@@ -72,7 +73,7 @@
     {% unless isDigitalProduct %}
       <a class="product-link w-full" href="{{ product.url }}">
         <button class="main-btn w-full" title="{{ product.title }}" prod-sku="{{ product.selected_or_first_available_variant.sku }}" prod-id="{{ product.variants.first.id }}" price="{{ product.selected_or_first_available_variant.price | money_without_currency }}" discount="{% if product.compare_at_price > product.price %}{{ product.compare_at_price | minus: product.price | times: 0.01 }}{% else %}0{% endif %}">
-        {% comment %} <span>{% if isAddToCart %}Learn More{% else %}Shop Now{% endif %}</span> {% endcomment %}
+        <span>{% if isAddToCart %}Learn More{% else %}Shop Now{% endif %}</span>
         <span>Shop Now</span>
         </button>
       </a>
