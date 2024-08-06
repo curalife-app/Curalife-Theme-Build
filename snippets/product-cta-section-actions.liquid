@@ -8,8 +8,7 @@
     <div class="cta-title">{{ title }}</div>
   {% endif %}
 
-
-  <div class="variants {% if product.variants.size == 1 %}hidden{% endif %}">
+  <div class="variants {% if variantQuantity == 1 %}hidden{% endif %}">
     {% for var in product.variants %}
       {% render 'product-cta-section-actions-variant-box', SID: SID, ctaTextType: ctaTextType, isVariantNotice: isVariantNotice, var: var, index: forloop.index, isHighlightSubtitle: isHighlightSubtitle, isUpdateSaveTitle: true, pricePer: pricePer %}
     {% endfor %}
@@ -21,9 +20,9 @@
     {% endif %}
   </div>
 
-  <script>console.log("Variants: {{ product.variants.size }}")</script>
+  <script>console.log("Variants: {{ variantQuantity }}")</script>
 
-  {% if product.variants.size == 1 %}
+  {% if variantQuantity == 1 %}
     <div class="product-price">
       <div class="price">
         <p class="real-price">{{ product.price | money }}</p>
