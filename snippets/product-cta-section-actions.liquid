@@ -8,7 +8,8 @@
     <div class="cta-title">{{ title }}</div>
   {% endif %}
 
-  <div class="variants">
+
+  <div class="variants {% if product.variants.size == 1 %}hidden{% endif %}">
     {% for var in product.variants %}
       {% render 'product-cta-section-actions-variant-box', SID: SID, ctaTextType: ctaTextType, isVariantNotice: isVariantNotice, var: var, index: forloop.index, isHighlightSubtitle: isHighlightSubtitle, isUpdateSaveTitle: true, pricePer: pricePer %}
     {% endfor %}
@@ -19,6 +20,17 @@
       {% endfor %}
     {% endif %}
   </div>
+
+  {% if product.variants.size == 1 %}
+    <div class="product-price">
+      <div class="price">
+        <p class="real-price">{{ product.price | money }}</p>
+        {% if product.compare_at_price > product.price %}
+          <p class="compared-at-price">{{ product.compare_at_price | money }}</p>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
 
   <div class="submit-wrap flex flex-col">
     <div class="main-submit-wrapper flex">
