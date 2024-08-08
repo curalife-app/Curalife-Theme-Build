@@ -21,23 +21,35 @@
   function insertUrlParamsToHtml() {
       console.log("Starting to process URL parameters...");
       const urlParams = new URLSearchParams(window.location.search);
+      let canValue = null;
 
       urlParams.forEach((value, key) => {
           console.log(`Processing parameter: ${key} with value: ${value}`);
-          let element = document.getElementById(key);
-          if (element) {
-              if (key === 'can') {
-                  let processedValue = parseFloat(value) * 0.0750;
-                  console.log(`Original value of 'can': ${value}, Processed value: ${processedValue}`);
-                  element.textContent = processedValue.toFixed(2); // Adjust to 2 decimal places
-              } else {
+          if (key === 'can') {
+              canValue = value;
+          } else {
+              const element = document.getElementById(key);
+              if (element) {
                   console.log(`Found element with ID: ${key}. Setting text content to: ${value}`);
                   element.textContent = value;
+              } else {
+                  console.warn(`No element found with ID: ${key}`);
               }
-          } else {
-              console.warn(`No element found with ID: ${key}`);
           }
       });
+
+      // Process the 'can' parameter separately
+      if (canValue !== null) {
+          const element = document.getElementById('can');
+          if (element) {
+              const processedValue = parseFloat(canValue) * 0.0750;
+              console.log(`Original value of 'can': ${canValue}, Processed value: ${processedValue}`);
+              element.textContent = processedValue.toFixed(2); // Adjust to 2 decimal places
+          } else {
+              console.warn(`No element found with ID: can`);
+          }
+      }
+
       console.log("Finished processing URL parameters.");
   }
 
