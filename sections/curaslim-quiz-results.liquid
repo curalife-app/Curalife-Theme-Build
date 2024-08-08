@@ -24,10 +24,16 @@
 
       urlParams.forEach((value, key) => {
           console.log(`Processing parameter: ${key} with value: ${value}`);
-          const element = document.getElementById(key);
+          let element = document.getElementById(key);
           if (element) {
-              console.log(`Found element with ID: ${key}. Setting text content to: ${value}`);
-              element.textContent = value;
+              if (key === 'can') {
+                  let processedValue = parseFloat(value) * 0.0750;
+                  console.log(`Original value of 'can': ${value}, Processed value: ${processedValue}`);
+                  element.textContent = processedValue.toFixed(2); // Adjust to 2 decimal places
+              } else {
+                  console.log(`Found element with ID: ${key}. Setting text content to: ${value}`);
+                  element.textContent = value;
+              }
           } else {
               console.warn(`No element found with ID: ${key}`);
           }
