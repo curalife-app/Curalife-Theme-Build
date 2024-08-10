@@ -4,9 +4,9 @@
 
     <div class="goals-wrapper bg-[#FFF1E8] rounded-md p-2">
       <h5 class="text-black mb-4">Your Goals:</h5>
-      <div class="goals">
-
-      </div>
+      <ul class="goals">
+        <li class="goal">Weight loss <span id="wls"></span>lbs</li>
+      </ul>
     </div>
 
     <p><b>That's an within-reach goal,</b><br>and with us by your side, you can achieve it without exhausting routines.</p>
@@ -54,9 +54,34 @@
       console.log("Finished processing 'can' URL parameter.");
   }
 
+  function processGoalsParam() {
+      console.log("Processing 'gls' URL parameter...");
+      const urlParams = new URLSearchParams(window.location.search);
+      const goalsValue = urlParams.get('gls');
+
+      if (goalsValue !== null) {
+          const goalsElement = document.getElementById('goals');
+          const goalsArray = goalsValue.split(','); // Assuming goals are comma-separated
+
+          goalsArray.forEach(goal => {
+              const listItem = document.createElement('li');
+              listItem.className = 'goal';
+              listItem.textContent = goal.trim();
+              goalsElement.appendChild(listItem);
+          });
+
+          console.log(`Added goals: ${goalsArray}`);
+      } else {
+          console.warn(`No 'gls' parameter found in the URL.`);
+      }
+
+      console.log("Finished processing 'gls' URL parameter.");
+  }
+
   // Immediately run the functions
   processGeneralUrlParams();
   processCanParam();
+  processGoalsParam();
 </script>
 
 {% schema %}
