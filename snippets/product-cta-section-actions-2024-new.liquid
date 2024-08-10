@@ -4,7 +4,7 @@
   <div class="purchase-options md:p-2 flex flex-col gap-2">
     <div class="purchase-type flex-nowrap flex w-full gap-2">
       {% assign subscriptionFeatures = "Save on every order,Guaranteed delivery,Make changes anytime,VIP support,New subscribers gifs" | split: ',' %}
-      <button class="subscription selected flex items-center justify-center gap-2" aria-label="Subscribe & Save"><span>Subscribe <div class="desktop">& Save</div>{% render 'tooltip', SID: SID, linkTitle: '<i class="tooltip-icon fa-duotone fa-circle-info text-[18px]"></i>', title: 'Subscription Details', description: '', features: subscriptionFeatures %}</span></button>
+      <button class="subscription selected flex items-center justify-center gap-2 text-black" aria-label="Subscribe & Save"><span>Subscribe <div class="desktop">& Save</div>{% render 'tooltip', SID: SID, linkTitle: '<i class="tooltip-icon fa-duotone fa-circle-info text-[18px]"></i>', title: 'Subscription Details', description: '', features: subscriptionFeatures %}</span></button>
       <button class="buy-once z-0" aria-label="Buy Once"><span>Buy Once</span></button>
     </div>
 
@@ -380,12 +380,16 @@
     --primary-color-light: color-mix(in srgb, var(--primary-color), white 80%);
   }
 
-  .purchase-type button {
+  #cta-section-{{ section.id }} .purchase-type button {
     background-color: var(--primary-color);
     border-radius: 5px;
     font-size: 16px;
     min-width: 49%;
     padding: 0.5rem;
+
+    &.selected {
+      color: white !important;
+    }
 
     &:not(.selected) {
       background: var(--primary-color-light);
