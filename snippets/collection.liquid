@@ -7,8 +7,12 @@
   {% assign isGlucoseGlobal = true %}
 {% endif %}
 
-{% if customer.b2b? or customer.email contains "curalife" %}
+{% if customer.b2b? or true %}
   {% assign isAddToCart = true %}
+
+  {% if customer.b2b? %}
+    {% assign isAddToCartQuantity = true %}
+  {% endif %}
 {% endif %}
 
 <div id="{{ collection_handle }}-collection-section" class="collection-section xl:w-full {% if collection_total_items_amount < 3 and template.name == 'list-collections' %}w-[48%]{% else %}w-full{% endif %} {% if shop.name == 'Curalife Global' or customer.tags contains 'B2B' %}max-w-[800px] m-auto{% endif %}" data-product-collections="{{ collection_handle }}" >
@@ -172,12 +176,13 @@
       min-height: 45px;
     }
 
-    @media (width > 768px) {
-      .product-card .submit-wrap:has(.qty) button {
-        border-radius: 0px 10px 10px 0;
+    {% if isAddToCartQuantity %}
+      @media (width > 768px) {
+        .product-card .submit-wrap:has(.qty) button {
+          border-radius: 0px 10px 10px 0;
+        }
       }
-    }
-
+    {% endif %}
 
     .product-card .submit-wrap .qty_inc_dec i:hover {
       background-color: #ffe3ae !important;
