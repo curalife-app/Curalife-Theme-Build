@@ -294,14 +294,17 @@
       toggleButtonLoading(buttonElement, true);
 
       if (isSubscriptionSelected()) {
+        console.log("Subscription selected");
         let variant_id = selectedBox.data('original-variant');
-        buySubscription(variant_id, 1, subscription_selling_plan_id);
+        console.log("variant_id: " + variant_id);
+        {%unless customer.email contains 'curalife'%}buySubscription(variant_id, 1, subscription_selling_plan_id);{%endunless%}
       } else {
+        console.log("Buy once selected");
         let variant_id = selectedBox.data('variant');
         let dc = $(buttonElement).closest('.purchase-option-box').data('dc');
         let giftProductID = buttonElement.parent().siblings('.gifts').attr('data-bundle-product-id');
 
-        redirectToCheckout(variant_id, dc);
+        {%unless customer.email contains 'curalife'%}redirectToCheckout(variant_id, dc);{%endunless%}
       }
     }
 
