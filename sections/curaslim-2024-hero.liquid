@@ -1,85 +1,98 @@
-<section class="hero-section p-4">
-  <div class="container text-center mb-auto">
-    <div class="top-bar flex justify-between items mb-8">
-      <div class="left flex gap-4 items-center">
+<section class="hero-section p-4 relative">
+  <div class="container mx-auto text-center">
+    <div class="top-bar flex justify-between items-center mb-8">
+      <div class="flex items-center gap-4">
         <img src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/curalife-logo-white.png?v=1678034399" alt="Curaslim 2024 Logo">
 
-        <div class="reviews flex gap-2 items-center">
-          <div class="stars">{% for star in (1..5) %}<i class="fa-sharp fa-solid fa-star text-[--orange] mr-1 font-thin"></i>{% endfor %}</div>
+        <div class="reviews flex items-center gap-2">
+          <div class="stars flex">{% for star in (1..5) %}<i class="fa-sharp fa-solid fa-star text-[--orange] mr-1 font-thin"></i>{% endfor %}</div>
           <div class="text-xs text-white text-start">45,852 verified<br>reviews</div>
         </div>
       </div>
 
-      <div class="right">
-        <Button class="bg-white text-black" src="#">Buy Now</Button>
+      <div>
+        <button class="bg-white text-black py-2 px-4">Buy Now</button>
       </div>
     </div>
 
-    <div class="content">
-      <h1 class="text-white"><strong>Lose Weight Fast</strong> <span class="italic"><span class="text-[--orange]">With Curaslim's</span><br>powerful Triple - Action Formula!</span></h1>
-      <Button class="bg-[--orange] text-black" src="#">Buy Now</Button>
+    <div class="content mb-8">
+      <h1 class="text-white text-4xl font-bold">Lose Weight Fast</h1>
+      <h2 class="italic text-2xl"><span class="text-[--orange]">With Curaslim's</span> powerful Triple-Action Formula!</h2>
+      <button class="bg-[--orange] text-black py-2 px-4 mt-4">Buy Now</button>
     </div>
 
-    <img class="review" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/Group_1597877448.png?v=1723474133" alt="Curaslim 2024 Hero Image 1">
-    <img class="badge" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/Group_1597877668.png?v=1723474133" alt="Curaslim 2024 Hero Image 1">
-    <img class="bottles" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/Group_1597877740.png?v=1723474133" alt="Curaslim 2024 Hero Image 1">
-    <img class="badges" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/Group_1597877453.png?v=1723474133" alt="Curaslim 2024 Hero Image 2">
+    <div class="images relative">
+      <img class="review absolute top-0 left-1/2 transform -translate-x-1/2" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/Group_1597877448.png?v=1723474133" alt="Curaslim 2024 Hero Image 1">
+      <img class="badge absolute top-20 left-10" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/Group_1597877668.png?v=1723474133" alt="Curaslim 2024 Hero Image 1">
+      <img class="bottles absolute top-32 right-10" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/Group_1597877740.png?v=1723474133" alt="Curaslim 2024 Hero Image 1">
+      <img class="badges absolute bottom-10 left-1/2 transform -translate-x-1/2" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/Group_1597877453.png?v=1723474133" alt="Curaslim 2024 Hero Image 2">
+    </div>
   </div>
 </section>
 
 <section class="h-[600px]"></section>
 
 <style>
-  html {
+  html, body {
     height: 100vh;
+    margin: 0;
+    overflow-x: hidden;
+  }
+
+  body {
+    perspective: 1px;
+    transform-style: preserve-3d;
+  }
+
+  section {
+    width: 100%;
+    min-height: 100vh;
+    position: relative;
+  }
+
+  .hero-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     overflow: hidden;
+    z-index: 1;
+  }
 
-    body {
-      width: 100vw;
-      height: 100vh;
-      margin: 0;
-      overflow-y: auto;
-      overflow-x: hidden;
-      perspective: 1px;
-      transform-style: preserve-3d;
+  .hero-section::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, #3392C9 -8.06%, #13699C 55.18%, #083F5F 75.87%, #18638F 83.03%, #3593CA 100.13%, #4EACE2 103.87%);
+    top: 0;
+    left: 0;
+    z-index: -1;
+    transform: translateZ(-1px) scale(2.2);
+    filter: blur(10px);
+  }
 
-      section {
-        width: 100%;
-        min-height: 100vw;
-        position: relative;
-      }
+  .top-bar {
+    z-index: 1;
+  }
 
-      .hero-section {
-        display: flex;
-        justify-content: center;
-        align-items: center;
+  .content {
+    z-index: 1;
+  }
 
-        &::before {
-          content: '';
-          width: 100%;
-          height: 100%;
-          position: absolute;
-          background: linear-gradient(180deg, #3392C9 -8.06%, #13699C 55.18%, #083F5F 75.87%, #18638F 83.03%, #3593CA 100.13%, #4EACE2 103.87%);
-          top: 0;
-          left: 0;
-          z-index: -1;
-          transform: translateZ(-1px) scale(2.2);
-          filter: blur(10px);
-        }
-      }
-    }
+  .images img {
+    z-index: 1;
   }
 </style>
 
 {% schema %}
-  {
-    "name": "Curaslim Hero Section",
-    "settings": [],
-    "presets": [
-      {
-        "category": "Page",
-        "name": "Curaslim Hero Section"
-      }
-    ]
-  }
+{
+  "name": "Curaslim Hero Section",
+  "settings": [],
+  "presets": [
+    {
+      "category": "Page",
+      "name": "Curaslim Hero Section"
+    }
+  ]
+}
 {% endschema %}
