@@ -1,0 +1,166 @@
+<div class="results-widget">
+    <h1>This Is About So Much More Than <br><span class="blue">Just Losing Weight.</span></h1>
+    <p>1000 Curaslim customer swear by it's results.</p>
+
+    <div class="tabs">
+        <div class="tab active" data-tab="weight-loss">Weight Loss</div>
+        <div class="tab" data-tab="hunger-reduction">Hunger Reduction</div>
+        <div class="tab" data-tab="energy-levels">Energy Levels</div>
+        <div class="tab" data-tab="appetite-control">Appetite Control</div>
+        <div class="tab" data-tab="fullness">Fullness</div>
+    </div>
+
+    <div id="content" class="content">
+        <!-- Content will be dynamically inserted here -->
+    </div>
+
+
+</div>
+
+<style>
+  .results-widget {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+  }
+  .results-widget h1 {
+      text-align: center;
+  }
+  .results-widget .blue {
+      color: #0077be;
+  }
+  .results-widget .tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+  }
+  .results-widget .tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin: 0 5px;
+  }
+  .results-widget .tab.active {
+      background-color: #f0f0f0;
+  }
+  .results-widget .content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid #ccc;
+      padding: 20px;
+      border-radius: 5px;
+  }
+  .results-widget .usage {
+      font-size: 24px;
+      font-weight: bold;
+      margin-right: 20px;
+  }
+  .results-widget .description {
+      flex: 1;
+  }
+  .results-widget .image {
+      width: 100px;
+      height: 100px;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+  }
+</style>
+
+<script>
+    const tabData = {
+        'weight-loss': {
+            '3': {
+                text: 'Approximately 93% of participants reported losing more than 7.5% of body weight in 3 months.',
+                image: '/api/placeholder/100/100'
+            },
+            '6': {
+                text: 'Approximately 92% of participants using Curaslim for 6 months reported losing more than 11.7% of body weight.',
+                image: '/api/placeholder/100/100'
+            }
+        },
+        'hunger-reduction': {
+            '3': {
+                text: '85% of users reported significant reduction in hunger after 3 months of use.',
+                image: '/api/placeholder/100/100'
+            },
+            '6': {
+                text: '94% of users experienced sustained hunger reduction after 6 months of use.',
+                image: '/api/placeholder/100/100'
+            }
+        },
+        'energy-levels': {
+            '3': {
+                text: '78% of participants reported increased energy levels within 3 months.',
+                image: '/api/placeholder/100/100'
+            },
+            '6': {
+                text: '89% of users maintained higher energy levels after 6 months of use.',
+                image: '/api/placeholder/100/100'
+            }
+        },
+        'appetite-control': {
+            '3': {
+                text: '82% of users reported better appetite control in just 3 months.',
+                image: '/api/placeholder/100/100'
+            },
+            '6': {
+                text: '91% of participants experienced long-term appetite control after 6 months.',
+                image: '/api/placeholder/100/100'
+            }
+        },
+        'fullness': {
+            '3': {
+                text: '76% of users felt fuller for longer periods after meals within 3 months.',
+                image: '/api/placeholder/100/100'
+            },
+            '6': {
+                text: '88% of participants reported sustained feelings of fullness after 6 months.',
+                image: '/api/placeholder/100/100'
+            }
+        }
+    };
+
+    function updateContent(tab) {
+        const content = document.getElementById('content');
+        content.innerHTML = `
+            <div>
+                <div class="usage">3</div>
+                <div>months usage</div>
+            </div>
+            <div class="description">${tabData[tab]['3'].text}</div>
+            <div class="image" style="background-image: url('${tabData[tab]['3'].image}')"></div>
+            <div>
+                <div class="usage">6</div>
+                <div>months usage</div>
+            </div>
+            <div class="description">${tabData[tab]['6'].text}</div>
+            <div class="image" style="background-image: url('${tabData[tab]['6'].image}')"></div>
+        `;
+    }
+
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelector('.tab.active').classList.remove('active');
+            tab.classList.add('active');
+            updateContent(tab.dataset.tab);
+        });
+    });
+
+    // Initialize with weight loss tab
+    updateContent('weight-loss');
+</script>
+
+{% schema %}
+  {
+    "name": "Results Widget",
+    "settings": [],
+    "blocks": [],
+    "presets": [{
+      "name": "Default"
+    }]
+  }
+{% endschema %}
