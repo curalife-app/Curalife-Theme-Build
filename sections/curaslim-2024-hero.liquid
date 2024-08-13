@@ -110,9 +110,9 @@
   }
 
   .floating {
-    animation-name: floating;
-    animation-delay: 2s;
     animation: floating 3s ease-in-out infinite;
+    animation-play-state: paused;
+    animation-delay: 2s;
     margin-left: 30px;
     margin-top: 5px;
 }
@@ -123,6 +123,18 @@
     100%   { transform: translate(0, -0px); }
 }
 </style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const floatingImage = document.querySelector('.floating');
+
+    // Listen for the AOS event that triggers when the element is scrolled into view
+    floatingImage.addEventListener('aos:in', function() {
+        // Start the floating animation after the fade-up animation
+        floatingImage.style.animationPlayState = 'running';
+    });
+  });
+</script>
 
 {% schema %}
   {
