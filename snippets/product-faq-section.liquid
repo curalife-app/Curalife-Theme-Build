@@ -15,7 +15,19 @@
 </div>
 
 <style>
-  {% if seperator_color != blank %}
+  #faq-section-{{ section.id }} .faq-item {
+    {% if seperator_color %}border-bottom: 2px solid {{ seperator_color }};{% endif %}
+    {% if closed_bg_color %}background-color: {{ closed_bg_color }};{% endif %}
+    transition: background-color .2s ease-out;
+
+    {% if opened_bg_color %}
+      &:has(.question.active) {
+        background-color: {{ opened_bg_color }};
+      }
+    {% endif %}
+  }
+
+  {% if closed_bg_color %}
     #faq-section-{{ section.id }} .faq-item {
       border-bottom: 2px solid {{ seperator_color }};
     }
