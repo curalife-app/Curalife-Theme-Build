@@ -206,12 +206,13 @@
     {% endif %}
 
     #section-{{ section.id }} .item {
-      {% unless section.settings.is_slider %}flex: 1;{% endunless %}
       width: calc(100% / {% if section.settings.items_in_row == 'all' %}{{ section.blocks.size }}{% else %}{{ section.settings.items_in_row }}{% endif %});
 
-        @media screen and (max-width: 768px) {
-          flex: unset;
+      {% unless section.settings.is_slider %}
+        @media screen and (min-width: 768px) {
+          flex: 1;
         }
+      {% endunless %}
     }
 
     #section-{{ section.id }} .item-content {
