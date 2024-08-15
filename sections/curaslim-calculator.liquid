@@ -1,178 +1,154 @@
-<section>
-  <div class="container">
-    <div class="wrapper">
-      <img class="absolute z-[-1]" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/plant.png?v=1723546241" alt="Curaslim 2024 plant">
+{% schema %}
+  {
+    "name": "Weight Loss Calculator",
+    "settings": [
+      {
+        "type": "text",
+        "id": "title",
+        "label": "Widget Title",
+        "default": "Weight Loss Estimator"
+      },
+      {
+        "type": "range",
+        "id": "min_weight",
+        "min": 50,
+        "max": 200,
+        "step": 10,
+        "unit": "lbs",
+        "label": "Minimum Weight",
+        "default": 100
+      },
+      {
+        "type": "range",
+        "id": "max_weight",
+        "min": 200,
+        "max": 500,
+        "step": 10,
+        "unit": "lbs",
+        "label": "Maximum Weight",
+        "default": 400
+      },
+      {
+        "type": "select",
+        "id": "weight_unit",
+        "label": "Weight Unit",
+        "options": [
+          { "value": "lbs", "label": "Pounds (lbs)" },
+          { "value": "kg", "label": "Kilograms (kg)" }
+        ],
+        "default": "lbs"
+      }
+    ],
+    "presets": [
+      {
+        "name": "Weight Loss Calculator",
+        "category": "Custom"
+      }
+    ]
+  }
+  {% endschema %}
 
-      <div class="weight-loss-calculator">
-        <div class="weight-display flex items-center justify-between">
-          <div class="weight-title flex items-center gap-2 font-bold">
-            <img src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/wightloss-icons.png?v=1723544732" alt="weight loss">
+  <section class="weight-loss-calculator-section">
+    <div class="container px-4 py-8 mx-auto">
+      <h2 class="mb-6 text-2xl font-bold text-center">{{ section.settings.title }}</h2>
+      <div class="weight-loss-calculator bg-gradient-to-b from-[#F7F7F4] to-[#9F9D5E] rounded-3xl shadow-lg p-8 max-w-2xl mx-auto">
+        <div class="md:flex-row flex flex-col items-center justify-between mb-6">
+          <div class="weight-title md:mb-0 flex items-center gap-2 mb-4 font-bold">
+            <img src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/wightloss-icons.png?v=1723544732" alt="Weight icon" class="w-8 h-8">
             <span>Your current<br>weight</span>
           </div>
-
-          <span class="current-weight text-lg" id="currentWeight">150 <span class="lbs text-sm">lbs</span></span>
-        </div>
-
-        <div class="slider-container">
-          <input type="range" min="{{ section.settings.min_weight }}" max="{{ section.settings.max_weight }}" value="150" class="slider" id="weightSlider">
-        </div>
-
-        <div class="result flex items-center justify-between">
-          <div class="left">
-            <div><strong>Weight you could lose</strong> (Ibs)</div>
-            <div class="bg-[--orange] italic rounded-full px-2 py-1 mt-1 w-fit">With Curaslim</div>
+          <div class="current-weight relative text-4xl font-bold">
+            <span id="currentWeight">150</span>
+            <span class="unit -bottom-6 absolute right-0 text-sm" id="weightUnit">{{ section.settings.weight_unit }}</span>
           </div>
-          <div class="result-value text-[--curaslim] text-lg" id="weightLoss">22 <span class="lbs text-sm">lbs</span></div>
+        </div>
+
+        <div class="slider-container my-8">
+          <input type="range"
+                 min="{{ section.settings.min_weight }}"
+                 max="{{ section.settings.max_weight }}"
+                 value="150"
+                 class="slider w-full h-2 bg-[#BBB86F] rounded-full appearance-none cursor-pointer"
+                 id="weightSlider"
+                 aria-label="Weight slider">
+        </div>
+
+        <div class="result rounded-2xl md:flex-row flex flex-col items-center justify-between p-6 bg-white">
+          <div class="md:mb-0 mb-4">
+            <div class="mb-2 font-bold">Weight you could lose</div>
+            <div class="bg-[#FFA500] text-white italic rounded-full px-3 py-1 text-sm">With Curaslim</div>
+          </div>
+          <div class="result-value text-[#4A90E2] text-4xl font-bold relative">
+            <span id="weightLoss">22</span>
+            <span class="unit -bottom-6 absolute right-0 text-sm" id="lossUnit">{{ section.settings.weight_unit }}</span>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<style>
-  .weight-loss-calculator {
-    border-radius: 24px;
-    background: linear-gradient(180deg, #F7F7F4 40.95%, #9F9D5E 190.95%);
-    box-shadow: 0px 16px 32px 0px rgba(18, 18, 18, 0.10);
-    padding: 50px 90px;
-    width: 800px;
-    margin: 0 auto;
-
-    @media screen and (max-width: 768px) {
-      width: 100%;
-      padding: 1rem;
+  <style>
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 40px;
+      height: 40px;
+      background: url('https://cdn.shopify.com/s/files/1/0452/2459/1511/files/pill-icon.png?v=1723546176') no-repeat center center;
+      background-size: cover;
+      cursor: pointer;
     }
-  }
 
-  .weight-display {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 10px;
-  }
-
-  .current-weight {
-    position: relative;
-    font-size: 44px;
-    font-weight: bold;
-  }
-
-  @media screen and (max-width: 768px) {
-    .lbs {
-      position: absolute;
-      bottom: -22px;
-      right: -2px;
+    .slider::-moz-range-thumb {
+      width: 40px;
+      height: 40px;
+      background: url('https://cdn.shopify.com/s/files/1/0452/2459/1511/files/pill-icon.png?v=1723546176') no-repeat center center;
+      background-size: cover;
+      cursor: pointer;
+      border: none;
     }
-  }
 
-  .slider-container {
-    position: relative;
-    width: 100%;
-    margin-bottom: 20px;
-    padding-block: 1rem;
-  }
+    @media (max-width: 640px) {
+      .slider::-webkit-slider-thumb,
+      .slider::-moz-range-thumb {
+        width: 30px;
+        height: 30px;
+      }
+    }
+  </style>
 
-  .slider {
-    -webkit-appearance: none;
-    width: 100%;
-    height: 5px;
-    background: #BBB86F;
-    outline: none;
-    opacity: 0.7;
-    transition: opacity .2s;
-    cursor: pointer;
-  }
-
-  .slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 67px;
-    height: 67px;
-    background: url('https://cdn.shopify.com/s/files/1/0452/2459/1511/files/pill-icon.png?v=1723546176') no-repeat center center;
-    background-size: cover;
-    cursor: pointer;
-  }
-
-  .slider::-moz-range-thumb {
-    width: 67px;
-    height: 67px;
-    background: url('https://cdn.shopify.com/s/files/1/0452/2459/1511/files/pill-icon.png?v=1723546176') no-repeat center center;
-    background-size: cover;
-    cursor: pointer;
-    border: none;
-  }
-
-  .result {
-    background-color: white;
-    padding: 1rem;
-    border-radius: 15px;
-  }
-
-  .result-value {
-    position: relative;
-    font-size: 44px;
-    font-weight: bold;
-  }
-</style>
-
-<script>
+  <script>
   document.addEventListener('DOMContentLoaded', function() {
     const slider = document.getElementById('weightSlider');
     const currentWeight = document.getElementById('currentWeight');
     const weightLoss = document.getElementById('weightLoss');
+    const weightUnit = document.getElementById('weightUnit');
+    const lossUnit = document.getElementById('lossUnit');
+
+    const minWeight = {{ section.settings.min_weight }};
+    const maxWeight = {{ section.settings.max_weight }};
+    const unit = "{{ section.settings.weight_unit }}";
 
     function calculateWeightLoss(weight) {
-      // This is a simplified calculation and should not be considered medical advice
       const potentialLoss = Math.round(weight * 0.15);
-      return Math.min(potentialLoss, 100); // Cap at 39 lbs for this example
+      return Math.min(potentialLoss, weight * 0.3); // Cap at 30% of current weight
     }
 
     function updateWeightLoss() {
-      const weight = slider.value;
-      currentWeight.innerHTML = `${weight} <span class="lbs text-sm">lbs</span>`;
-      weightLoss.innerHTML = `${calculateWeightLoss(weight)} <span class="lbs text-sm">lbs</span>`;
+      const weight = parseInt(slider.value);
+      currentWeight.textContent = weight;
+      weightLoss.textContent = calculateWeightLoss(weight);
+    }
+
+    function initializeCalculator() {
+      slider.min = minWeight;
+      slider.max = maxWeight;
+      slider.value = Math.round((minWeight + maxWeight) / 2);
+      weightUnit.textContent = unit;
+      lossUnit.textContent = unit;
+      updateWeightLoss();
     }
 
     slider.addEventListener('input', updateWeightLoss);
-    updateWeightLoss();
+    initializeCalculator();
   });
-</script>
-
-{% schema %}
-{
-  "name": "Weight Loss Calculator",
-  "settings": [
-    {
-      "type": "text",
-      "id": "title",
-      "label": "Widget Title",
-      "default": "Weight Loss Estimator"
-    },
-    {
-      "type": "range",
-      "id": "min_weight",
-      "min": 50,
-      "max": 200,
-      "step": 10,
-      "unit": "lbs",
-      "label": "Minimum Weight",
-      "default": 100
-    },
-    {
-      "type": "range",
-      "id": "max_weight",
-      "min": 200,
-      "max": 500,
-      "step": 10,
-      "unit": "lbs",
-      "label": "Maximum Weight",
-      "default": 400
-    }
-  ],
-  "presets": [
-    {
-      "name": "Weight Loss Calculator",
-      "category": "Custom"
-    }
-  ]
-}
-{% endschema %}
+  </script>
