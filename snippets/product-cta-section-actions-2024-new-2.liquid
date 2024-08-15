@@ -44,11 +44,8 @@
       </div>
     </div>
 
-    <!-- Updated submit button section -->
     <div class="submit-wrap flex flex-col w-full">
-      <div class="checkout-button">
-        {% render 'buy-buttons', product: product, variant: '', selling_plan_id: selling_plan_id, product_form_id: product_form_id, buyType: buyType, isBuyWithPrime: isBuyWithPrime %}
-      </div>
+      <div class="checkout-button">{% render 'buy-buttons', product: product, variant: '', selling_plan_id: selling_plan_id , product_form_id: product_form_id, buyType: buyType, isBuyWithPrime: isBuyWithPrime %}</div>
     </div>
   </div>
 </div>
@@ -76,12 +73,6 @@
     opacity: 0;
     transform: translateY(20px);
     animation: fadeInUp 0.5s forwards;
-  }
-
-  .option.selected {
-    border-color: var(--orange);
-    border-width: 2px;
-    box-shadow: 0 0 5px rgba(225, 188, 65, 0.5);
   }
 
   .option > label {
@@ -135,7 +126,6 @@
     border-width: 2px;
     box-shadow: 0 0 5px rgba(225, 188, 65, 0.5);
     transform: scale(1);
-    animation: none;
   }
 
   .quantity-option input[type="radio"] {
@@ -174,6 +164,27 @@
     margin-top: 5px;
   }
 
+  .submit-button {
+    width: 100%;
+    padding: 10px;
+    background-color: var(--orange);
+    color: black;
+    border: none;
+    border-radius: 100px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+  }
+
+  .submit-button:hover {
+    background-color: var(--dark-orange);
+    transform: scale(1.05);
+  }
+
+  .submit-button:active {
+    transform: scale(0.95);
+  }
+
   @keyframes fadeInUp {
     from {
       opacity: 0;
@@ -202,6 +213,7 @@
     const productActions = document.getElementById('product-actions-{{ SID }}');
     const purchaseTypeInputs = productActions.querySelectorAll('.purchase-type input[name="purchase-type"]');
     const quantityOptions = productActions.querySelectorAll('.quantity-option');
+    const submitButton = productActions.querySelector('.submit-button');
 
     const productData = {
       basePrice: 39.90,
@@ -214,6 +226,7 @@
     function init() {
       purchaseTypeInputs.forEach(input => input.addEventListener('change', handlePurchaseTypeChange));
       quantityOptions.forEach(option => option.addEventListener('click', handleQuantityOptionClick));
+      submitButton.addEventListener('click', handleSubmit);
       updatePurchaseOptions();
     }
 
@@ -262,6 +275,7 @@
 
       const { price, originalPrice, discount } = calculatePrices(selectedQuantity, isSubscription);
 
+      updateSubmitButton(price, isSubscription);
       updateQuantityOptionPrices(selectedQuantity, price, originalPrice, discount);
     }
 
@@ -278,6 +292,10 @@
         originalPrice: originalPrice.toFixed(2),
         discount: totalDiscount
       };
+    }
+
+    function updateSubmitButton(price, isSubscription) {
+      submitButton.textContent = `${isSubscription ? 'Subscribe Now' : 'Add to Cart'} - £${price}`;
     }
 
     function updateQuantityOptionPrices(selectedQuantity, price, originalPrice, discount) {
@@ -303,6 +321,16 @@
           priceElement.textContent = `£${individualPrice}`;
         }
       });
+    }
+
+    function handleSubmit(event) {
+      event.preventDefault();
+      const isSubscription = productActions.querySelector('input[name="purchase-type"]:checked').value === 'subscription';
+      const quantity = isSubscription ? 1 : parseInt(productActions.querySelector('.quantity-option.selected').dataset.quantity);
+      const { price } = calculatePrices(quantity, isSubscription);
+
+      console.log(`Adding to cart: ${quantity} item(s), Subscription: ${isSubscription}, Price: £${price}`);
+      // Implement your add to cart logic here
     }
 
     init();
