@@ -218,6 +218,8 @@
     const purchaseTypeInputs = productActions.querySelectorAll('.purchase-type input[name="purchase-type"]');
     const quantityOptions = productActions.querySelectorAll('.quantity-option');
     const submitButton = productActions.querySelector('.submit-button');
+    const loader = submitButton.querySelector('.loader');
+    const buttonText = submitButton.querySelector('.button-text');
 
     const productData = {
         basePrice: 39.90,
@@ -355,7 +357,7 @@
     }
 
     function isSubscriptionSelected() {
-        return productActions.querySelector('.purchase-type .subscription.selected') !== null;
+        return productActions.querySelector('input[name="purchase-type"]:checked').value === 'subscription';
     }
 
     function redirectToCheckout(variant_id, dc) {
@@ -367,9 +369,6 @@
     }
 
     function toggleButtonLoading(buttonElement, isLoading) {
-        let loader = buttonElement.closest('.purchase-option-box')?.querySelector('.loader');
-        let buttonText = buttonElement.querySelector('.button-text');
-
         if (!loader) {
             console.error("Loader element not found");
             return;
@@ -412,11 +411,12 @@
                 data: data,
                 dataType: 'json',
                 success: function() {
-                    console.log('success');
+                    console.log('Subscription added to cart');
                     window.location.href = '/checkout';
                 },
                 error: function() {
-                    console.log('Failed to add item to cart');
+                    console.log('Failed to add subscription to cart');
+                    toggleButtonLoading(submitButton, false);
                 }
             });
         });
