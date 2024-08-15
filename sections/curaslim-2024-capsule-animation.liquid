@@ -55,30 +55,26 @@
 
 <script>
   document.addEventListener("DOMContentLoaded", function() {
-    function isElementInViewport(el) {
-      const rect = el.getBoundingClientRect();
-      return (
-        rect.top >= 0 &&
-        rect.left >= 0 &&
-        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-        rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-      );
-    }
+    const pillLeft = document.querySelector('.pill-half.left');
+    const pillRight = document.querySelector('.pill-half.right');
+    const capsuleAnimation = document.querySelector('.capsule-animation');
 
-    function onScroll() {
-      const pillLeft = document.querySelector('.pill-half.left');
-      const pillRight = document.querySelector('.pill-half.right');
-      const capsuleAnimation = document.querySelector('.capsule-animation');
+    const observerOptions = {
+      root: null, // Use the viewport as the root
+      threshold: 0.5 // Trigger when 50% of the element is in view
+    };
 
-      if (isElementInViewport(capsuleAnimation)) {
-        pillLeft.classList.add('animate');
-        pillRight.classList.add('animate');
-        window.removeEventListener('scroll', onScroll); // Remove scroll listener once animation is triggered
-      }
-    }
+    const observer = new IntersectionObserver(function(entries, observer) {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          pillLeft.classList.add('animate');
+          pillRight.classList.add('animate');
+          observer.unobserve(capsuleAnimation); // Stop observing once animation has started
+        }
+      });
+    }, observerOptions);
 
-    window.addEventListener('scroll', onScroll);
-    onScroll(); // Check if the element is already in view on page load
+    observer.observe(capsuleAnimation);
   });
 </script>
 
