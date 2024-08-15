@@ -3,7 +3,7 @@
     <h6>Buying Options:</h6>
 
     <div class="purchase-type mt-2">
-      <div class="option one-time-purchase">
+      <div class="option one-time-purchase selected">
         <label>
           <input type="radio" name="purchase-type" value="one-time" checked>
           <span class="option-text">One Time Purchase</span>
@@ -68,6 +68,15 @@
     transition: all 0.3s ease;
     min-height: 60px;
     display: grid;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.5s forwards;
+  }
+
+  .option.selected {
+    border-color: var(--orange);
+    border-width: 2px;
+    box-shadow: 0 0 5px rgba(225, 188, 65, 0.5);
   }
 
   .option > label {
@@ -100,6 +109,8 @@
     display: flex;
     gap: 10px;
     margin-top: 10px;
+    opacity: 1;
+    transition: opacity 0.3s ease;
   }
 
   .quantity-option {
@@ -109,6 +120,17 @@
     border-radius: 5px;
     overflow: hidden;
     transition: all 0.3s ease;
+    transform: scale(0.95);
+    opacity: 0;
+    animation: fadeInScale 0.4s forwards;
+  }
+
+  .quantity-option.selected {
+    border-color: var(--orange);
+    border-width: 2px;
+    box-shadow: 0 0 5px rgba(225, 188, 65, 0.5);
+    transform: scale(1);
+    animation: none;
   }
 
   .quantity-option input[type="radio"] {
@@ -122,12 +144,6 @@
     cursor: pointer;
     justify-content: space-between;
     height: 100%;
-  }
-
-  .quantity-option.selected {
-    border-color: var(--orange);
-    border-width: 2px;
-    box-shadow: 0 0 5px rgba(225, 188, 65, 0.5);
   }
 
   .buy-text {
@@ -162,11 +178,38 @@
     border-radius: 100px;
     font-size: 1em;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s, transform 0.2s;
   }
 
   .submit-button:hover {
     background-color: var(--dark-orange);
+    transform: scale(1.05);
+  }
+
+  .submit-button:active {
+    transform: scale(0.95);
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeInScale {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 </style>
 
@@ -206,15 +249,22 @@
     function selectQuantityOption(option) {
       quantityOptions.forEach(opt => opt.classList.remove('selected'));
       option.classList.add('selected');
-      option.querySelector('input[type="radio"]').checked = true;
+
+      setTimeout(() => {
+        option.querySelector('input[type="radio"]').checked = true;
+      }, 150);
     }
 
     function updatePurchaseOptions(purchaseType = 'one-time') {
       const isSubscription = purchaseType === 'subscription';
       const quantityOptionsContainer = productActions.querySelector('.quantity-options');
-      quantityOptionsContainer.style.display = isSubscription ? 'none' : 'flex';
-      updatePricing();
-      highlightSelectedOption(purchaseType);
+
+      quantityOptionsContainer.style.opacity = isSubscription ? 0 : 1;
+      setTimeout(() => {
+        quantityOptionsContainer.style.display = isSubscription ? 'none' : 'flex';
+        updatePricing();
+        highlightSelectedOption(purchaseType);
+      }, 300);
     }
 
     function highlightSelectedOption(purchaseType) {
