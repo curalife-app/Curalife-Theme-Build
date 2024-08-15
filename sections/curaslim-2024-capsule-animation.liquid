@@ -17,16 +17,21 @@
     overflow: hidden;
   }
 
+  .pill-half {
+    opacity: 0; /* Initially hidden */
+    transition: opacity 0.5s ease-in-out;
+  }
+
+  .pill-half.animate {
+    opacity: 1;
+  }
+
   .pill-half.left {
-    animation: openPillLeft linear;
-    animation-timeline: view();
-    animation-range: entry 0;
+    animation: openPillLeft 2s ease forwards;
   }
 
   .pill-half.right {
-    animation: openPillRight linear;
-    animation-timeline: view();
-    animation-range: entry 0;
+    animation: openPillRight 2s ease forwards;
   }
 
   @keyframes openPillLeft {
@@ -47,6 +52,35 @@
     }
   }
 </style>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    function isElementInViewport(el) {
+      const rect = el.getBoundingClientRect();
+      return (
+        rect.top >= 0 &&
+        rect.left >= 0 &&
+        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+        rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+      );
+    }
+
+    function onScroll() {
+      const pillLeft = document.querySelector('.pill-half.left');
+      const pillRight = document.querySelector('.pill-half.right');
+      const capsuleAnimation = document.querySelector('.capsule-animation');
+
+      if (isElementInViewport(capsuleAnimation)) {
+        pillLeft.classList.add('animate');
+        pillRight.classList.add('animate');
+        window.removeEventListener('scroll', onScroll); // Remove scroll listener once animation is triggered
+      }
+    }
+
+    window.addEventListener('scroll', onScroll);
+    onScroll(); // Check if the element is already in view on page load
+  });
+</script>
 
 {% schema %}
   {
