@@ -11,21 +11,21 @@
         </label>
 
         <div class="quantity-options">
-          <div class="quantity-option">
+          <div class="quantity-option" data-quantity="1">
             <input type="radio" name="quantity" id="qty-1" value="1">
             <label for="qty-1">
               <span class="buy-text">Buy 1</span>
-              <span class="price">£39.90</span>
+              <span class="price"></span>
             </label>
           </div>
 
-          <div class="quantity-option selected">
+          <div class="quantity-option selected" data-quantity="3">
             <input type="radio" name="quantity" id="qty-3" value="3" checked>
             <label for="qty-3">
               <span class="buy-text">Buy 3</span>
-              <span class="price">£109.90</span>
-              <span class="original-price">£129.90</span>
-              <span class="save-tag">Save 20%</span>
+              <span class="price"></span>
+              <span class="original-price"></span>
+              <span class="save-tag"></span>
             </label>
           </div>
         </div>
@@ -70,6 +70,7 @@
     border: 1px solid #ddd;
     border-radius: 5px;
     padding: 10px;
+    transition: all 0.3s ease;
   }
 
   .option > label {
@@ -111,6 +112,7 @@
     border: 1px solid #ddd;
     border-radius: 5px;
     overflow: hidden;
+    transition: all 0.3s ease;
   }
 
   .quantity-option input[type="radio"] {
@@ -169,82 +171,131 @@
   .submit-button:hover {
     background-color: #3a5fcd;
   }
+
+  .option.selected {
+    border-color: #4169e1;
+    box-shadow: 0 0 5px rgba(65, 105, 225, 0.3);
+  }
 </style>
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    const purchaseTypeInputs = document.querySelectorAll('.purchase-type input[name="purchase-type"]');
-    const quantityOptions = document.querySelectorAll('.quantity-option');
-    const submitButton = document.querySelector('.submit-button');
+    const productActions = document.getElementById('product-actions-{{ SID }}');
+    const purchaseTypeInputs = productActions.querySelectorAll('.purchase-type input[name="purchase-type"]');
+    const quantityOptions = productActions.querySelectorAll('.quantity-option');
+    const submitButton = productActions.querySelector('.submit-button');
 
-    purchaseTypeInputs.forEach(input => {
-      input.addEventListener('change', updatePurchaseOptions);
-    });
+    const productData = {
+      basePrice: 39.90,
+      subscriptionDiscount: 0.3,
+      bulkDiscounts: {
+        3: 0.2
+      }
+    };
 
-    quantityOptions.forEach(option => {
-      option.addEventListener('click', function() {
-        quantityOptions.forEach(opt => opt.classList.remove('selected'));
-        this.classList.add('selected');
-        this.querySelector('input[type="radio"]').checked = true;
-        updatePricing();
-      });
-    });
+    function init() {
+      purchaseTypeInputs.forEach(input => input.addEventListener('change', handlePurchaseTypeChange));
+      quantityOptions.forEach(option => option.addEventListener('click', handleQuantityOptionClick));
+      submitButton.addEventListener('click', handleSubmit);
+      updatePurchaseOptions();
+    }
 
-    submitButton.addEventListener('click', handleSubmit);
+    function handlePurchaseTypeChange(event) {
+      const purchaseType = event.target.value;
+      updatePurchaseOptions(purchaseType);
+    }
 
-    function updatePurchaseOptions() {
-      const isSubscription = document.querySelector('input[name="purchase-type"]:checked').value === 'subscription';
-      const quantityOptionsContainer = document.querySelector('.quantity-options');
-      quantityOptionsContainer.style.display = isSubscription ? 'none' : 'flex';
+    function handleQuantityOptionClick(event) {
+      const clickedOption = event.currentTarget;
+      selectQuantityOption(clickedOption);
       updatePricing();
     }
 
+    function selectQuantityOption(option) {
+      quantityOptions.forEach(opt => opt.classList.remove('selected'));
+      option.classList.add('selected');
+      option.querySelector('input[type="radio"]').checked = true;
+    }
+
+    function updatePurchaseOptions(purchaseType = 'one-time') {
+      const isSubscription = purchaseType === 'subscription';
+      const quantityOptionsContainer = productActions.querySelector('.quantity-options');
+      quantityOptionsContainer.style.display = isSubscription ? 'none' : 'flex';
+      updatePricing();
+      highlightSelectedOption(purchaseType);
+    }
+
+    function highlightSelectedOption(purchaseType) {
+      const options = productActions.querySelectorAll('.option');
+      options.forEach(option => {
+        option.classList.toggle('selected', option.classList.contains(purchaseType === 'subscription' ? 'subscription' : 'one-time-purchase'));
+      });
+    }
+
     function updatePricing() {
-      const isSubscription = document.querySelector('input[name="purchase-type"]:checked').value === 'subscription';
-      const selectedQuantity = isSubscription ? 1 : document.querySelector('.quantity-option.selected input').value;
+      const isSubscription = productActions.querySelector('input[name="purchase-type"]:checked').value === 'subscription';
+      const selectedQuantity = isSubscription ? 1 : parseInt(productActions.querySelector('.quantity-option.selected').dataset.quantity);
 
-      // Here you would typically fetch the updated prices from your backend
-      // For this example, we'll just use placeholder logic
-      const basePrice = 39.90;
-      const discount = isSubscription ? 0.3 : (selectedQuantity === '3' ? 0.2 : 0);
-      const finalPrice = (basePrice * selectedQuantity * (1 - discount)).toFixed(2);
-      const originalPrice = (basePrice * selectedQuantity).toFixed(2);
+      const { price, originalPrice, discount } = calculatePrices(selectedQuantity, isSubscription);
 
-      if (isSubscription) {
-        submitButton.textContent = `Subscribe Now - £${finalPrice}`;
-      } else {
-        submitButton.textContent = `Add to Cart - £${finalPrice}`;
-      }
+      updateSubmitButton(price, isSubscription);
+      updateQuantityOptionPrices(selectedQuantity, price, originalPrice, discount);
+    }
 
-      if (!isSubscription) {
-        const selectedPriceElement = document.querySelector('.quantity-option.selected .price');
-        const selectedOriginalPriceElement = document.querySelector('.quantity-option.selected .original-price');
-        const selectedSaveTagElement = document.querySelector('.quantity-option.selected .save-tag');
+    function calculatePrices(quantity, isSubscription) {
+      const { basePrice, subscriptionDiscount, bulkDiscounts } = productData;
+      const bulkDiscount = bulkDiscounts[quantity] || 0;
+      const totalDiscount = isSubscription ? subscriptionDiscount : bulkDiscount;
 
-        selectedPriceElement.textContent = `£${finalPrice}`;
-        if (discount > 0) {
-          selectedOriginalPriceElement.textContent = `£${originalPrice}`;
-          selectedOriginalPriceElement.style.display = 'block';
-          selectedSaveTagElement.textContent = `Save ${discount * 100}%`;
-          selectedSaveTagElement.style.display = 'block';
+      const originalPrice = basePrice * quantity;
+      const discountedPrice = originalPrice * (1 - totalDiscount);
+
+      return {
+        price: discountedPrice.toFixed(2),
+        originalPrice: originalPrice.toFixed(2),
+        discount: totalDiscount
+      };
+    }
+
+    function updateSubmitButton(price, isSubscription) {
+      submitButton.textContent = `${isSubscription ? 'Subscribe Now' : 'Add to Cart'} - £${price}`;
+    }
+
+    function updateQuantityOptionPrices(selectedQuantity, price, originalPrice, discount) {
+      quantityOptions.forEach(option => {
+        const quantity = parseInt(option.dataset.quantity);
+        const priceElement = option.querySelector('.price');
+        const originalPriceElement = option.querySelector('.original-price');
+        const saveTagElement = option.querySelector('.save-tag');
+
+        if (quantity === selectedQuantity) {
+          priceElement.textContent = `£${price}`;
+          if (discount > 0) {
+            originalPriceElement.textContent = `£${originalPrice}`;
+            originalPriceElement.style.display = 'block';
+            saveTagElement.textContent = `Save ${(discount * 100).toFixed(0)}%`;
+            saveTagElement.style.display = 'block';
+          } else {
+            originalPriceElement.style.display = 'none';
+            saveTagElement.style.display = 'none';
+          }
         } else {
-          selectedOriginalPriceElement.style.display = 'none';
-          selectedSaveTagElement.style.display = 'none';
+          const { price: individualPrice } = calculatePrices(quantity, false);
+          priceElement.textContent = `£${individualPrice}`;
         }
-      }
+      });
     }
 
     function handleSubmit(event) {
       event.preventDefault();
-      const isSubscription = document.querySelector('input[name="purchase-type"]:checked').value === 'subscription';
-      const quantity = isSubscription ? 1 : document.querySelector('.quantity-option.selected input').value;
+      const isSubscription = productActions.querySelector('input[name="purchase-type"]:checked').value === 'subscription';
+      const quantity = isSubscription ? 1 : parseInt(productActions.querySelector('.quantity-option.selected').dataset.quantity);
+      const { price } = calculatePrices(quantity, isSubscription);
 
-      // Here you would typically send the data to your cart or checkout system
-      console.log(`Adding to cart: ${quantity} item(s), Subscription: ${isSubscription}`);
+      console.log(`Adding to cart: ${quantity} item(s), Subscription: ${isSubscription}, Price: £${price}`);
       // Implement your add to cart logic here
     }
 
-    // Initial update
-    updatePurchaseOptions();
+    init();
   });
 </script>
