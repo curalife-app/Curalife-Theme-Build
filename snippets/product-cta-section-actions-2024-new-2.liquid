@@ -3,38 +3,44 @@
     <h3>Buying Options:</h3>
 
     <div class="purchase-type">
-      <label class="option">
-        <input type="radio" name="purchase-type" value="one-time" checked>
-        <span class="option-text">One Time Purchase</span>
-        <span class="popular-tag">Popular</span>
-      </label>
-
-      <label class="option">
-        <input type="radio" name="purchase-type" value="subscription">
-        <span class="option-text">Purchase With Subscription</span>
-        <span class="best-value-tag">Best Value<br>30% Off</span>
-      </label>
-    </div>
-
-    <div class="quantity-options">
-      <div class="quantity-option">
-        <input type="radio" name="quantity" id="qty-1" value="1">
-        <label for="qty-1">
-          <span class="buy-text">Buy 1</span>
-          <span class="price">£39.90</span>
+      <div class="option one-time-purchase">
+        <label>
+          <input type="radio" name="purchase-type" value="one-time" checked>
+          <span class="option-text">One Time Purchase</span>
+          <span class="popular-tag">Popular</span>
         </label>
+
+        <div class="quantity-options">
+          <div class="quantity-option">
+            <input type="radio" name="quantity" id="qty-1" value="1">
+            <label for="qty-1">
+              <span class="buy-text">Buy 1</span>
+              <span class="price">£39.90</span>
+            </label>
+          </div>
+
+          <div class="quantity-option selected">
+            <input type="radio" name="quantity" id="qty-3" value="3" checked>
+            <label for="qty-3">
+              <span class="buy-text">Buy 3</span>
+              <span class="price">£109.90</span>
+              <span class="original-price">£129.90</span>
+              <span class="save-tag">Save 20%</span>
+            </label>
+          </div>
+        </div>
       </div>
 
-      <div class="quantity-option selected">
-        <input type="radio" name="quantity" id="qty-3" value="3" checked>
-        <label for="qty-3">
-          <span class="buy-text">Buy 3</span>
-          <span class="price">£109.90</span>
-          <span class="original-price">£129.90</span>
-          <span class="save-tag">Save 20%</span>
+      <div class="option subscription">
+        <label>
+          <input type="radio" name="purchase-type" value="subscription">
+          <span class="option-text">Purchase With Subscription</span>
+          <span class="best-value-tag">Best Value<br>30% Off</span>
         </label>
       </div>
     </div>
+
+    <button type="submit" class="submit-button">Add to Cart</button>
   </div>
 </div>
 
@@ -60,12 +66,15 @@
   }
 
   .option {
-    display: flex;
-    align-items: center;
     background-color: white;
     border: 1px solid #ddd;
     border-radius: 5px;
     padding: 10px;
+  }
+
+  .option > label {
+    display: flex;
+    align-items: center;
     cursor: pointer;
   }
 
@@ -93,11 +102,12 @@
   .quantity-options {
     display: flex;
     gap: 10px;
+    margin-top: 10px;
   }
 
   .quantity-option {
     flex: 1;
-    background-color: white;
+    background-color: #f9f9f9;
     border: 1px solid #ddd;
     border-radius: 5px;
     overflow: hidden;
@@ -143,15 +153,32 @@
     font-size: 0.8em;
     margin-top: 5px;
   }
+
+  .submit-button {
+    width: 100%;
+    padding: 10px;
+    background-color: #4169e1;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+
+  .submit-button:hover {
+    background-color: #3a5fcd;
+  }
 </style>
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    const purchaseTypeInputs = document.querySelectorAll('.purchase-type input[type="radio"]');
+    const purchaseTypeInputs = document.querySelectorAll('.purchase-type input[name="purchase-type"]');
     const quantityOptions = document.querySelectorAll('.quantity-option');
+    const submitButton = document.querySelector('.submit-button');
 
     purchaseTypeInputs.forEach(input => {
-      input.addEventListener('change', updatePricing);
+      input.addEventListener('change', updatePurchaseOptions);
     });
 
     quantityOptions.forEach(option => {
@@ -163,9 +190,18 @@
       });
     });
 
+    submitButton.addEventListener('click', handleSubmit);
+
+    function updatePurchaseOptions() {
+      const isSubscription = document.querySelector('input[name="purchase-type"]:checked').value === 'subscription';
+      const quantityOptionsContainer = document.querySelector('.quantity-options');
+      quantityOptionsContainer.style.display = isSubscription ? 'none' : 'flex';
+      updatePricing();
+    }
+
     function updatePricing() {
       const isSubscription = document.querySelector('input[name="purchase-type"]:checked').value === 'subscription';
-      const selectedQuantity = document.querySelector('.quantity-option.selected input').value;
+      const selectedQuantity = isSubscription ? 1 : document.querySelector('.quantity-option.selected input').value;
 
       // Here you would typically fetch the updated prices from your backend
       // For this example, we'll just use placeholder logic
@@ -174,23 +210,41 @@
       const finalPrice = (basePrice * selectedQuantity * (1 - discount)).toFixed(2);
       const originalPrice = (basePrice * selectedQuantity).toFixed(2);
 
-      const selectedPriceElement = document.querySelector('.quantity-option.selected .price');
-      const selectedOriginalPriceElement = document.querySelector('.quantity-option.selected .original-price');
-      const selectedSaveTagElement = document.querySelector('.quantity-option.selected .save-tag');
-
-      selectedPriceElement.textContent = `£${finalPrice}`;
-      if (discount > 0) {
-        selectedOriginalPriceElement.textContent = `£${originalPrice}`;
-        selectedOriginalPriceElement.style.display = 'block';
-        selectedSaveTagElement.textContent = `Save ${discount * 100}%`;
-        selectedSaveTagElement.style.display = 'block';
+      if (isSubscription) {
+        submitButton.textContent = `Subscribe Now - £${finalPrice}`;
       } else {
-        selectedOriginalPriceElement.style.display = 'none';
-        selectedSaveTagElement.style.display = 'none';
+        submitButton.textContent = `Add to Cart - £${finalPrice}`;
+      }
+
+      if (!isSubscription) {
+        const selectedPriceElement = document.querySelector('.quantity-option.selected .price');
+        const selectedOriginalPriceElement = document.querySelector('.quantity-option.selected .original-price');
+        const selectedSaveTagElement = document.querySelector('.quantity-option.selected .save-tag');
+
+        selectedPriceElement.textContent = `£${finalPrice}`;
+        if (discount > 0) {
+          selectedOriginalPriceElement.textContent = `£${originalPrice}`;
+          selectedOriginalPriceElement.style.display = 'block';
+          selectedSaveTagElement.textContent = `Save ${discount * 100}%`;
+          selectedSaveTagElement.style.display = 'block';
+        } else {
+          selectedOriginalPriceElement.style.display = 'none';
+          selectedSaveTagElement.style.display = 'none';
+        }
       }
     }
 
+    function handleSubmit(event) {
+      event.preventDefault();
+      const isSubscription = document.querySelector('input[name="purchase-type"]:checked').value === 'subscription';
+      const quantity = isSubscription ? 1 : document.querySelector('.quantity-option.selected input').value;
+
+      // Here you would typically send the data to your cart or checkout system
+      console.log(`Adding to cart: ${quantity} item(s), Subscription: ${isSubscription}`);
+      // Implement your add to cart logic here
+    }
+
     // Initial update
-    updatePricing();
+    updatePurchaseOptions();
   });
 </script>
