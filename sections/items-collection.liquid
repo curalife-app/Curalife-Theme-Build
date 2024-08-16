@@ -334,14 +334,14 @@
       }
 
       #section-{{ section.id }} .item {
-        {% assign itemsOnMobileCounter = section.blocks.size %}
+        {% assign itemsInRowMobile = section.blocks.size %}
         {% for block in section.blocks %}
           {% if block.settings.is_hide_on_mobile %}
-            {% assign itemsOnMobileCounter = itemsOnMobileCounter | minus: 1 %}
+            {% assign itemsInRowMobile = itemsInRowMobile | minus: 1 %}
           {% endif %}
         {% endfor %}
 
-        {% assign gapsInRow = itemsOnMobileCounter | minus: 1 %}
+        {% assign gapsInRow = itemsInRowMobile | minus: 1 %}
         width: calc((100% / {% if itemsInRowMobile == 'all' %}{{ section.blocks.size }}{% else %}{{ itemsInRowMobile }}{% endif %}) - ({{ gapsInRowMobile }} * ({{ section.settings.column_gap }}rem / {{ itemsInRowMobile }})));
         max-width: unset;
       }
