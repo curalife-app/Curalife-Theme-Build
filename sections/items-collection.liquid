@@ -244,7 +244,7 @@
         {% assign itemsInRow = section.settings.items_in_row %}
       {% endif %}
       {% assign gapsInRow = itemsInRow | minus: 1 %}
-      width: calc(100% / {{ itemsInRow }});
+      width: calc((100% / {{ itemsInRow }}) - ({{ gapsInRow }} * ({{ section.settings.column_gap }}rem / {{ itemsInRow }})));
 
     }
 
@@ -342,7 +342,7 @@
         {% endfor %}
 
         {% assign gapsInRow = itemsOnMobileCounter | minus: 1 %}
-        width: calc(100% / {% if section.settings.items_in_row_mobile == 'all' %}{{ itemsOnMobileCounter }}{% else %}{{ section.settings.items_in_row_mobile }}{% endif %});
+        width: calc((100% / {% if itemsInRowMobile == 'all' %}{{ section.blocks.size }}{% else %}{{ itemsInRowMobile }}{% endif %}) - ({{ gapsInRowMobile }} * ({{ section.settings.column_gap }}rem / {{ itemsInRowMobile }})));
         max-width: unset;
       }
 
