@@ -1,150 +1,150 @@
 {% schema %}
-  {
-    "name": "FAQ Section",
-    "settings": [
-      {
-        "type": "text",
-        "id": "title",
-        "label": "Section Title",
-        "default": "Frequently Asked Questions"
-      },
-      {
-        "type": "color",
-        "id": "title_color",
-        "label": "Title Color",
-        "default": "#333333"
-      },
-      {
-        "type": "color",
-        "id": "question_color",
-        "label": "Question Color",
-        "default": "#4A4A4A"
-      },
-      {
-        "type": "color",
-        "id": "answer_color",
-        "label": "Answer Color",
-        "default": "#666666"
-      },
-      {
-        "type": "color",
-        "id": "background_color",
-        "label": "Background Color",
-        "default": "#FFFFFF"
-      },
-      {
-        "type": "color",
-        "id": "border_color",
-        "label": "Border Color",
-        "default": "#E0E0E0"
-      }
-    ],
-    "blocks": [
-      {
-        "type": "faq_item",
-        "name": "FAQ Item",
-        "settings": [
-          {
-            "type": "text",
-            "id": "question",
-            "label": "Question"
-          },
-          {
-            "type": "richtext",
-            "id": "answer",
-            "label": "Answer"
-          }
-        ]
-      }
-    ],
-    "presets": [
-      {
-        "name": "FAQ Section",
-        "blocks": [
-          {
-            "type": "faq_item"
-          },
-          {
-            "type": "faq_item"
-          },
-          {
-            "type": "faq_item"
-          }
-        ]
-      }
-    ]
-  }
-  {% endschema %}
+{
+  "name": "FAQ Section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Section Title",
+      "default": "Frequently Asked Questions"
+    },
+    {
+      "type": "color",
+      "id": "title_color",
+      "label": "Title Color",
+      "default": "#333333"
+    },
+    {
+      "type": "color",
+      "id": "question_color",
+      "label": "Question Color",
+      "default": "#4A4A4A"
+    },
+    {
+      "type": "color",
+      "id": "answer_color",
+      "label": "Answer Color",
+      "default": "#666666"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background Color",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "color",
+      "id": "border_color",
+      "label": "Border Color",
+      "default": "#E0E0E0"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "faq_item",
+      "name": "FAQ Item",
+      "settings": [
+        {
+          "type": "text",
+          "id": "question",
+          "label": "Question"
+        },
+        {
+          "type": "richtext",
+          "id": "answer",
+          "label": "Answer"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "FAQ Section",
+      "blocks": [
+        {
+          "type": "faq_item"
+        },
+        {
+          "type": "faq_item"
+        },
+        {
+          "type": "faq_item"
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}
 
-  <div id="faq-{{ section.id }}" class="faq-section py-12" style="background-color: {{ section.settings.background_color }};">
-    <div class="container px-4 mx-auto">
-      <h2 class="mb-8 text-3xl font-bold text-center" style="color: {{ section.settings.title_color }};">
-        {{ section.settings.title }}
-      </h2>
-      <div class="max-w-3xl mx-auto">
-        {% for block in section.blocks %}
-          {% if block.type == 'faq_item' %}
-            <div class="faq-item mb-4 overflow-hidden border rounded-lg" style="border-color: {{ section.settings.border_color }};">
-              <button class="faq-question focus:outline-none w-full px-6 py-4 text-left" style="color: {{ section.settings.question_color }};">
-                <div class="flex items-center justify-between">
-                  <span class="font-semibold">{{ block.settings.question }}</span>
-                  <svg class="w-5 h-5 transition-transform duration-200 transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                  </svg>
-                </div>
-              </button>
-              <div class="faq-answer hidden px-6 py-4" style="color: {{ section.settings.answer_color }};">
-                {{ block.settings.answer }}
+<div id="faq-{{ section.id }}" class="faq-section py-12" style="background-color: {{ section.settings.background_color }};">
+  <div class="container px-4 mx-auto">
+    <h2 class="mb-8 text-3xl font-bold text-center" style="color: {{ section.settings.title_color }};">
+      {{ section.settings.title }}
+    </h2>
+    <div class="max-w-3xl mx-auto">
+      {% for block in section.blocks %}
+        {% if block.type == 'faq_item' %}
+          <div class="faq-item mb-4 overflow-hidden border rounded-lg" style="border-color: {{ section.settings.border_color }};">
+            <button class="faq-question focus:outline-none w-full px-6 py-4 text-left" style="color: {{ section.settings.question_color }};">
+              <div class="flex items-center justify-between">
+                <span class="font-semibold">{{ block.settings.question }}</span>
+                <svg class="w-5 h-5 transition-transform duration-200 transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
               </div>
+            </button>
+            <div class="faq-answer hidden px-6 py-4" style="color: {{ section.settings.answer_color }};">
+              {{ block.settings.answer }}
             </div>
-          {% endif %}
-        {% endfor %}
-      </div>
+          </div>
+        {% endif %}
+      {% endfor %}
     </div>
   </div>
+</div>
 
-  <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const faqItems = document.querySelectorAll('#faq-{{ section.id }} .faq-item');
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const faqItems = document.querySelectorAll('#faq-{{ section.id }} .faq-item');
 
-    faqItems.forEach(item => {
-      const question = item.querySelector('.faq-question');
-      const answer = item.querySelector('.faq-answer');
-      const icon = question.querySelector('svg');
+  faqItems.forEach(item => {
+    const question = item.querySelector('.faq-question');
+    const answer = item.querySelector('.faq-answer');
+    const icon = question.querySelector('svg');
 
-      question.addEventListener('click', () => {
-        const isOpen = answer.classList.toggle('hidden');
-        icon.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+    question.addEventListener('click', () => {
+      const isOpen = answer.classList.toggle('hidden');
+      icon.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
 
-        // Close other open items
-        faqItems.forEach(otherItem => {
-          if (otherItem !== item) {
-            otherItem.querySelector('.faq-answer').classList.add('hidden');
-            otherItem.querySelector('svg').style.transform = 'rotate(0deg)';
-          }
-        });
+      // Close other open items
+      faqItems.forEach(otherItem => {
+        if (otherItem !== item) {
+          otherItem.querySelector('.faq-answer').classList.add('hidden');
+          otherItem.querySelector('svg').style.transform = 'rotate(0deg)';
+        }
       });
     });
   });
-  </script>
+});
+</script>
 
-  <style>
-  .faq-section {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  }
+<style>
+.faq-section {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
 
-  .faq-question:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-  }
+.faq-question:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
 
-  .faq-answer {
-    transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
-    max-height: 0;
-    opacity: 0;
-  }
+.faq-answer {
+  transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+  max-height: 0;
+  opacity: 0;
+}
 
-  .faq-answer:not(.hidden) {
-    max-height: 1000px;
-    opacity: 1;
-  }
-  </style>
+.faq-answer:not(.hidden) {
+  max-height: 1000px;
+  opacity: 1;
+}
+</style>
