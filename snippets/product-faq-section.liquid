@@ -1,150 +1,138 @@
-{% schema %}
-{
-  "name": "FAQ Section",
-  "settings": [
-    {
-      "type": "text",
-      "id": "title",
-      "label": "Section Title",
-      "default": "Frequently Asked Questions"
-    },
-    {
-      "type": "color",
-      "id": "title_color",
-      "label": "Title Color",
-      "default": "#333333"
-    },
-    {
-      "type": "color",
-      "id": "question_color",
-      "label": "Question Color",
-      "default": "#4A4A4A"
-    },
-    {
-      "type": "color",
-      "id": "answer_color",
-      "label": "Answer Color",
-      "default": "#666666"
-    },
-    {
-      "type": "color",
-      "id": "background_color",
-      "label": "Background Color",
-      "default": "#FFFFFF"
-    },
-    {
-      "type": "color",
-      "id": "border_color",
-      "label": "Border Color",
-      "default": "#E0E0E0"
-    }
-  ],
-  "blocks": [
-    {
-      "type": "faq_item",
-      "name": "FAQ Item",
-      "settings": [
-        {
-          "type": "text",
-          "id": "question",
-          "label": "Question"
-        },
-        {
-          "type": "richtext",
-          "id": "answer",
-          "label": "Answer"
-        }
-      ]
-    }
-  ],
-  "presets": [
-    {
-      "name": "FAQ Section",
-      "blocks": [
-        {
-          "type": "faq_item"
-        },
-        {
-          "type": "faq_item"
-        },
-        {
-          "type": "faq_item"
-        }
-      ]
-    }
-  ]
-}
-{% endschema %}
+<div id="faq-{{ section_id }}" class="faq flex flex-col gap-4">
+  {% for faqItem in faqItems %}
+    <div class="faq-item last:border-b-0 p-4 border-b border-white rounded-lg">
+      {% assign question = faqItem.question | default: faqItem | split: ":" | first %}
+      {% assign answer = faqItem.answer | default: faqItem | split: ":" | last %}
 
-<div id="faq-{{ section.id }}" class="faq-section py-12" style="background-color: {{ section.settings.background_color }};">
-  <div class="container px-4 mx-auto">
-    <h2 class="mb-8 text-3xl font-bold text-center" style="color: {{ section.settings.title_color }};">
-      {{ section.settings.title }}
-    </h2>
-    <div class="max-w-3xl mx-auto">
-      {% for block in section.blocks %}
-        {% if block.type == 'faq_item' %}
-          <div class="faq-item mb-4 overflow-hidden border rounded-lg" style="border-color: {{ section.settings.border_color }};">
-            <button class="faq-question focus:outline-none w-full px-6 py-4 text-left" style="color: {{ section.settings.question_color }};">
-              <div class="flex items-center justify-between">
-                <span class="font-semibold">{{ block.settings.question }}</span>
-                <svg class="w-5 h-5 transition-transform duration-200 transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                </svg>
-              </div>
-            </button>
-            <div class="faq-answer hidden px-6 py-4" style="color: {{ section.settings.answer_color }};">
-              {{ block.settings.answer }}
-            </div>
-          </div>
-        {% endif %}
-      {% endfor %}
+      <h3 class="question h5 relative flex items-center py-6 m-0 cursor-pointer">
+        {{ question | trim }}
+      </h3>
+      <div class="answer mt-4">
+        {{ answer | trim }}
+      </div>
     </div>
-  </div>
+  {% endfor %}
 </div>
 
+<style>
+  #faq-section-{{ section.id }} .faq-item {
+  {% if seperator_color %}border-bottom: 2px solid {{ seperator_color }};{% endif %}
+  {% if closed_bg_color %}background-color: {{ closed_bg_color }};{% endif %}
+  transition: background-color .2s ease-out;
+}
+
+#faq-section-{{ section.id }} .faq-item.active {
+  {% if opened_bg_color %}background-color: {{ opened_bg_color }};{% endif %}
+}
+
+#faq-{{ section_id }} .faq-item .question {
+  padding: 1.5rem 3rem 1.5rem 0;
+  {% if titles_color %}color: {{ titles_color }};{% endif %}
+}
+
+#faq-{{ section_id }} .faq-item .question p {
+  margin-bottom: unset;
+}
+
+#faq-{{ section_id }} .faq-item .question + .answer {
+  transition: margin-bottom .2s ease-out;
+}
+
+#faq-{{ section_id }} .faq-item:not(.active) .question + .answer {
+  margin-bottom: 0;
+}
+
+#faq-{{ section_id }} .faq-item .question:after {
+  content: "+";
+  font-size: 2rem;
+  position: absolute;
+  right: 1rem;
+  transition: transform 0.3s;
+}
+
+#faq-{{ section_id }} .faq-item.active .question:after {
+  transform: rotate(45deg);
+}
+
+#faq-{{ section_id }} .faq-item .answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .2s ease-out;
+}
+
+@media screen and (max-width:768px) {
+  #faq-{{ section_id }} .faq-item .question {
+    font-size: 5vw;
+  }
+
+  #faq-{{ section_id }} .faq-item .answer {
+    font-size: 4vw;
+    line-height: 1.5;
+  }
+}
+
+</style>
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  const faqItems = document.querySelectorAll('#faq-{{ section.id }} .faq-item');
+  var accordionItems = document.querySelectorAll("#faq-{{ section_id }} .faq-item");
 
-  faqItems.forEach(item => {
-    const question = item.querySelector('.faq-question');
-    const answer = item.querySelector('.faq-answer');
-    const icon = question.querySelector('svg');
-
-    question.addEventListener('click', () => {
-      const isOpen = answer.classList.toggle('hidden');
-      icon.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
-
-      // Close other open items
-      faqItems.forEach(otherItem => {
-        if (otherItem !== item) {
-          otherItem.querySelector('.faq-answer').classList.add('hidden');
-          otherItem.querySelector('svg').style.transform = 'rotate(0deg)';
+  accordionItems.forEach(accordionItem => {
+    accordionItem.querySelector(".question").addEventListener("click", event => {
+      {% if is_allow_one_open %}
+        var currentlyActiveAccordionItem = document.querySelector("#faq-{{ section_id }} .faq-item.active");
+        if (currentlyActiveAccordionItem && currentlyActiveAccordionItem !== accordionItem) {
+          currentlyActiveAccordionItem.classList.toggle("active");
+          currentlyActiveAccordionItem.querySelector(".answer").style.maxHeight = 0;
         }
-      });
+      {% endif %}
+
+      accordionItem.classList.toggle("active");
+      var accordionItemBody = accordionItem.querySelector(".answer");
+      if (accordionItem.classList.contains("active")) {
+        accordionItemBody.style.maxHeight = accordionItemBody.scrollHeight + "px";
+      }
+      else {
+        accordionItemBody.style.maxHeight = 0;
+      }
     });
   });
-});
+
+  $('#faq-{{ section_id }} .faq-item .question').click(function() {
+    woopra.track('Open FAQ', {
+      question_display_text: $(this).text(),
+      question_order:  $(this).parents('.faq-item').index() + 1
+    })
+  });
 </script>
 
-<style>
-.faq-section {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-}
-
-.faq-question:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-}
-
-.faq-answer {
-  transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
-  max-height: 0;
-  opacity: 0;
-}
-
-.faq-answer:not(.hidden) {
-  max-height: 1000px;
-  opacity: 1;
-}
-</style>
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {% for textFAQItem in faqItems %}
+        {% assign parsedTextFAQItem = textFAQItem | json %}
+        {% if data_type == "json" %}
+          {
+            "@type": "Question",
+            "name": "{{ textFAQItem.question | escape }}",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "{{ textFAQItem.answer | escape }}"
+            }
+          }
+        {% elsif data_type == "string" %}
+          {
+            "@type": "Question",
+            "name": "{{ textFAQItem | split: ":" | first }}",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "{{ textFAQItem | split: ":" | last }}"
+            }
+          }
+        {% endif %}
+        {% unless forloop.last %},{% endunless %}
+      {% endfor %}
+    ]
+  }
+</script>
