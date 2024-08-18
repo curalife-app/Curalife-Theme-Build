@@ -384,7 +384,7 @@
     const productActions = document.getElementById('product-actions');
     const purchaseTypeInputs = productActions.querySelectorAll('input[name="purchase-type"]');
     const submitButton = productActions.querySelector('.submit-button');
-    const loader = submitButton.querySelector('.loader');
+    const quantityOptions = productActions.querySelectorAll('.quantity-option input[type="radio"]');
 
     function init() {
         // Ensure the one-time purchase option is selected on load
@@ -408,8 +408,12 @@
         // Update the submit button text
         updateSubmitButton();
 
-        // Add event listeners for purchase type changes and form submission
+        // Add event listeners for purchase type changes
         purchaseTypeInputs.forEach(input => input.addEventListener('change', handlePurchaseTypeChange));
+
+        // Add event listeners for quantity option selection
+        quantityOptions.forEach(option => option.addEventListener('click', handleQuantitySelection));
+
         submitButton.addEventListener('click', handleSubmit);
     }
 
@@ -438,6 +442,18 @@
 
         oneTimeOptions.style.display = isSubscription ? 'none' : 'flex';
         subscriptionOptions.style.display = isSubscription ? 'flex' : 'none';
+    }
+
+    function handleQuantitySelection(event) {
+        const selectedOption = event.target.closest('.quantity-option');
+
+        // Remove the selected class from all quantity options
+        quantityOptions.forEach(option => {
+            option.closest('.quantity-option').classList.remove('selected');
+        });
+
+        // Add the selected class to the clicked option
+        selectedOption.classList.add('selected');
     }
 
     function updateSubmitButton() {
@@ -505,4 +521,5 @@
 
     init();
 });
+
 </script>
