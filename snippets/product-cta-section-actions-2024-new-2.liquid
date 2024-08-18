@@ -424,16 +424,19 @@
 
 
     function handlePurchaseTypeChange(event) {
-      const purchaseType = event.target.value;
-      updatePurchaseOptions(purchaseType);
+        const purchaseType = event.target.value;
+        updatePurchaseOptions(purchaseType);
 
-      // Automatically select the first quantity option of the selected purchase type
-      const firstOptionSelector = purchaseType === 'subscription' ? '.subscription .quantity-option input[type="radio"]' : '.one-time-purchase .quantity-option input[type="radio"]';
-      const firstOption = productActions.querySelector(firstOptionSelector);
+        // Automatically select the first quantity option of the selected purchase type
+        const firstOptionSelector = purchaseType === 'subscription' ? '.subscription .quantity-option input[type="radio"]' : '.one-time-purchase .quantity-option input[type="radio"]';
+        const firstOption = productActions.querySelector(firstOptionSelector);
 
-      if (firstOption) {
-        firstOption.click();
-      }
+        if (firstOption) {
+            firstOption.click();
+        }
+
+        // Explicitly update the pricing and content when the purchase type changes
+        updatePricing();
     }
 
     function handleQuantityOptionClick(event) {
