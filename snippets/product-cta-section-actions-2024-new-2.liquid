@@ -409,19 +409,15 @@
         const buy3Option = document.getElementById('qty-3') || document.querySelector('.one-time-purchase .quantity-option input[type="radio"]');
         if (buy3Option) {
             buy3Option.click();
-        } else {
-            updatePurchaseOptions(); // Fallback to ensure options are updated
         }
 
-        // Explicitly update the pricing and content on page load
+        // Update pricing and content for one-time purchase option on load
         updatePricing();
 
         purchaseTypeInputs.forEach(input => input.addEventListener('change', handlePurchaseTypeChange));
         quantityOptions.forEach(option => option.addEventListener('click', handleQuantityOptionClick));
         submitButton.addEventListener('click', handleSubmit);
     }
-
-
 
     function handlePurchaseTypeChange(event) {
         const purchaseType = event.target.value;
@@ -435,15 +431,34 @@
             firstOption.click();
         }
 
-        // Explicitly update the pricing and content when the purchase type changes
+        // Update pricing and content for the selected purchase type
         updatePricing();
     }
 
+    function updatePurchaseOptions(purchaseType = 'one-time') {
+        const isSubscription = purchaseType === 'subscription';
+        const oneTimeOptions = productActions.querySelector('.one-time-purchase .quantity-options');
+        const subscriptionOptions = productActions.querySelector('.subscription .quantity-options');
+
+        oneTimeOptions.style.display = isSubscription ? 'none' : 'flex';
+        subscriptionOptions.style.display = isSubscription ? 'flex' : 'none';
+
+        // Ensure content is updated for the selected option
+        updatePricing();
+        highlightSelectedOption(purchaseType);
+    }
+
+    function highlightSelectedOption(purchaseType) {
+        productActions.querySelectorAll('.option').forEach(option => {
+            option.classList.toggle('selected', option.classList.contains(purchaseType === 'subscription' ? 'subscription' : 'one-time-purchase'));
+        });
+    }
+
     function handleQuantityOptionClick(event) {
-      const clickedOption = event.currentTarget;
-      const purchaseType = productActions.querySelector('input[name="purchase-type"]:checked').value;
-      selectQuantityOption(clickedOption, purchaseType);
-      updatePricing();
+        const clickedOption = event.currentTarget;
+        const purchaseType = productActions.querySelector('input[name="purchase-type"]:checked').value;
+        selectQuantityOption(clickedOption, purchaseType);
+        updatePricing(); // Ensure pricing is updated after selection
     }
 
     function selectQuantityOption(option, purchaseType) {
@@ -455,84 +470,61 @@
         });
     }
 
-    function updatePurchaseOptions(purchaseType = 'one-time') {
-      const isSubscription = purchaseType === 'subscription';
-      const oneTimeOptions = productActions.querySelector('.one-time-purchase .quantity-options');
-      const subscriptionOptions = productActions.querySelector('.subscription .quantity-options');
-
-      oneTimeOptions.style.display = isSubscription ? 'none' : 'flex';
-      subscriptionOptions.style.display = isSubscription ? 'flex' : 'none';
-
-      // Show the quantity options for the selected purchase type
-      if (!isSubscription) {
-        oneTimeOptions.style.display = 'flex';
-      } else {
-        subscriptionOptions.style.display = 'flex';
-      }
-
-      updatePricing();
-      highlightSelectedOption(purchaseType);
-    }
-
-    function highlightSelectedOption(purchaseType) {
-      productActions.querySelectorAll('.option').forEach(option => {
-        option.classList.toggle('selected', option.classList.contains(purchaseType === 'subscription' ? 'subscription' : 'one-time-purchase'));
-      });
-    }
-
     function updatePricing() {
-      const isSubscription = productActions.querySelector('input[name="purchase-type"]:checked').value === 'subscription';
-      const selector = isSubscription ? 'input[name="subscription-quantity"]:checked' : 'input[name="quantity"]:checked';
-      const selectedOption = productActions.querySelector(selector);
-      const selectedQuantity = parseInt(selectedOption.value);
+        const isSubscription = productActions.querySelector('input[name="purchase-type"]:checked').value === 'subscription';
+        const selector = isSubscription ? 'input[name="subscription-quantity"]:checked' : 'input[name="quantity"]:checked';
+        const selectedOption = productActions.querySelector(selector);
 
-      const { price, originalPrice, discount } = calculatePrices(selectedQuantity, isSubscription);
-      updateSubmitButton(price, isSubscription);
-      updateQuantityOptionPrices(selectedQuantity, price, originalPrice, discount, isSubscription);
+        if (selectedOption) {
+            const selectedQuantity = parseInt(selectedOption.value);
+            const { price, originalPrice, discount } = calculatePrices(selectedQuantity, isSubscription);
+            updateSubmitButton(price, isSubscription);
+            updateQuantityOptionPrices(selectedQuantity, price, originalPrice, discount, isSubscription);
+        }
     }
 
     function calculatePrices(quantity, isSubscription) {
-      const { basePrice, subscriptionDiscount, bulkDiscounts } = productData;
-      const discount = isSubscription ? subscriptionDiscount : (bulkDiscounts[quantity] || 0);
-      const originalPrice = basePrice * quantity;
-      const discountedPrice = originalPrice * (1 - discount);
-      return {
-        price: discountedPrice.toFixed(2),
-        originalPrice: originalPrice.toFixed(2),
-        discount
-      };
+        const { basePrice, subscriptionDiscount, bulkDiscounts } = productData;
+        const discount = isSubscription ? subscriptionDiscount : (bulkDiscounts[quantity] || 0);
+        const originalPrice = basePrice * quantity;
+        const discountedPrice = originalPrice * (1 - discount);
+        return {
+            price: discountedPrice.toFixed(2),
+            originalPrice: originalPrice.toFixed(2),
+            discount
+        };
     }
 
     function updateSubmitButton(price, isSubscription) {
-      submitButton.querySelector('.total-price').textContent = `- £${price}${isSubscription ? '/month' : ''}`;
+        submitButton.querySelector('.total-price').textContent = `- £${price}${isSubscription ? '/month' : ''}`;
     }
 
     function updateQuantityOptionPrices(selectedQuantity, price, originalPrice, discount, isSubscription) {
-      const selector = isSubscription ? '.subscription .quantity-option' : '.one-time-purchase .quantity-option';
-      const options = productActions.querySelectorAll(selector);
+        const selector = isSubscription ? '.subscription .quantity-option' : '.one-time-purchase .quantity-option';
+        const options = productActions.querySelectorAll(selector);
 
-      options.forEach(option => {
-        const quantity = parseInt(option.dataset.quantity);
-        const priceElement = option.querySelector('.price');
-        const originalPriceElement = option.querySelector('.original-price');
-        const saveTagElement = option.querySelector('.save-tag');
+        options.forEach(option => {
+            const quantity = parseInt(option.dataset.quantity);
+            const priceElement = option.querySelector('.price');
+            const originalPriceElement = option.querySelector('.original-price');
+            const saveTagElement = option.querySelector('.save-tag');
 
-        if (quantity === selectedQuantity) {
-          priceElement.textContent = `£${price}${isSubscription ? '/month' : ''}`;
-          if (discount > 0) {
-            originalPriceElement.textContent = `£${originalPrice}${isSubscription ? '/month' : ''}`;
-            originalPriceElement.style.display = 'block';
-            saveTagElement.textContent = `Save ${(discount * 100).toFixed(0)}%`;
-            saveTagElement.style.display = 'inline-block';
-          } else {
-            originalPriceElement.style.display = 'none';
-            saveTagElement.style.display = 'none';
-          }
-        } else {
-          const { price: individualPrice } = calculatePrices(quantity, isSubscription);
-          priceElement.textContent = `£${individualPrice}${isSubscription ? '/month' : ''}`;
-        }
-      });
+            if (quantity === selectedQuantity) {
+                priceElement.textContent = `£${price}${isSubscription ? '/month' : ''}`;
+                if (discount > 0) {
+                    originalPriceElement.textContent = `£${originalPrice}${isSubscription ? '/month' : ''}`;
+                    originalPriceElement.style.display = 'block';
+                    saveTagElement.textContent = `Save ${(discount * 100).toFixed(0)}%`;
+                    saveTagElement.style.display = 'inline-block';
+                } else {
+                    originalPriceElement.style.display = 'none';
+                    saveTagElement.style.display = 'none';
+                }
+            } else {
+                const { price: individualPrice } = calculatePrices(quantity, isSubscription);
+                priceElement.textContent = `£${individualPrice}${isSubscription ? '/month' : ''}`;
+            }
+        });
     }
 
     function handleSubmit(event) {
