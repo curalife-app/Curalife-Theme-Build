@@ -31,17 +31,39 @@
             </div>
           </div>
         </div>
-        <div class="option subscription" data-product-id="8228158439575" data-variant-id="44190159274135" data-subscription-plan-id="8556806295">
+        <div class="option subscription">
           <label>
             <input type="radio" name="purchase-type" value="subscription">
             <span class="option-text">Purchase With Subscription</span>
             <span class="tag best-value-tag">Best Value<br>30% Off</span>
           </label>
+          <div class="quantity-options">
+            <div class="quantity-option" data-product-id="8228158439575" data-quantity="1" data-variant-id="44190159274135" data-subscription-plan-id="8556806295">
+              <input type="radio" name="subscription-quantity" id="sub-qty-1" value="1">
+              <label for="sub-qty-1">
+                <span class="buy-text">1 Month</span>
+                <span class="price"></span>
+              </label>
+            </div>
+            <div class="quantity-option" data-product-id="8228158439575" data-quantity="3" data-variant-id="44190159274135" data-subscription-plan-id="8556806295">
+              <input type="radio" name="subscription-quantity" id="sub-qty-3" value="3">
+              <label for="sub-qty-3">
+                <div class="left-wrapper">
+                  <span class="buy-text">3 Months</span>
+                  <span class="save-tag"></span>
+                </div>
+                <div class="price-wrapper">
+                  <span class="price"></span>
+                  <span class="original-price"></span>
+                </div>
+              </label>
+            </div>
+          </div>
         </div>
       </div>
+
       <button type="submit" class="submit-button">
         <span class="submit-button-text"><strong>Buy Now</strong> <span class="total-price"></span></span>
-
         <div class="loader" style="display: none;">
           <div class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
         </div>
@@ -376,24 +398,28 @@
 
       function handleQuantityOptionClick(event) {
         const clickedOption = event.currentTarget;
-        selectQuantityOption(clickedOption);
+        const purchaseType = productActions.querySelector('input[name="purchase-type"]:checked').value;
+        selectQuantityOption(clickedOption, purchaseType);
         updatePricing();
       }
 
-      function selectQuantityOption(option) {
-        quantityOptions.forEach(opt => opt.classList.toggle('selected', opt === option));
-        setTimeout(() => option.querySelector('input[type="radio"]').checked = true, 150);
+      function selectQuantityOption(option, purchaseType) {
+        const selector = purchaseType === 'subscription' ? 'input[name="subscription-quantity"]' : 'input[name="quantity"]';
+        const options = option.closest('.quantity-options').querySelectorAll('.quantity-option');
+        options.forEach(opt => opt.classList.toggle('selected', opt === option));
+        setTimeout(() => option.querySelector(selector).checked = true, 150);
       }
 
       function updatePurchaseOptions(purchaseType = 'one-time') {
         const isSubscription = purchaseType === 'subscription';
-        const quantityOptionsContainer = productActions.querySelector('.quantity-options');
-        quantityOptionsContainer.style.opacity = isSubscription ? 0 : 1;
-        setTimeout(() => {
-          quantityOptionsContainer.style.display = isSubscription ? 'none' : 'flex';
-          updatePricing();
-          highlightSelectedOption(purchaseType);
-        }, 300);
+        const oneTimeOptions = productActions.querySelector('.one-time-purchase .quantity-options');
+        const subscriptionOptions = productActions.querySelector('.subscription .quantity-options');
+
+        oneTimeOptions.style.display = isSubscription ? 'none' : 'flex';
+        subscriptionOptions.style.display = isSubscription ? 'flex' : 'none';
+
+        updatePricing();
+        highlightSelectedOption(purchaseType);
       }
 
       function highlightSelectedOption(purchaseType) {
@@ -404,10 +430,13 @@
 
       function updatePricing() {
         const isSubscription = productActions.querySelector('input[name="purchase-type"]:checked').value === 'subscription';
-        const selectedQuantity = isSubscription ? 1 : parseInt(productActions.querySelector('.quantity-option.selected').dataset.quantity);
+        const selector = isSubscription ? 'input[name="subscription-quantity"]:checked' : '.quantity-option.selected';
+        const selectedOption = productActions.querySelector(selector);
+        const selectedQuantity = parseInt(selectedOption.value);
+
         const { price, originalPrice, discount } = calculatePrices(selectedQuantity, isSubscription);
         updateSubmitButton(price, isSubscription);
-        updateQuantityOptionPrices(selectedQuantity, price, originalPrice, discount);
+        updateQuantityOptionPrices(selectedQuantity, price, originalPrice, discount, isSubscription);
       }
 
       function calculatePrices(quantity, isSubscription) {
@@ -423,20 +452,23 @@
       }
 
       function updateSubmitButton(price, isSubscription) {
-        submitButton.querySelector('.total-price').textContent = `- £${price}`;
+        submitButton.querySelector('.total-price').textContent = `- £${price}${isSubscription ? '/month' : ''}`;
       }
 
-      function updateQuantityOptionPrices(selectedQuantity, price, originalPrice, discount) {
-        quantityOptions.forEach(option => {
+      function updateQuantityOptionPrices(selectedQuantity, price, originalPrice, discount, isSubscription) {
+        const selector = isSubscription ? '.subscription .quantity-option' : '.one-time-purchase .quantity-option';
+        const options = productActions.querySelectorAll(selector);
+
+        options.forEach(option => {
           const quantity = parseInt(option.dataset.quantity);
           const priceElement = option.querySelector('.price');
           const originalPriceElement = option.querySelector('.original-price');
           const saveTagElement = option.querySelector('.save-tag');
 
           if (quantity === selectedQuantity) {
-            priceElement.textContent = `£${price}`;
+            priceElement.textContent = `£${price}${isSubscription ? '/month' : ''}`;
             if (discount > 0) {
-              originalPriceElement.textContent = `£${originalPrice}`;
+              originalPriceElement.textContent = `£${originalPrice}${isSubscription ? '/month' : ''}`;
               originalPriceElement.style.display = 'block';
               saveTagElement.textContent = `Save ${(discount * 100).toFixed(0)}%`;
               saveTagElement.style.display = 'block';
@@ -445,8 +477,8 @@
               saveTagElement.style.display = 'none';
             }
           } else {
-            const { price: individualPrice } = calculatePrices(quantity, false);
-            priceElement.textContent = `£${individualPrice}`;
+            const { price: individualPrice } = calculatePrices(quantity, isSubscription);
+            priceElement.textContent = `£${individualPrice}${isSubscription ? '/month' : ''}`;
           }
         });
       }
@@ -454,12 +486,14 @@
       function handleSubmit(event) {
         event.preventDefault();
         const isSubscription = productActions.querySelector('input[name="purchase-type"]:checked').value === 'subscription';
-        const selectedOption = productActions.querySelector(isSubscription ? '.subscription' : '.quantity-option.selected');
+        const selector = isSubscription ? 'input[name="subscription-quantity"]:checked' : '.quantity-option.selected';
+        const selectedOption = productActions.querySelector(selector).closest('.quantity-option');
         const variantId = selectedOption.dataset.variantId;
+        const quantity = selectedOption.dataset.quantity;
         const subscriptionPlanId = isSubscription ? selectedOption.dataset.subscriptionPlanId : null;
 
         toggleButtonLoading(true);
-        isSubscription ? buySubscription(variantId, 1, subscriptionPlanId) : redirectToCheckout(variantId);
+        isSubscription ? buySubscription(variantId, quantity, subscriptionPlanId) : redirectToCheckout(variantId, quantity);
       }
 
       function toggleButtonLoading(isLoading) {
@@ -467,8 +501,8 @@
         submitButton.querySelector('.submit-button-text').style.display = isLoading ? 'none' : 'block';
       }
 
-      function redirectToCheckout(variantId) {
-        const checkoutLink = `https://${location.hostname}/cart/${variantId}:1`;
+      function redirectToCheckout(variantId, quantity) {
+        const checkoutLink = `https://${location.hostname}/cart/${variantId}:${quantity}`;
         window.location.href = checkoutLink;
       }
 
