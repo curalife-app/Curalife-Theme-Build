@@ -18,7 +18,7 @@
             </label>
           </div>
 
-          <div class="quantity-option selected" data-product-id="8260651352215" data-quantity="3" data-variant-id="44221702996119">
+          <div class="quantity-option" data-product-id="8260651352215" data-quantity="3" data-variant-id="44221702996119">
             <input type="radio" name="quantity" id="qty-3" value="3">
             <label for="qty-3">
               <div class="left-wrapper">
@@ -392,10 +392,19 @@
     };
 
     function init() {
-      purchaseTypeInputs.forEach(input => input.addEventListener('change', handlePurchaseTypeChange));
-      quantityOptions.forEach(option => option.addEventListener('click', handleQuantityOptionClick));
-      submitButton.addEventListener('click', handleSubmit);
-      updatePurchaseOptions();
+        purchaseTypeInputs.forEach(input => input.addEventListener('change', handlePurchaseTypeChange));
+        quantityOptions.forEach(option => option.addEventListener('click', handleQuantityOptionClick));
+        submitButton.addEventListener('click', handleSubmit);
+
+        // Trigger selection and pricing update on load
+        const initialSelectedOption = productActions.querySelector('input[name="quantity"]:checked');
+        if (initialSelectedOption) {
+            const clickedOption = initialSelectedOption.closest('.quantity-option');
+            selectQuantityOption(clickedOption, 'one-time');
+            updatePricing();
+        } else {
+            updatePurchaseOptions(); // Fallback to ensure options are updated
+        }
     }
 
     function handlePurchaseTypeChange(event) {
@@ -410,10 +419,12 @@
     }
 
     function selectQuantityOption(option, purchaseType) {
-      const selector = purchaseType === 'subscription' ? 'input[name="subscription-quantity"]' : 'input[name="quantity"]';
-      const options = option.closest('.quantity-options').querySelectorAll('.quantity-option');
-      options.forEach(opt => opt.classList.toggle('selected', opt === option));
-      setTimeout(() => option.querySelector(selector).checked = true, 150);
+        const selector = purchaseType === 'subscription' ? 'input[name="subscription-quantity"]' : 'input[name="quantity"]';
+        const options = option.closest('.quantity-options').querySelectorAll('.quantity-option');
+        options.forEach(opt => {
+            opt.classList.toggle('selected', opt === option);
+            opt.querySelector(selector).checked = opt === option;
+        });
     }
 
     function updatePurchaseOptions(purchaseType = 'one-time') {
