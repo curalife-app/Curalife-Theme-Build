@@ -408,7 +408,16 @@
 
 
     function handlePurchaseTypeChange(event) {
-      updatePurchaseOptions(event.target.value);
+      const purchaseType = event.target.value;
+      updatePurchaseOptions(purchaseType);
+
+      // Automatically select the first quantity option of the selected purchase type
+      const firstOptionSelector = purchaseType === 'subscription' ? '.subscription .quantity-option input[type="radio"]' : '.one-time-purchase .quantity-option input[type="radio"]';
+      const firstOption = productActions.querySelector(firstOptionSelector);
+
+      if (firstOption) {
+        firstOption.click();
+      }
     }
 
     function handleQuantityOptionClick(event) {
