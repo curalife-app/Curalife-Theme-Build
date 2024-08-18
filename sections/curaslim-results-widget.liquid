@@ -13,22 +13,7 @@
         </div>
 
         <div id="content" class="content">
-            <div class="usage-section" id="section-3">
-                <div class="months-usage">
-                    <div class="usage">3</div>
-                    <div>months usage</div>
-                </div>
-                <div class="description" id="desc-3"></div>
-                <div class="image" id="image-3"></div>
-            </div>
-            <div class="usage-section" id="section-6">
-                <div class="months-usage">
-                    <div class="usage">6</div>
-                    <div>months usage</div>
-                </div>
-                <div class="description" id="desc-6"></div>
-                <div class="image" id="image-6"></div>
-            </div>
+            <!-- Content will be dynamically inserted here -->
         </div>
     </div>
 </section>
@@ -67,30 +52,40 @@
         }
     };
 
+    function createUsageSection(period, data) {
+        return `
+            <div class="usage-section">
+                <div class="months-usage">
+                    <div class="usage">${period}</div>
+                    <div>${period === 'From Day 1' ? '' : 'months usage'}</div>
+                </div>
+                <div class="description">${data.text}</div>
+                ${data.image ? `<div class="image" style="background-image: url('${data.image}')"></div>` : ''}
+            </div>
+        `;
+    }
+
     function updateContent(tab) {
-        const sections = document.querySelectorAll('.usage-section');
-        sections.forEach(section => section.classList.remove('visible'));
+        const contentDiv = document.getElementById('content');
+        contentDiv.innerHTML = ''; // Clear existing content
 
+        const tabContent = tabData[tab];
+        let html = '';
+
+        for (const [period, data] of Object.entries(tabContent)) {
+            html += createUsageSection(period, data);
+        }
+
+        contentDiv.innerHTML = html;
+
+        // Add visibility class with a slight delay for animation
         setTimeout(() => {
-            const desc3 = document.getElementById('desc-3');
-            const image3 = document.getElementById('image-3');
-            const desc6 = document.getElementById('desc-6');
-            const image6 = document.getElementById('image-6');
-
-            desc3.textContent = tabData[tab]['3']?.text || '';
-            image3.style.backgroundImage = tabData[tab]['3']?.image ? `url(${tabData[tab]['3'].image})` : '';
-
-            desc6.textContent = tabData[tab]['6']?.text || '';
-            image6.style.backgroundImage = tabData[tab]['6']?.image ? `url(${tabData[tab]['6'].image})` : '';
-
-            sections.forEach((section, index) => {
-                if (tabData[tab][section.querySelector('.usage').textContent.trim()]) {
-                    setTimeout(() => {
-                        section.classList.add('visible');
-                    }, index * 200);
-                }
+            document.querySelectorAll('.usage-section').forEach((section, index) => {
+                setTimeout(() => {
+                    section.classList.add('visible');
+                }, index * 200);
             });
-        }, 300);
+        }, 100);
     }
 
     document.querySelectorAll('.tab').forEach(tab => {
@@ -105,176 +100,181 @@
 
     // Initialize with weight loss tab
     updateContent('weight-loss');
+
+    // Slider functionality
+    const slider = document.querySelector('.tabs');
+    let isDown = false;
+    let startX;
+    let scrollLeft;
+
+    slider.addEventListener('mousedown', (e) => {
+        isDown = true;
+        slider.classList.add('active');
+        startX = e.pageX - slider.offsetLeft;
+        scrollLeft = slider.scrollLeft;
+    });
+    slider.addEventListener('mouseleave', () => {
+        isDown = false;
+        slider.classList.remove('active');
+    });
+    slider.addEventListener('mouseup', () => {
+        isDown = false;
+        slider.classList.remove('active');
+    });
+    slider.addEventListener('mousemove', (e) => {
+        if(!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - slider.offsetLeft;
+        const walk = (x - startX) * 3; //scroll-fast
+        slider.scrollLeft = scrollLeft - walk;
+    });
 </script>
-
-    <script>
-      const slider = document.querySelector('.tabs');
-let isDown = false;
-let startX;
-let scrollLeft;
-
-slider.addEventListener('mousedown', (e) => {
-  isDown = true;
-  slider.classList.add('active');
-  startX = e.pageX - slider.offsetLeft;
-  scrollLeft = slider.scrollLeft;
-});
-slider.addEventListener('mouseleave', () => {
-  isDown = false;
-  slider.classList.remove('active');
-});
-slider.addEventListener('mouseup', () => {
-  isDown = false;
-  slider.classList.remove('active');
-});
-slider.addEventListener('mousemove', (e) => {
-  if(!isDown) return;
-  e.preventDefault();
-  const x = e.pageX - slider.offsetLeft;
-  const walk = (x - startX) * 3; //scroll-fast
-  slider.scrollLeft = scrollLeft - walk;
-  console.log(walk);
-});
-    </script>
 
 <style>
     .results-widget {
-    text-align: center;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem 1rem;
-}
+        text-align: center;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
 
-.results-widget h2 {
-    font-size: 2rem;
-    margin-bottom: 1rem;
-}
+    .results-widget h2 {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
 
-.results-widget h2 span {
-    color: #4a90e2;
-}
+    .results-widget h2 span {
+        color: #4a90e2;
+    }
 
-.results-widget p {
-    font-size: 1.2rem;
-    margin-bottom: 2rem;
-}
+    .results-widget p {
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+    }
 
-.results-widget .tabs {
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-    margin-bottom: 2rem;
-    overflow-y: auto;
-    scrollbar-width: none;
-    cursor: grab;
-}
-
-.results-widget .tab {
-    padding: 0.75rem 1.5rem;
-    cursor: pointer;
-    background: #EDEDED;
-    border: 1px solid #EDEDED;
-    border-radius: 100px;
-    font-size: 1rem;
-    transition: all 0.3s ease;
-    min-inline-size: max-content;
-}
-
-.results-widget .tab:hover {
-    background: #d1d1d1;
-}
-
-.results-widget .tab.active {
-    background-color: black;
-    color: white;
-}
-
-.results-widget .content {
-    display: flex;
-    flex-direction: column;
-    background-color: #F8FCFF;
-    justify-content: space-between;
-    align-items: stretch;
-    max-width: 1000px;
-    margin: auto;
-    border: 20px solid #EDEDED;
-    padding: 2rem;
-    border-radius: 15px;
-    gap: 3rem;
-}
-
-.results-widget .usage-section {
-    display: flex;
-    align-items: center;
-    gap: 2rem;
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.5s ease, transform 0.5s ease;
-}
-
-.results-widget .usage-section.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.results-widget .months-usage {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.results-widget .usage {
-    font-size: 2.5rem;
-    font-weight: bold;
-    color: #4a90e2;
-}
-
-.results-widget .description {
-    flex: 1;
-    padding-left: 1.5rem;
-    border-left: 3px solid #EDEDED;
-    text-align: start;
-    font-size: 1.1rem;
-}
-
-.results-widget .image {
-    width: 180px;
-    height: 100px;
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-    transition: transform 0.3s ease;
-}
-
-.results-widget .image:hover {
-    transform: scale(1.1);
-}
-
-/* Responsive Styles */
-@media screen and (max-width: 768px) {
     .results-widget .tabs {
-        justify-content: flex-start;
-        padding-bottom: 1rem;
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        overflow-x: auto;
+        scrollbar-width: none;
+        cursor: grab;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .results-widget .tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .results-widget .tab {
+        padding: 0.75rem 1.5rem;
+        cursor: pointer;
+        background: #EDEDED;
+        border: 1px solid #EDEDED;
+        border-radius: 100px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+    }
+
+    .results-widget .tab:hover {
+        background: #d1d1d1;
+    }
+
+    .results-widget .tab.active {
+        background-color: black;
+        color: white;
     }
 
     .results-widget .content {
+        display: flex;
         flex-direction: column;
-        padding: 1rem;
+        background-color: #F8FCFF;
+        max-width: 1000px;
+        margin: auto;
+        border: 20px solid #EDEDED;
+        padding: 2rem;
+        border-radius: 15px;
+        gap: 3rem;
     }
 
     .results-widget .usage-section {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .results-widget .usage-section.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .results-widget .months-usage {
+        display: flex;
         flex-direction: column;
-        gap: 1rem;
+        align-items: center;
+        gap: 0.5rem;
+        min-width: 100px;
+    }
+
+    .results-widget .usage {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #4a90e2;
     }
 
     .results-widget .description {
-        padding-left: 0;
-        border-left: none;
-        text-align: center;
+        flex: 1;
+        padding-left: 1.5rem;
+        border-left: 3px solid #EDEDED;
+        text-align: start;
+        font-size: 1.1rem;
     }
-}
-</style>>
+
+    .results-widget .image {
+        width: 180px;
+        height: 100px;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+        transition: transform 0.3s ease;
+    }
+
+    .results-widget .image:hover {
+        transform: scale(1.1);
+    }
+
+    /* Responsive Styles */
+    @media screen and (max-width: 768px) {
+        .results-widget .tabs {
+            justify-content: flex-start;
+            padding-bottom: 1rem;
+        }
+
+        .results-widget .content {
+            padding: 1rem;
+        }
+
+        .results-widget .usage-section {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .results-widget .description {
+            padding-left: 0;
+            border-left: none;
+            text-align: center;
+        }
+
+        .results-widget .months-usage {
+            min-width: auto;
+        }
+    }
+</style>
 
 {% schema %}
   {
