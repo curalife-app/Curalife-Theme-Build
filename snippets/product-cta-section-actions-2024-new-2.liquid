@@ -393,17 +393,29 @@
     };
 
     function init() {
-        purchaseTypeInputs.forEach(input => input.addEventListener('change', handlePurchaseTypeChange));
-        quantityOptions.forEach(option => option.addEventListener('click', handleQuantityOptionClick));
-        submitButton.addEventListener('click', handleSubmit);
+        // Ensure the one-time purchase option is selected on load
+        const oneTimePurchaseOption = document.querySelector('input[name="purchase-type"][value="one-time"]');
+        if (oneTimePurchaseOption) {
+            oneTimePurchaseOption.checked = true;
+        }
 
-        // Programmatically click on the "Buy 3" one-time option on load
-        const buy3Option = document.getElementById('qty-3');
+        // Make the one-time purchase quantity options visible
+        const oneTimeOptions = document.querySelector('.one-time-purchase .quantity-options');
+        if (oneTimeOptions) {
+            oneTimeOptions.style.display = 'flex';
+        }
+
+        // Programmatically click on the "Buy 3" one-time option on load, or fallback to the first available option
+        const buy3Option = document.getElementById('qty-3') || document.querySelector('.one-time-purchase .quantity-option input[type="radio"]');
         if (buy3Option) {
             buy3Option.click();
         } else {
             updatePurchaseOptions(); // Fallback to ensure options are updated
         }
+
+        purchaseTypeInputs.forEach(input => input.addEventListener('change', handlePurchaseTypeChange));
+        quantityOptions.forEach(option => option.addEventListener('click', handleQuantityOptionClick));
+        submitButton.addEventListener('click', handleSubmit);
     }
 
 
