@@ -477,8 +477,13 @@
     }
 
     function toggleButtonLoading(isLoading) {
-        loader.style.display = isLoading ? 'block' : 'none';
-        submitButton.querySelector('.submit-button-text').style.display = isLoading ? 'none' : 'block';
+        if (loader) { // Check if loader element exists
+            loader.style.display = isLoading ? 'block' : 'none';
+        }
+        const submitButtonText = submitButton.querySelector('.submit-button-text');
+        if (submitButtonText) { // Check if submit button text exists
+            submitButtonText.style.display = isLoading ? 'none' : 'block';
+        }
     }
 
     function redirectToCheckout(variantId, quantity) {
