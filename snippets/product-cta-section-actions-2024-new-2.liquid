@@ -397,16 +397,15 @@
         quantityOptions.forEach(option => option.addEventListener('click', handleQuantityOptionClick));
         submitButton.addEventListener('click', handleSubmit);
 
-        // Trigger selection and pricing update on load
-        const initialSelectedOption = productActions.querySelector('input[name="quantity"]:checked');
-        if (initialSelectedOption) {
-            const clickedOption = initialSelectedOption.closest('.quantity-option');
-            selectQuantityOption(clickedOption, 'one-time');
-            updatePricing();
+        // Programmatically click on the "Buy 3" one-time option on load
+        const buy3Option = document.getElementById('qty-3');
+        if (buy3Option) {
+            buy3Option.click();
         } else {
             updatePurchaseOptions(); // Fallback to ensure options are updated
         }
     }
+
 
     function handlePurchaseTypeChange(event) {
       updatePurchaseOptions(event.target.value);
