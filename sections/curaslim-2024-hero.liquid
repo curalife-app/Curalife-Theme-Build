@@ -42,7 +42,20 @@
     <div class="images">
       <img class="review" data-aos="fade-up" data-aos-delay="200" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/Group_1597877448.png?v=1723474133" alt="Curaslim 2024 Hero Image 1">
       {% comment %} <img class="badge" data-aos="fade-up" data-aos-delay="300" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/Group_1597877668.png?v=1723474133" alt="Curaslim 2024 Hero Image 1"> {% endcomment %}
-      <div id='circle' data-text="of your body weight · of your body weight ·"></div>
+      <div id="circle">
+      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="300px" height="300px" viewBox="0 0 300 300" enable-background="new 0 0 300 300" xml:space="preserve">
+          <defs>
+              <path id="circlePath" d="M 150, 150 m -60, 0 a 60,60 0 0,1 120,0 a 60,60 0 0,1 -120,0 "/>
+          </defs>
+        <circle cx="150" cy="100" r="75" fill="none"/>
+          <g>
+              <use xlink:href="#circlePath" fill="none"/>
+              <text fill="#000">
+                  <textPath xlink:href="#circlePath">of your body weight · of your body weight · </textPath>
+              </text>
+          </g>
+      </svg>
+      </div>
       <img class="bottles" data-aos="zoom-in" data-aos-delay="50" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/Group_1597877740.png?v=1723474133" alt="Curaslim 2024 Hero Image 1">
       <img class="badges" data-aos="zoom-out-up" data-aos-delay="300" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/Group_1597877453.png?v=1723474133" alt="Curaslim 2024 Hero Image 2">
     </div>
@@ -64,57 +77,55 @@
   });
 </script>
 
-<script>
-  const degreeToRadian = (angle) => {
-    return angle * (Math.PI / 180);
-  };
-
-  const radius = 80;
-  const diameter = radius * 2;
-
-  const circle = document.querySelector("#circle");
-  circle.style.width = `${diameter}px`;
-  circle.style.height = `${diameter}px`;
-
-  const text = circle.dataset.text;
-  const characters = text.split("");
-
-  const deltaAngle = 360 / characters.length;
-  const characterOffsetAngle = 8;
-  let currentAngle = -90;
-
-  characters.forEach((character, index) => {
-    const span = document.createElement("span");
-    span.innerText = character;
-    const xPos = radius * (1 + Math.cos(degreeToRadian(currentAngle)));
-    const yPos = radius * (1 + Math.sin(degreeToRadian(currentAngle)));
-
-    const transform = `translate(${xPos}px, ${yPos}px)`;
-    const rotate = `rotate(${(index * deltaAngle) + characterOffsetAngle}deg)`;
-    span.style.transform = `${transform} ${rotate}`;
-
-    currentAngle += deltaAngle;
-    circle.appendChild(span);
-  });
-
-</script>
-
 <style>
-  #circle {
-  position: relative;
-  border-radius: 100%;
-  padding: 16px;
- 	animation: rotate-animation 8s infinite linear;
+  #circle { position: relative; width: 100%; padding-bottom: 100%; overflow: hidden; }
+
+#circle text { font-family: 'Helvetica Neue', Arial; font-size: 26px; font-weight: bold;}
+
+#circle svg { position: absolute; left: 0; top: 0; width: 50%; height: 50%;
+
+  -webkit-animation-name: rotate;
+     -moz-animation-name: rotate;
+      -ms-animation-name: rotate;
+       -o-animation-name: rotate;
+          animation-name: rotate;
+  -webkit-animation-duration: 5s;
+     -moz-animation-duration: 5s;
+      -ms-animation-duration: 5s;
+       -o-animation-duration: 5s;
+          animation-duration: 5s;
+  -webkit-animation-iteration-count: infinite;
+     -moz-animation-iteration-count: infinite;
+      -ms-animation-iteration-count: infinite;
+       -o-animation-iteration-count: infinite;
+          animation-iteration-count: infinite;
+  -webkit-animation-timing-function: linear;
+     -moz-animation-timing-function: linear;
+      -ms-animation-timing-function: linear;
+       -o-animation-timing-function: linear;
+          animation-timing-function: linear;
+
 }
 
-#circle span {
-  position: absolute;
-  transform-origin: top left;
+@-webkit-keyframes rotate {
+    from { -webkit-transform: rotate(360deg); }
+    to { -webkit-transform: rotate(0); }
 }
-
-@keyframes rotate-animation {
-  from { transform: rotate(0); }
-  to { transform: rotate(-360deg); }
+@-moz-keyframes rotate {
+    from { -moz-transform: rotate(360deg); }
+    to { -moz-transform: rotate(0); }
+}
+@-ms-keyframes rotate {
+    from { -ms-transform: rotate(360deg); }
+    to { -ms-transform: rotate(0); }
+}
+@-o-keyframes rotate {
+    from { -o-transform: rotate(360deg); }
+    to { -o-transform: rotate(0); }
+}
+@keyframes rotate {
+    from { transform: rotate(360deg); }
+    to { transform: rotate(0); }
 }
 
 </style>
