@@ -4,7 +4,7 @@
   <div class="container flex flex-col justify-between h-full text-center">
     <div class="circle" data-rellax-speed="2" data-aos="zoom-in" data-aos-duration="3000"></div>
 
-    <div class="top-bar items mbl:m-0 flex justify-between mb-12">
+    <div id="top-bar" class="top-bar items mbl:m-0 flex justify-between mb-12">
       <div class="left flex items-center gap-4">
         <img src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/curalife-logo-white.svg?v=1723980306" alt="Curaslim 2024 Logo">
 
@@ -47,7 +47,19 @@
 </section>
 
 <script src="https://cdn.jsdelivr.net/gh/dixonandmoe/rellax@master/rellax.min.js"></script>
-<script>var rellax = new Rellax('.rellax', {easing: 'ease', duration: 600});</script>
+<script>
+  var rellax = new Rellax('.rellax', {easing: 'ease', duration: 600});
+
+  // Add this new script for the floating top bar
+  window.addEventListener('scroll', function() {
+    var topBar = document.getElementById('top-bar');
+    if (window.scrollY > 100) { // Adjust this value as needed
+      topBar.classList.add('floating');
+    } else {
+      topBar.classList.remove('floating');
+    }
+  });
+</script>
 
 <style>
 
@@ -69,6 +81,19 @@
     position: relative;
 
     .top-bar {
+      transition: all 0.3s ease;
+      z-index: 1000;
+
+      &.floating {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background: var(--curaslim);
+        padding: 10px 20px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      }
+
       button {
         padding: 0.8rem 2rem;
         min-width: unset;
