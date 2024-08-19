@@ -81,12 +81,24 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
+            z-index: 3;
             opacity: 0;
-            transition: opacity 0.5s ease-in-out;
+            animation: fadeInPowder linear;
+            animation-timeline: view();
+            animation-range: cover 30% cover 100%;
+            animation-fill-mode: forwards;
         }
 
-        .powder.visible {
-            opacity: 1;
+        @keyframes fadeInPowder {
+            0% {
+                opacity: 0;
+            }
+            20% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
         }
 
         .fallen-items {
@@ -324,20 +336,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         confettiContainer.appendChild(confetti);
     }
-
-    // Add fade-in animation for powder
-    const powder = document.querySelector('.powder');
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                powder.classList.add('visible');
-            } else {
-                powder.classList.remove('visible');
-            }
-        });
-    }, { threshold: 0.5 }); // Trigger when 50% of the element is visible
-
-    observer.observe(powder);
 });
 </script>
 
