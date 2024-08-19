@@ -42,22 +42,7 @@
     <div class="images">
       <img class="review" data-aos="fade-up" data-aos-delay="200" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/Group_1597877448.png?v=1723474133" alt="Curaslim 2024 Hero Image 1">
       {% comment %} <img class="badge" data-aos="fade-up" data-aos-delay="300" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/Group_1597877668.png?v=1723474133" alt="Curaslim 2024 Hero Image 1"> {% endcomment %}
-      <div class="badge" data-aos="fade-up" data-aos-delay="300">
-        <svg viewBox="0 0 300 300" width="140" heigh="140">
-          <defs>
-            <path id="criclePath" d=" M 150, 150 m -120, 0 a 120,120 0 0,1 240,0 a 120,120 0 0,1 -240,0 "/>
-          </defs>
-
-          <g class="circleText">
-            <use xlink:href="#criclePath" fill="none"/>
-            <text fill="white" font-size="29">
-                <textPath xlink:href="#criclePath" >of your body weight · of your body weight · of your body weight ·</textPath>
-            </text>
-          </g>
-
-          <g><text fill="white" x="67" y="180" font-size="80">Lose<br>10%-15%</text></g>
-        </svg>
-      </div>
+      <div id='circle' data-text="of your body weight · of your body weight · of your body weight ·"></div>
       <img class="bottles" data-aos="zoom-in" data-aos-delay="50" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/Group_1597877740.png?v=1723474133" alt="Curaslim 2024 Hero Image 1">
       <img class="badges" data-aos="zoom-out-up" data-aos-delay="300" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/Group_1597877453.png?v=1723474133" alt="Curaslim 2024 Hero Image 2">
     </div>
@@ -79,34 +64,59 @@
   });
 </script>
 
+<script>
+  const degreeToRadian = (angle) => {
+    return angle * (Math.PI / 180);
+  };
+
+  const radius = 80;
+  const diameter = radius * 2;
+
+  const circle = document.querySelector("#circle");
+  circle.style.width = `${diameter}px`;
+  circle.style.height = `${diameter}px`;
+
+  const text = circle.dataset.text;
+  const characters = text.split("");
+
+  const deltaAngle = 360 / characters.length;
+  const characterOffsetAngle = 8;
+  let currentAngle = -90;
+
+  characters.forEach((character, index) => {
+    const span = document.createElement("span");
+    span.innerText = character;
+    const xPos = radius * (1 + Math.cos(degreeToRadian(currentAngle)));
+    const yPos = radius * (1 + Math.sin(degreeToRadian(currentAngle)));
+
+    const transform = `translate(${xPos}px, ${yPos}px)`;
+    const rotate = `rotate(${(index * deltaAngle) + characterOffsetAngle}deg)`;
+    span.style.transform = `${transform} ${rotate}`;
+
+    currentAngle += deltaAngle;
+    circle.appendChild(span);
+  });
+
+</script>
+
 <style>
-  .badge {
-    display: inline-block;
-    background: #9abfd4;
-    border-radius: 50%;
-    padding: 5px;
-    margin: 10px;
-    height: 140px;
-    width: 140px;
-    border: 3px solid black;
-    bottom: -80px;
-    left: 330px;
-    position: relative;
+  #circle {
+  position: relative;
+  border-radius: 100%;
+  padding: 16px;
+ 	animation: rotate-animation 8s infinite linear;
+}
 
-    @media (width <= 768px) {
-      bottom: 40vw;
-      left: 60vw;
-    }
-  }
-  .circleText {
-    position: relative;
-    transform-origin: 150px 150px;
-    animation:spin 60s linear infinite;
-  }
+#circle span {
+  position: absolute;
+  transform-origin: top left;
+}
 
-  @keyframes spin {
-    100% { transform:rotate(360deg); }
-  }
+@keyframes rotate-animation {
+  from { transform: rotate(0); }
+  to { transform: rotate(-360deg); }
+}
+
 </style>
 
 <style>
