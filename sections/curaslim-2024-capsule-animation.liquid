@@ -14,7 +14,7 @@
         <img class="fallen-item" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/3_Control_Craving_Portion2.png?v=1723735925" alt="Curaslim 2024 Capsule Animation Fallen Item">
       </div>
 
-
+        <img class="powder" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/powder.png?v=1724075423" alt="Curaslim 2024 Capsule Animation Powder">
 
       {% comment %} <div class="confetti-container">
         <!-- Confetti particles will be dynamically added here -->
@@ -74,6 +74,19 @@
             to {
                 transform: rotate(30deg);
             }
+        }
+
+        .powder {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .powder.visible {
+            opacity: 1;
         }
 
         .fallen-items {
@@ -311,6 +324,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
         confettiContainer.appendChild(confetti);
     }
+
+    // Add fade-in animation for powder
+    const powder = document.querySelector('.powder');
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                powder.classList.add('visible');
+            } else {
+                powder.classList.remove('visible');
+            }
+        });
+    }, { threshold: 0.5 }); // Trigger when 50% of the element is visible
+
+    observer.observe(powder);
 });
 </script>
 
