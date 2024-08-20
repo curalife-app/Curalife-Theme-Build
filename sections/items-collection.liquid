@@ -303,17 +303,20 @@
       }
     {% endif %}
 
-    #section-{{ section.id }} .item {
-      {% if section.settings.items_in_row == 'all' %}
-        {% assign itemsInRow = section.blocks.size %}
-      {% else %}
-        {% assign itemsInRow = section.settings.items_in_row %}
-      {% endif %}
-      {% assign gapsInRow = itemsInRow | minus: 1 %}
-      width: calc((100% / {{ itemsInRow }}) - ({{ gapsInRow }} * ({{ section.settings.column_gap }}rem / {{ itemsInRow }})));
-      padding: {{ section.settings.item_padding }}rem;
-      height: auto;
-    }
+    {% unless section.settings.is_slider %}
+      #section-{{ section.id }} .item {
+        {% if section.settings.items_in_row == 'all' %}
+          {% assign itemsInRow = section.blocks.size %}
+        {% else %}
+          {% assign itemsInRow = section.settings.items_in_row %}
+        {% endif %}
+
+        {% assign gapsInRow = itemsInRow | minus: 1 %}
+        width: calc((100% / {{ itemsInRow }}) - ({{ gapsInRow }} * ({{ section.settings.column_gap }}rem / {{ itemsInRow }})));
+        padding: {{ section.settings.item_padding }}rem;
+        height: auto;
+      }
+    {% endunless %}
 
     #section-{{ section.id }} .item-content {
       max-width: {{ section.settings.item_content_width }}%;
