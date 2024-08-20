@@ -122,7 +122,6 @@
 
   {% if admin %}
     {% if section.settings.is_slider %}
-      {{ 'swiper.min.js' | asset_url | script_tag }}
       <script>
         var itemsSwiper = new Swiper('#items-container-{{ section.id }}', {
           spaceBetween: 15,
@@ -130,11 +129,11 @@
           slidesPerView: {% if section.settings.items_in_row != 'all' %}{{ section.settings.items_in_row }}{% else %}'auto'{% endif %},
           autoHeight: {{ section.settings.is_auto_height }},
           {% if section.settings.is_arrows %}navigation: {
-            nextEl: '.swiper-button-next',
-            prevEl: '.swiper-button-prev',
+            nextEl: '#items-container-{{ section.id }} .swiper-button-next',
+            prevEl: '#items-container-{{ section.id }} .swiper-button-prev',
           },{% endif %}
           {% if section.settings.is_dots %}pagination: {
-            el: '.swiper-pagination',
+            el: '#items-container-{{ section.id }} .swiper-pagination',
             clickable: true
           },{% endif %}
           {% if section.settings.is_ticker %}
