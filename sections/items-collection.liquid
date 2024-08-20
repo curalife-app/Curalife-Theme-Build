@@ -55,7 +55,7 @@
         {% assign itemID = 'item-' | append: section.id | append: forloop.index %}
 
         {% if admin %}
-          <div class="swiper-slide item {% unless section.settings.is_slider %}relative h-auto{% endunless %}" id="{{ itemID }}">
+          <div class="{% if section.settings.is_slider %}swiper-slide{% endif %} item {% unless section.settings.is_slider %}relative h-auto{% endunless %}" id="{{ itemID }}">
         {% else %}
           <{% if section.settings.is_slider %}swiper-slide{% else %}div{% endif %} class="item relative h-auto" id="{{ itemID }}">
         {% endif %}
@@ -313,15 +313,16 @@
         {% endif %}
 
         {% assign gapsInRow = itemsInRow | minus: 1 %}
-        {% if section.settings.is_slider %}
-          width: calc((100% / {{ itemsInRow }}) - ({{ gapsInRow }} * ({{ section.settings.column_gap }}rem / {{ itemsInRow }})));
-        {% else %}
-          width: auto;
-        {% endif %}
+
+        width: calc((100% / {{ itemsInRow }}) - ({{ gapsInRow }} * ({{ section.settings.column_gap }}rem / {{ itemsInRow }})));
         padding: {{ section.settings.item_padding }}rem;
         height: auto;
       }
     {% endunless %}
+
+    #section-{{ section.id }} .swiper-slide {
+      width: auto;
+    }
 
     #section-{{ section.id }} .item-content {
       max-width: {{ section.settings.item_content_width }}%;
