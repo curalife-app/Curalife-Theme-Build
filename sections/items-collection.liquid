@@ -171,14 +171,16 @@
   {% endif %}
 
 
-  {% if section.settings.is_slider %}
-    <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-element-bundle.min.js"></script>
-    <script>
-      if (window.innerWidth < 768) {
-        $("swiper-container").attr("slides-per-view", 1);
-      }
-    </script>
-  {% endif %}
+  {% unless admin %}
+    {% if section.settings.is_slider %}
+      <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-element-bundle.min.js"></script>
+      <script>
+        if (window.innerWidth < 768) {
+          $("swiper-container").attr("slides-per-view", 1);
+        }
+      </script>
+    {% endif %}
+  {% endunless %}
 
   {% if section.settings.display_on_utm_parmeters != blank %}
     <script>
