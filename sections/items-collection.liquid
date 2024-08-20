@@ -215,18 +215,46 @@
   }
   </script>
 
-  <style>
-    #section-{{ section.id }} .swiper-slide {
-      opacity: 0;
-      transition: opacity 1s ease;
-    }
+<style>
+  #section-{{ section.id }} .swiper-slide {
+    opacity: 0;
+    transition: opacity 1s ease;
+  }
 
-    #section-{{ section.id }} .swiper-slide-active,
-    #section-{{ section.id }} .swiper-slide-active + .swiper-slide,
-    #section-{{ section.id }} .swiper-slide-active + .swiper-slide + .swiper-slide {
+  #section-{{ section.id }} .swiper-slide-active {
+    opacity: 1;
+  }
+
+  {% if section.settings.items_in_row == 'all' %}
+    {% assign items_in_row = section.blocks.size %}
+  {% else %}
+    {% assign items_in_row = section.settings.items_in_row | plus: 0 %}
+  {% endif %}
+
+  {% for i in (1..items_in_row) %}
+    #section-{{ section.id }} .swiper-slide-active{% for j in (1..i) %} + .swiper-slide{% endfor %} {
       opacity: 1;
     }
-  </style>
+  {% endfor %}
+
+  @media (max-width: 768px) {
+    #section-{{ section.id }} .swiper-slide-active {
+      opacity: 1;
+    }
+
+    {% if section.settings.items_in_row_mobile == 'all' %}
+      {% assign items_in_row_mobile = section.blocks.size %}
+    {% else %}
+      {% assign items_in_row_mobile = section.settings.items_in_row_mobile | plus: 0 %}
+    {% endif %}
+
+    {% for i in (1..items_in_row_mobile) %}
+      #section-{{ section.id }} .swiper-slide-active{% for j in (1..i) %} + .swiper-slide{% endfor %} {
+        opacity: 1;
+      }
+    {% endfor %}
+  }
+</style>
 
   <style>
 
