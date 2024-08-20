@@ -31,7 +31,7 @@
 
       {% if admin %}
         {% if section.settings.is_slider %}
-          <div class="swiper items overflow-{{ section.settings.overflow }} z-10 py-8 overflow-visible" id="items-container-{{ section.id }}">
+          <div class="swiper items overflow-{{ section.settings.overflow }} z-10 !py-8 overflow-visible" id="items-container-{{ section.id }}">
             <div class="swiper-wrapper">
         {% else %}
           <div class="items overflow-{{ section.settings.overflow }} z-10 py-8 flex flex-wrap {% if section.settings.items_align == 'center' %}items-center{% else %}items-start{% endif %} {% if section.settings.collection_align == 'center' %}m-auto{% endif %} justify-center mbl:justify-between overflow-visible" id="items-container-{{ section.id }}">
@@ -327,13 +327,9 @@
 
         width: calc((100% / {{ itemsInRow }}) - ({{ gapsInRow }} * ({{ section.settings.column_gap }}rem / {{ itemsInRow }})));
         padding: {{ section.settings.item_padding }}rem;
-        height: auto;
+        align-self: stretch;
       }
     {% endunless %}
-
-    #section-{{ section.id }} .swiper-slide {
-      width: auto;
-    }
 
     #section-{{ section.id }} .item-content {
       max-width: {{ section.settings.item_content_width }}%;
