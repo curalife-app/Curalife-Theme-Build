@@ -30,8 +30,12 @@
       {% endif %}
 
       {% if admin %}
-        <div class="{% if section.settings.is_slider %}swiper{% endif %} items overflow-{{ section.settings.overflow }} z-10 py-8 overflow-visible" id="items-container-{{ section.id }}">
-          <div class="{% if section.settings.is_slider %}swiper-wrapper{% endif %} {% unless section.settings.is_slider %}flex flex-wrap {% if section.settings.items_align == 'center' %}items-center{% else %}items-start{% endif %} {% if section.settings.collection_align == 'center' %}m-auto{% endif %} justify-center mbl:justify-between{% endunless %}">
+        {% if section.settings.is_slider %}
+          <div class="swiper{% endif %} items overflow-{{ section.settings.overflow }} z-10 py-8 overflow-visible" id="items-container-{{ section.id }}">
+            <div class="swiper-wrapper{% endif %} {% unless section.settings.is_slider %}flex flex-wrap {% if section.settings.items_align == 'center' %}items-center{% else %}items-start{% endif %} {% if section.settings.collection_align == 'center' %}m-auto{% endif %} justify-center mbl:justify-between{% endunless %}">
+        {% else %}
+          <div class="items overflow-{{ section.settings.overflow }} z-10 py-8 flex flex-wrap {% if section.settings.items_align == 'center' %}items-center{% else %}items-start{% endif %} {% if section.settings.collection_align == 'center' %}m-auto{% endif %} justify-center mbl:justify-between overflow-visible" id="items-container-{{ section.id }">
+        {% endif %}
       {% else %}
         <{% if section.settings.is_slider %}swiper-container{% else %}div{% endif %} class="items overflow-{{ section.settings.overflow }} z-10 py-8 flex flex-wrap {% if section.settings.items_align == 'center' %}items-center{% else %}items-start{% endif %} {% if section.settings.collection_align == 'center' %}m-auto{% endif %} justify-center mbl:justify-between overflow-visible" id="items-container-{{ section.id }}" {% if section.settings.is_slider %}centered-slide="true" space-between="15" grab-cursor="true" slides-per-view="{% if section.settings.items_in_row != 'all' %}{{ section.settings.items_in_row }}{% else %}auto{% endif %}" auto-height="{{ section.settings.is_auto_height }}" {% if section.settings.is_arrows %}navigation="true"{% endif %} {% if section.settings.is_dots %}pagination="true" pagination-clickable="true"{% endif %} {% if section.settings.is_ticker %}inject-styles="['.swiper-wrapper {transition-timing-function: linear !important;}']" loop="true" autoplay-delay="0" speed="1500" autoplay-disable-on-interaction="false"{% elsif section.settings.slider_autoplay_speed > 0 %}loop="true" autoplay-delay="0" speed="{{ section.settings.slider_autoplay_speed }}"{% endif %} lazy="true"{% endif %}>
       {% endif %}
@@ -85,7 +89,7 @@
         {% if admin %}
           </div><!-- Closing tag for swiper-slide -->
         {% else %}
-          </{% if section.settings.is_slider %}swiper-slide{% else %}div{% endif %}>
+          </di{% if section.settings.is_slider %}swiper-slide{% else %}div{% endif %}>
         {% endif %}
 
         {% if linkUrl and section.settings.link_style == 'item' %}</a>{% endif %}
@@ -112,7 +116,8 @@
               <div class="swiper-pagination"></div>
             {% endif %}
           {% endif %}
-          </div>
+
+          {% if section.settings.is_slider %}</div>{% endif %}
         {% else %}
           </{% if section.settings.is_slider %}swiper-container{% else %}div{% endif %}>
         {% endif %}
