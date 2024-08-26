@@ -47,6 +47,36 @@
   }
 </style>
 
+<style>
+  {% if section.settings.padding_top != 50 and section.settings.padding_top != blank %}
+    #section-{{ section.id }} {
+      padding-top: {{ section.settings.padding_top }}px;
+    }
+  {% endif %}
+
+  {% if section.settings.padding_bottom != 50 and section.settings.padding_top != blank %}
+    #section-{{ section.id }} {
+      padding-bottom: {{ section.settings.padding_bottom }}px;
+    }
+  {% endif %}
+
+  {% if section.settings.padding_top_mobile != blank %}
+    @media screen and (max-width: 768px) {
+      #section-{{ section.id }} {
+        padding-top: {{ section.settings.padding_top_mobile }}vw;
+      }
+    }
+  {% endif %}
+
+  {% if section.settings.padding_bottom_mobile != blank %}
+    @media screen and (max-width: 768px) {
+      #section-{{ section.id }} {
+        padding-bottom: {{ section.settings.padding_bottom_mobile }}vw;
+      }
+    }
+  {% endif %}
+</style>
+
 {% schema %}
 {
   "name": "Button",
@@ -98,6 +128,48 @@
       "type": "color",
       "id": "button_title_color_hover",
       "label": "Button Hover Title Color"
+    },
+    {
+      "type": "header",
+      "content": "Padding"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Padding Top (px unit)",
+      "min": 0,
+      "max": 200,
+      "step": 10,
+      "unit": "px",
+      "default": 50
+    },
+    {
+      "type": "number",
+      "id": "padding_bottom",
+      "label": "Padding Bottom (px unit)",
+      "min": 0,
+      "max": 200,
+      "step": 10,
+      "unit": "px",
+      "default": 50
+    },
+    {
+      "type": "number",
+      "id": "padding_top_mobile",
+      "label": "Padding Top on Mobile (vw unit)",
+      "min": 0,
+      "max": 30,
+      "step": 1,
+      "unit": "vw"
+    },
+    {
+      "type": "number",
+      "id": "padding_bottom_mobile",
+      "label": "Padding Bottom on Mobile (vw unit)",
+      "min": 0,
+      "max": 30,
+      "step": 1,
+      "unit": "vw"
     },
     {
       "type": "checkbox",
