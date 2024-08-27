@@ -49,7 +49,7 @@
     }
 
     .pill-half {
-        transition: transform 1s ease-out;
+        transition: transform 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
         will-change: transform;
     }
 
@@ -68,7 +68,7 @@
         transform: translate(-50%, -50%);
         z-index: -1;
         opacity: 0;
-        transition: opacity 1s ease-out;
+        transition: opacity 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
     }
 
     .fallen-items {
@@ -84,7 +84,7 @@
     .fallen-item {
         position: absolute;
         opacity: 0;
-        transition: all 1.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+        transition: all 1.2s cubic-bezier(0.25, 0.1, 0.25, 1);
         will-change: transform, opacity;
     }
 
@@ -146,8 +146,9 @@ document.addEventListener('DOMContentLoaded', function() {
             maxOpeningPercentage = Math.max(maxOpeningPercentage, openingPercentage);
             openingPercentage = maxOpeningPercentage;
 
-            const rotateAngle = 30 * openingPercentage;
-            const translateX = 50 * openingPercentage;
+            // Reduce the rotation and translation for a more elegant opening
+            const rotateAngle = 20 * openingPercentage; // Reduced from 30 to 20
+            const translateX = 30 * openingPercentage; // Reduced from 50 to 30
 
             pillLeft.style.transform = `translateX(${-translateX}%) rotate(${rotateAngle}deg)`;
             pillRight.style.transform = `translateX(calc(-10px + ${translateX}%)) rotate(${-rotateAngle}deg)`;
@@ -161,9 +162,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     { x: '0%', y: '420px' }
                   ]
                 : [
-                    { x: '-60%', y: '270px' },
+                    { x: '-40%', y: '270px' }, // Adjusted from -60% to -40%
                     { x: '0%', y: '380px' },
-                    { x: '50%', y: '200px' }
+                    { x: '40%', y: '200px' }  // Adjusted from 50% to 40%
                   ];
 
             fallenItems.forEach((item, index) => {
@@ -171,11 +172,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 item.style.transform = `translate(${x}, ${y})`;
                 item.style.opacity = openingPercentage;
             });
-
-            if (openingPercentage > 0.5 && !confettiContainer.classList.contains('animated')) {
-                confettiContainer.classList.add('animated');
-                animateConfetti();
-            }
 
             if (openingPercentage >= 1) {
                 animationCompleted = true;
