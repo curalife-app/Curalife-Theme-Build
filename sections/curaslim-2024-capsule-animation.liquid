@@ -22,8 +22,6 @@
       </div>
 
       <img class="powder" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/powder.png?v=1724075423" alt="Curaslim 2024 Capsule Animation Powder">
-
-      <div class="confetti-container"></div>
     </div>
   </div>
 </section>
@@ -123,10 +121,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const pillRight = section.querySelector('.pill-half.right');
     const powder = section.querySelector('.powder');
     const fallenItems = section.querySelectorAll('.fallen-item');
-    const confettiContainer = section.querySelector('.confetti-container');
-
-    const confettiColors = ['#0F7CBF', '#FFCB5E', '#FFB22D', '#c2c195', '#FFEBCD'];
-    const confettiShapes = ['circle', 'square', 'triangle', 'rectangle'];
 
     let maxOpeningPercentage = 0;
     let animationCompleted = false;
@@ -135,25 +129,18 @@ document.addEventListener('DOMContentLoaded', function() {
     pillLeft.style.transform = 'translateX(0) rotate(0deg)';
     pillRight.style.transform = 'translateX(-10px) rotate(0deg)';
 
-    function createConfetti() {
-        // ... (rest of the createConfetti function remains unchanged)
-    }
-
-    function animateConfetti() {
-        // ... (rest of the animateConfetti function remains unchanged)
-    }
-
     function animateOnScroll() {
         if (animationCompleted) return;
 
         const rect = section.getBoundingClientRect();
         const sectionTop = rect.top;
-        const sectionHeight = rect.height;
         const windowHeight = window.innerHeight;
-        const scrollPercentage = Math.max(0, Math.min(1, (windowHeight - sectionTop) / (windowHeight + sectionHeight)));
 
-        if (scrollPercentage > 0.3) {
-            let openingPercentage = (scrollPercentage - 0.3) / 0.7;
+        // Adjust this value to control how quickly the animation completes
+        const animationTriggerPoint = windowHeight * 0.7;
+
+        if (sectionTop < animationTriggerPoint) {
+            let openingPercentage = Math.min(1, (animationTriggerPoint - sectionTop) / (animationTriggerPoint * 0.5));
 
             // Ensure the opening percentage never decreases
             maxOpeningPercentage = Math.max(maxOpeningPercentage, openingPercentage);
@@ -180,9 +167,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   ];
 
             fallenItems.forEach((item, index) => {
-                const delay = index * 0.2;
                 const { x, y } = finalPositions[index];
-                item.style.transition = `all 1.5s cubic-bezier(0.25, 0.1, 0.25, 1) ${delay}s`;
                 item.style.transform = `translate(${x}, ${y})`;
                 item.style.opacity = openingPercentage;
             });
@@ -199,7 +184,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    createConfetti();
     window.addEventListener('scroll', animateOnScroll);
     animateOnScroll(); // Initial call to set starting positions
 
