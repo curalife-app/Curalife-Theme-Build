@@ -188,11 +188,17 @@ document.addEventListener('DOMContentLoaded', function() {
             pillRight.style.transform = `translateX(${translateX}%) rotate(${-rotateAngle}deg)`;
             powder.style.opacity = openingPercentage;
 
+            const finalPositions = [
+                { x: '-50%', y: '400px' },
+                { x: '20%', y: '450px' },
+                { x: '60%', y: '350px' }
+            ];
+
             fallenItems.forEach((item, index) => {
                 const delay = index * 0.2;
-                const fallDistance = 400 + index * 50;
+                const { x, y } = finalPositions[index];
                 item.style.transition = `all 1.5s cubic-bezier(0.25, 0.1, 0.25, 1) ${delay}s`;
-                item.style.transform = `translate(${(index - 1) * 40}%, ${fallDistance}px)`;
+                item.style.transform = `translate(${x}, ${y})`;
                 item.style.opacity = 1;
             });
 
