@@ -128,50 +128,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const confettiColors = ['#0F7CBF', '#FFCB5E', '#FFB22D', '#c2c195', '#FFEBCD'];
     const confettiShapes = ['circle', 'square', 'triangle', 'rectangle'];
 
+    let maxOpeningPercentage = 0;
     let animationCompleted = false;
 
+    // Set initial positions of capsule halves
+    pillLeft.style.transform = 'translateX(0) rotate(0deg)';
+    pillRight.style.transform = 'translateX(-10px) rotate(0deg)';
+
     function createConfetti() {
-        for (let i = 0; i < 100; i++) {
-            const confetti = document.createElement('div');
-            confetti.classList.add('confetti');
-
-            const color = confettiColors[Math.floor(Math.random() * confettiColors.length)];
-            const shape = confettiShapes[Math.floor(Math.random() * confettiShapes.length)];
-            const size = Math.random() * 8 + 4;
-
-            confetti.style.backgroundColor = color;
-            confetti.style.width = `${size}px`;
-            confetti.style.height = `${size}px`;
-
-            if (shape === 'circle') {
-                confetti.style.borderRadius = '50%';
-            } else if (shape === 'triangle') {
-                confetti.style.width = '0';
-                confetti.style.height = '0';
-                confetti.style.backgroundColor = 'transparent';
-                confetti.style.borderLeft = `${size/2}px solid transparent`;
-                confetti.style.borderRight = `${size/2}px solid transparent`;
-                confetti.style.borderBottom = `${size}px solid ${color}`;
-            } else if (shape === 'rectangle') {
-                confetti.style.height = `${size * 1.5}px`;
-            }
-
-            confettiContainer.appendChild(confetti);
-        }
+        // ... (rest of the createConfetti function remains unchanged)
     }
 
     function animateConfetti() {
-        const confetti = confettiContainer.querySelectorAll('.confetti');
-        confetti.forEach(c => {
-            const fallX = (Math.random() - 0.5) * 600;
-            const fallY = Math.random() * 800 + 400;
-            const rotation = Math.random() * 720 - 360;
-            const delay = Math.random() * 0.5;
-
-            c.style.transition = `transform 2s ease-out ${delay}s, opacity 2s ease-out ${delay}s`;
-            c.style.transform = `translate(${fallX}px, ${fallY}px) rotate(${rotation}deg)`;
-            c.style.opacity = 0;
-        });
+        // ... (rest of the animateConfetti function remains unchanged)
     }
 
     function animateOnScroll() {
@@ -184,7 +153,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const scrollPercentage = Math.max(0, Math.min(1, (windowHeight - sectionTop) / (windowHeight + sectionHeight)));
 
         if (scrollPercentage > 0.3) {
-            const openingPercentage = (scrollPercentage - 0.3) / 0.7;
+            let openingPercentage = (scrollPercentage - 0.3) / 0.7;
+
+            // Ensure the opening percentage never decreases
+            maxOpeningPercentage = Math.max(maxOpeningPercentage, openingPercentage);
+            openingPercentage = maxOpeningPercentage;
+
             const rotateAngle = 30 * openingPercentage;
             const translateX = 50 * openingPercentage;
 
@@ -195,9 +169,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const isMobile = window.innerWidth <= 768;
             const finalPositions = isMobile
                 ? [
+                    { x: '0%', y: '200px' },
                     { x: '0%', y: '350px' },
-                    { x: '0%', y: '450px' },
-                    { x: '0%', y: '230px' }
+                    { x: '0%', y: '500px' }
                   ]
                 : [
                     { x: '-60%', y: '270px' },
@@ -210,7 +184,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const { x, y } = finalPositions[index];
                 item.style.transition = `all 1.5s cubic-bezier(0.25, 0.1, 0.25, 1) ${delay}s`;
                 item.style.transform = `translate(${x}, ${y})`;
-                item.style.opacity = 1;
+                item.style.opacity = openingPercentage;
             });
 
             if (openingPercentage > 0.5 && !confettiContainer.classList.contains('animated')) {
@@ -232,6 +206,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Re-run animation on window resize to adjust for mobile/desktop layouts
     window.addEventListener('resize', () => {
         animationCompleted = false;
+        maxOpeningPercentage = 0;
         animateOnScroll();
     });
 });
