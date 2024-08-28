@@ -1,10 +1,8 @@
 <section class="section-page-intro">
   <div class="page-intro-wrapper">
     <div class="page-intro-content">
-
       <section class="hero-section mbl:px-0 p-4">
         <div class="rellax bg" data-rellax-speed="-5"></div>
-
         <div class="main-container container flex flex-col justify-between h-full text-center">
           <div class="circle" data-rellax-speed="2" data-aos="zoom-in" data-aos-duration="3000"></div>
 
@@ -71,12 +69,11 @@
           </div>
         </div>
       </section>
-
     </div>
-    <div class="page-intro-splitscreen-wrapper">
-      <div class="page-intro-splitscreen-top"></div>
-      <div class="page-intro-splitscreen-bottom"></div>
-    </div>
+  </div>
+  <div class="page-intro-splitscreen-wrapper">
+    <div class="page-intro-splitscreen-top"></div>
+    <div class="page-intro-splitscreen-bottom"></div>
   </div>
   <div class="next-section-fade">
     <!-- Content for the next section -->
@@ -88,45 +85,33 @@
 <style>
   .section-page-intro {
     position: relative;
-    min-height: 200vh;
-    overflow: hidden;
+    height: 200vh; /* Adjust this to control when the animation completes */
   }
 
   .page-intro-wrapper {
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    width: 100%;
     height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: #fff; /* Adjust as needed */
+    z-index: 2;
   }
 
   .page-intro-content {
-    z-index: 2;
-    text-align: center;
-  }
-
-  .page-intro-title {
-    font-size: 10vw;
-    font-weight: 900;
-    line-height: 0.8;
-    text-transform: uppercase;
-  }
-
-  .page-intro-title.is-webdesign,
-  .page-intro-title.is-skills,
-  .page-intro-title.is-animation {
-    color: #000; /* Adjust colors as needed */
+    width: 100%;
+    height: 100%;
   }
 
   .page-intro-splitscreen-wrapper {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 1;
+    z-index: 3;
     pointer-events: none;
   }
 
@@ -162,12 +147,21 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    z-index: 1;
   }
+
+  /* Preserve your existing styles */
+  .hero-section {
+    min-height: 100vh;
+  }
+
+  /* Add any additional styles you need for your content */
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   const section = document.querySelector('.section-page-intro');
+  const wrapper = document.querySelector('.page-intro-wrapper');
   const splitTop = document.querySelector('.page-intro-splitscreen-top');
   const splitBottom = document.querySelector('.page-intro-splitscreen-bottom');
   const nextSection = document.querySelector('.next-section-fade');
@@ -192,8 +186,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (scrollPercentage > 75) {
       const fadePercentage = (scrollPercentage - 75) * 4;
       nextSection.style.opacity = Math.min(fadePercentage / 100, 1);
+      wrapper.style.opacity = Math.max(1 - (fadePercentage / 100), 0);
     } else {
       nextSection.style.opacity = 0;
+      wrapper.style.opacity = 1;
+    }
+
+    if (scrollPercentage >= 100) {
+      wrapper.style.position = 'absolute';
+      wrapper.style.top = `${sectionHeight - viewportHeight}px`;
+    } else {
+      wrapper.style.position = 'fixed';
+      wrapper.style.top = '0';
     }
   }
 
@@ -201,6 +205,9 @@ document.addEventListener('DOMContentLoaded', () => {
   updateSplitScreen(); // Initial call
 });
 </script>
+
+
+
 
 {% if request.path contains 'curaslim-b2b' %}
   <style>
