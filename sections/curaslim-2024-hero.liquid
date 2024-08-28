@@ -193,10 +193,9 @@ document.addEventListener('DOMContentLoaded', () => {
       splitBottom.style.opacity = 1;
       splitFullBottom.style.opacity = 1;
 
-      // Ensure top bar is not floating during animation
+      // Ensure top bar is not visible during animation
+      topBar.style.opacity = '0';
       topBar.classList.remove('floating');
-      topBar.style.background = 'transparent';
-      topBar.style.boxShadow = 'none';
     } else {
       // Ensure split screens cover the entire viewport
       splitTop.style.height = '25%';
@@ -210,16 +209,16 @@ document.addEventListener('DOMContentLoaded', () => {
       splitBottom.style.opacity = opacity;
       splitFullBottom.style.opacity = opacity;
 
-      // Apply floating effect to top bar after animation
+      // Apply floating effect to top bar after animation and fade-out
       if (fadeOutPercentage >= 100) {
         topBar.classList.add('floating');
         const topBarOpacity = Math.min((scrollPercentage - 150) / 50, 1);
+        topBar.style.opacity = topBarOpacity.toString();
         topBar.style.background = `linear-gradient(0deg, rgba(15, 114, 176, ${topBarOpacity}) 0%, rgba(15, 124, 191, ${topBarOpacity}) 100%)`;
         topBar.style.boxShadow = `0 2px 5px rgba(0,0,0,${topBarOpacity * 0.1})`;
       } else {
         topBar.classList.remove('floating');
-        topBar.style.background = 'transparent';
-        topBar.style.boxShadow = 'none';
+        topBar.style.opacity = '0';
       }
     }
 
@@ -485,6 +484,7 @@ document.addEventListener('DOMContentLoaded', () => {
         right: 0;
         padding: 10px 20px;
         background: transparent;
+        opacity: 0; /* Start with the top bar invisible */
 
         &.floating {
           background: rgb(34,98,138);
