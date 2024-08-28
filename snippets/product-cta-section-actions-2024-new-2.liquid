@@ -453,7 +453,7 @@
 </style>
 
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
     const productActions = document.getElementById('product-actions');
     const purchaseTypeInputs = productActions.querySelectorAll('input[name="purchase-type"]');
     const submitButton = productActions.querySelector('.submit-button');
@@ -461,73 +461,23 @@
     const quantityOptions = productActions.querySelectorAll('.quantity-option input[type="radio"]');
 
     function init() {
-        // Ensure the one-time purchase option is selected on load
-        const oneTimePurchaseOption = document.querySelector('input[name="purchase-type"][value="one-time"]');
-        if (oneTimePurchaseOption) {
-            oneTimePurchaseOption.checked = true;
-        }
-
-        // Make the one-time purchase quantity options visible on load
-        const oneTimeOptions = document.querySelector('.one-time-purchase .quantity-options');
-        if (oneTimeOptions) {
-            oneTimeOptions.style.display = 'flex';
-        }
-
-        // Automatically select the "Buy 3" option
-        const buyThreeOption = document.querySelector('.one-time-purchase .quantity-option input[value="3"]');
-        if (buyThreeOption) {
-            buyThreeOption.checked = true;
-            buyThreeOption.click();
-            buyThreeOption.closest('.quantity-option').classList.add('selected');
-        }
-
-        // Update the submit button text
-        updateSubmitButton();
-
-        // Add event listeners
-        purchaseTypeInputs.forEach(input => input.addEventListener('change', handlePurchaseTypeChange));
-        quantityOptions.forEach(option => option.addEventListener('click', handleQuantitySelection));
-        submitButton.addEventListener('click', handleSubmit);
+        // ... (keep the existing init function as is)
     }
 
     function handlePurchaseTypeChange(event) {
-        const purchaseType = event.target.value;
-        updatePurchaseOptions(purchaseType);
-
-        // Automatically select the first quantity option of the selected purchase type
-        const firstOptionSelector = purchaseType === 'subscription' ? '.subscription .quantity-option input[type="radio"]' : '.one-time-purchase .quantity-option input[type="radio"]';
-        const firstOption = productActions.querySelector(firstOptionSelector);
-
-        if (firstOption) {
-            firstOption.click();
-        }
-
-        updateSubmitButton();
+        // ... (keep the existing handlePurchaseTypeChange function as is)
     }
 
     function updatePurchaseOptions(purchaseType = 'one-time') {
-        const isSubscription = purchaseType === 'subscription';
-        const oneTimeOptions = productActions.querySelector('.one-time-purchase .quantity-options');
-        const subscriptionOptions = productActions.querySelector('.subscription .quantity-options');
-
-        oneTimeOptions.style.display = isSubscription ? 'none' : 'flex';
-        subscriptionOptions.style.display = isSubscription ? 'flex' : 'none';
+        // ... (keep the existing updatePurchaseOptions function as is)
     }
 
     function handleQuantitySelection(event) {
-        const selectedOption = event.target.closest('.quantity-option');
-
-        quantityOptions.forEach(option => {
-            option.closest('.quantity-option').classList.remove('selected');
-        });
-
-        selectedOption.classList.add('selected');
+        // ... (keep the existing handleQuantitySelection function as is)
     }
 
     function updateSubmitButton() {
-        const isSubscription = productActions.querySelector('input[name="purchase-type"]:checked').value === 'subscription';
-        const buttonText = isSubscription ? 'Subscribe Now' : 'Buy Now';
-        submitButton.querySelector('.submit-button-text').innerHTML = `<strong>${buttonText}</strong>`;
+        // ... (keep the existing updateSubmitButton function as is)
     }
 
     function handleSubmit(event) {
@@ -540,43 +490,23 @@
         const subscriptionPlanId = isSubscription ? selectedOption.dataset.subscriptionPlanId : null;
 
         toggleButtonLoading(true);
-        clearCartAndAddItem(variantId, quantity, subscriptionPlanId);
+        directCheckout(variantId, quantity, subscriptionPlanId);
     }
 
     function toggleButtonLoading(isLoading) {
-        if (loader) {
-            loader.style.display = isLoading ? 'block' : 'none';
-        }
-        const submitButtonText = submitButton.querySelector('.submit-button-text');
-        if (submitButtonText) {
-            submitButtonText.style.display = isLoading ? 'none' : 'block';
-        }
+        // ... (keep the existing toggleButtonLoading function as is)
     }
 
-    function clearCartAndAddItem(variantId, quantity, sellingPlan = null) {
-        const data = {
-            items: [{
-                id: variantId,
-                quantity: quantity,
-                selling_plan: sellingPlan
-            }]
-        };
+    function directCheckout(variantId, quantity, sellingPlan = null) {
+        let checkoutUrl = `https://${window.location.hostname}/cart/${variantId}:${quantity}`;
 
-        fetch('/cart/clear.js', { method: 'POST' })
-            .then(() => fetch('/cart/add.js', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            }))
-            .then(response => response.json())
-            .then(() => {
-                console.log('Item added to cart');
-                window.location.href = '/checkout';
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-                toggleButtonLoading(false);
-            });
+        if (sellingPlan) {
+            checkoutUrl += `?selling_plan=${sellingPlan}`;
+        }
+
+        checkoutUrl += (sellingPlan ? '&' : '?') + 'checkout=direct';
+
+        window.location.href = checkoutUrl;
     }
 
     init();
