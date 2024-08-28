@@ -461,23 +461,73 @@ document.addEventListener('DOMContentLoaded', () => {
     const quantityOptions = productActions.querySelectorAll('.quantity-option input[type="radio"]');
 
     function init() {
-        // ... (keep the existing init function as is)
+        // Ensure the one-time purchase option is selected on load
+        const oneTimePurchaseOption = document.querySelector('input[name="purchase-type"][value="one-time"]');
+        if (oneTimePurchaseOption) {
+            oneTimePurchaseOption.checked = true;
+        }
+
+        // Make the one-time purchase quantity options visible on load
+        const oneTimeOptions = document.querySelector('.one-time-purchase .quantity-options');
+        if (oneTimeOptions) {
+            oneTimeOptions.style.display = 'flex';
+        }
+
+        // Automatically select the "Buy 3" option
+        const buyThreeOption = document.querySelector('.one-time-purchase .quantity-option input[value="3"]');
+        if (buyThreeOption) {
+            buyThreeOption.checked = true;
+            buyThreeOption.click();
+            buyThreeOption.closest('.quantity-option').classList.add('selected');
+        }
+
+        // Update the submit button text
+        updateSubmitButton();
+
+        // Add event listeners
+        purchaseTypeInputs.forEach(input => input.addEventListener('change', handlePurchaseTypeChange));
+        quantityOptions.forEach(option => option.addEventListener('click', handleQuantitySelection));
+        submitButton.addEventListener('click', handleSubmit);
     }
 
     function handlePurchaseTypeChange(event) {
-        // ... (keep the existing handlePurchaseTypeChange function as is)
+        const purchaseType = event.target.value;
+        updatePurchaseOptions(purchaseType);
+
+        // Automatically select the first quantity option of the selected purchase type
+        const firstOptionSelector = purchaseType === 'subscription' ? '.subscription .quantity-option input[type="radio"]' : '.one-time-purchase .quantity-option input[type="radio"]';
+        const firstOption = productActions.querySelector(firstOptionSelector);
+
+        if (firstOption) {
+            firstOption.click();
+        }
+
+        updateSubmitButton();
     }
 
     function updatePurchaseOptions(purchaseType = 'one-time') {
-        // ... (keep the existing updatePurchaseOptions function as is)
+        const isSubscription = purchaseType === 'subscription';
+        const oneTimeOptions = productActions.querySelector('.one-time-purchase .quantity-options');
+        const subscriptionOptions = productActions.querySelector('.subscription .quantity-options');
+
+        oneTimeOptions.style.display = isSubscription ? 'none' : 'flex';
+        subscriptionOptions.style.display = isSubscription ? 'flex' : 'none';
     }
 
     function handleQuantitySelection(event) {
-        // ... (keep the existing handleQuantitySelection function as is)
+        const selectedOption = event.target.closest('.quantity-option');
+
+        quantityOptions.forEach(option => {
+            option.closest('.quantity-option').classList.remove('selected');
+        });
+
+        selectedOption.classList.add('selected');
     }
 
     function updateSubmitButton() {
-        // ... (keep the existing updateSubmitButton function as is)
+        const isSubscription = productActions.querySelector('input[name="purchase-type"]:checked').value === 'subscription';
+        const buttonText = isSubscription ? 'Subscribe Now' : 'Buy Now';
+        submitButton.querySelector('.submit-button-text').innerHTML = `<strong>${buttonText}</strong>`;
     }
 
     function handleSubmit(event) {
@@ -494,7 +544,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function toggleButtonLoading(isLoading) {
-        // ... (keep the existing toggleButtonLoading function as is)
+        if (loader) {
+            loader.style.display = isLoading ? 'block' : 'none';
+        }
+        const submitButtonText = submitButton.querySelector('.submit-button-text');
+        if (submitButtonText) {
+            submitButtonText.style.display = isLoading ? 'none' : 'block';
+        }
     }
 
     function directCheckout(variantId, quantity, sellingPlan = null) {
