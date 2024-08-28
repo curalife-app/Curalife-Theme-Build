@@ -106,18 +106,18 @@
   }
 
   .page-intro-splitscreen-wrapper {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 3;
-    pointer-events: none;
-  }
-
-  .page-intro-splitscreen-top,
-.page-intro-splitscreen-bottom {
   position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.page-intro-splitscreen-top,
+.page-intro-splitscreen-bottom {
+  position: absolute;
   left: 0;
   right: 0;
   height: 0;
@@ -172,16 +172,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewportHeight = window.innerHeight;
     const scrollPercentage = (scrollPosition / (sectionHeight - viewportHeight)) * 100;
 
-    if (scrollPercentage <= 50) {
-      const height = Math.min(scrollPercentage * 2, 50);
+    if (scrollPercentage <= 100) {
+      // Split screen animation
+      const height = Math.min(scrollPercentage, 50);
       splitTop.style.height = `${height}%`;
       splitBottom.style.height = `${height}%`;
-    } else if (scrollPercentage <= 100) {
-      const remainingPercentage = (scrollPercentage - 50) * 2;
-      const height = Math.min(50 + remainingPercentage, 100);
-      splitTop.style.height = `${height}%`;
-      splitBottom.style.height = `${height}%`;
+      splitTop.style.opacity = 1;
+      splitBottom.style.opacity = 1;
     } else {
+      // Ensure split screens cover the entire viewport
+      splitTop.style.height = '50%';
+      splitBottom.style.height = '50%';
+
       // Start fading out the white screens
       const fadeOutPercentage = Math.min((scrollPercentage - 100) * 2, 100);
       const opacity = 1 - (fadeOutPercentage / 100);
@@ -189,12 +191,12 @@ document.addEventListener('DOMContentLoaded', () => {
       splitBottom.style.opacity = opacity;
     }
 
-    if (scrollPercentage > 75) {
+    if (scrollPercentage > 75 && scrollPercentage <= 100) {
       const fadePercentage = (scrollPercentage - 75) * 4;
-      nextSection.style.opacity = Math.min(fadePercentage / 100, 1);
       wrapper.style.opacity = Math.max(1 - (fadePercentage / 100), 0);
+    } else if (scrollPercentage > 100) {
+      wrapper.style.opacity = 0;
     } else {
-      nextSection.style.opacity = 0;
       wrapper.style.opacity = 1;
     }
 
