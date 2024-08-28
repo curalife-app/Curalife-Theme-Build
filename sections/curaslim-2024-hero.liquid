@@ -116,22 +116,22 @@
   }
 
   .page-intro-splitscreen-top,
-  .page-intro-splitscreen-bottom {
-    position: absolute;
-    left: 0;
-    right: 0;
-    height: 0;
-    background-color: white;
-    transition: height 0.5s ease-out;
-  }
+.page-intro-splitscreen-bottom {
+  position: fixed;
+  left: 0;
+  right: 0;
+  height: 0;
+  background-color: white;
+  transition: height 0.5s ease-out, opacity 0.5s ease-out;
+}
 
-  .page-intro-splitscreen-top {
-    top: 0;
-  }
+.page-intro-splitscreen-top {
+  top: 50%;
+}
 
-  .page-intro-splitscreen-bottom {
-    bottom: 0;
-  }
+.page-intro-splitscreen-bottom {
+  bottom: 0;
+}
 
   .next-section-fade {
     position: absolute;
@@ -176,11 +176,17 @@ document.addEventListener('DOMContentLoaded', () => {
       const height = Math.min(scrollPercentage * 2, 50);
       splitTop.style.height = `${height}%`;
       splitBottom.style.height = `${height}%`;
-    } else {
+    } else if (scrollPercentage <= 100) {
       const remainingPercentage = (scrollPercentage - 50) * 2;
       const height = Math.min(50 + remainingPercentage, 100);
       splitTop.style.height = `${height}%`;
       splitBottom.style.height = `${height}%`;
+    } else {
+      // Start fading out the white screens
+      const fadeOutPercentage = Math.min((scrollPercentage - 100) * 2, 100);
+      const opacity = 1 - (fadeOutPercentage / 100);
+      splitTop.style.opacity = opacity;
+      splitBottom.style.opacity = opacity;
     }
 
     if (scrollPercentage > 75) {
@@ -205,9 +211,6 @@ document.addEventListener('DOMContentLoaded', () => {
   updateSplitScreen(); // Initial call
 });
 </script>
-
-
-
 
 {% if request.path contains 'curaslim-b2b' %}
   <style>
