@@ -1,3 +1,20 @@
+<div id="top-bar" class="top-bar items mbl:m-0 mb-12">
+  <div class="container flex justify-between p-0">
+    <div class="left mbl:gap-2 flex items-center gap-4">
+      <img class="max-w-[40%] mx-0" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/curalife-logo-white.svg" alt="Curaslim 2024 Logo">
+
+      <div class="reviews mbl:flex-col mbl:gap-0 flex items-center gap-2">
+        <div class="stars flex gap-1 mbl:w-full mbl:text-[3vw]">{% for star in (1..5) %}<img class="m-0 mbl:w-[3vw]" src="{{ "star.svg" | asset_url }}" alt="review star">{% endfor %}</div>
+        <div class="text-start text-xs mbl:text-[3vw] text-white">3,000 verified <br class="desktop">reviews</div>
+      </div>
+    </div>
+
+    <div class="right min-w-[30%]">
+      <a href="#cta" class="cta-element"><Button class="font-bold text-black bg-white" style="padding:unset;width:120px;height:40px;font-size:15px">Buy Now</Button></a>
+    </div>
+  </div>
+</div>
+
 <section class="section-page-intro">
   <div class="page-intro-wrapper">
     <div class="page-intro-content">
@@ -6,22 +23,7 @@
         <div class="main-container container flex flex-col justify-between h-full text-center">
           <div class="circle" data-rellax-speed="2" data-aos="zoom-in" data-aos-duration="3000"></div>
 
-          <div id="top-bar" class="top-bar items mbl:m-0 mb-12">
-            <div class="container flex justify-between p-0">
-              <div class="left mbl:gap-2 flex items-center gap-4">
-                <img class="max-w-[40%] mx-0" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/curalife-logo-white.svg" alt="Curaslim 2024 Logo">
 
-                <div class="reviews mbl:flex-col mbl:gap-0 flex items-center gap-2">
-                  <div class="stars flex gap-1 mbl:w-full mbl:text-[3vw]">{% for star in (1..5) %}<img class="m-0 mbl:w-[3vw]" src="{{ "star.svg" | asset_url }}" alt="review star">{% endfor %}</div>
-                  <div class="text-start text-xs mbl:text-[3vw] text-white">3,000 verified <br class="desktop">reviews</div>
-                </div>
-              </div>
-
-              <div class="right min-w-[30%]">
-                <a href="#cta" class="cta-element"><Button class="font-bold text-black bg-white" style="padding:unset;width:120px;height:40px;font-size:15px">Buy Now</Button></a>
-              </div>
-            </div>
-          </div>
 
           <div class="content mt-8 mb-auto">
             <h1 class="mb-8" data-aos="zoom-in">
@@ -172,6 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const splitBottom = document.querySelector('.page-intro-splitscreen-bottom');
   const splitFullBottom = document.querySelector('.page-intro-splitscreen-full-bottom');
   const nextSection = document.querySelector('.next-section-fade');
+  const topBar = document.getElementById('top-bar');
 
   function updateSplitScreen() {
     const scrollPosition = window.scrollY;
@@ -181,8 +184,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (scrollPercentage <= 100) {
       // Split screen animation
-      const centerHeight = Math.min(scrollPercentage / 3, 25); // Divide by 3 to allocate 1/3 of the effect to center split
-      const bottomHeight = Math.min(scrollPercentage / 3, 50); // Divide by 3 to allocate 1/3 of the effect to bottom split
+      const centerHeight = Math.min(scrollPercentage / 3, 25);
+      const bottomHeight = Math.min(scrollPercentage / 3, 50);
 
       splitTop.style.height = `${centerHeight}%`;
       splitBottom.style.height = `${centerHeight}%`;
@@ -191,6 +194,10 @@ document.addEventListener('DOMContentLoaded', () => {
       splitTop.style.opacity = 1;
       splitBottom.style.opacity = 1;
       splitFullBottom.style.opacity = 1;
+
+      // Ensure top bar is not visible during animation
+      topBar.style.opacity = '0';
+      topBar.classList.remove('floating');
     } else {
       // Ensure split screens cover the entire viewport
       splitTop.style.height = '25%';
@@ -203,6 +210,18 @@ document.addEventListener('DOMContentLoaded', () => {
       splitTop.style.opacity = opacity;
       splitBottom.style.opacity = opacity;
       splitFullBottom.style.opacity = opacity;
+
+      // Apply floating effect to top bar after animation and fade-out
+      if (fadeOutPercentage >= 100) {
+        topBar.classList.add('floating');
+        const topBarOpacity = Math.min((scrollPercentage - 150) / 50, 1);
+        topBar.style.opacity = topBarOpacity.toString();
+        topBar.style.background = `linear-gradient(0deg, rgba(15, 114, 176, ${topBarOpacity}) 0%, rgba(15, 124, 191, ${topBarOpacity}) 100%)`;
+        topBar.style.boxShadow = `0 2px 5px rgba(0,0,0,${topBarOpacity * 0.1})`;
+      } else {
+        topBar.classList.remove('floating');
+        topBar.style.opacity = '0';
+      }
     }
 
     if (scrollPercentage > 75 && scrollPercentage <= 100) {
@@ -220,6 +239,13 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       wrapper.style.position = 'fixed';
       wrapper.style.top = '0';
+    }
+
+    // Fade in the next section content
+    if (scrollPercentage > 100) {
+      nextSection.style.opacity = Math.min((scrollPercentage - 100) / 50, 1);
+    } else {
+      nextSection.style.opacity = 0;
     }
   }
 
@@ -453,13 +479,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
       .top-bar {
         transition: all 0.3s ease-in-out;
-        z-index: 1000;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        padding: 10px 20px;
-        background: transparent;
+    z-index: 1000;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 10px 20px;
+    background: transparent;
+    opacity: 0; /* Start with the top bar invisible */
 
         &.floating {
           background: rgb(34,98,138);
