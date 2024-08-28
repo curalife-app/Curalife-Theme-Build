@@ -248,12 +248,18 @@ document.addEventListener('DOMContentLoaded', () => {
     var topBar = document.getElementById('top-bar');
     var heroSection = document.querySelector('.hero-section');
     var heroBottom = heroSection.offsetTop + heroSection.offsetHeight;
+    var scrollPosition = window.scrollY;
 
-    if (window.scrollY > heroBottom) {
+    if (scrollPosition > 0) {
       topBar.classList.add('floating');
     } else {
       topBar.classList.remove('floating');
     }
+
+    // Adjust opacity based on scroll position
+    var opacity = Math.min(scrollPosition / (heroBottom / 2), 1);
+    topBar.style.background = `linear-gradient(0deg, rgba(15, 114, 176, ${opacity}) 0%, rgba(15, 124, 191, ${opacity}) 100%)`;
+    topBar.style.boxShadow = `0 2px 5px rgba(0,0,0,${opacity * 0.1})`;
   });
 </script>
 
@@ -448,15 +454,16 @@ document.addEventListener('DOMContentLoaded', () => {
       .top-bar {
         transition: all 0.3s ease-in-out;
         z-index: 1000;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        padding: 10px 20px;
+        background: transparent;
 
         &.floating {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
           background: rgb(34,98,138);
           background: linear-gradient(0deg, rgb(15 114 176) 0%, rgba(15, 124, 191, 1) 100%);
-          padding: 10px 20px;
           box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
