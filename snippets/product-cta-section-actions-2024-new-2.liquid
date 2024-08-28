@@ -453,7 +453,7 @@
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', () => {
     const productActions = document.getElementById('product-actions');
     const purchaseTypeInputs = productActions.querySelectorAll('input[name="purchase-type"]');
     const submitButton = productActions.querySelector('.submit-button');
@@ -540,7 +540,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const subscriptionPlanId = isSubscription ? selectedOption.dataset.subscriptionPlanId : null;
 
         toggleButtonLoading(true);
-        directCheckout(variantId, quantity, subscriptionPlanId);
+        clearCartAndAddItem(variantId, quantity, subscriptionPlanId);
     }
 
     function toggleButtonLoading(isLoading) {
@@ -553,16 +553,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function directCheckout(variantId, quantity, sellingPlan = null) {
-        let checkoutUrl = `https://${window.location.hostname}/cart/${variantId}:${quantity}`;
+    function clearCartAndAddItem(variantId, quantity, sellingPlan = null) {
+        const data = {
+            items: [{
+                id: variantId,
+                quantity: quantity,
+                selling_plan: sellingPlan
+            }]
+        };
 
-        if (sellingPlan) {
-            checkoutUrl += `?selling_plan=${sellingPlan}`;
-        }
-
-        checkoutUrl += (sellingPlan ? '&' : '?') + 'checkout=direct';
-
-        window.location.href = checkoutUrl;
+        fetch('/cart/clear.js', { method: 'POST' })
+            .then(() => fetch('/cart/add.js', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }))
+            .then(response => response.json())
+            .then(() => {
+                console.log('Item added to cart');
+                window.location.href = '/checkout';
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                toggleButtonLoading(false);
+            });
     }
 
     init();
