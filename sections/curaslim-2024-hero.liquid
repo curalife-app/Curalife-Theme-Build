@@ -9,10 +9,10 @@
         </div>
       </div>
     </div>
-    <div class="page-intro-splitscreen-wrapper">
-      <div class="page-intro-splitscreen-top"></div>
-      <div class="page-intro-splitscreen-bottom"></div>
-    </div>
+  </div>
+  <div class="page-intro-splitscreen-wrapper">
+    <div class="page-intro-splitscreen-top"></div>
+    <div class="page-intro-splitscreen-bottom"></div>
   </div>
   <div class="next-section-fade">
     <!-- Content for the next section -->
@@ -23,87 +23,90 @@
 
 <style>
   .section-page-intro {
-    position: relative;
-    min-height: 200vh;
-    overflow: hidden;
-  }
+  position: relative;
+  height: 200vh; /* Adjust this to control when the animation completes */
+}
 
-  .page-intro-wrapper {
-    position: sticky;
-    top: 0;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: #fff; /* Adjust as needed */
-  }
+.page-intro-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #fff; /* Adjust as needed */
+  z-index: 2;
+}
 
-  .page-intro-content {
-    z-index: 2;
-    text-align: center;
-  }
+.page-intro-content {
+  text-align: center;
+}
 
-  .page-intro-title {
-    font-size: 10vw;
-    font-weight: 900;
-    line-height: 0.8;
-    text-transform: uppercase;
-  }
+.page-intro-title {
+  font-size: 10vw;
+  font-weight: 900;
+  line-height: 0.8;
+  text-transform: uppercase;
+}
 
-  .page-intro-title.is-webdesign,
-  .page-intro-title.is-skills,
-  .page-intro-title.is-animation {
-    color: #000; /* Adjust colors as needed */
-  }
+.page-intro-title.is-webdesign,
+.page-intro-title.is-skills,
+.page-intro-title.is-animation {
+  color: #000; /* Adjust colors as needed */
+}
 
-  .page-intro-splitscreen-wrapper {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 1;
-    pointer-events: none;
-  }
+.page-intro-splitscreen-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  pointer-events: none;
+}
 
-  .page-intro-splitscreen-top,
-  .page-intro-splitscreen-bottom {
-    position: absolute;
-    left: 0;
-    right: 0;
-    height: 0;
-    background-color: #000;
-    transition: height 0.5s ease-out;
-  }
+.page-intro-splitscreen-top,
+.page-intro-splitscreen-bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  background-color: #000;
+  transition: height 0.5s ease-out;
+}
 
-  .page-intro-splitscreen-top {
-    top: 0;
-  }
+.page-intro-splitscreen-top {
+  top: 0;
+}
 
-  .page-intro-splitscreen-bottom {
-    bottom: 0;
-  }
+.page-intro-splitscreen-bottom {
+  bottom: 0;
+}
 
-  .next-section-fade {
-    position: absolute;
-    top: 100vh;
-    left: 0;
-    right: 0;
-    min-height: 100vh;
-    background-color: #f0f0f0; /* Adjust as needed */
-    opacity: 0;
-    transition: opacity 0.5s ease-out;
-    padding: 2rem;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-  }
+.next-section-fade {
+  position: absolute;
+  top: 100vh;
+  left: 0;
+  right: 0;
+  min-height: 100vh;
+  background-color: #f0f0f0; /* Adjust as needed */
+  opacity: 0;
+  transition: opacity 0.5s ease-out;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 1;
+}
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   const section = document.querySelector('.section-page-intro');
+  const wrapper = document.querySelector('.page-intro-wrapper');
   const splitTop = document.querySelector('.page-intro-splitscreen-top');
   const splitBottom = document.querySelector('.page-intro-splitscreen-bottom');
   const nextSection = document.querySelector('.next-section-fade');
@@ -128,8 +131,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (scrollPercentage > 75) {
       const fadePercentage = (scrollPercentage - 75) * 4;
       nextSection.style.opacity = Math.min(fadePercentage / 100, 1);
+      wrapper.style.opacity = Math.max(1 - (fadePercentage / 100), 0);
     } else {
       nextSection.style.opacity = 0;
+      wrapper.style.opacity = 1;
+    }
+
+    if (scrollPercentage >= 100) {
+      wrapper.style.position = 'absolute';
+      wrapper.style.top = `${sectionHeight - viewportHeight}px`;
+    } else {
+      wrapper.style.position = 'fixed';
+      wrapper.style.top = '0';
     }
   }
 
@@ -138,75 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
-<section class="hero-section mbl:px-0 p-4">
-  <div class="rellax bg" data-rellax-speed="-5"></div>
 
-  <div class="main-container container flex flex-col justify-between h-full text-center">
-    <div class="circle" data-rellax-speed="2" data-aos="zoom-in" data-aos-duration="3000"></div>
-
-    <div id="top-bar" class="top-bar items mbl:m-0 mb-12">
-      <div class="container flex justify-between p-0">
-        <div class="left mbl:gap-2 flex items-center gap-4">
-          <img class="max-w-[40%] mx-0" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/curalife-logo-white.svg" alt="Curaslim 2024 Logo">
-
-          <div class="reviews mbl:flex-col mbl:gap-0 flex items-center gap-2">
-            <div class="stars flex gap-1 mbl:w-full mbl:text-[3vw]">{% for star in (1..5) %}<img class="m-0 mbl:w-[3vw]" src="{{ "star.svg" | asset_url }}" alt="review star">{% endfor %}</div>
-            <div class="text-start text-xs mbl:text-[3vw] text-white">3,000 verified <br class="desktop">reviews</div>
-          </div>
-        </div>
-
-        <div class="right min-w-[30%]">
-          <a href="#cta" class="cta-element"><Button class="font-bold text-black bg-white" style="padding:unset;width:120px;height:40px;font-size:15px">Buy Now</Button></a>
-        </div>
-      </div>
-    </div>
-
-    <div class="content mt-8 mb-auto">
-      <h1 class="mb-8" data-aos="zoom-in">
-        <strong class="!not-italic">Lose Weight Fast</strong>
-        <img class="inline" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/hero-icons.png" srcset="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/hero-icons-2x.png 2x" alt="Curaslim 2024 Hero Image 1">
-        <em class="!italic"><span class="text-[--orange] !font-thin !italic">With Curaslim's</span><br>Powerful Triple - Action Formula!</em>
-      </h1>
-
-      <a href="#cta" class="cta-element" data-aos="flip-left" data-aos-delay="700"><button class="bg-[--orange] text-black font-bold cursor-pointer">Buy Now</button></a>
-    </div>
-
-    <div class="images">
-      <img class="review" data-aos="fade-up" data-aos-delay="200" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/Group_1597877448.png" srcset="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/Group_1597877448-2x.png 2x" alt="Curaslim Review">
-
-      <div class="badge" data-aos="flip-left" data-aos-easing="ease-out-cubic" data-aos-duration="1000">
-        <div class="inner-circle">
-          <div class="badge-text text-[14px]">Lose<br><strong class="text-[16px]">10%-15%</strong></div>
-        </div>
-
-        <div id="circle">
-          <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="280px" height="280px" viewBox="0 0 300 300" enable-background="new 0 0 300 300" xml:space="preserve">
-              <defs>
-                  <path id="circlePath" d="M 150, 150 m -60, 0 a 60,60 0 0,1 120,0 a 60,60 0 0,1 -120,0 "/>
-              </defs>
-            <circle cx="150" cy="100" r="75" fill="none"/>
-              <g>
-                  <use xlink:href="#circlePath" fill="none"/>
-                  <text fill="#ffffff">
-                      <textPath xlink:href="#circlePath">of your body weight · of your body weight · of your body weight · </textPath>
-                  </text>
-              </g>
-          </svg>
-        </div>
-      </div>
-      <img class="bottles" data-aos="zoom-in" data-aos-delay="50" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/Group_1597877740.png" srcset="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/Group_1597877740-2x.png 2x" alt="Curaslim 2024 Hero Image 1">
-      {% comment %} <img class="badges" data-aos="zoom-out-up" data-aos-delay="300" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/Group_1597877453.png" alt="Curaslim 2024 Hero Image 2"> {% endcomment %}
-    </div>
-
-    <div class="badges opacity-80 py-3" data-aos="zoom-out-up" data-aos-delay="300" data-aos-offset="-200">
-      <img src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/3.svg" alt="Curaslim 2024 Trust Badges">
-      <img src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/1.svg" alt="Curaslim 2024 Trust Badges">
-      <img src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/4.svg" alt="Curaslim 2024 Trust Badges">
-      <img src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/5.svg" alt="Curaslim 2024 Trust Badges">
-      <img src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/2.svg" alt="Curaslim 2024 Trust Badges">
-    </div>
-  </div>
-</section>
 
 {% if request.path contains 'curaslim-b2b' %}
   <style>
