@@ -107,9 +107,10 @@
   function handleStickyBar() {
     const stickyBar = document.getElementById('sticky-bar');
     const quizResultsSection = document.querySelector('.quiz-results-section');
-    const sectionBottom = quizResultsSection.offsetTop + quizResultsSection.offsetHeight;
 
     window.addEventListener('scroll', () => {
+      const sectionBottom = quizResultsSection.offsetTop + quizResultsSection.offsetHeight;
+
       if (window.pageYOffset > sectionBottom) {
         stickyBar.classList.remove('hidden');
         stickyBar.classList.add('visible');
@@ -120,11 +121,13 @@
     });
   }
 
-  // Immediately run the functions
-  processGeneralUrlParams();
-  processCanParam();
-  processGoalsParam();
-  handleStickyBar();
+  // Run the functions when the DOM is fully loaded
+  document.addEventListener('DOMContentLoaded', () => {
+    processGeneralUrlParams();
+    processCanParam();
+    processGoalsParam();
+    handleStickyBar();
+  });
 </script>
 
 {% schema %}
