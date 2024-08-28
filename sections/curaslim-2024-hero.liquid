@@ -1,3 +1,143 @@
+<section class="section-page-intro">
+  <div class="page-intro-wrapper">
+    <div class="page-intro-content">
+      <div class="page-intro-text-wrapper">
+        <div class="page-intro-title-wrapper">
+          <div class="page-intro-title is-webdesign">OUTBRAIN</div>
+          <div class="page-intro-title is-animation">HIGHLIGHTS</div>
+          <div class="page-intro-title is-skills">2024</div>
+        </div>
+      </div>
+    </div>
+    <div class="page-intro-splitscreen-wrapper">
+      <div class="page-intro-splitscreen-top"></div>
+      <div class="page-intro-splitscreen-bottom"></div>
+    </div>
+  </div>
+  <div class="next-section-fade">
+    <!-- Content for the next section -->
+    <h2>Next Section Content</h2>
+    <p>This content will fade in as the split-screen animation completes.</p>
+  </div>
+</section>
+
+<style>
+  .section-page-intro {
+    position: relative;
+    min-height: 200vh;
+    overflow: hidden;
+  }
+
+  .page-intro-wrapper {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #fff; /* Adjust as needed */
+  }
+
+  .page-intro-content {
+    z-index: 2;
+    text-align: center;
+  }
+
+  .page-intro-title {
+    font-size: 10vw;
+    font-weight: 900;
+    line-height: 0.8;
+    text-transform: uppercase;
+  }
+
+  .page-intro-title.is-webdesign,
+  .page-intro-title.is-skills,
+  .page-intro-title.is-animation {
+    color: #000; /* Adjust colors as needed */
+  }
+
+  .page-intro-splitscreen-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .page-intro-splitscreen-top,
+  .page-intro-splitscreen-bottom {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 0;
+    background-color: #000;
+    transition: height 0.5s ease-out;
+  }
+
+  .page-intro-splitscreen-top {
+    top: 0;
+  }
+
+  .page-intro-splitscreen-bottom {
+    bottom: 0;
+  }
+
+  .next-section-fade {
+    position: absolute;
+    top: 100vh;
+    left: 0;
+    right: 0;
+    min-height: 100vh;
+    background-color: #f0f0f0; /* Adjust as needed */
+    opacity: 0;
+    transition: opacity 0.5s ease-out;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const section = document.querySelector('.section-page-intro');
+  const splitTop = document.querySelector('.page-intro-splitscreen-top');
+  const splitBottom = document.querySelector('.page-intro-splitscreen-bottom');
+  const nextSection = document.querySelector('.next-section-fade');
+
+  function updateSplitScreen() {
+    const scrollPosition = window.scrollY;
+    const sectionHeight = section.offsetHeight;
+    const viewportHeight = window.innerHeight;
+    const scrollPercentage = (scrollPosition / (sectionHeight - viewportHeight)) * 100;
+
+    if (scrollPercentage <= 50) {
+      const height = Math.min(scrollPercentage * 2, 50);
+      splitTop.style.height = `${height}%`;
+      splitBottom.style.height = `${height}%`;
+    } else {
+      const remainingPercentage = (scrollPercentage - 50) * 2;
+      const height = Math.min(50 + remainingPercentage, 100);
+      splitTop.style.height = `${height}%`;
+      splitBottom.style.height = `${height}%`;
+    }
+
+    if (scrollPercentage > 75) {
+      const fadePercentage = (scrollPercentage - 75) * 4;
+      nextSection.style.opacity = Math.min(fadePercentage / 100, 1);
+    } else {
+      nextSection.style.opacity = 0;
+    }
+  }
+
+  window.addEventListener('scroll', updateSplitScreen);
+  updateSplitScreen(); // Initial call
+});
+</script>
+
 <section class="hero-section mbl:px-0 p-4">
   <div class="rellax bg" data-rellax-speed="-5"></div>
 
