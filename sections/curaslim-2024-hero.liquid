@@ -189,16 +189,25 @@ document.addEventListener('DOMContentLoaded', () => {
   const nextSection = document.querySelector('.next-section-fade');
   const topBar = document.getElementById('top-bar');
 
+  // Check if the device is mobile
+  const isMobile = window.innerWidth <= 768;
+
+  // Adjust the animation speed factor for mobile
+  const speedFactor = isMobile ? 0.5 : 1; // Twice as fast on mobile
+
   function updateSplitScreen() {
     const scrollPosition = window.scrollY;
     const sectionHeight = section.offsetHeight;
     const viewportHeight = window.innerHeight;
     const scrollPercentage = (scrollPosition / (sectionHeight - viewportHeight)) * 100;
 
-    if (scrollPercentage <= 100) {
+    // Adjust the scroll percentage for faster animation on mobile
+    const adjustedScrollPercentage = isMobile ? scrollPercentage / speedFactor : scrollPercentage;
+
+    if (adjustedScrollPercentage <= 100) {
       // Split screen animation
-      const centerHeight = Math.min(scrollPercentage / 3, 25);
-      const bottomHeight = Math.min(scrollPercentage / 3, 50);
+      const centerHeight = Math.min(adjustedScrollPercentage / 3, 25);
+      const bottomHeight = Math.min(adjustedScrollPercentage / 3, 50);
 
       splitTop.style.height = `${centerHeight}%`;
       splitBottom.style.height = `${centerHeight}%`;
@@ -208,26 +217,22 @@ document.addEventListener('DOMContentLoaded', () => {
       splitBottom.style.opacity = 1;
       splitFullBottom.style.opacity = 1;
 
-      // Ensure top bar is not visible during animation
       topBar.style.opacity = '0';
       topBar.classList.remove('floating');
     } else {
-      // Ensure split screens cover the entire viewport
       splitTop.style.height = '25%';
       splitBottom.style.height = '25%';
       splitFullBottom.style.height = '50%';
 
-      // Start fading out the white screens
-      const fadeOutPercentage = Math.min((scrollPercentage - 100) * 2, 100);
+      const fadeOutPercentage = Math.min((adjustedScrollPercentage - 100) * 2, 100);
       const opacity = 1 - (fadeOutPercentage / 100);
       splitTop.style.opacity = opacity;
       splitBottom.style.opacity = opacity;
       splitFullBottom.style.opacity = opacity;
 
-      // Apply floating effect to top bar after animation and fade-out
       if (fadeOutPercentage >= 100) {
         topBar.classList.add('floating');
-        const topBarOpacity = Math.min((scrollPercentage - 150) / 50, 1);
+        const topBarOpacity = Math.min((adjustedScrollPercentage - 150) / 50, 1);
         topBar.style.opacity = topBarOpacity.toString();
         topBar.style.background = `linear-gradient(0deg, rgba(15, 114, 176, ${topBarOpacity}) 0%, rgba(15, 124, 191, ${topBarOpacity}) 100%)`;
         topBar.style.boxShadow = `0 2px 5px rgba(0,0,0,${topBarOpacity * 0.1})`;
@@ -237,16 +242,16 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    if (scrollPercentage > 75 && scrollPercentage <= 100) {
-      const fadePercentage = (scrollPercentage - 75) * 4;
+    if (adjustedScrollPercentage > 75 && adjustedScrollPercentage <= 100) {
+      const fadePercentage = (adjustedScrollPercentage - 75) * 4;
       wrapper.style.opacity = Math.max(1 - (fadePercentage / 100), 0);
-    } else if (scrollPercentage > 100) {
+    } else if (adjustedScrollPercentage > 100) {
       wrapper.style.opacity = 0;
     } else {
       wrapper.style.opacity = 1;
     }
 
-    if (scrollPercentage >= 100) {
+    if (adjustedScrollPercentage >= 100) {
       wrapper.style.position = 'absolute';
       wrapper.style.top = `${sectionHeight - viewportHeight}px`;
     } else {
@@ -255,8 +260,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Fade in the next section content
-    if (scrollPercentage > 100) {
-      nextSection.style.opacity = Math.min((scrollPercentage - 100) / 50, 1);
+    if (adjustedScrollPercentage > 100) {
+      nextSection.style.opacity = Math.min((adjustedScrollPercentage - 100) / 50, 1);
     } else {
       nextSection.style.opacity = 0;
     }
@@ -264,6 +269,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.addEventListener('scroll', updateSplitScreen);
   updateSplitScreen(); // Initial call
+
+  // Update speed factor on window resize
+  window.addEventListener('resize', () => {
+    const newIsMobile = window.innerWidth <= 768;
+    if (newIsMobile !== isMobile) {
+      location.reload(); // Reload the page to reinitialize with the new speed factor
+    }
+  });
 });
 </script>
 
