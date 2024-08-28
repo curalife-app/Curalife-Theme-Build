@@ -117,18 +117,20 @@
   function handleStickyBar() {
     const stickyBar = document.getElementById('sticky-bar');
     const quizResultsSection = document.querySelector('.quiz-results-section');
+    const ctaElement = document.getElementById('cta');
     let isVisible = false;
 
     window.addEventListener('scroll', () => {
       const sectionBottom = quizResultsSection.offsetTop + quizResultsSection.offsetHeight;
+      const ctaPosition = ctaElement.getBoundingClientRect().top + window.pageYOffset;
 
-      if (window.pageYOffset > sectionBottom && !isVisible) {
+      if (window.pageYOffset > sectionBottom && window.pageYOffset < ctaPosition && !isVisible) {
         stickyBar.classList.remove('hidden');
         setTimeout(() => {
           stickyBar.classList.add('visible');
         }, 10);
         isVisible = true;
-      } else if (window.pageYOffset <= sectionBottom && isVisible) {
+      } else if ((window.pageYOffset <= sectionBottom || window.pageYOffset >= ctaPosition) && isVisible) {
         stickyBar.classList.remove('visible');
         setTimeout(() => {
           stickyBar.classList.add('hidden');
