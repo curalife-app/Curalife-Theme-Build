@@ -17,7 +17,10 @@
   </div>
 </section>
 
-<a id="sticky-bar" class="fixed bottom-0 left-0 z-50 hidden w-full px-4 py-4 text-[22px] bg-[--orange] text-center font-bold" href="#cta">Buy Curaslim - Lose Weight</a>
+<a id="sticky-bar" class="fixed bottom-0 left-0 z-50 hidden w-full px-4 py-4 bg-[--orange] text-center font-bold text-black text-[22px] shadow-lg transition-all duration-300 ease-in-out" href="#cta">
+  <span class="mr-2">🛒</span> Buy Curaslim - Lose Weight
+  <span class="absolute top-0 right-4 transform -translate-y-1/2 bg-white text-[--orange] rounded-full w-8 h-8 flex items-center justify-center">↑</span>
+</a>
 
 <style>
   article ul li, section ul li {
@@ -30,12 +33,22 @@
   }
 
   #sticky-bar {
-    transition: transform 0.3s ease-in-out;
     transform: translateY(100%);
+    opacity: 0;
   }
 
   #sticky-bar.visible {
     transform: translateY(0);
+    opacity: 1;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: translateY(-50%) scale(1); }
+    50% { transform: translateY(-50%) scale(1.1); }
+  }
+
+  #sticky-bar .absolute {
+    animation: pulse 2s infinite;
   }
 </style>
 
@@ -107,16 +120,23 @@
   function handleStickyBar() {
     const stickyBar = document.getElementById('sticky-bar');
     const quizResultsSection = document.querySelector('.quiz-results-section');
+    let isVisible = false;
 
     window.addEventListener('scroll', () => {
       const sectionBottom = quizResultsSection.offsetTop + quizResultsSection.offsetHeight;
 
-      if (window.pageYOffset > sectionBottom) {
+      if (window.pageYOffset > sectionBottom && !isVisible) {
         stickyBar.classList.remove('hidden');
-        stickyBar.classList.add('visible');
-      } else {
+        setTimeout(() => {
+          stickyBar.classList.add('visible');
+        }, 10);
+        isVisible = true;
+      } else if (window.pageYOffset <= sectionBottom && isVisible) {
         stickyBar.classList.remove('visible');
-        stickyBar.classList.add('hidden');
+        setTimeout(() => {
+          stickyBar.classList.add('hidden');
+        }, 300);
+        isVisible = false;
       }
     });
   }
