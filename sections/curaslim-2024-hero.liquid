@@ -481,7 +481,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const topBar = document.getElementById('top-bar');
 
   const isMobile = window.innerWidth <= 768;
-  const speedFactor = isMobile ? 2 : 1.5;
+  const speedFactor = isMobile ? 1 : 1.5;
 
   let lastScrollPosition = 0;
   let ticking = false;
@@ -503,6 +503,9 @@ document.addEventListener('DOMContentLoaded', () => {
       splitTop.style.opacity = splitBottom.style.opacity = splitFullBottom.style.opacity = 1;
       topBar.style.opacity = '0';
       topBar.classList.remove('floating');
+
+      nextSection.style.opacity = '0';
+      nextSection.style.visibility = 'hidden';
     } else {
       const fadeOutPercentage = Math.min((adjustedScrollPercentage - 100) * 2, 100);
       const opacity = 1 - (fadeOutPercentage / 100);
@@ -519,6 +522,11 @@ document.addEventListener('DOMContentLoaded', () => {
         topBar.classList.remove('floating');
         topBar.style.opacity = '0';
       }
+
+      // Fade in the next section
+      const nextSectionOpacity = Math.min((adjustedScrollPercentage - 100) / 50, 1);
+      nextSection.style.opacity = nextSectionOpacity.toString();
+      nextSection.style.visibility = 'visible';
     }
 
     wrapper.style.opacity = adjustedScrollPercentage > 75 ? Math.max(1 - ((adjustedScrollPercentage - 75) * 4 / 100), 0) : 1;
@@ -526,16 +534,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (adjustedScrollPercentage >= 100) {
       wrapper.style.position = 'absolute';
       wrapper.style.top = `${sectionHeight - viewportHeight}px`;
-      nextSection.style.position = 'relative';
-      nextSection.style.top = `${sectionHeight}px`;
     } else {
       wrapper.style.position = 'fixed';
       wrapper.style.top = '0';
-      nextSection.style.position = 'absolute';
-      nextSection.style.top = '100vh';
     }
 
-    nextSection.style.opacity = adjustedScrollPercentage > 100 ? Math.min((adjustedScrollPercentage - 100) / 50, 1) : 0;
+    // Update next section position for mobile
+    if (isMobile) {
+      nextSection.style.top = `${sectionHeight}px`;
+    }
   }
 
   function onScroll() {
