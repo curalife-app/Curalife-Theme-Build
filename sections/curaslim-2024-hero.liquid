@@ -499,8 +499,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let ticking = false;
 
   function updateSplitScreen(scrollPosition) {
-    const sectionHeight = section.offsetHeight;
-    const viewportHeight = window.innerHeight;
+    const sectionHeight = isMobile ? 750 : section.offsetHeight / window.innerHeight * 100;
+    const viewportHeight = 100;
     const scrollPercentage = (scrollPosition / (sectionHeight - viewportHeight)) * 100;
     const adjustedScrollPercentage = scrollPercentage * speedFactor;
 
@@ -536,16 +536,17 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       // Fade in the next section
-      const nextSectionOpacity = Math.min((adjustedScrollPercentage - 100) / 50, 1);
+      const nextSectionStartFade = isMobile ? 300 : 100;
+      const nextSectionOpacity = Math.max(0, Math.min((adjustedScrollPercentage - nextSectionStartFade) / 50, 1));
       nextSection.style.opacity = nextSectionOpacity.toString();
-      nextSection.style.visibility = 'visible';
+      nextSection.style.visibility = nextSectionOpacity > 0 ? 'visible' : 'hidden';
     }
 
     wrapper.style.opacity = adjustedScrollPercentage > 75 ? Math.max(1 - ((adjustedScrollPercentage - 75) * 4 / 100), 0) : 1;
 
     if (adjustedScrollPercentage >= 100) {
       wrapper.style.position = 'absolute';
-      wrapper.style.top = `${sectionHeight - viewportHeight}px`;
+      wrapper.style.top = `${sectionHeight - viewportHeight}${isMobile ? 'vw' : 'vh'}`;
     } else {
       wrapper.style.position = 'fixed';
       wrapper.style.top = '0';
@@ -553,8 +554,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update next section position
     if (isMobile) {
-      // Adjust this value to control when the next section starts to appear on mobile
-      nextSection.style.top = `${Math.max(sectionHeight * 0.6, viewportHeight)}px`;
+      nextSection.style.top = `${450}vw`; // Adjust this value to position the next section lower
     } else {
       nextSection.style.top = '100vh';
     }
