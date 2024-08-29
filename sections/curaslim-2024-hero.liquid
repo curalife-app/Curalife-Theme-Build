@@ -183,21 +183,31 @@ document.addEventListener('DOMContentLoaded', () => {
   const topBar = document.getElementById('top-bar');
 
   const isMobile = window.innerWidth <= 768;
-  const speedFactor = isMobile ? 1.5 : 1; // Adjusted for smoother animation
+  const speedFactor = isMobile ? 0.75 : 0.5; // Reduced speed factor for slower animation
 
   let lastScrollPosition = 0;
   let ticking = false;
+  let animationFrameId = null;
 
-  function easeInOutQuad(t) {
-    return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+  function easeInOutCubic(t) {
+    return t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1;
   }
+
+  function lerp(start, end, t) {
+    return start * (1 - t) + end * t;
+  }
+
+  let currentProgress = 0;
 
   function updateSplitScreen(scrollPosition) {
     const viewportHeight = window.innerHeight;
-    const scrollPercentage = (scrollPosition / viewportHeight) * 100;
-    const adjustedScrollPercentage = scrollPercentage * speedFactor;
+    const scrollPercentage = (scrollPosition / (section.offsetHeight - viewportHeight)) * 100;
+    const targetProgress = scrollPercentage * speedFactor;
 
-    const easedPercentage = easeInOutQuad(Math.min(adjustedScrollPercentage / 100, 1)) * 100;
+    // Smoothly interpolate between current progress and target progress
+    currentProgress = lerp(currentProgress, targetProgress, 0.1);
+
+    const easedPercentage = easeInOutCubic(Math.min(currentProgress / 100, 1)) * 100;
 
     if (easedPercentage <= 100) {
       const centerHeight = Math.min(easedPercentage / 2, 50);
@@ -237,12 +247,18 @@ document.addEventListener('DOMContentLoaded', () => {
       wrapper.style.position = 'fixed';
       wrapper.style.top = '0';
     }
+
+    if (Math.abs(currentProgress - targetProgress) > 0.01) {
+      animationFrameId = requestAnimationFrame(() => updateSplitScreen(scrollPosition));
+    } else {
+      animationFrameId = null;
+    }
   }
 
   function onScroll() {
     lastScrollPosition = window.scrollY;
     if (!ticking) {
-      window.requestAnimationFrame(() => {
+      animationFrameId = requestAnimationFrame(() => {
         updateSplitScreen(lastScrollPosition);
         ticking = false;
       });
@@ -259,10 +275,20 @@ document.addEventListener('DOMContentLoaded', () => {
       const targetId = this.getAttribute('href').substring(1);
       const targetElement = document.getElementById(targetId);
       if (targetElement) {
-        targetElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start'
-        });
+        const targetPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
+        const startPosition = window.pageYOffset;
+        const distance = targetPosition - startPosition;
+        let startTime = null;
+
+        function animation(currentTime) {
+          if (startTime === null) startTime = currentTime;
+          const timeElapsed = currentTime - startTime;
+          const run = easeInOutCubic(Math.min(timeElapsed / 1000, 1)) * distance;
+          window.scrollTo(0, startPosition + run);
+          if (timeElapsed < 1000) requestAnimationFrame(animation);
+        }
+
+        requestAnimationFrame(animation);
       }
     });
   });
