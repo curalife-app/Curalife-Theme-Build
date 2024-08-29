@@ -436,30 +436,24 @@
 
   .next-section-fade {
     position: absolute;
-    top: 100vh;
-    left: 0;
-    right: 0;
-    min-height: 100vh;
-    background-color: white;
-    opacity: 0;
-    transition: opacity 0.5s ease-out;
-    padding: 2rem;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 1;
+  top: 200vh; /* This should match the height of .section-page-intro */
+  left: 0;
+  right: 0;
+  min-height: 100vh;
+  background-color: white;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+  padding: 2rem;
+  z-index: 4; /* Ensure it's above the splitscreen elements */
   }
 
   @media (max-width: 768px) {
-  .next-section-fade {
-    padding: 1rem;
+    .next-section-fade {
+      top: 300vh; /* This should match the height of .section-page-intro for mobile */
+      padding: 1rem;
+    }
   }
-
-  .section-page-intro {
-    height: 300vh; /* Adjust this value to control when the animation completes on mobile */
-  }
-}
 
   /* Preserve your existing styles */
   .hero-section {
@@ -502,6 +496,9 @@ document.addEventListener('DOMContentLoaded', () => {
       splitTop.style.opacity = splitBottom.style.opacity = splitFullBottom.style.opacity = 1;
       topBar.style.opacity = '0';
       topBar.classList.remove('floating');
+
+      nextSection.style.opacity = '0';
+      nextSection.style.visibility = 'hidden';
     } else {
       const fadeOutPercentage = Math.min((adjustedScrollPercentage - 100) * 2, 100);
       const opacity = 1 - (fadeOutPercentage / 100);
@@ -518,6 +515,11 @@ document.addEventListener('DOMContentLoaded', () => {
         topBar.classList.remove('floating');
         topBar.style.opacity = '0';
       }
+
+      // Fade in the next section
+      const nextSectionOpacity = Math.min((adjustedScrollPercentage - 100) / 50, 1);
+      nextSection.style.opacity = nextSectionOpacity.toString();
+      nextSection.style.visibility = 'visible';
     }
 
     wrapper.style.opacity = adjustedScrollPercentage > 75 ? Math.max(1 - ((adjustedScrollPercentage - 75) * 4 / 100), 0) : 1;
@@ -525,16 +527,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (adjustedScrollPercentage >= 100) {
       wrapper.style.position = 'absolute';
       wrapper.style.top = `${sectionHeight - viewportHeight}px`;
-      nextSection.style.position = 'relative';
-      nextSection.style.top = `${sectionHeight}px`;
     } else {
       wrapper.style.position = 'fixed';
       wrapper.style.top = '0';
-      nextSection.style.position = 'absolute';
-      nextSection.style.top = '100vh';
     }
-
-    nextSection.style.opacity = adjustedScrollPercentage > 100 ? Math.min((adjustedScrollPercentage - 100) / 50, 1) : 0;
   }
 
   function onScroll() {
