@@ -499,8 +499,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let ticking = false;
 
   function updateSplitScreen(scrollPosition) {
-    const sectionHeight = isMobile ? 750 : section.offsetHeight / window.innerHeight * 100;
-    const viewportHeight = 100;
+    const sectionHeight = section.offsetHeight;
+    const viewportHeight = window.innerHeight;
     const scrollPercentage = (scrollPosition / (sectionHeight - viewportHeight)) * 100;
     const adjustedScrollPercentage = scrollPercentage * speedFactor;
 
@@ -536,8 +536,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       // Fade in the next section
-      const nextSectionStartFade = isMobile ? 300 : 100;
-      const nextSectionOpacity = Math.max(0, Math.min((adjustedScrollPercentage - nextSectionStartFade) / 50, 1));
+      const fadeInStart = isMobile ? 300 : 100; // Start fade-in later on mobile
+      const fadeInDuration = isMobile ? 200 : 50; // Longer fade-in duration on mobile
+      const nextSectionOpacity = Math.min(Math.max((adjustedScrollPercentage - fadeInStart) / fadeInDuration, 0), 1);
       nextSection.style.opacity = nextSectionOpacity.toString();
       nextSection.style.visibility = nextSectionOpacity > 0 ? 'visible' : 'hidden';
     }
@@ -546,7 +547,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (adjustedScrollPercentage >= 100) {
       wrapper.style.position = 'absolute';
-      wrapper.style.top = `${sectionHeight - viewportHeight}${isMobile ? 'vw' : 'vh'}`;
+      wrapper.style.top = `${sectionHeight - viewportHeight}px`;
     } else {
       wrapper.style.position = 'fixed';
       wrapper.style.top = '0';
@@ -554,7 +555,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update next section position
     if (isMobile) {
-      nextSection.style.top = `${450}vw`; // Adjust this value to position the next section lower
+      // Use vw units for mobile
+      const mobileTopPosition = 300; // Adjust this value to control when the next section appears
+      nextSection.style.top = `${mobileTopPosition}vw`;
     } else {
       nextSection.style.top = '100vh';
     }
