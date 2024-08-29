@@ -485,72 +485,39 @@
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  const section = document.querySelector('.section-page-intro');
-  const wrapper = document.querySelector('.page-intro-wrapper');
-  const nextSection = document.querySelector('.next-section-fade');
-  const topBar = document.getElementById('top-bar');
+    document.addEventListener('DOMContentLoaded', () => {
+        const section = document.querySelector('.section-page-intro');
+        const wrapper = document.querySelector('.page-intro-wrapper');
+        const nextSection = document.querySelector('.next-section-fade');
 
-  const isMobile = window.innerWidth <= 768;
+        const isMobile = window.innerWidth <= 768;
 
-  let lastScrollPosition = 0;
-  let ticking = false;
+        function updateScroll() {
+            const scrollPosition = window.pageYOffset;
+            const sectionHeight = section.offsetHeight;
+            const viewportHeight = window.innerHeight;
+            const scrollPercentage = (scrollPosition / (sectionHeight - viewportHeight)) * 100;
 
-  function updateAnimation(scrollPosition) {
-    const sectionHeight = section.offsetHeight;
-    const viewportHeight = window.innerHeight;
-    const scrollPercentage = (scrollPosition / (sectionHeight - viewportHeight)) * 100;
+            if (isMobile) {
+                // Simple fade out for mobile
+                wrapper.style.opacity = 1 - (scrollPosition / viewportHeight);
+                nextSection.style.opacity = scrollPosition / viewportHeight;
+            } else {
+                // Desktop animation
+                if (scrollPercentage <= 100) {
+                    wrapper.style.opacity = 1 - (scrollPercentage / 100);
+                    nextSection.style.opacity = scrollPercentage / 100;
+                } else {
+                    wrapper.style.opacity = 0;
+                    nextSection.style.opacity = 1;
+                }
+            }
+        }
 
-    if (isMobile) {
-      // Simplified animation for mobile
-      if (scrollPercentage <= 30) {
-        wrapper.style.opacity = 1;
-        nextSection.style.opacity = 0;
-      } else {
-        wrapper.style.opacity = Math.max(1 - ((scrollPercentage - 30) / 40), 0);
-        nextSection.style.opacity = Math.min((scrollPercentage - 30) / 40, 1);
-      }
-
-      // Simple fade for top bar on mobile
-      topBar.style.opacity = scrollPercentage > 5 ? Math.min((scrollPercentage - 5) / 15, 1) : 0;
-      topBar.style.background = scrollPercentage > 5 ? 'rgba(15, 114, 176, 1)' : 'transparent';
-    } else {
-      // Desktop animation
-      if (scrollPercentage <= 50) {
-        wrapper.style.opacity = 1;
-        nextSection.style.opacity = 0;
-      } else if (scrollPercentage > 50 && scrollPercentage <= 100) {
-        wrapper.style.opacity = Math.max(1 - ((scrollPercentage - 50) / 50), 0);
-        nextSection.style.opacity = Math.min((scrollPercentage - 50) / 50, 1);
-      } else {
-        wrapper.style.opacity = 0;
-        nextSection.style.opacity = 1;
-      }
-
-      // Top bar animation for desktop
-      topBar.style.opacity = scrollPercentage > 10 ? Math.min((scrollPercentage - 10) / 20, 1) : 0;
-      topBar.style.background = scrollPercentage > 10 ? 'rgba(15, 114, 176, 1)' : 'transparent';
-    }
-
-    // Update next section position
-    nextSection.style.top = isMobile ? `${sectionHeight}px` : '100vh';
-  }
-
-  function onScroll() {
-    lastScrollPosition = window.scrollY;
-    if (!ticking) {
-      window.requestAnimationFrame(() => {
-        updateAnimation(lastScrollPosition);
-        ticking = false;
-      });
-      ticking = true;
-    }
-  }
-
-  window.addEventListener('scroll', onScroll, { passive: true });
-  updateAnimation(window.scrollY);
-});
-</script>
+        window.addEventListener('scroll', updateScroll);
+        updateScroll(); // Initial call
+    });
+    </script>
 
 {% if request.path contains 'curaslim-b2b' %}
   <style>
