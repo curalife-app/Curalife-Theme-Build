@@ -189,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const topBar = document.getElementById('top-bar');
 
   const isMobile = window.innerWidth <= 768;
-  const speedFactor = isMobile ? 1 : 2;
+  const speedFactor = isMobile ? 1 : 2; // Reduced from 2 to 1.5 for desktop
 
   let lastScrollPosition = 0;
   let ticking = false;
@@ -231,8 +231,8 @@ document.addEventListener('DOMContentLoaded', () => {
         topBar.style.opacity = '0';
       }
 
-      // Fade in the next section
-      const nextSectionStartFade = isMobile ? 300 : 100;
+      // Fade in the next section earlier
+      const nextSectionStartFade = isMobile ? 300 : 75; // Changed from 100 to 75 for desktop
       const nextSectionOpacity = Math.max(0, Math.min((adjustedScrollPercentage - nextSectionStartFade) / 50, 1));
       nextSection.style.opacity = nextSectionOpacity.toString();
       nextSection.style.visibility = nextSectionOpacity > 0 ? 'visible' : 'hidden';
@@ -250,7 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update next section position
     if (isMobile) {
-      nextSection.style.top = `${450}vw`; // Adjust this value to position the next section lower
+      nextSection.style.top = `${450}vw`;
     } else {
       nextSection.style.top = '100vh';
     }
