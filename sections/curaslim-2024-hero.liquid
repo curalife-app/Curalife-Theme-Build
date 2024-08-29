@@ -93,9 +93,6 @@
     <div class="page-intro-splitscreen-bottom"></div>
     <div class="page-intro-splitscreen-full-bottom"></div>
   </div>
-  <div class="next-section-fade">
-
-  </div>
 </section>
 
 <style>
@@ -154,18 +151,6 @@
     bottom: 0;
   }
 
-  .next-section-fade {
-    position: absolute;
-    top: 100vh;
-    left: 0;
-    right: 0;
-    min-height: 100vh;
-    background-color: white;
-    opacity: 0;
-    transition: opacity 0.5s ease-out;
-    z-index: 1;
-  }
-
   /* Preserve your existing styles */
   .hero-section {
     min-height: 100vh;
@@ -185,11 +170,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const splitTop = document.querySelector('.page-intro-splitscreen-top');
   const splitBottom = document.querySelector('.page-intro-splitscreen-bottom');
   const splitFullBottom = document.querySelector('.page-intro-splitscreen-full-bottom');
-  const nextSection = document.querySelector('.next-section-fade');
   const topBar = document.getElementById('top-bar');
 
   const isMobile = window.innerWidth <= 768;
-  const speedFactor = isMobile ? 1 : 2; // Reduced from 2 to 1.5 for desktop
+  const speedFactor = isMobile ? 1 : 1.5;
 
   let lastScrollPosition = 0;
   let ticking = false;
@@ -211,9 +195,6 @@ document.addEventListener('DOMContentLoaded', () => {
       splitTop.style.opacity = splitBottom.style.opacity = splitFullBottom.style.opacity = 1;
       topBar.style.opacity = '0';
       topBar.classList.remove('floating');
-
-      nextSection.style.opacity = '0';
-      nextSection.style.visibility = 'hidden';
     } else {
       const fadeOutPercentage = Math.min((adjustedScrollPercentage - 100) * 2, 100);
       const opacity = 1 - (fadeOutPercentage / 100);
@@ -230,12 +211,6 @@ document.addEventListener('DOMContentLoaded', () => {
         topBar.classList.remove('floating');
         topBar.style.opacity = '0';
       }
-
-      // Fade in the next section earlier
-      const nextSectionStartFade = isMobile ? 300 : 75; // Changed from 100 to 75 for desktop
-      const nextSectionOpacity = Math.max(0, Math.min((adjustedScrollPercentage - nextSectionStartFade) / 50, 1));
-      nextSection.style.opacity = nextSectionOpacity.toString();
-      nextSection.style.visibility = nextSectionOpacity > 0 ? 'visible' : 'hidden';
     }
 
     wrapper.style.opacity = adjustedScrollPercentage > 75 ? Math.max(1 - ((adjustedScrollPercentage - 75) * 4 / 100), 0) : 1;
@@ -246,13 +221,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       wrapper.style.position = 'fixed';
       wrapper.style.top = '0';
-    }
-
-    // Update next section position
-    if (isMobile) {
-      nextSection.style.top = `${450}vw`;
-    } else {
-      nextSection.style.top = '100vh';
     }
   }
 
