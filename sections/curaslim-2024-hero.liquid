@@ -183,94 +183,71 @@ document.addEventListener('DOMContentLoaded', () => {
   const topBar = document.getElementById('top-bar');
 
   const isMobile = window.innerWidth <= 768;
-  const speedFactor = isMobile ? 1 : 0.75; // Slightly reduced speed factor
+  const speedFactor = isMobile ? 2 : 1; // Increased from 1.5 to 2 for mobile, and from 0.25 to 1 for desktop
 
   let lastScrollPosition = 0;
   let ticking = false;
 
-  function easeInOutQuad(t) {
-    return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-  }
-
   function updateSplitScreen(scrollPosition) {
-    const viewportHeight = window.innerHeight;
-    const scrollPercentage = (scrollPosition / viewportHeight) * 100;
-    const adjustedScrollPercentage = scrollPercentage * speedFactor;
+  const viewportHeight = window.innerHeight;
+  const scrollPercentage = (scrollPosition / viewportHeight) * 100;
+  const adjustedScrollPercentage = scrollPercentage * speedFactor;
 
-    const easedPercentage = easeInOutQuad(Math.min(adjustedScrollPercentage / 100, 1)) * 100;
+  if (adjustedScrollPercentage <= 100) {
+    const centerHeight = Math.min(adjustedScrollPercentage / 2, 50); // Adjusted to expand fully
+    const bottomHeight = Math.min(adjustedScrollPercentage, 100); // Adjusted to expand fully
 
-    if (easedPercentage <= 100) {
-      const centerHeight = Math.min(easedPercentage / 2, 50);
-      const bottomHeight = Math.min(easedPercentage, 100);
+    splitTop.style.height = `${centerHeight}%`;
+    splitBottom.style.height = `${centerHeight}%`;
+    splitFullBottom.style.height = `${bottomHeight}%`;
 
-      splitTop.style.height = `${centerHeight}%`;
-      splitBottom.style.height = `${centerHeight}%`;
-      splitFullBottom.style.height = `${bottomHeight}%`;
+    splitTop.style.opacity = splitBottom.style.opacity = splitFullBottom.style.opacity = 1;
+    topBar.style.opacity = '0';
+    topBar.classList.remove('floating');
+  } else {
+    const fadeOutPercentage = Math.min((adjustedScrollPercentage - 100) * 2, 100);
+    const opacity = 1 - (fadeOutPercentage / 100);
 
-      splitTop.style.opacity = splitBottom.style.opacity = splitFullBottom.style.opacity = 1;
-      topBar.style.opacity = '0';
+    splitTop.style.opacity = splitBottom.style.opacity = splitFullBottom.style.opacity = opacity;
+
+    if (fadeOutPercentage >= 100) {
+      topBar.classList.add('floating');
+      const topBarOpacity = Math.min((adjustedScrollPercentage - 150) / 50, 1);
+      topBar.style.opacity = topBarOpacity.toString();
+      topBar.style.background = `linear-gradient(0deg, rgba(15, 114, 176, ${topBarOpacity}) 0%, rgba(15, 124, 191, ${topBarOpacity}) 100%)`;
+      topBar.style.boxShadow = `0 2px 5px rgba(0,0,0,${topBarOpacity * 0.1})`;
+    } else {
       topBar.classList.remove('floating');
-    } else {
-      const fadeOutPercentage = Math.min((easedPercentage - 100) * 2, 100);
-      const opacity = 1 - (fadeOutPercentage / 100);
-
-      splitTop.style.opacity = splitBottom.style.opacity = splitFullBottom.style.opacity = opacity;
-
-      if (fadeOutPercentage >= 100) {
-        topBar.classList.add('floating');
-        const topBarOpacity = Math.min((easedPercentage - 150) / 50, 1);
-        topBar.style.opacity = topBarOpacity.toString();
-        topBar.style.background = `linear-gradient(0deg, rgba(15, 114, 176, ${topBarOpacity}) 0%, rgba(15, 124, 191, ${topBarOpacity}) 100%)`;
-        topBar.style.boxShadow = `0 2px 5px rgba(0,0,0,${topBarOpacity * 0.1})`;
-      } else {
-        topBar.classList.remove('floating');
-        topBar.style.opacity = '0';
-      }
-    }
-
-    wrapper.style.opacity = easedPercentage > 50 ? Math.max(1 - ((easedPercentage - 50) * 4 / 100), 0) : 1;
-
-    if (easedPercentage >= 100) {
-      wrapper.style.position = 'absolute';
-      wrapper.style.top = '100vh';
-    } else {
-      wrapper.style.position = 'fixed';
-      wrapper.style.top = '0';
+      topBar.style.opacity = '0';
     }
   }
 
-  function onScroll() {
-    lastScrollPosition = window.scrollY;
-    if (!ticking) {
-      window.requestAnimationFrame(() => {
-        updateSplitScreen(lastScrollPosition);
-        ticking = false;
-      });
-      ticking = true;
-    }
+  wrapper.style.opacity = adjustedScrollPercentage > 50 ? Math.max(1 - ((adjustedScrollPercentage - 50) * 4 / 100), 0) : 1;
+
+  if (adjustedScrollPercentage >= 100) {
+    wrapper.style.position = 'absolute';
+    wrapper.style.top = '100vh';
+  } else {
+    wrapper.style.position = 'fixed';
+    wrapper.style.top = '0';
   }
+}
 
-  window.addEventListener('scroll', onScroll, { passive: true });
-
-  // Smooth scroll function for "Buy Now" button
-  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-      e.preventDefault();
-      const targetId = this.getAttribute('href').substring(1);
-      const targetElement = document.getElementById(targetId);
-      if (targetElement) {
-        targetElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start'
-        });
-      }
+function onScroll() {
+  lastScrollPosition = window.scrollY;
+  if (!ticking) {
+    window.requestAnimationFrame(() => {
+      updateSplitScreen(lastScrollPosition);
+      ticking = false;
     });
-  });
+    ticking = true;
+  }
+}
 
-  updateSplitScreen(window.scrollY);
+window.addEventListener('scroll', onScroll, { passive: true });
+updateSplitScreen(window.scrollY);
 });
 </script>
-
 
 {% if request.path contains 'curaslim-b2b' %}
   <style>
