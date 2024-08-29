@@ -123,10 +123,13 @@
     position: fixed;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 3;
-    pointer-events: none;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2;
+    transition: opacity 0.3s ease-out;
   }
 
   .page-intro-splitscreen-top,
@@ -138,6 +141,7 @@
     height: 0;
     background-color: white;
     transition: height 0.3s ease-out, opacity 0.3s ease-out;
+    z-index: 3 ;
   }
 
   .page-intro-splitscreen-top {
@@ -180,63 +184,63 @@ document.addEventListener('DOMContentLoaded', () => {
   let ticking = false;
 
   function updateSplitScreen(scrollPosition) {
-    const viewportHeight = window.innerHeight;
-    const scrollPercentage = (scrollPosition / viewportHeight) * 100;
-    const adjustedScrollPercentage = scrollPercentage * speedFactor;
+  const viewportHeight = window.innerHeight;
+  const scrollPercentage = (scrollPosition / viewportHeight) * 100;
+  const adjustedScrollPercentage = scrollPercentage * speedFactor;
 
-    if (adjustedScrollPercentage <= 100) {
-      const centerHeight = Math.min(adjustedScrollPercentage / 2, 25);
-      const bottomHeight = Math.min(adjustedScrollPercentage, 50);
+  if (adjustedScrollPercentage <= 100) {
+    const centerHeight = Math.min(adjustedScrollPercentage / 2, 50); // Adjusted to expand fully
+    const bottomHeight = Math.min(adjustedScrollPercentage, 100); // Adjusted to expand fully
 
-      splitTop.style.height = `${centerHeight}%`;
-      splitBottom.style.height = `${centerHeight}%`;
-      splitFullBottom.style.height = `${bottomHeight}%`;
+    splitTop.style.height = `${centerHeight}%`;
+    splitBottom.style.height = `${centerHeight}%`;
+    splitFullBottom.style.height = `${bottomHeight}%`;
 
-      splitTop.style.opacity = splitBottom.style.opacity = splitFullBottom.style.opacity = 1;
-      topBar.style.opacity = '0';
+    splitTop.style.opacity = splitBottom.style.opacity = splitFullBottom.style.opacity = 1;
+    topBar.style.opacity = '0';
+    topBar.classList.remove('floating');
+  } else {
+    const fadeOutPercentage = Math.min((adjustedScrollPercentage - 100) * 2, 100);
+    const opacity = 1 - (fadeOutPercentage / 100);
+
+    splitTop.style.opacity = splitBottom.style.opacity = splitFullBottom.style.opacity = opacity;
+
+    if (fadeOutPercentage >= 100) {
+      topBar.classList.add('floating');
+      const topBarOpacity = Math.min((adjustedScrollPercentage - 150) / 50, 1);
+      topBar.style.opacity = topBarOpacity.toString();
+      topBar.style.background = `linear-gradient(0deg, rgba(15, 114, 176, ${topBarOpacity}) 0%, rgba(15, 124, 191, ${topBarOpacity}) 100%)`;
+      topBar.style.boxShadow = `0 2px 5px rgba(0,0,0,${topBarOpacity * 0.1})`;
+    } else {
       topBar.classList.remove('floating');
-    } else {
-      const fadeOutPercentage = Math.min((adjustedScrollPercentage - 100) * 2, 100);
-      const opacity = 1 - (fadeOutPercentage / 100);
-
-      splitTop.style.opacity = splitBottom.style.opacity = splitFullBottom.style.opacity = opacity;
-
-      if (fadeOutPercentage >= 100) {
-        topBar.classList.add('floating');
-        const topBarOpacity = Math.min((adjustedScrollPercentage - 150) / 50, 1);
-        topBar.style.opacity = topBarOpacity.toString();
-        topBar.style.background = `linear-gradient(0deg, rgba(15, 114, 176, ${topBarOpacity}) 0%, rgba(15, 124, 191, ${topBarOpacity}) 100%)`;
-        topBar.style.boxShadow = `0 2px 5px rgba(0,0,0,${topBarOpacity * 0.1})`;
-      } else {
-        topBar.classList.remove('floating');
-        topBar.style.opacity = '0';
-      }
-    }
-
-    wrapper.style.opacity = adjustedScrollPercentage > 50 ? Math.max(1 - ((adjustedScrollPercentage - 50) * 4 / 100), 0) : 1;
-
-    if (adjustedScrollPercentage >= 100) {
-      wrapper.style.position = 'absolute';
-      wrapper.style.top = '100vh';
-    } else {
-      wrapper.style.position = 'fixed';
-      wrapper.style.top = '0';
+      topBar.style.opacity = '0';
     }
   }
 
-  function onScroll() {
-    lastScrollPosition = window.scrollY;
-    if (!ticking) {
-      window.requestAnimationFrame(() => {
-        updateSplitScreen(lastScrollPosition);
-        ticking = false;
-      });
-      ticking = true;
-    }
-  }
+  wrapper.style.opacity = adjustedScrollPercentage > 50 ? Math.max(1 - ((adjustedScrollPercentage - 50) * 4 / 100), 0) : 1;
 
-  window.addEventListener('scroll', onScroll, { passive: true });
-  updateSplitScreen(window.scrollY);
+  if (adjustedScrollPercentage >= 100) {
+    wrapper.style.position = 'absolute';
+    wrapper.style.top = '100vh';
+  } else {
+    wrapper.style.position = 'fixed';
+    wrapper.style.top = '0';
+  }
+}
+
+function onScroll() {
+  lastScrollPosition = window.scrollY;
+  if (!ticking) {
+    window.requestAnimationFrame(() => {
+      updateSplitScreen(lastScrollPosition);
+      ticking = false;
+    });
+    ticking = true;
+  }
+}
+
+window.addEventListener('scroll', onScroll, { passive: true });
+updateSplitScreen(window.scrollY);
 });
 </script>
 
