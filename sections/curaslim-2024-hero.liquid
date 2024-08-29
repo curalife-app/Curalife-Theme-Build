@@ -171,6 +171,16 @@
     z-index: 1;
   }
 
+  @media (max-width: 768px) {
+  .next-section-fade {
+    padding: 1rem;
+  }
+
+  .section-page-intro {
+    height: 300vh; /* Adjust this value to control when the animation completes on mobile */
+  }
+}
+
   /* Preserve your existing styles */
   .hero-section {
     min-height: 100vh;
@@ -189,10 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const nextSection = document.querySelector('.next-section-fade');
   const topBar = document.getElementById('top-bar');
 
-  // Check if the device is mobile
   const isMobile = window.innerWidth <= 768;
-
-  // Adjust the animation speed factor (increase for faster animation)
   const speedFactor = isMobile ? 2 : 1.5;
 
   let lastScrollPosition = 0;
@@ -202,12 +209,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const sectionHeight = section.offsetHeight;
     const viewportHeight = window.innerHeight;
     const scrollPercentage = (scrollPosition / (sectionHeight - viewportHeight)) * 100;
-
-    // Adjust the scroll percentage for faster animation
     const adjustedScrollPercentage = scrollPercentage * speedFactor;
 
     if (adjustedScrollPercentage <= 100) {
-      // Split screen animation
       const centerHeight = Math.min(adjustedScrollPercentage / 2, 25);
       const bottomHeight = Math.min(adjustedScrollPercentage, 50);
 
@@ -215,22 +219,14 @@ document.addEventListener('DOMContentLoaded', () => {
       splitBottom.style.height = `${centerHeight}%`;
       splitFullBottom.style.height = `${bottomHeight}%`;
 
-      splitTop.style.opacity = 1;
-      splitBottom.style.opacity = 1;
-      splitFullBottom.style.opacity = 1;
-
+      splitTop.style.opacity = splitBottom.style.opacity = splitFullBottom.style.opacity = 1;
       topBar.style.opacity = '0';
       topBar.classList.remove('floating');
     } else {
-      splitTop.style.height = '25%';
-      splitBottom.style.height = '25%';
-      splitFullBottom.style.height = '50%';
-
       const fadeOutPercentage = Math.min((adjustedScrollPercentage - 100) * 2, 100);
       const opacity = 1 - (fadeOutPercentage / 100);
-      splitTop.style.opacity = opacity;
-      splitBottom.style.opacity = opacity;
-      splitFullBottom.style.opacity = opacity;
+
+      splitTop.style.opacity = splitBottom.style.opacity = splitFullBottom.style.opacity = opacity;
 
       if (fadeOutPercentage >= 100) {
         topBar.classList.add('floating');
@@ -244,29 +240,21 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    if (adjustedScrollPercentage > 75 && adjustedScrollPercentage <= 100) {
-      const fadePercentage = (adjustedScrollPercentage - 75) * 4;
-      wrapper.style.opacity = Math.max(1 - (fadePercentage / 100), 0);
-    } else if (adjustedScrollPercentage > 100) {
-      wrapper.style.opacity = 0;
-    } else {
-      wrapper.style.opacity = 1;
-    }
+    wrapper.style.opacity = adjustedScrollPercentage > 75 ? Math.max(1 - ((adjustedScrollPercentage - 75) * 4 / 100), 0) : 1;
 
     if (adjustedScrollPercentage >= 100) {
       wrapper.style.position = 'absolute';
       wrapper.style.top = `${sectionHeight - viewportHeight}px`;
+      nextSection.style.position = 'relative';
+      nextSection.style.top = `${sectionHeight}px`;
     } else {
       wrapper.style.position = 'fixed';
       wrapper.style.top = '0';
+      nextSection.style.position = 'absolute';
+      nextSection.style.top = '100vh';
     }
 
-    // Fade in the next section content
-    if (adjustedScrollPercentage > 100) {
-      nextSection.style.opacity = Math.min((adjustedScrollPercentage - 100) / 50, 1);
-    } else {
-      nextSection.style.opacity = 0;
-    }
+    nextSection.style.opacity = adjustedScrollPercentage > 100 ? Math.min((adjustedScrollPercentage - 100) / 50, 1) : 0;
   }
 
   function onScroll() {
@@ -281,13 +269,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   window.addEventListener('scroll', onScroll, { passive: true });
-  updateSplitScreen(window.scrollY); // Initial call
+  updateSplitScreen(window.scrollY);
 
-  // Update speed factor on window resize
   window.addEventListener('resize', () => {
     const newIsMobile = window.innerWidth <= 768;
     if (newIsMobile !== isMobile) {
-      location.reload(); // Reload the page to reinitialize with the new speed factor
+      location.reload();
     }
   });
 });
