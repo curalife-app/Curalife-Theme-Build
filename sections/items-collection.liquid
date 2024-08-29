@@ -119,24 +119,30 @@
       document.addEventListener('DOMContentLoaded', function() {
         var itemsContainer = document.getElementById('items-container-{{ section.id }}');
         var isMobile = window.innerWidth <= 768;
+        var arrows = document.querySelectorAll('#section-{{ section.id }} .swiper-button-next, #section-{{ section.id }} .swiper-button-prev');
 
         {% if section.settings.items_in_row == 'all' %}
           if (isMobile) {
             initializeSwiper();
+            showArrows();
           } else {
-            itemsContainer.classList.remove('swiper');
-            itemsContainer.classList.add('items', 'flex', 'flex-wrap');
-            var slides = itemsContainer.querySelectorAll('.swiper-slide');
-            slides.forEach(function(slide) {
-              slide.classList.remove('swiper-slide');
-              slide.classList.add('item');
-            });
+            deactivateSwiper();
+            hideArrows();
           }
         {% else %}
           initializeSwiper();
+          showArrows();
         {% endif %}
 
         function initializeSwiper() {
+          itemsContainer.classList.add('swiper');
+          itemsContainer.classList.remove('items', 'flex', 'flex-wrap');
+          var slides = itemsContainer.querySelectorAll('.item');
+          slides.forEach(function(slide) {
+            slide.classList.add('swiper-slide');
+            slide.classList.remove('item');
+          });
+
           var itemsSwiper = new Swiper('#items-container-{{ section.id }}', {
             spaceBetween: 15,
             grabCursor: true,
@@ -185,11 +191,41 @@
           });
         }
 
+        function deactivateSwiper() {
+          itemsContainer.classList.remove('swiper');
+          itemsContainer.classList.add('items', 'flex', 'flex-wrap');
+          var slides = itemsContainer.querySelectorAll('.swiper-slide');
+          slides.forEach(function(slide) {
+            slide.classList.remove('swiper-slide');
+            slide.classList.add('item');
+          });
+        }
+
+        function hideArrows() {
+          arrows.forEach(function(arrow) {
+            arrow.style.display = 'none';
+          });
+        }
+
+        function showArrows() {
+          arrows.forEach(function(arrow) {
+            arrow.style.display = '';
+          });
+        }
+
         window.addEventListener('resize', function() {
           var newIsMobile = window.innerWidth <= 768;
           if (isMobile !== newIsMobile) {
             isMobile = newIsMobile;
-            location.reload();
+            {% if section.settings.items_in_row == 'all' %}
+              if (isMobile) {
+                initializeSwiper();
+                showArrows();
+              } else {
+                deactivateSwiper();
+                hideArrows();
+              }
+            {% endif %}
           }
         });
       });
