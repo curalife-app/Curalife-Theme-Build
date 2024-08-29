@@ -504,22 +504,42 @@ document.addEventListener('DOMContentLoaded', () => {
     const scrollPercentage = (scrollPosition / (sectionHeight - viewportHeight)) * 100;
     const adjustedScrollPercentage = scrollPercentage * speedFactor;
 
-    // ... (keep the existing code for splitscreen animation)
+    if (adjustedScrollPercentage <= 100) {
+      const centerHeight = Math.min(adjustedScrollPercentage / 2, 25);
+      const bottomHeight = Math.min(adjustedScrollPercentage, 50);
 
-    // Update next section position
-    if (isMobile) {
-      const mobileOffset = viewportHeight * 0.5; // 50% of viewport height
-      nextSection.style.top = `${sectionHeight + mobileOffset}px`;
+      splitTop.style.height = `${centerHeight}%`;
+      splitBottom.style.height = `${centerHeight}%`;
+      splitFullBottom.style.height = `${bottomHeight}%`;
+
+      splitTop.style.opacity = splitBottom.style.opacity = splitFullBottom.style.opacity = 1;
+      topBar.style.opacity = '0';
+      topBar.classList.remove('floating');
+
+      nextSection.style.opacity = '0';
+      nextSection.style.visibility = 'hidden';
     } else {
-      nextSection.style.top = '100vh';
-    }
+      const fadeOutPercentage = Math.min((adjustedScrollPercentage - 100) * 2, 100);
+      const opacity = 1 - (fadeOutPercentage / 100);
 
-    // Fade in the next section
-    const fadeStartPercentage = isMobile ? 150 : 100;
-    const nextSectionOpacity = Math.max(0, Math.min((adjustedScrollPercentage - fadeStartPercentage) / 50, 1));
-    nextSection.style.opacity = nextSectionOpacity.toString();
-    nextSection.style.visibility = nextSectionOpacity > 0 ? 'visible' : 'hidden';
-  }
+      splitTop.style.opacity = splitBottom.style.opacity = splitFullBottom.style.opacity = opacity;
+
+      if (fadeOutPercentage >= 100) {
+        topBar.classList.add('floating');
+        const topBarOpacity = Math.min((adjustedScrollPercentage - 150) / 50, 1);
+        topBar.style.opacity = topBarOpacity.toString();
+        topBar.style.background = `linear-gradient(0deg, rgba(15, 114, 176, ${topBarOpacity}) 0%, rgba(15, 124, 191, ${topBarOpacity}) 100%)`;
+        topBar.style.boxShadow = `0 2px 5px rgba(0,0,0,${topBarOpacity * 0.1})`;
+      } else {
+        topBar.classList.remove('floating');
+        topBar.style.opacity = '0';
+      }
+
+      // Fade in the next section
+      const nextSectionOpacity = Math.min((adjustedScrollPercentage - 100) / 50, 1);
+      nextSection.style.opacity = nextSectionOpacity.toString();
+      nextSection.style.visibility = 'visible';
+    }
 
     wrapper.style.opacity = adjustedScrollPercentage > 75 ? Math.max(1 - ((adjustedScrollPercentage - 75) * 4 / 100), 0) : 1;
 
@@ -533,7 +553,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update next section position
     if (isMobile) {
-      nextSection.style.top = `${sectionHeight}px`;
+      // Adjust this value to control when the next section starts to appear on mobile
+      nextSection.style.top = `${Math.max(sectionHeight * 0.6, viewportHeight)}px`;
     } else {
       nextSection.style.top = '100vh';
     }
