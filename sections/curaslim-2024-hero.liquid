@@ -381,87 +381,104 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  {% if section.settings.enable_scroll_animation %}
-  const section = document.querySelector('.section-page-intro');
-  const wrapper = document.querySelector('.page-intro-wrapper');
-  const splitTop = document.querySelector('.page-intro-splitscreen-top');
-  const splitBottom = document.querySelector('.page-intro-splitscreen-bottom');
-  const splitFullBottom = document.querySelector('.page-intro-splitscreen-full-bottom');
   const topBar = document.getElementById('top-bar');
+  const isAnimationEnabled = {{ section.settings.enable_scroll_animation | json }};
 
-  const isMobile = window.innerWidth <= 768;
-  const speedFactor = isMobile ? 1.5 : 0.75;
+  if (isAnimationEnabled) {
+    const section = document.querySelector('.section-page-intro');
+    const wrapper = document.querySelector('.page-intro-wrapper');
+    const splitTop = document.querySelector('.page-intro-splitscreen-top');
+    const splitBottom = document.querySelector('.page-intro-splitscreen-bottom');
+    const splitFullBottom = document.querySelector('.page-intro-splitscreen-full-bottom');
 
-  let lastScrollPosition = 0;
-  let ticking = false;
+    const isMobile = window.innerWidth <= 768;
+    const speedFactor = isMobile ? 1.5 : 0.75;
 
-  function easeInOutCubic(t) {
-    return t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1;
-  }
+    let lastScrollPosition = 0;
+    let ticking = false;
 
-  function updateSplitScreen(scrollPosition) {
-    const viewportHeight = window.innerHeight;
-    const scrollPercentage = (scrollPosition / viewportHeight) * 100;
-    const adjustedScrollPercentage = scrollPercentage * speedFactor;
+    function easeInOutCubic(t) {
+      return t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1;
+    }
 
-    if (adjustedScrollPercentage <= 100) {
-      const easedPercentage = easeInOutCubic(adjustedScrollPercentage / 100) * 100;
-      const centerHeight = Math.min(easedPercentage / 2, 50);
-      const bottomHeight = Math.min(easedPercentage, 100);
+    function updateSplitScreen(scrollPosition) {
+      const viewportHeight = window.innerHeight;
+      const scrollPercentage = (scrollPosition / viewportHeight) * 100;
+      const adjustedScrollPercentage = scrollPercentage * speedFactor;
 
-      splitTop.style.height = `${centerHeight}%`;
-      splitBottom.style.height = `${centerHeight}%`;
-      splitFullBottom.style.height = `${bottomHeight}%`;
+      if (adjustedScrollPercentage <= 100) {
+        const easedPercentage = easeInOutCubic(adjustedScrollPercentage / 100) * 100;
+        const centerHeight = Math.min(easedPercentage / 2, 50);
+        const bottomHeight = Math.min(easedPercentage, 100);
 
-      splitTop.style.opacity = splitBottom.style.opacity = splitFullBottom.style.opacity = 1;
-      topBar.style.opacity = '0';
-      topBar.classList.remove('floating');
-    } else {
-      const fadeOutPercentage = Math.min((adjustedScrollPercentage - 100) * 2, 100);
-      const opacity = 1 - easeInOutCubic(fadeOutPercentage / 100);
+        splitTop.style.height = `${centerHeight}%`;
+        splitBottom.style.height = `${centerHeight}%`;
+        splitFullBottom.style.height = `${bottomHeight}%`;
 
-      splitTop.style.opacity = splitBottom.style.opacity = splitFullBottom.style.opacity = opacity;
-
-      if (fadeOutPercentage >= 100) {
-        topBar.classList.add('floating');
-        const topBarOpacity = easeInOutCubic(Math.min((adjustedScrollPercentage - 150) / 50, 1));
-        topBar.style.opacity = topBarOpacity.toString();
-        topBar.style.background = `linear-gradient(0deg, rgba(15, 114, 176, ${topBarOpacity}) 0%, rgba(15, 124, 191, ${topBarOpacity}) 100%)`;
-        topBar.style.boxShadow = `0 2px 5px rgba(0,0,0,${topBarOpacity * 0.1})`;
-      } else {
-        topBar.classList.remove('floating');
+        splitTop.style.opacity = splitBottom.style.opacity = splitFullBottom.style.opacity = 1;
         topBar.style.opacity = '0';
+        topBar.classList.remove('floating');
+      } else {
+        const fadeOutPercentage = Math.min((adjustedScrollPercentage - 100) * 2, 100);
+        const opacity = 1 - easeInOutCubic(fadeOutPercentage / 100);
+
+        splitTop.style.opacity = splitBottom.style.opacity = splitFullBottom.style.opacity = opacity;
+
+        if (fadeOutPercentage >= 100) {
+          topBar.classList.add('floating');
+          const topBarOpacity = easeInOutCubic(Math.min((adjustedScrollPercentage - 150) / 50, 1));
+          topBar.style.opacity = topBarOpacity.toString();
+          topBar.style.background = `linear-gradient(0deg, rgba(15, 114, 176, ${topBarOpacity}) 0%, rgba(15, 124, 191, ${topBarOpacity}) 100%)`;
+          topBar.style.boxShadow = `0 2px 5px rgba(0,0,0,${topBarOpacity * 0.1})`;
+        } else {
+          topBar.classList.remove('floating');
+          topBar.style.opacity = '0';
+        }
+      }
+
+      wrapper.style.opacity = adjustedScrollPercentage > 50 ? Math.max(1 - easeInOutCubic(((adjustedScrollPercentage - 50) * 4 / 100)), 0) : 1;
+
+      if (adjustedScrollPercentage >= 100) {
+        wrapper.style.position = 'absolute';
+        wrapper.style.top = '100vh';
+      } else {
+        wrapper.style.position = 'fixed';
+        wrapper.style.top = '0';
       }
     }
 
-    wrapper.style.opacity = adjustedScrollPercentage > 50 ? Math.max(1 - easeInOutCubic(((adjustedScrollPercentage - 50) * 4 / 100)), 0) : 1;
-
-    if (adjustedScrollPercentage >= 100) {
-      wrapper.style.position = 'absolute';
-      wrapper.style.top = '100vh';
-    } else {
-      wrapper.style.position = 'fixed';
-      wrapper.style.top = '0';
+    function onScroll() {
+      lastScrollPosition = window.scrollY;
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          updateSplitScreen(lastScrollPosition);
+          ticking = false;
+        });
+        ticking = true;
+      }
     }
-  }
 
-  function onScroll() {
-    lastScrollPosition = window.scrollY;
-    if (!ticking) {
-      window.requestAnimationFrame(() => {
-        updateSplitScreen(lastScrollPosition);
-        ticking = false;
-      });
-      ticking = true;
+    window.addEventListener('scroll', onScroll, { passive: true });
+    updateSplitScreen(window.scrollY);
+  } else {
+    // Handle floating top bar for non-animated version
+    function handleStaticTopBar() {
+      const scrollPosition = window.scrollY;
+      if (scrollPosition > 0) {
+        topBar.classList.add('floating');
+        const opacity = Math.min(scrollPosition / 200, 1);
+        topBar.style.background = `linear-gradient(0deg, rgba(15, 114, 176, ${opacity}) 0%, rgba(15, 124, 191, ${opacity}) 100%)`;
+        topBar.style.boxShadow = `0 2px 5px rgba(0,0,0,${opacity * 0.1})`;
+      } else {
+        topBar.classList.remove('floating');
+        topBar.style.background = 'transparent';
+        topBar.style.boxShadow = 'none';
+      }
     }
-  }
 
-  window.addEventListener('scroll', onScroll, { passive: true });
-  updateSplitScreen(window.scrollY);
-  {% else %}
-  const topBar = document.getElementById('top-bar');
-  topBar.classList.add('floating');
-  {% endif %}
+    window.addEventListener('scroll', handleStaticTopBar, { passive: true });
+    handleStaticTopBar(); // Initial call to set correct state on page load
+  }
 });
 </script>
 
