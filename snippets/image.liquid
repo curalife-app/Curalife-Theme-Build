@@ -1,5 +1,5 @@
 {% comment %}
-  Corrected Shopify CDN Responsive Image Component
+  Shopify CDN Responsive Image Component with Improved Aspect Ratio
 
   Accepts:
   - image: The main image object (required)
@@ -39,14 +39,46 @@
   if image_extension == 'png'
     assign is_png = true
   endif
+
+  assign desktop_aspect_ratio = desktop_image.aspect_ratio | default: 1
+  assign mobile_aspect_ratio = mobile_image.aspect_ratio | default: desktop_aspect_ratio
+
+  assign desktop_padding_bottom = desktop_aspect_ratio | times: 100 | round: 2
+  assign mobile_padding_bottom = mobile_aspect_ratio | times: 100 | round: 2
 -%}
 
+<style>
+  #wrapper-{{ unique_id }} {
+    position: relative;
+    width: 100%;
+    padding-bottom: {{ mobile_padding_bottom }}%;
+  }
+  @media (min-width: {{ breakpoint | plus: 1 }}px) {
+    #wrapper-{{ unique_id }} {
+      padding-bottom: {{ desktop_padding_bottom }}%;
+    }
+  }
+  #wrapper-{{ unique_id }} img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .responsive-image {
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+  }
+  .responsive-image.loaded {
+    opacity: 1;
+  }
+</style>
+
 <div
+  id="wrapper-{{ unique_id }}"
   class="responsive-image-wrapper"
-  style="
-    aspect-ratio: {{ desktop_image.aspect_ratio }};
-    {% unless is_png %}background-color: {{ desktop_image.dominant_color | default: '#f0f0f0' }};{% endunless %}
-  "
+  {% unless is_png %}style="background-color: {{ desktop_image.dominant_color | default: '#f0f0f0' }};"{% endunless %}
 >
   <picture>
     <source
@@ -82,8 +114,6 @@
         "
       {% endif %}
       alt="{{ alt | escape }}"
-      width="{{ desktop_image.width }}"
-      height="{{ desktop_image.height }}"
       class="responsive-image {% if class %}{{ class }}{% endif %}"
       onload="this.classList.add('loaded');"
     >
@@ -112,17 +142,3 @@
     });
   </script>
 {% endif %}
-
-<style>
-  .responsive-image-wrapper {
-    overflow: hidden;
-    position: relative;
-  }
-  .responsive-image {
-    opacity: 0;
-    transition: opacity 0.3s ease-in-out;
-  }
-  .responsive-image.loaded {
-    opacity: 1;
-  }
-</style>
