@@ -1,5 +1,5 @@
 {% comment %}
-  Shopify CDN Responsive Image Component
+  Improved Shopify CDN Responsive Image Component
 
   Accepts:
   - image: The main image object (required)
@@ -33,21 +33,17 @@
   assign widths_array = widths | split: ','
 
   assign unique_id = 'img-' | append: desktop_image.id | append: '-' | append: mobile_image.id
+
+  assign is_png = desktop_image.src | split: '.' | last | downcase == 'png'
 -%}
 
-<script>
-  console.log('Shopify CDN Image Snippet - Processed Variables:', {
-    desktop_image: {{ desktop_image | json }},
-    mobile_image: {{ mobile_image | json }},
-    lazy_load: {{ lazy_load }},
-    breakpoint: {{ breakpoint }},
-    sizes: '{{ sizes }}',
-    widths_array: {{ widths_array | json }},
-    unique_id: '{{ unique_id }}'
-  });
-</script>
-
-<div class="responsive-image-wrapper" style="aspect-ratio: {{ desktop_image.aspect_ratio }}; background-color: {{ desktop_image.dominant_color | default: '#f0f0f0' }};">
+<div
+  class="responsive-image-wrapper"
+  style="
+    aspect-ratio: {{ desktop_image.aspect_ratio }};
+    {% unless is_png %}background-color: {{ desktop_image.dominant_color | default: '#f0f0f0' }};{% endunless %}
+  "
+>
   <picture>
     <source
       media="(max-width: {{ breakpoint }}px)"
@@ -86,23 +82,20 @@
       height="{{ desktop_image.height }}"
       class="responsive-image {% if class %}{{ class }}{% endif %}"
       style="width: 100%; height: 100%; object-fit: cover;"
-      onload="this.style.backgroundColor='transparent'; console.log('Shopify CDN Image Snippet - Image loaded:', '{{ unique_id }}');"
+      onload="this.classList.add('loaded');"
     >
   </picture>
 </div>
 
 {% if lazy_load %}
   <script>
-    console.log('Shopify CDN Image Snippet - Setting up lazy loading');
     document.addEventListener('DOMContentLoaded', function() {
       var lazyImageObserver = new IntersectionObserver(function(entries, observer) {
         entries.forEach(function(entry) {
           if (entry.isIntersecting) {
             let lazyImage = entry.target;
-            console.log('Shopify CDN Image Snippet - Lazy loading image:', lazyImage.id);
             lazyImage.src = lazyImage.dataset.src;
             lazyImage.srcset = lazyImage.dataset.srcset;
-            lazyImage.classList.add('loaded');
             lazyImageObserver.unobserve(lazyImage);
           }
         });
@@ -111,7 +104,6 @@
       });
 
       document.querySelectorAll('img[data-src]').forEach(function(lazyImage) {
-        console.log('Shopify CDN Image Snippet - Observing image:', lazyImage.id);
         lazyImageObserver.observe(lazyImage);
       });
     });
@@ -124,14 +116,10 @@
     position: relative;
   }
   .responsive-image {
-    transition: opacity 0.3s ease-in-out;
-  }
-  .responsive-image:not(.loaded) {
     opacity: 0;
+    transition: opacity 0.3s ease-in-out;
   }
   .responsive-image.loaded {
     opacity: 1;
   }
 </style>
-
-<script>console.log('Shopify CDN Image Snippet - End of snippet');</script>
