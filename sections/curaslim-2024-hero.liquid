@@ -383,6 +383,23 @@
 document.addEventListener('DOMContentLoaded', () => {
   const topBar = document.getElementById('top-bar');
   const isAnimationEnabled = {{ section.settings.enable_scroll_animation | json }};
+  const heroSection = document.querySelector('.hero-section');
+
+  function handleTopBar() {
+    const scrollPosition = window.scrollY;
+    const heroBottom = heroSection.offsetTop + heroSection.offsetHeight;
+
+    if (scrollPosition > 0) {
+      topBar.classList.add('floating');
+      const opacity = Math.min(scrollPosition / (heroBottom / 2), 1);
+      topBar.style.background = `linear-gradient(0deg, rgba(15, 114, 176, ${opacity}) 0%, rgba(15, 124, 191, ${opacity}) 100%)`;
+      topBar.style.boxShadow = `0 2px 5px rgba(0,0,0,${opacity * 0.1})`;
+    } else {
+      topBar.classList.remove('floating');
+      topBar.style.background = 'transparent';
+      topBar.style.boxShadow = 'none';
+    }
+  }
 
   if (isAnimationEnabled) {
     const section = document.querySelector('.section-page-intro');
@@ -445,6 +462,8 @@ document.addEventListener('DOMContentLoaded', () => {
         wrapper.style.position = 'fixed';
         wrapper.style.top = '0';
       }
+
+      handleTopBar();
     }
 
     function onScroll() {
@@ -461,24 +480,34 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('scroll', onScroll, { passive: true });
     updateSplitScreen(window.scrollY);
   } else {
-    // Handle floating top bar for non-animated version
-    function handleStaticTopBar() {
-      const scrollPosition = window.scrollY;
-      if (scrollPosition > 0) {
-        topBar.classList.add('floating');
-        const opacity = Math.min(scrollPosition / 200, 1);
-        topBar.style.background = `linear-gradient(0deg, rgba(15, 114, 176, ${opacity}) 0%, rgba(15, 124, 191, ${opacity}) 100%)`;
-        topBar.style.boxShadow = `0 2px 5px rgba(0,0,0,${opacity * 0.1})`;
-      } else {
-        topBar.classList.remove('floating');
-        topBar.style.background = 'transparent';
-        topBar.style.boxShadow = 'none';
-      }
-    }
-
-    window.addEventListener('scroll', handleStaticTopBar, { passive: true });
-    handleStaticTopBar(); // Initial call to set correct state on page load
+    // For non-animated version, just use handleTopBar
+    window.addEventListener('scroll', handleTopBar, { passive: true });
   }
+
+  // Initial call to set correct state on page load
+  handleTopBar();
+});
+
+// Rellax initialization (commented out)
+// var rellax = new Rellax('.rellax', {easing: 'ease', duration: 600});
+
+// Additional event listener for top bar (you may want to remove this if it's redundant)
+window.addEventListener('scroll', function() {
+  var topBar = document.getElementById('top-bar');
+  var heroSection = document.querySelector('.hero-section');
+  var heroBottom = heroSection.offsetTop + heroSection.offsetHeight;
+  var scrollPosition = window.scrollY;
+
+  if (scrollPosition > 0) {
+    topBar.classList.add('floating');
+  } else {
+    topBar.classList.remove('floating');
+  }
+
+  // Adjust opacity based on scroll position
+  var opacity = Math.min(scrollPosition / (heroBottom / 2), 1);
+  topBar.style.background = `linear-gradient(0deg, rgba(15, 114, 176, ${opacity}) 0%, rgba(15, 124, 191, ${opacity}) 100%)`;
+  topBar.style.boxShadow = `0 2px 5px rgba(0,0,0,${opacity * 0.1})`;
 });
 </script>
 
@@ -885,6 +914,452 @@ document.addEventListener('DOMContentLoaded', () => {
       margin: 0;
     }
   }
+</style>
+
+<style>
+  <style>
+  .section-page-intro {
+    position: relative;
+    height: 150vh;
+  }
+
+  .page-intro-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2;
+    transition: opacity 0.5s ease-out;
+  }
+
+  .page-intro-content {
+    width: 100%;
+    height: 100%;
+  }
+
+  .page-intro-splitscreen-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+    align-items: center;
+    z-index: 2;
+    transition: opacity 0.5s ease-out;
+  }
+
+  .page-intro-splitscreen-top,
+  .page-intro-splitscreen-bottom,
+  .page-intro-splitscreen-full-bottom {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 0;
+    background-color: white;
+    transition: height 0.5s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.5s cubic-bezier(0.65, 0, 0.35, 1);
+    z-index: 3;
+  }
+
+  .page-intro-splitscreen-top {
+    bottom: 49%;
+  }
+
+  .page-intro-splitscreen-bottom {
+    top: 50%;
+  }
+
+  .page-intro-splitscreen-full-bottom {
+    bottom: 0;
+  }
+
+  #top-bar {
+    transition: background 0.3s ease-out, box-shadow 0.3s ease-out;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    padding: 0.75rem;
+    width: 100%;
+  }
+
+  #top-bar.floating {
+    background: linear-gradient(0deg, rgb(15 114 176) 0%, rgba(15, 124, 191, 1) 100%);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+
+  .hero-section {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+  }
+
+  @media (max-width: 768px) {
+    .section-page-intro {
+      height: 120vh;
+    }
+  }
+
+  {% if section.settings.enable_scroll_animation == false %}
+  .section-page-intro.static {
+    height: auto;
+    min-height: 100vh;
+    padding-top: 60px; /* Adjust this value based on your top bar height */
+  }
+
+  .section-page-intro.static .page-intro-content {
+    position: relative;
+  }
+  {% endif %}
+
+  body {
+    color: var(--black) !important;
+  }
+
+  body p {
+    line-height: 1.3 !important;
+  }
+
+  section {
+    padding: 80px 0;
+  }
+
+  section.button-section {
+    padding: 50px 0;
+  }
+
+  section h2 {
+    font-size: 48px;
+  }
+
+  @media (width <= 768px) {
+    section h2 {
+      font-size: 9vw;
+    }
+  }
+
+  section h2 strong {
+    font-style: normal;
+  }
+
+  section .subtitle {
+    font-size: 24px;
+  }
+
+  @media (width <= 768px) {
+    section .subtitle {
+      font-size: 4.5vw;
+    }
+  }
+
+  section button {
+    min-width: 160px;
+    height: 52px;
+    padding-block: unset;
+    padding-inline: 24px;
+    box-shadow: unset !important;
+  }
+
+  @media (width <= 768px) {
+    section button {
+      min-width: unset !important;
+      width: 40vw;
+    }
+  }
+
+  section button.main-button {
+    @media (width <= 768px) {
+      width: 30vw;
+      max-height: 11vw;
+      font-size: 4vw;
+      padding: 1vw;
+      min-width: unset;
+    }
+  }
+
+  section .swiper .swiper-nav {
+    background: #ECF2F2;
+    box-shadow: none;
+  }
+
+  section .swiper .swiper-nav:hover {
+    background: #cfd8d8;
+  }
+
+  section .swiper .swiper-nav::after {
+    color: var(--black);
+  }
+
+  section .swiper .swiper-nav.swiper-button-prev::after {
+    content: "←";
+  }
+
+  section .swiper .swiper-nav.swiper-button-next::after {
+    content: "→";
+  }
+
+  .badge {
+    background: #6649ad40;
+    color: white;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    top: 90px;
+    left: 850px;
+    position: absolute;
+  }
+
+  @media (width <= 768px) {
+    .badge {
+      left: 64vw;
+      top: 0;
+      width: 30vw;
+      height: 30vw;
+      margin-top: unset;
+      margin-left: unset;
+    }
+  }
+
+  .badge .inner-circle {
+    width: 80px;
+    height: 80px;
+    top: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    margin: auto;
+    background: #A665AB;
+    border-radius: 50%;
+  }
+
+  @media (width <= 768px) {
+    .badge .inner-circle {
+      top: 5vw;
+      width: 20vw;
+      height: 20vw;
+    }
+  }
+
+  .badge #circle text {
+    font-size: 13px;
+    color: white;
+  }
+
+  .badge #circle svg {
+    position: absolute;
+    left: -70px;
+    top: -70px;
+    animation: rotate 10s linear infinite;
+  }
+
+  @media (width <= 768px) {
+    .badge #circle svg {
+      left: -15vw;
+      top: -15vw;
+      width: 60vw;
+      height: 60vw;
+    }
+  }
+
+  @keyframes rotate {
+    from { transform: rotate(360deg); }
+    to { transform: rotate(0); }
+  }
+
+  .hero-section .main-container .top-bar {
+    transition: all 0.3s ease-in-out;
+    z-index: 1000;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 10px 20px;
+    background: transparent;
+  }
+
+  .hero-section .main-container .top-bar.floating {
+    background: rgb(34,98,138);
+    background: linear-gradient(0deg, rgb(15 114 176) 0%, rgba(15, 124, 191, 1) 100%);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+
+  .hero-section .main-container .top-bar button {
+    padding: 0.8rem 2rem;
+    font-size: 16px;
+    min-width: 120px;
+  }
+
+  @media (width <= 768px) {
+    .hero-section .main-container .top-bar button {
+      padding: 0.8rem 1rem;
+      font-size: 4vw;
+      width: unset;
+    }
+  }
+
+  @media (width <= 768px) {
+    .hero-section {
+      height: 100vh;
+    }
+  }
+
+  .hero-section h1 {
+    color: white !important;
+  }
+
+  @media screen and (max-width: 768px) {
+    .hero-section h1 {
+      font-size: 8vw;
+    }
+  }
+
+  @media screen and (max-width: 768px) {
+    .hero-section h1 img {
+      max-height: 10vw;
+    }
+  }
+
+  @media screen and (max-width: 768px) {
+    .content {
+      margin-top: 13vw;
+      margin-bottom: 0;
+    }
+  }
+
+  .bg {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    background: linear-gradient(180deg, #3392C9 -8.06%, #13699C 55.18%, #083F5F 75.87%, #18638F 83.03%, #3593CA 100.13%, #4EACE2 103.87%);
+    z-index: -1;
+  }
+
+  .circle {
+    background: rgba(255, 255, 255, 0.05);
+    width: 80%;
+    height: 120%;
+    position: absolute;
+    border-radius: 50%;
+    margin: auto;
+    margin-top: -70px;
+    left: 0;
+    right: 0;
+  }
+
+  @media (width <= 768px) {
+    .circle {
+      width: 140%;
+      left: -20%;
+    }
+  }
+
+  .images {
+    position: relative;
+    min-height: 400px;
+  }
+
+  @media (width <= 768px) {
+    .images {
+      min-height: 90vw;
+    }
+  }
+
+  .review-box {
+    top: 40px;
+    left: 60px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: start;
+    background-color:rgba(255, 255, 255, 0.1);
+    font-size: 13px;
+    border-radius: 15px;
+    width: 316px;
+    height: 179px;
+    padding: 1rem;
+    text-align: start;
+  }
+
+  .review-box .quote-sign {
+    position: relative !important;
+    margin: 0;
+  }
+
+  .review-box p {
+    font-size: inherit;
+    line-height: 1.5 !important;
+  }
+
+  @media (width <= 768px) {
+    .review-box {
+      width: 100%;
+      top: 45vw;
+      bottom: 0px;
+      left: 0;
+    }
+  }
+
+  .images img {
+    position: absolute;
+    left: 0;
+    right: 0;
+  }
+
+  .images img.review {
+    left: 60px;
+    bottom: 180px;
+    margin: 0;
+  }
+
+  @media (width <= 768px) {
+    .images img.review {
+      bottom: 5vw;
+      left: unset;
+      width: 100%;
+    }
+  }
+
+  .images img.bottles {
+    bottom: 0;
+    left: 75px;
+  }
+
+  @media (width <= 768px) {
+    .images img.bottles {
+      bottom: 40vw;
+      left: 4vw;
+    }
+  }
+
+  .badges {
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+  }
+
+  @media (width <= 768px) {
+    .badges {
+      gap: 4vw;
+    }
+  }
+
+  .badges img {
+    width: 53px;
+    margin: 0;
+  }
+</style>
 </style>
 
 {% schema %}
