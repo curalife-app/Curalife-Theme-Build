@@ -1,5 +1,5 @@
 {% comment %}
-  Improved Shopify CDN Responsive Image Component
+  Corrected Shopify CDN Responsive Image Component
 
   Accepts:
   - image: The main image object (required)
@@ -34,7 +34,11 @@
 
   assign unique_id = 'img-' | append: desktop_image.id | append: '-' | append: mobile_image.id
 
-  assign is_png = desktop_image.src | split: '.' | last
+  assign image_extension = desktop_image.src | split: '.' | last | downcase
+  assign is_png = false
+  if image_extension == 'png'
+    assign is_png = true
+  endif
 -%}
 
 <div
