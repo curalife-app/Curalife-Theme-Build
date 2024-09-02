@@ -284,6 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const splitBottom = document.querySelector('.page-intro-splitscreen-bottom');
   const splitFullBottom = document.querySelector('.page-intro-splitscreen-full-bottom');
   const topBar = document.getElementById('top-bar');
+  const heroSection = document.querySelector('.hero-section');
 
   const isMobile = window.innerWidth <= 768;
   const speedFactor = isMobile ? 1.5 : 0.75;
@@ -298,6 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateSplitScreen(scrollPosition) {
     const viewportHeight = window.innerHeight;
     const sectionHeight = section.offsetHeight;
+    const heroHeight = heroSection.offsetHeight;
     const scrollPercentage = (scrollPosition / viewportHeight) * 100;
     const adjustedScrollPercentage = scrollPercentage * speedFactor;
 
@@ -319,7 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Updated top bar animation
-    if (scrollPosition > sectionHeight) {
+    if (scrollPosition > heroHeight) {
       topBar.classList.add('floating');
       topBar.style.opacity = '1';
       topBar.style.background = 'linear-gradient(0deg, rgba(15, 114, 176, 1) 0%, rgba(15, 124, 191, 1) 100%)';
