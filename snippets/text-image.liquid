@@ -24,9 +24,16 @@
         {% else %}
 
           {% if customer.email contains 'yotam@curalife.com' %}
-            {{ main_image | image_url: width: main_image.width | image_tag: widths: '300, 600' }}
+            {% comment %} {{ main_image | image_url: width: main_image.width | image_tag: widths: '300, 600' }} {% endcomment %}
             {% comment %} {% render 'image' with image: main_image, image_class: "css-class", wrapper_class: "wrapper-css-class" %} {% endcomment %}
-          {% else %}
+            <picture>
+              {% if main_mobile_image %}
+                <source media="(max-width: 768px)" srcset="{{ main_mobile_image | image_url }}" width="{{ main_mobile_image.width }}" height="{{ main_mobile_image.height }}">
+              {% endif %}
+              {{ main_image | image_url: width: 1200 | image_tag: loading: 'eager', height: 'auto', class: 'main-image' }}
+              <img class="{% if is_limit_image_size %}max-h-500px{% endif %} relative z-auto object-contain {% if is_hide_image_on_mobile %}md:hidden{% endif %} {% if is_image_overlap_style %} h-[calc(100%+135px)] object-cover object-left{% endif %}" src="{{ main_image | default: main_mobile_image | image_url }}" alt="{{ main_image.alt }}" width="{{ main_image.width }}" height="{{ main_image.height }}" {% unless is_dont_lazyload %}loading="lazy"{% endunless %} {% if image_animation != 'none'%}data-aos="{{ image_animation }}" data-aos-duration="{{ animation_duration }}"{% endif %}>
+            </picture>
+            {% else %}
             <picture>
               {% if main_mobile_image %}
                 <source media="(max-width: 768px)" srcset="{{ main_mobile_image | image_url }}" width="{{ main_mobile_image.width }}" height="{{ main_mobile_image.height }}">
