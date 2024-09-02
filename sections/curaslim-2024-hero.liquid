@@ -278,7 +278,6 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  {% if section.settings.enable_scroll_animation %}
   const section = document.querySelector('.section-page-intro');
   const wrapper = document.querySelector('.page-intro-wrapper');
   const splitTop = document.querySelector('.page-intro-splitscreen-top');
@@ -311,24 +310,23 @@ document.addEventListener('DOMContentLoaded', () => {
       splitFullBottom.style.height = `${bottomHeight}%`;
 
       splitTop.style.opacity = splitBottom.style.opacity = splitFullBottom.style.opacity = 1;
-      topBar.style.opacity = '0';
-      topBar.classList.remove('floating');
     } else {
       const fadeOutPercentage = Math.min((adjustedScrollPercentage - 100) * 2, 100);
       const opacity = 1 - easeInOutCubic(fadeOutPercentage / 100);
 
       splitTop.style.opacity = splitBottom.style.opacity = splitFullBottom.style.opacity = opacity;
+    }
 
-      if (fadeOutPercentage >= 100) {
-        topBar.classList.add('floating');
-        const topBarOpacity = easeInOutCubic(Math.min((adjustedScrollPercentage - 150) / 50, 1));
-        topBar.style.opacity = topBarOpacity.toString();
-        topBar.style.background = `linear-gradient(0deg, rgba(15, 114, 176, ${topBarOpacity}) 0%, rgba(15, 124, 191, ${topBarOpacity}) 100%)`;
-        topBar.style.boxShadow = `0 2px 5px rgba(0,0,0,${topBarOpacity * 0.1})`;
-      } else {
-        topBar.classList.remove('floating');
-        topBar.style.opacity = '0';
-      }
+    // Updated top bar animation
+    if (adjustedScrollPercentage > 50) {
+      topBar.classList.add('floating');
+      const topBarOpacity = easeInOutCubic(Math.min((adjustedScrollPercentage - 50) / 50, 1));
+      topBar.style.opacity = topBarOpacity.toString();
+      topBar.style.background = `linear-gradient(0deg, rgba(15, 114, 176, ${topBarOpacity}) 0%, rgba(15, 124, 191, ${topBarOpacity}) 100%)`;
+      topBar.style.boxShadow = `0 2px 5px rgba(0,0,0,${topBarOpacity * 0.1})`;
+    } else {
+      topBar.classList.remove('floating');
+      topBar.style.opacity = '0';
     }
 
     wrapper.style.opacity = adjustedScrollPercentage > 50 ? Math.max(1 - easeInOutCubic(((adjustedScrollPercentage - 50) * 4 / 100)), 0) : 1;
@@ -355,10 +353,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.addEventListener('scroll', onScroll, { passive: true });
   updateSplitScreen(window.scrollY);
-  {% else %}
-  const topBar = document.getElementById('top-bar');
-  topBar.classList.add('floating');
-  {% endif %}
 });
 </script>
 
