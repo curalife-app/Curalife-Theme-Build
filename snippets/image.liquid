@@ -1,5 +1,5 @@
 {% comment %}
-  Responsive Image Component for Shopify with Fixed URL Construction
+  Responsive Image Component for Shopify with Manual URL Construction
 
   Accepts:
   - image: The main image object (required)
@@ -24,19 +24,6 @@
   %}
 {% endcomment %}
 
-<script>
-  console.log('Responsive Image Snippet - Input Parameters:', {
-    image: {{ image | json }},
-    mobile_image: {{ mobile_image | json }},
-    sizes: '{{ sizes }}',
-    breakpoint: {{ breakpoint | default: 768 }},
-    lazy: {{ lazy | default: true }},
-    preload: {{ preload | default: false }},
-    alt: '{{ alt | escape }}',
-    class: '{{ class }}'
-  });
-</script>
-
 {%- liquid
   assign desktop_image = image
   assign mobile_image = mobile_image | default: image
@@ -45,13 +32,15 @@
   assign breakpoint = breakpoint | default: 768
   assign sizes = sizes | default: '(min-width: 1200px) 1100px, (min-width: 769px) 750px, 100vw'
 
-  assign mobile_widths = '375,750,1080,1500'
-  assign desktop_widths = '750,1100,1500,2200,3000'
-
-  assign mobile_widths_array = mobile_widths | split: ','
-  assign desktop_widths_array = desktop_widths | split: ','
+  assign widths = '375,750,1080,1500,2200,3000'
+  assign widths_array = widths | split: ','
 
   assign unique_id = 'img-' | append: desktop_image.id | append: '-' | append: mobile_image.id
+
+  assign base_url = desktop_image.src | split: '?' | first
+  assign url_parts = base_url | split: '.'
+  assign extension = url_parts | last
+  assign filename = url_parts | pop | join: '.'
 -%}
 
 <script>
@@ -62,53 +51,21 @@
     preload_image: {{ preload_image }},
     breakpoint: {{ breakpoint }},
     sizes: '{{ sizes }}',
-    mobile_widths_array: {{ mobile_widths_array | json }},
-    desktop_widths_array: {{ desktop_widths_array | json }},
-    unique_id: '{{ unique_id }}'
+    widths_array: {{ widths_array | json }},
+    unique_id: '{{ unique_id }}',
+    base_url: '{{ base_url }}',
+    filename: '{{ filename }}',
+    extension: '{{ extension }}'
   });
 </script>
 
-{% if preload_image %}
-  <script>console.log('Responsive Image Snippet - Preloading image');</script>
-  <link rel="preload" as="image" href="{{ desktop_image | img_url: '1100x' }}" imagesrcset="
-    {%- for width in desktop_widths_array -%}
-      {{ desktop_image | img_url: width | append: 'x' }} {{ width }}w,
-    {%- endfor -%}
-  " imagesizes="{{ sizes }}">
-{% endif %}
-
 <div class="responsive-image-wrapper" style="aspect-ratio: {{ desktop_image.aspect_ratio }}; background-color: {{ desktop_image.dominant_color | default: '#f0f0f0' }};">
   <picture>
-    <script>console.log('Responsive Image Snippet - WebP enabled:', {{ settings.enable_webp }});</script>
-    {%- if settings.enable_webp -%}
-      <source
-        type="image/webp"
-        media="(max-width: {{ breakpoint }}px)"
-        srcset="
-          {%- for width in mobile_widths_array -%}
-            {{ mobile_image | img_url: width | append: 'x.webp' }} {{ width }}w,
-          {%- endfor -%}
-        "
-        sizes="{{ sizes }}"
-      >
-      <source
-        type="image/webp"
-        media="(min-width: {{ breakpoint | plus: 1 }}px)"
-        srcset="
-          {%- for width in desktop_widths_array -%}
-            {{ desktop_image | img_url: width | append: 'x.webp' }} {{ width }}w,
-          {%- endfor -%}
-        "
-        sizes="{{ sizes }}"
-      >
-    {%- endif -%}
-
-    <script>console.log('Responsive Image Snippet - Adding regular image sources');</script>
     <source
       media="(max-width: {{ breakpoint }}px)"
       srcset="
-        {%- for width in mobile_widths_array -%}
-          {{ mobile_image | img_url: width | append: 'x' }} {{ width }}w,
+        {%- for width in widths_array -%}
+          {{ filename }}_{{ width }}x.{{ extension }} {{ width }}w,
         {%- endfor -%}
       "
       sizes="{{ sizes }}"
@@ -116,24 +73,23 @@
     <source
       media="(min-width: {{ breakpoint | plus: 1 }}px)"
       srcset="
-        {%- for width in desktop_widths_array -%}
-          {{ desktop_image | img_url: width | append: 'x' }} {{ width }}w,
+        {%- for width in widths_array -%}
+          {{ filename }}_{{ width }}x.{{ extension }} {{ width }}w,
         {%- endfor -%}
       "
       sizes="{{ sizes }}"
     >
 
-    <script>console.log('Responsive Image Snippet - Adding img tag');</script>
     <img
       id="{{ unique_id }}"
-      src="{{ desktop_image | img_url: '1100x' }}"
-      srcset="{{ desktop_image | img_url: '2200x' }} 2x"
+      src="{{ filename }}_1100x.{{ extension }}"
+      srcset="{{ filename }}_2200x.{{ extension }} 2x"
       {% if lazy_load and preload_image == false %}loading="lazy"{% endif %}
       {% if lazy_load and preload_image == false %}
-        data-src="{{ desktop_image | img_url: '1100x' }}"
+        data-src="{{ filename }}_1100x.{{ extension }}"
         data-srcset="
-          {%- for width in desktop_widths_array -%}
-            {{ desktop_image | img_url: width | append: 'x' }} {{ width }}w,
+          {%- for width in widths_array -%}
+            {{ filename }}_{{ width }}x.{{ extension }} {{ width }}w,
           {%- endfor -%}
         "
       {% endif %}
