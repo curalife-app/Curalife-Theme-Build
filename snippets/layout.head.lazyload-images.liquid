@@ -1,20 +1,21 @@
 {% if lazy_load %}
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      var lazyImageObserver = new IntersectionObserver(function(entries, observer) {
-        entries.forEach(function(entry) {
+    document.addEventListener('DOMContentLoaded', () => {
+      const lazyImageObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
           if (entry.isIntersecting) {
-            let lazyImage = entry.target;
+            const lazyImage = entry.target;
             lazyImage.src = lazyImage.dataset.src;
             lazyImage.srcset = lazyImage.dataset.srcset;
-            lazyImageObserver.unobserve(lazyImage);
+            lazyImage.classList.add('loaded');
+            observer.unobserve(lazyImage);
           }
         });
       }, {
         rootMargin: '0px 0px 300px 0px'
       });
 
-      document.querySelectorAll('img[data-src]').forEach(function(lazyImage) {
+      document.querySelectorAll('img[data-src]').forEach(lazyImage => {
         lazyImageObserver.observe(lazyImage);
       });
     });
