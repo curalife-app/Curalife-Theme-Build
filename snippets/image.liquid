@@ -1,5 +1,5 @@
 {% comment %}
-  Highly Optimized Shopify CDN Responsive Image Component
+  Corrected Shopify CDN Responsive Image Component
 
   Accepts:
   - image: The main image object (required)
@@ -34,8 +34,15 @@
 
   assign unique_id = 'img-' | append: desktop_image.id | append: '-' | append: mobile_image.id
 
-  assign desktop_is_2x = desktop_image.src contains '2x'
-  assign mobile_is_2x = mobile_image.src contains '2x'
+  assign desktop_is_2x = false
+  if desktop_image.src contains '2x'
+    assign desktop_is_2x = true
+  endif
+
+  assign mobile_is_2x = false
+  if mobile_image.src contains '2x'
+    assign mobile_is_2x = true
+  endif
 
   assign desktop_width = desktop_image.width
   assign desktop_height = desktop_image.height
