@@ -297,6 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateSplitScreen(scrollPosition) {
     const viewportHeight = window.innerHeight;
+    const sectionHeight = section.offsetHeight;
     const scrollPercentage = (scrollPosition / viewportHeight) * 100;
     const adjustedScrollPercentage = scrollPercentage * speedFactor;
 
@@ -318,15 +319,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Updated top bar animation
-    if (adjustedScrollPercentage > 50) {
+    if (scrollPosition > sectionHeight) {
       topBar.classList.add('floating');
-      const topBarOpacity = easeInOutCubic(Math.min((adjustedScrollPercentage - 50) / 50, 1));
-      topBar.style.opacity = topBarOpacity.toString();
-      topBar.style.background = `linear-gradient(0deg, rgba(15, 114, 176, ${topBarOpacity}) 0%, rgba(15, 124, 191, ${topBarOpacity}) 100%)`;
-      topBar.style.boxShadow = `0 2px 5px rgba(0,0,0,${topBarOpacity * 0.1})`;
+      topBar.style.opacity = '1';
+      topBar.style.background = 'linear-gradient(0deg, rgba(15, 114, 176, 1) 0%, rgba(15, 124, 191, 1) 100%)';
+      topBar.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
     } else {
       topBar.classList.remove('floating');
       topBar.style.opacity = '0';
+      topBar.style.background = 'transparent';
+      topBar.style.boxShadow = 'none';
     }
 
     wrapper.style.opacity = adjustedScrollPercentage > 50 ? Math.max(1 - easeInOutCubic(((adjustedScrollPercentage - 50) * 4 / 100)), 0) : 1;
