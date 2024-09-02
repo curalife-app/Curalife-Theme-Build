@@ -282,8 +282,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const splitTop = document.querySelector('.page-intro-splitscreen-top');
   const splitBottom = document.querySelector('.page-intro-splitscreen-bottom');
   const splitFullBottom = document.querySelector('.page-intro-splitscreen-full-bottom');
-  const topBar = document.querySelector('.top-bar.top-top'); // Updated selector
+  const topBar = document.querySelector('.top-bar.top-top'); // Check your selector
   const heroSection = document.querySelector('.hero-section');
+
+  // Ensure topBar is found
+  if (!topBar) {
+    console.error('Top bar element not found');
+    return; // Exit the script if topBar is not found
+  }
 
   const isMobile = window.innerWidth <= 768;
   const speedFactor = isMobile ? 1.5 : 0.75;
@@ -301,7 +307,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const scrollPercentage = (scrollPosition / viewportHeight) * 100;
     const adjustedScrollPercentage = scrollPercentage * speedFactor;
 
-    // Scroll animation logic
+    console.log(`Scroll Position: ${scrollPosition}, Hero Height: ${heroHeight}`);
+
     if (adjustedScrollPercentage <= 100) {
       const easedPercentage = easeInOutCubic(adjustedScrollPercentage / 100) * 100;
       const centerHeight = Math.min(easedPercentage / 2, 50);
@@ -319,13 +326,14 @@ document.addEventListener('DOMContentLoaded', () => {
       splitTop.style.opacity = splitBottom.style.opacity = splitFullBottom.style.opacity = opacity;
     }
 
-    // Update top bar visibility after scrolling past the hero section
     if (scrollPosition > heroHeight) {
+      console.log('Adding floating class');
       topBar.classList.add('floating');
       topBar.style.opacity = '1';
       topBar.style.background = 'linear-gradient(0deg, rgba(15, 114, 176, 1) 0%, rgba(15, 124, 191, 1) 100%)';
       topBar.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
     } else {
+      console.log('Removing floating class');
       topBar.classList.remove('floating');
       topBar.style.opacity = '0';
       topBar.style.background = 'transparent';
@@ -357,6 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('scroll', onScroll, { passive: true });
   updateSplitScreen(window.scrollY);
 });
+
 </script>
 
 {% if request.path contains 'curaslim-b2b' %}
