@@ -289,6 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
       topBar.style.background = 'transparent';
       topBar.style.boxShadow = 'none';
     }
+    topBar.style.opacity = '1'; // Ensure the top bar is always visible
   }
 
   if (isAnimationEnabled) {
@@ -323,19 +324,11 @@ document.addEventListener('DOMContentLoaded', () => {
         splitFullBottom.style.height = `${bottomHeight}%`;
 
         splitTop.style.opacity = splitBottom.style.opacity = splitFullBottom.style.opacity = 1;
-        topBar.style.opacity = '0';
       } else {
         const fadeOutPercentage = Math.min((adjustedScrollPercentage - 100) * 2, 100);
         const opacity = 1 - easeInOutCubic(fadeOutPercentage / 100);
 
         splitTop.style.opacity = splitBottom.style.opacity = splitFullBottom.style.opacity = opacity;
-
-        if (fadeOutPercentage >= 100) {
-          const topBarOpacity = easeInOutCubic(Math.min((adjustedScrollPercentage - 150) / 50, 1));
-          topBar.style.opacity = topBarOpacity.toString();
-        } else {
-          topBar.style.opacity = '0';
-        }
       }
 
       wrapper.style.opacity = adjustedScrollPercentage > 50 ? Math.max(1 - easeInOutCubic(((adjustedScrollPercentage - 50) * 4 / 100)), 0) : 1;
@@ -370,6 +363,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   handleTopBar(); // Initial call to set correct state on page load
 });
+</script>
 </script>
 
 {% if request.path contains 'curaslim-b2b' %}
