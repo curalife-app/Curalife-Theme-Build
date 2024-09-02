@@ -1,0 +1,44 @@
+<script>
+  // This should be included once in your theme's JavaScript bundle
+  document.addEventListener('DOMContentLoaded', function() {
+    if ('IntersectionObserver' in window) {
+      const imageObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const image = entry.target;
+            image.src = image.dataset.src;
+            image.srcset = image.dataset.srcset;
+            image.classList.add('loaded');
+            imageObserver.unobserve(image);
+          }
+        });
+      }, {
+        rootMargin: '50px 0px',
+        threshold: 0.01
+      });
+
+      document.querySelectorAll('img[data-src]').forEach(img => imageObserver.observe(img));
+    } else {
+      // Fallback for browsers that don't support IntersectionObserver
+      document.querySelectorAll('img[data-src]').forEach(img => {
+        img.src = img.dataset.src;
+        img.srcset = img.dataset.srcset;
+        img.classList.add('loaded');
+      });
+    }
+  });
+</script>
+
+<style>
+  .responsive-image-wrapper {
+    overflow: hidden;
+    position: relative;
+  }
+  .responsive-image {
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+  }
+  .responsive-image.loaded {
+    opacity: 1;
+  }
+</style>
