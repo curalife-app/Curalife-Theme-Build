@@ -1,5 +1,5 @@
 {% comment %}
-  Shopify CDN Responsive Image Component with Automatic 2x Detection
+  Optimized Shopify CDN Responsive Image Component
 
   Accepts:
   - image: The main image object (required)
@@ -34,41 +34,47 @@
 
   assign unique_id = 'img-' | append: desktop_image.id | append: '-' | append: mobile_image.id
 
-  assign image_extension = desktop_image.src | split: '.' | last | downcase
-  assign is_png = false
-  if image_extension == 'png'
-    assign is_png = true
-  endif
-
-  assign desktop_is_2x = false
-  assign mobile_is_2x = false
-  if desktop_image.src contains '2x'
-    assign desktop_is_2x = true
-  endif
-  if mobile_image.src contains '2x'
-    assign mobile_is_2x = true
-  endif
-
   assign desktop_width = desktop_image.width
   assign desktop_height = desktop_image.height
   assign mobile_width = mobile_image.width
   assign mobile_height = mobile_image.height
 
-  if desktop_is_2x
+  # Automatically detect and adjust for 2x images
+  if desktop_image.src contains '2x'
     assign desktop_width = desktop_width | divided_by: 2
     assign desktop_height = desktop_height | divided_by: 2
   endif
-  if mobile_is_2x
+  if mobile_image.src contains '2x'
     assign mobile_width = mobile_width | divided_by: 2
     assign mobile_height = mobile_height | divided_by: 2
   endif
+
+  # Calculate aspect ratio for padding-bottom trick
+  assign aspect_ratio = desktop_height | divided_by: desktop_width | times: 100 | append: '%'
 -%}
 
-<div
-  class="responsive-image-wrapper"
-  style="{% unless is_png %}background-color: {{ desktop_image.dominant_color | default: '#f0f0f0' }};{% endunless %}"
->
+<div class="responsive-image-wrapper" style="padding-bottom: {{ aspect_ratio }}; background-color: {{ desktop_image.dominant_color | default: '#f0f0f0' }};">
   <picture>
+    <source
+      type="image/webp"
+      media="(max-width: {{ breakpoint }}px)"
+      srcset="
+        {%- for width in widths_array -%}
+          {{ mobile_image | image_url: width: width, format: 'webp' }} {{ width }}w{% unless forloop.last %},{% endunless %}
+        {%- endfor -%}
+      "
+      sizes="{{ sizes }}"
+    >
+    <source
+      type="image/webp"
+      media="(min-width: {{ breakpoint | plus: 1 }}px)"
+      srcset="
+        {%- for width in widths_array -%}
+          {{ desktop_image | image_url: width: width, format: 'webp' }} {{ width }}w{% unless forloop.last %},{% endunless %}
+        {%- endfor -%}
+      "
+      sizes="{{ sizes }}"
+    >
     <source
       media="(max-width: {{ breakpoint }}px)"
       srcset="
@@ -90,34 +96,34 @@
 
     <img
       id="{{ unique_id }}"
-      src="{{ desktop_image | image_url: width: desktop_width }}"
-      srcset="{{ desktop_image | image_url: width: desktop_width | times: 2 }} 2x"
-      {% if lazy_load %}loading="lazy"{% endif %}
+      src="{{ desktop_image | image_url: width: 40 }}"
       {% if lazy_load %}
+        loading="lazy"
         data-src="{{ desktop_image | image_url: width: desktop_width }}"
-        data-srcset="
-          {{ desktop_image | image_url: width: desktop_width }} 1x,
-          {{ desktop_image | image_url: width: desktop_width | times: 2 }} 2x
-        "
+        data-srcset="{{ desktop_image | image_url: width: desktop_width }} 1x, {{ desktop_image | image_url: width: desktop_width | times: 2 }} 2x"
+      {% else %}
+        src="{{ desktop_image | image_url: width: desktop_width }}"
+        srcset="{{ desktop_image | image_url: width: desktop_width }} 1x, {{ desktop_image | image_url: width: desktop_width | times: 2 }} 2x"
       {% endif %}
       alt="{{ alt | escape }}"
       width="{{ desktop_width }}"
       height="{{ desktop_height }}"
       class="responsive-image {% if class %}{{ class }}{% endif %}"
-      onload="this.classList.add('loaded');"
     >
   </picture>
 </div>
 
-{% if lazy_load %}
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
+<script>
+  // This script should be included once in your theme's JavaScript bundle
+  document.addEventListener('DOMContentLoaded', function() {
+    if ('IntersectionObserver' in window) {
       var lazyImageObserver = new IntersectionObserver(function(entries, observer) {
         entries.forEach(function(entry) {
           if (entry.isIntersecting) {
-            let lazyImage = entry.target;
+            var lazyImage = entry.target;
             lazyImage.src = lazyImage.dataset.src;
             lazyImage.srcset = lazyImage.dataset.srcset;
+            lazyImage.classList.add('loaded');
             lazyImageObserver.unobserve(lazyImage);
           }
         });
@@ -125,19 +131,34 @@
         rootMargin: '0px 0px 300px 0px'
       });
 
-      document.querySelectorAll('img[data-src]').forEach(function(lazyImage) {
+      document.querySelectorAll('img.responsive-image[data-src]').forEach(function(lazyImage) {
         lazyImageObserver.observe(lazyImage);
       });
-    });
-  </script>
-{% endif %}
+    } else {
+      // Fallback for browsers that don't support IntersectionObserver
+      document.querySelectorAll('img.responsive-image[data-src]').forEach(function(img) {
+        img.src = img.dataset.src;
+        img.srcset = img.dataset.srcset;
+        img.classList.add('loaded');
+      });
+    }
+  });
+</script>
 
 <style>
   .responsive-image-wrapper {
-    overflow: hidden;
     position: relative;
+    width: 100%;
+    height: 0; /* Height will be determined by padding-bottom */
+    overflow: hidden;
   }
   .responsive-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
     opacity: 0;
     transition: opacity 0.3s ease-in-out;
   }
