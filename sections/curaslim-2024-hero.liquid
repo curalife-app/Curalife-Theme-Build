@@ -272,6 +272,63 @@
   {% endif %}
 </style>
 
+<style>
+  #top-bar {
+    transition: background 0.5s ease-out, box-shadow 0.5s ease-out;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    padding: 0.75rem;
+    background: transparent;
+  }
+
+  #top-bar.floating {
+    background: linear-gradient(0deg, rgb(15 114 176) 0%, rgba(15, 124, 191, 1) 100%);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+
+  .hero-section {
+    min-height: 100vh;
+    padding-top: 0; /* Remove the top padding */
+  }
+
+  .section-page-intro {
+    margin-top: -60px; /* Negative margin to remove the white space at the top */
+  }
+
+  .page-intro-wrapper {
+    padding-top: 60px; /* Add padding to the wrapper to account for the fixed top bar */
+  }
+
+  @media (max-width: 768px) {
+    .section-page-intro {
+      height: 120vh;
+    }
+  }
+
+  {% if section.settings.enable_scroll_animation == false %}
+  .section-page-intro.static {
+    height: auto;
+    min-height: 100vh;
+    margin-top: 0; /* Remove negative margin for static version */
+  }
+
+  .section-page-intro.static .page-intro-content {
+    position: relative;
+    padding-top: 60px; /* Add padding to account for the fixed top bar in static version */
+  }
+
+  .section-page-intro.static #top-bar {
+    position: absolute;
+    top: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  {% endif %}
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   const topBar = document.getElementById('top-bar');
