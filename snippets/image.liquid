@@ -55,52 +55,33 @@
     }
   </style>
 
-{%- assign img_url = image | img_url: '1x1' | replace: '_1x1.', '_{width}x.' -%}
+  {%- assign img_url = image | img_url: '1x1' | replace: '_1x1.', '_{width}x.' -%}
 
-{%- comment -%} Limit image widths to valid options based on image.width {%- endcomment -%}
-{%- assign image_widths = '180,360,540,720,900,1080,1296,1512,1728,1944,2160,2376,2592,2808,3024' | split: ',' -%}
-{%- capture image_widths -%}
-  {%- for width in image_widths -%}
-    {%- comment -%} Check if image width is less or equal to width {%- endcomment -%}
-    {%- assign width_num = width | plus: 0 | round -%}
-    {%- if image.width >= width_num -%}{{ width_num }},{%- endif -%}
-  {%- endfor -%}
-  {{ image.width }}
-{%- endcapture -%}
-{%- assign image_widths = image_widths | strip -%}
+  {%- comment -%} Limit image widths to valid options based on image.width {%- endcomment -%}
+  {%- assign image_widths = '180,360,540,720,900,1080,1296,1512,1728,1944,2160,2376,2592,2808,3024' | split: ',' -%}
+  {%- capture image_widths -%}
+    {%- for width in image_widths -%}
+      {%- comment -%} Check if image width is less or equal to width {%- endcomment -%}
+      {%- assign width_num = width | plus: 0 | round -%}
+      {%- if image.width >= width_num -%}{{ width_num }},{%- endif -%}
+    {%- endfor -%}
+    {{ image.width }}
+  {%- endcapture -%}
+  {%- assign image_widths = image_widths | strip -%}
 
-<div id="ImageWrapper-{{ image.id }}-{{ responsive_image_counter }}" data-image-id="{{ image.id }}" class="responsive-image__wrapper {{ wrapper_class }}" {{ wrapper_attributes }}>
-  <img id="Image-{{ image.id }}-{{ responsive_image_counter }}"
-    class="responsive-image__image lazyload {{ image_class }}"
-    src="{{ image | img_url: '50x' }}"
-    data-src="{{ img_url }}"
-    data-widths="[{{ image_widths }}]"
-    data-aspectratio="{{ image.aspect_ratio }}"
-    data-sizes="auto"
-    tabindex="-1"
-    alt="{{ image.alt | escape }}"
-    {{ image_attributes }}
-  >
-</div>
-
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    var img = document.getElementById('Image-{{ image.id }}-{{ responsive_image_counter }}');
-    var wrapper = document.getElementById('ImageWrapper-{{ image.id }}-{{ responsive_image_counter }}');
-
-    function updateImageSrc() {
-      var containerWidth = wrapper.offsetWidth;
-      var widths = JSON.parse(img.getAttribute('data-widths'));
-      var bestWidth = widths.reduce(function(prev, curr) {
-        return (Math.abs(curr - containerWidth) < Math.abs(prev - containerWidth) ? curr : prev);
-      });
-      img.setAttribute('src', '{{ image | img_url: '{width}x' }}'.replace('{width}', bestWidth));
-    }
-
-    updateImageSrc();
-    window.addEventListener('resize', updateImageSrc);
-  });
-</script>
+  <div id="ImageWrapper-{{ image.id }}-{{ responsive_image_counter }}" data-image-id="{{ image.id }}" class="responsive-image__wrapper {{ wrapper_class }}" {{ wrapper_attributes }}>
+    <img id="Image-{{ image.id }}-{{ responsive_image_counter }}"
+      class="responsive-image__image lazyload {{ image_class }}"
+      src="{{ image | img_url: '300x' }}"
+      data-src="{{ img_url }}"
+      data-widths="[{{ image_widths }}]"
+      data-aspectratio="{{ image.aspect_ratio }}"
+      data-sizes="auto"
+      tabindex="-1"
+      alt="{{ image.alt | escape }}"
+      {{ image_attributes }}
+    >
+  </div>
 
   <noscript>
     <img class="{{ image_class }}" src="{{ image | img_url: '2048x2048' }}" alt="{{ image.alt | escape }}">
