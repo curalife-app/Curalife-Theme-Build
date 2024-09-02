@@ -1,5 +1,5 @@
 {% comment %}
-  Responsive Image Component for Shopify with Manual URL Construction
+  Shopify CDN Responsive Image Component
 
   Accepts:
   - image: The main image object (required)
@@ -7,18 +7,16 @@
   - sizes: Custom sizes attribute (optional, default provided)
   - breakpoint: Custom breakpoint in pixels (optional, default: 768)
   - lazy: Enable lazy loading (optional, default: true)
-  - preload: Preload the image (optional, default: false)
   - alt: Alt text for the image (required for accessibility)
   - class: Additional CSS classes (optional)
 
   Usage:
-  {% render 'responsive-image',
+  {% render 'shopify-cdn-image',
     image: product.featured_image,
     mobile_image: product.images[1],
     sizes: '(min-width: 1200px) 1100px, (min-width: 769px) 750px, 100vw',
     breakpoint: 768,
     lazy: true,
-    preload: false,
     alt: product.title,
     class: 'my-custom-class'
   %}
@@ -28,7 +26,6 @@
   assign desktop_image = image
   assign mobile_image = mobile_image | default: image
   assign lazy_load = lazy | default: true
-  assign preload_image = preload | default: false
   assign breakpoint = breakpoint | default: 768
   assign sizes = sizes | default: '(min-width: 1200px) 1100px, (min-width: 769px) 750px, 100vw'
 
@@ -36,26 +33,17 @@
   assign widths_array = widths | split: ','
 
   assign unique_id = 'img-' | append: desktop_image.id | append: '-' | append: mobile_image.id
-
-  assign base_url = desktop_image.src | split: '?' | first
-  assign url_parts = base_url | split: '.'
-  assign extension = url_parts | last
-  assign filename = url_parts | pop | join: '.'
 -%}
 
 <script>
-  console.log('Responsive Image Snippet - Processed Variables:', {
+  console.log('Shopify CDN Image Snippet - Processed Variables:', {
     desktop_image: {{ desktop_image | json }},
     mobile_image: {{ mobile_image | json }},
     lazy_load: {{ lazy_load }},
-    preload_image: {{ preload_image }},
     breakpoint: {{ breakpoint }},
     sizes: '{{ sizes }}',
     widths_array: {{ widths_array | json }},
-    unique_id: '{{ unique_id }}',
-    base_url: '{{ base_url }}',
-    filename: '{{ filename }}',
-    extension: '{{ extension }}'
+    unique_id: '{{ unique_id }}'
   });
 </script>
 
@@ -65,7 +53,7 @@
       media="(max-width: {{ breakpoint }}px)"
       srcset="
         {%- for width in widths_array -%}
-          {{ filename }}_{{ width }}x.{{ extension }} {{ width }}w,
+          {{ mobile_image | image_url: width: width }} {{ width }}w,
         {%- endfor -%}
       "
       sizes="{{ sizes }}"
@@ -74,7 +62,7 @@
       media="(min-width: {{ breakpoint | plus: 1 }}px)"
       srcset="
         {%- for width in widths_array -%}
-          {{ filename }}_{{ width }}x.{{ extension }} {{ width }}w,
+          {{ desktop_image | image_url: width: width }} {{ width }}w,
         {%- endfor -%}
       "
       sizes="{{ sizes }}"
@@ -82,14 +70,14 @@
 
     <img
       id="{{ unique_id }}"
-      src="{{ filename }}_1100x.{{ extension }}"
-      srcset="{{ filename }}_2200x.{{ extension }} 2x"
-      {% if lazy_load and preload_image == false %}loading="lazy"{% endif %}
-      {% if lazy_load and preload_image == false %}
-        data-src="{{ filename }}_1100x.{{ extension }}"
+      src="{{ desktop_image | image_url: width: 1100 }}"
+      srcset="{{ desktop_image | image_url: width: 2200 }} 2x"
+      {% if lazy_load %}loading="lazy"{% endif %}
+      {% if lazy_load %}
+        data-src="{{ desktop_image | image_url: width: 1100 }}"
         data-srcset="
           {%- for width in widths_array -%}
-            {{ filename }}_{{ width }}x.{{ extension }} {{ width }}w,
+            {{ desktop_image | image_url: width: width }} {{ width }}w,
           {%- endfor -%}
         "
       {% endif %}
@@ -98,20 +86,20 @@
       height="{{ desktop_image.height }}"
       class="responsive-image {% if class %}{{ class }}{% endif %}"
       style="width: 100%; height: 100%; object-fit: cover;"
-      onload="this.style.backgroundColor='transparent'; console.log('Responsive Image Snippet - Image loaded:', '{{ unique_id }}');"
+      onload="this.style.backgroundColor='transparent'; console.log('Shopify CDN Image Snippet - Image loaded:', '{{ unique_id }}');"
     >
   </picture>
 </div>
 
-{% if lazy_load and preload_image == false %}
+{% if lazy_load %}
   <script>
-    console.log('Responsive Image Snippet - Setting up lazy loading');
+    console.log('Shopify CDN Image Snippet - Setting up lazy loading');
     document.addEventListener('DOMContentLoaded', function() {
       var lazyImageObserver = new IntersectionObserver(function(entries, observer) {
         entries.forEach(function(entry) {
           if (entry.isIntersecting) {
             let lazyImage = entry.target;
-            console.log('Responsive Image Snippet - Lazy loading image:', lazyImage.id);
+            console.log('Shopify CDN Image Snippet - Lazy loading image:', lazyImage.id);
             lazyImage.src = lazyImage.dataset.src;
             lazyImage.srcset = lazyImage.dataset.srcset;
             lazyImage.classList.add('loaded');
@@ -123,7 +111,7 @@
       });
 
       document.querySelectorAll('img[data-src]').forEach(function(lazyImage) {
-        console.log('Responsive Image Snippet - Observing image:', lazyImage.id);
+        console.log('Shopify CDN Image Snippet - Observing image:', lazyImage.id);
         lazyImageObserver.observe(lazyImage);
       });
     });
@@ -146,4 +134,4 @@
   }
 </style>
 
-<script>console.log('Responsive Image Snippet - End of snippet');</script>
+<script>console.log('Shopify CDN Image Snippet - End of snippet');</script>
