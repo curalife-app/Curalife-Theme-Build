@@ -1,5 +1,5 @@
 {% comment %}
-  Corrected Shopify CDN Responsive Image Component
+  Revised Shopify CDN Responsive Image Component
 
   Accepts:
   - image: The main image object (required)
@@ -18,7 +18,7 @@
     breakpoint: 768,
     alt: product.title,
     class: 'my-custom-class',
-    priority: true
+    priority: false
   %}
 {% endcomment %}
 
@@ -58,14 +58,14 @@
     assign mobile_height = mobile_height | divided_by: 2
   endif
 
-  assign aspect_ratio = desktop_width | divided_by: desktop_height | times: 100 | append: '%'
+  assign aspect_ratio = desktop_height | divided_by: desktop_width | times: 100 | append: '%'
 -%}
 
 {% if priority %}
   <link rel="preload" as="image" href="{{ desktop_image | image_url: width: desktop_width }}" imagesrcset="{{ desktop_image | image_url: width: desktop_width }} 1x, {{ desktop_image | image_url: width: desktop_width | times: 2 }} 2x" imagesizes="{{ sizes }}">
 {% endif %}
 
-<div class="responsive-image-wrapper" style="padding-top: {{ aspect_ratio }};">
+<div class="responsive-image-wrapper" style="padding-bottom: {{ aspect_ratio }};">
   <picture>
     <source
       type="image/webp"
