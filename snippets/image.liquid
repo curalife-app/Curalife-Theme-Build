@@ -1,5 +1,5 @@
 {% comment %}
-  High-Performance Responsive Image Component
+  Responsive Image Component for Shopify
 
   Accepts:
   - image: The main image object (required)
@@ -10,7 +10,6 @@
   - preload: Preload the image (optional, default: false)
   - alt: Alt text for the image (required for accessibility)
   - class: Additional CSS classes (optional)
-  - focal_point: Custom focal point for art-directed cropping (optional)
 
   Usage:
   {% render 'responsive-image',
@@ -21,8 +20,7 @@
     lazy: true,
     preload: false,
     alt: product.title,
-    class: 'my-custom-class',
-    focal_point: '50-50'
+    class: 'my-custom-class'
   %}
 {% endcomment %}
 
@@ -33,15 +31,9 @@
   assign preload_image = preload | default: false
   assign breakpoint = breakpoint | default: 768
   assign sizes = sizes | default: '(min-width: 1200px) 1100px, (min-width: 769px) 750px, 100vw'
-  assign focal_point = focal_point | default: '50-50'
 
   assign mobile_widths = '375,750,1080,1500'
   assign desktop_widths = '750,1100,1500,2200,3000'
-
-  assign img_url_params = 'q_auto,f_auto'
-  if lazy_load and preload_image == false
-    assign img_url_params = img_url_params | append: ',e_blur:1000,c_thumb,w_50'
-  endif
 
   assign mobile_widths_array = mobile_widths | split: ','
   assign desktop_widths_array = desktop_widths | split: ','
@@ -50,9 +42,9 @@
 -%}
 
 {% if preload_image %}
-  <link rel="preload" as="image" href="{{ desktop_image | image_url: width: 1100 }}" imagesrcset="
+  <link rel="preload" as="image" href="{{ desktop_image | img_url: '1100x' }}" imagesrcset="
     {%- for width in desktop_widths_array -%}
-      {{ desktop_image | image_url: width: width }} {{ width }}w,
+      {{ desktop_image | img_url: width | append: 'x' }} {{ width }}w,
     {%- endfor -%}
   " imagesizes="{{ sizes }}">
 {% endif %}
@@ -65,7 +57,7 @@
         media="(max-width: {{ breakpoint }}px)"
         srcset="
           {%- for width in mobile_widths_array -%}
-            {{ mobile_image | image_url: width: width, format: 'webp', crop: 'center', gravity: focal_point }} {{ width }}w,
+            {{ mobile_image | img_url: width | append: 'x.webp' }} {{ width }}w,
           {%- endfor -%}
         "
         sizes="{{ sizes }}"
@@ -75,7 +67,7 @@
         media="(min-width: {{ breakpoint | plus: 1 }}px)"
         srcset="
           {%- for width in desktop_widths_array -%}
-            {{ desktop_image | image_url: width: width, format: 'webp', crop: 'center', gravity: focal_point }} {{ width }}w,
+            {{ desktop_image | img_url: width | append: 'x.webp' }} {{ width }}w,
           {%- endfor -%}
         "
         sizes="{{ sizes }}"
@@ -86,17 +78,16 @@
       media="(max-width: {{ breakpoint }}px)"
       srcset="
         {%- for width in mobile_widths_array -%}
-          {{ mobile_image | image_url: width: width, crop: 'center', gravity: focal_point }} {{ width }}w,
+          {{ mobile_image | img_url: width | append: 'x' }} {{ width }}w,
         {%- endfor -%}
       "
       sizes="{{ sizes }}"
     >
-
     <source
       media="(min-width: {{ breakpoint | plus: 1 }}px)"
       srcset="
         {%- for width in desktop_widths_array -%}
-          {{ desktop_image | image_url: width: width, crop: 'center', gravity: focal_point }} {{ width }}w,
+          {{ desktop_image | img_url: width | append: 'x' }} {{ width }}w,
         {%- endfor -%}
       "
       sizes="{{ sizes }}"
@@ -104,14 +95,14 @@
 
     <img
       id="{{ unique_id }}"
-      src="{{ desktop_image | image_url: width: 1100, crop: 'center', gravity: focal_point }}"
-      srcset="{{ desktop_image | image_url: width: 2200, crop: 'center', gravity: focal_point }} 2x"
+      src="{{ desktop_image | img_url: '1100x' }}"
+      srcset="{{ desktop_image | img_url: '2200x' }} 2x"
       {% if lazy_load and preload_image == false %}loading="lazy"{% endif %}
       {% if lazy_load and preload_image == false %}
-        data-src="{{ desktop_image | image_url: width: 1100, crop: 'center', gravity: focal_point }}"
+        data-src="{{ desktop_image | img_url: '1100x' }}"
         data-srcset="
           {%- for width in desktop_widths_array -%}
-            {{ desktop_image | image_url: width: width, crop: 'center', gravity: focal_point }} {{ width }}w,
+            {{ desktop_image | img_url: width | append: 'x' }} {{ width }}w,
           {%- endfor -%}
         "
       {% endif %}
