@@ -211,7 +211,7 @@
       <div class="main-container container flex flex-col justify-between h-full text-center">
         <div class="circle" data-rellax-speed="2" data-aos-once="true" data-aos="zoom-in" data-aos-duration="3000"></div>
 
-        <div id="top-bar" class="top-bar items mbl:m-0 mb-12 opacity-100">
+          {% comment %} <div id="top-bar" class="top-bar items mbl:m-0 mb-12 opacity-100">
             <div class="container flex justify-between p-0">
               <div class="left mbl:gap-2 flex items-center gap-4">
                 <img class="max-w-[40%] mx-0" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/curalife-logo-white.svg" alt="Curaslim 2024 Logo">
@@ -226,7 +226,7 @@
                 <a href="#cta" class="cta-element"><Button class="font-bold text-black bg-white" style="padding:unset;width:120px;height:40px;font-size:15px">Buy Now</Button></a>
               </div>
             </div>
-          </div>
+          </div> {% endcomment %}
 
           <div class="content mt-12 mb-auto">
             <h1 class="mb-8" data-aos="zoom-in" data-aos-once="true">
@@ -384,6 +384,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const topBar = document.getElementById('top-bar');
   const isAnimationEnabled = {{ section.settings.enable_scroll_animation | json }};
 
+  function handleTopBar() {
+    const scrollPosition = window.scrollY;
+    if (scrollPosition > 0) {
+      topBar.classList.add('floating');
+      const opacity = Math.min(scrollPosition / 200, 1);
+      topBar.style.background = `linear-gradient(0deg, rgba(15, 114, 176, ${opacity}) 0%, rgba(15, 124, 191, ${opacity}) 100%)`;
+      topBar.style.boxShadow = `0 2px 5px rgba(0,0,0,${opacity * 0.1})`;
+    } else {
+      topBar.classList.remove('floating');
+      topBar.style.background = 'transparent';
+      topBar.style.boxShadow = 'none';
+    }
+  }
+
   if (isAnimationEnabled) {
     const section = document.querySelector('.section-page-intro');
     const wrapper = document.querySelector('.page-intro-wrapper');
@@ -417,7 +431,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         splitTop.style.opacity = splitBottom.style.opacity = splitFullBottom.style.opacity = 1;
         topBar.style.opacity = '0';
-        topBar.classList.remove('floating');
       } else {
         const fadeOutPercentage = Math.min((adjustedScrollPercentage - 100) * 2, 100);
         const opacity = 1 - easeInOutCubic(fadeOutPercentage / 100);
@@ -425,13 +438,9 @@ document.addEventListener('DOMContentLoaded', () => {
         splitTop.style.opacity = splitBottom.style.opacity = splitFullBottom.style.opacity = opacity;
 
         if (fadeOutPercentage >= 100) {
-          topBar.classList.add('floating');
           const topBarOpacity = easeInOutCubic(Math.min((adjustedScrollPercentage - 150) / 50, 1));
           topBar.style.opacity = topBarOpacity.toString();
-          topBar.style.background = `linear-gradient(0deg, rgba(15, 114, 176, ${topBarOpacity}) 0%, rgba(15, 124, 191, ${topBarOpacity}) 100%)`;
-          topBar.style.boxShadow = `0 2px 5px rgba(0,0,0,${topBarOpacity * 0.1})`;
         } else {
-          topBar.classList.remove('floating');
           topBar.style.opacity = '0';
         }
       }
@@ -445,6 +454,8 @@ document.addEventListener('DOMContentLoaded', () => {
         wrapper.style.position = 'fixed';
         wrapper.style.top = '0';
       }
+
+      handleTopBar();
     }
 
     function onScroll() {
@@ -461,24 +472,10 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('scroll', onScroll, { passive: true });
     updateSplitScreen(window.scrollY);
   } else {
-    // Handle floating top bar for non-animated version
-    function handleStaticTopBar() {
-      const scrollPosition = window.scrollY;
-      if (scrollPosition > 0) {
-        topBar.classList.add('floating');
-        const opacity = Math.min(scrollPosition / 200, 1);
-        topBar.style.background = `linear-gradient(0deg, rgba(15, 114, 176, ${opacity}) 0%, rgba(15, 124, 191, ${opacity}) 100%)`;
-        topBar.style.boxShadow = `0 2px 5px rgba(0,0,0,${opacity * 0.1})`;
-      } else {
-        topBar.classList.remove('floating');
-        topBar.style.background = 'transparent';
-        topBar.style.boxShadow = 'none';
-      }
-    }
-
-    window.addEventListener('scroll', handleStaticTopBar, { passive: true });
-    handleStaticTopBar(); // Initial call to set correct state on page load
+    window.addEventListener('scroll', handleTopBar, { passive: true });
   }
+
+  handleTopBar(); // Initial call to set correct state on page load
 });
 </script>
 
@@ -729,7 +726,6 @@ document.addEventListener('DOMContentLoaded', () => {
         background: transparent;
 
         &.floating {
-          background: rgb(34,98,138);
           background: linear-gradient(0deg, rgb(15 114 176) 0%, rgba(15, 124, 191, 1) 100%);
           box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
