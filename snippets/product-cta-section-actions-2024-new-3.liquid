@@ -161,6 +161,11 @@
             box.removeAttr('inert');
           }
         });
+
+        // Reset max-height for subscription
+        if (enableToggleAnimation) {
+          parentBox.css('max-height', '72px');
+        }
       } else {
         $('#product-actions-{{ SID }} .purchase-type button.buy-once').addClass('selected');
         {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').hide();{% endunless %}
@@ -178,11 +183,59 @@
           const box = $(this);
           box.removeAttr('inert');
         });
+
+        // Unset max-height for buy-once
+        parentBox.css('max-height', 'none');
       }
 
       updateYotpoPointsWidget(parentBox);
       togglePriceDisplay(parentBox);
       updateComparedAtPriceDisplay(parentBox);
+    }
+
+    function togglePurchaseBox(element) {
+      const isSubscription = isSubscriptionSelected();
+      const wasSelected = $(element).hasClass('selected');
+      const subscriptionPlanID = isSubscription ? element.data('subscription-selling-plan-id') : '';
+      const variantID = isSubscriptionSelected() ? $(element).data('original-variant') : $(element).data('variant');
+
+      if (wasSelected) {
+          return;
+      }
+
+      $('#product-actions-{{ SID }} .purchase-option-box.selected').removeClass('selected').each(function() {
+        if (enableToggleAnimation && isSubscription) {
+          $(this).css('max-height', '72px');
+          $(this).find('.toggle-icon').hide();
+        }
+      });
+
+      $('#product-actions-{{ SID }} .submit-selling-plan-id').val(subscriptionPlanID);
+      $('#product-actions-{{ SID }} .submit-variant-id').val(variantID);
+
+      $(element).addClass('selected');
+      if (enableToggleAnimation && isSubscription) {
+        adjustMaxHeight(element);
+        $(element).find('.toggle-icon').show();
+      } else {
+        // Unset max-height for buy-once
+        $(element).css('max-height', 'none');
+      }
+      $(element).find("input[type='radio']").prop('checked', true);
+
+      updateYotpoPointsWidget(element);
+
+      {% if variantsAmount > 1 %}
+        {% if isSlideOnLoad %}
+          updateVariantImage(element);
+        {% else %}
+          if (window.hasInitialImageUpdateHappened) {
+            updateVariantImage(element);
+          }
+
+          window.hasInitialImageUpdateHappened = true
+        {% endif %}
+      {% endif %}
     }
 
 
@@ -215,48 +268,6 @@
       } else {
         comparedAtPriceElement.fadeOut();
       }
-    }
-
-    function togglePurchaseBox(element) {
-      const isSubscription = isSubscriptionSelected();
-      const wasSelected = $(element).hasClass('selected');
-      const subscriptionPlanID = isSubscription ? element.data('subscription-selling-plan-id') : '';
-      const variantID = isSubscriptionSelected() ? $(element).data('original-variant') : $(element).data('variant');
-
-      if (wasSelected) {
-          return;
-      }
-
-      $('#product-actions-{{ SID }} .purchase-option-box.selected').removeClass('selected').each(function() {
-        if (enableToggleAnimation) {
-          $(this).css('max-height', '72px');
-          $(this).find('.toggle-icon').hide();
-        }
-      });
-
-      $('#product-actions-{{ SID }} .submit-selling-plan-id').val(subscriptionPlanID);
-      $('#product-actions-{{ SID }} .submit-variant-id').val(variantID);
-
-      $(element).addClass('selected');
-      if (enableToggleAnimation) {
-        adjustMaxHeight(element);
-        $(element).find('.toggle-icon').show();
-      }
-      $(element).find("input[type='radio']").prop('checked', true);
-
-      updateYotpoPointsWidget(element);
-
-      {% if variantsAmount > 1 %}
-        {% if isSlideOnLoad %}
-          updateVariantImage(element);
-        {% else %}
-          if (window.hasInitialImageUpdateHappened) {
-            updateVariantImage(element);
-          }
-
-          window.hasInitialImageUpdateHappened = true
-        {% endif %}
-      {% endif %}
     }
 
     function togglePriceDisplay(parentBox) {
