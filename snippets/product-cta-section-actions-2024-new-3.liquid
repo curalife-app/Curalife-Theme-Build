@@ -121,6 +121,16 @@
         const parentBox = $(this);
         togglePurchaseType(parentBox, isBuyOnceSelected);
       });
+
+      // If switching to Buy Once, remove any animation classes and reset max-height
+      if (isBuyOnceSelected) {
+        $purchaseOptionBoxes.removeClass('with-animation').css('max-height', '');
+      } else {
+        // Re-enable animation for subscription if it was originally enabled
+        if (enableToggleAnimation) {
+          $purchaseOptionBoxes.addClass('with-animation');
+        }
+      }
     }
 
     function togglePurchaseType(parentBox, isBuyOnceSelected) {
@@ -155,6 +165,9 @@
           const box = $(this);
           box.removeAttr('inert');
         });
+
+        // Remove toggle icon for Buy Once
+        parentBox.find('.toggle-icon').hide();
       } else {
         $('#product-actions-{{ SID }} .purchase-type button.subscription').addClass('selected');
         {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').show();{% endunless %}
@@ -193,6 +206,11 @@
             box.removeAttr('inert');
           }
         });
+
+        // Show toggle icon for Subscription if animation is enabled
+        if (enableToggleAnimation) {
+          parentBox.find('.toggle-icon').show();
+        }
       }
 
       updateYotpoPointsWidget(parentBox);
@@ -211,7 +229,7 @@
       }
 
       $('#product-actions-{{ SID }} .purchase-option-box.selected').removeClass('selected').each(function() {
-        if (enableToggleAnimation) {
+        if (enableToggleAnimation && isSubscription) {
           $(this).css('max-height', '72px');
           $(this).find('.toggle-icon').hide();
         }
@@ -221,7 +239,7 @@
       $('#product-actions-{{ SID }} .submit-variant-id').val(variantID);
 
       $(element).addClass('selected');
-      if (enableToggleAnimation) {
+      if (enableToggleAnimation && isSubscription) {
         adjustMaxHeight(element);
         $(element).find('.toggle-icon').show();
       }
