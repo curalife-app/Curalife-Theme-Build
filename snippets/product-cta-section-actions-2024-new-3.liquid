@@ -130,6 +130,8 @@
       const buyOnceSubtitle = parentBox.find('.subtitle.buy-once');
       const subscriptionSubtitle = parentBox.find('.subtitle.subscription');
       const bwpButton = $('#product-actions-{{ SID }} .bwp-button');
+      const subscriptionContent = parentBox.find('.subscription');
+      const buyOnceContent = parentBox.find('.buy-once');
 
       if (isSubscription) {
         $('#product-actions-{{ SID }} .purchase-type button.subscription').addClass('selected');
@@ -138,6 +140,10 @@
 
         const selectedBox = $('#product-actions-{{ SID }} .purchase-option-box.selected');
         const sellingPlanId = selectedBox.data('subscription-selling-plan-id');
+
+        buyOnceContent.fadeOut(200, function() {
+          subscriptionContent.fadeIn(200);
+        });
 
         if (buyOnceSubtitle.length) {
           buyOnceSubtitle.fadeOut(200, function() {
@@ -173,6 +179,10 @@
         bwpButton.show(); // Show the bwp-button
         $('.submit-selling-plan-id').val('');
         parentBox.removeAttr('inert');
+
+        subscriptionContent.fadeOut(200, function() {
+          buyOnceContent.fadeIn(200);
+        });
 
         if (subscriptionSubtitle.length) {
           subscriptionSubtitle.fadeOut(200, function() {
