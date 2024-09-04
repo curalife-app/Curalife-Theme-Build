@@ -1,3 +1,7 @@
+{% if shop.name == 'CuraLife Global' %}
+  {% assign isGlobal = true %}
+{% endif %}
+
 {% if buyType == "buy_now" %}
   <div class="submit-wrap flex flex-col w-full">
     <button class="main-btn p-0 text-black bg-[--orange] min-h-[50px]" id="buy-button">
@@ -53,13 +57,13 @@
           <span class="product-form__error-message text-[12px]"></span>
         </div>
 
-        <div class="notice">Please <a class="underline" href="https://help{% if shop.name == "CuraLife Global" %}-global{% endif %}.curalife.com/">Contact Us</a>, we'd love to help!</div>
+        <div class="notice">Please <a class="underline" href="https://help{% if isGlobal %}-global{% endif %}.curalife.com/">Contact Us</a>, we'd love to help!</div>
       </div>
     </product-form>
   </div>
 {% endif %}
 
-{% if isBuyWithPrime and shop.name != 'CuraLife Global' %}
+{% if isBuyWithPrime and isGlobal == false %}
   <div class="bwp-button">
     {% render 'buy-with-prime-button' %}
   </div>
@@ -68,3 +72,68 @@
 {% if customer %}
   {% render 'yotpo-product-points-widget' %}
 {% endif %}
+
+<style>
+  #cta-section-{{ section.id }} .lds-ellipsis {
+    display: inline-block;
+    position: relative;
+    width: 80px;
+    top: -10px;
+
+    div {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #fff;
+      animation-timing-function: cubic-bezier(0, 1, 1, 0);
+
+      &:nth-child(1) {
+        left: 8px;
+        animation: lds-ellipsis1 0.6s infinite;
+      }
+
+      &:nth-child(2) {
+        left: 8px;
+        animation: lds-ellipsis2 0.6s infinite;
+      }
+
+      &:nth-child(3) {
+        left: 32px;
+        animation: lds-ellipsis2 0.6s infinite;
+      }
+
+      &:nth-child(4) {
+        left: 56px;
+        animation: lds-ellipsis3 0.6s infinite;
+      }
+    }
+  }
+
+  @keyframes lds-ellipsis1 {
+    0% {
+      transform: scale(0);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  @keyframes lds-ellipsis3 {
+    0% {
+      transform: scale(1);
+    }
+    100% {
+      transform: scale(0);
+    }
+  }
+
+  @keyframes lds-ellipsis2 {
+    0% {
+      transform: translate(0, 0);
+    }
+    100% {
+      transform: translate(24px, 0);
+    }
+  }
+</style>
