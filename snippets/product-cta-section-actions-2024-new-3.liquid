@@ -123,44 +123,32 @@
       });
     }
 
-    function togglePurchaseType(parentBox) {
-      const isSubscription = isSubscriptionSelected();
-      $('#product-actions-{{ SID }} .purchase-type button').removeClass('selected');
-
+    function togglePurchaseType(parentBox, isSubscriptionSelected) {
       const buyOnceSubtitle = parentBox.find('.subtitle.buy-once');
       const subscriptionSubtitle = parentBox.find('.subtitle.subscription');
       const bwpButton = $('#product-actions-{{ SID }} .bwp-button');
       const subscriptionContent = parentBox.find('.subscription');
       const buyOnceContent = parentBox.find('.buy-once');
 
-      if (isSubscription) {
+      if (isSubscriptionSelected) {
         $('#product-actions-{{ SID }} .purchase-type button.subscription').addClass('selected');
         {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').show();{% endunless %}
-        bwpButton.hide(); // Hide the bwp-button
+        bwpButton.hide();
 
         const selectedBox = $('#product-actions-{{ SID }} .purchase-option-box.selected');
         const sellingPlanId = selectedBox.data('subscription-selling-plan-id');
 
-        buyOnceContent.fadeOut(200, function() {
-          subscriptionContent.fadeIn(200);
-        });
+        buyOnceContent.hide();
+        subscriptionContent.show();
 
-        if (buyOnceSubtitle.length) {
-          buyOnceSubtitle.fadeOut(200, function() {
-            if (subscriptionSubtitle.length) {
-              subscriptionSubtitle.fadeIn(200);
-            }
-          });
-        } else if (subscriptionSubtitle.length) {
-          subscriptionSubtitle.fadeIn(200);
-        }
+        buyOnceSubtitle.hide();
+        subscriptionSubtitle.show();
 
         if (sellingPlanId > 0) {
           $('#product-actions-{{ SID }} .submit-selling-plan-id').val(sellingPlanId);
         } else {
           parentBox.attr('inert', '');
           parentBox.removeClass('selected');
-          parentBox.removeAttr('style');
           $purchaseOptionBoxes.filter(':not([inert])').first().trigger('click');
         }
 
@@ -176,23 +164,15 @@
       } else {
         $('#product-actions-{{ SID }} .purchase-type button.buy-once').addClass('selected');
         {% unless product.metafields.custom.is_price_per_month %}parentBox.find('.per-month').hide();{% endunless %}
-        bwpButton.show(); // Show the bwp-button
+        bwpButton.show();
         $('.submit-selling-plan-id').val('');
         parentBox.removeAttr('inert');
 
-        subscriptionContent.fadeOut(200, function() {
-          buyOnceContent.fadeIn(200);
-        });
+        subscriptionContent.hide();
+        buyOnceContent.show();
 
-        if (subscriptionSubtitle.length) {
-          subscriptionSubtitle.fadeOut(200, function() {
-            if (buyOnceSubtitle.length) {
-              buyOnceSubtitle.fadeIn(200);
-            }
-          });
-        } else if (buyOnceSubtitle.length) {
-          buyOnceSubtitle.fadeIn(200);
-        }
+        subscriptionSubtitle.hide();
+        buyOnceSubtitle.show();
 
         $purchaseOptionBoxes.each(function() {
           const box = $(this);
@@ -280,17 +260,13 @@
     }
 
     function togglePriceDisplay(parentBox) {
-      const subscriptionContent = parentBox.find('.subscription-content');
-      const buyOnceContent = parentBox.find('.buy-once-content');
+      const subscriptionContent = parentBox.find('.subscription');
+      const buyOnceContent = parentBox.find('.buy-once');
       const contentToShow = isSubscriptionSelected() ? subscriptionContent : buyOnceContent;
       const contentToHide = isSubscriptionSelected() ? buyOnceContent : subscriptionContent;
 
-      subscriptionContent.stop();
-      buyOnceContent.stop();
-
-      contentToHide.fadeOut('fast', function() {
-        contentToShow.fadeIn('fast');
-      });
+      contentToHide.hide();
+      contentToShow.show();
     }
 
     function updateYotpoPointsWidget(parentBox) {
