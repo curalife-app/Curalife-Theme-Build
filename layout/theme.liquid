@@ -4,10 +4,13 @@
     {% unless request.design_mode %}
       {% render 'layout.head.geo-redirect-script' %}
       {% render 'layout.head.redirects-script' %}
-      {% render 'layout.head.gcm-integration-script' %}
       {% comment %} {% render 'layout.head.google-tag-manager'%} {% endcomment %}
       {% comment %} {% render 'layout.head.sentry-io' %} {% endcomment %}
-      {% unless shop.name == 'CuraLife Global' %}{% render "pandectes-rules" %}{% endunless %}
+      {% if shop.name == 'CuraLife Global' %}
+        {% render 'layout.head.gcm-integration-script' %}
+      {% else %}
+        {% render "pandectes-rules" %}
+      {% endunless %}
     {% endunless %}
 
     {% render 'layout.head.meta-tags' %}
