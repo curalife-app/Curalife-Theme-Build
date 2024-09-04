@@ -112,9 +112,9 @@ $(document).ready(function() {
   }
 
   function updatePriceDisplay(parentBox, isSubscriptionSelected) {
-    const itemPrice = parseFloat(parentBox.data('item-price'));
-    const subscriptionItemPrice = parseFloat(parentBox.data('subscription-item-price'));
-    const originalItemCap = parseFloat(parentBox.data('original-item-cap'));
+    const itemPrice = parseInt(parentBox.data('item-price'));
+    const subscriptionItemPrice = parseInt(parentBox.data('subscription-item-price'));
+    const originalItemCap = parseInt(parentBox.data('original-item-cap'));
 
     const currentPrice = isSubscriptionSelected ? subscriptionItemPrice : itemPrice;
     const priceElement = isSubscriptionSelected ?
@@ -125,13 +125,13 @@ $(document).ready(function() {
       parentBox.find('.total-price.buy-once-content .floor');
     const comparedAtPriceElement = parentBox.find('.compared-at-price');
 
-    priceElement.text('$' + currentPrice.toFixed(2));
+    priceElement.text('$' + formatPrice(currentPrice));
     if (totalPriceElement.length) {
-      totalPriceElement.text('$' + currentPrice.toFixed(2));
+      totalPriceElement.text('$' + formatPrice(currentPrice));
     }
 
     if (originalItemCap > currentPrice) {
-      comparedAtPriceElement.text('$' + originalItemCap.toFixed(2)).show();
+      comparedAtPriceElement.text('$' + formatPrice(originalItemCap)).show();
     } else {
       comparedAtPriceElement.hide();
     }
@@ -141,6 +141,10 @@ $(document).ready(function() {
       parentBox.find('.save-title.subscription-content') :
       parentBox.find('.save-title.buy-once-content');
     saveTag.show().siblings('.save-title').hide();
+  }
+
+  function formatPrice(cents) {
+    return (cents / 100).toFixed(2);
   }
 
   function adjustMaxHeight(element, isSubscriptionSelected) {
