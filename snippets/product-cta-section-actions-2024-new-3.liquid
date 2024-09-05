@@ -18,6 +18,95 @@
     {% for var in product.variants %}
       {% render 'product-cta-section-actions-variant-2024-new-3', SID: SID, prod: product, var: var, buyBoxColor: buyBoxColor, pricePer: pricePer, index: forloop.index %}
     {% endfor %}
+    {% comment %} {% if customer.email == 'yotam@curalife.com' and false %} {% endcomment %}
+    <div class="subscription-benefits">
+      <div>Complimentary subscriber benefits:</div>
+      <ul>
+        <li>Free gift in every box!</li>
+        <li>Free Expert Consultations</li>
+        <li>Best Price Guarantee</li>
+      </ul>
+      <a href="#" id="see-all-benefits">See all benefits</a>
+    </div>
+
+    <div class="submit-wrap flex flex-col w-full">
+      <div class="checkout-button">
+        {% render 'buy-buttons', product: product, variant: '', selling_plan_id: selling_plan_id , product_form_id: product_form_id, buyType: buyType, isBuyWithPrime: isBuyWithPrime %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Structure -->
+<div id="benefits-modal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h2>Subscription Benefits</h2>
+    <ul>
+      <li>Free gift in every box!</li>
+      <li>Free Expert Consultations</li>
+      <li>Best Price Guarantee</li>
+      <!-- Add more benefits as needed -->
+    </ul>
+  </div>
+</div>
+
+<style>
+  /* Modal styles */
+  .modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0, 0, 0, 0.4); /* Black w/ opacity */
+  }
+
+  .modal-content {
+    background-color: #fff;
+    margin: 15% auto; /* 15% from the top and centered */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%; /* Could be more or less, depending on screen size */
+    border-radius: 10px; /* Rounded edges */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Shadow */
+  }
+
+  .close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+  }
+
+  .close:hover,
+  .close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+  }
+</style>
+
+<script>
+  // JavaScript to handle modal open and close
+  document.getElementById('see-all-benefits').addEventListener('click', function(event) {
+    event.preventDefault();
+    document.getElementById('benefits-modal').style.display = 'block';
+  });
+
+  document.querySelector('.modal .close').addEventListener('click', function() {
+    document.getElementById('benefits-modal').style.display = 'none';
+  });
+
+  window.addEventListener('click', function(event) {
+    if (event.target == document.getElementById('benefits-modal')) {
+      document.getElementById('benefits-modal').style.display = 'none';
+    }
+  });
+</script>
 
     {% comment %} {% if customer.email == 'yotam@curalife.com' and false %}
       {% for additionalVariant in product.metafields.custom.additional_variants.value %}
