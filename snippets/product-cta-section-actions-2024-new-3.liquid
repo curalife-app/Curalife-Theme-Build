@@ -237,9 +237,8 @@
   }
 </style>
 
-
 <script>
- $(document).ready(function() {
+  $(document).ready(function() {
   const $productActions = $("#product-actions-{{ SID }}");
   const $purchaseOptionBoxes = $productActions.find('.purchase-option-box');
   const enableToggleAnimation = {{ isVariantBoxToggle | default: false }};
@@ -281,7 +280,6 @@
         bwpButton.hide();
         buyOnceContent.hide();
         subscriptionContent.show();
-        subscriptionTerms.show();
 
         const sellingPlanId = parentBox.data('subscription-selling-plan-id');
         if (sellingPlanId > 0) {
@@ -296,7 +294,14 @@
         parentBox.removeAttr('inert');
         subscriptionContent.hide();
         buyOnceContent.show();
+      }
+
+      // Always hide subscription terms for non-selected boxes
+      if (!parentBox.hasClass('selected')) {
         subscriptionTerms.hide();
+      } else {
+        // Show subscription terms only for selected box in subscription mode
+        subscriptionTerms.toggle(isSubscriptionSelected);
       }
 
       updatePriceDisplay(parentBox, isSubscriptionSelected);
