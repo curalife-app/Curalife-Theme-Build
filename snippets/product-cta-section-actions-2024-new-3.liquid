@@ -295,8 +295,14 @@
   function toggleContentVisibility(parentBox, isSubscriptionSelected, subscriptionContent, buyOnceContent, bwpButton) {
     parentBox.find('.per-month').toggle(isSubscriptionSelected);
     bwpButton.toggle(!isSubscriptionSelected);
-    subscriptionContent.toggle(isSubscriptionSelected);
-    buyOnceContent.toggle(!isSubscriptionSelected);
+
+    // Fade out current content
+    const currentContent = isSubscriptionSelected ? buyOnceContent : subscriptionContent;
+    currentContent.fadeOut(300, function() {
+      // Fade in new content
+      const newContent = isSubscriptionSelected ? subscriptionContent : buyOnceContent;
+      newContent.fadeIn(300);
+    });
 
     const sellingPlanId = parentBox.data('subscription-selling-plan-id');
     parentBox.attr('inert', isSubscriptionSelected && sellingPlanId <= 0 ? '' : null);
@@ -305,7 +311,12 @@
       parentBox.removeClass('selected');
     }
 
-    parentBox.find('.subscription-terms').toggle(isSubscriptionSelected && parentBox.hasClass('selected'));
+    // Fade in/out subscription terms
+    if (isSubscriptionSelected && parentBox.hasClass('selected')) {
+      parentBox.find('.subscription-terms').fadeIn(300);
+    } else {
+      parentBox.find('.subscription-terms').fadeOut(300);
+    }
   }
 
   function togglePurchaseBox(element) {
@@ -319,9 +330,9 @@
     }
 
     $purchaseOptionBoxes.removeClass('selected').each(function() {
-      $(this).css('max-height', getClosedHeight());
-      $(this).find('.toggle-icon').hide();
-      $(this).find('.subscription-terms').hide();
+      $(this).animate({ maxHeight: getClosedHeight() }, 300);
+      $(this).find('.toggle-icon').fadeOut(300);
+      $(this).find('.subscription-terms').fadeOut(300);
     });
 
     $('#product-actions-{{ SID }} .submit-selling-plan-id').val(subscriptionPlanID);
@@ -356,16 +367,22 @@
     const comparedAtPriceElement = parentBox.find('.compared-at-price');
 
     const displayPrice = pricePer === 'month' ? currentPrice : totalPrice;
-    priceElement.text('$' + formatPrice(displayPrice));
+
+    // Fade out, update, and fade in price elements
+    priceElement.fadeOut(300, function() {
+      $(this).text('$' + formatPrice(displayPrice)).fadeIn(300);
+    });
 
     if (totalPriceElement.length) {
-      totalPriceElement.text('$' + formatPrice(totalPrice));
+      totalPriceElement.fadeOut(300, function() {
+        $(this).text('$' + formatPrice(totalPrice)).fadeIn(300);
+      });
     }
 
     updateComparedAtPrice(comparedAtPriceElement, originalItemCap, currentPrice, pricePer, bottleQuantity);
 
     const saveTag = parentBox.find('.save-title' + (isSubscriptionSelected ? '.subscription' : '.buy-once'));
-    saveTag.show().siblings('.save-title').hide();
+    saveTag.fadeIn(300).siblings('.save-title').fadeOut(300);
 
     parentBox.find('.per-month').toggle(pricePer === 'month');
   }
@@ -373,9 +390,11 @@
   function updateComparedAtPrice(element, originalItemCap, currentPrice, pricePer, bottleQuantity) {
     if (originalItemCap > currentPrice) {
       const comparedAtPrice = pricePer === 'month' ? originalItemCap : (originalItemCap * bottleQuantity);
-      element.text('$' + formatPrice(comparedAtPrice)).show();
+      element.fadeOut(300, function() {
+        $(this).text('$' + formatPrice(comparedAtPrice)).fadeIn(300);
+      });
     } else {
-      element.hide();
+      element.fadeOut(300);
     }
   }
 
@@ -399,15 +418,13 @@
     if (enableToggleAnimation) {
       if (element.hasClass('selected')) {
         const scrollHeight = element.prop('scrollHeight');
-        element.css('max-height', scrollHeight + 'px');
-        element.find('.toggle-icon').show();
-
-        setTimeout(() => {
-          element.css('max-height', 'max-content');
-        }, 500);
+        element.animate({ maxHeight: scrollHeight }, 300, function() {
+          $(this).css('max-height', 'max-content');
+        });
+        element.find('.toggle-icon').fadeIn(300);
       } else {
-        element.css('max-height', getClosedHeight());
-        element.find('.toggle-icon').hide();
+        element.animate({ maxHeight: getClosedHeight() }, 300);
+        element.find('.toggle-icon').fadeOut(300);
       }
     } else {
       element.css('max-height', 'none');
@@ -417,12 +434,10 @@
   function animateSelectedBox(element) {
     if (enableToggleAnimation) {
       const scrollHeight = element.prop('scrollHeight');
-      element.css('max-height', scrollHeight + 'px');
-      element.find('.toggle-icon').show();
-
-      setTimeout(() => {
-        element.css('max-height', 'max-content');
-      }, 500);
+      element.animate({ maxHeight: scrollHeight }, 300, function() {
+        $(this).css('max-height', 'max-content');
+      });
+      element.find('.toggle-icon').fadeIn(300);
     } else {
       element.css('max-height', 'max-content');
       element.find('.toggle-icon').show();
