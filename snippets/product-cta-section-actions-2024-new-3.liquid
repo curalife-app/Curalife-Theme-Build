@@ -25,17 +25,7 @@
       <a href="#" id="see-all-benefits">See all benefits</a>
     </div>
 
-    <div id="benefits-modal" class="modal">
-      <div class="modal-content">
-        <span class="close">&times;</span>
-        <h2>Subscription Benefits</h2>
-        <ul>
-          <li>Free gift in every box!</li>
-          <li>Free Expert Consultations</li>
-          <li>Best Price Guarantee</li>
-        </ul>
-      </div>
-    </div>
+    {% render 'subscription-benefits-modal' %}
 
     <div class="submit-wrap flex flex-col w-full">
       <div class="checkout-button">
@@ -208,21 +198,6 @@ $(document).ready(function() {
     togglePurchaseBox($(this));
   });
 
-  $('#see-all-benefits').on('click', function(event) {
-    event.preventDefault();
-    $('#benefits-modal').css('display', 'block');
-  });
-
-  $('.modal .close').on('click', function() {
-    $('#benefits-modal').css('display', 'none');
-  });
-
-  $(window).on('click', function(event) {
-    if (event.target == document.getElementById('benefits-modal')) {
-      $('#benefits-modal').css('display', 'none');
-    }
-  });
-
   initializePurchaseOptions();
 });
 </script>
@@ -379,82 +354,5 @@ $(document).ready(function() {
 
   #cta-section-{{ section.id }} .product-actions:not(.with-animation) .purchase-option-box .toggle-icon {
     display: none !important;
-  }
-
-  /* Modal Styles */
-  .modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0,0,0,0.4);
-  }
-
-  .modal-content {
-    background-color: #fefefe;
-    margin: 15% auto;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 80%;
-    max-width: 600px;
-    border-radius: 5px;
-  }
-
-  .close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-  }
-
-  .close:hover,
-  .close:focus {
-    color: #000;
-    text-decoration: none;
-    cursor: pointer;
-  }
-
-  /* Subscription Benefits Styles */
-  .subscription-benefits {
-    margin-top: 20px;
-    padding: 15px;
-    background-color: #f8f8f8;
-    border-radius: 5px;
-  }
-
-  .subscription-benefits div {
-    font-weight: bold;
-    margin-bottom: 10px;
-  }
-
-  .subscription-benefits ul {
-    list-style-type: none;
-    padding-left: 0;
-  }
-
-  .subscription-benefits ul li {
-    margin-bottom: 5px;
-    padding-left: 25px;
-    position: relative;
-  }
-
-  .subscription-benefits ul li::before {
-    content: '\2713';
-    position: absolute;
-    left: 0;
-    color: var(--primary-color);
-  }
-
-  #see-all-benefits {
-    display: inline-block;
-    margin-top: 10px;
-    color: var(--primary-color);
-    text-decoration: underline;
-    cursor: pointer;
   }
 </style>

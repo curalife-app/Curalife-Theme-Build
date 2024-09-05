@@ -1,0 +1,205 @@
+<div id="benefits-modal" class="modal" aria-labelledby="modal-title" aria-hidden="true">
+  <div class="modal-content">
+    <button class="close" aria-label="Close modal">&times;</button>
+    <h2 id="modal-title">Complimentary subscriber benefits:</h2>
+    <ul class="benefits-list">
+      <li>
+        <span class="icon" aria-hidden="true">📦</span>
+        <div class="benefit-content">
+          <h3>Free gift in every box!</h3>
+          <p>Enjoy a special surprise with each purchase – a free gift just for you!</p>
+        </div>
+      </li>
+      <li>
+        <span class="icon" aria-hidden="true">👨‍⚕️</span>
+        <div class="benefit-content">
+          <h3>Free Expert Consultations</h3>
+          <p>Enjoy free chats with Naturopathic and Nutrition Doctors to tailor your health plan</p>
+        </div>
+      </li>
+      <li>
+        <span class="icon" aria-hidden="true">💰</span>
+        <div class="benefit-content">
+          <h3>Best Price Guarantee</h3>
+          <p>Enjoy unbeatable value with our best prices guaranteed all year round!</p>
+        </div>
+      </li>
+      <li>
+        <span class="icon" aria-hidden="true">🔄</span>
+        <div class="benefit-content">
+          <h3>Cancel, Pause, Delay or Change, Hassle Free</h3>
+          <p>Manage your subscription effortlessly with options to cancel, pause, delay, or change anytime, without any hassle.</p>
+        </div>
+      </li>
+      <li>
+        <span class="icon" aria-hidden="true">⭐</span>
+        <div class="benefit-content">
+          <h3>Double & Triple Loyalty Points</h3>
+          <p>At Curalife, you earn loyalty points with every order, which you can use to purchase our products later. As a subscription user, you'll enjoy double and triple loyalty points rewards compared to regular orders.</p>
+        </div>
+      </li>
+    </ul>
+    <button class="close-button">Close</button>
+  </div>
+</div>
+
+<style>
+:root {
+  --primary-color: #2c7a7b;
+  --primary-color-hover: #235c5c;
+  --text-color: #4a5568;
+  --border-color: #e2e8f0;
+  --background-color: #fefefe;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background-color: rgba(0,0,0,0.4);
+  overflow-y: auto;
+}
+
+.modal-content {
+  background-color: var(--background-color);
+  margin: 5% auto;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  max-width: 600px;
+  width: 90%;
+}
+
+.close {
+  float: right;
+  font-size: 1.75rem;
+  font-weight: bold;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: #aaa;
+}
+
+.close:hover,
+.close:focus {
+  color: #000;
+}
+
+h2 {
+  color: var(--primary-color);
+  font-size: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.benefits-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.benefits-list li {
+  display: flex;
+  align-items: flex-start;
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.benefits-list li:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.icon {
+  font-size: 1.5rem;
+  margin-right: 1rem;
+  flex-shrink: 0;
+}
+
+.benefit-content h3 {
+  color: var(--primary-color);
+  font-size: 1.125rem;
+  margin: 0 0 0.3rem 0;
+}
+
+.benefit-content p {
+  color: var(--text-color);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.close-button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.625rem 1.25rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  display: block;
+  margin: 1.25rem auto 0;
+  transition: background-color 0.3s ease;
+}
+
+.close-button:hover {
+  background-color: var(--primary-color-hover);
+}
+
+@media (max-width: 480px) {
+  .modal-content {
+    padding: 1rem;
+  }
+
+  h2 {
+    font-size: 1.25rem;
+  }
+
+  .benefit-content h3 {
+    font-size: 1rem;
+  }
+
+  .benefit-content p {
+    font-size: 0.8125rem;
+  }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const modal = document.getElementById('benefits-modal');
+  const closeButtons = modal.querySelectorAll('.close, .close-button');
+
+  function closeModal() {
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  function openModal() {
+    modal.style.display = 'block';
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeButtons.forEach(button => {
+    button.addEventListener('click', closeModal);
+  });
+
+  window.addEventListener('click', function(event) {
+    if (event.target === modal) {
+      closeModal();
+    }
+  });
+
+  // Assuming you have a button to open the modal
+  document.getElementById('see-all-benefits').addEventListener('click', openModal);
+
+  // Close modal with Escape key
+  document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape' && modal.style.display === 'block') {
+      closeModal();
+    }
+  });
+});
+</script>
