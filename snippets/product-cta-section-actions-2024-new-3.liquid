@@ -316,24 +316,22 @@
       const currentPrice = isSubscriptionSelected ? subscriptionItemPrice : itemPrice;
       const totalPrice = currentPrice * bottleQuantity;
 
-      const pricePer = parentBox.data('price-per') || 'total'; // New line
+      const pricePer = parentBox.data('price-per') || 'total';
 
       const priceElement = parentBox.find('.real-price' + (isSubscriptionSelected ? '.subscription' : '.buy-once') + ' .floor');
       const totalPriceElement = parentBox.find('.total-price' + (isSubscriptionSelected ? '.subscription' : '.buy-once') + ' .floor');
       const comparedAtPriceElement = parentBox.find('.compared-at-price');
 
-      // Update the main price display
-      const displayPrice = pricePer === 'month' ? currentPrice : totalPrice; // New line
-      priceElement.text('$' + formatPrice(displayPrice)); // Modified line
+      const displayPrice = pricePer === 'month' ? currentPrice : totalPrice;
+      priceElement.text('$' + formatPrice(displayPrice));
 
-      // Update the total price (if the element exists)
       if (totalPriceElement.length) {
         totalPriceElement.text('$' + formatPrice(totalPrice));
       }
 
       if (originalItemCap > currentPrice) {
-        const comparedAtPrice = pricePer === 'month' ? originalItemCap : (originalItemCap * bottleQuantity); // New line
-        comparedAtPriceElement.text('$' + formatPrice(comparedAtPrice)).show(); // Modified line
+        const comparedAtPrice = pricePer === 'month' ? originalItemCap : (originalItemCap * bottleQuantity);
+        comparedAtPriceElement.text('$' + formatPrice(comparedAtPrice)).show();
       } else {
         comparedAtPriceElement.hide();
       }
