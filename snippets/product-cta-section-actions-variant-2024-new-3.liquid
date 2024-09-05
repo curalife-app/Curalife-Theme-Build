@@ -118,23 +118,18 @@
             </span>
           </div>
 
-          {% comment %} Corrected compared price logic {% endcomment %}
           {% if pricePer == 'month' %}
-            {% assign subscription_compared_price = original_item_cap %}
-            {% assign buy_once_compared_price = original_item_cap %}
-          {% else %}
-            {% assign subscription_compared_price = original_item_cap_total %}
-            {% assign buy_once_compared_price = original_item_cap_total %}
-          {% endif %}
-
-          {% if subscription_compared_price > subscription_item_price or buy_once_compared_price > item_price %}
-            <div class="compared-at-price text-[14px] opacity-40 font-normal line-through rounded">
-              {% if pricePer == 'month' %}
+            {% if original_item_cap > subscription_item_price or original_item_cap > item_price %}
+              <div class="compared-at-price text-[14px] opacity-40 font-normal line-through rounded">
                 {{ original_item_cap | money | replace: '.00', '' }}
-              {% else %}
+              </div>
+            {% endif %}
+          {% else %}
+            {% if original_item_cap_total > subscription_total_price or original_item_cap_total > var.price %}
+              <div class="compared-at-price text-[14px] opacity-40 font-normal line-through rounded">
                 {{ original_item_cap_total | money | replace: '.00', '' }}
-              {% endif %}
-            </div>
+              </div>
+            {% endif %}
           {% endif %}
         </div>
 
