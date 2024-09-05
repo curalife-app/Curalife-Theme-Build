@@ -309,41 +309,41 @@ const Util = {
   getClosedHeight: () => window.innerWidth <= CONFIG.mobileBreakpoint ? '16vw' : '72px',
   isSubscriptionSelected: () => DOM.subscriptionButton && DOM.subscriptionButton.classList.contains('selected'),
 
-  animateElement(element, keyframes, options) {
+  animateElement: (element, keyframes, options) => {
     if (element && element.animate) {
       return element.animate(keyframes, options);
     }
     return null;
   },
 
-  fadeIn(element, duration = CONFIG.animationDuration) {
-    return this.animateElement(element, [
+  fadeIn: (element, duration = CONFIG.animationDuration) => {
+    return Util.animateElement(element, [
       { opacity: 0, transform: 'translateY(-10px)' },
       { opacity: 1, transform: 'translateY(0)' }
     ], { duration, fill: 'forwards', easing: 'ease-out' });
   },
 
-  fadeOut(element, duration = CONFIG.animationDuration) {
-    return this.animateElement(element, [
+  fadeOut: (element, duration = CONFIG.animationDuration) => {
+    return Util.animateElement(element, [
       { opacity: 1, transform: 'translateY(0)' },
       { opacity: 0, transform: 'translateY(-10px)' }
     ], { duration, fill: 'forwards', easing: 'ease-in' });
   },
 
-  slideDown(element, duration = CONFIG.animationDuration) {
+  slideDown: (element, duration = CONFIG.animationDuration) => {
     const startHeight = element.offsetHeight;
     element.style.height = 'auto';
     const endHeight = element.offsetHeight;
     element.style.height = startHeight + 'px';
-    return this.animateElement(element, [
+    return Util.animateElement(element, [
       { height: startHeight + 'px', opacity: 0 },
       { height: endHeight + 'px', opacity: 1 }
     ], { duration, fill: 'forwards', easing: 'ease-in-out' });
   },
 
-  slideUp(element, duration = CONFIG.animationDuration) {
+  slideUp: (element, duration = CONFIG.animationDuration) => {
     const startHeight = element.offsetHeight;
-    return this.animateElement(element, [
+    return Util.animateElement(element, [
       { height: startHeight + 'px', opacity: 1 },
       { height: '0px', opacity: 0 }
     ], { duration, fill: 'forwards', easing: 'ease-in-out' });
