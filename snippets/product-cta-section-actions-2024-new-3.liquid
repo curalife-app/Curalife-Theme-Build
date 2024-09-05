@@ -213,7 +213,19 @@ $(document).ready(function() {
       const bwpButton = $('#product-actions-{{ SID }} .bwp-button');
 
       if (isSubscriptionSelected) {
-        // ... (keep existing subscription logic)
+        parentBox.find('.per-month').show();
+        bwpButton.hide();
+        buyOnceContent.hide();
+        subscriptionContent.show();
+        parentBox.find('.subscription-terms').show();
+
+        const sellingPlanId = parentBox.data('subscription-selling-plan-id');
+        if (sellingPlanId > 0) {
+          parentBox.removeAttr('inert');
+        } else {
+          parentBox.attr('inert', '');
+          parentBox.removeClass('selected');
+        }
       } else {
         parentBox.find('.per-month').hide();
         bwpButton.show();
@@ -221,19 +233,15 @@ $(document).ready(function() {
         subscriptionContent.hide();
         buyOnceContent.show();
         parentBox.find('.subscription-terms').hide();
-
-        // Animate all boxes to the initial state when switching to "Buy Once"
-        if (enableToggleAnimation) {
-          parentBox.css('max-height', '72px');
-          parentBox.find('.toggle-icon').hide();
-        }
       }
 
       updatePriceDisplay(parentBox, isSubscriptionSelected);
 
-      // Adjust max height only for the selected box in subscription mode
-      if (isSubscriptionSelected && parentBox.hasClass('selected')) {
-        adjustMaxHeight(parentBox, isSubscriptionSelected);
+      // Adjust max height for the selected box in both modes
+      if (parentBox.hasClass('selected')) {
+        adjustMaxHeight(parentBox, true);
+      } else {
+        adjustMaxHeight(parentBox, false);
       }
     });
 
@@ -285,9 +293,9 @@ $(document).ready(function() {
     return (cents / 100).toFixed(2);
   }
 
-  function adjustMaxHeight(element, isSubscriptionSelected) {
+  function adjustMaxHeight(element, isExpanded) {
     if (enableToggleAnimation) {
-      if (isSubscriptionSelected && element.hasClass('selected')) {
+      if (isExpanded) {
         const openHeight = element.get(0).scrollHeight;
         element.css('max-height', openHeight + 'px');
         element.find('.toggle-icon').show();
@@ -311,8 +319,7 @@ $(document).ready(function() {
     }
 
     $purchaseOptionBoxes.removeClass('selected').each(function() {
-      $(this).css('max-height', '72px');
-      $(this).find('.toggle-icon').hide();
+      adjustMaxHeight($(this), false);
     });
 
     $('#product-actions-{{ SID }} .submit-selling-plan-id').val(subscriptionPlanID);
@@ -321,15 +328,9 @@ $(document).ready(function() {
     element.addClass('selected');
     element.find("input[type='radio']").prop('checked', true);
 
-    togglePurchaseType(isSubscription);
-    updateVariantImage(element);
+    adjustMaxHeight(element, true);
 
-    // Expand only the selected variant box in subscription mode
-    if (enableToggleAnimation && isSubscription) {
-      const openHeight = element.get(0).scrollHeight;
-      element.css('max-height', openHeight + 'px');
-      element.find('.toggle-icon').show();
-    }
+    updateVariantImage(element);
   }
 
   function updateVariantImage(element) {
