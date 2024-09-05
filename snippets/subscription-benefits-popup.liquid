@@ -1,72 +1,26 @@
 <div id="benefits-modal" class="modal" aria-labelledby="modal-title" aria-hidden="true">
   <div class="modal-content">
-    <button class="close" aria-label="Close modal">&times;</button>
     <h2 id="modal-title">Complimentary subscriber benefits:</h2>
-    <ul class="benefits-list">
-      <li>
-        <span class="icon" aria-hidden="true">📦</span>
-        <div class="benefit-content">
-          <h3>Free gift in every box!</h3>
-          <p>Enjoy a special surprise with each purchase – a free gift just for you!</p>
-        </div>
-      </li>
-      <li>
-        <span class="icon" aria-hidden="true">👨‍⚕️</span>
-        <div class="benefit-content">
-          <h3>Free Expert Consultations</h3>
-          <p>Enjoy free chats with Naturopathic and Nutrition Doctors to tailor your health plan</p>
-        </div>
-      </li>
-      <li>
-        <span class="icon" aria-hidden="true">💰</span>
-        <div class="benefit-content">
-          <h3>Best Price Guarantee</h3>
-          <p>Enjoy unbeatable value with our best prices guaranteed all year round!</p>
-        </div>
-      </li>
-      <li>
-        <span class="icon" aria-hidden="true">🔄</span>
-        <div class="benefit-content">
-          <h3>Cancel, Pause, Delay or Change, Hassle Free</h3>
-          <p>Manage your subscription effortlessly with options to cancel, pause, delay, or change anytime, without any hassle.</p>
-        </div>
-      </li>
-      <li>
-        <span class="icon" aria-hidden="true">⭐</span>
-        <div class="benefit-content">
-          <h3>Double & Triple Loyalty Points</h3>
-          <p>At Curalife, you earn loyalty points with every order, which you can use to purchase our products later. As a subscription user, you'll enjoy double and triple loyalty points rewards compared to regular orders.</p>
-        </div>
-      </li>
-    </ul>
+    <ul id="benefits-list"></ul>
     <button class="close-button">Close</button>
   </div>
 </div>
 
 <style>
-:root {
-  --primary-color: #2c7a7b;
-  --primary-color-hover: #235c5c;
-  --text-color: #4a5568;
-  --border-color: #e2e8f0;
-  --background-color: #fefefe;
-}
-
 .modal {
+  --primary: #2c7a7b;
+  --text: #4a5568;
+  --border: #e2e8f0;
+  --bg: #fefefe;
   display: none;
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background-color: rgba(0,0,0,0.4);
-  overflow-y: auto;
+  background: rgba(0,0,0,0.4);
+  overflow: auto;
 }
-
-.modal ul li::before {
-  content: unset;
-}
-
 .modal-content {
-  background-color: var(--background-color);
+  background: var(--bg);
   margin: 5% auto;
   padding: 2rem;
   border-radius: 10px;
@@ -74,136 +28,107 @@
   max-width: 600px;
   width: 90%;
 }
-
-.close {
-  float: right;
-  font-size: 1.75rem;
-  font-weight: bold;
-  cursor: pointer;
-  background: none;
-  border: none;
-  color: #aaa;
-}
-
-.close:hover,
-.close:focus {
-  color: #000;
-}
-
 h2 {
-  color: var(--primary-color);
+  color: var(--primary);
   font-size: 1.5rem;
   margin-bottom: 1.25rem;
 }
-
-.benefits-list {
-  list-style-type: none;
+#benefits-list {
+  list-style: none;
   padding: 0;
 }
-
-.benefits-list li {
+.benefit {
   display: flex;
   align-items: flex-start;
   padding-bottom: 1.25rem;
   margin-bottom: 1.25rem;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border);
 }
-
-.benefits-list li:last-child {
+.benefit:last-child {
   border-bottom: none;
   margin-bottom: 0;
   padding-bottom: 0;
 }
-
 .icon {
   font-size: 1.5rem;
   margin-right: 1rem;
   flex-shrink: 0;
 }
-
-.benefit-content h3 {
-  color: var(--primary-color);
+.content h3 {
+  color: var(--primary);
   font-size: 1.125rem;
-  margin: 0 0 0.3rem 0;
+  margin: 0 0 0.3rem;
 }
-
-.benefit-content p {
-  color: var(--text-color);
+.content p {
+  color: var(--text);
   font-size: 0.875rem;
   margin: 0;
 }
-
 .close-button {
-  background-color: var(--primary-color);
+  background: var(--primary);
   color: white;
   border: none;
   padding: 0.625rem 1.25rem;
   border-radius: 5px;
-  cursor: pointer;
   font-size: 1rem;
   display: block;
   margin: 1.25rem auto 0;
-  transition: background-color 0.3s ease;
+  cursor: pointer;
+  transition: background 0.3s;
 }
-
 .close-button:hover {
-  background-color: var(--primary-color-hover);
+  background: #235c5c;
 }
-
 @media (max-width: 480px) {
-  .modal-content {
-    padding: 1rem;
-  }
-
-  h2 {
-    font-size: 1.25rem;
-  }
-
-  .benefit-content h3 {
-    font-size: 1rem;
-  }
-
-  .benefit-content p {
-    font-size: 0.8125rem;
-  }
+  .modal-content { padding: 1rem; }
+  h2 { font-size: 1.25rem; }
+  .content h3 { font-size: 1rem; }
+  .content p { font-size: 0.8125rem; }
 }
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  const modal = document.getElementById('benefits-modal');
-  const closeButtons = modal.querySelectorAll('.close, .close-button');
+const benefits = [
+  ['📦', 'Free gift in every box!', 'Enjoy a special surprise with each purchase – a free gift just for you!'],
+  ['👨‍⚕️', 'Free Expert Consultations', 'Enjoy free chats with Naturopathic and Nutrition Doctors to tailor your health plan'],
+  ['💰', 'Best Price Guarantee', 'Enjoy unbeatable value with our best prices guaranteed all year round!'],
+  ['🔄', 'Cancel, Pause, Delay or Change, Hassle Free', 'Manage your subscription effortlessly with options to cancel, pause, delay, or change anytime, without any hassle.'],
+  ['⭐', 'Double & Triple Loyalty Points', 'At Curalife, you earn loyalty points with every order, which you can use to purchase our products later. As a subscription user, you will enjoy double and triple loyalty points rewards compared to regular orders.']
+];
 
-  function closeModal() {
-    modal.style.display = 'none';
-    modal.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = '';
-  }
+const modal = document.getElementById('benefits-modal');
+const benefitsList = document.getElementById('benefits-list');
 
-  function openModal() {
-    modal.style.display = 'block';
-    modal.setAttribute('aria-hidden', 'false');
-    document.body.style.overflow = 'hidden';
-  }
+const toggleModal = show => {
+  modal.style.display = show ? 'block' : 'none';
+  modal.setAttribute('aria-hidden', !show);
+  document.body.style.overflow = show ? 'hidden' : '';
+};
 
-  closeButtons.forEach(button => {
-    button.addEventListener('click', closeModal);
-  });
+const createBenefit = ([icon, title, description]) => {
+  const li = document.createElement('li');
+  li.className = 'benefit';
+  li.innerHTML = `
+    <span class="icon" aria-hidden="true">${icon}</span>
+    <div class="content">
+      <h3>${title}</h3>
+      <p>${description}</p>
+    </div>
+  `;
+  return li;
+};
 
-  window.addEventListener('click', function(event) {
-    if (event.target === modal) {
-      closeModal();
-    }
-  });
+benefitsList.append(...benefits.map(createBenefit));
 
-  // Assuming you have a button to open the modal
-  document.getElementById('see-all-benefits').addEventListener('click', openModal);
+modal.querySelector('.close-button').addEventListener('click', () => toggleModal(false));
 
-  // Close modal with Escape key
-  document.addEventListener('keydown', function(event) {
-    if (event.key === 'Escape' && modal.style.display === 'block') {
-      closeModal();
-    }
-  });
+window.addEventListener('click', event => {
+  if (event.target === modal) toggleModal(false);
+});
+
+document.getElementById('see-all-benefits').addEventListener('click', () => toggleModal(true));
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && modal.style.display === 'block') toggleModal(false);
 });
 </script>
