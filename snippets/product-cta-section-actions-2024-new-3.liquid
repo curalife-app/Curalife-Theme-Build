@@ -361,8 +361,14 @@
   function adjustMaxHeight(element, isSubscriptionSelected) {
     if (enableToggleAnimation) {
       if (element.hasClass('selected')) {
-        element.css('max-height', 'max-content');
+        const scrollHeight = element.prop('scrollHeight');
+        element.css('max-height', scrollHeight + 'px');
         element.find('.toggle-icon').show();
+
+        // After the animation, set to max-content
+        setTimeout(() => {
+          element.css('max-height', 'max-content');
+        }, 500); // Match this to your transition duration
       } else {
         element.css('max-height', getClosedHeight());
         element.find('.toggle-icon').hide();
@@ -397,8 +403,16 @@
     togglePurchaseType(isSubscription);
     updateVariantImage(element);
 
-    if (enableToggleAnimation && isSubscription) {
-      const openHeight = element.get(0).scrollHeight;
+    if (enableToggleAnimation) {
+      const scrollHeight = element.prop('scrollHeight');
+      element.css('max-height', scrollHeight + 'px');
+      element.find('.toggle-icon').show();
+
+      // After the animation, set to max-content
+      setTimeout(() => {
+        element.css('max-height', 'max-content');
+      }, 500); // Match this to your transition duration
+    } else {
       element.css('max-height', 'max-content');
       element.find('.toggle-icon').show();
     }
@@ -436,7 +450,9 @@
 
   $(window).on('resize', function() {
     $purchaseOptionBoxes.not('.selected').css('max-height', getClosedHeight());
-    $purchaseOptionBoxes.filter('.selected').css('max-height', 'max-content');
+    $purchaseOptionBoxes.filter('.selected').each(function() {
+      adjustMaxHeight($(this), isSubscriptionSelected());
+    });
   });
 
   initializePurchaseOptions();
