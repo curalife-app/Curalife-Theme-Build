@@ -275,70 +275,54 @@
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  const SID = '{{ SID }}';
-  const productActions = document.getElementById(`product-actions-${SID}`);
-  const purchaseOptionBoxes = productActions.querySelectorAll('.purchase-option-box');
+$(document).ready(function() {
+  const $productActions = $("#product-actions-{{ SID }}");
+  const $purchaseOptionBoxes = $productActions.find('.purchase-option-box');
   const enableToggleAnimation = {{ isVariantBoxToggle | default: false }};
-  const variantsAmount = {{ variantsAmount | default: 1 }};
-  const defaultSelectionIndex = {{ defaultSelectionIndex | default: 1 }};
-
-  const selectors = {
-    subscriptionButton: `.purchase-type button.subscription`,
-    submitSellingPlanId: `.submit-selling-plan-id`,
-    submitVariantId: `.submit-variant-id`,
-    bwpButton: `.bwp-button`,
-    purchaseTypeButtons: `.purchase-type button`
-  };
-
-  function $(selector) {
-    return productActions.querySelector(selector);
-  }
-
-  function $$(selector) {
-    return productActions.querySelectorAll(selector);
-  }
 
   function isSubscriptionSelected() {
-    return $(selectors.subscriptionButton).classList.contains('selected');
+    return $('#product-actions-{{ SID }} .purchase-type button.subscription').hasClass('selected');
   }
 
   function initializePurchaseOptions() {
     const urlParams = new URLSearchParams(window.location.search);
-    const defaultVariant = parseInt(urlParams.get('default-variant')) || defaultSelectionIndex;
+    const defaultVariant = urlParams.get('default-variant') ? parseInt(urlParams.get('default-variant')) : {{ defaultSelectionIndex | default: 1 }};
 
-    $(selectors.subscriptionButton).click();
-    const initialVariant = purchaseOptionBoxes[defaultVariant - 1] || purchaseOptionBoxes[0];
-    initialVariant.click();
-    initialVariant.querySelector("input[type='radio']").checked = true;
+    $('#product-actions-{{ SID }} .purchase-type .subscription').trigger('click');
+
+    const initialDefaultVariant = defaultVariant ? defaultVariant - 1 : 0;
+    $purchaseOptionBoxes.eq(initialDefaultVariant).trigger('click').find("input[type='radio']").prop('checked', true);
   }
 
   function togglePurchaseType(parentBox, isSubscriptionSelected) {
-    const elements = {
-      perMonth: parentBox.querySelector('.per-month'),
-      subscription: parentBox.querySelector('.subscription'),
-      buyOnce: parentBox.querySelector('.buy-once'),
-      bwpButton: $(selectors.bwpButton),
-      subscriptionTerms: parentBox.querySelector('.subscription-terms')
-    };
+    const subscriptionContent = parentBox.find('.subscription');
+    const buyOnceContent = parentBox.find('.buy-once');
+    const bwpButton = $('#product-actions-{{ SID }} .bwp-button');
 
-    const visibility = isSubscriptionSelected ? 'show' : 'hide';
-    ['perMonth', 'subscription', 'subscriptionTerms'].forEach(el => elements[el]?.classList[visibility]('hidden'));
-    ['buyOnce', 'bwpButton'].forEach(el => elements[el]?.classList[visibility === 'show' ? 'hide' : 'show']('hidden'));
+    if (isSubscriptionSelected) {
+      parentBox.find('.per-month').show();
+      bwpButton.hide();
+      buyOnceContent.hide();
+      subscriptionContent.show();
+      parentBox.find('.subscription-terms').show();
 
-    const sellingPlanId = parentBox.dataset.subscriptionSellingPlanId;
-    if (isSubscriptionSelected && sellingPlanId > 0) {
-      $(selectors.submitSellingPlanId).value = sellingPlanId;
-      parentBox.removeAttribute('inert');
-    } else {
-      $(selectors.submitSellingPlanId).value = '';
-      if (isSubscriptionSelected) {
-        parentBox.setAttribute('inert', '');
-        parentBox.classList.remove('selected');
-        Array.from(purchaseOptionBoxes).find(box => !box.hasAttribute('inert'))?.click();
+      const sellingPlanId = parentBox.data('subscription-selling-plan-id');
+      if (sellingPlanId > 0) {
+        $('#product-actions-{{ SID }} .submit-selling-plan-id').val(sellingPlanId);
+        parentBox.removeAttr('inert');
       } else {
-        parentBox.removeAttribute('inert');
+        parentBox.attr('inert', '');
+        parentBox.removeClass('selected');
+        $purchaseOptionBoxes.filter(':not([inert])').first().trigger('click');
       }
+    } else {
+      parentBox.find('.per-month').hide();
+      bwpButton.show();
+      $('.submit-selling-plan-id').val('');
+      parentBox.removeAttr('inert');
+      subscriptionContent.hide();
+      buyOnceContent.show();
+      parentBox.find('.subscription-terms').hide();
     }
 
     updatePriceDisplay(parentBox, isSubscriptionSelected);
@@ -346,30 +330,34 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function updatePriceDisplay(parentBox, isSubscriptionSelected) {
-    const prices = {
-      item: parseInt(parentBox.dataset.itemPrice),
-      subscription: parseInt(parentBox.dataset.subscriptionItemPrice),
-      original: parseInt(parentBox.dataset.originalItemCap)
-    };
+    const itemPrice = parseInt(parentBox.data('item-price'));
+    const subscriptionItemPrice = parseInt(parentBox.data('subscription-item-price'));
+    const originalItemCap = parseInt(parentBox.data('original-item-cap'));
 
-    const currentPrice = isSubscriptionSelected ? prices.subscription : prices.item;
-    const priceElement = parentBox.querySelector(`.real-price.${isSubscriptionSelected ? 'subscription' : 'buy-once'} .floor`);
-    const totalPriceElement = parentBox.querySelector(`.total-price.${isSubscriptionSelected ? 'subscription' : 'buy-once'} .floor`);
-    const comparedAtPriceElement = parentBox.querySelector('.compared-at-price');
+    const currentPrice = isSubscriptionSelected ? subscriptionItemPrice : itemPrice;
+    const priceElement = isSubscriptionSelected ?
+      parentBox.find('.real-price.subscription .floor') :
+      parentBox.find('.real-price.buy-once .floor');
+    const totalPriceElement = isSubscriptionSelected ?
+      parentBox.find('.total-price.subscription .floor') :
+      parentBox.find('.total-price.buy-once .floor');
+    const comparedAtPriceElement = parentBox.find('.compared-at-price');
 
-    priceElement.textContent = `$${formatPrice(currentPrice)}`;
-    if (totalPriceElement) totalPriceElement.textContent = `$${formatPrice(currentPrice)}`;
-
-    if (prices.original > currentPrice) {
-      comparedAtPriceElement.textContent = `$${formatPrice(prices.original)}`;
-      comparedAtPriceElement.classList.remove('hidden');
-    } else {
-      comparedAtPriceElement.classList.add('hidden');
+    priceElement.text('$' + formatPrice(currentPrice));
+    if (totalPriceElement.length) {
+      totalPriceElement.text('$' + formatPrice(currentPrice));
     }
 
-    const saveTag = parentBox.querySelector(`.save-title.${isSubscriptionSelected ? 'subscription' : 'buy-once'}`);
-    saveTag.classList.remove('hidden');
-    saveTag.siblings('.save-title').classList.add('hidden');
+    if (originalItemCap > currentPrice) {
+      comparedAtPriceElement.text('$' + formatPrice(originalItemCap)).show();
+    } else {
+      comparedAtPriceElement.hide();
+    }
+
+    const saveTag = isSubscriptionSelected ?
+      parentBox.find('.save-title.subscription') :
+      parentBox.find('.save-title.buy-once');
+    saveTag.show().siblings('.save-title').hide();
   }
 
   function formatPrice(cents) {
@@ -377,62 +365,91 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function adjustMaxHeight(element, isSubscriptionSelected) {
-    if (!enableToggleAnimation) return;
-
-    const height = isSubscriptionSelected ? `${element.scrollHeight}px` : '72px';
-    element.style.maxHeight = height;
-    element.querySelector('.toggle-icon')?.classList[isSubscriptionSelected ? 'remove' : 'add']('hidden');
+    if (enableToggleAnimation) {
+      if (isSubscriptionSelected) {
+        const openHeight = element.get(0).scrollHeight;
+        element.css('max-height', openHeight + 'px');
+        element.find('.toggle-icon').show();
+      } else {
+        element.css('max-height', '72px');
+        element.find('.toggle-icon').hide();
+      }
+    } else {
+      element.css('max-height', 'none');
+    }
   }
 
   function togglePurchaseBox(element) {
-    if (element.classList.contains('selected')) return;
-
     const isSubscription = isSubscriptionSelected();
-    purchaseOptionBoxes.forEach(box => {
-      box.classList.remove('selected');
+    const wasSelected = element.hasClass('selected');
+    const subscriptionPlanID = isSubscription ? element.data('subscription-selling-plan-id') : '';
+    const variantID = isSubscription ? element.data('original-variant') : element.data('variant');
+
+    if (wasSelected) {
+      return;
+    }
+
+    $purchaseOptionBoxes.removeClass('selected').each(function() {
       if (enableToggleAnimation && isSubscription) {
-        box.style.maxHeight = '72px';
-        box.querySelector('.toggle-icon')?.classList.add('hidden');
+        $(this).css('max-height', '72px');
+        $(this).find('.toggle-icon').hide();
       }
     });
 
-    $(selectors.submitSellingPlanId).value = isSubscription ? element.dataset.subscriptionSellingPlanId : '';
-    $(selectors.submitVariantId).value = isSubscription ? element.dataset.originalVariant : element.dataset.variant;
+    $('#product-actions-{{ SID }} .submit-selling-plan-id').val(subscriptionPlanID);
+    $('#product-actions-{{ SID }} .submit-variant-id').val(variantID);
 
-    element.classList.add('selected');
-    element.querySelector("input[type='radio']").checked = true;
+    element.addClass('selected');
+    element.find("input[type='radio']").prop('checked', true);
 
     togglePurchaseType(element, isSubscription);
     updateVariantImage(element);
   }
 
   function updateVariantImage(element) {
-    if (variantsAmount <= 1 || !window.productSliderAllInOne{{ SID }}) return;
-
-    const slideIndex = window.productSliderAllInOne{{ SID }}.slides.length - (variantsAmount + 1 - element.dataset.index);
-    window.productSliderAllInOne{{ SID }}.slideTo(slideIndex);
-    window.hasInitialImageUpdateHappened = true;
+    {% if variantsAmount > 1 %}
+      {% if isSlideOnLoad %}
+        let slideIndex = window.productSliderAllInOne{{ SID }}.slides.length - ({{ variantsAmount | plus: 1 }} - element.attr('data-index'));
+        window.productSliderAllInOne{{ SID }}.slideTo(slideIndex);
+      {% else %}
+        if (window.hasInitialImageUpdateHappened) {
+          let slideIndex = window.productSliderAllInOne{{ SID }}.slides.length - ({{ variantsAmount | plus: 1 }} - element.attr('data-index'));
+          window.productSliderAllInOne{{ SID }}.slideTo(slideIndex);
+        }
+        window.hasInitialImageUpdateHappened = true;
+      {% endif %}
+    {% endif %}
   }
 
-  productActions.addEventListener('click', function(event) {
-    const target = event.target;
-
-    if (target.closest(selectors.purchaseTypeButtons)) {
-      event.preventDefault();
-      const isSubscription = target.classList.contains('subscription');
-      $$(selectors.purchaseTypeButtons).forEach(btn => btn.classList.toggle('selected', btn === target));
-      purchaseOptionBoxes.forEach(box => togglePurchaseType(box, isSubscription));
-    } else if (target.closest('.purchase-option-box')) {
-      event.preventDefault();
-      togglePurchaseBox(target.closest('.purchase-option-box'));
-    }
-  });
-
-  document.getElementById('see-all-benefits')?.addEventListener('click', function(event) {
+  $productActions.on('click', '.purchase-type button', function(event) {
     event.preventDefault();
-    console.log('Show benefits modal');
-    // Implement showBenefitsModal() function here
+    const isSubscription = $(this).hasClass('subscription');
+
+    $('#product-actions-{{ SID }} .purchase-type button').removeClass('selected');
+    $(this).addClass('selected');
+
+    $purchaseOptionBoxes.each(function() {
+      togglePurchaseType($(this), isSubscription);
+    });
   });
+
+  $productActions.on('click', '.purchase-option-box', function(event) {
+    event.preventDefault();
+    togglePurchaseBox($(this));
+  });
+
+  // Handle "See all benefits" click
+  $('#see-all-benefits').on('click', function(event) {
+    event.preventDefault();
+    // Assuming you have a function to show the benefits modal
+    showBenefitsModal();
+  });
+
+  function showBenefitsModal() {
+    // Implement the logic to show the benefits modal here
+    // This could be triggering a Shopify modal or a custom modal implementation
+    console.log('Show benefits modal');
+  }
 
   initializePurchaseOptions();
 });
