@@ -237,19 +237,10 @@
 
 
 <script>
-  $(document).ready(function() {
+ $(document).ready(function() {
   const $productActions = $("#product-actions-{{ SID }}");
   const $purchaseOptionBoxes = $productActions.find('.purchase-option-box');
   const enableToggleAnimation = {{ isVariantBoxToggle | default: false }};
-
-  function getClosedHeight() {
-    return window.innerWidth <= 767 ? 15 : 72;
-  }
-
-  function setClosedHeight() {
-    const height = getClosedHeight();
-    document.documentElement.style.setProperty('--closed-height', height + (window.innerWidth <= 767 ? 'vw' : 'px'));
-  }
 
   function isSubscriptionSelected() {
     return $('#product-actions-{{ SID }} .purchase-type button.subscription').hasClass('selected');
@@ -264,10 +255,8 @@
     const initialDefaultVariant = defaultVariant ? defaultVariant - 1 : 0;
     $purchaseOptionBoxes.eq(initialDefaultVariant).trigger('click').find("input[type='radio']").prop('checked', true);
 
-    setClosedHeight();
     $purchaseOptionBoxes.not(':eq(' + initialDefaultVariant + ')').each(function() {
-      $(this).css('max-height', 'var(--closed-height)');
-      $(this).find('.toggle-icon').hide();
+      $(this).find('.subscription-terms').hide();
     });
   }
 
@@ -283,7 +272,6 @@
         bwpButton.hide();
         buyOnceContent.hide();
         subscriptionContent.show();
-        parentBox.find('.subscription-terms').show();
 
         const sellingPlanId = parentBox.data('subscription-selling-plan-id');
         if (sellingPlanId > 0) {
@@ -298,16 +286,14 @@
         parentBox.removeAttr('inert');
         subscriptionContent.hide();
         buyOnceContent.show();
-        parentBox.find('.subscription-terms').hide();
       }
 
       updatePriceDisplay(parentBox, isSubscriptionSelected);
 
       if (parentBox.hasClass('selected')) {
-        adjustMaxHeight(parentBox, isSubscriptionSelected);
+        toggleSubscriptionTerms(parentBox, isSubscriptionSelected);
       } else {
-        parentBox.css('max-height', 'var(--closed-height)');
-        parentBox.find('.toggle-icon').hide();
+        parentBox.find('.subscription-terms').hide();
       }
     });
 
@@ -355,18 +341,13 @@
     return (cents / 100).toFixed(2);
   }
 
-  function adjustMaxHeight(element, isSubscriptionSelected) {
-    if (enableToggleAnimation) {
-      if (isSubscriptionSelected && element.hasClass('selected')) {
-        const openHeight = element.get(0).scrollHeight;
-        element.css('max-height', openHeight + 'px');
-        element.find('.toggle-icon').show();
-      } else {
-        element.css('max-height', 'var(--closed-height)');
-        element.find('.toggle-icon').hide();
-      }
+  function toggleSubscriptionTerms(element, isSubscriptionSelected) {
+    const $subscriptionTerms = element.find('.subscription-terms');
+
+    if (isSubscriptionSelected) {
+      $subscriptionTerms.slideDown(300);
     } else {
-      element.css('max-height', 'none');
+      $subscriptionTerms.slideUp(300);
     }
   }
 
@@ -381,8 +362,7 @@
     }
 
     $purchaseOptionBoxes.removeClass('selected').each(function() {
-      $(this).css('max-height', 'var(--closed-height)');
-      $(this).find('.toggle-icon').hide();
+      $(this).find('.subscription-terms').slideUp(300);
     });
 
     $('#product-actions-{{ SID }} .submit-selling-plan-id').val(subscriptionPlanID);
@@ -394,10 +374,8 @@
     togglePurchaseType(isSubscription);
     updateVariantImage(element);
 
-    if (enableToggleAnimation && isSubscription) {
-      const openHeight = element.get(0).scrollHeight;
-      element.css('max-height', openHeight + 'px');
-      element.find('.toggle-icon').show();
+    if (isSubscription) {
+      toggleSubscriptionTerms(element, true);
     }
   }
 
@@ -431,9 +409,6 @@
     togglePurchaseBox($(this));
   });
 
-  $(window).on('resize', setClosedHeight);
-
-  setClosedHeight();
   initializePurchaseOptions();
 });
 </script>
