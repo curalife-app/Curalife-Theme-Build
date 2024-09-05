@@ -255,7 +255,7 @@
       $purchaseOptionBoxes.eq(initialDefaultVariant).trigger('click').find("input[type='radio']").prop('checked', true);
 
       $purchaseOptionBoxes.not(':eq(' + initialDefaultVariant + ')').each(function() {
-        $(this).css('max-height', '72px');
+        $(this).css('max-height', getClosedHeight());
         $(this).find('.toggle-icon').hide();
       });
     }
@@ -292,16 +292,14 @@
 
         updatePriceDisplay(parentBox, isSubscriptionSelected);
 
-        // Adjust max height only for the selected box
         if (parentBox.hasClass('selected')) {
           adjustMaxHeight(parentBox, isSubscriptionSelected);
         } else {
-          parentBox.css('max-height', '72px');
+          parentBox.css('max-height', getClosedHeight());
           parentBox.find('.toggle-icon').hide();
         }
       });
 
-      // Ensure a variant is selected after toggling purchase type
       if (!$purchaseOptionBoxes.filter('.selected').length) {
         $purchaseOptionBoxes.filter(':not([inert])').first().trigger('click');
       }
@@ -339,7 +337,6 @@
       const saveTag = parentBox.find('.save-title' + (isSubscriptionSelected ? '.subscription' : '.buy-once'));
       saveTag.show().siblings('.save-title').hide();
 
-      // Show/hide the "Per Month" text
       parentBox.find('.per-month').toggle(pricePer === 'month'); // Modified line
     }
 
@@ -358,7 +355,7 @@
           element.css('max-height', openHeight + 'px');
           element.find('.toggle-icon').show();
         } else {
-          element.css('max-height', '72px');
+          element.css('max-height', getClosedHeight());
           element.find('.toggle-icon').hide();
         }
       } else {
