@@ -56,15 +56,30 @@
     <div class="right-wrapper flex items-center justify-end gap-4">
       <div class="save-tag">
         {% if isSaveInMoney or true %}
-          {% if subscription_save_money > 0 %}
-            <div class="save-title subscription text-center text-[14px] mbl:text-[3vw] mbl:min-w-[18vw] rounded-full p-1 px-2">
-              Save {{ subscription_save_money | divided_by: 100.0 | round | floor | times: 100 | money_without_trailing_zeros | remove: '.00' }}
-            </div>
-          {% endif %}
-          {% if buy_once_save_money > 0 %}
-            <div class="save-title buy-once hidden text-center text-[14px] mbl:text-[3vw] mbl:min-w-[18vw] rounded-full p-1 px-2">
-              Save {{ buy_once_save_money | divided_by: 100.0 | round | floor | times: 100 | money_without_trailing_zeros | remove: '.00' }}
-            </div>
+          {% if pricePer == 'month' %}
+            {% if subscription_save_money > 0 %}
+              <div class="save-title subscription text-center text-[14px] mbl:text-[3vw] mbl:min-w-[18vw] rounded-full p-1 px-2">
+                Save {{ subscription_save_money | divided_by: 100.0 | round | floor | times: 100 | money_without_trailing_zeros | remove: '.00' }}
+              </div>
+            {% endif %}
+            {% if buy_once_save_money > 0 %}
+              <div class="save-title buy-once hidden text-center text-[14px] mbl:text-[3vw] mbl:min-w-[18vw] rounded-full p-1 px-2">
+                Save {{ buy_once_save_money | divided_by: 100.0 | round | floor | times: 100 | money_without_trailing_zeros | remove: '.00' }}
+              </div>
+            {% endif %}
+          {% elsif pricePer == 'dont-split' %}
+            {% assign total_subscription_save = subscription_save_money | times: bottle_quantity %}
+            {% assign total_buy_once_save = buy_once_save_money | times: bottle_quantity %}
+            {% if total_subscription_save > 0 %}
+              <div class="save-title subscription text-center text-[14px] mbl:text-[3vw] mbl:min-w-[18vw] rounded-full p-1 px-2">
+                Save {{ total_subscription_save | divided_by: 100.0 | round | floor | times: 100 | money_without_trailing_zeros | remove: '.00' }}
+              </div>
+            {% endif %}
+            {% if total_buy_once_save > 0 %}
+              <div class="save-title buy-once hidden text-center text-[14px] mbl:text-[3vw] mbl:min-w-[18vw] rounded-full p-1 px-2">
+                Save {{ total_buy_once_save | divided_by: 100.0 | round | floor | times: 100 | money_without_trailing_zeros | remove: '.00' }}
+              </div>
+            {% endif %}
           {% endif %}
         {% else %}
           {% if var.metafields.subscription.save_percents > 0 %}<div class="save-title subscription text-center text-[14px] mbl:text-[3vw] mbl:min-w-[18vw] rounded-full p-1 px-2">Save {{ var.metafields.subscription.save_percents }}%</div>{% endif %}
