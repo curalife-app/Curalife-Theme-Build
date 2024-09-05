@@ -67,7 +67,7 @@
     background: #fff;
     border: 1px solid var(--border-color);
     cursor: pointer;
-    max-height: 72px;
+    max-height: 72px; /* Start all boxes collapsed */
     filter: drop-shadow(0px 4px 4px rgba(47, 47, 47, 0.1));
     transition: max-height 0.5s ease-in-out, filter 0.3s, background-color 0.3s, border-width 0.3s;
     border-radius: 10px;
@@ -84,7 +84,7 @@
     filter: drop-shadow(0px 4px 4px rgba(77, 53, 98, 0.3));
     background-color: #EBF1F3;
     border-width: 3px;
-    max-height: max-content;
+    max-height: max-content; /* Allow selected box to expand */
   }
 
   #cta-section-{{ section.id }} .purchase-option-box[inert] {
@@ -197,6 +197,12 @@ $(document).ready(function() {
 
     const initialDefaultVariant = defaultVariant ? defaultVariant - 1 : 0;
     $purchaseOptionBoxes.eq(initialDefaultVariant).trigger('click').find("input[type='radio']").prop('checked', true);
+
+    // Collapse non-selected variant boxes
+    $purchaseOptionBoxes.not(':eq(' + initialDefaultVariant + ')').each(function() {
+      $(this).css('max-height', '72px');
+      $(this).find('.toggle-icon').hide();
+    });
   }
 
   function togglePurchaseType(parentBox, isSubscriptionSelected) {
@@ -309,6 +315,13 @@ $(document).ready(function() {
 
     togglePurchaseType(element, isSubscription);
     updateVariantImage(element);
+
+    // Expand the selected variant box
+    if (enableToggleAnimation && isSubscription) {
+      const openHeight = element.get(0).scrollHeight;
+      element.css('max-height', openHeight + 'px');
+      element.find('.toggle-icon').show();
+    }
   }
 
   function updateVariantImage(element) {
