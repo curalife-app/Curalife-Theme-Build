@@ -255,26 +255,30 @@ $(document).ready(function() {
   function updatePriceDisplay(parentBox, isSubscriptionSelected) {
     const itemPrice = parseInt(parentBox.data('item-price'));
     const subscriptionItemPrice = parseInt(parentBox.data('subscription-item-price'));
-    const originalItemCap = parseInt(parentBox.data('original-item-cap'));
     const bottleQuantity = parseInt(parentBox.data('bottle-quantity') || 1);
+    const originalItemCap = parseInt(parentBox.data('original-item-cap'));
 
     const currentPrice = isSubscriptionSelected ? subscriptionItemPrice : itemPrice;
     const totalPrice = currentPrice * bottleQuantity;
+
+    const pricePer = parentBox.data('price-per') || 'total'; // New line
 
     const priceElement = parentBox.find('.real-price' + (isSubscriptionSelected ? '.subscription' : '.buy-once') + ' .floor');
     const totalPriceElement = parentBox.find('.total-price' + (isSubscriptionSelected ? '.subscription' : '.buy-once') + ' .floor');
     const comparedAtPriceElement = parentBox.find('.compared-at-price');
 
-    // Update the per-month price
-    priceElement.text('$' + formatPrice(currentPrice));
+    // Update the main price display
+    const displayPrice = pricePer === 'month' ? currentPrice : totalPrice; // New line
+    priceElement.text('$' + formatPrice(displayPrice)); // Modified line
 
-    // Update the total price
+    // Update the total price (if the element exists)
     if (totalPriceElement.length) {
       totalPriceElement.text('$' + formatPrice(totalPrice));
     }
 
     if (originalItemCap > currentPrice) {
-      comparedAtPriceElement.text('$' + formatPrice(originalItemCap * bottleQuantity)).show();
+      const comparedAtPrice = pricePer === 'month' ? originalItemCap : (originalItemCap * bottleQuantity); // New line
+      comparedAtPriceElement.text('$' + formatPrice(comparedAtPrice)).show(); // Modified line
     } else {
       comparedAtPriceElement.hide();
     }
@@ -283,7 +287,7 @@ $(document).ready(function() {
     saveTag.show().siblings('.save-title').hide();
 
     // Show/hide the "Per Month" text
-    parentBox.find('.per-month').toggle(isSubscriptionSelected);
+    parentBox.find('.per-month').toggle(pricePer === 'month'); // Modified line
   }
 
   function formatPrice(cents) {
