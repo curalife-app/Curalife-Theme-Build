@@ -117,13 +117,18 @@
               {% endif %}
             </span>
           </div>
-          <div class="compared-at-price text-[14px] opacity-40 font-normal line-through rounded">
-            {% if pricePer == 'month' %}
-              {{ original_item_cap | money | replace: '.00', '' }}
-            {% else %}
-              {{ original_item_cap_total | money | replace: '.00', '' }}
-            {% endif %}
-          </div>
+
+          {% assign subscription_compared_price = pricePer == 'month' ? original_item_cap : original_item_cap_total %}
+          {% assign buy_once_compared_price = pricePer == 'month' ? original_item_cap : original_item_cap_total %}
+          {% if subscription_compared_price > subscription_item_price or buy_once_compared_price > item_price %}
+            <div class="compared-at-price text-[14px] opacity-40 font-normal line-through rounded">
+              {% if pricePer == 'month' %}
+                {{ original_item_cap | money | replace: '.00', '' }}
+              {% else %}
+                {{ original_item_cap_total | money | replace: '.00', '' }}
+              {% endif %}
+            </div>
+          {% endif %}
         </div>
 
         {% if pricePer == 'month' %}
