@@ -203,8 +203,6 @@
       }
 
       .subscription-terms {
-        margin-top: 2vw;
-
         .subtitle, .terms-title {
           font-size: 3.5vw;
         }
@@ -262,6 +260,7 @@
     $purchaseOptionBoxes.not(':eq(' + initialDefaultVariant + ')').each(function() {
       $(this).css('max-height', getClosedHeight());
       $(this).find('.toggle-icon').hide();
+      $(this).find('.subscription-terms').hide();
     });
   }
 
@@ -275,13 +274,14 @@
       const subscriptionContent = parentBox.find('.subscription');
       const buyOnceContent = parentBox.find('.buy-once');
       const bwpButton = $('#product-actions-{{ SID }} .bwp-button');
+      const subscriptionTerms = parentBox.find('.subscription-terms');
 
       if (isSubscriptionSelected) {
         parentBox.find('.per-month').show();
         bwpButton.hide();
         buyOnceContent.hide();
         subscriptionContent.show();
-        parentBox.find('.subscription-terms').show();
+        subscriptionTerms.show();
 
         const sellingPlanId = parentBox.data('subscription-selling-plan-id');
         if (sellingPlanId > 0) {
@@ -296,7 +296,7 @@
         parentBox.removeAttr('inert');
         subscriptionContent.hide();
         buyOnceContent.show();
-        parentBox.find('.subscription-terms').hide();
+        subscriptionTerms.hide();
       }
 
       updatePriceDisplay(parentBox, isSubscriptionSelected);
@@ -381,6 +381,7 @@
     $purchaseOptionBoxes.removeClass('selected').each(function() {
       $(this).css('max-height', getClosedHeight());
       $(this).find('.toggle-icon').hide();
+      $(this).find('.subscription-terms').hide();
     });
 
     $('#product-actions-{{ SID }} .submit-selling-plan-id').val(subscriptionPlanID);
