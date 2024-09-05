@@ -3,22 +3,17 @@
 <div id="product-actions-{{ SID }}" class="product-actions {% if isVariantBoxToggle %}with-animation{% endif %}">
   <div class="purchase-options md:p-2 flex flex-col gap-2">
     <div class="purchase-type flex-nowrap flex w-full gap-2">
-      {% comment %} {% assign subscriptionFeatures = "Save on every order,Guaranteed delivery,Make changes anytime,VIP support,New subscribers gifs" | split: ',' %}
-       {% endcomment %}
       <button class="subscription selected flex items-center justify-center gap-2" aria-label="Subscribe & Save">
         <span>
           Subscribe <div class="desktop">& Save</div>
-          {% comment %} {% render 'tooltip', SID: SID, linkTitle: '<i class="tooltip-icon fa-duotone fa-circle-info text-[18px]"></i>', title: 'Subscription Details', description: '', features: subscriptionFeatures %} {% endcomment %}
         </span>
       </button>
-
       <button class="buy-once z-0" aria-label="Buy Once"><span>Buy Once</span></button>
     </div>
 
     {% for var in product.variants %}
       {% render 'product-cta-section-actions-variant-2024-new-3', SID: SID, prod: product, var: var, buyBoxColor: buyBoxColor, pricePer: pricePer, index: forloop.index %}
     {% endfor %}
-    {% comment %} {% if customer.email == 'yotam@curalife.com' and false %} {% endcomment %}
 
     <div class="subscription-benefits">
       <div>Complimentary subscriber benefits:</div>
@@ -30,7 +25,6 @@
       <a href="#" id="see-all-benefits">See all benefits</a>
     </div>
 
-    <!-- Modal Structure -->
     <div id="benefits-modal" class="modal">
       <div class="modal-content">
         <span class="close">&times;</span>
@@ -39,61 +33,13 @@
           <li>Free gift in every box!</li>
           <li>Free Expert Consultations</li>
           <li>Best Price Guarantee</li>
-          <!-- Add more benefits as needed -->
         </ul>
       </div>
     </div>
 
-    <script>
-      // JavaScript to handle modal open and close
-      document.getElementById('see-all-benefits').addEventListener('click', function(event) {
-        event.preventDefault();
-        document.getElementById('benefits-modal').style.display = 'block';
-      });
-
-      document.querySelector('.modal .close').addEventListener('click', function() {
-        document.getElementById('benefits-modal').style.display = 'none';
-      });
-
-      window.addEventListener('click', function(event) {
-        if (event.target == document.getElementById('benefits-modal')) {
-          document.getElementById('benefits-modal').style.display = 'none';
-        }
-      });
-    </script>
-
-    {% comment %} {% if customer.email == 'yotam@curalife.com' and false %}
-      {% for additionalVariant in product.metafields.custom.additional_variants.value %}
-        {% assign variantsAmount = variantsAmount | plus: 1 %}
-        {% render 'product-cta-section-actions-variant-2024-new', SID: SID, prod: additionalVariant.product, var: additionalVariant, index: variantsAmount %}
-      {% endfor %}
-
-      {% for block in blocks %}
-        {% case block.type %}
-          {% when 'variant' %}
-            {% assign pathsToReveal = block.settings.reveal_on_paths | split: "," %}
-            {% if pathsToReveal contains request.path or pathsToReveal == blank %}
-              {% assign referenced_variant_product = block.settings.prod %}
-              {% assign referenced_variant = blank %}
-              {% assign blockVarID = block.settings.variant_id | plus: 0 %}
-              {% for vari in referenced_variant_product.variants %}
-                {% assign currVarID = vari.id | plus: 0 %}
-                {% if currVarID == blockVarID %}
-                  {% assign referenced_variant = vari %}
-                {% endif %}
-              {% endfor %}
-
-              {% if referenced_variant != blank %}
-                {% render 'product-cta-section-actions-variant-2024-new', SID: SID, prod: referenced_variant_product, var: referenced_variant %}
-              {% endif %}
-            {% endif %}
-        {% endcase %}
-      {% endfor %}
-    {% endif %} {% endcomment %}
-
     <div class="submit-wrap flex flex-col w-full">
       <div class="checkout-button">
-        {% render 'buy-buttons', product: product, variant: '', selling_plan_id: selling_plan_id , product_form_id: product_form_id, buyType: buyType, isBuyWithPrime: isBuyWithPrime %}
+        {% render 'buy-buttons', product: product, variant: '', selling_plan_id: selling_plan_id, product_form_id: product_form_id, buyType: buyType, isBuyWithPrime: isBuyWithPrime %}
       </div>
     </div>
   </div>
@@ -115,8 +61,8 @@ $(document).ready(function() {
 
     $('#product-actions-{{ SID }} .purchase-type .subscription').trigger('click');
 
-    const InitialDefaultVariant = defaultVariant ? defaultVariant - 1 : 0;
-    $purchaseOptionBoxes.eq(InitialDefaultVariant).trigger('click').find("input[type='radio']").prop('checked', true);
+    const initialDefaultVariant = defaultVariant ? defaultVariant - 1 : 0;
+    $purchaseOptionBoxes.eq(initialDefaultVariant).trigger('click').find("input[type='radio']").prop('checked', true);
   }
 
   function togglePurchaseType(parentBox, isSubscriptionSelected) {
@@ -179,7 +125,6 @@ $(document).ready(function() {
       comparedAtPriceElement.hide();
     }
 
-    // Toggle save tag visibility
     const saveTag = isSubscriptionSelected ?
       parentBox.find('.save-title.subscription') :
       parentBox.find('.save-title.buy-once');
@@ -246,7 +191,6 @@ $(document).ready(function() {
     {% endif %}
   }
 
-  // Event Listeners
   $productActions.on('click', '.purchase-type button', function(event) {
     event.preventDefault();
     const isSubscription = $(this).hasClass('subscription');
@@ -264,7 +208,21 @@ $(document).ready(function() {
     togglePurchaseBox($(this));
   });
 
-  // Initialize
+  $('#see-all-benefits').on('click', function(event) {
+    event.preventDefault();
+    $('#benefits-modal').css('display', 'block');
+  });
+
+  $('.modal .close').on('click', function() {
+    $('#benefits-modal').css('display', 'none');
+  });
+
+  $(window).on('click', function(event) {
+    if (event.target == document.getElementById('benefits-modal')) {
+      $('#benefits-modal').css('display', 'none');
+    }
+  });
+
   initializePurchaseOptions();
 });
 </script>
@@ -283,55 +241,56 @@ $(document).ready(function() {
     font-size: 16px;
     min-width: 49%;
     padding: 0.5rem;
+  }
 
-    &.selected {
-      color: white !important;
-    }
+  #cta-section-{{ section.id }} .purchase-type button.selected {
+    color: white !important;
+  }
 
-    &:not(.selected) {
-      background: var(--primary-color-light);
-      border: 1px solid var(--primary-color);
+  #cta-section-{{ section.id }} .purchase-type button:not(.selected) {
+    background: var(--primary-color-light);
+    border: 1px solid var(--primary-color);
+  }
 
-      .subscription-details {
-        color: var(--primary-color-dark);
-      }
-    }
+  #cta-section-{{ section.id }} .purchase-type button:not(.selected) .subscription-details {
+    color: var(--primary-color-dark);
   }
 
   #cta-section-{{ section.id }} .purchase-option-box .radio-box input[type='radio'] {
-      display: none;
+    display: none;
   }
 
   #cta-section-{{ section.id }} .purchase-option-box .radio-box label {
-      cursor: pointer;
-      width: 19px;
-      height: 19px;
-      border: 1px solid var(--primary-color);
-      border-radius: 50%;
-      position: relative;
+    cursor: pointer;
+    width: 19px;
+    height: 19px;
+    border: 1px solid var(--primary-color);
+    border-radius: 50%;
+    position: relative;
   }
 
-  /* This will only apply the style when the variant box is selected and the radio button is checked */
   #cta-section-{{ section.id }} .purchase-option-box.selected .radio-box input[type='radio']:checked + label:after {
-      content: '\2713';
-      position: absolute;
-      top: -2px;
-      left: -2px;
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: var(--primary-color);
-      text-align: center;
-      line-height: 22px;
-      color: #fff;
+    content: '\2713';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    text-align: center;
+    line-height: 22px;
+    color: #fff;
   }
 
   #cta-section-{{ section.id }} .product-actions {
     grid-area: 2/2/3/3;
     max-width: 410px;
     min-height: 415px;
+  }
 
-    @media (width < 768px) {
+  @media (max-width: 767px) {
+    #cta-section-{{ section.id }} .product-actions {
       grid-area: unset;
       grid-row: 3;
       max-width: unset;
@@ -350,61 +309,67 @@ $(document).ready(function() {
     border-color: var(--primary-color);
     overflow: hidden;
     padding: 1rem;
+  }
 
-    &:hover {
-      filter: drop-shadow(0px 4px 4px rgba(77, 53, 98, 0.3));
-    }
+  #cta-section-{{ section.id }} .purchase-option-box:hover {
+    filter: drop-shadow(0px 4px 4px rgba(77, 53, 98, 0.3));
+  }
 
-    &.selected {
-      filter: drop-shadow(0px 4px 4px rgba(77, 53, 98, 0.3));
-      background-color: #EBF1F3;
-      border-width: 3px;
-      max-height: max-content;
-    }
+  #cta-section-{{ section.id }} .purchase-option-box.selected {
+    filter: drop-shadow(0px 4px 4px rgba(77, 53, 98, 0.3));
+    background-color: #EBF1F3;
+    border-width: 3px;
+    max-height: max-content;
+  }
 
-    &[inert] {
-      max-height: 72px !important;
-      background: #ededed;
-      opacity: 0.6;
+  #cta-section-{{ section.id }} .purchase-option-box[inert] {
+    max-height: 72px !important;
+    background: #ededed;
+    opacity: 0.6;
+  }
 
-      .option-title {
-        color: grey;
-      }
-    }
+  #cta-section-{{ section.id }} .purchase-option-box[inert] .option-title {
+    color: grey;
+  }
 
-    @media (width < 1270px) {
+  @media (max-width: 1269px) {
+    #cta-section-{{ section.id }} .purchase-option-box {
       width: 100%;
     }
+  }
 
-    @media (width < 768px) {
+  @media (max-width: 767px) {
+    #cta-section-{{ section.id }} .purchase-option-box {
       font-size: 4vw;
     }
+  }
 
-    .save-title {
-      background-color: var(--orange);
-      font-weight: bold;
+  #cta-section-{{ section.id }} .purchase-option-box .save-title {
+    background-color: var(--orange);
+    font-weight: bold;
+  }
+
+  #cta-section-{{ section.id }} .purchase-option-box .radio-box {
+    align-items: center;
+    display: flex;
+  }
+
+  @media (max-width: 767px) {
+    #cta-section-{{ section.id }} .purchase-option-box .radio-box {
+      padding: 3vw 0;
     }
+  }
 
-    .radio-box {
-      align-items: center;
-      display: flex;
+  #cta-section-{{ section.id }} .purchase-option-box .top-wrapper {
+    min-height: 36px;
+  }
 
-      @media (width < 768px) {
-        padding: 3vw 0;
-      }
-    }
+  #cta-section-{{ section.id }} .purchase-option-box .price-wrapper {
+    min-width: 5rem;
+  }
 
-    .top-wrapper {
-      min-height: 36px;
-    }
-
-    .price-wrapper {
-      min-width: 5rem;
-
-      .total-price {
-        color: {{ buyBoxColor | default: 'var(--primary-color-dark)'}};
-      }
-    }
+  #cta-section-{{ section.id }} .purchase-option-box .price-wrapper .total-price {
+    color: {{ buyBoxColor | default: 'var(--primary-color-dark)'}};
   }
 
   #cta-section-{{ section.id }} .product-actions:not(.with-animation) .purchase-option-box {
@@ -414,5 +379,82 @@ $(document).ready(function() {
 
   #cta-section-{{ section.id }} .product-actions:not(.with-animation) .purchase-option-box .toggle-icon {
     display: none !important;
+  }
+
+  /* Modal Styles */
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+  }
+
+  .modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 600px;
+    border-radius: 5px;
+  }
+
+  .close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .close:hover,
+  .close:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  /* Subscription Benefits Styles */
+  .subscription-benefits {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f8f8f8;
+    border-radius: 5px;
+  }
+
+  .subscription-benefits div {
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+
+  .subscription-benefits ul {
+    list-style-type: none;
+    padding-left: 0;
+  }
+
+  .subscription-benefits ul li {
+    margin-bottom: 5px;
+    padding-left: 25px;
+    position: relative;
+  }
+
+  .subscription-benefits ul li::before {
+    content: '\2713';
+    position: absolute;
+    left: 0;
+    color: var(--primary-color);
+  }
+
+  #see-all-benefits {
+    display: inline-block;
+    margin-top: 10px;
+    color: var(--primary-color);
+    text-decoration: underline;
+    cursor: pointer;
   }
 </style>
