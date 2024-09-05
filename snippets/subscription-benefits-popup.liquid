@@ -11,6 +11,7 @@
 <div id="benefits-modal" class="modal" aria-labelledby="modal-title" aria-hidden="true">
   <div class="modal-backdrop"></div>
   <div class="modal-content">
+    <button class="close-icon" aria-label="Close modal">&times;</button>
     <h2 id="modal-title">Complimentary subscriber benefits:</h2>
     <div id="benefits-list"></div>
     <button class="close-button">Close</button>
@@ -48,6 +49,22 @@
     margin-right: 0.75rem;
     width: 1.5rem;
     text-align: center;
+  }
+
+  .close-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 24px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text);
+    transition: color 0.3s;
+  }
+
+  .close-icon:hover {
+    color: var(--primary-color);
   }
 
   .benefit-text {
@@ -253,8 +270,13 @@ benefitsList.append(...benefits.map(createBenefit));
 
 modal.querySelector('.close-button').addEventListener('click', () => toggleModal(false));
 
+const closeIcon = modal.querySelector('.close-icon');
+  closeIcon.addEventListener('click', () => toggleModal(false));
+
 modal.addEventListener('click', event => {
-  if (event.target === modal) toggleModal(false);
+  if (event.target === modal || event.target.classList.contains('modal-backdrop')) {
+    toggleModal(false);
+  }
 });
 
 document.getElementById('see-all-benefits').addEventListener('click', () => toggleModal(true));
