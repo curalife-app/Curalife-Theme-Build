@@ -360,9 +360,8 @@
 
   function adjustMaxHeight(element, isSubscriptionSelected) {
     if (enableToggleAnimation) {
-      if (isSubscriptionSelected && element.hasClass('selected')) {
-        const openHeight = element.get(0).scrollHeight;
-        element.css('max-height', openHeight + 'px');
+      if (element.hasClass('selected')) {
+        element.css('max-height', 'max-content');
         element.find('.toggle-icon').show();
       } else {
         element.css('max-height', getClosedHeight());
@@ -400,7 +399,7 @@
 
     if (enableToggleAnimation && isSubscription) {
       const openHeight = element.get(0).scrollHeight;
-      element.css('max-height', openHeight + 'px');
+      element.css('max-height', 'max-content');
       element.find('.toggle-icon').show();
     }
   }
@@ -437,6 +436,7 @@
 
   $(window).on('resize', function() {
     $purchaseOptionBoxes.not('.selected').css('max-height', getClosedHeight());
+    $purchaseOptionBoxes.filter('.selected').css('max-height', 'max-content');
   });
 
   initializePurchaseOptions();
