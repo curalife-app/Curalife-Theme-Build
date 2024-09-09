@@ -351,15 +351,17 @@
           totalPriceElement.text('$' + formatPrice(totalPrice));
         }
 
-        if (originalItemCap > currentPrice) {
-          const comparedAtPrice = pricePer === 'month' ? originalItemCap : (originalItemCap * bottleQuantity);
+        const comparedAtPrice = pricePer === 'month' ? originalItemCap : (originalItemCap * bottleQuantity);
+
+        if (comparedAtPrice > currentPrice) {
           comparedAtPriceElement.text('$' + formatPrice(comparedAtPrice));
           comparedAtPriceElement.show();
+          saveTag.show();
         } else {
           comparedAtPriceElement.hide();
+          saveTag.hide();
         }
 
-        saveTag.show().siblings('.save-title').hide();
         parentBox.find('.per-month').toggle(pricePer === 'month');
       };
 
