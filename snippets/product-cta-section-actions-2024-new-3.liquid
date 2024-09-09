@@ -277,12 +277,19 @@
         const buyOnceElements = parentBox.find('.buy-once');
         const bwpButton = $('#product-actions-{{ SID }} .bwp-button');
 
+        // Store the current height of the box
+        const currentHeight = parentBox.height();
+        parentBox.css('min-height', currentHeight + 'px');
+
         if (isSubscriptionSelected) {
           parentBox.find('.per-month').fadeIn(150);
           bwpButton.fadeOut(150);
 
           buyOnceElements.fadeOut(150, function() {
-            subscriptionElements.fadeIn(150);
+            subscriptionElements.fadeIn(150, function() {
+              // After fade in, reset the min-height
+              parentBox.css('min-height', '');
+            });
           });
 
           const sellingPlanId = parentBox.data('subscription-selling-plan-id');
@@ -298,7 +305,10 @@
           parentBox.removeAttr('inert');
 
           subscriptionElements.fadeOut(150, function() {
-            buyOnceElements.fadeIn(150);
+            buyOnceElements.fadeIn(150, function() {
+              // After fade in, reset the min-height
+              parentBox.css('min-height', '');
+            });
           });
         }
 
