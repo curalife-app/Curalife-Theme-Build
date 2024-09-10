@@ -381,66 +381,52 @@
       }
     }
 
-    function toggleElementVisibility(element, show) {
-      if (!element) return;
-
-      if (show) {
-        element.classList.remove('hidden');
-        element.style.display = '';
-      } else {
-        element.classList.add('hidden');
-        element.style.display = 'none';
-      }
-    }
-
     function fadeOutThenIn(elementsToHide, elementsToShow, duration = 200) {
-      const fadePromises = Array.from(elementsToHide).map(el =>
-        new Promise(resolve => fadeOut(el, resolve, duration))
-      );
-
-      Promise.all(fadePromises).then(() => {
+      elementsToHide.forEach(el => fadeOut(el, duration));
+      setTimeout(() => {
         elementsToShow.forEach(el => fadeIn(el, 'inline-block', duration));
-      });
+      }, duration);
     }
 
-    function fadeOut(element, callback, duration = 200) {
-      if (!element || element.classList.contains('hidden')) {
-        if (callback) callback();
-        return;
-      }
+    function fadeOut(element, duration = 200) {
+      if (!element || getComputedStyle(element).display === 'none') return;
 
-      element.style.opacity = '1';
       element.style.transition = `opacity ${duration}ms ease-out`;
-
-      requestAnimationFrame(() => {
-        element.style.opacity = '0';
-      });
+      element.style.opacity = '0';
 
       setTimeout(() => {
         element.style.display = 'none';
         element.style.transition = '';
-        if (callback) callback();
       }, duration);
     }
 
     function fadeIn(element, display = 'inline-block', duration = 200) {
-      if (!element || !element.classList.contains('hidden')) {
-        element.style.opacity = '1';
-        element.style.display = display;
-        return;
-      }
+      if (!element) return;
 
       element.style.opacity = '0';
       element.style.display = display;
       element.style.transition = `opacity ${duration}ms ease-in`;
 
-      requestAnimationFrame(() => {
-        element.style.opacity = '1';
-      });
+      // Force a reflow
+      element.offsetHeight;
+
+      element.style.opacity = '1';
 
       setTimeout(() => {
         element.style.transition = '';
       }, duration);
+    }
+
+    function toggleElementVisibility(element, show) {
+      if (!element) return;
+
+      if (show) {
+        element.style.display = '';
+        element.classList.remove('hidden');
+      } else {
+        element.style.display = 'none';
+        element.classList.add('hidden');
+      }
     }
 
     function updatePriceDisplay(box, isSubscriptionSelected, animate = true) {
