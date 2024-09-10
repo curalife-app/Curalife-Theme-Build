@@ -393,10 +393,14 @@
       }
     }
 
-    function fadeOutThenIn(elementsToHide, elementsToShow) {
-      elementsToHide.forEach(el => fadeOut(el, () => {
-        elementsToShow.forEach(el => fadeIn(el));
-      }));
+    function fadeOutThenIn(elementsToHide, elementsToShow, duration = 200) {
+      const fadePromises = Array.from(elementsToHide).map(el =>
+        new Promise(resolve => fadeOut(el, resolve, duration))
+      );
+
+      Promise.all(fadePromises).then(() => {
+        elementsToShow.forEach(el => fadeIn(el, 'inline-block', duration));
+      });
     }
 
     function fadeOut(element, callback, duration = 200) {
@@ -405,40 +409,38 @@
         return;
       }
 
-      let opacity = 1;
-      const step = 10 / duration; // Adjust the step size to make the animation faster
+      element.style.opacity = '1';
+      element.style.transition = `opacity ${duration}ms ease-out`;
 
-      function animate() {
-        opacity -= step;
-        if (opacity <= 0) {
-          element.style.opacity = '';
-          if (callback) callback();
-        } else {
-          element.style.opacity = opacity.toString();
-          requestAnimationFrame(animate);
-        }
-      }
-      animate();
+      requestAnimationFrame(() => {
+        element.style.opacity = '0';
+      });
+
+      setTimeout(() => {
+        element.style.display = 'none';
+        element.style.transition = '';
+        if (callback) callback();
+      }, duration);
     }
 
     function fadeIn(element, display = 'inline-block', duration = 200) {
-      if (!element || element.classList.contains('hidden')) return;
+      if (!element || !element.classList.contains('hidden')) {
+        element.style.opacity = '1';
+        element.style.display = display;
+        return;
+      }
 
-      let opacity = 0;
       element.style.opacity = '0';
       element.style.display = display;
-      const step = 10 / duration; // Adjust the step size to make the animation faster
+      element.style.transition = `opacity ${duration}ms ease-in`;
 
-      function animate() {
-        opacity += step;
-        if (opacity >= 1) {
-          element.style.opacity = '';
-        } else {
-          element.style.opacity = opacity.toString();
-          requestAnimationFrame(animate);
-        }
-      }
-      animate();
+      requestAnimationFrame(() => {
+        element.style.opacity = '1';
+      });
+
+      setTimeout(() => {
+        element.style.transition = '';
+      }, duration);
     }
 
     function updatePriceDisplay(box, isSubscriptionSelected, animate = true) {
