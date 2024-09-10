@@ -239,7 +239,6 @@
   }
 </style>
 
-
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     const productActions = document.querySelector('[id^="product-actions-"]');
@@ -470,12 +469,14 @@
         }
 
         if (saveTag) {
-          toggleElementVisibility(saveTag, shouldShowComparedPrice);
-          // Update the save tag content based on the purchase type
-          if (isSubscriptionSelected) {
-            saveTag.textContent = box.dataset.subscriptionSaveTag || 'Subscribe & Save';
-          } else {
-            saveTag.textContent = box.dataset.buyOnceSaveTag || 'Save';
+          const subscriptionSaveTag = saveTag.querySelector('.subscription');
+          const buyOnceSaveTag = saveTag.querySelector('.buy-once');
+
+          if (subscriptionSaveTag) {
+            toggleElementVisibility(subscriptionSaveTag, isSubscriptionSelected);
+          }
+          if (buyOnceSaveTag) {
+            toggleElementVisibility(buyOnceSaveTag, !isSubscriptionSelected);
           }
         }
 
