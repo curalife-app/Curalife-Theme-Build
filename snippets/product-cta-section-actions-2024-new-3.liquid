@@ -379,28 +379,37 @@
 
     function fadeOut(element, callback) {
       if (!element) return;
-      element.style.opacity = 1;
-      (function fade() {
-        if ((element.style.opacity -= .1) < 0) {
+      let opacity = 1;
+      function animate() {
+        opacity -= 0.1;
+        if (opacity <= 0) {
+          opacity = 0;
+          safelySetStyle(element, 'opacity', '0');
           safelySetDisplay(element, 'none');
           if (callback) callback();
         } else {
-          requestAnimationFrame(fade);
+          safelySetStyle(element, 'opacity', opacity.toString());
+          requestAnimationFrame(animate);
         }
-      })();
+      }
+      animate();
     }
 
     function fadeIn(element, display = 'block') {
       if (!element) return;
-      element.style.opacity = 0;
+      let opacity = 0;
       safelySetDisplay(element, display);
-      (function fade() {
-        let val = parseFloat(element.style.opacity);
-        if (!((val += .1) > 1)) {
-          element.style.opacity = val;
-          requestAnimationFrame(fade);
+      function animate() {
+        opacity += 0.1;
+        if (opacity >= 1) {
+          opacity = 1;
+          safelySetStyle(element, 'opacity', '1');
+        } else {
+          safelySetStyle(element, 'opacity', opacity.toString());
+          requestAnimationFrame(animate);
         }
-      })();
+      }
+      animate();
     }
 
     function updatePriceDisplay(box, isSubscriptionSelected, animate = true) {
@@ -454,20 +463,18 @@
       };
 
       if (animate) {
-        fadeOut(priceElement);
-        if (totalPriceElement) fadeOut(totalPriceElement);
-        fadeOut(comparedAtPriceElement);
-        fadeOut(saveTag);
-
-        setTimeout(() => {
+        fadeOut(priceElement, () => {
           updateContent();
           fadeIn(priceElement);
-          if (totalPriceElement) fadeIn(totalPriceElement);
-          fadeIn(comparedAtPriceElement);
-          fadeIn(saveTag);
-        }, 150);
+        });
+        if (totalPriceElement) fadeOut(totalPriceElement, () => fadeIn(totalPriceElement));
+        fadeOut(comparedAtPriceElement, () => fadeIn(comparedAtPriceElement));
+        fadeOut(saveTag, () => fadeIn(saveTag));
       } else {
         updateContent();
+        [priceElement, totalPriceElement, comparedAtPriceElement, saveTag].forEach(el => {
+          if (el) safelySetStyle(el, 'opacity', '1');
+        });
       }
     }
 
