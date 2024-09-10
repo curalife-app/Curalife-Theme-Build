@@ -461,7 +461,7 @@
 
         const comparedAtPrice = pricePer === 'month' ? originalItemCap : (originalItemCap * bottleQuantity);
 
-        const shouldShowComparedPrice = comparedAtPrice > displayPrice && (!isSubscriptionSelected || pricePer !== 'month');
+        const shouldShowComparedPrice = comparedAtPrice > displayPrice;
 
         if (comparedAtPriceElement) {
           comparedAtPriceElement.textContent = '$' + formatPrice(comparedAtPrice);
@@ -473,10 +473,10 @@
           const buyOnceSaveTag = saveTag.querySelector('.buy-once');
 
           if (subscriptionSaveTag) {
-            toggleElementVisibility(subscriptionSaveTag, isSubscriptionSelected);
+            toggleElementVisibility(subscriptionSaveTag, isSubscriptionSelected && shouldShowComparedPrice);
           }
           if (buyOnceSaveTag) {
-            toggleElementVisibility(buyOnceSaveTag, !isSubscriptionSelected);
+            toggleElementVisibility(buyOnceSaveTag, !isSubscriptionSelected && shouldShowComparedPrice);
           }
         }
 
@@ -487,13 +487,14 @@
       };
 
       if (animate) {
-        fadeOut(isSubscriptionSelected ? subscriptionPriceElement : buyOncePriceElement, () => {
-          updateContent();
-          fadeIn(isSubscriptionSelected ? subscriptionPriceElement : buyOncePriceElement);
-        });
+        fadeOutThenIn(
+          [isSubscriptionSelected ? buyOncePriceElement : subscriptionPriceElement, comparedAtPriceElement],
+          [isSubscriptionSelected ? subscriptionPriceElement : buyOncePriceElement, comparedAtPriceElement].filter(el => el && getComputedStyle(el).display !== 'none')
+        );
         if (totalPriceElement) {
-          fadeOut(totalPriceElement, () => fadeIn(totalPriceElement));
+          fadeOutThenIn([totalPriceElement], [totalPriceElement]);
         }
+        setTimeout(updateContent, 200); // Wait for fade out to complete
       } else {
         updateContent();
       }
