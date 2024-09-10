@@ -553,17 +553,33 @@
     }
 
     function updateVariantImage(element) {
+      console.log('updateVariantImage called', { element });
+      console.log('variantsAmount:', variantsAmount);
+      console.log('SID:', SID);
+      console.log('productSliderAllInOne:', window.productSliderAllInOne);
+
       if (typeof variantsAmount !== 'undefined' && variantsAmount > 1 && window.productSliderAllInOne && window.productSliderAllInOne[SID]) {
+        console.log('Conditions met for image update');
+
         if (typeof isSlideOnLoad !== 'undefined' && isSlideOnLoad) {
+          console.log('isSlideOnLoad is true');
           let slideIndex = window.productSliderAllInOne[SID].slides.length - (variantsAmount + 1 - parseInt(element.dataset.index));
+          console.log('Calculated slideIndex:', slideIndex);
           window.productSliderAllInOne[SID].slideTo(slideIndex);
         } else {
+          console.log('isSlideOnLoad is false');
           if (window.hasInitialImageUpdateHappened) {
+            console.log('Initial image update has happened');
             let slideIndex = window.productSliderAllInOne[SID].slides.length - (variantsAmount + 1 - parseInt(element.dataset.index));
+            console.log('Calculated slideIndex:', slideIndex);
             window.productSliderAllInOne[SID].slideTo(slideIndex);
+          } else {
+            console.log('Setting hasInitialImageUpdateHappened to true');
           }
           window.hasInitialImageUpdateHappened = true;
         }
+      } else {
+        console.log('Conditions not met for image update');
       }
     }
 
