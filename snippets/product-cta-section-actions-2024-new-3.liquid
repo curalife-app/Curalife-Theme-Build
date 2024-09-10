@@ -328,18 +328,21 @@
       purchaseOptionBoxes.forEach((box, index) => {
         const subscriptionElements = box.querySelectorAll('.subscription');
         const buyOnceElements = box.querySelectorAll('.buy-once');
-        const bwpButton = productActions.querySelector('.bwp-button');
         const comparedAtPriceElement = box.querySelector('.compared-at-price');
         const perMonthElement = box.querySelector('.per-month');
+        const saveTagSubscription = box.querySelector('.save-title.subscription');
+        const saveTagBuyOnce = box.querySelector('.save-title.buy-once');
 
         if (isSubscription) {
+          // Show subscription-related elements
           safelySetDisplay(perMonthElement, 'block');
-          if (bwpButton) safelySetDisplay(bwpButton, 'none');
-
           fadeOutThenIn(buyOnceElements, subscriptionElements);
 
-          const sellingPlanId = box.dataset.subscriptionSellingPlanId;
+          // Show the subscription save tag and hide the buy-once save tag
+          safelySetDisplay(saveTagSubscription, 'block');
+          safelySetDisplay(saveTagBuyOnce, 'none');
 
+          const sellingPlanId = box.dataset.subscriptionSellingPlanId;
           if (parseInt(sellingPlanId) > 0) {
             box.removeAttribute('inert');
           } else {
@@ -347,11 +350,15 @@
             safelyRemoveClass(box, 'selected');
           }
         } else {
+          // Show buy-once related elements
           safelySetDisplay(perMonthElement, 'none');
-          if (bwpButton) safelySetDisplay(bwpButton, 'block');
-          box.removeAttribute('inert');
-
           fadeOutThenIn(subscriptionElements, buyOnceElements);
+
+          // Show the buy-once save tag and hide the subscription save tag
+          safelySetDisplay(saveTagBuyOnce, 'block');
+          safelySetDisplay(saveTagSubscription, 'none');
+
+          box.removeAttribute('inert');
         }
 
         updatePriceDisplay(box, isSubscription, true);
