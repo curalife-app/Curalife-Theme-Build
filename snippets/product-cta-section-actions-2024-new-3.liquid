@@ -240,371 +240,274 @@
 </style>
 
 <script>
-  $(document).ready(function() {
-    const $productActions = $("#product-actions-{{ SID }}");
-    const $purchaseOptionBoxes = $productActions.find('.purchase-option-box');
-    const enableToggleAnimation = {{ isVariantBoxToggle | default: false }};
+  document.addEventListener('DOMContentLoaded', () => {
+    const productActions = document.getElementById(`product-actions-${SID}`);
+    const purchaseOptionBoxes = productActions.querySelectorAll('.purchase-option-box');
+    const enableToggleAnimation = isVariantBoxToggle ?? false;
 
-    function isSubscriptionSelected() {
-      return $('#product-actions-{{ SID }} .purchase-type button.subscription').hasClass('selected');
-    }
-
-    function initializePurchaseOptions() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const defaultVariant = urlParams.get('default-variant') ? parseInt(urlParams.get('default-variant')) : {{ defaultSelectionIndex | default: 1 }};
-
-        $('#product-actions-{{ SID }} .purchase-type .subscription').trigger('click');
-
-        const initialDefaultVariant = defaultVariant ? defaultVariant - 1 : 0;
-        $purchaseOptionBoxes.eq(initialDefaultVariant).trigger('click').find("input[type='radio']").prop('checked', true);
-
-        $purchaseOptionBoxes.not(':eq(' + initialDefaultVariant + ')').each(function() {
-            $(this).css('max-height', getClosedHeight());
-            $(this).find('.toggle-icon').hide();
-            $(this).find('.subscription-terms').hide();
-        });
-
-        $purchaseOptionBoxes.each(function() {
-            const isSubscription = isSubscriptionSelected();
-            updatePriceDisplay($(this), isSubscription, false);
-        });
-    }
-
+    const state = {
+      isSubscriptionSelected: false,
+      selectedBox: null,
+    };
 
     function getClosedHeight() {
       return window.innerWidth <= 767 ? '16vw' : '72px';
     }
 
-    function debugLog(functionName, message, data = null) {
-  console.log(`[${functionName}] ${message}`, data ? data : '');
-}
-
-function togglePurchaseType(isSubscriptionSelected) {
-  debugLog('togglePurchaseType', `Called with isSubscriptionSelected:`, isSubscriptionSelected);
-
-  $purchaseOptionBoxes.each(function(index) {
-    const parentBox = $(this);
-    debugLog('togglePurchaseType', `Processing box ${index + 1}`);
-
-    const subscriptionElements = parentBox.find('.subscription');
-    const buyOnceElements = parentBox.find('.buy-once');
-    const bwpButton = $('#product-actions-{{ SID }} .bwp-button');
-    const comparedAtPriceElement = parentBox.find('.compared-at-price');
-
-    debugLog('togglePurchaseType', `Elements found:`, {
-      subscriptionElements: subscriptionElements.length,
-      buyOnceElements: buyOnceElements.length,
-      bwpButton: bwpButton.length,
-      comparedAtPriceElement: comparedAtPriceElement.length
-    });
-
-    if (isSubscriptionSelected) {
-      debugLog('togglePurchaseType', 'Subscription selected, showing subscription elements');
-      parentBox.find('.per-month').fadeIn(150);
-      bwpButton.fadeOut(150);
-
-      buyOnceElements.fadeOut(150, function() {
-        subscriptionElements.fadeIn(150, function() {
-          parentBox.css('min-height', '');
-        });
-      });
-
-      const sellingPlanId = parentBox.data('subscription-selling-plan-id');
-      debugLog('togglePurchaseType', `Subscription selling plan ID:`, sellingPlanId);
-
-      if (sellingPlanId > 0) {
-        parentBox.removeAttr('inert');
-        debugLog('togglePurchaseType', 'Removed inert attribute');
-      } else {
-        parentBox.attr('inert', '');
-        parentBox.removeClass('selected');
-        debugLog('togglePurchaseType', 'Added inert attribute and removed selected class');
-      }
-    } else {
-      debugLog('togglePurchaseType', 'Buy once selected, showing buy once elements');
-      parentBox.find('.per-month').fadeOut(150);
-      bwpButton.fadeIn(150);
-      parentBox.removeAttr('inert');
-
-      subscriptionElements.fadeOut(150, function() {
-        buyOnceElements.fadeIn(150, function() {
-          parentBox.css('min-height', '');
-        });
-      });
-    }
-
-    updatePriceDisplay(parentBox, isSubscriptionSelected, true);
-
-    if (parentBox.hasClass('selected')) {
-      adjustMaxHeight(parentBox, isSubscriptionSelected);
-      debugLog('togglePurchaseType', 'Adjusted max height for selected box');
-    } else {
-      parentBox.css('max-height', getClosedHeight());
-      parentBox.find('.toggle-icon').hide();
-      debugLog('togglePurchaseType', 'Set max height for non-selected box');
-    }
-  });
-
-  if (!$purchaseOptionBoxes.filter('.selected').length) {
-    debugLog('togglePurchaseType', 'No box selected, selecting first non-inert box');
-    $purchaseOptionBoxes.filter(':not([inert])').first().trigger('click');
-  }
-}
-
-function checkConflicts() {
-  debugLog('checkConflicts', 'Checking for conflicting styles or scripts');
-
-  // Check for inline styles
-  const inlineStyles = $('style');
-  inlineStyles.each(function(index) {
-    debugLog('checkConflicts', `Inline style ${index + 1}:`, $(this).text());
-  });
-
-  // Check for external stylesheets
-  const externalStyles = $('link[rel="stylesheet"]');
-  externalStyles.each(function(index) {
-    debugLog('checkConflicts', `External stylesheet ${index + 1}:`, $(this).attr('href'));
-  });
-
-  // Check for other scripts that might be interfering
-  const scripts = $('script');
-  scripts.each(function(index) {
-    const src = $(this).attr('src');
-    if (src) {
-      debugLog('checkConflicts', `External script ${index + 1}:`, src);
-    } else {
-      debugLog('checkConflicts', `Inline script ${index + 1}:`, $(this).text().substring(0, 100) + '...');
-    }
-  });
-}
-
-function updatePriceDisplay(parentBox, isSubscriptionSelected, animate = true) {
-  debugLog('updatePriceDisplay', `Called with:`, { isSubscriptionSelected, animate });
-
-  const itemPrice = parseInt(parentBox.data('item-price'));
-  const subscriptionItemPrice = parseInt(parentBox.data('subscription-item-price'));
-  const bottleQuantity = parseInt(parentBox.data('bottle-quantity') || 1);
-  const originalItemCap = parseInt(parentBox.data('original-item-cap'));
-
-  debugLog('updatePriceDisplay', 'Parsed data attributes:', {
-    itemPrice,
-    subscriptionItemPrice,
-    bottleQuantity,
-    originalItemCap
-  });
-
-  const currentPrice = isSubscriptionSelected ? subscriptionItemPrice : itemPrice;
-  const totalPrice = currentPrice * bottleQuantity;
-
-  const pricePer = parentBox.data('price-per') || 'total';
-
-  debugLog('updatePriceDisplay', 'Calculated prices:', {
-    currentPrice,
-    totalPrice,
-    pricePer
-  });
-
-  const priceElement = parentBox.find('.real-price' + (isSubscriptionSelected ? '.subscription' : '.buy-once') + ' .floor');
-  const totalPriceElement = parentBox.find('.total-price' + (isSubscriptionSelected ? '.subscription' : '.buy-once') + ' .floor');
-  const comparedAtPriceElement = parentBox.find('.compared-at-price');
-  const saveTag = parentBox.find('.save-title' + (isSubscriptionSelected ? '.subscription' : '.buy-once'));
-
-  debugLog('updatePriceDisplay', 'Found elements:', {
-    priceElement: priceElement.length,
-    totalPriceElement: totalPriceElement.length,
-    comparedAtPriceElement: comparedAtPriceElement.length,
-    saveTag: saveTag.length
-  });
-
-  const updateContent = () => {
-    const displayPrice = pricePer === 'month' ? currentPrice : totalPrice;
-    priceElement.text('$' + formatPrice(displayPrice));
-
-    debugLog('updatePriceDisplay', 'Updated price element:', {
-      displayPrice,
-      formattedPrice: formatPrice(displayPrice)
-    });
-
-    if (totalPriceElement.length) {
-      totalPriceElement.text('$' + formatPrice(totalPrice));
-      debugLog('updatePriceDisplay', 'Updated total price element:', {
-        totalPrice,
-        formattedTotalPrice: formatPrice(totalPrice)
-      });
-    }
-
-    const comparedAtPrice = pricePer === 'month' ? originalItemCap : (originalItemCap * bottleQuantity);
-
-    debugLog('updatePriceDisplay', 'Compared at price calculation:', {
-      comparedAtPrice,
-      displayPrice,
-      priceDifference: comparedAtPrice - displayPrice
-    });
-
-    if (comparedAtPrice > displayPrice) {
-      comparedAtPriceElement.text('$' + formatPrice(comparedAtPrice));
-      if (!isSubscriptionSelected || pricePer !== 'month') {
-        comparedAtPriceElement.removeClass('hidden');
-        saveTag.removeClass('hidden');
-
-        setTimeout(() => {
-          comparedAtPriceElement.css('display', 'inline-block');
-          saveTag.css('display', 'inline-block');
-          debugLog('updatePriceDisplay', 'Showing compared at price and save tag', {
-            comparedAtPriceDisplay: comparedAtPriceElement.css('display'),
-            saveTagDisplay: saveTag.css('display'),
-            comparedAtPriceVisibility: comparedAtPriceElement.is(':visible'),
-            saveTagVisibility: saveTag.is(':visible')
-          });
-        }, 0);
-      } else {
-        comparedAtPriceElement.addClass('hidden');
-        saveTag.addClass('hidden');
-
-        setTimeout(() => {
-          comparedAtPriceElement.css('display', 'none');
-          saveTag.css('display', 'none');
-          debugLog('updatePriceDisplay', 'Hiding compared at price and save tag for subscription with pricePer month', {
-            comparedAtPriceDisplay: comparedAtPriceElement.css('display'),
-            saveTagDisplay: saveTag.css('display'),
-            comparedAtPriceVisibility: comparedAtPriceElement.is(':visible'),
-            saveTagVisibility: saveTag.is(':visible')
-          });
-        }, 0);
-      }
-    } else {
-      comparedAtPriceElement.addClass('hidden');
-      saveTag.addClass('hidden');
-
-      setTimeout(() => {
-        comparedAtPriceElement.css('display', 'none');
-        saveTag.css('display', 'none');
-        debugLog('updatePriceDisplay', 'Hiding compared at price and save tag due to no price difference', {
-          comparedAtPriceDisplay: comparedAtPriceElement.css('display'),
-          saveTagDisplay: saveTag.css('display'),
-          comparedAtPriceVisibility: comparedAtPriceElement.is(':visible'),
-          saveTagVisibility: saveTag.is(':visible')
-        });
-      }, 0);
-    }
-
-    parentBox.find('.per-month').toggle(pricePer === 'month' && isSubscriptionSelected);
-    debugLog('updatePriceDisplay', 'Toggled per-month element:', {
-      isVisible: pricePer === 'month' && isSubscriptionSelected
-    });
-  };
-
-  if (animate) {
-    debugLog('updatePriceDisplay', 'Starting animation');
-    priceElement.fadeOut(150);
-    totalPriceElement.fadeOut(150);
-    comparedAtPriceElement.fadeOut(150);
-    saveTag.fadeOut(150);
-
-    setTimeout(() => {
-      updateContent();
-      priceElement.fadeIn(150);
-      totalPriceElement.fadeIn(150);
-      comparedAtPriceElement.fadeIn(150);
-      saveTag.fadeIn(150);
-      debugLog('updatePriceDisplay', 'Animation completed');
-    }, 150);
-  } else {
-    updateContent();
-    debugLog('updatePriceDisplay', 'Updated content without animation');
-  }
-}
-
-function forceHideComparedAtPrice() {
-  $('.compared-at-price, .save-title').each(function() {
-    $(this).css('display', 'none !important').hide().addClass('hidden');
-  });
-  debugLog('forceHideComparedAtPrice', 'Forcibly hid compared at price and save tag elements');
-}
-
     function formatPrice(cents) {
       return (cents / 100).toFixed(2);
     }
 
+    function isSubscriptionSelected() {
+      return productActions.querySelector('.purchase-type button.subscription').classList.contains('selected');
+    }
+
+    function initializePurchaseOptions() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const defaultVariant = parseInt(urlParams.get('default-variant')) || defaultSelectionIndex || 1;
+
+      productActions.querySelector('.purchase-type .subscription').click();
+
+      const initialDefaultVariant = defaultVariant ? defaultVariant - 1 : 0;
+      purchaseOptionBoxes[initialDefaultVariant].click();
+      purchaseOptionBoxes[initialDefaultVariant].querySelector("input[type='radio']").checked = true;
+
+      purchaseOptionBoxes.forEach((box, index) => {
+        if (index !== initialDefaultVariant) {
+          box.style.maxHeight = getClosedHeight();
+          box.querySelector('.toggle-icon').style.display = 'none';
+          box.querySelector('.subscription-terms').style.display = 'none';
+        }
+        updatePriceDisplay(box, state.isSubscriptionSelected, false);
+      });
+    }
+
+    function togglePurchaseType(isSubscription) {
+      purchaseOptionBoxes.forEach((box, index) => {
+        const subscriptionElements = box.querySelectorAll('.subscription');
+        const buyOnceElements = box.querySelectorAll('.buy-once');
+        const bwpButton = productActions.querySelector('.bwp-button');
+        const comparedAtPriceElement = box.querySelector('.compared-at-price');
+
+        if (isSubscription) {
+          box.querySelector('.per-month').style.display = 'block';
+          if (bwpButton) bwpButton.style.display = 'none';
+
+          fadeOutThenIn(buyOnceElements, subscriptionElements);
+
+          const sellingPlanId = box.dataset.subscriptionSellingPlanId;
+
+          if (parseInt(sellingPlanId) > 0) {
+            box.removeAttribute('inert');
+          } else {
+            box.setAttribute('inert', '');
+            box.classList.remove('selected');
+          }
+        } else {
+          box.querySelector('.per-month').style.display = 'none';
+          if (bwpButton) bwpButton.style.display = 'block';
+          box.removeAttribute('inert');
+
+          fadeOutThenIn(subscriptionElements, buyOnceElements);
+        }
+
+        updatePriceDisplay(box, isSubscription, true);
+
+        if (box.classList.contains('selected')) {
+          adjustMaxHeight(box, isSubscription);
+        } else {
+          box.style.maxHeight = getClosedHeight();
+          box.querySelector('.toggle-icon').style.display = 'none';
+        }
+      });
+
+      if (!productActions.querySelector('.purchase-option-box.selected')) {
+        productActions.querySelector('.purchase-option-box:not([inert])').click();
+      }
+    }
+
+    function fadeOutThenIn(elementsToHide, elementsToShow) {
+      elementsToHide.forEach(el => fadeOut(el, () => {
+        elementsToShow.forEach(el => fadeIn(el));
+      }));
+    }
+
+    function fadeOut(element, callback) {
+      element.style.opacity = 1;
+      (function fade() {
+        if ((element.style.opacity -= .1) < 0) {
+          element.style.display = 'none';
+          if (callback) callback();
+        } else {
+          requestAnimationFrame(fade);
+        }
+      })();
+    }
+
+    function fadeIn(element, display = 'block') {
+      element.style.opacity = 0;
+      element.style.display = display;
+      (function fade() {
+        let val = parseFloat(element.style.opacity);
+        if (!((val += .1) > 1)) {
+          element.style.opacity = val;
+          requestAnimationFrame(fade);
+        }
+      })();
+    }
+
+    function updatePriceDisplay(box, isSubscriptionSelected, animate = true) {
+      const itemPrice = parseInt(box.dataset.itemPrice);
+      const subscriptionItemPrice = parseInt(box.dataset.subscriptionItemPrice);
+      const bottleQuantity = parseInt(box.dataset.bottleQuantity || 1);
+      const originalItemCap = parseInt(box.dataset.originalItemCap);
+
+      const currentPrice = isSubscriptionSelected ? subscriptionItemPrice : itemPrice;
+      const totalPrice = currentPrice * bottleQuantity;
+
+      const pricePer = box.dataset.pricePer || 'total';
+
+      const priceElement = box.querySelector(`.real-price${isSubscriptionSelected ? '.subscription' : '.buy-once'} .floor`);
+      const totalPriceElement = box.querySelector(`.total-price${isSubscriptionSelected ? '.subscription' : '.buy-once'} .floor`);
+      const comparedAtPriceElement = box.querySelector('.compared-at-price');
+      const saveTag = box.querySelector(`.save-title${isSubscriptionSelected ? '.subscription' : '.buy-once'}`);
+
+      const updateContent = () => {
+        const displayPrice = pricePer === 'month' ? currentPrice : totalPrice;
+        priceElement.textContent = '$' + formatPrice(displayPrice);
+
+        if (totalPriceElement) {
+          totalPriceElement.textContent = '$' + formatPrice(totalPrice);
+        }
+
+        const comparedAtPrice = pricePer === 'month' ? originalItemCap : (originalItemCap * bottleQuantity);
+
+        if (comparedAtPrice > displayPrice) {
+          comparedAtPriceElement.textContent = '$' + formatPrice(comparedAtPrice);
+          if (!isSubscriptionSelected || pricePer !== 'month') {
+            comparedAtPriceElement.classList.remove('hidden');
+            saveTag.classList.remove('hidden');
+            comparedAtPriceElement.style.display = 'inline-block';
+            saveTag.style.display = 'inline-block';
+          } else {
+            comparedAtPriceElement.classList.add('hidden');
+            saveTag.classList.add('hidden');
+            comparedAtPriceElement.style.display = 'none';
+            saveTag.style.display = 'none';
+          }
+        } else {
+          comparedAtPriceElement.classList.add('hidden');
+          saveTag.classList.add('hidden');
+          comparedAtPriceElement.style.display = 'none';
+          saveTag.style.display = 'none';
+        }
+
+        box.querySelector('.per-month').style.display = (pricePer === 'month' && isSubscriptionSelected) ? 'block' : 'none';
+      };
+
+      if (animate) {
+        fadeOut(priceElement);
+        if (totalPriceElement) fadeOut(totalPriceElement);
+        fadeOut(comparedAtPriceElement);
+        fadeOut(saveTag);
+
+        setTimeout(() => {
+          updateContent();
+          fadeIn(priceElement);
+          if (totalPriceElement) fadeIn(totalPriceElement);
+          fadeIn(comparedAtPriceElement);
+          fadeIn(saveTag);
+        }, 150);
+      } else {
+        updateContent();
+      }
+    }
+
     function adjustMaxHeight(element, isSubscriptionSelected) {
       if (enableToggleAnimation) {
-        if (isSubscriptionSelected && element.hasClass('selected')) {
-          const openHeight = element.get(0).scrollHeight;
-          element.css('max-height', openHeight + 'px');
-          element.find('.toggle-icon').show();
+        if (isSubscriptionSelected && element.classList.contains('selected')) {
+          const openHeight = element.scrollHeight;
+          element.style.maxHeight = openHeight + 'px';
+          element.querySelector('.toggle-icon').style.display = 'block';
         } else {
-          element.css('max-height', getClosedHeight());
-          element.find('.toggle-icon').hide();
+          element.style.maxHeight = getClosedHeight();
+          element.querySelector('.toggle-icon').style.display = 'none';
         }
       } else {
-        element.css('max-height', 'none');
+        element.style.maxHeight = 'none';
       }
     }
 
     function togglePurchaseBox(element) {
       const isSubscription = isSubscriptionSelected();
-      const wasSelected = element.hasClass('selected');
-      const subscriptionPlanID = isSubscription ? element.data('subscription-selling-plan-id') : '';
-      const variantID = isSubscription ? element.data('original-variant') : element.data('variant');
+      const wasSelected = element.classList.contains('selected');
+      const subscriptionPlanID = isSubscription ? element.dataset.subscriptionSellingPlanId : '';
+      const variantID = isSubscription ? element.dataset.originalVariant : element.dataset.variant;
 
       if (wasSelected) {
         return;
       }
 
-      $purchaseOptionBoxes.removeClass('selected').each(function() {
-        $(this).css('max-height', getClosedHeight());
-        $(this).find('.toggle-icon').hide();
-        $(this).find('.subscription-terms').hide();
+      purchaseOptionBoxes.forEach(box => {
+        box.classList.remove('selected');
+        box.style.maxHeight = getClosedHeight();
+        box.querySelector('.toggle-icon').style.display = 'none';
+        box.querySelector('.subscription-terms').style.display = 'none';
       });
 
-      $('#product-actions-{{ SID }} .submit-selling-plan-id').val(subscriptionPlanID);
-      $('#product-actions-{{ SID }} .submit-variant-id').val(variantID);
+      productActions.querySelector('.submit-selling-plan-id').value = subscriptionPlanID;
+      productActions.querySelector('.submit-variant-id').value = variantID;
 
-      element.addClass('selected');
-      element.find("input[type='radio']").prop('checked', true);
+      element.classList.add('selected');
+      element.querySelector("input[type='radio']").checked = true;
 
       updatePriceDisplay(element, isSubscription, false);
       updateVariantImage(element);
 
       if (enableToggleAnimation && isSubscription) {
-        const openHeight = element.get(0).scrollHeight;
-        element.css('max-height', openHeight + 'px');
-        element.find('.toggle-icon').show();
+        const openHeight = element.scrollHeight;
+        element.style.maxHeight = openHeight + 'px';
+        element.querySelector('.toggle-icon').style.display = 'block';
       }
     }
 
     function updateVariantImage(element) {
-      {% if variantsAmount > 1 %}
-        {% if isSlideOnLoad %}
-          let slideIndex = window.productSliderAllInOne{{ SID }}.slides.length - ({{ variantsAmount | plus: 1 }} - element.attr('data-index'));
-          window.productSliderAllInOne{{ SID }}.slideTo(slideIndex);
-        {% else %}
+      if (variantsAmount > 1) {
+        if (isSlideOnLoad) {
+          let slideIndex = window.productSliderAllInOne[SID].slides.length - (variantsAmount + 1 - element.dataset.index);
+          window.productSliderAllInOne[SID].slideTo(slideIndex);
+        } else {
           if (window.hasInitialImageUpdateHappened) {
-            let slideIndex = window.productSliderAllInOne{{ SID }}.slides.length - ({{ variantsAmount | plus: 1 }} - element.attr('data-index'));
-            window.productSliderAllInOne{{ SID }}.slideTo(slideIndex);
+            let slideIndex = window.productSliderAllInOne[SID].slides.length - (variantsAmount + 1 - element.dataset.index);
+            window.productSliderAllInOne[SID].slideTo(slideIndex);
           }
           window.hasInitialImageUpdateHappened = true;
-        {% endif %}
-      {% endif %}
+        }
+      }
     }
 
-    $productActions.on('click', '.purchase-type button', function(event) {
-      event.preventDefault();
-      const isSubscription = $(this).hasClass('subscription');
+    productActions.addEventListener('click', (event) => {
+      if (event.target.closest('.purchase-type button')) {
+        event.preventDefault();
+        const button = event.target.closest('.purchase-type button');
+        const isSubscription = button.classList.contains('subscription');
 
-      $('#product-actions-{{ SID }} .purchase-type button').removeClass('selected');
-      $(this).addClass('selected');
+        productActions.querySelectorAll('.purchase-type button').forEach(btn => btn.classList.remove('selected'));
+        button.classList.add('selected');
 
-      togglePurchaseType(isSubscription);
+        togglePurchaseType(isSubscription);
+      } else if (event.target.closest('.purchase-option-box')) {
+        event.preventDefault();
+        togglePurchaseBox(event.target.closest('.purchase-option-box'));
+      }
     });
 
-    $productActions.on('click', '.purchase-option-box', function(event) {
-      event.preventDefault();
-      togglePurchaseBox($(this));
-    });
-
-    $(window).on('resize', function() {
-      $purchaseOptionBoxes.not('.selected').css('max-height', getClosedHeight());
+    window.addEventListener('resize', () => {
+      purchaseOptionBoxes.forEach(box => {
+        if (!box.classList.contains('selected')) {
+          box.style.maxHeight = getClosedHeight();
+        }
+      });
     });
 
     initializePurchaseOptions();
