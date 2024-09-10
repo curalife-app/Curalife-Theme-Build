@@ -398,14 +398,17 @@
       }));
     }
 
-    function fadeOut(element, callback) {
+    function fadeOut(element, callback, duration = 200) {
       if (!element || element.classList.contains('hidden')) {
         if (callback) callback();
         return;
       }
+
       let opacity = 1;
+      const step = 10 / duration; // Adjust the step size to make the animation faster
+
       function animate() {
-        opacity -= 0.1;
+        opacity -= step;
         if (opacity <= 0) {
           element.style.opacity = '';
           if (callback) callback();
@@ -417,13 +420,16 @@
       animate();
     }
 
-    function fadeIn(element, display = 'block') {
+    function fadeIn(element, display = 'block', duration = 200) {
       if (!element || element.classList.contains('hidden')) return;
+
       let opacity = 0;
       element.style.opacity = '0';
       element.style.display = display;
+      const step = 10 / duration; // Adjust the step size to make the animation faster
+
       function animate() {
-        opacity += 0.1;
+        opacity += step;
         if (opacity >= 1) {
           element.style.opacity = '';
         } else {
