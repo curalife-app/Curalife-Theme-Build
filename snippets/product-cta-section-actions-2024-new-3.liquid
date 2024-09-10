@@ -371,6 +371,18 @@
       }
     }
 
+    function toggleElementVisibility(element, show) {
+      if (!element) return;
+
+      if (show) {
+        element.classList.remove('hidden');
+        element.style.display = '';
+      } else {
+        element.classList.add('hidden');
+        element.style.display = 'none';
+      }
+    }
+
     function fadeOutThenIn(elementsToHide, elementsToShow) {
       elementsToHide.forEach(el => fadeOut(el, () => {
         elementsToShow.forEach(el => fadeIn(el));
@@ -386,11 +398,10 @@
       function animate() {
         opacity -= 0.1;
         if (opacity <= 0) {
-          safelySetStyle(element, 'opacity', '');
-          safelySetStyle(element, 'display', '');
+          element.style.opacity = '';
           if (callback) callback();
         } else {
-          safelySetStyle(element, 'opacity', opacity.toString());
+          element.style.opacity = opacity.toString();
           requestAnimationFrame(animate);
         }
       }
@@ -400,13 +411,14 @@
     function fadeIn(element, display = 'block') {
       if (!element || element.classList.contains('hidden')) return;
       let opacity = 0;
-      safelySetStyle(element, 'display', display);
+      element.style.opacity = '0';
+      element.style.display = display;
       function animate() {
         opacity += 0.1;
         if (opacity >= 1) {
-          safelySetStyle(element, 'opacity', '');
+          element.style.opacity = '';
         } else {
-          safelySetStyle(element, 'opacity', opacity.toString());
+          element.style.opacity = opacity.toString();
           requestAnimationFrame(animate);
         }
       }
@@ -427,7 +439,7 @@
       const priceElement = box.querySelector(`.real-price${isSubscriptionSelected ? '.subscription' : '.buy-once'} .floor`);
       const totalPriceElement = box.querySelector(`.total-price${isSubscriptionSelected ? '.subscription' : '.buy-once'} .floor`);
       const comparedAtPriceElement = box.querySelector('.compared-at-price');
-      const saveTag = box.querySelector(`.save-title${isSubscriptionSelected ? '.subscription' : '.buy-once'}`);
+      const saveTag = box.querySelector('.save-title'); // Remove the subscription/buy-once class from the selector
 
       const updateContent = () => {
         const displayPrice = pricePer === 'month' ? currentPrice : totalPrice;
@@ -443,24 +455,16 @@
 
         if (comparedAtPriceElement) {
           comparedAtPriceElement.textContent = '$' + formatPrice(comparedAtPrice);
-          if (shouldShowComparedPrice) {
-            safelyRemoveClass(comparedAtPriceElement, 'hidden');
-          } else {
-            safelyAddClass(comparedAtPriceElement, 'hidden');
-          }
+          toggleElementVisibility(comparedAtPriceElement, shouldShowComparedPrice);
         }
 
         if (saveTag) {
-          if (shouldShowComparedPrice) {
-            safelyRemoveClass(saveTag, 'hidden');
-          } else {
-            safelyAddClass(saveTag, 'hidden');
-          }
+          toggleElementVisibility(saveTag, shouldShowComparedPrice);
         }
 
         const perMonthElement = box.querySelector('.per-month');
         if (perMonthElement) {
-          safelySetDisplay(perMonthElement, (pricePer === 'month' && isSubscriptionSelected) ? 'block' : 'none');
+          toggleElementVisibility(perMonthElement, pricePer === 'month' && isSubscriptionSelected);
         }
       };
 
@@ -472,8 +476,6 @@
         if (totalPriceElement) {
           fadeOut(totalPriceElement, () => fadeIn(totalPriceElement));
         }
-
-        updateContent();
       } else {
         updateContent();
       }
