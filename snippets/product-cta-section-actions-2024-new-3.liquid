@@ -157,10 +157,6 @@
     transition: none !important;
   }
 
-  #cta-section-{{ section.id }} .product-actions:not(.with-animation) .purchase-option-box .toggle-icon {
-    display: none !important;
-  }
-
   @media (max-width: 1269px) {
     #cta-section-{{ section.id }} .purchase-option-box {
       width: 100%;
@@ -314,12 +310,6 @@
       purchaseOptionBoxes.forEach((box, index) => {
         if (index !== initialDefaultVariant) {
           safelySetStyle(box, 'maxHeight', getClosedHeight());
-          const toggleIcon = box.querySelector('.toggle-icon');
-          const subscriptionTerms = box.querySelector('.subscription-terms');
-          safelySetDisplay(toggleIcon, 'none');
-          safelySetDisplay(subscriptionTerms, 'none');
-        }
-
         updatePriceDisplay(box, state.isSubscriptionSelected, false);
       });
     }
@@ -367,8 +357,6 @@
           adjustMaxHeight(box, isSubscription);
         } else {
           safelySetStyle(box, 'maxHeight', getClosedHeight());
-          const toggleIcon = box.querySelector('.toggle-icon');
-          safelySetDisplay(toggleIcon, 'none');
         }
       });
 
@@ -515,12 +503,8 @@
         if (isSubscriptionSelected && element.classList.contains('selected')) {
           const openHeight = element.scrollHeight;
           safelySetStyle(element, 'maxHeight', openHeight + 'px');
-          const toggleIcon = element.querySelector('.toggle-icon');
-          safelySetDisplay(toggleIcon, 'block');
         } else {
           safelySetStyle(element, 'maxHeight', getClosedHeight());
-          const toggleIcon = element.querySelector('.toggle-icon');
-          safelySetDisplay(toggleIcon, 'none');
         }
       } else {
         safelySetStyle(element, 'maxHeight', 'none');
@@ -542,10 +526,6 @@
       purchaseOptionBoxes.forEach(box => {
         safelyRemoveClass(box, 'selected');
         safelySetStyle(box, 'maxHeight', getClosedHeight());
-        const toggleIcon = box.querySelector('.toggle-icon');
-        const subscriptionTerms = box.querySelector('.subscription-terms');
-        safelySetDisplay(toggleIcon, 'none');
-        safelySetDisplay(subscriptionTerms, 'none');
       });
 
       const submitSellingPlanId = productActions.querySelector('.submit-selling-plan-id');
@@ -563,8 +543,6 @@
       if (enableToggleAnimation && isSubscription) {
         const openHeight = element.scrollHeight;
         safelySetStyle(element, 'maxHeight', openHeight + 'px');
-        const toggleIcon = element.querySelector('.toggle-icon');
-        safelySetDisplay(toggleIcon, 'block');
       }
     }
 
