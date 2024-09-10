@@ -1,5 +1,3 @@
-Updated Benefits Modal HTML, CSS, and JavaScript
-
 <div class="subscription-benefits mt-2">
   <h3>Complimentary subscriber benefits:</h3>
   <ul class="benefits-list check">
@@ -38,8 +36,8 @@ Updated Benefits Modal HTML, CSS, and JavaScript
         </div>
       </div>
       <div class="benefit">
-        <img src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/subscription-benefits-icon-4.svg" alt="Cancel, Pause, Delay or Change, Hassle Free" class="icon">
-        <div class="content">
+      <img src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/subscription-benefits-icon-4.svg" alt="Cancel, Pause, Delay or Change, Hassle Free" class="icon">
+      <div class="content">
           <h3>Cancel, Pause, Delay or Change, Hassle Free</h3>
           <p>Manage your subscription effortlessly with options to cancel, pause, delay, or change anytime, without any hassle.</p>
         </div>
@@ -52,7 +50,6 @@ Updated Benefits Modal HTML, CSS, and JavaScript
         </div>
       </div>
     </div>
-    <button class="close-button">Close</button>
   </div>
 </div>
 
@@ -159,6 +156,32 @@ Updated Benefits Modal HTML, CSS, and JavaScript
     }
   }
 
+  .modal {
+    --text: #4a5568;
+    --border: #e2e8f0;
+    --bg: #fefefe;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    overflow: auto;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+  }
+  .modal.show {
+    opacity: 1;
+    visibility: visible;
+  }
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .modal.show .modal-backdrop {
+    opacity: 1;
+  }
   .modal-content {
     background: var(--bg);
     margin: 5% auto;
@@ -170,63 +193,66 @@ Updated Benefits Modal HTML, CSS, and JavaScript
     transform: translateY(-20px);
     opacity: 0;
     transition: transform 0.3s, opacity 0.3s;
-    position: relative;
-    max-height: 90vh;
-    overflow-y: auto;
   }
   .modal.show .modal-content {
     transform: translateY(0);
     opacity: 1;
   }
-  .close-icon {
-    position: absolute;
-    top: 10px;
-    right: 20px;
-    font-size: 35px;
-    background: none;
-    border: none;
-    cursor: pointer;
+  h2 {
     color: var(--primary-color);
-    transition: color 0.3s;
+    font-size: 1.5rem;
+    margin-bottom: 1.25rem;
   }
-  .close-icon:hover {
-    color: var(--primary-color-dark);
+  #benefits-list {
+    list-style: none;
+    padding: 0;
   }
-  .close-button {
-    display: block;
-    width: 100%;
-    padding: 10px;
-    margin-top: 20px;
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: 5px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: background-color 0.3s;
+  .benefit {
+    display: flex;
+    align-items: flex-start;
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border);
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: opacity 0.3s, transform 0.3s;
   }
-  .close-button:hover {
-    background-color: var(--primary-color-dark);
+  .modal.show .benefit {
+    opacity: 1;
+    transform: translateX(0);
   }
+  .benefit:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+  .icon {
+    font-size: 1.5rem;
+    margin-right: 1rem;
+    margin-left: 0;
+    flex-shrink: 0;
+  }
+  .content h3 {
+    color: var(--primary-color);
+    font-size: 1.125rem;
+    margin: 0 0 0.3rem;
+  }
+  .content p {
+    color: var(--text);
+    font-size: 0.875rem;
+    margin: 0;
+  }
+
   @media (max-width: 480px) {
-    .modal-content {
-      padding: 1rem;
-      margin: 10% auto;
-      max-height: 80vh;
-    }
+    .modal-content { padding: 1rem; }
     h2 { font-size: 1.25rem; }
     .content h3 { font-size: 1rem; }
     .content p { font-size: 0.8125rem; }
-    .close-button {
-      padding: 8px;
-      font-size: 14px;
-    }
   }
 </style>
 
 <script>
 const modal = document.getElementById('benefits-modal');
-const closeButton = modal.querySelector('.close-button');
 
 const toggleModal = show => {
   modal.classList.toggle('show', show);
@@ -244,7 +270,6 @@ const toggleModal = show => {
 
 const closeIcon = modal.querySelector('.close-icon');
 closeIcon.addEventListener('click', () => toggleModal(false));
-closeButton.addEventListener('click', () => toggleModal(false));
 
 modal.addEventListener('click', event => {
   if (event.target === modal || event.target.classList.contains('modal-backdrop')) {
