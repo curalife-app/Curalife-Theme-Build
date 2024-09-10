@@ -241,9 +241,16 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-    const productActions = document.getElementById(`product-actions-${SID}`);
+    const productActions = document.querySelector('[id^="product-actions-"]');
+    const SID = productActions ? productActions.id.split('-').pop() : '';
+
+    if (!productActions || !SID) {
+      console.error('Product actions element not found or SID not available');
+      return;
+    }
+
     const purchaseOptionBoxes = productActions.querySelectorAll('.purchase-option-box');
-    const enableToggleAnimation = isVariantBoxToggle ?? false;
+    const enableToggleAnimation = typeof isVariantBoxToggle !== 'undefined' ? isVariantBoxToggle : false;
 
     const state = {
       isSubscriptionSelected: false,
@@ -264,7 +271,7 @@
 
     function initializePurchaseOptions() {
       const urlParams = new URLSearchParams(window.location.search);
-      const defaultVariant = parseInt(urlParams.get('default-variant')) || defaultSelectionIndex || 1;
+      const defaultVariant = parseInt(urlParams.get('default-variant')) || (typeof defaultSelectionIndex !== 'undefined' ? defaultSelectionIndex : 1);
 
       productActions.querySelector('.purchase-type .subscription').click();
 
@@ -472,13 +479,13 @@
     }
 
     function updateVariantImage(element) {
-      if (variantsAmount > 1) {
-        if (isSlideOnLoad) {
-          let slideIndex = window.productSliderAllInOne[SID].slides.length - (variantsAmount + 1 - element.dataset.index);
+      if (typeof variantsAmount !== 'undefined' && variantsAmount > 1) {
+        if (typeof isSlideOnLoad !== 'undefined' && isSlideOnLoad) {
+          let slideIndex = window.productSliderAllInOne[SID].slides.length - (variantsAmount + 1 - parseInt(element.dataset.index));
           window.productSliderAllInOne[SID].slideTo(slideIndex);
         } else {
           if (window.hasInitialImageUpdateHappened) {
-            let slideIndex = window.productSliderAllInOne[SID].slides.length - (variantsAmount + 1 - element.dataset.index);
+            let slideIndex = window.productSliderAllInOne[SID].slides.length - (variantsAmount + 1 - parseInt(element.dataset.index));
             window.productSliderAllInOne[SID].slideTo(slideIndex);
           }
           window.hasInitialImageUpdateHappened = true;
