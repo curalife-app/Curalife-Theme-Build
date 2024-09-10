@@ -298,12 +298,13 @@
 
       const subscriptionButton = productActions.querySelector('.purchase-type .subscription');
       if (subscriptionButton) {
-        subscriptionButton.click();
+        subscriptionButton.classList.add('selected');
+        state.isSubscriptionSelected = true;
       }
 
       const initialDefaultVariant = defaultVariant ? defaultVariant - 1 : 0;
       if (purchaseOptionBoxes[initialDefaultVariant]) {
-        purchaseOptionBoxes[initialDefaultVariant].click();
+        purchaseOptionBoxes[initialDefaultVariant].classList.add('selected');
         const radio = purchaseOptionBoxes[initialDefaultVariant].querySelector("input[type='radio']");
         if (radio) {
           radio.checked = true;
@@ -318,6 +319,7 @@
           safelySetDisplay(toggleIcon, 'none');
           safelySetDisplay(subscriptionTerms, 'none');
         }
+
         updatePriceDisplay(box, state.isSubscriptionSelected, false);
       });
     }
@@ -446,17 +448,13 @@
         const displayPrice = pricePer === 'month' ? currentPrice : totalPrice;
 
         if (subscriptionPriceElement) {
-          subscriptionPriceElement.textContent = '$' + formatPrice(subscriptionItemPrice * bottleQuantity);
           toggleElementVisibility(subscriptionPriceElement.closest('.real-price.subscription'), isSubscriptionSelected);
         }
-
         if (buyOncePriceElement) {
-          buyOncePriceElement.textContent = '$' + formatPrice(itemPrice * bottleQuantity);
           toggleElementVisibility(buyOncePriceElement.closest('.real-price.buy-once'), !isSubscriptionSelected);
         }
-
         if (totalPriceElement) {
-          totalPriceElement.textContent = '$' + formatPrice(totalPrice);
+          toggleElementVisibility(totalPriceElement, true);
         }
 
         const comparedAtPrice = pricePer === 'month' ? originalItemCap : (originalItemCap * bottleQuantity);
