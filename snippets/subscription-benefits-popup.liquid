@@ -50,6 +50,7 @@
         </div>
       </div>
     </div>
+    <button class="close-button">Close</button>
   </div>
 </div>
 
@@ -105,8 +106,8 @@
   .close-icon {
     position: absolute;
     top: 10px;
-  right: 20px;
-  font-size: 35px;
+    right: 20px;
+    font-size: 35px;
     background: none;
     border: none;
     cursor: pointer;
@@ -243,11 +244,30 @@
     margin: 0;
   }
 
+  .close-button {
+    display: block;
+    width: 100%;
+    padding: 0.75rem;
+    margin-top: 1.5rem;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+
+  .close-button:hover {
+    background-color: var(--primary-color-dark);
+  }
+
   @media (max-width: 480px) {
     .modal-content { padding: 1rem; }
     h2 { font-size: 1.25rem; }
     .content h3 { font-size: 1rem; }
     .content p { font-size: 0.8125rem; }
+    .close-button { font-size: 0.9rem; padding: 0.6rem; }
   }
 </style>
 
@@ -270,6 +290,9 @@ const toggleModal = show => {
 
 const closeIcon = modal.querySelector('.close-icon');
 closeIcon.addEventListener('click', () => toggleModal(false));
+
+const closeButton = modal.querySelector('.close-button');
+closeButton.addEventListener('click', () => toggleModal(false));
 
 modal.addEventListener('click', event => {
   if (event.target === modal || event.target.classList.contains('modal-backdrop')) {
