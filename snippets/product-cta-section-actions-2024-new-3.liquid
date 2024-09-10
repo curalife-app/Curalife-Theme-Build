@@ -378,14 +378,16 @@
     }
 
     function fadeOut(element, callback) {
-      if (!element) return;
+      if (!element || element.classList.contains('hidden')) {
+        if (callback) callback();
+        return;
+      }
       let opacity = 1;
       function animate() {
         opacity -= 0.1;
         if (opacity <= 0) {
-          opacity = 0;
-          safelySetStyle(element, 'opacity', '0');
-          safelySetDisplay(element, 'none');
+          safelySetStyle(element, 'opacity', '');
+          safelySetStyle(element, 'display', '');
           if (callback) callback();
         } else {
           safelySetStyle(element, 'opacity', opacity.toString());
@@ -396,14 +398,13 @@
     }
 
     function fadeIn(element, display = 'block') {
-      if (!element) return;
+      if (!element || element.classList.contains('hidden')) return;
       let opacity = 0;
-      safelySetDisplay(element, display);
+      safelySetStyle(element, 'display', display);
       function animate() {
         opacity += 0.1;
         if (opacity >= 1) {
-          opacity = 1;
-          safelySetStyle(element, 'opacity', '1');
+          safelySetStyle(element, 'opacity', '');
         } else {
           safelySetStyle(element, 'opacity', opacity.toString());
           requestAnimationFrame(animate);
@@ -438,28 +439,29 @@
 
         const comparedAtPrice = pricePer === 'month' ? originalItemCap : (originalItemCap * bottleQuantity);
 
-        if (comparedAtPrice > displayPrice) {
-          if (comparedAtPriceElement) comparedAtPriceElement.textContent = '$' + formatPrice(comparedAtPrice);
-          if (!isSubscriptionSelected || pricePer !== 'month') {
+        const shouldShowComparedPrice = comparedAtPrice > displayPrice && (!isSubscriptionSelected || pricePer !== 'month');
+
+        if (comparedAtPriceElement) {
+          comparedAtPriceElement.textContent = '$' + formatPrice(comparedAtPrice);
+          if (shouldShowComparedPrice) {
             safelyRemoveClass(comparedAtPriceElement, 'hidden');
-            safelyRemoveClass(saveTag, 'hidden');
-            safelySetDisplay(comparedAtPriceElement, 'inline-block');
-            safelySetDisplay(saveTag, 'inline-block');
           } else {
             safelyAddClass(comparedAtPriceElement, 'hidden');
-            safelyAddClass(saveTag, 'hidden');
-            safelySetDisplay(comparedAtPriceElement, 'none');
-            safelySetDisplay(saveTag, 'none');
           }
-        } else {
-          safelyAddClass(comparedAtPriceElement, 'hidden');
-          safelyAddClass(saveTag, 'hidden');
-          safelySetDisplay(comparedAtPriceElement, 'none');
-          safelySetDisplay(saveTag, 'none');
+        }
+
+        if (saveTag) {
+          if (shouldShowComparedPrice) {
+            safelyRemoveClass(saveTag, 'hidden');
+          } else {
+            safelyAddClass(saveTag, 'hidden');
+          }
         }
 
         const perMonthElement = box.querySelector('.per-month');
-        safelySetDisplay(perMonthElement, (pricePer === 'month' && isSubscriptionSelected) ? 'block' : 'none');
+        if (perMonthElement) {
+          safelySetDisplay(perMonthElement, (pricePer === 'month' && isSubscriptionSelected) ? 'block' : 'none');
+        }
       };
 
       if (animate) {
@@ -467,14 +469,13 @@
           updateContent();
           fadeIn(priceElement);
         });
-        if (totalPriceElement) fadeOut(totalPriceElement, () => fadeIn(totalPriceElement));
-        fadeOut(comparedAtPriceElement, () => fadeIn(comparedAtPriceElement));
-        fadeOut(saveTag, () => fadeIn(saveTag));
+        if (totalPriceElement) {
+          fadeOut(totalPriceElement, () => fadeIn(totalPriceElement));
+        }
+
+        updateContent();
       } else {
         updateContent();
-        [priceElement, totalPriceElement, comparedAtPriceElement, saveTag].forEach(el => {
-          if (el) safelySetStyle(el, 'opacity', '1');
-        });
       }
     }
 
