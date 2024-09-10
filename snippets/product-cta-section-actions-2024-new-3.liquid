@@ -351,7 +351,34 @@ function togglePurchaseType(isSubscriptionSelected) {
   }
 }
 
-    function updatePriceDisplay(parentBox, isSubscriptionSelected, animate = true) {
+function checkConflicts() {
+  debugLog('checkConflicts', 'Checking for conflicting styles or scripts');
+
+  // Check for inline styles
+  const inlineStyles = $('style');
+  inlineStyles.each(function(index) {
+    debugLog('checkConflicts', `Inline style ${index + 1}:`, $(this).text());
+  });
+
+  // Check for external stylesheets
+  const externalStyles = $('link[rel="stylesheet"]');
+  externalStyles.each(function(index) {
+    debugLog('checkConflicts', `External stylesheet ${index + 1}:`, $(this).attr('href'));
+  });
+
+  // Check for other scripts that might be interfering
+  const scripts = $('script');
+  scripts.each(function(index) {
+    const src = $(this).attr('src');
+    if (src) {
+      debugLog('checkConflicts', `External script ${index + 1}:`, src);
+    } else {
+      debugLog('checkConflicts', `Inline script ${index + 1}:`, $(this).text().substring(0, 100) + '...');
+    }
+  });
+}
+
+function updatePriceDisplay(parentBox, isSubscriptionSelected, animate = true) {
   debugLog('updatePriceDisplay', `Called with:`, { isSubscriptionSelected, animate });
 
   const itemPrice = parseInt(parentBox.data('item-price'));
@@ -417,24 +444,53 @@ function togglePurchaseType(isSubscriptionSelected) {
     if (comparedAtPrice > displayPrice) {
       comparedAtPriceElement.text('$' + formatPrice(comparedAtPrice));
       if (!isSubscriptionSelected || pricePer !== 'month') {
-        comparedAtPriceElement.show();
-        saveTag.show();
-        debugLog('updatePriceDisplay', 'Showing compared at price and save tag');
+        comparedAtPriceElement.show().css('display', 'inline-block').removeClass('hidden');
+        saveTag.show().css('display', 'inline-block').removeClass('hidden');
+        debugLog('updatePriceDisplay', 'Showing compared at price and save tag', {
+          comparedAtPriceDisplay: comparedAtPriceElement.css('display'),
+          saveTagDisplay: saveTag.css('display'),
+          comparedAtPriceVisibility: comparedAtPriceElement.is(':visible'),
+          saveTagVisibility: saveTag.is(':visible')
+        });
       } else {
-        comparedAtPriceElement.hide();
-        saveTag.hide();
-        debugLog('updatePriceDisplay', 'Hiding compared at price and save tag for subscription with pricePer month');
+        comparedAtPriceElement.hide().css('display', 'none').addClass('hidden');
+        saveTag.hide().css('display', 'none').addClass('hidden');
+        debugLog('updatePriceDisplay', 'Hiding compared at price and save tag for subscription with pricePer month', {
+          comparedAtPriceDisplay: comparedAtPriceElement.css('display'),
+          saveTagDisplay: saveTag.css('display'),
+          comparedAtPriceVisibility: comparedAtPriceElement.is(':visible'),
+          saveTagVisibility: saveTag.is(':visible')
+        });
       }
     } else {
-      comparedAtPriceElement.hide();
-      saveTag.hide();
-      debugLog('updatePriceDisplay', 'Hiding compared at price and save tag due to no price difference');
+      comparedAtPriceElement.hide().css('display', 'none').addClass('hidden');
+      saveTag.hide().css('display', 'none').addClass('hidden');
+      debugLog('updatePriceDisplay', 'Hiding compared at price and save tag due to no price difference', {
+        comparedAtPriceDisplay: comparedAtPriceElement.css('display'),
+        saveTagDisplay: saveTag.css('display'),
+        comparedAtPriceVisibility: comparedAtPriceElement.is(':visible'),
+        saveTagVisibility: saveTag.is(':visible')
+      });
     }
 
     parentBox.find('.per-month').toggle(pricePer === 'month' && isSubscriptionSelected);
     debugLog('updatePriceDisplay', 'Toggled per-month element:', {
       isVisible: pricePer === 'month' && isSubscriptionSelected
     });
+
+    // Log the final state after all operations
+    setTimeout(() => {
+      debugLog('updatePriceDisplay', 'Final state of compared at price and save tag', {
+        comparedAtPriceDisplay: comparedAtPriceElement.css('display'),
+        saveTagDisplay: saveTag.css('display'),
+        comparedAtPriceVisibility: comparedAtPriceElement.is(':visible'),
+        saveTagVisibility: saveTag.is(':visible'),
+        comparedAtPriceCSS: comparedAtPriceElement.attr('style'),
+        saveTagCSS: saveTag.attr('style'),
+        comparedAtPriceClasses: comparedAtPriceElement.attr('class'),
+        saveTagClasses: saveTag.attr('class')
+      });
+    }, 0);
   };
 
   if (animate) {
