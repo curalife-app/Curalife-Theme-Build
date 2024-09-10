@@ -461,7 +461,7 @@
 
         const comparedAtPrice = pricePer === 'month' ? originalItemCap : (originalItemCap * bottleQuantity);
 
-        const shouldShowComparedPrice = comparedAtPrice > displayPrice;
+        const shouldShowComparedPrice = comparedAtPrice > displayPrice && (!isSubscriptionSelected || pricePer !== 'month');
 
         if (comparedAtPriceElement) {
           comparedAtPriceElement.textContent = '$' + formatPrice(comparedAtPrice);
@@ -469,22 +469,7 @@
         }
 
         if (saveTag) {
-          if (shouldShowComparedPrice) {
-            const savings = comparedAtPrice - displayPrice;
-            const savingsPercentage = Math.round((savings / comparedAtPrice) * 100);
-
-            let saveText;
-            if (isSubscriptionSelected) {
-              saveText = `Subscribe & Save ${savingsPercentage}%`;
-            } else {
-              saveText = `Save ${savingsPercentage}%`;
-            }
-
-            saveTag.textContent = saveText;
-            toggleElementVisibility(saveTag, true);
-          } else {
-            toggleElementVisibility(saveTag, false);
-          }
+          toggleElementVisibility(saveTag, shouldShowComparedPrice);
         }
 
         const perMonthElement = box.querySelector('.per-month');
