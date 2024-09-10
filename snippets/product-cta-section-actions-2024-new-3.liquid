@@ -355,14 +355,14 @@
 
             const comparedAtPrice = pricePer === 'month' ? originalItemCap : (originalItemCap * bottleQuantity);
 
-            // Hide compare-at price if it's the same as the current price
-            if (comparedAtPrice > displayPrice) {
+            // Updated logic to consider both price difference and subscription status
+            if (comparedAtPrice > displayPrice && (!isSubscriptionSelected || pricePer !== 'month')) {
                 comparedAtPriceElement.text('$' + formatPrice(comparedAtPrice));
                 comparedAtPriceElement.show();
                 saveTag.show();
             } else {
-                comparedAtPriceElement.hide(); // Hide compare-at price
-                saveTag.hide(); // Hide save tag if applicable
+                comparedAtPriceElement.hide();
+                saveTag.hide();
             }
 
             parentBox.find('.per-month').toggle(pricePer === 'month');
@@ -382,10 +382,9 @@
                 saveTag.fadeIn(150);
             }, 150);
         } else {
-            updateContent(); // Ensure prices are updated without animation on load
+            updateContent();
         }
     }
-
 
     function formatPrice(cents) {
       return (cents / 100).toFixed(2);
