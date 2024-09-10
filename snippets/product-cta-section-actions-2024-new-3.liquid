@@ -436,14 +436,24 @@
 
       const pricePer = box.dataset.pricePer || 'total';
 
-      const priceElement = box.querySelector(`.real-price${isSubscriptionSelected ? '.subscription' : '.buy-once'} .floor`);
+      const subscriptionPriceElement = box.querySelector('.real-price.subscription .floor');
+      const buyOncePriceElement = box.querySelector('.real-price.buy-once .floor');
       const totalPriceElement = box.querySelector(`.total-price${isSubscriptionSelected ? '.subscription' : '.buy-once'} .floor`);
       const comparedAtPriceElement = box.querySelector('.compared-at-price');
-      const saveTag = box.querySelector('.save-title'); // Remove the subscription/buy-once class from the selector
+      const saveTag = box.querySelector('.save-title');
 
       const updateContent = () => {
         const displayPrice = pricePer === 'month' ? currentPrice : totalPrice;
-        if (priceElement) priceElement.textContent = '$' + formatPrice(displayPrice);
+
+        if (subscriptionPriceElement) {
+          subscriptionPriceElement.textContent = '$' + formatPrice(subscriptionItemPrice * bottleQuantity);
+          toggleElementVisibility(subscriptionPriceElement.closest('.real-price.subscription'), isSubscriptionSelected);
+        }
+
+        if (buyOncePriceElement) {
+          buyOncePriceElement.textContent = '$' + formatPrice(itemPrice * bottleQuantity);
+          toggleElementVisibility(buyOncePriceElement.closest('.real-price.buy-once'), !isSubscriptionSelected);
+        }
 
         if (totalPriceElement) {
           totalPriceElement.textContent = '$' + formatPrice(totalPrice);
@@ -469,9 +479,9 @@
       };
 
       if (animate) {
-        fadeOut(priceElement, () => {
+        fadeOut(isSubscriptionSelected ? subscriptionPriceElement : buyOncePriceElement, () => {
           updateContent();
-          fadeIn(priceElement);
+          fadeIn(isSubscriptionSelected ? subscriptionPriceElement : buyOncePriceElement);
         });
         if (totalPriceElement) {
           fadeOut(totalPriceElement, () => fadeIn(totalPriceElement));
