@@ -100,33 +100,29 @@
 
         <div class="calculations flex flex-col items-end font-bold">
           <div class="real-price no-letters text-[20px] text-[--primary-color] subscription">
-            <span class="floor rounded">
-              {% if pricePer == 'month' %}
-                {{ subscription_item_price | money | replace: '.00', '' }}
-              {% else %}
-                {{ subscription_total_price | money | replace: '.00', '' }}
-              {% endif %}
-            </span>
+            {% if pricePer == 'month' %}
+              {{ subscription_item_price | money | replace: '.00', '' }}
+            {% else %}
+              {{ subscription_total_price | money | replace: '.00', '' }}
+            {% endif %}
           </div>
           <div class="real-price no-letters text-[20px] text-[--primary-color] buy-once hidden">
-            <span class="floor rounded">
-              {% if pricePer == 'month' %}
-                {{ item_price | money | replace: '.00', '' }}
-              {% else %}
-                {{ var.price | money | replace: '.00', '' }}
-              {% endif %}
-            </span>
+            {% if pricePer == 'month' %}
+              {{ item_price | money | replace: '.00', '' }}
+            {% else %}
+              {{ var.price | money | replace: '.00', '' }}
+            {% endif %}
           </div>
 
 
           {% if pricePer == 'month' %}
             {% if original_item_cap > subscription_item_price or original_item_cap > item_price %}
-              <div class="compared-at-price text-[14px] font-normal line-through rounded">
+              <div class="compared-at-price text-[14px] font-normal line-through">
                 {{ original_item_cap | money | replace: '.00', '' }}
               </div>
             {% endif %}
           {% else %}
-            <div class="compared-at-price text-[14px] font-normal line-through rounded">
+            <div class="compared-at-price text-[14px] font-normal line-through">
               {{ original_item_cap_total | money | replace: '.00', '' }}
             </div>
           {% endif %}
