@@ -1,9 +1,3 @@
-{% assign benefits = "Free gift in every box!|Enjoy a special surprise with each purchase – a free gift just for you!,
-Free Expert Consultations|Enjoy free chats with Naturopathic and Nutrition Doctors to tailor your health plan,
-Best Price Guarantee|Enjoy unbeatable value with our best prices guaranteed all year round!,
-Cancel, Pause, Delay or Change, Hassle Free|Manage your subscription effortlessly with options to cancel, pause, delay, or change anytime, without any hassle.,
-Double & Triple Loyalty Points|At Curalife, you earn loyalty points with every order, which you can use to purchase our products later. As a subscription user, you will enjoy double and triple loyalty points rewards compared to regular orders." | split: "," %}
-
 <div class="subscription-benefits mt-2">
   <h3>Complimentary subscriber benefits:</h3>
   <ul class="benefits-list check">
@@ -19,25 +13,12 @@ Double & Triple Loyalty Points|At Curalife, you earn loyalty points with every o
   <div class="modal-content">
     <div class="close-icon" aria-label="Close modal">&times;</div>
     <h2 id="modal-title">Complimentary subscriber benefits:</h2>
-    <div id="benefits-list">
-      {% for benefit in benefits %}
-        {% assign benefit_parts = benefit | split: "|" %}
-        <div class="benefit">
-          <span class="icon" aria-hidden="true">
-            <img src="{{ 'subscription-icon-' | append: forloop.index | append: '.png' | image_url }}" alt="subscription benefit icon" loading="lazy">
-          </span>
-          <div class="content">
-            <h3>{{ benefit_parts[0] }}</h3>
-            <p>{{ benefit_parts[1] }}</p>
-          </div>
-        </div>
-      {% endfor %}
-    </div>
+    <div id="benefits-list"></div>
   </div>
 </div>
 
 <style>
-    .subscription-benefits h3 {
+  .subscription-benefits h3 {
     color: var(--primary-color);
     font-size: 1.1rem;
     margin-bottom: 0.75rem;
@@ -221,12 +202,6 @@ h2 {
   font-size: 1.5rem;
   margin-right: 1rem;
   flex-shrink: 0;
-
-  img {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
-  }
 }
 .content h3 {
   color: var(--primary-color);
@@ -245,46 +220,74 @@ h2 {
   .content h3 { font-size: 1rem; }
   .content p { font-size: 0.8125rem; }
 }
-
-  .modal.show .benefit {
-    opacity: 1;
-    transform: translateX(0);
-  }
 </style>
 
 <script>
-  const modal = document.getElementById('benefits-modal');
-  const benefitsList = document.getElementById('benefits-list');
+  // Handle "See all benefits" click
+  $('#see-all-benefits').on('click', function(event) {
+    event.preventDefault();
+    // Assuming you have a function to show the benefits modal
+    showBenefitsModal();
+  });
 
-  const toggleModal = show => {
-    modal.classList.toggle('show', show);
-    modal.setAttribute('aria-hidden', !show);
-    document.body.style.overflow = show ? 'hidden' : '';
+  function showBenefitsModal() {
+    // Implement the logic to show the benefits modal here
+    // This could be triggering a Shopify modal or a custom modal implementation
+    console.log('Show benefits modal');
+  }
 
-    if (show) {
-      setTimeout(() => {
-        document.querySelectorAll('.benefit').forEach((benefit, index) => {
-          setTimeout(() => benefit.style.transition = 'opacity 0.5s, transform 0.5s', index * 100);
-        });
-      }, 300);
-    }
-  };
+const benefits = [
+  ['📦', 'Free gift in every box!', 'Enjoy a special surprise with each purchase – a free gift just for you!'],
+  ['👨‍⚕️', 'Free Expert Consultations', 'Enjoy free chats with Naturopathic and Nutrition Doctors to tailor your health plan'],
+  ['💰', 'Best Price Guarantee', 'Enjoy unbeatable value with our best prices guaranteed all year round!'],
+  ['🔄', 'Cancel, Pause, Delay or Change, Hassle Free', 'Manage your subscription effortlessly with options to cancel, pause, delay, or change anytime, without any hassle.'],
+  ['⭐', 'Double & Triple Loyalty Points', 'At Curalife, you earn loyalty points with every order, which you can use to purchase our products later. As a subscription user, you will enjoy double and triple loyalty points rewards compared to regular orders.']
+];
 
-  const closeIcon = modal.querySelector('.close-icon');
+const modal = document.getElementById('benefits-modal');
+const benefitsList = document.getElementById('benefits-list');
+
+const toggleModal = show => {
+  modal.classList.toggle('show', show);
+  modal.setAttribute('aria-hidden', !show);
+  document.body.style.overflow = show ? 'hidden' : '';
+
+  if (show) {
+    setTimeout(() => {
+      document.querySelectorAll('.benefit').forEach((benefit, index) => {
+        setTimeout(() => benefit.style.transition = 'opacity 0.5s, transform 0.5s', index * 100);
+      });
+    }, 300);
+  }
+};
+
+const createBenefit = ([icon, title, description]) => {
+  const div = document.createElement('div');
+  div.className = 'benefit';
+  div.innerHTML = `
+    <span class="icon" aria-hidden="true">${icon}</span>
+    <div class="content">
+      <h3>${title}</h3>
+      <p>${description}</p>
+    </div>
+  `;
+  return div;
+};
+
+benefitsList.append(...benefits.map(createBenefit));
+
+const closeIcon = modal.querySelector('.close-icon');
   closeIcon.addEventListener('click', () => toggleModal(false));
 
-  modal.addEventListener('click', event => {
-    if (event.target === modal || event.target.classList.contains('modal-backdrop')) {
-      toggleModal(false);
-    }
-  });
+modal.addEventListener('click', event => {
+  if (event.target === modal || event.target.classList.contains('modal-backdrop')) {
+    toggleModal(false);
+  }
+});
 
-  document.getElementById('see-all-benefits').addEventListener('click', (event) => {
-    event.preventDefault();
-    toggleModal(true);
-  });
+document.getElementById('see-all-benefits').addEventListener('click', () => toggleModal(true));
 
-  document.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && modal.classList.contains('show')) toggleModal(false);
-  });
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && modal.classList.contains('show')) toggleModal(false);
+});
 </script>
