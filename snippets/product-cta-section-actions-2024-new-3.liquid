@@ -597,7 +597,24 @@
         const variantId = selectedBox.dataset.originalVariant;
         const sellingPlanId = selectedBox.dataset.subscriptionSellingPlanId;
         const quantity = 1;
-        buySubscription(variantId, quantity, sellingPlanId);
+        const submitButton = productActions.querySelector('.checkout-button.subscription button');
+        const buttonText = submitButton.querySelector('.button-text');
+        const loadingSpinner = submitButton.querySelector('.loading-overlay__spinner');
+
+        if (buttonText && loadingSpinner) {
+          buttonText.style.display = 'none';
+          loadingSpinner.classList.remove('hidden');
+        }
+
+        buySubscription(variantId, quantity, sellingPlanId, function(success) {
+          if (!success) {
+            // If there's an error, revert the button state
+            if (buttonText && loadingSpinner) {
+              buttonText.style.display = '';
+              loadingSpinner.classList.add('hidden');
+            }
+          }
+        });
       } else {
         console.error('No variant selected');
       }
@@ -618,10 +635,12 @@
           dataType: 'json',
           success: function() {
             console.log('success');
+            if (callback) callback(true);
             window.location.href = '/checkout';
           },
           error: function() {
             console.log('Failed to add item to cart');
+            if (callback) callback(false);
           }
         });
       });
