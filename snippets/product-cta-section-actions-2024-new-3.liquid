@@ -298,6 +298,17 @@
       }
     }
 
+    function setupSubscriptionButton() {
+      const subscriptionSubmitButton = productActions.querySelector('.checkout-button.subscription');
+      if (subscriptionSubmitButton) {
+        const button = subscriptionSubmitButton.querySelector('button');
+        if (button) {
+          button.removeEventListener('click', handleSubscriptionSubmit);
+          button.addEventListener('click', handleSubscriptionSubmit);
+        }
+      }
+    }
+
     function initializePurchaseOptions() {
       const urlParams = new URLSearchParams(window.location.search);
       const defaultVariant = parseInt(urlParams.get('default-variant')) || (typeof defaultSelectionIndex !== 'undefined' ? defaultSelectionIndex : 1);
@@ -323,6 +334,10 @@
           updatePriceDisplay(box, state.isSubscriptionSelected, false);
         }
       });
+
+      if (state.isSubscriptionSelected) {
+        setupSubscriptionButton();
+      }
     }
 
     function togglePurchaseType(isSubscription) {
@@ -374,12 +389,14 @@
       const subscriptionSubmitButton = productActions.querySelector('.checkout-button.subscription');
       const buyOnceSubmitButton = productActions.querySelector('.checkout-button.buy-once');
 
+      const subscriptionSubmitButton = productActions.querySelector('.checkout-button.subscription');
+      const buyOnceSubmitButton = productActions.querySelector('.checkout-button.buy-once');
+
       if (subscriptionSubmitButton && buyOnceSubmitButton) {
         if (isSubscription) {
           safelyRemoveClass(subscriptionSubmitButton, 'hidden');
           safelyAddClass(buyOnceSubmitButton, 'hidden');
-
-          subscriptionSubmitButton.querySelector('button').addEventListener('click', handleSubscriptionSubmit);
+          setupSubscriptionButton();
         } else {
           safelyAddClass(subscriptionSubmitButton, 'hidden');
           safelyRemoveClass(buyOnceSubmitButton, 'hidden');
