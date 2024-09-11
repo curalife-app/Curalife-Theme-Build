@@ -18,9 +18,14 @@
     {% render 'subscription-benefits-popup' %}
 
     <div class="submit-wrap flex flex-col w-full">
-      <div class="checkout-button">
+      <div class="checkout-button subscription">
         {% if prod != blank %}
-          {% render 'buy-buttons', product: prod, variant: '', SID: SID, selling_plan_id: selling_plan_id, product_form_id: product_form_id, buyType: buyType, isBuyWithPrime: isBuyWithPrime %}
+          {% render 'buy-buttons', SID: SID, product: prod, variant: '', selling_plan_id: selling_plan_id, product_form_id: product_form_id, buyType: 'buy_now', isBuyWithPrime: isBuyWithPrime %}
+        {% endif %}
+      </div>
+      <div class="checkout-button buy-once hidden"></div>
+        {% if prod != blank %}
+          {% render 'buy-buttons', SID: SID, product: prod, variant: '', selling_plan_id: selling_plan_id, product_form_id: product_form_id, buyType: buyType, isBuyWithPrime: isBuyWithPrime %}
         {% endif %}
       </div>
     </div>
@@ -382,44 +387,12 @@
         }
       });
 
-      updateSubmitButton(isSubscription);
-
       if (!productActions.querySelector('.purchase-option-box.selected')) {
         const firstNonInertBox = productActions.querySelector('.purchase-option-box:not([inert])');
         if (firstNonInertBox) {
           firstNonInertBox.click();
         }
       }
-    }
-
-    function updateSubmitButton(isSubscription) {
-      console.log(`[updateSubmitButton] Function called with isSubscription: ${isSubscription}`);
-
-      const submitButton = document.querySelector('#ProductSubmitButton-' + SID);
-      if (submitButton) {
-        console.log('[updateSubmitButton] Submit button found');
-
-        const submitTitle = submitButton.querySelector('.submit-title');
-        if (submitTitle) {
-          const oldText = submitTitle.textContent;
-          const newText = isSubscription ? 'Subscribe Now' : 'Add To Cart';
-          submitTitle.textContent = newText;
-          console.log(`[updateSubmitButton] Button text updated from "${oldText}" to "${newText}"`);
-        } else {
-          console.warn('[updateSubmitButton] Submit title element not found within the button');
-        }
-
-        // Remove the formaction attribute manipulation
-        submitButton.removeAttribute('formaction');
-
-        // Update the button's data attribute to indicate subscription status
-        submitButton.setAttribute('data-is-subscription', isSubscription);
-        console.log(`[updateSubmitButton] Button data-is-subscription attribute set to "${isSubscription}"`);
-      } else {
-        console.error(`[updateSubmitButton] Submit button not found with selector: #ProductSubmitButton-${SID}`);
-      }
-
-      console.log('[updateSubmitButton] Function execution completed');
     }
 
     function fadeOutThenIn(elementsToHide, elementsToShow, duration = 200) {
@@ -603,42 +576,6 @@
           window.hasInitialImageUpdateHappened = true;
         }
       }
-    }
-
-    function handleFormSubmit(event) {
-      const submitButton = event.submitter;
-      if (submitButton && submitButton.getAttribute('data-is-subscription') === 'true') {
-        event.preventDefault();
-        console.log('[handleFormSubmit] Subscription submission detected, redirecting to checkout');
-
-        const form = event.target;
-        const formData = new FormData(form);
-
-        fetch('/cart/add.js', {
-          method: 'POST',
-          body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-          console.log('[handleFormSubmit] Product added to cart, redirecting to checkout');
-          window.location.href = '/checkout';
-        })
-        .catch(error => {
-          console.error('[handleFormSubmit] Error adding product to cart:', error);
-          // Handle error (e.g., show error message to user)
-        });
-      } else {
-        console.log('[handleFormSubmit] Regular submission, proceeding with add to cart');
-        // Let the form submit normally for add to cart
-      }
-    }
-
-    const productForm = document.querySelector('.product-form form');
-    if (productForm) {
-      productForm.addEventListener('submit', handleFormSubmit);
-      console.log('[Setup] Form submit event listener added');
-    } else {
-      console.error('[Setup] Product form not found');
     }
 
     productActions.addEventListener('click', (event) => {
