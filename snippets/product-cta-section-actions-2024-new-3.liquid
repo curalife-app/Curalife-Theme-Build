@@ -378,6 +378,8 @@
         if (isSubscription) {
           safelyRemoveClass(subscriptionSubmitButton, 'hidden');
           safelyAddClass(buyOnceSubmitButton, 'hidden');
+
+          subscriptionSubmitButton.querySelector('button').addEventListener('click', handleSubscriptionSubmit);
         } else {
           safelyAddClass(subscriptionSubmitButton, 'hidden');
           safelyRemoveClass(buyOnceSubmitButton, 'hidden');
@@ -559,21 +561,6 @@
       }
     }
 
-    function initiateSubscriptionCheckout(event) {
-      event.preventDefault();
-      const form = event.target.closest('form');
-      if (form) {
-        const variantId = form.querySelector('.submit-variant-id').value;
-        const sellingPlanId = form.querySelector('.submit-selling-plan-id').value;
-
-        // Construct the checkout URL
-        const checkoutUrl = `/cart/${variantId}:1?selling_plan=${sellingPlanId}`;
-
-        // Redirect to checkout
-        window.location.href = checkoutUrl;
-      }
-    }
-
     function updateVariantImage(element) {
       if (typeof variantsAmount !== 'undefined' && variantsAmount > 1 && window.productSliderAllInOne{{SID}}) {
         if (typeof isSlideOnLoad !== 'undefined' && isSlideOnLoad) {
@@ -590,6 +577,60 @@
       }
     }
 
+    function handleSubscriptionSubmit(event) {
+      event.preventDefault();
+      const selectedBox = productActions.querySelector('.purchase-option-box.selected');
+      if (selectedBox) {
+        const variantId = selectedBox.dataset.originalVariant;
+        const sellingPlanId = selectedBox.dataset.subscriptionSellingPlanId;
+        const quantity = 1;
+        buySubscription(variantId, quantity, sellingPlanId);
+      } else {
+        console.error('No variant selected');
+      }
+    }
+
+    function buySubscription(variant_id, qty, selling_plan) {
+      clearCart(function() {
+        data = {
+          "id": variant_id,
+          "quantity": qty,
+          "selling_plan": selling_plan
+        }
+
+        jQuery.ajax({
+          type: 'POST',
+          url: '/cart/add.js',
+          data: data,
+          dataType: 'json',
+          success: function() {
+            console.log('success');
+            window.location.href = '/checkout';
+          },
+          error: function() {
+            console.log('Failed to add item to cart');
+          }
+        });
+      });
+    }
+
+    function clearCart(callback) {
+      jQuery.ajax({
+        type: 'POST',
+        url: '/cart/clear.js',
+        data: '',
+        dataType: 'json',
+        success: function() {
+          if (callback) {
+            callback();
+          }
+        },
+        error: function() {
+          console.log('Failed to clear cart');
+        }
+      });
+    }
+
     productActions.addEventListener('click', (event) => {
       const purchaseTypeButton = event.target.closest('.purchase-type button');
       const purchaseOptionBox = event.target.closest('.purchase-option-box');
@@ -602,14 +643,6 @@
         safelyAddClass(purchaseTypeButton, 'selected');
 
         togglePurchaseType(isSubscription);
-
-
-        if (isSubscription) {
-          const checkoutButton = productActions.querySelector('.checkout-button.subscription button');
-          if (checkoutButton) {
-            checkoutButton.addEventListener('click', initiateSubscriptionCheckout);
-          }
-        }
       } else if (purchaseOptionBox) {
         event.preventDefault();
         togglePurchaseBox(purchaseOptionBox);
