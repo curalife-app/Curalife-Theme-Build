@@ -395,9 +395,11 @@
           safelyRemoveClass(subscriptionSubmitButton, 'hidden');
           safelyAddClass(buyOnceSubmitButton, 'hidden');
           setupSubscriptionButton();
+          toggleSubscriptionBenefits(true);
         } else {
           safelyAddClass(subscriptionSubmitButton, 'hidden');
           safelyRemoveClass(buyOnceSubmitButton, 'hidden');
+          toggleSubscriptionBenefits(false);
         }
       }
 
@@ -440,6 +442,19 @@
       setTimeout(() => {
         element.style.transition = '';
       }, duration);
+    }
+
+    function toggleSubscriptionBenefits(show) {
+      const benefitsElement = document.querySelector('.subscription-benefits');
+      if (benefitsElement) {
+        if (show) {
+          benefitsElement.classList.remove('hidden');
+          benefitsElement.style.maxHeight = benefitsElement.scrollHeight + 'px';
+        } else {
+          benefitsElement.classList.add('hidden');
+          benefitsElement.style.maxHeight = '0';
+        }
+      }
     }
 
     function toggleElementVisibility(element, show) {
