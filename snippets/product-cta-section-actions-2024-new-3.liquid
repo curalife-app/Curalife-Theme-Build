@@ -393,19 +393,36 @@
     }
 
     function updateSubmitButton(isSubscription) {
+      console.log(`[updateSubmitButton] Function called with isSubscription: ${isSubscription}`);
+
       const submitButton = document.querySelector('#ProductSubmitButton-' + SID);
       if (submitButton) {
+        console.log('[updateSubmitButton] Submit button found');
+
         const submitTitle = submitButton.querySelector('.submit-title');
         if (submitTitle) {
-          submitTitle.textContent = isSubscription ? 'Subscribe Now' : 'Add To Cart';
+          const oldText = submitTitle.textContent;
+          const newText = isSubscription ? 'Subscribe Now' : 'Add To Cart';
+          submitTitle.textContent = newText;
+          console.log(`[updateSubmitButton] Button text updated from "${oldText}" to "${newText}"`);
+        } else {
+          console.warn('[updateSubmitButton] Submit title element not found within the button');
         }
 
         if (isSubscription) {
+          const oldFormAction = submitButton.getAttribute('formaction') || 'None';
           submitButton.setAttribute('formaction', '/cart/add?checkout');
+          console.log(`[updateSubmitButton] formaction attribute set to "/cart/add?checkout" (was: ${oldFormAction})`);
         } else {
+          const oldFormAction = submitButton.getAttribute('formaction') || 'None';
           submitButton.removeAttribute('formaction');
+          console.log(`[updateSubmitButton] formaction attribute removed (was: ${oldFormAction})`);
         }
+      } else {
+        console.error(`[updateSubmitButton] Submit button not found with selector: #ProductSubmitButton-${SID}`);
       }
+
+      console.log('[updateSubmitButton] Function execution completed');
     }
 
     function fadeOutThenIn(elementsToHide, elementsToShow, duration = 200) {
