@@ -409,15 +409,12 @@
           console.warn('[updateSubmitButton] Submit title element not found within the button');
         }
 
-        if (isSubscription) {
-          const oldFormAction = submitButton.getAttribute('formaction') || 'None';
-          submitButton.setAttribute('formaction', '/cart/add?checkout');
-          console.log(`[updateSubmitButton] formaction attribute set to "/cart/add?checkout" (was: ${oldFormAction})`);
-        } else {
-          const oldFormAction = submitButton.getAttribute('formaction') || 'None';
-          submitButton.removeAttribute('formaction');
-          console.log(`[updateSubmitButton] formaction attribute removed (was: ${oldFormAction})`);
-        }
+        // Remove the formaction attribute manipulation
+        submitButton.removeAttribute('formaction');
+
+        // Update the button's data attribute to indicate subscription status
+        submitButton.setAttribute('data-is-subscription', isSubscription);
+        console.log(`[updateSubmitButton] Button data-is-subscription attribute set to "${isSubscription}"`);
       } else {
         console.error(`[updateSubmitButton] Submit button not found with selector: #ProductSubmitButton-${SID}`);
       }
@@ -606,6 +603,42 @@
           window.hasInitialImageUpdateHappened = true;
         }
       }
+    }
+
+    function handleFormSubmit(event) {
+      const submitButton = event.submitter;
+      if (submitButton && submitButton.getAttribute('data-is-subscription') === 'true') {
+        event.preventDefault();
+        console.log('[handleFormSubmit] Subscription submission detected, redirecting to checkout');
+
+        const form = event.target;
+        const formData = new FormData(form);
+
+        fetch('/cart/add.js', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log('[handleFormSubmit] Product added to cart, redirecting to checkout');
+          window.location.href = '/checkout';
+        })
+        .catch(error => {
+          console.error('[handleFormSubmit] Error adding product to cart:', error);
+          // Handle error (e.g., show error message to user)
+        });
+      } else {
+        console.log('[handleFormSubmit] Regular submission, proceeding with add to cart');
+        // Let the form submit normally for add to cart
+      }
+    }
+
+    const productForm = document.querySelector('.product-form form');
+    if (productForm) {
+      productForm.addEventListener('submit', handleFormSubmit);
+      console.log('[Setup] Form submit event listener added');
+    } else {
+      console.error('[Setup] Product form not found');
     }
 
     productActions.addEventListener('click', (event) => {
