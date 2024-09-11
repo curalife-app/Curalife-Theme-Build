@@ -333,21 +333,14 @@
         const perMonthElement = box.querySelector('.per-month');
         const saveTagSubscription = box.querySelector('.save-title.subscription');
         const saveTagBuyOnce = box.querySelector('.save-title.buy-once');
-
-        // Add these lines to handle the subtitle
         const subtitleSubscription = box.querySelector('.subtitle.subscription');
         const subtitleBuyOnce = box.querySelector('.subtitle.buy-once');
 
         if (isSubscription) {
-          // Show subscription-related elements
           safelySetDisplay(perMonthElement, 'inline-block');
           fadeOutThenIn(buyOnceElements, subscriptionElements);
-
-          // Show the subscription save tag and hide the buy-once save tag
           safelySetDisplay(saveTagSubscription, 'inline-block');
           safelySetDisplay(saveTagBuyOnce, 'none');
-
-          // Show subscription subtitle and hide buy-once subtitle
           safelySetDisplay(subtitleSubscription, 'inline-block');
           safelySetDisplay(subtitleBuyOnce, 'none');
 
@@ -359,15 +352,10 @@
             safelyRemoveClass(box, 'selected');
           }
         } else {
-          // Show buy-once related elements
           safelySetDisplay(perMonthElement, 'none');
           fadeOutThenIn(subscriptionElements, buyOnceElements);
-
-          // Show the buy-once save tag and hide the subscription save tag
           safelySetDisplay(saveTagBuyOnce, 'inline-block');
           safelySetDisplay(saveTagSubscription, 'none');
-
-          // Show buy-once subtitle and hide subscription subtitle
           safelySetDisplay(subtitleBuyOnce, 'inline-block');
           safelySetDisplay(subtitleSubscription, 'none');
 
@@ -382,6 +370,19 @@
           safelySetStyle(box, 'maxHeight', getClosedHeight());
         }
       });
+
+      const subscriptionSubmitButton = productActions.querySelector('.checkout-button.subscription');
+      const buyOnceSubmitButton = productActions.querySelector('.checkout-button.buy-once');
+
+      if (subscriptionSubmitButton && buyOnceSubmitButton) {
+        if (isSubscription) {
+          safelyRemoveClass(subscriptionSubmitButton, 'hidden');
+          safelyAddClass(buyOnceSubmitButton, 'hidden');
+        } else {
+          safelyAddClass(subscriptionSubmitButton, 'hidden');
+          safelyRemoveClass(buyOnceSubmitButton, 'hidden');
+        }
+      }
 
       if (!productActions.querySelector('.purchase-option-box.selected')) {
         const firstNonInertBox = productActions.querySelector('.purchase-option-box:not([inert])');
