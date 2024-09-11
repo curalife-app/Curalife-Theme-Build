@@ -589,63 +589,31 @@
       }
     }
 
-    function handleSubscriptionSubmit(event) {
-      event.preventDefault();
-
-      const upCart = document.querySelector('#upCart');
-      if (upCart) {
-        upCart.remove();
-      }
-
-      const selectedBox = productActions.querySelector('.purchase-option-box.selected');
-      if (selectedBox) {
-        const variantId = selectedBox.dataset.originalVariant;
-        const sellingPlanId = selectedBox.dataset.subscriptionSellingPlanId;
-        const quantity = 1;
-        const submitButton = productActions.querySelector('.checkout-button.subscription button');
-        const buttonText = submitButton.querySelector('.button-text');
-        const loadingSpinner = submitButton.querySelector('.loading-overlay__spinner');
-
-        if (buttonText && loadingSpinner) {
-          buttonText.style.display = 'none';
-          loadingSpinner.classList.remove('hidden');
-        }
-
-        buySubscription(variantId, quantity, sellingPlanId, function(success) {
-          if (!success) {
-            // If there's an error, revert the button state
-            if (buttonText && loadingSpinner) {
-              buttonText.style.display = '';
-              loadingSpinner.classList.add('hidden');
-            }
-          }
-        });
-      } else {
-        console.error('No variant selected');
-      }
-    }
-
-    function buySubscription(variant_id, qty, selling_plan) {
+    function buySubscription(variant_id, qty, selling_plan, callback) {
       clearCart(function() {
-        data = {
+        var data = {
           "id": variant_id,
           "quantity": qty,
           "selling_plan": selling_plan
-        }
+        };
 
         jQuery.ajax({
           type: 'POST',
           url: '/cart/add.js',
           data: data,
           dataType: 'json',
-          success: function() {
-            console.log('success');
-            if (callback) callback(true);
+          success: function(response) {
+            console.log('success', response);
+            if (typeof callback === 'function') {
+              callback(true);
+            }
             window.location.href = '/checkout';
           },
-          error: function() {
-            console.log('Failed to add item to cart');
-            if (callback) callback(false);
+          error: function(error) {
+            console.log('Failed to add item to cart', error);
+            if (typeof callback === 'function') {
+              callback(false);
+            }
           }
         });
       });
@@ -655,17 +623,65 @@
       jQuery.ajax({
         type: 'POST',
         url: '/cart/clear.js',
-        data: '',
         dataType: 'json',
-        success: function() {
-          if (callback) {
+        success: function(response) {
+          console.log('Cart cleared successfully', response);
+          if (typeof callback === 'function') {
             callback();
           }
         },
-        error: function() {
-          console.log('Failed to clear cart');
+        error: function(error) {
+          console.log('Failed to clear cart', error);
+          if (typeof callback === 'function') {
+            callback();
+          }
         }
       });
+    }
+
+    function handleSubscriptionSubmit(event) {
+      event.preventDefault();
+
+      try {
+        const upCart = document.querySelector('#upCart');
+        if (upCart) {
+          upCart.remove();
+        }
+
+        const selectedBox = productActions.querySelector('.purchase-option-box.selected');
+        if (selectedBox) {
+          const variantId = selectedBox.dataset.originalVariant;
+          const sellingPlanId = selectedBox.dataset.subscriptionSellingPlanId;
+          const quantity = 1;
+
+          const submitButton = productActions.querySelector('.checkout-button.subscription button');
+
+          if (submitButton) {
+            const buttonText = submitButton.querySelector('.button-text');
+            const loadingSpinner = submitButton.querySelector('.loading-overlay__spinner');
+
+            if (buttonText && loadingSpinner) {
+              buttonText.style.display = 'none';
+              loadingSpinner.classList.remove('hidden');
+            }
+
+            buySubscription(variantId, quantity, sellingPlanId, function(success) {
+              if (!success) {
+                if (buttonText && loadingSpinner) {
+                  buttonText.style.display = '';
+                  loadingSpinner.classList.add('hidden');
+                }
+              }
+            });
+          } else {
+            console.error('Submit button not found');
+          }
+        } else {
+          console.error('No variant selected');
+        }
+      } catch (error) {
+        console.error('Error in handleSubscriptionSubmit:', error);
+      }
     }
 
     productActions.addEventListener('click', (event) => {
