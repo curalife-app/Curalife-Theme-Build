@@ -382,10 +382,28 @@
         }
       });
 
+      updateSubmitButton(isSubscription);
+
       if (!productActions.querySelector('.purchase-option-box.selected')) {
         const firstNonInertBox = productActions.querySelector('.purchase-option-box:not([inert])');
         if (firstNonInertBox) {
           firstNonInertBox.click();
+        }
+      }
+    }
+
+    function updateSubmitButton(isSubscription) {
+      const submitButton = document.querySelector('#ProductSubmitButton-' + SID);
+      if (submitButton) {
+        const submitTitle = submitButton.querySelector('.submit-title');
+        if (submitTitle) {
+          submitTitle.textContent = isSubscription ? 'Subscribe Now' : 'Add To Cart';
+        }
+
+        if (isSubscription) {
+          submitButton.setAttribute('formaction', '/cart/add?checkout');
+        } else {
+          submitButton.removeAttribute('formaction');
         }
       }
     }
