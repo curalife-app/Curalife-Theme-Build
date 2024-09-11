@@ -449,23 +449,46 @@
 
     function toggleSubscriptionBenefits(show) {
       const benefitsElement = document.querySelector('.subscription-benefits');
-      if (benefitsElement) {
-        if (show) {
-          benefitsElement.classList.remove('hidden');
-          benefitsElement.style.maxHeight = benefitsElement.scrollHeight + 'px';
-          setTimeout(() => {
-            benefitsElement.style.opacity = '1';
-            benefitsElement.style.marginTop = '0.5rem';
-          }, 50);
-        } else {
-          benefitsElement.style.maxHeight = benefitsElement.scrollHeight + 'px';
-          benefitsElement.style.opacity = '0';
-          benefitsElement.style.marginTop = '0';
-          setTimeout(() => {
-            benefitsElement.style.maxHeight = '0';
-            benefitsElement.classList.add('hidden');
-          }, 50);
-        }
+      if (!benefitsElement) return;
+
+      const duration = 300; // Animation duration in milliseconds
+
+      if (show) {
+        benefitsElement.classList.remove('hidden');
+        benefitsElement.style.overflow = 'hidden';
+        benefitsElement.style.maxHeight = '0';
+        benefitsElement.style.opacity = '0';
+        benefitsElement.style.marginTop = '0';
+        benefitsElement.style.transition = `max-height ${duration}ms ease-out, opacity ${duration}ms ease-out, margin-top ${duration}ms ease-out`;
+
+        // Trigger reflow
+        benefitsElement.offsetHeight;
+
+        benefitsElement.style.maxHeight = `${benefitsElement.scrollHeight}px`;
+        benefitsElement.style.opacity = '1';
+        benefitsElement.style.marginTop = '0.5rem';
+
+        setTimeout(() => {
+          benefitsElement.style.overflow = '';
+          benefitsElement.style.maxHeight = '';
+        }, duration);
+      } else {
+        benefitsElement.style.overflow = 'hidden';
+        benefitsElement.style.maxHeight = `${benefitsElement.scrollHeight}px`;
+        benefitsElement.style.transition = `max-height ${duration}ms ease-out, opacity ${duration}ms ease-out, margin-top ${duration}ms ease-out`;
+
+        // Trigger reflow
+        benefitsElement.offsetHeight;
+
+        benefitsElement.style.maxHeight = '0';
+        benefitsElement.style.opacity = '0';
+        benefitsElement.style.marginTop = '0';
+
+        setTimeout(() => {
+          benefitsElement.classList.add('hidden');
+          benefitsElement.style.overflow = '';
+          benefitsElement.style.maxHeight = '';
+        }, duration);
       }
     }
 
