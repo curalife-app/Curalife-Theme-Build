@@ -267,45 +267,34 @@
       return window.innerWidth <= 767 ? '16vw' : '72px';
     }
 
-    function formatPrice(cents) {
-      return (cents / 100).toFixed(2);
-    }
+    const formatPrice = (cents) => (cents / 100).toFixed(2);
 
     function isSubscriptionSelected() {
-      const subscriptionButton = productActions.querySelector('.purchase-type button.subscription');
-      return subscriptionButton ? subscriptionButton.classList.contains('selected') : false;
+      const subscriptionButton = document.querySelector('.purchase-type button.subscription');
+      return subscriptionButton?.classList.contains('selected') || false;
     }
 
     function safelySetStyle(element, property, value) {
-      if (element && element.style) {
+      if (element?.style) {
         element.style[property] = value;
       }
     }
 
-    function safelySetDisplay(element, value) {
-      safelySetStyle(element, 'display', value);
-    }
+    const safelySetDisplay = (element, value) => safelySetStyle(element, 'display', value);
 
     function safelyAddClass(element, className) {
-      if (element && element.classList) {
-        element.classList.add(className);
-      }
+      element?.classList.add(className);
     }
 
     function safelyRemoveClass(element, className) {
-      if (element && element.classList) {
-        element.classList.remove(className);
-      }
+      element?.classList.remove(className);
     }
 
     function setupSubscriptionButton() {
-      const subscriptionSubmitButton = productActions.querySelector('.checkout-button.subscription');
-      if (subscriptionSubmitButton) {
-        const button = subscriptionSubmitButton.querySelector('button');
-        if (button) {
-          button.removeEventListener('click', handleSubscriptionSubmit);
-          button.addEventListener('click', handleSubscriptionSubmit);
-        }
+      const button = document.querySelector('.checkout-button.subscription button');
+      if (button) {
+        button.removeEventListener('click', handleSubscriptionSubmit);
+        button.addEventListener('click', handleSubscriptionSubmit);
       }
     }
 
@@ -313,19 +302,17 @@
       const urlParams = new URLSearchParams(window.location.search);
       const defaultVariant = parseInt(urlParams.get('default-variant')) || (typeof defaultSelectionIndex !== 'undefined' ? defaultSelectionIndex : 1);
 
-      const subscriptionButton = productActions.querySelector('.purchase-type .subscription');
+      const subscriptionButton = document.querySelector('.purchase-type .subscription');
       if (subscriptionButton) {
         subscriptionButton.classList.add('selected');
         state.isSubscriptionSelected = true;
       }
 
       const initialDefaultVariant = defaultVariant ? defaultVariant - 1 : 0;
-      if (purchaseOptionBoxes[initialDefaultVariant]) {
-        purchaseOptionBoxes[initialDefaultVariant].classList.add('selected');
-        const radio = purchaseOptionBoxes[initialDefaultVariant].querySelector("input[type='radio']");
-        if (radio) {
-          radio.checked = true;
-        }
+      const defaultBox = purchaseOptionBoxes[initialDefaultVariant];
+      if (defaultBox) {
+        defaultBox.classList.add('selected');
+        defaultBox.querySelector("input[type='radio']")?.checked = true;
       }
 
       purchaseOptionBoxes.forEach((box, index) => {
@@ -344,38 +331,43 @@
     }
 
     function togglePurchaseType(isSubscription) {
-      purchaseOptionBoxes.forEach((box, index) => {
-        const subscriptionElements = box.querySelectorAll('.subscription');
-        const buyOnceElements = box.querySelectorAll('.buy-once');
-        const comparedAtPriceElement = box.querySelector('.compared-at-price');
-        const perMonthElement = box.querySelector('.per-month');
-        const saveTagSubscription = box.querySelector('.save-title.subscription');
-        const saveTagBuyOnce = box.querySelector('.save-title.buy-once');
-        const subtitleSubscription = box.querySelector('.subtitle.subscription');
-        const subtitleBuyOnce = box.querySelector('.subtitle.buy-once');
+      purchaseOptionBoxes.forEach(box => {
+        const elements = {
+          subscription: box.querySelectorAll('.subscription'),
+          buyOnce: box.querySelectorAll('.buy-once'),
+          perMonth: box.querySelector('.per-month'),
+          saveTag: {
+            subscription: box.querySelector('.save-title.subscription'),
+            buyOnce: box.querySelector('.save-title.buy-once')
+          },
+          subtitle: {
+            subscription: box.querySelector('.subtitle.subscription'),
+            buyOnce: box.querySelector('.subtitle.buy-once')
+          }
+        };
 
         if (isSubscription) {
-          safelySetDisplay(perMonthElement, 'inline-block');
-          fadeOutThenIn(buyOnceElements, subscriptionElements);
-          safelySetDisplay(saveTagSubscription, 'inline-block');
-          safelySetDisplay(saveTagBuyOnce, 'none');
-          safelySetDisplay(subtitleSubscription, 'inline-block');
-          safelySetDisplay(subtitleBuyOnce, 'none');
+          safelySetDisplay(elements.perMonth, 'inline-block');
+          fadeOutThenIn(elements.buyOnce, elements.subscription);
+          safelySetDisplay(elements.saveTag.subscription, 'inline-block');
+          safelySetDisplay(elements.saveTag.buyOnce, 'none');
+          safelySetDisplay(elements.subtitle.subscription, 'inline-block');
+          safelySetDisplay(elements.subtitle.buyOnce, 'none');
 
-          const sellingPlanId = box.dataset.subscriptionSellingPlanId;
-          if (parseInt(sellingPlanId) > 0) {
+          const sellingPlanId = parseInt(box.dataset.subscriptionSellingPlanId);
+          if (sellingPlanId > 0) {
             box.removeAttribute('inert');
           } else {
             box.setAttribute('inert', '');
             safelyRemoveClass(box, 'selected');
           }
         } else {
-          safelySetDisplay(perMonthElement, 'none');
-          fadeOutThenIn(subscriptionElements, buyOnceElements);
-          safelySetDisplay(saveTagBuyOnce, 'inline-block');
-          safelySetDisplay(saveTagSubscription, 'none');
-          safelySetDisplay(subtitleBuyOnce, 'inline-block');
-          safelySetDisplay(subtitleSubscription, 'none');
+          safelySetDisplay(elements.perMonth, 'none');
+          fadeOutThenIn(elements.subscription, elements.buyOnce);
+          safelySetDisplay(elements.saveTag.buyOnce, 'inline-block');
+          safelySetDisplay(elements.saveTag.subscription, 'none');
+          safelySetDisplay(elements.subtitle.buyOnce, 'inline-block');
+          safelySetDisplay(elements.subtitle.subscription, 'none');
 
           box.removeAttribute('inert');
         }
@@ -389,8 +381,8 @@
         }
       });
 
-      const subscriptionSubmitButton = productActions.querySelector('.checkout-button.subscription');
-      const buyOnceSubmitButton = productActions.querySelector('.checkout-button.buy-once');
+      const subscriptionSubmitButton = document.querySelector('.checkout-button.subscription');
+      const buyOnceSubmitButton = document.querySelector('.checkout-button.buy-once');
 
       if (subscriptionSubmitButton && buyOnceSubmitButton) {
         if (isSubscription) {
@@ -405,11 +397,8 @@
         }
       }
 
-      if (!productActions.querySelector('.purchase-option-box.selected')) {
-        const firstNonInertBox = productActions.querySelector('.purchase-option-box:not([inert])');
-        if (firstNonInertBox) {
-          firstNonInertBox.click();
-        }
+      if (!document.querySelector('.purchase-option-box.selected')) {
+        document.querySelector('.purchase-option-box:not([inert])')?.click();
       }
     }
 
@@ -450,43 +439,51 @@
       const benefitsElement = document.querySelector('.subscription-benefits');
       if (!benefitsElement) return;
 
-      const duration = 300; // Animation duration in milliseconds
+      const duration = 300;
 
       if (show) {
         benefitsElement.classList.remove('hidden');
-        benefitsElement.style.overflow = 'hidden';
-        benefitsElement.style.maxHeight = '0';
-        benefitsElement.style.opacity = '0';
-        benefitsElement.style.marginTop = '0';
-        benefitsElement.style.transition = `max-height ${duration}ms ease-out, opacity ${duration}ms ease-out, margin-top ${duration}ms ease-out`;
+        benefitsElement.style.cssText = `
+          overflow: hidden;
+          max-height: 0;
+          opacity: 0;
+          margin-top: 0;
+          transition: max-height ${duration}ms ease-out, opacity ${duration}ms ease-out, margin-top ${duration}ms ease-out;
+        `;
 
-        // Trigger reflow
-        benefitsElement.offsetHeight;
+        benefitsElement.offsetHeight; // Force reflow
 
-        benefitsElement.style.maxHeight = `${benefitsElement.scrollHeight}px`;
-        benefitsElement.style.opacity = '1';
-        benefitsElement.style.marginTop = '0.5rem';
+        benefitsElement.style.cssText = `
+          overflow: hidden;
+          max-height: ${benefitsElement.scrollHeight}px;
+          opacity: 1;
+          margin-top: 0.5rem;
+          transition: max-height ${duration}ms ease-out, opacity ${duration}ms ease-out, margin-top ${duration}ms ease-out;
+        `;
 
         setTimeout(() => {
-          benefitsElement.style.overflow = '';
-          benefitsElement.style.maxHeight = '';
+          benefitsElement.style.cssText = '';
         }, duration);
       } else {
-        benefitsElement.style.overflow = 'hidden';
-        benefitsElement.style.maxHeight = `${benefitsElement.scrollHeight}px`;
-        benefitsElement.style.transition = `max-height ${duration}ms ease-out, opacity ${duration}ms ease-out, margin-top ${duration}ms ease-out`;
+        benefitsElement.style.cssText = `
+          overflow: hidden;
+          max-height: ${benefitsElement.scrollHeight}px;
+          transition: max-height ${duration}ms ease-out, opacity ${duration}ms ease-out, margin-top ${duration}ms ease-out;
+        `;
 
-        // Trigger reflow
-        benefitsElement.offsetHeight;
+        benefitsElement.offsetHeight; // Force reflow
 
-        benefitsElement.style.maxHeight = '0';
-        benefitsElement.style.opacity = '0';
-        benefitsElement.style.marginTop = '0';
+        benefitsElement.style.cssText = `
+          overflow: hidden;
+          max-height: 0;
+          opacity: 0;
+          margin-top: 0;
+          transition: max-height ${duration}ms ease-out, opacity ${duration}ms ease-out, margin-top ${duration}ms ease-out;
+        `;
 
         setTimeout(() => {
           benefitsElement.classList.add('hidden');
-          benefitsElement.style.overflow = '';
-          benefitsElement.style.maxHeight = '';
+          benefitsElement.style.cssText = '';
         }, duration);
       }
     }
