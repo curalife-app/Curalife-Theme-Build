@@ -645,14 +645,14 @@
       if (typeof variantsAmount === 'undefined' || variantsAmount <= 1 || !window['productSliderAllInOne' + SID]) return;
 
       const index = parseInt(element.getAttribute('data-index')) || 1;
-      const slideIndex = window['productSliderAllInOne' + SID].slides.length - (variantsAmount + 1 - index);
+      const swiperInstance = window['productSliderAllInOne' + SID];
 
-      if (typeof isSlideOnLoad !== 'undefined' && isSlideOnLoad) {
-        window['productSliderAllInOne' + SID].slideTo(slideIndex);
-      } else if (window.hasInitialImageUpdateHappened) {
-        window['productSliderAllInOne' + SID].slideTo(slideIndex);
-      }
+      // Adjust the slideIndex calculation if necessary
+      const slideIndex = index - 1; // Assuming slides are zero-indexed
 
+      console.log('Navigating to slide index:', slideIndex);
+
+      swiperInstance.slideTo(slideIndex);
       window.hasInitialImageUpdateHappened = true;
     }
 
