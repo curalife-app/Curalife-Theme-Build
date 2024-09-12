@@ -554,12 +554,8 @@
 
     function adjustMaxHeight(element, isSubscriptionSelected) {
       if (enableToggleAnimation) {
-        if (isSubscriptionSelected && element.classList.contains('selected')) {
-          const openHeight = element.scrollHeight;
-          safelySetStyle(element, 'maxHeight', openHeight + 'px');
-        } else {
-          safelySetStyle(element, 'maxHeight', getClosedHeight());
-        }
+        const height = isSubscriptionSelected && element.classList.contains('selected') ? element.scrollHeight + 'px' : getClosedHeight();
+        safelySetStyle(element, 'maxHeight', height);
       } else {
         safelySetStyle(element, 'maxHeight', 'none');
       }
@@ -570,98 +566,95 @@
 
       const isSubscription = isSubscriptionSelected();
       const wasSelected = element.classList.contains('selected');
-      const subscriptionPlanID = isSubscription ? element.dataset.subscriptionSellingPlanId : '';
-      const variantID = isSubscription ? element.dataset.originalVariant : element.dataset.variant;
 
-      if (wasSelected) {
-        return;
-      }
+      if (wasSelected) return;
 
       purchaseOptionBoxes.forEach(box => {
         safelyRemoveClass(box, 'selected');
         safelySetStyle(box, 'maxHeight', getClosedHeight());
       });
 
-      const submitSellingPlanId = productActions.querySelector('.submit-selling-plan-id');
-      const submitVariantId = productActions.querySelector('.submit-variant-id');
-      if (submitSellingPlanId) submitSellingPlanId.value = subscriptionPlanID;
-      if (submitVariantId) submitVariantId.value = variantID;
+      const subscriptionPlanID = isSubscription ? element.dataset.subscriptionSellingPlanId : '';
+      const variantID = isSubscription ? element.dataset.originalVariant : element.dataset.variant;
+
+      document.querySelector('.submit-selling-plan-id')?.value = subscriptionPlanID;
+      document.querySelector('.submit-variant-id')?.value = variantID;
 
       safelyAddClass(element, 'selected');
-      const radio = element.querySelector("input[type='radio']");
-      if (radio) radio.checked = true;
+      element.querySelector("input[type='radio']")?.checked = true;
 
       updatePriceDisplay(element, isSubscription, false);
       updateVariantImage(element);
 
       if (enableToggleAnimation && isSubscription) {
-        const openHeight = element.scrollHeight;
-        safelySetStyle(element, 'maxHeight', openHeight + 'px');
+        safelySetStyle(element, 'maxHeight', element.scrollHeight + 'px');
       }
     }
 
     function updateVariantImage(element) {
-      if (typeof variantsAmount !== 'undefined' && variantsAmount > 1 && window.productSliderAllInOne{{SID}}) {
-        if (typeof isSlideOnLoad !== 'undefined' && isSlideOnLoad) {
-          let slideIndex = window.productSliderAllInOne{{SID}}.slides.length - (variantsAmount + 1 - parseInt(element.dataset.index));
-          window.productSliderAllInOne{{SID}}.slideTo(slideIndex);
-        } else {
-          if (window.hasInitialImageUpdateHappened) {
-            let slideIndex = window.productSliderAllInOne{{SID}}.slides.length - (variantsAmount + 1 - parseInt(element.dataset.index));
-            window.productSliderAllInOne{{SID}}.slideTo(slideIndex);
-          } else {
-          }
-          window.hasInitialImageUpdateHappened = true;
-        }
+      if (typeof variantsAmount === 'undefined' || variantsAmount <= 1 || !window.productSliderAllInOne{{SID}}) return;
+
+      const slideIndex = window.productSliderAllInOne{{SID}}.slides.length - (variantsAmount + 1 - parseInt(element.dataset.index));
+
+      if (typeof isSlideOnLoad !== 'undefined' && isSlideOnLoad) {
+        window.productSliderAllInOne{{SID}}.slideTo(slideIndex);
+      } else if (window.hasInitialImageUpdateHappened) {
+        window.productSliderAllInOne{{SID}}.slideTo(slideIndex);
       }
+
+      window.hasInitialImageUpdateHappened = true;
     }
 
     function buySubscription(variant_id, qty, selling_plan, callback) {
-      clearCart(function() {
-        var data = {
+      clearCart(() => {
+        const data = {
           "id": variant_id,
           "quantity": qty,
           "selling_plan": selling_plan
         };
 
-        jQuery.ajax({
-          type: 'POST',
-          url: '/cart/add.js',
-          data: data,
-          dataType: 'json',
-          success: function(response) {
-            console.log('success', response);
-            if (typeof callback === 'function') {
-              callback(true);
-            }
-            window.location.href = '/checkout';
+        fetch('/cart/add.js', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           },
-          error: function(error) {
-            console.log('Failed to add item to cart', error);
-            if (typeof callback === 'function') {
-              callback(false);
-            }
+          body: JSON.stringify(data),
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log('Success:', data);
+          if (typeof callback === 'function') {
+            callback(true);
+          }
+          window.location.href = '/checkout';
+        })
+        .catch((error) => {
+          console.error('Error:', error);
+          if (typeof callback === 'function') {
+            callback(false);
           }
         });
       });
     }
 
     function clearCart(callback) {
-      jQuery.ajax({
-        type: 'POST',
-        url: '/cart/clear.js',
-        dataType: 'json',
-        success: function(response) {
-          console.log('Cart cleared successfully', response);
-          if (typeof callback === 'function') {
-            callback();
-          }
+      fetch('/cart/clear.js', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        error: function(error) {
-          console.log('Failed to clear cart', error);
-          if (typeof callback === 'function') {
-            callback();
-          }
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Cart cleared successfully', data);
+        if (typeof callback === 'function') {
+          callback();
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to clear cart', error);
+        if (typeof callback === 'function') {
+          callback();
         }
       });
     }
@@ -670,42 +663,38 @@
       event.preventDefault();
 
       try {
-        const upCart = document.querySelector('#upCart');
-        if (upCart) {
-          upCart.remove();
-        }
+        document.querySelector('#upCart')?.remove();
 
-        const selectedBox = productActions.querySelector('.purchase-option-box.selected');
-        if (selectedBox) {
-          const variantId = selectedBox.dataset.originalVariant;
-          const sellingPlanId = selectedBox.dataset.subscriptionSellingPlanId;
-          const quantity = 1;
-
-          const submitButton = productActions.querySelector('.checkout-button.subscription button');
-
-          if (submitButton) {
-            const buttonText = submitButton.querySelector('.button-text');
-            const loadingSpinner = submitButton.querySelector('.loading-overlay__spinner');
-
-            if (buttonText && loadingSpinner) {
-              buttonText.style.display = 'none';
-              loadingSpinner.classList.remove('hidden');
-            }
-
-            buySubscription(variantId, quantity, sellingPlanId, function(success) {
-              if (!success) {
-                if (buttonText && loadingSpinner) {
-                  buttonText.style.display = '';
-                  loadingSpinner.classList.add('hidden');
-                }
-              }
-            });
-          } else {
-            console.error('Submit button not found');
-          }
-        } else {
+        const selectedBox = document.querySelector('.purchase-option-box.selected');
+        if (!selectedBox) {
           console.error('No variant selected');
+          return;
         }
+
+        const variantId = selectedBox.dataset.originalVariant;
+        const sellingPlanId = selectedBox.dataset.subscriptionSellingPlanId;
+        const quantity = 1;
+
+        const submitButton = document.querySelector('.checkout-button.subscription button');
+        if (!submitButton) {
+          console.error('Submit button not found');
+          return;
+        }
+
+        const buttonText = submitButton.querySelector('.button-text');
+        const loadingSpinner = submitButton.querySelector('.loading-overlay__spinner');
+
+        if (buttonText && loadingSpinner) {
+          buttonText.style.display = 'none';
+          loadingSpinner.classList.remove('hidden');
+        }
+
+        buySubscription(variantId, quantity, sellingPlanId, (success) => {
+          if (!success && buttonText && loadingSpinner) {
+            buttonText.style.display = '';
+            loadingSpinner.classList.add('hidden');
+          }
+        });
       } catch (error) {
         console.error('Error in handleSubscriptionSubmit:', error);
       }
