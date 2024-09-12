@@ -1,5 +1,5 @@
 {% comment %}
-  Corrected Shopify CDN Responsive Image Component
+  Optimized Shopify CDN Responsive Image Component
 
   Accepts:
   - image: The main image object (required)
@@ -32,8 +32,6 @@
   assign widths = '375,750,1080,1500,2200,3000'
   assign widths_array = widths | split: ','
 
-  assign unique_id = 'img-' | append: desktop_image.id | append: '-' | append: mobile_image.id
-
   assign image_extension = desktop_image.src | split: '.' | last | downcase
   assign is_png = false
   if image_extension == 'png'
@@ -50,7 +48,7 @@
       media="(max-width: {{ breakpoint }}px)"
       srcset="
         {%- for width in widths_array -%}
-          {{ mobile_image | image_url: width: width }} {{ width }}w,
+          {{ mobile_image | image_url: width: width }} {{ width }}w{% unless forloop.last %},{% endunless %}
         {%- endfor -%}
       "
       sizes="{{ sizes }}"
@@ -59,30 +57,25 @@
       media="(min-width: {{ breakpoint | plus: 1 }}px)"
       srcset="
         {%- for width in widths_array -%}
-          {{ desktop_image | image_url: width: width }} {{ width }}w,
+          {{ desktop_image | image_url: width: width }} {{ width }}w{% unless forloop.last %},{% endunless %}
         {%- endfor -%}
       "
       sizes="{{ sizes }}"
     >
 
     <img
-      id="{{ unique_id }}"
       src="{{ desktop_image | image_url: width: 1100 }}"
-      srcset="{{ desktop_image | image_url: width: 2200 }} 2x"
+      srcset="
+        {%- for width in widths_array -%}
+          {{ desktop_image | image_url: width: width }} {{ width }}w{% unless forloop.last %},{% endunless %}
+        {%- endfor -%}
+      "
+      sizes="{{ sizes }}"
       {% if lazy_load %}loading="lazy"{% endif %}
-      {% if lazy_load %}
-        data-src="{{ desktop_image | image_url: width: 1100 }}"
-        data-srcset="
-          {%- for width in widths_array -%}
-            {{ desktop_image | image_url: width: width }} {{ width }}w,
-          {%- endfor -%}
-        "
-      {% endif %}
       alt="{{ alt | escape }}"
       width="{{ desktop_image.width }}"
       height="{{ desktop_image.height }}"
       class="responsive-image {% if class %}{{ class }}{% endif %}"
-      onload="this.classList.add('loaded');"
     >
   </picture>
 </div>
