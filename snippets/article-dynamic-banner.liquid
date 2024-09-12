@@ -8,39 +8,56 @@
 {% assign curalin_tags = "curalin,blood-sugar,glucose-support" | split: "," %}
 {% assign curaslim_tags = "curaslim,nutrition,recipe,food,bread,carbs,dessert,desserts,fasting,fitness,high carb,low carb,moderate card,pasta,recipes,snack,snacking,snacks,sweet,sweet tooth,sweeteners,weight,workout" | split: "," %}
 
+{% assign use_auto_logic = true %}
 {% assign chosen_banner = CuralinCuraslimBannerURL %}
 {% assign debug_message = "Initial chosen_banner: " | append: chosen_banner %}
 
-{% for keyword in curalin_keywords %}
-  {% if article.content contains keyword %}
-    {% assign chosen_banner = CuralinBannerURL %}
-    {% assign debug_message = debug_message | append: ", Curalin keyword matched: " | append: keyword %}
-    {% break %}
-  {% endif %}
-{% endfor %}
-
-{% if chosen_banner == CuralinCuraslimBannerURL %}
-  {% for keyword in curaslim_keywords %}
+{% if use_auto_logic %}
+  {% for keyword in curalin_keywords %}
     {% if article.content contains keyword %}
-      {% assign chosen_banner = CuraslimBannerURL %}
-      {% assign debug_message = debug_message | append: ", Curaslim keyword matched: " | append: keyword %}
-      {% break %}
-    {% endif %}
-  {% endfor %}
-{% endif %}
-
-{% if chosen_banner == CuralinCuraslimBannerURL %}
-  {% for tag in article.tags %}
-    {% if curalin_tags contains tag %}
       {% assign chosen_banner = CuralinBannerURL %}
-      {% assign debug_message = debug_message | append: ", Curalin tag matched: " | append: tag %}
-      {% break %}
-    {% elsif curaslim_tags contains tag %}
-      {% assign chosen_banner = CuraslimBannerURL %}
-      {% assign debug_message = debug_message | append: ", Curaslim tag matched: " | append: tag %}
+      {% assign debug_message = debug_message | append: ", Curalin keyword matched: " | append: keyword %}
       {% break %}
     {% endif %}
   {% endfor %}
+
+  {% if chosen_banner == CuralinCuraslimBannerURL %}
+    {% for keyword in curaslim_keywords %}
+      {% if article.content contains keyword %}
+        {% assign chosen_banner = CuraslimBannerURL %}
+        {% assign debug_message = debug_message | append: ", Curaslim keyword matched: " | append: keyword %}
+        {% break %}
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+
+  {% if chosen_banner == CuralinCuraslimBannerURL %}
+    {% for tag in article.tags %}
+      {% if curalin_tags contains tag %}
+        {% assign chosen_banner = CuralinBannerURL %}
+        {% assign debug_message = debug_message | append: ", Curalin tag matched: " | append: tag %}
+        {% break %}
+      {% elsif curaslim_tags contains tag %}
+        {% assign chosen_banner = CuraslimBannerURL %}
+        {% assign debug_message = debug_message | append: ", Curaslim tag matched: " | append: tag %}
+        {% break %}
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+{% else %}
+  {% if article.metafields.custom.promo_banner %}
+    {% case article.metafields.custom.promoted_product.handle %}
+      {% when 'curalin' %}
+        {% assign chosen_banner = CuralinBannerURL %}
+      {% when 'curaslim' %}
+        {% assign chosen_banner = CuraslimBannerURL %}
+      {% when 'curalin_curaslim' %}
+        {% assign chosen_banner = CuralinCuraslimBannerURL %}
+      {% else %}
+        {% assign chosen_banner = article.metafields.custom.promo_banner %}
+    {% endcase %}
+    {% assign debug_message = debug_message | append: ", Manual banner selection from metafield: " | append: article.metafields.custom.promo_banner %}
+  {% endif %}
 {% endif %}
 
 {% assign debug_message = debug_message | append: ", Final chosen_banner: " | append: chosen_banner %}
