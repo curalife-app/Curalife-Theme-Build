@@ -46,19 +46,7 @@
   {% endif %}
 {% else %}
   {% assign promotedProduct = article.metafields.custom.promoted_product.value %}
-  <script>console.log("promoted product: {{promotedProduct.handle}}")</script>
-  {% if promotedProduct %}
-    <script>console.log("promoted product: {{promotedProduct.handle}}")</script>
-    {% case promotedProduct.handle %}
-      {% when 'curalin' %}
-        {% assign chosen_banner = CuralinBannerURL %}
-      {% when 'curaslim' %}
-        {% assign chosen_banner = CuraslimBannerURL %}
-      {% when 'curalin-curaslim' %}
-        {% assign chosen_banner = CuralinCuraslimBannerURL %}
-    {% endcase %}
-    {% assign debug_message = debug_message | append: ", Manual banner selection from metafield: " | append: article.metafields.custom.promo_banner %}
-  {% endif %}
+  {% assign chosen_banner = promotedProduct.url %}
 {% endif %}
 
 {% assign debug_message = debug_message | append: ", Final chosen_banner: " | append: chosen_banner %}
