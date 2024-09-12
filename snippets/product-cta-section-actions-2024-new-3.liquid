@@ -490,82 +490,63 @@
 
     function toggleElementVisibility(element, show) {
       if (!element) return;
-
-      if (show) {
-        element.style.display = '';
-        element.classList.remove('hidden');
-      } else {
-        element.style.display = 'none';
-        element.classList.add('hidden');
-      }
+      element.style.display = show ? '' : 'none';
+      element.classList.toggle('hidden', !show);
     }
 
     function updatePriceDisplay(box, isSubscriptionSelected, animate = true) {
-      const itemPrice = parseInt(box.dataset.itemPrice) || 0;
-      const subscriptionItemPrice = parseInt(box.dataset.subscriptionItemPrice) || 0;
-      const bottleQuantity = parseInt(box.dataset.bottleQuantity) || 1;
-      const originalItemCap = parseInt(box.dataset.originalItemCap) || 0;
+      const data = {
+        itemPrice: parseInt(box.dataset.itemPrice) || 0,
+        subscriptionItemPrice: parseInt(box.dataset.subscriptionItemPrice) || 0,
+        bottleQuantity: parseInt(box.dataset.bottleQuantity) || 1,
+        originalItemCap: parseInt(box.dataset.originalItemCap) || 0,
+        pricePer: box.dataset.pricePer || 'total'
+      };
 
-      const currentPrice = isSubscriptionSelected ? subscriptionItemPrice : itemPrice;
-      const totalPrice = currentPrice * bottleQuantity;
+      const currentPrice = isSubscriptionSelected ? data.subscriptionItemPrice : data.itemPrice;
+      const totalPrice = currentPrice * data.bottleQuantity;
 
-      const pricePer = box.dataset.pricePer || 'total';
-
-      const subscriptionPriceElement = box.querySelector('.real-price.subscription');
-      const buyOncePriceElement = box.querySelector('.real-price.buy-once');
-      const totalPriceElement = box.querySelector(`.total-price${isSubscriptionSelected ? '.subscription' : '.buy-once'}`);
-      const comparedAtPriceElement = box.querySelector('.compared-at-price');
-      const saveTag = box.querySelector('.save-title');
+      const elements = {
+        subscriptionPrice: box.querySelector('.real-price.subscription'),
+        buyOncePrice: box.querySelector('.real-price.buy-once'),
+        totalPrice: box.querySelector(`.total-price${isSubscriptionSelected ? '.subscription' : '.buy-once'}`),
+        comparedAtPrice: box.querySelector('.compared-at-price'),
+        saveTag: box.querySelector('.save-title'),
+        perMonth: box.querySelector('.per-month')
+      };
 
       const updateContent = () => {
-        const displayPrice = pricePer === 'month' ? currentPrice : totalPrice;
-
-        if (subscriptionPriceElement) {
-          toggleElementVisibility(subscriptionPriceElement.closest('.real-price.subscription'), isSubscriptionSelected);
-        }
-        if (buyOncePriceElement) {
-          toggleElementVisibility(buyOncePriceElement.closest('.real-price.buy-once'), !isSubscriptionSelected);
-        }
-        if (totalPriceElement) {
-          toggleElementVisibility(totalPriceElement, true);
-        }
-
-        const comparedAtPrice = pricePer === 'month' ? originalItemCap : (originalItemCap * bottleQuantity);
-
+        const displayPrice = data.pricePer === 'month' ? currentPrice : totalPrice;
+        const comparedAtPrice = data.pricePer === 'month' ? data.originalItemCap : (data.originalItemCap * data.bottleQuantity);
         const shouldShowComparedPrice = comparedAtPrice > displayPrice;
 
-        if (comparedAtPriceElement) {
-          comparedAtPriceElement.textContent = '$' + formatPrice(comparedAtPrice);
-          toggleElementVisibility(comparedAtPriceElement, shouldShowComparedPrice);
+        toggleElementVisibility(elements.subscriptionPrice?.closest('.real-price.subscription'), isSubscriptionSelected);
+        toggleElementVisibility(elements.buyOncePrice?.closest('.real-price.buy-once'), !isSubscriptionSelected);
+        toggleElementVisibility(elements.totalPrice, true);
+
+        if (elements.comparedAtPrice) {
+          elements.comparedAtPrice.textContent = '$' + formatPrice(comparedAtPrice);
+          toggleElementVisibility(elements.comparedAtPrice, shouldShowComparedPrice);
         }
 
-        if (saveTag) {
-          const subscriptionSaveTag = saveTag.querySelector('.subscription');
-          const buyOnceSaveTag = saveTag.querySelector('.buy-once');
-
-          if (subscriptionSaveTag) {
-            toggleElementVisibility(subscriptionSaveTag, isSubscriptionSelected && shouldShowComparedPrice);
-          }
-          if (buyOnceSaveTag) {
-            toggleElementVisibility(buyOnceSaveTag, !isSubscriptionSelected && shouldShowComparedPrice);
-          }
+        if (elements.saveTag) {
+          const subscriptionSaveTag = elements.saveTag.querySelector('.subscription');
+          const buyOnceSaveTag = elements.saveTag.querySelector('.buy-once');
+          toggleElementVisibility(subscriptionSaveTag, isSubscriptionSelected && shouldShowComparedPrice);
+          toggleElementVisibility(buyOnceSaveTag, !isSubscriptionSelected && shouldShowComparedPrice);
         }
 
-        const perMonthElement = box.querySelector('.per-month');
-        if (perMonthElement) {
-          toggleElementVisibility(perMonthElement, pricePer === 'month' && isSubscriptionSelected);
-        }
+        toggleElementVisibility(elements.perMonth, data.pricePer === 'month' && isSubscriptionSelected);
       };
 
       if (animate) {
-        fadeOutThenIn(
-          [isSubscriptionSelected ? buyOncePriceElement : subscriptionPriceElement, comparedAtPriceElement],
-          [isSubscriptionSelected ? subscriptionPriceElement : buyOncePriceElement, comparedAtPriceElement].filter(el => el && getComputedStyle(el).display !== 'none')
-        );
-        if (totalPriceElement) {
-          fadeOutThenIn([totalPriceElement], [totalPriceElement]);
+        const elementsToHide = [isSubscriptionSelected ? elements.buyOncePrice : elements.subscriptionPrice, elements.comparedAtPrice];
+        const elementsToShow = [isSubscriptionSelected ? elements.subscriptionPrice : elements.buyOncePrice, elements.comparedAtPrice].filter(el => el && getComputedStyle(el).display !== 'none');
+        fadeOutThenIn(elementsToHide, elementsToShow);
+        if (elements.totalPrice) {
+          fadeOutThenIn([elements.totalPrice], [elements.totalPrice]);
         }
-        setTimeout(updateContent, 200); // Wait for fade out to complete
+        setTimeout(updateContent, 200);
       } else {
         updateContent();
       }
