@@ -66,7 +66,7 @@
           {% render 'article-dynamic-banner' %}
         {% endif %}
 
-        {% assign bannerProduct = article.metafields.banner.product.value %}
+        {% assign bannerProduct = article.metafields.banner.product %}
 
         <div class="promotional-banner rounded-xl flex items-center justify-between gap-4 p-4" style="background-color:{{ article.metafields.banner.background }}">
           {% assign bannerImage = article.metafields.banner.image | default: bannerProduct.image %}
@@ -84,7 +84,7 @@
             <div class="banner-content w-[60%]">
               <h3 class="banner-title h6" style="color:{{ article.metafields.banner.button_color }}">{{ article.metafields.banner.title }}</h3>
               <p class="banner-description">{{ article.metafields.banner.description }}</p>
-              <div class="banner-product-price">{{ cart.currency.symbol }}{{ bannerProduct.price }}</div>
+              <div class="banner-product-price">{{ cart.currency.symbol }}{{ bannerProduct.selected_or_first_available_variant.price }}</div>
               <a href="{{ bannerProduct.url }}" class="banner-link"><button style="background-color:{{ article.metafields.banner.button_color }}">Shop {% if bannerProduct != blank %}{{ bannerProduct.title }}{% else %}All Supplements{% endif %}</button></a>
             </div>
 
