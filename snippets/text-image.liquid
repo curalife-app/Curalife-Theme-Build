@@ -1,0 +1,269 @@
+{% assign section_id = block_index | default: section.id %}
+
+{% assign itemsDirection = 'vertical' %}
+{% if image_position == 'right' or image_position == 'left' %}
+  {% if main_image and title %}
+    {% assign itemsDirection = 'horizontal' %}
+  {% endif %}
+{% endif %}
+
+<div class="text-image-wrapper w-full">
+  <div class="container static p-0 h-auto flex md:gap-4 md:items-center gap-x-16 gap-y-4 {% case image_position %}{% when 'right' %}flex-row-reverse{% when 'left' %}flex-row{% when 'bottom' %}flex-col-reverse{% when 'top' %}flex-col{% endcase %} {% unless is_no_wrap %}{% if is_image_middle_mobile or is_reverse_on_mobile %}md:flex-col{% else %}md:flex-col-reverse{% endif %}{% endunless %} {% if is_image_overlap and image_position == 'left' %}justify-end{% else %}justify-between{% endif %} {% if is_remove_container_padding_mobile %}md:p-0{% endif %}">
+    {% if is_image_middle_mobile and title != blank %}
+      <div class="mobile-titles mobile">
+        <div class="mobile-title title z-[1] justify-{{ alignment }} md:justify-{{ mobile_alignment }} text-{{ alignment }} md:text-{{ mobile_alignment }} {% if is_line_seperator %}m-0{% endif %}"><{{ title_tag }}>{{ title }}</{{ title_tag }}></div>
+        <p class="mobile-subtitle subtitle z-[1] justify-{{ alignment }} md:justify-{{ mobile_alignment }} text-{{ alignment }} md:text-{{ mobile_alignment }} {% if is_line_seperator %}m-0{% endif %}">{{ subtitle }}</p>
+      </div>
+    {% endif %}
+
+    {% if image_link != blank %}<a href="{{ image_link }}">{% endif %}
+    {% if main_image or main_mobile_image or videoEmbed != blank %}
+      <div class="image-wrapper z-[1] h-auto md:mb-0 {% if main_mobile_image and main_image == blank %}mobile{% endif %} {% if itemsDirection == 'vertical' %}w-full{% endif %} {% if is_image_bottom %}self-end md:self-auto{% endif %}">
+        {% if videoEmbed != blank %}
+          <iframe class="w-full h-[400px] mbl:h-[100vw]" src="{{ videoEmbed | escape }}" frameborder="0" allow="autoplay; fullscreen" class="fluidvids-item" data-fluidvids="loaded" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title=""></iframe>
+        {% else %}
+          {% if is_dont_lazyload == false %}{% assign lazyLoad = true %}{% endif %}
+          {% if customer.email contains 'yotam@curalife.com' %}
+            {% render 'image',
+              image: main_image,
+              mobile_image: main_mobile_image,
+              sizes: '(min-width: 1200px) 1100px, (min-width: 769px) 750px, 100vw',
+              breakpoint: 768,
+              lazy: lazyLoad,
+              preload: false,
+              alt: main_image.alt,
+              class: 'main-image'
+            %}
+          {% else %}
+            <picture>
+              {% if main_mobile_image %}
+                <source media="(max-width: 768px)" srcset="{{ main_mobile_image | image_url }}" width="{{ main_mobile_image.width }}" height="{{ main_mobile_image.height }}">
+              {% endif %}
+              <img class="{% if is_limit_image_size %}max-h-500px{% endif %} relative z-auto object-contain {% if is_hide_image_on_mobile %}md:hidden{% endif %} {% if is_image_overlap_style %} h-[calc(100%+135px)] object-cover object-left{% endif %}" src="{{ main_image | default: main_mobile_image | image_url }}" alt="{{ main_image.alt }}" width="{{ main_image.width }}" height="{{ main_image.height }}" {% unless is_dont_lazyload %}loading="lazy"{% endunless %} {% if image_animation != 'none'%}data-aos="{{ image_animation }}" data-aos-duration="{{ animation_duration }}"{% endif %}>
+            </picture>
+          {% endif %}
+
+        {% endif %}
+      </div>
+    {% endif %}
+    {% if image_link != blank %}</a>{% endif %}
+
+    {% assign blocks_amount = section_blocks | size %}
+    {% if title != blank or content != blank or subtitle != blank or blocks_amount > 0 %}
+      <div class="content-wrapper break-word z-[1] flex md:py-0 md:!w-full gap-12 md:gap-4 md:m-auto {% if alignment == 'center' %}justify-center m-auto{% endif %} {% if itemsDirection == 'horizontal' %}w-45%{% else %}w-70%{% endif %}" {% if content_animation != 'none'%}data-aos="{{ content_animation }}" data-aos-duration="{{ animation_duration }}"{% endif %}>
+        <div class="content flex flex-col justify-center gap-4 md:w-full text-{{ alignment }} md:text-{{ mobile_alignment }} items-{{ alignment }} md:items-{{ mobile_alignment }} {% unless main_image %}w-full{% endunless %}">
+          {% if title != blank or subtitle != blank %}
+            <div class="titles">
+              {% if title != blank %}
+                <{% if title_tag == 'h1' %}h1{% else %}h2{% endif %} class="title {% if subtitle != blank %}mb-0{% endif %} {{ title_tag }} w-full {% if is_image_middle_mobile %}md:hidden{% endif %} {% if is_line_seperator %}m-0{% endif %}">
+                  {% if title_icon != blank %}<i class="{{ title_icon }} mr-2"></i>{% endif %}
+                  {{ title }}
+                </{%    if title_tag == 'h1' %}h1{% else %}h2{% endif %}>
+              {% endif %}
+
+              {% if subtitle != blank %}
+                <p class="subtitle {% if title_tag == 'h1' %}text-[30px]{% else %}text-xl{% endif %} md:text-[6vw] {% if is_no_p_margin %}m-0{% endif %} {% if is_image_middle_mobile %}md:hidden{% endif %}">{{ subtitle }}</p>
+              {% endif %}
+            </div>
+          {% endif %}
+
+          {% if is_line_seperator %}
+            <div class="line-seperator my-2 border-b border-black w-[100px] md:w-[30vw]"></div>
+          {% endif %}
+
+          {% if content != blank %}
+            <div class="description {% if is_hide_description_on_mobile %}md:hidden{% endif %} text-{{ alignment }} md:text-{{ mobile_alignment }}">{{ content }}</div>
+          {% endif %}
+
+          {% for block in section_blocks %}
+            {% case block.type %}
+              {% when 'text' %}
+                <div class="text-block">
+                  {% if block.settings.is_review_stars %}<div class="stars pb-4">{% for star in (1..5) %}<i class="fa-sharp fa-solid fa-star text-[#FFB22D] mr-1"></i>{% endfor %}</div>{% endif %}
+                  {{ block.settings.text }}
+                </div>
+
+                <style>
+                    #section-{{ section_id }} .text-block {
+                      {% if block.settings.box_border_color != blank %}
+                        border: 1px solid {{ block.settings.box_border_color }};
+                        padding: 20px;
+                      {% endif %}
+                      {% if block.settings.is_box_shadow %}box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);{% endif %}
+                      {% if block.settings.box_bg_color != blank %}
+                        background-color: {{ block.settings.box_bg_color }};
+                        padding: 20px;
+                      {% endif %}
+                      color: {{ block.settings.text_color }};
+                      border-radius: 10px;
+                    }
+                </style>
+              {% when 'button' %}
+                {% render 'button',
+                  button_text: block.settings.button_text,
+                  button_url: block.settings.button_url,
+                  button_url_global: block.settings.button_url_global,
+                  button_icon: block.settings.button_icon,
+                  button_style: block.settings.button_style,
+                  button_text_color: block.settings.button_text_color,
+                  button_bg_color: block.settings.button_bg_color,
+                  button_is_new_tab: block.settings.button_is_new_tab,
+                  button_is_link_to_top: block.settings.button_is_link_to_top,
+                  button_is_chatbot: block.settings.button_is_chatbot,
+                  button_is_prerender_link: block.settings.button_is_prerender_link,
+                  button_id: block.id
+                %}
+              {% when 'image' %}
+                {% if block.settings.image_link %}<a class="mbl:w-full" href="{{ block.settings.image_link }}">{% endif %}
+                  <picture id="text-{{ section_id }}" class="mbl:w-full {{ block.settings.additional_classes }}">
+                    {% if block.settings.image_mobile %}
+                      <source media="(max-width: 768px)" srcset="{{ block.settings.image_mobile | image_url }}">
+                    {% endif %}
+                    <img class="block-image mbl:w-full object-contain" src="{% if block.settings.image %}{{ block.settings.image | image_url }}{% endif %}" alt="{{ block.settings.image.alt }}" {% unless is_dont_lazyload %}loading="lazy"{% endunless %}>
+                  </picture>
+                {% if block.settings.image_link %}</a>{% endif %}
+
+                {% if block.settings.is_image_before_content %}
+                  <script>$('#text-{{ section_id }}').prependTo('#shopify-section-{{ section.id }} .description');</script>
+                {% endif %}
+              {% when 'countdown' %}
+                  {% render 'countdown-timer', section_id: section.id, day: block.settings.day, month: block.settings.month, year: block.settings.year, hour: block.settings.hour, minute: block.settings.minute, urgencyMinutes: block.settings.urgency_minutes, bgColor: block.settings.bg_color, isShowDays: block.settings.is_show_days %}
+                  <style>#section-{{ section_id }} .content-wrapper {justify-content: right}</style>
+              {% when 'code' %}
+                {{ block.settings.content }}
+            {% endcase %}
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<style>
+  {% if is_image_shadow %}
+    #section-{{ section_id }} .image-wrapper img {
+      filter: drop-shadow({{ shadow_position_inline }}px {{ shadow_position_block }}px {{ shadow_blur }}px rgba(0, 0, 0, {{ shadow_opacity }}));
+    }
+  {% endif %}
+
+  {% if is_image_overlap_style %}
+    #section-{{ section_id }} .image-wrapper img {
+      filter: drop-shadow(-21px 22px 21px rgba(0, 0, 0, 0.2));
+    }
+  {% endif %}
+
+  {% if is_image_full_width_mobile %}
+    @media screen and (max-width: 768px) {
+      #section-{{ section_id }} .container {
+        padding-left: 0;
+        padding-right: 0;
+      }
+
+      #section-{{ section_id }} .image-wrapper {
+        width: 100vw;
+        margin-left: calc(-50vw + 50%);
+      }
+
+      #section-{{ section_id }} .image-wrapper img {
+        width: 100%;
+        max-width: none;
+        height: auto;
+        object-fit: cover;
+      }
+
+      #section-{{ section_id }} .content-wrapper .content {
+        padding: 0 15px;
+      }
+    }
+  {% endif %}
+
+  {% if text_color %}
+    #section-{{ section_id }} {
+      color: {{ text_color }};
+    }
+
+    #section-{{ section_id }} .title,
+    #section-{{ section_id }} .content h1,
+    #section-{{ section_id }} .content h2,
+    #section-{{ section_id }} .mobile-title * {
+      color: {{ title_color | default: text_color }};
+    }
+  {% endif %}
+
+  {% if is_image_overlap %}
+    #section-{{ section_id }} .image-wrapper img {
+      {% if image_position == 'right' %}
+        min-width: 55vw;
+        object-position: top left;
+        object-fit: contain;
+      {% elsif image_position == 'left'%}
+        object-position: top right;
+        object-fit: cover;
+        position: absolute;
+        right: 50%;
+        top: 0;
+        min-width: 50vw;
+      {% endif %}
+      height: 500px;
+      max-height: 100%;
+
+      @media (width < 768px) {
+        min-width: 100vw;
+        object-fit: cover;
+        object-position: top;
+        position: unset;
+        right: unset;
+        top: unset;
+        bottom: unset;
+        margin: unset;
+        height: unset;
+      }
+    }
+  {% endif %}
+
+  {% if padding_top == 0 and padding_bottom == 0 %}
+    #section-{{ section_id }} .content {
+      margin: 50px 0;
+    }
+  {% endif %}
+
+  {% if title_highlight_color %}
+    #section-{{ section_id }} .content-wrapper h1 strong,
+    #section-{{ section_id }} .content-wrapper h2 strong,
+    #section-{{ section_id }} .mobile-title strong {
+      color: {{ title_highlight_color }};
+    }
+
+    #section-{{ section_id }} .content-wrapper .description ul li::before {
+      background-color: {{ title_highlight_color }};
+    }
+  {% endif %}
+
+  #section-{{ section_id }} .content-wrapper {
+    font-size: {{ text_size }}px;
+    width: {{ content_width }}%;
+  }
+
+  #section-{{ section_id }} .content-wrapper .content a {
+    color: var(--primary);
+    font-weight: bold;
+  }
+
+  #section-{{ section_id }} .content-wrapper .content p:last-of-type {
+    margin: unset;
+  }
+
+  {% if itemsDirection == 'horizontal' %}
+    #section-{{ section_id }} .image-wrapper {
+      max-width: calc(100% - {{ content_width }}%);
+
+      @media (max-width: 768px) {
+        max-width: 100%;
+      }
+    }
+  {% endif %}
+
+  #section-{{ section_id }} h2 {
+    text-align: inherit;
+  }
+</style>
