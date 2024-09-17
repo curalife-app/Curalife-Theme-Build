@@ -1,18 +1,18 @@
 <div class="product-recommendations">
   <h2>Take Control of Your Wellness</h2>
 
-  <div class="product-slider">
-    <button class="arrow-button prev-button">&lt;</button>
-    <div class="product-list">
+  <div class="swiper product-slider">
+    <div class="swiper-wrapper">
       {% for product in collections['all'].products limit: 8 %}
-        <div class="product-item">
+        <div class="swiper-slide product-item">
           <img src="{{ product.featured_image | img_url: '200x' }}" alt="{{ product.title }}" class="product-image">
           <p class="product-name">{{ product.title }}</p>
           <p class="product-price">{{ product.price | money }}</p>
         </div>
       {% endfor %}
     </div>
-    <button class="arrow-button next-button">&gt;</button>
+    <div class="swiper-button-prev"></div>
+    <div class="swiper-button-next"></div>
   </div>
 
   <a href="/collections/all" class="shop-button">
@@ -22,16 +22,27 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    const productList = document.querySelector('.product-list');
-    const prevButton = document.querySelector('.prev-button');
-    const nextButton = document.querySelector('.next-button');
-
-    prevButton.addEventListener('click', () => {
-      productList.scrollBy({ left: -200, behavior: 'smooth' });
-    });
-
-    nextButton.addEventListener('click', () => {
-      productList.scrollBy({ left: 200, behavior: 'smooth' });
+    new Swiper('.product-slider', {
+      slidesPerView: 1,
+      spaceBetween: 10,
+      navigation: {
+        nextEl: '.swiper-button-next',
+        prevEl: '.swiper-button-prev',
+      },
+      breakpoints: {
+        640: {
+          slidesPerView: 2,
+          spaceBetween: 20,
+        },
+        768: {
+          slidesPerView: 3,
+          spaceBetween: 30,
+        },
+        1024: {
+          slidesPerView: 4,
+          spaceBetween: 40,
+        },
+      },
     });
   });
 </script>
@@ -41,16 +52,10 @@
     padding: 2rem 0;
     text-align: center;
   }
-  .product-list {
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
+  .product-slider {
     margin: 2rem 0;
-    overflow-x: auto;
-    padding: 1rem 0;
   }
   .product-item {
-    flex: 0 0 auto;
     width: 200px;
   }
   .product-image {
@@ -75,12 +80,10 @@
     font-size: 1rem;
     text-decoration: none;
     display: inline-block;
+    margin-top: 1rem;
   }
-  .arrow-button {
-    background: none;
-    border: none;
-    font-size: 2rem;
-    cursor: pointer;
+  .swiper-button-prev,
+  .swiper-button-next {
     color: #4a7c7d;
   }
 </style>
