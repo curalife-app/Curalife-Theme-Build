@@ -6,16 +6,18 @@
 <div class="product-recommendations">
   <h2>Take Control of Your Wellness</h2>
 
-  <div class="swiper product-slider !overflow-visible">
-    <div class="swiper-wrapper overflow-hidden">
-      {% for productHandle in productHandles %}
-        {% assign product = all_products[productHandle] %}
-        <div class="swiper-slide product-item">
-          <img src="{{ product.metafields.custom.bottle_image | img_url: '200x' }}" alt="{{ product.title }}" class="product-image">
-          <p class="product-name">{{ product.title }}</p>
-          <p class="product-price">{{ product.price | money }}</p>
-        </div>
-      {% endfor %}
+  <div class="swiper-container">
+    <div class="swiper product-slider">
+      <div class="swiper-wrapper">
+        {% for productHandle in productHandles %}
+          {% assign product = all_products[productHandle] %}
+          <div class="swiper-slide product-item">
+            <img src="{{ product.metafields.custom.bottle_image | img_url: '200x' }}" alt="{{ product.title }}" class="product-image">
+            <p class="product-name">{{ product.title }}</p>
+            <p class="product-price">{{ product.price | money }}</p>
+          </div>
+        {% endfor %}
+      </div>
     </div>
     <div class="swiper-nav swiper-button-prev"></div>
     <div class="swiper-nav swiper-button-next"></div>
@@ -46,8 +48,6 @@
 
 <style>
   .product-recommendations {
-    --swiper-navigation-sides-offset: -50px;
-
     padding: 2rem;
     margin-top: 2rem;
     text-align: center;
@@ -55,8 +55,14 @@
     background-color: #EBF1F3;
   }
 
+  .swiper-container {
+    position: relative;
+    padding: 0 50px;
+    margin: 2rem 0;
+  }
+
   .product-slider {
-    margin: 2rem 4rem;
+    overflow: hidden;
   }
 
   .product-item {
@@ -92,8 +98,32 @@
     font-weight: bold;
   }
 
-  .swiper-button-prev,
+  .swiper-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    background-color: #4a7c7d;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+  }
+
+  .swiper-button-prev {
+    left: 0;
+  }
+
   .swiper-button-next {
-    color: #4a7c7d;
+    right: 0;
+  }
+
+  .swiper-button-prev::after,
+  .swiper-button-next::after {
+    font-size: 18px;
   }
 </style>
