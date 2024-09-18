@@ -39,22 +39,15 @@
         {% endif %}
 
         {% if banner_position == 'Middle' %}
-          {% assign paragraphs = article.content | split: '</p>' %}
-          {% assign total_paragraphs = paragraphs | size %}
-          {% assign mid_index = total_paragraphs | divided_by: 2 %}
+          {% assign content_html = article.content | split: '</p>' %}
+          {% assign total_paragraphs = content_html | size %}
+          {% assign mid_index = total_paragraphs | divided_by: 2 | floor %}
 
           <div class="text text-[20px]">
-            {% for paragraph in paragraphs %}
-              {% if forloop.index0 < mid_index %}
-                {{ paragraph }}</p>
-              {% endif %}
-            {% endfor %}
-
-            {% render 'article-dynamic-banner' %}
-
-            {% for paragraph in paragraphs %}
-              {% if forloop.index0 >= mid_index %}
-                {{ paragraph }}</p>
+            {% for paragraph in content_html %}
+              {{ paragraph }}</p>
+              {% if forloop.index == mid_index %}
+                {% render 'article-dynamic-banner' %}
               {% endif %}
             {% endfor %}
           </div>
@@ -164,7 +157,7 @@
       <div class="social-buttons flex">
         <a href="https://www.facebook.com/sharer/sharer.php?u={{ shop.url }}{{ article.url }}" target="_blank"><i class="fab fa-facebook-f p-4"></i></a>
         <a href="https://twitter.com/share?url={{ shop.url }}{{ article.url }}&text={{ article.title }}" target="_blank"><i class="fab fa-twitter p-4"></i></a>
-        <a href="#" id="copy-link-button"><i class="fas fa-copy p-4"></i></a>
+        <button id="copy-link-button" aria-label="Copy link to clipboard"><i class="fas fa-copy p-4" aria-hidden="true"></i></button>
       </div>
     </div>
 
@@ -189,7 +182,7 @@
                     <div class="article-card flex-nowrap flex gap-3">
                       <div class="picture min-w-[150px] h-[100px] overflow-hidden border-r-2 bg-[--blue]">
                         {% if related_article.image %}
-                          <img src="{{ related_article.image | image_url: height: 100 }}" class="related-image object-cover h-full" width="150" height="100" alt="{{ related_article.title }}" loading="lazy">
+                          <img src="{{ related_article.image | image_url: height: 100 }}" alt="{{ related_article.title }}" class="related-image object-cover h-full" width="150" height="100" loading="lazy">
                         {% else %}
                           <img src="{{ 'logo-new.svg' | asset_url }}" class="invert !object-contain p-12" alt="curalife logo" loading="lazy">
                         {% endif %}
@@ -245,51 +238,37 @@
 {% render 'newsletter-form' %}
 
 <script>
-  $(document).ready(function() {
-    if ($(window).width() > 768) {
-      var initialSidebarTop = $('#stickySidebar').offset().top;
-      var tagsSectionBottom = $('.tag-section').offset().top + $('.tag-section').height();
-      var sidebarHeight = $('#stickySidebar').height();
+  document.addEventListener('DOMContentLoaded', function() {
+    if (window.innerWidth > 768) {
+      var stickySidebar = document.getElementById('stickySidebar');
+      var initialSidebarTop = stickySidebar.offsetTop;
+      var tagsSection = document.querySelector('.tag-section');
+      var tagsSectionBottom = tagsSection.offsetTop + tagsSection.offsetHeight;
+      var sidebarHeight = stickySidebar.offsetHeight;
       var offsetTop = 100;
-      var offsetBottom = 0;
       var translateY = 0;
-      var prevScrollPosition = $(window).scrollTop();
-      var scrollingUp = false;
+      var ticking = false;
 
       function updateSidebar() {
-        var scrollPosition = $(window).scrollTop();
+        var scrollPosition = window.pageYOffset;
+        var maxTranslate = tagsSectionBottom - sidebarHeight - initialSidebarTop;
 
-        // Update offset based on scroll direction
-        if (scrollPosition < prevScrollPosition) {
-          scrollingUp = true;
-          offsetTop = 100;
-        } else if (scrollPosition > prevScrollPosition) {
-          scrollingUp = false;
-          offsetTop = 0;
-        }
-
-        // Calculate the maximum translateY value
-        var maxTranslate = tagsSectionBottom - sidebarHeight - initialSidebarTop - offsetBottom;
-
-        // Calculate the new translateY value
         if (scrollPosition >= initialSidebarTop - offsetTop) {
           translateY = Math.min(scrollPosition - initialSidebarTop + offsetTop, maxTranslate);
         } else {
           translateY = 0;
         }
 
-        // Apply the new translateY value to the sidebar
-        $('#stickySidebar').css('transform', 'translateY(' + translateY + 'px)');
-
-        // Update the previous scroll position for the next iteration
-        prevScrollPosition = scrollPosition;
-
-        // Continue updating
-        requestAnimationFrame(updateSidebar);
+        stickySidebar.style.transform = 'translateY(' + translateY + 'px)';
+        ticking = false;
       }
 
-      // Start the update loop
-      requestAnimationFrame(updateSidebar);
+      window.addEventListener('scroll', function() {
+        if (!ticking) {
+          window.requestAnimationFrame(updateSidebar);
+          ticking = true;
+        }
+      });
     }
   });
 </script>
@@ -304,16 +283,13 @@
   document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('copy-link-button').addEventListener('click', function(e) {
       e.preventDefault();
-      var dummy = document.createElement('input'),
-          text = window.location.href;
-
-      document.body.appendChild(dummy);
-      dummy.value = text;
-      dummy.select();
-      document.execCommand('copy');
-      document.body.removeChild(dummy);
-
-      alert('Link copied to clipboard.');
+      navigator.clipboard.writeText(window.location.href)
+        .then(function() {
+          alert('Link copied to clipboard.');
+        })
+        .catch(function(err) {
+          console.error('Could not copy text: ', err);
+        });
     });
   });
 </script>
