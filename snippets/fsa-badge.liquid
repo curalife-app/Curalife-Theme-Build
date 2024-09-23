@@ -5,7 +5,7 @@
 <div id="hsa-modal" class="modal" aria-labelledby="hsa-modal-title" aria-hidden="true">
   <div class="modal-backdrop"></div>
 
-  <div class="modal-content" role="dialog" aria-modal="true">
+  <div class="modal-content">
     <div class="close-icon" aria-label="Close modal">&times;</div>
 
     <h2 id="hsa-modal-title">How does it work?</h2>
@@ -66,7 +66,6 @@
 </div>
 
 <style>
-/* Pay with HSA Badge Styles */
 .pay-with-hsa-badge {
   display: inline-block;
   background-color: #E5E3FF;
@@ -90,12 +89,10 @@
   position: fixed;
   inset: 0;
   z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  overflow: auto;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.3s ease-in-out;
+  transition: opacity 0.3s, visibility 0.3s;
 }
 
 .modal.show {
@@ -107,20 +104,32 @@
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.5);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.modal.show .modal-backdrop {
+  opacity: 1;
+}
+
+#hsa-modal-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3%;
 }
 
 .modal-content {
   background: var(--bg);
+  margin: 3% auto;
   padding: 2rem;
   border-radius: 10px;
-  max-width: 90%;
-  width: 1200px;
-  max-height: 90vh;
-  overflow-y: auto;
-  position: relative;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  max-width: 1200px;
+  width: 90%;
   transform: translateY(-20px);
   opacity: 0;
-  transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+  transition: transform 0.3s, opacity 0.3s;
+  position: relative;
 }
 
 .modal.show .modal-content {
@@ -133,18 +142,11 @@
   text-align: center;
 }
 
-#hsa-modal-content {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2%;
-  justify-content: space-between;
-}
-
 .step {
-  flex: 1 1 30%;
   display: flex;
-  flex-direction: column;
+  align-items: flex-start;
   margin-bottom: 2rem;
+  width: 30%;
 }
 
 .step-number {
@@ -157,39 +159,70 @@
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  margin-bottom: 1rem;
+  margin-right: 1rem;
+  flex-shrink: 0;
+}
+
+.step-content {
+  flex-grow: 1;
 }
 
 .step-content p {
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
+  min-height: 75px;
+}
+
+.step-image {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: visible;
 }
 
 .step-image img {
-  width: 100%;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  max-width: calc(100% + 50px);
+  margin-left: -50px;
+  height: auto;
+  display: block;
+}
+
+.approved-badge {
+  display: inline-flex;
+  align-items: center;
+  background-color: #e0f2fe;
+  color: #0284c7;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-weight: bold;
+}
+
+.approved-badge svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-right: 0.5rem;
 }
 
 .close-icon {
   position: absolute;
   top: 1rem;
   right: 1rem;
+  font-size: 2rem;
   background: none;
   border: 3px solid var(--primary-color);
   border-radius: 50%;
-  width: 2rem;
-  height: 2rem;
-  font-size: 1.5rem;
-  color: var(--primary-color);
+  width: 30px;
+  height: 30px;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   cursor: pointer;
+  color: var(--primary-color);
+  transition: color 0.3s;
 }
 
 .close-button {
   display: block;
-  margin: 2rem auto 0;
+  width: auto;
+  margin: auto;
   padding: 0.75rem 2rem;
   background-color: var(--primary-color);
   color: white;
@@ -198,12 +231,6 @@
   font-size: 1rem;
   cursor: pointer;
   transition: background-color 0.3s;
-}
-
-@media (max-width: 1024px) {
-  .step {
-    flex: 1 1 45%;
-  }
 }
 
 @media (max-width: 640px) {
@@ -215,13 +242,12 @@
     font-size: 1.5rem;
   }
 
-  #hsa-modal-content {
+  .step {
     flex-direction: column;
-    gap: 1.5rem;
   }
 
-  .step {
-    flex: 1 1 100%;
+  .step-number {
+    margin-bottom: 0.5rem;
   }
 }
 </style>
@@ -229,25 +255,23 @@
 <script>
 // Get the modal element
 const hsaModal = document.getElementById('hsa-modal');
-const body = document.body;
 
 // Function to toggle the modal visibility
 const toggleHSAModal = (show) => {
   hsaModal.classList.toggle('show', show);
   hsaModal.setAttribute('aria-hidden', !show);
-  body.style.overflow = show ? 'hidden' : '';
+  document.body.style.overflow = show ? 'hidden' : '';
 };
 
-// Open modal when badge link is clicked
+// Open modal when badge is clicked
 document.getElementById('hsa-badge-link').addEventListener('click', (event) => {
   event.preventDefault();
   toggleHSAModal(true);
 });
 
 // Close modal when close icon or button is clicked
-hsaModal.querySelectorAll('.close-icon, .close-button').forEach((btn) => {
-  btn.addEventListener('click', () => toggleHSAModal(false));
-});
+hsaModal.querySelector('.close-icon').addEventListener('click', () => toggleHSAModal(false));
+hsaModal.querySelector('.close-button').addEventListener('click', () => toggleHSAModal(false));
 
 // Close modal when clicking outside the modal content
 hsaModal.addEventListener('click', (event) => {
