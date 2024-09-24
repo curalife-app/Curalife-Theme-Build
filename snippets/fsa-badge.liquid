@@ -1,4 +1,5 @@
-<div class="pay-with-hsa-badge w-full">
+<!-- HTML -->
+<div class="pay-with-hsa-badge">
   Pay with HSA | FSA <a href="#" id="hsa-badge-link">Read More</a>
 </div>
 
@@ -73,10 +74,14 @@
   </div>
 </div>
 
+<!-- CSS -->
 <style>
   :root {
     --bg: #E5E3FF;
     --primary-color: #0D007C;
+    --modal-bg: #EFEEFE;
+    --modal-gradient-start: rgba(229, 227, 255, 1);
+    --modal-gradient-end: rgba(229, 227, 255, 0);
   }
 
   .pay-with-hsa-badge {
@@ -105,8 +110,7 @@
     overflow: hidden;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.3s, visibility 0.3s;
-    background-color: #EFEEFE;
+    transition: opacity 0.3s;
   }
 
   .modal.show {
@@ -127,7 +131,7 @@
   }
 
   .modal-content {
-    background: #EFEEFE;
+    background: var(--modal-bg);
     margin: 3% auto;
     padding: 2rem;
     border-radius: 10px;
@@ -152,17 +156,17 @@
   .modal-body {
     flex-grow: 1;
     overflow-y: auto;
+    position: relative;
   }
 
   .modal-body::after {
-    content: " ";
+    content: "";
     height: 120px;
     width: 100%;
     position: absolute;
     bottom: 0;
     left: 0;
-    display: inline-block;
-    background: linear-gradient(0deg, rgba(229, 227, 255, 1) 50%, rgba(229, 227, 255, 0) 100%);
+    background: linear-gradient(0deg, var(--modal-gradient-start) 50%, var(--modal-gradient-end) 100%);
   }
 
   .modal-content h2 {
@@ -218,9 +222,9 @@
     position: absolute;
     top: 1rem;
     right: 1rem;
-    font-size: 2rem;
+    font-size: 1.5rem;
     background: none;
-    border: 3px solid var(--primary-color);
+    border: 2px solid var(--primary-color);
     border-radius: 50%;
     width: 30px;
     height: 30px;
@@ -229,7 +233,6 @@
     align-items: center;
     cursor: pointer;
     color: var(--primary-color);
-    transition: color 0.3s;
   }
 
   .close-button {
@@ -244,7 +247,6 @@
     border-radius: 9999px;
     font-size: 1rem;
     cursor: pointer;
-    transition: background-color 0.3s;
   }
 
   /* Mobile-specific adjustments */
@@ -264,7 +266,6 @@
 
     .step {
       width: 100%;
-      align-items: flex-start;
     }
 
     .step-number {
@@ -274,57 +275,44 @@
     .step-content p {
       min-height: auto;
     }
-
-    .modal-body::after {
-      content: " ";
-      height: 120px;
-      width: 100%;
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      display: inline-block;
-      background: linear-gradient(0deg, rgba(229, 227, 255, 1) 50%, rgba(229, 227, 255, 0) 100%);
-    }
   }
 </style>
 
 <!-- JavaScript -->
 <script>
-  const hsaModal = document.getElementById('hsa-modal');
+  document.addEventListener('DOMContentLoaded', () => {
+    const hsaModal = document.getElementById('hsa-modal');
+    const hsaBadgeLink = document.getElementById('hsa-badge-link');
+    const closeIcon = hsaModal.querySelector('.close-icon');
+    const closeButton = hsaModal.querySelector('.close-button');
+    const modalBackdrop = hsaModal.querySelector('.modal-backdrop');
 
-  const toggleHSAModal = (show) => {
-    hsaModal.classList.toggle('show', show);
-    hsaModal.setAttribute('aria-hidden', !show);
-    document.body.style.overflow = show ? 'hidden' : '';
+    const toggleHSAModal = (show) => {
+      hsaModal.classList.toggle('show', show);
+      hsaModal.setAttribute('aria-hidden', !show);
+      document.body.style.overflow = show ? 'hidden' : '';
 
-    if (show) {
-      // Lazy load images when modal is opened
-      const images = hsaModal.querySelectorAll('img[data-src]');
-      images.forEach(img => {
-        if (!img.getAttribute('src')) {
-          img.setAttribute('src', img.getAttribute('data-src'));
-        }
-      });
-    }
-  };
+      if (show) {
+        // Lazy load images when modal is opened
+        hsaModal.querySelectorAll('img[data-src]').forEach(img => {
+          if (!img.src) img.src = img.dataset.src;
+        });
+      }
+    };
 
-  document.getElementById('hsa-badge-link').addEventListener('click', (event) => {
-    event.preventDefault();
-    toggleHSAModal(true);
-  });
+    hsaBadgeLink.addEventListener('click', (event) => {
+      event.preventDefault();
+      toggleHSAModal(true);
+    });
 
-  hsaModal.querySelector('.close-icon').addEventListener('click', () => toggleHSAModal(false));
-  hsaModal.querySelector('.close-button').addEventListener('click', () => toggleHSAModal(false));
+    [closeIcon, closeButton, modalBackdrop].forEach(element => {
+      element.addEventListener('click', () => toggleHSAModal(false));
+    });
 
-  hsaModal.addEventListener('click', (event) => {
-    if (event.target === hsaModal || event.target.classList.contains('modal-backdrop')) {
-      toggleHSAModal(false);
-    }
-  });
-
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && hsaModal.classList.contains('show')) {
-      toggleHSAModal(false);
-    }
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && hsaModal.classList.contains('show')) {
+        toggleHSAModal(false);
+      }
+    });
   });
 </script>
