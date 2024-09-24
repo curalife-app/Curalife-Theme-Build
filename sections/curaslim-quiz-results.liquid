@@ -162,21 +162,19 @@
     let isVisible = false;
 
     window.addEventListener("scroll", () => {
-      const sectionBottom =
-        quizResultsSection.offsetTop + quizResultsSection.offsetHeight;
-      const ctaPosition =
-        ctaElement.getBoundingClientRect().top + window.pageYOffset;
+      const sectionBottom = quizResultsSection.offsetTop + quizResultsSection.offsetHeight;
+      const ctaPosition = ctaElement.offsetTop;
 
       if (
         window.pageYOffset > sectionBottom &&
-        window.pageYOffset < ctaPosition &&
+        window.pageYOffset + window.innerHeight < ctaPosition &&
         !isVisible
       ) {
         stickyBar.classList.add("visible");
         isVisible = true;
       } else if (
         (window.pageYOffset <= sectionBottom ||
-          window.pageYOffset >= ctaPosition) &&
+          window.pageYOffset + window.innerHeight >= ctaPosition) &&
         isVisible
       ) {
         stickyBar.classList.remove("visible");
