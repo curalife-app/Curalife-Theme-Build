@@ -138,6 +138,31 @@
         </div>
       </div>
     {% endif %}
+
+    {% for block in section_blocks %}
+      {% case block.type %}
+        {% when 'item' %}
+          {% render 'item',
+            image: block.settings.image,
+            image_global: block.settings.image_global,
+            img_mobile: block.settings.image_mobile,
+            title: block.settings.title,
+            title_tag: section.settings.title_tag,
+            description: block.settings.description,
+            link_title: block.settings.link_title,
+            link_style: section.settings.link_style,
+            link_url: block.settings.link_url,
+            link_url_global: block.settings.link_url_global,
+            icon: block.settings.icon,
+            is_image_background: block.settings.is_image_background,
+            item_layout_mobile: section.settings.item_layout_mobile,
+            is_slider: section.settings.is_slider,
+            index: forloop.index,
+            section_id: section.id
+          %}
+      {% endcase %}
+    {% endfor %}
+
   </div>
 </div>
 
