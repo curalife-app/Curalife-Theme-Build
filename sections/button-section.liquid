@@ -1,8 +1,26 @@
 <section id="button-section-{{ section.id }}" class="button-section {{ section.settings.section_additional_classes }}">
   <div class="container flex justify-center">
-    <a id="button-link" href="{% if page.metafields.custom.next_page_link != blank %}{{ page.metafields.custom.next_page_link }}{% else %}{{ section.settings.button_link }}{% endif %}" {% if section.settings.animation %}data-aos="{{ section.settings.animation }}"{% endif %}><button><span>{{ section.settings.button_text }}</span></button></a>
+    {% comment %} <a id="button-link" href="{% if page.metafields.custom.next_page_link != blank %}{{ page.metafields.custom.next_page_link }}{% else %}{{ section.settings.button_link }}{% endif %}" {% if section.settings.animation %}data-aos="{{ section.settings.animation }}"{% endif %}><button><span>{{ section.settings.button_text }}</span></button></a> {% endcomment %}
+
+    {% render 'button',
+      button_text: section.settings.button_text,
+      button_url: section.settings.button_link,
+      button_url_global: section.settings.button_link,
+      button_icon: "",
+      button_style: "",
+      button_text_color: section.settings.button_title_color,
+      button_bg_color: section.settings.button_bg_color,
+      button_is_new_tab: section.settings.button_is_new_tab,
+      button_is_link_to_top: false,
+      button_is_chatbot: false,
+      button_is_prerender_link: false,
+      button_under_title: section.settings.button_under_title,
+      button_under_title_color: section.settings.button_under_title_color,
+      button_id: block.id
+    %}
   </div>
 </section>
+
 
 {% if section.settings.is_pass_url_parameters %}
   <script>
