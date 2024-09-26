@@ -34,7 +34,7 @@
       {% endif %}
 
       {% for block in section.blocks %}
-        {% if shop.name == 'CuraLife Global' %}
+        {% comment %} {% if shop.name == 'CuraLife Global' %}
           {% assign imageLink = block.settings.image_global | default: block.settings.image %}
           {% assign imageMobileLink = block.settings.image_mobile_global | default: block.settings.image_mobile %}
           {% assign linkUrl = block.settings.link_url_global | default: block.settings.link_url %}
@@ -87,13 +87,14 @@
               background-position: center;
             }
           </style>
-        {% endif %}
+        {% endif %} {% endcomment %}
 
         {% render 'item',
           image: block.settings.image,
           image_global: block.settings.image_global,
           img_mobile: block.settings.image_mobile,
           title: block.settings.title,
+          title_tag: section.settings.title_tag,
           description: block.settings.description,
           link_title: block.settings.link_title,
           link_style: section.settings.link_style,
