@@ -142,6 +142,10 @@
                 {{ block.settings.content }}
             {% endcase %}
           {% endfor %}
+
+          {% if hasItems %}
+            <a class="collection-link" href="#">View Risk Statistics <i class="fa-sharp fa-regular fa-chevron-down"></i></a>
+          {% endif %}
         </div>
       </div>
     {% endif %}
@@ -186,9 +190,31 @@
       <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
       <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
+          var collectionLink = document.querySelector('#section-{{ section_id }} .collection-link');
+          var itemsContainer = document.querySelector('#section-{{ section_id }} .container');
+
+          if (collectionLink && itemsContainer) {
+            collectionLink.addEventListener('click', function(e) {
+              e.preventDefault();
+
+              if (itemsContainer.classList.contains('open')) {
+                // Close the accordion
+                itemsContainer.style.maxHeight = null;
+                itemsContainer.classList.remove('open');
+                collectionLink.classList.remove('open');
+              } else {
+                // Open the accordion
+                itemsContainer.style.maxHeight = itemsContainer.scrollHeight + 'px';
+                itemsContainer.classList.add('open');
+                collectionLink.classList.add('open');
+              }
+            });
+          }
+
+          // Initialize Swiper
           var swiper = new Swiper('#section-{{ section_id }} .swiper.items', {
-            slidesPerView: '3',
+            slidesPerView: 3,
             spaceBetween: 16,
             loop: true,
             navigation: {
@@ -204,6 +230,27 @@
           background-color: #EBF1F3;
           border-radius: 15px;
           padding: 1rem;
+        }
+      </style>
+
+      <style>
+        #section-{{ section_id }} .container {
+          overflow: hidden;
+          max-height: 0;
+          transition: max-height 0.3s ease-out;
+        }
+
+        #section-{{ section_id }} .container.open {
+          /* Max-height will be set dynamically via JavaScript */
+        }
+
+        /* Rotate the chevron icon when open */
+        #section-{{ section_id }} .collection-link .fa-chevron-down {
+          transition: transform 0.3s ease;
+        }
+
+        #section-{{ section_id }} .collection-link.open .fa-chevron-down {
+          transform: rotate(180deg);
         }
       </style>
     {% endif %}
