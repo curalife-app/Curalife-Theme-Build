@@ -184,8 +184,10 @@
             {% endfor %}
           </div>
 
-          <div class="swiper-button-prev"></div>
-          <div class="swiper-button-next"></div>
+          {% if itemsCounter > 3 %}
+            <div class="swiper-button-prev"></div>
+            <div class="swiper-button-next"></div>
+          {% endif %}
         </div>
       </div>
 
@@ -229,25 +231,35 @@
         });
       </script>
 
-      <style>
-        .item {
-          background-color: #EBF1F3;
-          border-radius: 15px;
-          padding: 1rem;
+      {% if itemsCounter < 4 %}
+        <style>
+          #section-{{ section_id }} .swiper-wrapper {
+            gap: 1rem;
 
-          .item-content {
-            text-align: start;
+            .item {
+              background-color: #EBF1F3;
+              border-radius: 15px;
+              padding: 1rem;
 
-            .img-wrapper {
-              align-items: start;
-            }
+              {% if itemsCounter < 4 %}
+                width: calc(100% / 3 - 2rem);
+              {% endif %}
 
-            .title-tag {
-              margin: unset;
+              .item-content {
+                text-align: start;
+
+                .img-wrapper {
+                  align-items: start;
+                }
+
+                .title-tag {
+                  margin: unset;
+                }
+              }
             }
           }
-        }
-      </style>
+        </style>
+      {% endif %}
 
       {% if items_hidden_title != blank %}
         <style>
