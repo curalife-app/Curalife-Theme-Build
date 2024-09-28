@@ -7,10 +7,11 @@
   {% endif %}
 {% endif %}
 
+{% assign itemsCounter = 0 %}
 {% for block in section_blocks %}
   {% case block.type %}
     {% when 'item' %}
-      {% assign hasItems = true %}
+      {% assign itemsCounter = itemsCounter | plus: 1 %}
   {% endcase %}
 {% endfor %}
 
@@ -152,7 +153,7 @@
 
 
     </div>
-    {% if hasItems %}
+    {% if itemsCounter > 0 %}
       <div class="collection-container container px-12">
         <div class="swiper items">
           <div class="swiper-wrapper flex-nowrap flex">
