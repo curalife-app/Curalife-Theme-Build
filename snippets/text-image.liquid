@@ -143,8 +143,8 @@
             {% endcase %}
           {% endfor %}
 
-          {% if hasItems %}
-            <a class="collection-link" href="#">View Risk Statistics <i class="fa-sharp fa-regular fa-chevron-down"></i></a>
+          {% if items_hidden_title != blank %}
+            <a class="collection-link" href="#">{{ items_hidden_title }} <i class="fa-sharp fa-regular fa-chevron-down"></i></a>
           {% endif %}
         </div>
       </div>
@@ -246,27 +246,29 @@
         }
       </style>
 
-      <style>
-        #section-{{ section_id }} .collection-container {
-          padding-top: 30px;
-          overflow: hidden;
-          max-height: 0;
-          transition: max-height 0.3s ease-out;
-        }
+      {% if items_hidden_title != blank %}
+        <style>
+          #section-{{ section_id }} .collection-container {
+            padding-top: 30px;
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.3s ease-out;
+          }
 
-        #section-{{ section_id }} .collection-container.open {
-          /* Max-height will be set dynamically via JavaScript */
-        }
+          #section-{{ section_id }} .collection-container.open {
+            /* Max-height will be set dynamically via JavaScript */
+          }
 
-        /* Rotate the chevron icon when open */
-        #section-{{ section_id }} .collection-link .fa-chevron-down {
-          transition: transform 0.3s ease;
-        }
+          /* Rotate the chevron icon when open */
+          #section-{{ section_id }} .collection-link .fa-chevron-down {
+            transition: transform 0.3s ease;
+          }
 
-        #section-{{ section_id }} .collection-link.open .fa-chevron-down {
-          transform: rotate(180deg);
-        }
-      </style>
+          #section-{{ section_id }} .collection-link.open .fa-chevron-down {
+            transform: rotate(180deg);
+          }
+        </style>
+      {% endif %}
     {% endif %}
 </div>
 
