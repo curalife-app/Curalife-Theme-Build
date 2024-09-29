@@ -14,26 +14,15 @@
     {% endif %}
 
     {% for var in prod.variants %}
-      {% assign hasSellingPlans = var.selling_plan_allocations.size | default: 0 %}
-
-      {% if hasSellingPlans > 0 %}
-        {% assign isSubscriptionVariant = true %}
-      {% else %}
-        {% assign isSubscriptionVariant = false %}
-      {% endif %}
-
-      {% if isSubscription or isSubscriptionVariant == false %}
-        {% render 'product-cta-section-actions-variant-2024-new-3',
-          SID: SID,
-          prod: prod,
-          var: var,
-          buyBoxColor: buyBoxColor,
-          pricePer: pricePer,
-          saveFormat: saveFormat,
-          index: forloop.index,
-          isSubscriptionVariant: isSubscriptionVariant
-        %}
-      {% endif %}
+      {% render 'product-cta-section-actions-variant-2024-new-3',
+        SID: SID,
+        prod: prod,
+        var: var,
+        buyBoxColor: buyBoxColor,
+        pricePer: pricePer,
+        saveFormat: saveFormat,
+        index: forloop.index
+      %}
     {% endfor %}
 
     {% if isSubscription %}
