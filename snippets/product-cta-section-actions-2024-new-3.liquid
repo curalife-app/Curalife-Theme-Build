@@ -14,8 +14,14 @@
     {% endif %}
 
     {% for var in prod.variants %}
-      {% assign variant_selling_plans = var.selling_plan_allocations %}
-      {% assign isSubscriptionVariant = variant_selling_plans.size > 0 %}
+      {% assign hasSellingPlans = var.selling_plan_allocations.size | default: 0 %}
+
+      {% if hasSellingPlans > 0 %}
+        {% assign isSubscriptionVariant = true %}
+      {% else %}
+        {% assign isSubscriptionVariant = false %}
+      {% endif %}
+
       {% if isSubscription or (not isSubscription and not isSubscriptionVariant) %}
         {% render 'product-cta-section-actions-variant-2024-new-3', SID: SID, prod: prod, var: var, buyBoxColor: buyBoxColor, pricePer: pricePer, saveFormat: saveFormat, index: forloop.index %}
       {% endif %}
