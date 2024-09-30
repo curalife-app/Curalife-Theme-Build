@@ -4,6 +4,7 @@
 
 {% if buyType == "buy_now" %}
   <div class="submit-wrap flex flex-col w-full">
+    <input class="submit-variant-id" type="hidden" name="id" value="{{ variant | default: product.selected_or_first_available_variant.id }}">
     <button class="main-btn p-0 text-black bg-[--orange] min-h-[50px]" id="buy-button">
       <span class="button-text flex justify-center md:text-[5vw]">{{ buttonText | default: "Shop Now" }}</span>
 
@@ -14,6 +15,58 @@
       </div>
     </button>
   </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var buyButton = document.getElementById('buy-button');
+      if (buyButton) {
+        buyButton.addEventListener('click', function(event) {
+          event.preventDefault();
+          var submitButton = this;
+          var buttonText = submitButton.querySelector('.button-text');
+          var loadingSpinner = submitButton.querySelector('.loading-overlay__spinner');
+
+          if (buttonText && loadingSpinner) {
+            buttonText.style.display = 'none';
+            loadingSpinner.classList.remove('hidden');
+          }
+
+          // Get the variant ID from the hidden input
+          var variantIdInput = document.querySelector('.submit-variant-id');
+          var variantId = variantIdInput ? variantIdInput.value : '{{ variant | default: product.selected_or_first_available_variant.id }}';
+          var quantity = 1;
+
+          var data = {
+            "id": variantId,
+            "quantity": quantity
+          };
+
+          fetch('/cart/add.js', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+          })
+          .then(function(response) {
+            return response.json();
+          })
+          .then(function(data) {
+            console.log('Success:', data);
+            window.location.href = '/checkout';
+          })
+          .catch(function(error) {
+            console.error('Error:', error);
+            if (buttonText && loadingSpinner) {
+              buttonText.style.display = '';
+              loadingSpinner.classList.add('hidden');
+            }
+            // Optionally, display an error message to the user
+          });
+        });
+      }
+    });
+  </script>
 {% else %}
   <script src="{{ 'product-info.js' | asset_url }}" defer="defer"></script>
   <script src="{{ 'product-form.js' | asset_url }}" defer="defer"></script>
