@@ -18,48 +18,48 @@
 
   <script>
   document.addEventListener('DOMContentLoaded', function() {
-    // Attempt to find the buy button by its ID
-    var buyButton = document.getElementById('buy-button-{{ SID }}');
+    // Cache the buy button using the dynamic ID
+    var buyButton = document.querySelector('#buy-button-{{ SID }}');
 
     if (buyButton) {
       console.log('Buy button found, attaching event listener.');
 
+      // Attach click event listener to the buy button
       buyButton.addEventListener('click', function(event) {
         event.preventDefault();
         console.log('Buy button clicked.');
 
         // Button states for loading
-        var submitButton = this;
-        var buttonText = submitButton.querySelector('.button-text');
-        var loadingSpinner = submitButton.querySelector('.loading-overlay__spinner');
+        var buttonText = buyButton.querySelector('.button-text');
+        var loadingSpinner = buyButton.querySelector('.loading-overlay__spinner');
 
-        // Display loading spinner
+        // Display loading spinner if elements are found
         if (buttonText && loadingSpinner) {
           console.log('Showing loading spinner and hiding button text.');
           buttonText.style.display = 'none';
           loadingSpinner.classList.remove('hidden');
+        } else {
+          console.error('Button text or loading spinner not found.');
         }
 
         // Get the variant ID from the hidden input
         var variantIdInput = document.querySelector('.submit-variant-id');
-        if (variantIdInput) {
-          console.log('Variant ID input found.');
-        } else {
+        if (!variantIdInput) {
           console.error('Variant ID input not found.');
+          return;
         }
-
-        var variantId = variantIdInput ? variantIdInput.value : '{{ variant | default: product.selected_or_first_available_variant.id }}';
+        var variantId = variantIdInput.value;
         console.log('Variant ID:', variantId);
-        var quantity = 1;
 
+        // Prepare data to add the product to the cart
+        var quantity = 1;
         var data = {
           "id": variantId,
           "quantity": quantity
         };
-
-        // Adding product to the cart
         console.log('Sending request to add product to the cart:', data);
 
+        // Fetch request to add product to the cart
         fetch('/cart/add.js', {
           method: 'POST',
           headers: {
@@ -68,6 +68,9 @@
           body: JSON.stringify(data),
         })
         .then(function(response) {
+          if (!response.ok) {
+            throw new Error('Failed to add product to cart. Response status: ' + response.status);
+          }
           console.log('Received response from add to cart:', response);
           return response.json();
         })
@@ -78,6 +81,8 @@
         })
         .catch(function(error) {
           console.error('Error adding product to cart:', error);
+
+          // Reset button state on error
           if (buttonText && loadingSpinner) {
             console.log('An error occurred. Resetting button to normal state.');
             buttonText.style.display = '';
@@ -86,79 +91,7 @@
         });
       });
     } else {
-      console.error('Buy button not found. Cannot attach event listener. Retrying after 500ms.');
-
-      // Retry finding the button after a short delay, in case of DOM load issues
-      setTimeout(function() {
-        var retryBuyButton = document.getElementById('buy-button-{{ SID }}');
-        if (retryBuyButton) {
-          console.log('Buy button found after retry, attaching event listener.');
-
-          retryBuyButton.addEventListener('click', function(event) {
-            event.preventDefault();
-            console.log('Buy button clicked.');
-
-            // Button states for loading
-            var submitButton = this;
-            var buttonText = submitButton.querySelector('.button-text');
-            var loadingSpinner = submitButton.querySelector('.loading-overlay__spinner');
-
-            // Display loading spinner
-            if (buttonText && loadingSpinner) {
-              console.log('Showing loading spinner and hiding button text.');
-              buttonText.style.display = 'none';
-              loadingSpinner.classList.remove('hidden');
-            }
-
-            // Get the variant ID from the hidden input
-            var variantIdInput = document.querySelector('.submit-variant-id');
-            if (variantIdInput) {
-              console.log('Variant ID input found.');
-            } else {
-              console.error('Variant ID input not found.');
-            }
-
-            var variantId = variantIdInput ? variantIdInput.value : '{{ variant | default: product.selected_or_first_available_variant.id }}';
-            console.log('Variant ID:', variantId);
-            var quantity = 1;
-
-            var data = {
-              "id": variantId,
-              "quantity": quantity
-            };
-
-            // Adding product to the cart
-            console.log('Sending request to add product to the cart:', data);
-
-            fetch('/cart/add.js', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(data),
-            })
-            .then(function(response) {
-              console.log('Received response from add to cart:', response);
-              return response.json();
-            })
-            .then(function(data) {
-              console.log('Product successfully added to cart:', data);
-              console.log('Redirecting to checkout.');
-              window.location.href = '/checkout';
-            })
-            .catch(function(error) {
-              console.error('Error adding product to cart:', error);
-              if (buttonText && loadingSpinner) {
-                console.log('An error occurred. Resetting button to normal state.');
-                buttonText.style.display = '';
-                loadingSpinner.classList.add('hidden');
-              }
-            });
-          });
-        } else {
-          console.error('Buy button not found after retry. Please check the DOM or script loading sequence.');
-        }
-      }, 500); // Retry after 500ms
+      console.error('Buy button not found. Ensure that the button is rendered in the DOM.');
     }
   });
 </script>
