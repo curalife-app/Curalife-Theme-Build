@@ -28,7 +28,34 @@
     {% if main_image or main_mobile_image or videoEmbed != blank %}
       <div class="image-wrapper z-[1] h-auto md:mb-0 {% if main_mobile_image and main_image == blank %}mobile{% endif %} {% if itemsDirection == 'vertical' %}w-full{% endif %} {% if is_image_bottom %}self-end md:self-auto{% endif %}">
         {% if videoEmbed != blank %}
-          <iframe class="w-full h-[400px] mbl:h-[100vw]" src="{{ videoEmbed | escape }}" frameborder="0" allow="autoplay; fullscreen" class="fluidvids-item" data-fluidvids="loaded" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title=""></iframe>
+          <div class="video-placeholder" data-video-src="{{ videoEmbed | escape }}">
+            <picture>
+              {% if main_mobile_image %}
+                <source media="(max-width: 768px)" srcset="{{ main_mobile_image | image_url }}" width="{{ main_mobile_image.width }}" height="{{ main_mobile_image.height }}">
+              {% endif %}
+              <img class="{% if is_limit_image_size %}max-h-500px{% endif %} relative z-auto object-contain cursor-pointer {% if is_hide_image_on_mobile %}md:hidden{% endif %} {% if is_image_overlap_style %} h-[calc(100%+135px)] object-cover object-left{% endif %}" src="{{ main_image | default: main_mobile_image | image_url }}" alt="{{ main_image.alt }}" width="{{ main_image.width }}" height="{{ main_image.height }}" {% unless is_dont_lazyload %}loading="lazy"{% endunless %} {% if image_animation != 'none'%}data-aos="{{ image_animation }}" data-aos-duration="{{ animation_duration }}"{% endif %}>
+            </picture>
+            <div class="play-button"></div>
+          </div>
+
+          <script>
+            document.addEventListener('DOMContentLoaded', function() {
+              var videoPlaceholder = document.querySelector('#section-{{ section_id }} .video-placeholder');
+              if (videoPlaceholder) {
+                videoPlaceholder.addEventListener('click', function() {
+                  var videoSrc = this.getAttribute('data-video-src');
+                  var iframe = document.createElement('iframe');
+                  iframe.setAttribute('src', videoSrc);
+                  iframe.setAttribute('frameborder', '0');
+                  iframe.setAttribute('allow', 'autoplay; fullscreen; picture-in-picture');
+                  iframe.setAttribute('allowfullscreen', '');
+                  iframe.setAttribute('class', 'w-full h-[400px] mbl:h-[100vw]');
+                  iframe.setAttribute('title', '');
+                  this.parentNode.replaceChild(iframe, this);
+                });
+              }
+            });
+          </script>
         {% else %}
           {% if is_dont_lazyload == false %}{% assign lazyLoad = true %}{% endif %}
           {% if customer.email contains 'yotam@curalife.com' %}
