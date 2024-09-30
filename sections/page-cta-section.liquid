@@ -1,3 +1,8 @@
+{% assign sectionIDParts = section.id | split: '_' %}
+{% assign shortSectionID = sectionIDParts[-1] %}
+{% assign shortSectionIDParts = shortSectionID | split: '-' %}
+{% assign SID = shortSectionIDParts[-1] %}
+
 {% assign prodReference = section.settings.product | default: product | default: all_products["curalin-pack"] %}
 {% assign buyBoxColor = prodReference.metafields.custom.primary_color | default: section.settings.buy_box_color | default: page.metafields.primary_color | default: "var(--primary-color)" %}
 
@@ -32,6 +37,7 @@
     isVariantBoxToggle: section.settings.is_variant_toggle,
     buyType: section.settings.buy_type,
     prod: prodReference,
+    SID: SID
   %}
 
   {% if section.settings.isPopup %}</div>{% endif %}
