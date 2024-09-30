@@ -370,24 +370,11 @@
         state.isSubscriptionSelected = false;
       }
 
-      // Call togglePurchaseType with the current state
+      // Update variant boxes based on the subscription state
       togglePurchaseType(state.isSubscriptionSelected);
 
       // Set default selection
-      let defaultBox = null;
-      if (isSubscriptionAvailable) {
-        defaultBox = purchaseOptionBoxes[defaultVariantIndex] || purchaseOptionBoxes[0];
-      } else {
-        // Find the first box that is not a subscription variant
-        for (let i = 0; i < purchaseOptionBoxes.length; i++) {
-          const box = purchaseOptionBoxes[i];
-          const isSubscriptionVariant = box.classList.contains('subscription-variant');
-          if (!isSubscriptionVariant) {
-            defaultBox = box;
-            break;
-          }
-        }
-      }
+      let defaultBox = purchaseOptionBoxes[defaultVariantIndex] || purchaseOptionBoxes[0];
 
       if (defaultBox) {
         safelyAddClass(defaultBox, 'selected');
@@ -398,15 +385,15 @@
         state.selectedBox = defaultBox;
       }
 
-      // Update price display and styles
+      // Update price display and styles for all boxes
       for (let i = 0; i < purchaseOptionBoxes.length; i++) {
         const box = purchaseOptionBoxes[i];
         if (box !== defaultBox) {
           safelySetStyle(box, 'maxHeight', getClosedHeight());
-          updatePriceDisplay(box, state.isSubscriptionSelected, false);
         }
       }
 
+      // Toggle subscription benefits if applicable
       if (state.isSubscriptionSelected) {
         setupSubscriptionButton();
         toggleSubscriptionBenefits(true);
