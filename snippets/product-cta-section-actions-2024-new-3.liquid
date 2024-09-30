@@ -2,26 +2,40 @@
 
 <div id="product-actions-{{ SID }}" class="product-actions {% if isVariantBoxToggle %}with-animation{% endif %}">
   <div class="purchase-options flex flex-col gap-2">
-    <div class="purchase-type flex-nowrap flex w-full gap-2">
-      <button class="subscription selected flex items-center justify-center gap-2" aria-label="Subscribe & Save">
-        <span>
-          Subscribe <div class="desktop">& Save</div>
-        </span>
-      </button>
-      <button class="buy-once z-0" aria-label="Buy Once"><span>Buy Once</span></button>
-    </div>
+    {% if isSubscription %}
+      <div class="purchase-type flex-nowrap flex w-full gap-2">
+        <button class="subscription selected flex items-center justify-center gap-2" aria-label="Subscribe & Save">
+          <span>
+            Subscribe <div class="desktop">& Save</div>
+          </span>
+        </button>
+        <button class="buy-once z-0" aria-label="Buy Once"><span>Buy Once</span></button>
+      </div>
+    {% endif %}
 
     {% for var in prod.variants %}
-      {% render 'product-cta-section-actions-variant-2024-new-3', SID: SID, prod: prod, var: var, buyBoxColor: buyBoxColor, pricePer: pricePer, saveFormat: saveFormat, index: forloop.index %}
+      {% render 'product-cta-section-actions-variant-2024-new-3',
+        SID: SID,
+        prod: prod,
+        var: var,
+        buyBoxColor: buyBoxColor,
+        pricePer: pricePer,
+        saveFormat: saveFormat,
+        index: forloop.index
+      %}
     {% endfor %}
 
-    {% render 'subscription-benefits-popup' %}
+    {% if isSubscription %}
+      {% render 'subscription-benefits-popup' %}
+    {% endif %}
 
     <div class="submit-wrap flex flex-col w-full">
-      <div class="checkout-button subscription">
-        {% render 'buy-buttons', SID: SID, product: prod, variant: '', buttonText: "Subscribe Now", selling_plan_id: selling_plan_id, product_form_id: product_form_id, buyType: 'buy_now', isBuyWithPrime: isBuyWithPrime %}
-      </div>
-      <div class="checkout-button buy-once hidden">
+      {% if isSubscription %}
+        <div class="checkout-button subscription">
+          {% render 'buy-buttons', SID: SID, product: prod, variant: '', buttonText: "Subscribe Now", selling_plan_id: selling_plan_id, product_form_id: product_form_id, buyType: 'buy_now', isBuyWithPrime: isBuyWithPrime %}
+        </div>
+      {% endif %}
+      <div class="checkout-button buy-once {% unless isSubscription %}selected{% endunless %} {% if isSubscription %}hidden{% endif %}">
         {% render 'buy-buttons', SID: SID, product: prod, variant: '', selling_plan_id: selling_plan_id, product_form_id: product_form_id, buyType: buyType, isBuyWithPrime: isBuyWithPrime %}
       </div>
     </div>
@@ -44,6 +58,7 @@
       min-height: 415px;
     }
 
+    {% if isSubscription %}
     .purchase-type {
       button {
         background-color: var(--primary-color);
@@ -68,6 +83,7 @@
         }
       }
     }
+    {% endif %}
 
     .purchase-option-box {
       background: #fff;
@@ -266,13 +282,16 @@
     }
     const SID = productActions.id.split('-').pop();
 
+    // Introduce variable for subscription availability
+    const isSubscriptionAvailable = {{ isSubscription | json }};
+
     // Cache frequently used elements
-    const subscriptionButton = productActions.querySelector('.purchase-type .subscription');
+    const subscriptionButton = isSubscriptionAvailable ? productActions.querySelector('.purchase-type .subscription') : null;
     const buyOnceButton = productActions.querySelector('.purchase-type .buy-once');
-    const subscriptionSubmitButton = productActions.querySelector('.checkout-button.subscription');
+    const subscriptionSubmitButton = isSubscriptionAvailable ? productActions.querySelector('.checkout-button.subscription') : null;
     const buyOnceSubmitButton = productActions.querySelector('.checkout-button.buy-once');
     const purchaseOptionBoxes = productActions.querySelectorAll('.purchase-option-box');
-    const benefitsElement = document.querySelector('.subscription-benefits');
+    const benefitsElement = isSubscriptionAvailable ? document.querySelector('.subscription-benefits') : null;
     const submitSellingPlanIdInput = document.querySelector('.submit-selling-plan-id');
     const submitVariantIdInput = document.querySelector('.submit-variant-id');
     const submitButton = subscriptionSubmitButton ? subscriptionSubmitButton.querySelector('button') : null;
@@ -281,7 +300,7 @@
 
     // Initialize state
     const state = {
-      isSubscriptionSelected: true, // assuming subscription is selected by default
+      isSubscriptionSelected: isSubscriptionAvailable ? true : false,
       selectedBox: null,
     };
 
@@ -340,10 +359,10 @@
 
     function initializePurchaseOptions() {
       const urlParams = new URLSearchParams(window.location.search);
-      const defaultVariantIndex = parseInt(urlParams.get('default-variant')) || (typeof defaultSelectionIndex !== 'undefined' ? defaultSelectionIndex : 1) - 1;
+      const defaultVariantIndex = parseInt(urlParams.get('default-variant')) || 0;
 
       // Set initial purchase type selection
-      if (subscriptionButton) {
+      if (isSubscriptionAvailable && subscriptionButton) {
         safelyAddClass(subscriptionButton, 'selected');
         state.isSubscriptionSelected = true;
       } else if (buyOnceButton) {
@@ -351,8 +370,12 @@
         state.isSubscriptionSelected = false;
       }
 
+      // Update variant boxes based on the subscription state
+      togglePurchaseType(state.isSubscriptionSelected);
+
       // Set default selection
-      const defaultBox = purchaseOptionBoxes[defaultVariantIndex] || purchaseOptionBoxes[0];
+      let defaultBox = purchaseOptionBoxes[defaultVariantIndex] || purchaseOptionBoxes[0];
+
       if (defaultBox) {
         safelyAddClass(defaultBox, 'selected');
         const radioInput = defaultBox.querySelector("input[type='radio']");
@@ -362,15 +385,15 @@
         state.selectedBox = defaultBox;
       }
 
-      // Update price display and styles
+      // Update price display and styles for all boxes
       for (let i = 0; i < purchaseOptionBoxes.length; i++) {
         const box = purchaseOptionBoxes[i];
         if (box !== defaultBox) {
           safelySetStyle(box, 'maxHeight', getClosedHeight());
-          updatePriceDisplay(box, state.isSubscriptionSelected, false);
         }
       }
 
+      // Toggle subscription benefits if applicable
       if (state.isSubscriptionSelected) {
         setupSubscriptionButton();
         toggleSubscriptionBenefits(true);
@@ -380,6 +403,8 @@
     }
 
     function togglePurchaseType(isSubscription) {
+      if (!isSubscriptionAvailable) return; // Prevent toggling if subscription is not available
+
       state.isSubscriptionSelected = isSubscription;
 
       for (let i = 0; i < purchaseOptionBoxes.length; i++) {
@@ -751,23 +776,25 @@
       });
     }
 
-    productActions.addEventListener('click', (event) => {
-      const target = event.target;
-      const purchaseTypeButton = target.closest('.purchase-type button');
-      const purchaseOptionBox = target.closest('.purchase-option-box');
+    if (productActions) {
+      productActions.addEventListener('click', (event) => {
+        const target = event.target;
+        const purchaseTypeButton = target.closest('.purchase-type button');
+        const purchaseOptionBox = target.closest('.purchase-option-box');
 
-      if (purchaseTypeButton) {
-        event.preventDefault();
-        const isSubscription = purchaseTypeButton.classList.contains('subscription');
-        safelyRemoveClass(subscriptionButton, 'selected');
-        safelyRemoveClass(buyOnceButton, 'selected');
-        safelyAddClass(purchaseTypeButton, 'selected');
-        togglePurchaseType(isSubscription);
-      } else if (purchaseOptionBox) {
-        event.preventDefault();
-        togglePurchaseBox(purchaseOptionBox);
-      }
-    });
+        if (purchaseTypeButton && isSubscriptionAvailable) {
+          event.preventDefault();
+          const isSubscription = purchaseTypeButton.classList.contains('subscription');
+          safelyRemoveClass(subscriptionButton, 'selected');
+          safelyRemoveClass(buyOnceButton, 'selected');
+          safelyAddClass(purchaseTypeButton, 'selected');
+          togglePurchaseType(isSubscription);
+        } else if (purchaseOptionBox) {
+          event.preventDefault();
+          togglePurchaseBox(purchaseOptionBox);
+        }
+      });
+    }
 
     // Throttle function for resize event
     function throttle(func, limit) {
@@ -803,4 +830,3 @@
     initializePurchaseOptions();
   });
 </script>
-
