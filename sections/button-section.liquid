@@ -1,7 +1,7 @@
 {% assign buttonURL = page.metafields.custom.next_page_link | default: section.settings.button_link %}
 
 <!-- Original Button Section (hidden when sticky button is active) -->
-<section id="button-section-{{ section.id }}" class="button-section {{ section.settings.section_additional_classes }} {% if section.settings.is_sticky %}hidden mbl:w-full{% endif %}">
+<section id="button-section-{{ section.id }}" class="button-section {{ section.settings.section_additional_classes }} {% if section.settings.is_sticky %}!hidden mbl:w-full{% endif %}">
   <div class="container flex justify-center">
     {% render 'button',
       button_text: section.settings.button_text,
@@ -43,7 +43,7 @@
   <script>
     document.addEventListener("DOMContentLoaded", function() {
       var stickyBar = document.getElementById("sticky-bar");
-      var hideOnElements = {{ section.settings.sticky_hide | default: '' | strip | split: ',' | map: 'strip' | json }};
+      var hideOnElements = {{ section.settings.sticky_hide | default: '' | strip | split: ' ' | map: 'strip' | json }};
 
       function checkStickyVisibility() {
         var shouldHide = false;
