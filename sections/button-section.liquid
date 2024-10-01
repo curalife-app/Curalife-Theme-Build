@@ -44,28 +44,29 @@
   <script>
     document.addEventListener("DOMContentLoaded", function() {
       var stickyBar = document.getElementById("sticky-bar");
-      var isVisible = false;
-      var hideOnElements = {{ section.settings.sticky_hide | strip | split: ',' | json }};
+      var hideOnElements = {{ section.settings.sticky_hide | default: '' | strip | split: ',' | map: 'strip' | json }};
 
       function checkStickyVisibility() {
         var shouldHide = false;
 
-        hideOnElements.forEach(function(selector) {
-          var element = document.querySelector(selector.trim());
-          if (element) {
-            var rect = element.getBoundingClientRect();
-            if (rect.top < window.innerHeight && rect.bottom > 0) {
-              shouldHide = true;
+        if (hideOnElements.length > 0) {
+          hideOnElements.forEach(function(selector) {
+            if (selector) {
+              var elements = document.querySelectorAll(selector);
+              elements.forEach(function(element) {
+                var rect = element.getBoundingClientRect();
+                if (rect.top < window.innerHeight && rect.bottom > 0) {
+                  shouldHide = true;
+                }
+              });
             }
-          }
-        });
+          });
+        }
 
-        if (shouldHide && isVisible) {
+        if (shouldHide) {
           stickyBar.classList.remove("visible");
-          isVisible = false;
-        } else if (!shouldHide && !isVisible) {
+        } else {
           stickyBar.classList.add("visible");
-          isVisible = true;
         }
       }
 
