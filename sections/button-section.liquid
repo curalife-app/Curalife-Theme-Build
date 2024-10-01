@@ -1,6 +1,7 @@
 {% assign buttonURL = page.metafields.custom.next_page_link | default: section.settings.button_link %}
 
-<section id="button-section-{{ section.id }}" class="button-section {{ section.settings.section_additional_classes }} {% if section.settings.is_sticky %}sticky-button{% endif %}">
+<!-- Original Button Section (hidden when sticky button is active) -->
+<section id="button-section-{{ section.id }}" class="button-section {{ section.settings.section_additional_classes }} {% if section.settings.is_sticky %}hidden{% endif %}">
   <div class="container flex justify-center">
     {% render 'button',
       button_text: section.settings.button_text,
@@ -21,6 +22,15 @@
   </div>
 </section>
 
+<!-- Sticky Button -->
+{% if section.settings.is_sticky %}
+  <a id="sticky-bar" href="{{ buttonURL }}">
+    <button class="sticky-button">
+      <i class="fa-solid fa-arrow-right mr-2"></i>{{ section.settings.button_text }}
+    </button>
+  </a>
+{% endif %}
+
 {% if section.settings.is_pass_url_parameters %}
   <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -31,61 +41,119 @@
   </script>
 {% endif %}
 
+<!-- JavaScript for Sticky Button Behavior -->
 {% if section.settings.is_sticky %}
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      var buttonSection = document.getElementById('button-section-{{ section.id }}');
+    document.addEventListener("DOMContentLoaded", function() {
+      var stickyBar = document.getElementById("sticky-bar");
+      var isVisible = false;
       var hideOnElements = "{{ section.settings.sticky_hide }}".split(',');
 
-      function checkVisibility() {
-        var viewportHeight = window.innerHeight;
-        var scrollBottom = window.scrollY + viewportHeight;
-        var shouldHide = false;
+      function checkStickyVisibility() {
+        var scrollY = window.scrollY;
+        var windowHeight = window.innerHeight;
+        var shouldShow = true;
 
-        for (var i = 0; i < hideOnElements.length; i++) {
-          var selector = hideOnElements[i].trim();
-          if (selector) {
-            var elements = document.querySelectorAll(selector);
-            for (var j = 0; j < elements.length; j++) {
-              var element = elements[j];
-              var elementTop = element.getBoundingClientRect().top + window.scrollY;
-              if (scrollBottom >= elementTop) {
-                shouldHide = true;
-                break;
-              }
+        hideOnElements.forEach(function(selector) {
+          var element = document.querySelector(selector.trim());
+          if (element) {
+            var rect = element.getBoundingClientRect();
+            var elementTop = rect.top + scrollY;
+            var elementBottom = elementTop + element.offsetHeight;
+
+            if (scrollY + windowHeight > elementTop) {
+              shouldShow = false;
             }
           }
-          if (shouldHide) break;
-        }
-        if (shouldHide) {
-          buttonSection.style.display = 'none';
-        } else {
-          buttonSection.style.display = '';
+        });
+
+        if (shouldShow && !isVisible) {
+          stickyBar.classList.add("visible");
+          isVisible = true;
+        } else if (!shouldShow && isVisible) {
+          stickyBar.classList.remove("visible");
+          isVisible = false;
         }
       }
 
-      window.addEventListener('scroll', checkVisibility);
-      window.addEventListener('resize', checkVisibility);
-      checkVisibility();
+      window.addEventListener("scroll", checkStickyVisibility);
+      window.addEventListener("resize", checkStickyVisibility);
+      checkStickyVisibility();
     });
   </script>
 {% endif %}
 
+<!-- CSS Styles -->
 <style>
+  /* Hide the original button section when sticky button is active */
   {% if section.settings.is_sticky %}
-    #button-section-{{ section.id }} {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      z-index: 1000;
-      padding: 10px 0; /* Adjust padding as needed */
-    }
-    #button-section-{{ section.id }} .container {
-      width: 100%;
+    #button-section-{{ section.id }}.hidden {
+      display: none;
     }
   {% endif %}
 
+  /* Sticky Button Styles */
+  #sticky-bar {
+    position: fixed;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    z-index: 50;
+    width: 94vw;
+    max-width: 500px; /* Adjust as needed */
+    text-align: center;
+  }
+
+  #sticky-bar.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  #sticky-bar .sticky-button {
+    width: 100%;
+    padding: 1rem;
+    background-color: {{ section.settings.button_bg_color }};
+    color: {{ section.settings.button_title_color }};
+    font-weight: bold;
+    font-size: 1.25rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+  }
+
+  /* Adjust icon styles if using Font Awesome */
+  #sticky-bar .fa-arrow-right {
+    margin-right: 0.5rem;
+  }
+
+  /* Animation */
+  @keyframes popIn {
+    0% {
+      opacity: 0;
+      transform: translateY(100%) scale(0.9);
+    }
+    80% {
+      opacity: 1;
+      transform: translateY(-10%) scale(1.05);
+    }
+    100% {
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  #sticky-bar.visible {
+    animation: popIn 0.5s forwards;
+  }
+
+  /* Existing padding styles */
   {% if section.settings.padding_top != 50 and section.settings.padding_top != blank %}
     #button-section-{{ section.id }} {
       padding-top: {{ section.settings.padding_top }}px;
@@ -140,7 +208,7 @@
     {
       "type": "checkbox",
       "id": "is_link_to_next_page",
-      "label": "link to next page (metafield)"
+      "label": "Link to Next Page (Metafield)"
     },
     {
       "type": "checkbox",
@@ -150,7 +218,7 @@
     {
       "type": "text",
       "id": "sticky_hide",
-      "label": "Hide Button When Scrolled over Elements"
+      "label": "Hide Button When Scrolled Over Elements (CSS Selectors)"
     },
     {
       "type": "color",
