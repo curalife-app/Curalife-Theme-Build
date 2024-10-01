@@ -1,7 +1,7 @@
 {% assign buttonURL = page.metafields.custom.next_page_link | default: section.settings.button_link %}
 
 <!-- Original Button Section (hidden when sticky button is active) -->
-<section id="button-section-{{ section.id }}" class="button-section {{ section.settings.section_additional_classes }} {% if section.settings.is_sticky %}!hidden mbl:w-full{% endif %}">
+<section id="button-section-{{ section.id }}" class="button-section {{ section.settings.section_additional_classes }} {% if section.settings.is_sticky %}hidden mbl:w-full{% endif %}">
   <div class="container flex justify-center">
     {% render 'button',
       button_text: section.settings.button_text,
@@ -22,6 +22,7 @@
   </div>
 </section>
 
+<!-- Sticky Button -->
 {% if section.settings.is_sticky %}
   <a id="sticky-bar" href="{{ buttonURL }}">
     <button class="sticky-button">{{ section.settings.button_text }}</button>
@@ -38,13 +39,13 @@
   </script>
 {% endif %}
 
+<!-- JavaScript for Sticky Button Behavior -->
 {% if section.settings.is_sticky %}
   <script>
     document.addEventListener("DOMContentLoaded", function() {
       var stickyBar = document.getElementById("sticky-bar");
-      var hideOnElements = {{ section.settings.sticky_hide | default: '' | strip | split: ',' | map: 'strip' | json }};
-
-      console.log("Hide on elements: ", hideOnElements);
+      var stickyHideSetting = "{{ section.settings.sticky_hide | default: '' | strip }}";
+      var hideOnElements = stickyHideSetting.split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s !== ''; });
 
       function checkStickyVisibility() {
         var shouldHide = false;
@@ -96,13 +97,8 @@
       transition: opacity 0.5s ease, transform 0.5s ease;
       z-index: 50;
       width: 94vw;
-      max-width: 500px;
+      max-width: 500px; /* Adjust as needed */
       text-align: center;
-
-      @media (width < 768px) {
-        bottom: 3vw;
-        left: 3vw;
-      }
     }
 
     #sticky-bar.visible {
