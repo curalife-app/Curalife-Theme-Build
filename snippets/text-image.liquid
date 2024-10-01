@@ -198,15 +198,10 @@
             collectionLink.addEventListener('click', function(e) {
               e.preventDefault();
 
-              if (itemsContainer.classList.contains('open')) {
-                itemsContainer.style.maxHeight = null;
-                itemsContainer.classList.remove('open');
-                collectionLink.classList.remove('open');
-              } else {
-                itemsContainer.style.maxHeight = itemsContainer.scrollHeight + 'px';
-                itemsContainer.classList.add('open');
-                collectionLink.classList.add('open');
-              }
+              // Always open the container and hide the link
+              itemsContainer.style.maxHeight = itemsContainer.scrollHeight + 'px';
+              itemsContainer.classList.add('open');
+              collectionLink.classList.add('open');
             });
           }
 
@@ -286,6 +281,10 @@
 
           #section-{{ section_id }} .collection-link.open .fa-chevron-down {
             transform: rotate(180deg);
+          }
+
+          #section-{{ section_id }} .collection-link.open {
+            display: none;
           }
 
           @media screen and (max-width: 768px) {
