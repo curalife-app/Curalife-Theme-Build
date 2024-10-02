@@ -94,79 +94,77 @@
   });
 
   {% if section.settings.isPopup %}
-    {% if section.settings.isPopup %}
-      document.addEventListener('DOMContentLoaded', function() {
-        const popup = document.getElementById('cta-section-{{ section.id }}');
-        const popupContent = popup.querySelector('.cta-popup-content');
-        const closeButton = popup.querySelector('.close-popup');
-        const focusableElementsString = 'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]';
-        let focusableElements = [];
-        let firstFocusableElement = null;
-        let lastFocusableElement = null;
+    document.addEventListener('DOMContentLoaded', function() {
+      const popup = document.getElementById('cta-section-{{ section.id }}');
+      const popupContent = popup.querySelector('.cta-popup-content');
+      const closeButton = popup.querySelector('.close-popup');
+      const focusableElementsString = 'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]';
+      let focusableElements = [];
+      let firstFocusableElement = null;
+      let lastFocusableElement = null;
 
-        const togglePopup = (show) => {
-          if (show) {
-            popup.setAttribute('aria-hidden', 'false');
-            popup.classList.add('show');
-            // Get all focusable elements inside the popup
-            focusableElements = popupContent.querySelectorAll(focusableElementsString);
-            firstFocusableElement = focusableElements[0];
-            lastFocusableElement = focusableElements[focusableElements.length - 1];
-            // Focus the first element
-            firstFocusableElement.focus();
-            // Add event listener to trap focus
-            document.addEventListener('keydown', trapTabKey);
-            // Add event listener for Escape key
-            document.addEventListener('keydown', handleEscape);
-            // Disable background scrolling
-            document.body.style.overflow = 'hidden';
-          } else {
-            popup.setAttribute('aria-hidden', 'true');
-            popup.classList.remove('show');
-            // Remove event listeners
-            document.removeEventListener('keydown', trapTabKey);
-            document.removeEventListener('keydown', handleEscape);
-            // Re-enable background scrolling
-            document.body.style.overflow = '';
-          }
-        };
+      const togglePopup = (show) => {
+        if (show) {
+          popup.setAttribute('aria-hidden', 'false');
+          popup.classList.add('show');
+          // Get all focusable elements inside the popup
+          focusableElements = popupContent.querySelectorAll(focusableElementsString);
+          firstFocusableElement = focusableElements[0];
+          lastFocusableElement = focusableElements[focusableElements.length - 1];
+          // Focus the first element
+          firstFocusableElement.focus();
+          // Add event listener to trap focus
+          document.addEventListener('keydown', trapTabKey);
+          // Add event listener for Escape key
+          document.addEventListener('keydown', handleEscape);
+          // Disable background scrolling
+          document.body.style.overflow = 'hidden';
+        } else {
+          popup.setAttribute('aria-hidden', 'true');
+          popup.classList.remove('show');
+          // Remove event listeners
+          document.removeEventListener('keydown', trapTabKey);
+          document.removeEventListener('keydown', handleEscape);
+          // Re-enable background scrolling
+          document.body.style.overflow = '';
+        }
+      };
 
-        const trapTabKey = (e) => {
-          if (e.keyCode === 9) { // Tab key
-            if (e.shiftKey) { // Shift + Tab
-              if (document.activeElement === firstFocusableElement) {
-                e.preventDefault();
-                lastFocusableElement.focus();
-              }
-            } else { // Tab
-              if (document.activeElement === lastFocusableElement) {
-                e.preventDefault();
-                firstFocusableElement.focus();
-              }
+      const trapTabKey = (e) => {
+        if (e.keyCode === 9) { // Tab key
+          if (e.shiftKey) { // Shift + Tab
+            if (document.activeElement === firstFocusableElement) {
+              e.preventDefault();
+              lastFocusableElement.focus();
+            }
+          } else { // Tab
+            if (document.activeElement === lastFocusableElement) {
+              e.preventDefault();
+              firstFocusableElement.focus();
             }
           }
-        };
+        }
+      };
 
-        const handleEscape = (e) => {
-          if (e.key === 'Escape' || e.keyCode === 27) {
-            togglePopup(false);
-          }
-        };
+      const handleEscape = (e) => {
+        if (e.key === 'Escape' || e.keyCode === 27) {
+          togglePopup(false);
+        }
+      };
 
-        document.querySelectorAll('a[href="#cta-popup"]').forEach(el =>
-          el.addEventListener('click', (e) => {
-            e.preventDefault();
-            togglePopup(true);
-          })
-        );
+      document.querySelectorAll('a[href="#cta-popup"]').forEach(el =>
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          togglePopup(true);
+        })
+      );
 
-        closeButton.addEventListener('click', () => togglePopup(false));
+      closeButton.addEventListener('click', () => togglePopup(false));
 
-        popup.addEventListener('click', (e) => {
-          if (e.target === popup) togglePopup(false);
-        });
+      popup.addEventListener('click', (e) => {
+        if (e.target === popup) togglePopup(false);
       });
-      {% endif %}
+    });
   {% endif %}
 </script>
 
@@ -174,10 +172,10 @@
   <style>
     #shopify-section-{{ section.id }} .product-container {
       padding: 0 !important;
+    }
 
-      .variant-title span {
-        display: none;
-      }
+    #shopify-section-{{ section.id }} .variant-title span {
+      display: none;
     }
 
     #shopify-section-{{ section.id }} .cta-popup {
@@ -195,9 +193,9 @@
     }
 
     #shopify-section-{{ section.id }} .cta-popup.show {
-      opacity: 1;
-      visibility: visible;
-      pointer-events: auto; /* Allow interaction when visible */
+      opacity: 1 !important;
+      visibility: visible !important;
+      pointer-events: auto !important; /* Allow interaction when visible */
       transition-delay: 0s;
     }
 
@@ -530,9 +528,9 @@
       }
     ],
     "presets": [
-    {
+      {
         "name": "CTA Section"
-    }
-  ]
+      }
+    ]
 }
 {% endschema %}
