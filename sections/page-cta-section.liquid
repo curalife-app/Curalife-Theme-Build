@@ -94,77 +94,79 @@
   });
 
   {% if section.settings.isPopup %}
-    document.addEventListener('DOMContentLoaded', function() {
-      const popup = document.getElementById('cta-section-{{ section.id }}');
-      const popupContent = popup.querySelector('.cta-popup-content');
-      const closeButton = popup.querySelector('.close-popup');
-      const focusableElementsString = 'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]';
-      let focusableElements = [];
-      let firstFocusableElement = null;
-      let lastFocusableElement = null;
+    {% if section.settings.isPopup %}
+      document.addEventListener('DOMContentLoaded', function() {
+        const popup = document.getElementById('cta-section-{{ section.id }}');
+        const popupContent = popup.querySelector('.cta-popup-content');
+        const closeButton = popup.querySelector('.close-popup');
+        const focusableElementsString = 'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]';
+        let focusableElements = [];
+        let firstFocusableElement = null;
+        let lastFocusableElement = null;
 
-      const togglePopup = (show) => {
-        if (show) {
-          popup.setAttribute('aria-hidden', 'false');
-          popup.classList.add('show');
-          // Get all focusable elements inside the popup
-          focusableElements = popupContent.querySelectorAll(focusableElementsString);
-          firstFocusableElement = focusableElements[0];
-          lastFocusableElement = focusableElements[focusableElements.length - 1];
-          // Focus the first element
-          firstFocusableElement.focus();
-          // Add event listener to trap focus
-          document.addEventListener('keydown', trapTabKey);
-          // Add event listener for Escape key
-          document.addEventListener('keydown', handleEscape);
-          // Disable background scrolling
-          document.body.style.overflow = 'hidden';
-        } else {
-          popup.setAttribute('aria-hidden', 'true');
-          popup.classList.remove('show');
-          // Remove event listeners
-          document.removeEventListener('keydown', trapTabKey);
-          document.removeEventListener('keydown', handleEscape);
-          // Re-enable background scrolling
-          document.body.style.overflow = '';
-        }
-      };
+        const togglePopup = (show) => {
+          if (show) {
+            popup.setAttribute('aria-hidden', 'false');
+            popup.classList.add('show');
+            // Get all focusable elements inside the popup
+            focusableElements = popupContent.querySelectorAll(focusableElementsString);
+            firstFocusableElement = focusableElements[0];
+            lastFocusableElement = focusableElements[focusableElements.length - 1];
+            // Focus the first element
+            firstFocusableElement.focus();
+            // Add event listener to trap focus
+            document.addEventListener('keydown', trapTabKey);
+            // Add event listener for Escape key
+            document.addEventListener('keydown', handleEscape);
+            // Disable background scrolling
+            document.body.style.overflow = 'hidden';
+          } else {
+            popup.setAttribute('aria-hidden', 'true');
+            popup.classList.remove('show');
+            // Remove event listeners
+            document.removeEventListener('keydown', trapTabKey);
+            document.removeEventListener('keydown', handleEscape);
+            // Re-enable background scrolling
+            document.body.style.overflow = '';
+          }
+        };
 
-      const trapTabKey = (e) => {
-        if (e.keyCode === 9) { // Tab key
-          if (e.shiftKey) { // Shift + Tab
-            if (document.activeElement === firstFocusableElement) {
-              e.preventDefault();
-              lastFocusableElement.focus();
-            }
-          } else { // Tab
-            if (document.activeElement === lastFocusableElement) {
-              e.preventDefault();
-              firstFocusableElement.focus();
+        const trapTabKey = (e) => {
+          if (e.keyCode === 9) { // Tab key
+            if (e.shiftKey) { // Shift + Tab
+              if (document.activeElement === firstFocusableElement) {
+                e.preventDefault();
+                lastFocusableElement.focus();
+              }
+            } else { // Tab
+              if (document.activeElement === lastFocusableElement) {
+                e.preventDefault();
+                firstFocusableElement.focus();
+              }
             }
           }
-        }
-      };
+        };
 
-      const handleEscape = (e) => {
-        if (e.key === 'Escape' || e.keyCode === 27) {
-          togglePopup(false);
-        }
-      };
+        const handleEscape = (e) => {
+          if (e.key === 'Escape' || e.keyCode === 27) {
+            togglePopup(false);
+          }
+        };
 
-      document.querySelectorAll('a[href="#cta-popup"]').forEach(el =>
-        el.addEventListener('click', (e) => {
-          e.preventDefault();
-          togglePopup(true);
-        })
-      );
+        document.querySelectorAll('a[href="#cta-popup"]').forEach(el =>
+          el.addEventListener('click', (e) => {
+            e.preventDefault();
+            togglePopup(true);
+          })
+        );
 
-      closeButton.addEventListener('click', () => togglePopup(false));
+        closeButton.addEventListener('click', () => togglePopup(false));
 
-      popup.addEventListener('click', (e) => {
-        if (e.target === popup) togglePopup(false);
+        popup.addEventListener('click', (e) => {
+          if (e.target === popup) togglePopup(false);
+        });
       });
-    });
+      {% endif %}
   {% endif %}
 </script>
 
@@ -182,17 +184,23 @@
       position: fixed;
       inset: 0;
       background-color: rgba(0, 0, 0, 0.5);
-      display: none;
+      display: flex; /* Keep it always flex */
       justify-content: center;
       align-items: center;
       z-index: 1000;
       opacity: 0;
-      transition: opacity 0.3s ease;
+      visibility: hidden;
+      pointer-events: none; /* Prevent interaction when hidden */
+      transition: opacity 0.3s ease, visibility 0s linear 0.3s;
     }
+
     #shopify-section-{{ section.id }} .cta-popup.show {
-      display: flex;
       opacity: 1;
+      visibility: visible;
+      pointer-events: auto; /* Allow interaction when visible */
+      transition-delay: 0s;
     }
+
     #shopify-section-{{ section.id }} .cta-popup-content {
       background-color: #fff;
       padding: 30px;
@@ -202,12 +210,16 @@
       width: 90%;
       max-height: 90%;
       box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-      transform: scale(0.9);
-      transition: transform 0.3s ease;
+      transform: translateY(-20px); /* Start slightly above */
+      opacity: 0; /* Start invisible */
+      transition: opacity 0.3s ease, transform 0.3s ease;
     }
+
     #shopify-section-{{ section.id }} .cta-popup.show .cta-popup-content {
-      transform: scale(1);
+      transform: translateY(0); /* Move to original position */
+      opacity: 1; /* Fade in */
     }
+
     #shopify-section-{{ section.id }} .close-popup {
       position: absolute;
       top: 15px;
