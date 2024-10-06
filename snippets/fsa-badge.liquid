@@ -292,36 +292,52 @@
   const hsaModal = document.getElementById('hsa-modal-{{ SID }}');
 
   const toggleHSAModal = (show) => {
+    if (!hsaModal) return; // Ensure the modal element exists
+
     hsaModal.classList.toggle('show', show);
     hsaModal.setAttribute('aria-hidden', !show);
-    document.body.style.overflow = show ? 'hidden' : '';
 
     if (show) {
+      // Prevent scrolling when modal is visible
+      document.body.style.overflow = 'hidden';
+      // Load images with data-src attribute
       const images = hsaModal.querySelectorAll('img[data-src]');
       images.forEach(img => {
         if (!img.getAttribute('src')) {
           img.setAttribute('src', img.getAttribute('data-src'));
         }
       });
+    } else {
+      // Enable scrolling when modal is hidden
+      document.body.style.overflow = '';
     }
   };
 
   document.getElementById('hsa-badge-link-{{ SID }}').addEventListener('click', (event) => {
     event.preventDefault();
+    console.log("Read more link clicked");
     toggleHSAModal(true);
   });
 
-  hsaModal.querySelector('.close-icon').addEventListener('click', () => toggleHSAModal(false));
-  hsaModal.querySelector('.close-button').addEventListener('click', () => toggleHSAModal(false));
+  hsaModal.querySelector('.close-icon').addEventListener('click', () => {
+    console.log("Close icon clicked");
+    toggleHSAModal(false);
+  });
+  hsaModal.querySelector('.close-button').addEventListener('click', () => {
+    console.log("Close button clicked");
+    toggleHSAModal(false);
+  });
 
   hsaModal.addEventListener('click', (event) => {
     if (event.target === hsaModal || event.target.classList.contains('modal-backdrop')) {
+      console.log("Backdrop clicked");
       toggleHSAModal(false);
     }
   });
 
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && hsaModal.classList.contains('show')) {
+      console.log("Escape key pressed");
       toggleHSAModal(false);
     }
   });
