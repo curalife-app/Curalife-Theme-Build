@@ -252,12 +252,27 @@
             collectionLink.addEventListener('click', function(e) {
               e.preventDefault();
 
-              itemsContainer.classList.toggle('open');
+              if (itemsContainer.classList.contains('open')) {
+                // Close the container
+                itemsContainer.style.maxHeight = itemsContainer.scrollHeight + 'px';
+                itemsContainer.offsetHeight; // Trigger reflow
+                itemsContainer.style.maxHeight = '0';
+                itemsContainer.classList.remove('open');
+              } else {
+                // Open the container
+                itemsContainer.style.maxHeight = itemsContainer.scrollHeight + 'px';
+                itemsContainer.classList.add('open');
+                // Remove max-height after transition to allow for dynamic content changes
+                setTimeout(function() {
+                  itemsContainer.style.maxHeight = '';
+                }, 300); // Match the CSS transition duration
+              }
+
               collectionLink.classList.toggle('open');
             });
           }
 
-          // Existing items_slider_on logic
+          // Existing items_slider_on logic remains the same
           var sliderOn = '{{ items_slider_on | escape }}';
           var isMobile = window.innerWidth <= 768;
 
@@ -304,6 +319,7 @@
             }
           }
         });
+
       </script>
 
       <style>
