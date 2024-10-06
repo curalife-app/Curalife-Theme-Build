@@ -2,7 +2,7 @@
   Pay with HSA | FSA <a href="#" id="hsa-badge-link-{{ SID }}">Read More</a>
 </div>
 
-<div id="hsa-modal-{{ SID }}" class="modal" aria-labelledby="hsa-modal-title" aria-hidden="true" style="opacity: 0; visibility: hidden;">
+<div id="hsa-modal-{{ SID }}" class="modal" aria-labelledby="hsa-modal-title" aria-hidden="true">
   <div class="modal-backdrop"></div>
 
   <div class="modal-content">
@@ -294,10 +294,11 @@
   const toggleHSAModal = (show) => {
     if (!hsaModal) return; // Ensure the modal element exists
 
-    hsaModal.classList.toggle('show', show);
-    hsaModal.setAttribute('aria-hidden', !show);
-
     if (show) {
+      hsaModal.style.opacity = '1';
+      hsaModal.style.visibility = 'visible';
+      hsaModal.classList.add('show');
+      hsaModal.setAttribute('aria-hidden', 'false');
       // Prevent scrolling when modal is visible
       document.body.style.overflow = 'hidden';
       // Load images with data-src attribute
@@ -308,6 +309,10 @@
         }
       });
     } else {
+      hsaModal.style.opacity = '0';
+      hsaModal.style.visibility = 'hidden';
+      hsaModal.classList.remove('show');
+      hsaModal.setAttribute('aria-hidden', 'true');
       // Enable scrolling when modal is hidden
       document.body.style.overflow = '';
     }
