@@ -18,7 +18,6 @@
   {% endcase %}
 {% endfor %}
 
-
 <div class="text-image-wrapper w-full">
   <div class="container static p-0 h-auto flex md:gap-4 md:items-center gap-x-16 gap-y-4 {% case image_position %}{% when 'right' %}flex-row-reverse{% when 'left' %}flex-row{% when 'bottom' %}flex-col-reverse{% when 'top' %}flex-col{% endcase %} {% unless is_no_wrap %}{% if is_image_middle_mobile or is_reverse_on_mobile %}md:flex-col{% else %}md:flex-col-reverse{% endif %}{% endunless %} {% if is_image_overlap and image_position == 'left' %}justify-end{% else %}justify-between{% endif %} {% if is_remove_container_padding_mobile %}md:p-0{% endif %}">
     {% if is_image_middle_mobile and title != blank %}
@@ -191,7 +190,7 @@
 
     {% if itemsCounter > 0 %}
       <div class="collection-container mt-8 {% if items_hidden_title == blank %}open{% endif %}">
-        <div class="swiper items overflow-visible">
+        <div class="swiper items overflow-visible {{ sliderClass }}">
           <div class="swiper-wrapper flex-nowrap flex">
             {% for block in section_blocks %}
               {% case block.type %}
@@ -225,20 +224,21 @@
 
       <script>
         document.addEventListener('DOMContentLoaded', function() {
-          var collectionLink = document.querySelector('#section-{{ section_id }} .collection-link');
-          var itemsContainer = document.querySelector('#section-{{ section_id }} .collection-container');
+          var sliderOn = '{{ items_slider_on | escape }}';
+          var isMobile = window.innerWidth <= 768;
 
-          if (collectionLink && itemsContainer) {
-            collectionLink.addEventListener('click', function(e) {
-              e.preventDefault();
-
-              itemsContainer.style.maxHeight = itemsContainer.scrollHeight + 'px';
-              itemsContainer.classList.add('open');
-              collectionLink.classList.add('open');
-            });
+          var shouldInitializeSwiper = false;
+          if (sliderOn === 'both') {
+            shouldInitializeSwiper = true;
+          } else if (sliderOn === 'desktop' && !isMobile) {
+            shouldInitializeSwiper = true;
+          } else if (sliderOn === 'mobile' && isMobile) {
+            shouldInitializeSwiper = true;
+          } else if (sliderOn === 'none') {
+            shouldInitializeSwiper = false;
           }
 
-
+          if (shouldInitializeSwiper) {
             var swiper = new Swiper('#section-{{ section_id }} .swiper.items', {
               slidesPerView: 1,
               navigation: {
@@ -251,6 +251,23 @@
                 }
               },
             });
+          } else {
+            // Adjust layout if Swiper is not initialized
+            var swiperContainer = document.querySelector('#section-{{ section_id }} .swiper.items');
+            if (swiperContainer) {
+              swiperContainer.classList.remove('swiper');
+              var swiperWrapper = swiperContainer.querySelector('.swiper-wrapper');
+              if (swiperWrapper) {
+                swiperWrapper.classList.remove('swiper-wrapper');
+                swiperWrapper.classList.add('non-swiper-wrapper');
+              }
+              var swiperSlides = swiperWrapper.querySelectorAll('.swiper-slide');
+              swiperSlides.forEach(function(slide) {
+                slide.classList.remove('swiper-slide');
+                slide.classList.add('non-swiper-slide');
+              });
+            }
+          }
         });
       </script>
 
