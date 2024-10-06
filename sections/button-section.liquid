@@ -33,7 +33,7 @@
     var hideOnElements = stickyHideSetting.split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s !== ''; });
 
     function checkStickyVisibility() {
-      var shouldHide = false;
+      var shouldShow = true;
 
       if (hideOnElements.length > 0) {
         hideOnElements.forEach(function(selector) {
@@ -42,25 +42,20 @@
             elements.forEach(function(element) {
               var rect = element.getBoundingClientRect();
               if (rect.top < window.innerHeight && rect.bottom > 0) {
-                shouldHide = true;
+                shouldShow = false;
               }
             });
           }
         });
       }
 
-      // Force visibility if there are no hide conditions
-      if (hideOnElements.length === 0) {
-        shouldHide = false;
-      }
-
-      if (shouldHide) {
-        stickyBar.classList.remove("visible");
-      } else {
+      if (shouldShow) {
         stickyBar.classList.add("visible");
+      } else {
+        stickyBar.classList.remove("visible");
       }
 
-      console.log("Should hide:", shouldHide);
+      console.log("Should show:", shouldShow);
       console.log("Hide on elements:", hideOnElements);
       console.log("Sticky bar classList:", stickyBar.classList);
     }
