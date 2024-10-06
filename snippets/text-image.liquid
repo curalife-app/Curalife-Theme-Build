@@ -252,9 +252,15 @@
             collectionLink.addEventListener('click', function(e) {
               e.preventDefault();
 
-              itemsContainer.style.maxHeight = itemsContainer.scrollHeight + 'px';
-              itemsContainer.classList.add('open');
-              collectionLink.classList.add('open');
+              if (itemsContainer.classList.contains('open')) {
+                itemsContainer.style.height = '0px';
+                itemsContainer.classList.remove('open');
+                collectionLink.classList.remove('open');
+              } else {
+                itemsContainer.style.height = itemsContainer.scrollHeight + 'px';
+                itemsContainer.classList.add('open');
+                collectionLink.classList.add('open');
+              }
             });
           }
 
@@ -308,25 +314,28 @@
 
       <style>
         #section-{{ section_id }} .collection-container {
-          min-height: 0;
-          transition: min-height 0.3s ease-out;
+          height: 0;
+          transition: height 0.3s ease-out;
+          overflow: hidden;
+
+          &.open {
+            overflow: visible;
+            height: auto;
+          }
 
           &:has(.non-swiper-wrapper) {
             &.open {
-                padding-bottom: 0 !important;
-              }
+              padding-bottom: 0 !important;
+            }
           }
 
           &.open {
             padding-bottom: {% if itemsCounter <= 3 %}0{% else %}80px{% endif %};
-            max-height: unset !important;
 
-            @media (width < 768px) {
-              &.open {
-                /* overflow-y: hidden; */
-                padding-bottom: 20vw;
-                scrollbar-width: none !important;
-              }
+            @media (max-width: 768px) {
+              overflow-y: hidden;
+              padding-bottom: 20vw;
+              scrollbar-width: none !important;
             }
           }
 
@@ -383,12 +392,6 @@
         <style>
           #section-{{ section_id }} .collection-container {
             overflow: hidden;
-            max-height: 0;
-            transition: max-height 0.3s ease-out;
-
-            &.open {
-              overflow: visible;
-            }
           }
 
           #section-{{ section_id }} .collection-link .fa-chevron-down {
@@ -400,7 +403,9 @@
           }
 
           #section-{{ section_id }} .collection-link.open {
-            display: none;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
           }
 
           @media screen and (max-width: 768px) {
