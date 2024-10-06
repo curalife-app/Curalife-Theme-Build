@@ -253,16 +253,35 @@
               e.preventDefault();
 
               if (itemsContainer.classList.contains('open')) {
-                itemsContainer.style.height = itemsContainer.scrollHeight + 'px';
-                itemsContainer.offsetHeight; // Trigger reflow
-                itemsContainer.style.height = '0';
+                // Closing the container
+                itemsContainer.style.overflow = 'hidden';
+                itemsContainer.style.maxHeight = itemsContainer.scrollHeight + 'px';
+                // Force a reflow to ensure the animation runs
+                itemsContainer.offsetHeight;
+                itemsContainer.style.maxHeight = '0';
                 itemsContainer.classList.remove('open');
+
+                // Remove inline styles after the transition ends
+                itemsContainer.addEventListener('transitionend', function handler() {
+                  itemsContainer.style.overflow = '';
+                  itemsContainer.style.maxHeight = '';
+                  itemsContainer.removeEventListener('transitionend', handler);
+                });
               } else {
-                itemsContainer.style.height = itemsContainer.scrollHeight + 'px';
+                // Opening the container
+                itemsContainer.style.overflow = 'hidden';
+                itemsContainer.style.maxHeight = '0';
                 itemsContainer.classList.add('open');
-                setTimeout(function() {
-                  itemsContainer.style.height = '';
-                }, 300); // Match transition duration
+                // Force a reflow to ensure the animation runs
+                itemsContainer.offsetHeight;
+                itemsContainer.style.maxHeight = itemsContainer.scrollHeight + 'px';
+
+                // After the transition ends, allow overflow
+                itemsContainer.addEventListener('transitionend', function handler() {
+                  itemsContainer.style.overflow = 'visible';
+                  itemsContainer.style.maxHeight = '';
+                  itemsContainer.removeEventListener('transitionend', handler);
+                });
               }
 
               collectionLink.classList.toggle('open');
@@ -396,13 +415,8 @@
       {% if items_hidden_title != blank %}
         <style>
           #section-{{ section_id }} .collection-container {
-            overflow: hidden;
             height: 0;
             transition: height 0.3s ease-out;
-          }
-
-          #section-{{ section_id }} .collection-container.open {
-            max-height: 1000px; /* Adjust this value */
           }
 
           #section-{{ section_id }} .collection-link .fa-chevron-down {
