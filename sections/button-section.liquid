@@ -3,7 +3,7 @@
 <!-- Unified Button Section -->
 <section id="button-section-{{ section.id }}" class="button-section {{ section.settings.section_additional_classes }} {% if section.settings.is_sticky %}sticky-enabled{% endif %}">
   <div class="container flex justify-center">
-    <a id="button-link" href="{{ buttonURL }}" class="button-link {% if section.settings.is_sticky %}sticky-bar{% endif %}">
+    <a href="{{ buttonURL }}" class="button-link {% if section.settings.is_sticky %}sticky-bar{% endif %}">
       <button class="main-button">{{ section.settings.button_text }}</button>
     </a>
   </div>
@@ -12,7 +12,7 @@
 {% if section.settings.is_pass_url_parameters %}
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      var buttonLink = document.getElementById('button-link');
+      var buttonLink = document.querySelector("#button-section-{{ section.id }} .button-link");
       if (buttonLink) {
         var baseLink = buttonLink.href;
         var params = new URLSearchParams(window.location.search);
@@ -26,7 +26,7 @@
 {% if section.settings.is_sticky %}
   <script>
     document.addEventListener("DOMContentLoaded", function() {
-      var stickyBar = document.querySelector("#button-section-{{ section.id }} #button-link");
+      var stickyBar = document.querySelector("#button-section-{{ section.id }} .button-link");
       if (stickyBar) {
         var stickyHideSetting = "{{ section.settings.sticky_hide | default: '' | strip }}";
         var hideOnElements = stickyHideSetting.split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s !== ''; });
