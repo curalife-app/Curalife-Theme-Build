@@ -209,37 +209,39 @@
 
     {% if itemsCounter > 0 %}
       <div class="collection-container mt-8 {% if items_hidden_title == blank %}open{% endif %}">
-        <div class="swiper items overflow-visible {{ sliderClass }}">
-          <div class="swiper-wrapper flex-nowrap flex">
-            {% for block in section_blocks %}
-              {% case block.type %}
-              {% when 'item' %}
-                  {% render 'item',
-                    image: block.settings.image,
-                    image_global: block.settings.image_global,
-                    img_mobile: block.settings.image_mobile,
-                    title: block.settings.title,
-                    title_tag: 'p',
-                    description: block.settings.description,
-                    link_title: block.settings.link_title,
-                    link_style: section.settings.link_style,
-                    link_url: block.settings.link_url,
-                    link_url_global: block.settings.link_url_global,
-                    icon: block.settings.icon,
-                    is_image_background: block.settings.is_image_background,
-                    item_layout_mobile: section.settings.item_layout_mobile,
-                    is_slider: true,
-                    index: forloop.index,
-                    section_id: section.id
-                  %}
-              {% endcase %}
-            {% endfor %}
-          </div>
+        <div class="collection-content">
+          <div class="swiper items overflow-visible {{ sliderClass }}">
+            <div class="swiper-wrapper flex-nowrap flex">
+              {% for block in section_blocks %}
+                {% case block.type %}
+                {% when 'item' %}
+                    {% render 'item',
+                      image: block.settings.image,
+                      image_global: block.settings.image_global,
+                      img_mobile: block.settings.image_mobile,
+                      title: block.settings.title,
+                      title_tag: 'p',
+                      description: block.settings.description,
+                      link_title: block.settings.link_title,
+                      link_style: section.settings.link_style,
+                      link_url: block.settings.link_url,
+                      link_url_global: block.settings.link_url_global,
+                      icon: block.settings.icon,
+                      is_image_background: block.settings.is_image_background,
+                      item_layout_mobile: section.settings.item_layout_mobile,
+                      is_slider: true,
+                      index: forloop.index,
+                      section_id: section.id
+                    %}
+                {% endcase %}
+              {% endfor %}
+            </div>
 
-          {% unless items_slider_on == 'none' %}
-            <div class="swiper-nav swiper-button-prev"></div>
-            <div class="swiper-nav swiper-button-next"></div>
-          {% endunless %}
+            {% unless items_slider_on == 'none' %}
+              <div class="swiper-nav swiper-button-prev"></div>
+              <div class="swiper-nav swiper-button-next"></div>
+            {% endunless %}
+          </div>
         </div>
       </div>
 
@@ -247,19 +249,26 @@
         document.addEventListener('DOMContentLoaded', function() {
           var collectionLink = document.querySelector('#section-{{ section_id }} .collection-link');
           var itemsContainer = document.querySelector('#section-{{ section_id }} .collection-container');
+          var contentContainer = document.querySelector('#section-{{ section_id }} .collection-content');
 
-          if (collectionLink && itemsContainer) {
+          if (collectionLink && itemsContainer && contentContainer) {
             collectionLink.addEventListener('click', function(e) {
               e.preventDefault();
 
               if (itemsContainer.classList.contains('open')) {
-                itemsContainer.style.height = '0px';
-                itemsContainer.classList.remove('open');
-                collectionLink.classList.remove('open');
+                contentContainer.style.opacity = '0';
+                setTimeout(function() {
+                  itemsContainer.style.height = '0px';
+                  itemsContainer.classList.remove('open');
+                  collectionLink.classList.remove('open');
+                }, 300);
               } else {
-                itemsContainer.style.height = itemsContainer.scrollHeight + 'px';
+                itemsContainer.style.height = contentContainer.scrollHeight + 'px';
                 itemsContainer.classList.add('open');
                 collectionLink.classList.add('open');
+                setTimeout(function() {
+                  contentContainer.style.opacity = '1';
+                }, 50);
               }
             });
           }
@@ -312,112 +321,119 @@
         });
       </script>
 
-      <style>
-        #section-{{ section_id }} .collection-container {
-          height: 0;
-          transition: height 0.3s ease-out;
-          overflow: hidden;
+    <style>
+      #section-{{ section_id }} .collection-container {
+        height: 0;
+        transition: height 0.3s ease-out;
+        overflow: hidden;
 
+        .collection-content {
+          opacity: 0;
+          transition: opacity 0.3s ease-out;
+        }
+
+        &.open {
+          overflow: visible;
+          height: auto;
+
+          .collection-content {
+            opacity: 1;
+          }
+        }
+
+        &:has(.non-swiper-wrapper) {
           &.open {
-            overflow: visible;
-            height: auto;
+            padding-bottom: 0 !important;
+          }
+        }
+
+        &.open {
+          padding-bottom: {% if itemsCounter <= 3 %}0{% else %}80px{% endif %};
+
+          @media (max-width: 768px) {
+            overflow-y: hidden;
+            padding-bottom: 20vw;
+            scrollbar-width: none !important;
+          }
+        }
+
+        @media (width < 768px) {
+          .non-swiper-wrapper {
+            flex-direction: column;
+            gap: 1rem;
+          }
+        }
+
+        .swiper-wrapper {
+          justify-content: space-between;
+
+          @media (width > 768px) {
+            gap: 1rem;
           }
 
-          &:has(.non-swiper-wrapper) {
-            &.open {
-              padding-bottom: 0 !important;
-            }
-          }
-
-          &.open {
-            padding-bottom: {% if itemsCounter <= 3 %}0{% else %}80px{% endif %};
-
-            @media (max-width: 768px) {
-              overflow-y: hidden;
-              padding-bottom: 20vw;
-              scrollbar-width: none !important;
-            }
-          }
-
-          @media (width < 768px) {
-            .non-swiper-wrapper {
-              flex-direction: column;
-              gap: 1rem;
-            }
-          }
-
-          .swiper-wrapper {
-            justify-content: space-between;
+          .item {
+            background-color: #EBF1F3;
+            border-radius: 15px;
+            padding: 1rem;
 
             @media (width > 768px) {
-              gap: 1rem;
+              width: calc((100% / 3) - (2 * (1rem / 3))) !important;
             }
 
-            .item {
-              background-color: #EBF1F3;
-              border-radius: 15px;
-              padding: 1rem;
+            .item-content {
+              text-align: start;
+              align-items: start;
 
-              @media (width > 768px) {
-                width: calc((100% / 3) - (2 * (1rem / 3))) !important;
-              }
-
-              .item-content {
-                text-align: start;
+              .img-wrapper {
                 align-items: start;
-
-                .img-wrapper {
-                  align-items: start;
-                }
-
-                .title-tag {
-                  margin: unset;
-                }
               }
-            }
-          }
 
-          .swiper-nav {
-            --swiper-navigation-sides-offset: 40%;
-            --swiper-navigation-top-offset: 110%;
-
-            @media (width < 768px) {
-              --swiper-navigation-sides-offset: 30%;
+              .title-tag {
+                margin: unset;
+              }
             }
           }
         }
-      </style>
+
+        .swiper-nav {
+          --swiper-navigation-sides-offset: 40%;
+          --swiper-navigation-top-offset: 110%;
+
+          @media (width < 768px) {
+            --swiper-navigation-sides-offset: 30%;
+          }
+        }
+      }
 
       {% if items_hidden_title != blank %}
-        <style>
-          #section-{{ section_id }} .collection-container {
-            overflow: hidden;
-          }
+        #section-{{ section_id }} .collection-container {
+          overflow: hidden;
+        }
 
-          #section-{{ section_id }} .collection-link .fa-chevron-down {
-            transition: transform 0.3s ease;
-          }
+        #section-{{ section_id }} .collection-link .fa-chevron-down {
+          transition: transform 0.3s ease;
+        }
 
-          #section-{{ section_id }} .collection-link.open .fa-chevron-down {
-            transform: rotate(180deg);
-          }
+        #section-{{ section_id }} .collection-link.open .fa-chevron-down {
+          transform: rotate(180deg);
+        }
 
-          #section-{{ section_id }} .collection-link.open {
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-          }
+        #section-{{ section_id }} .collection-link.open {
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.3s ease;
+        }
 
-          @media screen and (max-width: 768px) {
-            #section-{{ section_id }} .collection-link {
-              margin: auto;
-              display: flex;
-              flex-direction: column;
-              gap: 0.5rem;
-            }
+        @media screen and (max-width: 768px) {
+          #section-{{ section_id }} .collection-link {
+            margin: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
           }
-        </style>
+        }
       {% endif %}
+    </style>
     {% endif %}
 </div>
 
