@@ -226,6 +226,19 @@
 
       <script>
         document.addEventListener('DOMContentLoaded', function() {
+          var collectionLink = document.querySelector('#section-{{ section_id }} .collection-link');
+          var itemsContainer = document.querySelector('#section-{{ section_id }} .collection-container');
+
+          if (collectionLink && itemsContainer) {
+            collectionLink.addEventListener('click', function(e) {
+              e.preventDefault();
+
+              itemsContainer.style.maxHeight = itemsContainer.scrollHeight + 'px';
+              itemsContainer.classList.add('open');
+              collectionLink.classList.add('open');
+            });
+          }
+
           var sliderOn = '{{ items_slider_on | escape }}';
           var isMobile = window.innerWidth <= 768;
 
@@ -296,6 +309,7 @@
           @media (width < 768px) {
             .non-swiper-wrapper {
               flex-direction: column;
+              gap: 1rem;
             }
           }
 
