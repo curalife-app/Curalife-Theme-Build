@@ -257,6 +257,8 @@
 
               if (itemsContainer.classList.contains('open')) {
                 contentContainer.style.opacity = '0';
+                collectionLink.style.opacity = '1';
+                collectionLink.style.pointerEvents = 'auto';
                 setTimeout(function() {
                   itemsContainer.style.height = '0px';
                   itemsContainer.classList.remove('open');
@@ -266,6 +268,8 @@
                 itemsContainer.style.height = contentContainer.scrollHeight + 'px';
                 itemsContainer.classList.add('open');
                 collectionLink.classList.add('open');
+                collectionLink.style.opacity = '0';
+                collectionLink.style.pointerEvents = 'none';
                 setTimeout(function() {
                   contentContainer.style.opacity = '1';
                 }, 50);
@@ -321,119 +325,136 @@
         });
       </script>
 
-    <style>
-      #section-{{ section_id }} .collection-container {
-        height: 0;
-        transition: height 0.3s ease-out;
-        overflow: hidden;
-
-        .collection-content {
-          opacity: 0;
-          transition: opacity 0.3s ease-out;
-        }
-
-        &.open {
-          overflow: visible;
-          height: auto;
+      <style>
+        #section-{{ section_id }} .collection-container {
+          height: 0;
+          transition: height 0.3s ease-out;
+          overflow: hidden;
 
           .collection-content {
-            opacity: 1;
+            opacity: 0;
+            transition: opacity 0.3s ease-out;
           }
-        }
 
-        &:has(.non-swiper-wrapper) {
           &.open {
-            padding-bottom: 0 !important;
-          }
-        }
+            overflow: visible;
+            height: auto;
 
-        &.open {
-          padding-bottom: {% if itemsCounter <= 3 %}0{% else %}80px{% endif %};
-
-          @media (max-width: 768px) {
-            overflow-y: hidden;
-            padding-bottom: 20vw;
-            scrollbar-width: none !important;
-          }
-        }
-
-        @media (width < 768px) {
-          .non-swiper-wrapper {
-            flex-direction: column;
-            gap: 1rem;
-          }
-        }
-
-        .swiper-wrapper {
-          justify-content: space-between;
-
-          @media (width > 768px) {
-            gap: 1rem;
-          }
-
-          .item {
-            background-color: #EBF1F3;
-            border-radius: 15px;
-            padding: 1rem;
-
-            @media (width > 768px) {
-              width: calc((100% / 3) - (2 * (1rem / 3))) !important;
-            }
-
-            .item-content {
-              text-align: start;
-              align-items: start;
-
-              .img-wrapper {
-                align-items: start;
-              }
-
-              .title-tag {
-                margin: unset;
-              }
+            .collection-content {
+              opacity: 1;
             }
           }
-        }
 
-        .swiper-nav {
-          --swiper-navigation-sides-offset: 40%;
-          --swiper-navigation-top-offset: 110%;
+          &:has(.non-swiper-wrapper) {
+            &.open {
+              padding-bottom: 0 !important;
+            }
+          }
+
+          &.open {
+            padding-bottom: {% if itemsCounter <= 3 %}0{% else %}80px{% endif %};
+
+            @media (max-width: 768px) {
+              overflow-y: hidden;
+              padding-bottom: 20vw;
+              scrollbar-width: none !important;
+            }
+          }
 
           @media (width < 768px) {
-            --swiper-navigation-sides-offset: 30%;
+            .non-swiper-wrapper {
+              flex-direction: column;
+              gap: 1rem;
+            }
+          }
+
+          .swiper-wrapper {
+            justify-content: space-between;
+
+            @media (width > 768px) {
+              gap: 1rem;
+            }
+
+            .item {
+              background-color: #EBF1F3;
+              border-radius: 15px;
+              padding: 1rem;
+
+              @media (width > 768px) {
+                width: calc((100% / 3) - (2 * (1rem / 3))) !important;
+              }
+
+              .item-content {
+                text-align: start;
+                align-items: start;
+
+                .img-wrapper {
+                  align-items: start;
+                }
+
+                .title-tag {
+                  margin: unset;
+                }
+              }
+            }
+          }
+
+          .swiper-nav {
+            --swiper-navigation-sides-offset: 40%;
+            --swiper-navigation-top-offset: 110%;
+
+            @media (width < 768px) {
+              --swiper-navigation-sides-offset: 30%;
+            }
           }
         }
-      }
 
-      {% if items_hidden_title != blank %}
-        #section-{{ section_id }} .collection-container {
-          overflow: hidden;
-        }
+        {% if items_hidden_title != blank %}
+          #section-{{ section_id }} .collection-link-wrapper {
+            position: relative;
+            height: 2.5rem; /* Adjust this value based on your link's height */
+            margin-bottom: 1rem; /* Adjust as needed */
+          }
 
-        #section-{{ section_id }} .collection-link .fa-chevron-down {
-          transition: transform 0.3s ease;
-        }
-
-        #section-{{ section_id }} .collection-link.open .fa-chevron-down {
-          transform: rotate(180deg);
-        }
-
-        #section-{{ section_id }} .collection-link.open {
-          opacity: 0;
-          pointer-events: none;
-          transition: opacity 0.3s ease;
-        }
-
-        @media screen and (max-width: 768px) {
           #section-{{ section_id }} .collection-link {
-            margin: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
+            display: inline-flex;
+            align-items: center;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            cursor: pointer;
+            position: absolute;
+            top: 0;
+            left: 0;
           }
-        }
-      {% endif %}
-    </style>
+
+          #section-{{ section_id }} .collection-link .fa-chevron-down {
+            transition: transform 0.3s ease;
+            margin-left: 0.5rem;
+          }
+
+          #section-{{ section_id }} .collection-link.open {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-10px);
+          }
+
+          #section-{{ section_id }} .collection-link.open .fa-chevron-down {
+            transform: rotate(180deg);
+          }
+
+          @media screen and (max-width: 768px) {
+            #section-{{ section_id }} .collection-link {
+              left: 50%;
+              transform: translateX(-50%);
+              flex-direction: column;
+              gap: 0.5rem;
+            }
+
+            #section-{{ section_id }} .collection-link.open {
+              transform: translate(-50%, -10px);
+            }
+          }
+        {% endif %}
+      </style>
     {% endif %}
 </div>
 
