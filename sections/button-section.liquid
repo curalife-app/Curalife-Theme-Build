@@ -1,33 +1,13 @@
 {% assign buttonURL = page.metafields.custom.next_page_link | default: section.settings.button_link %}
 
-<!-- Original Button Section (hidden when sticky button is active) -->
-<section id="button-section-{{ section.id }}" class="button-section {{ section.settings.section_additional_classes }} {% if section.settings.is_sticky %}hidden mbl:w-full{% endif %}">
+<!-- Unified Button Section -->
+<section id="button-section-{{ section.id }}" class="button-section {{ section.settings.section_additional_classes }} {% if section.settings.is_sticky %}sticky-enabled{% endif %}">
   <div class="container flex justify-center">
-    {% render 'button',
-      button_text: section.settings.button_text,
-      button_url: buttonURL,
-      button_url_global: buttonURL,
-      button_icon: "",
-      button_style: "",
-      button_text_color: section.settings.button_title_color,
-      button_bg_color: section.settings.button_bg_color,
-      button_is_new_tab: section.settings.button_is_new_tab,
-      button_is_link_to_top: false,
-      button_is_chatbot: false,
-      button_is_prerender_link: false,
-      button_under_title: section.settings.button_under_title,
-      button_under_title_color: section.settings.button_under_title_color,
-      button_id: block.id
-    %}
+    <a id="button-link" href="{{ buttonURL }}" class="button-link {% if section.settings.is_sticky %}sticky-bar{% endif %}">
+      <button class="main-button">{{ section.settings.button_text }}</button>
+    </a>
   </div>
 </section>
-
-<!-- Sticky Button -->
-{% if section.settings.is_sticky %}
-  <a id="sticky-bar" href="{{ buttonURL }}">
-    <button class="sticky-button">{{ section.settings.button_text }}</button>
-  </a>
-{% endif %}
 
 {% if section.settings.is_pass_url_parameters %}
   <script>
@@ -43,7 +23,7 @@
 {% if section.settings.is_sticky %}
   <script>
     document.addEventListener("DOMContentLoaded", function() {
-      var stickyBar = document.getElementById("sticky-bar");
+      var stickyBar = document.getElementById("button-link");
       var stickyHideSetting = "{{ section.settings.sticky_hide | default: '' | strip }}";
       var hideOnElements = stickyHideSetting.split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s !== ''; });
 
@@ -80,14 +60,13 @@
 
 <!-- CSS Styles -->
 <style>
-  {% if section.settings.is_sticky %}
-    /* Hide the original button section when sticky button is active */
-    #button-section-{{ section.id }}.hidden {
-      display: none;
-    }
+  .button-link {
+    text-align: center;
+  }
 
-    /* Sticky Button Styles */
-    #sticky-bar {
+  /* Sticky Button Styles */
+  {% if section.settings.is_sticky %}
+    .sticky-enabled .button-link {
       position: fixed;
       bottom: 4px;
       left: 50%;
@@ -98,21 +77,15 @@
       z-index: 50;
       width: 94vw;
       max-width: 500px; /* Adjust as needed */
-      text-align: center;
-
-      @media screen and (max-width: 768px) {
-        bottom: 3vw;
-        left: 3vw;
-      }
     }
 
-    #sticky-bar.visible {
+    .sticky-enabled .button-link.visible {
       opacity: 1;
       pointer-events: auto;
       transform: translateX(-50%) translateY(0);
     }
 
-    #sticky-bar .sticky-button {
+    .main-button {
       width: 100%;
       padding: 1rem;
       background-color: {{ section.settings.button_bg_color }};
@@ -143,7 +116,7 @@
       }
     }
 
-    #sticky-bar.visible {
+    .button-link.visible {
       animation: popIn 0.5s forwards;
     }
   {% endif %}
