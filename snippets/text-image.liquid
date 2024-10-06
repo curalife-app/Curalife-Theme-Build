@@ -253,24 +253,22 @@
               e.preventDefault();
 
               if (itemsContainer.classList.contains('open')) {
-                // Close the container
-                itemsContainer.style.maxHeight = itemsContainer.scrollHeight + 'px';
+                itemsContainer.style.height = itemsContainer.scrollHeight + 'px';
                 itemsContainer.offsetHeight; // Trigger reflow
-                itemsContainer.style.maxHeight = '0';
+                itemsContainer.style.height = '0';
                 itemsContainer.classList.remove('open');
               } else {
-                // Open the container
-                itemsContainer.style.maxHeight = itemsContainer.scrollHeight + 'px';
+                itemsContainer.style.height = itemsContainer.scrollHeight + 'px';
                 itemsContainer.classList.add('open');
-                // Remove max-height after transition to allow for dynamic content changes
                 setTimeout(function() {
-                  itemsContainer.style.maxHeight = '';
-                }, 300); // Match the CSS transition duration
+                  itemsContainer.style.height = '';
+                }, 300); // Match transition duration
               }
 
               collectionLink.classList.toggle('open');
             });
           }
+
 
           // Existing items_slider_on logic remains the same
           var sliderOn = '{{ items_slider_on | escape }}';
@@ -399,8 +397,8 @@
         <style>
           #section-{{ section_id }} .collection-container {
             overflow: hidden;
-            max-height: 0;
-            transition: max-height 0.3s ease-out;
+            height: 0;
+            transition: height 0.3s ease-out;
           }
 
           #section-{{ section_id }} .collection-container.open {
