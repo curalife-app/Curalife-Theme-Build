@@ -252,44 +252,12 @@
             collectionLink.addEventListener('click', function(e) {
               e.preventDefault();
 
-              if (itemsContainer.classList.contains('open')) {
-                // Closing the container
-                itemsContainer.style.overflow = 'hidden';
-                itemsContainer.style.maxHeight = itemsContainer.scrollHeight + 'px';
-                // Force a reflow to ensure the animation runs
-                itemsContainer.offsetHeight;
-                itemsContainer.style.maxHeight = '0';
-                itemsContainer.classList.remove('open');
-
-                // Remove inline styles after the transition ends
-                itemsContainer.addEventListener('transitionend', function handler() {
-                  itemsContainer.style.overflow = '';
-                  itemsContainer.style.maxHeight = '';
-                  itemsContainer.removeEventListener('transitionend', handler);
-                });
-              } else {
-                // Opening the container
-                itemsContainer.style.overflow = 'hidden';
-                itemsContainer.style.maxHeight = '0';
-                itemsContainer.classList.add('open');
-                // Force a reflow to ensure the animation runs
-                itemsContainer.offsetHeight;
-                itemsContainer.style.maxHeight = itemsContainer.scrollHeight + 'px';
-
-                // After the transition ends, allow overflow
-                itemsContainer.addEventListener('transitionend', function handler() {
-                  itemsContainer.style.overflow = 'visible';
-                  itemsContainer.style.maxHeight = '';
-                  itemsContainer.removeEventListener('transitionend', handler);
-                });
-              }
-
-              collectionLink.classList.toggle('open');
+              itemsContainer.style.maxHeight = itemsContainer.scrollHeight + 'px';
+              itemsContainer.classList.add('open');
+              collectionLink.classList.add('open');
             });
           }
 
-
-          // Existing items_slider_on logic remains the same
           var sliderOn = '{{ items_slider_on | escape }}';
           var isMobile = window.innerWidth <= 768;
 
@@ -336,7 +304,6 @@
             }
           }
         });
-
       </script>
 
       <style>
@@ -415,8 +382,13 @@
       {% if items_hidden_title != blank %}
         <style>
           #section-{{ section_id }} .collection-container {
-            height: 0;
-            transition: height 0.3s ease-out;
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.3s ease-out;
+
+            &.open {
+              overflow: visible;
+            }
           }
 
           #section-{{ section_id }} .collection-link .fa-chevron-down {
