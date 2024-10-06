@@ -26,42 +26,53 @@
 {% if section.settings.is_sticky %}
   <script>
     document.addEventListener("DOMContentLoaded", function() {
-      var stickyBar = document.querySelector("#button-section-{{ section.id }} .button-link");
-      console.log("Sticky Bar", stickyBar);
-      if (stickyBar) {
-        var stickyHideSetting = "{{ section.settings.sticky_hide | default: '' | strip }}";
-        var hideOnElements = stickyHideSetting.split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s !== ''; });
+  var stickyBar = document.querySelector("#button-section-{{ section.id }} .button-link");
 
-        function checkStickyVisibility() {
-          var shouldHide = false;
+  if (stickyBar) {
+    var stickyHideSetting = "{{ section.settings.sticky_hide | default: '' | strip }}";
+    var hideOnElements = stickyHideSetting.split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s !== ''; });
 
-          if (hideOnElements.length > 0) {
-            hideOnElements.forEach(function(selector) {
-              if (selector) {
-                var elements = document.querySelectorAll(selector);
-                elements.forEach(function(element) {
-                  var rect = element.getBoundingClientRect();
-                  if (rect.top < window.innerHeight && rect.bottom > 0) {
-                    shouldHide = true;
-                  }
-                });
+    function checkStickyVisibility() {
+      var shouldHide = false;
+
+      if (hideOnElements.length > 0) {
+        hideOnElements.forEach(function(selector) {
+          if (selector) {
+            var elements = document.querySelectorAll(selector);
+            elements.forEach(function(element) {
+              var rect = element.getBoundingClientRect();
+              if (rect.top < window.innerHeight && rect.bottom > 0) {
+                shouldHide = true;
               }
             });
           }
-
-          if (shouldHide) {
-            stickyBar.classList.remove("visible");
-          } else {
-            stickyBar.classList.add("visible");
-          }
-        }
-
-        window.addEventListener("scroll", checkStickyVisibility);
-        window.addEventListener("resize", checkStickyVisibility);
-        window.addEventListener("load", checkStickyVisibility);
-        checkStickyVisibility();
+        });
       }
-    });
+
+      if (shouldHide) {
+        stickyBar.classList.remove("visible");
+      } else {
+        stickyBar.classList.add("visible");
+      }
+    }
+
+    window.addEventListener("scroll", checkStickyVisibility);
+    window.addEventListener("resize", checkStickyVisibility);
+    window.addEventListener("load", checkStickyVisibility);
+
+    // Trigger initial check
+    checkStickyVisibility();
+
+    // Debug logging
+    console.log("Sticky bar element:", stickyBar);
+    console.log("Hide on elements:", hideOnElements);
+    setInterval(function() {
+      console.log("Sticky bar visibility:", stickyBar.classList.contains("visible"));
+    }, 1000);
+  } else {
+    console.error("Sticky bar element not found");
+  }
+});
   </script>
 {% endif %}
 
