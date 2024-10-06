@@ -49,11 +49,20 @@
         });
       }
 
+      // Force visibility if there are no hide conditions
+      if (hideOnElements.length === 0) {
+        shouldHide = false;
+      }
+
       if (shouldHide) {
         stickyBar.classList.remove("visible");
       } else {
         stickyBar.classList.add("visible");
       }
+
+      console.log("Should hide:", shouldHide);
+      console.log("Hide on elements:", hideOnElements);
+      console.log("Sticky bar classList:", stickyBar.classList);
     }
 
     window.addEventListener("scroll", checkStickyVisibility);
@@ -61,14 +70,11 @@
     window.addEventListener("load", checkStickyVisibility);
 
     // Trigger initial check
-    checkStickyVisibility();
+    setTimeout(checkStickyVisibility, 0);
 
     // Debug logging
     console.log("Sticky bar element:", stickyBar);
-    console.log("Hide on elements:", hideOnElements);
-    setInterval(function() {
-      console.log("Sticky bar visibility:", stickyBar.classList.contains("visible"));
-    }, 1000);
+    console.log("Initial sticky bar visibility:", stickyBar.classList.contains("visible"));
   } else {
     console.error("Sticky bar element not found");
   }
