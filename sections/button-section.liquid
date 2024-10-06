@@ -26,81 +26,41 @@
 {% if section.settings.is_sticky %}
   <script>
     document.addEventListener("DOMContentLoaded", function() {
-  var stickyBar = document.querySelector("#button-section-{{ section.id }} .button-link");
+      var stickyBar = document.querySelector("#button-section-{{ section.id }} .button-link");
+      if (stickyBar) {
+        var stickyHideSetting = "{{ section.settings.sticky_hide | default: '' | strip }}";
+        var hideOnElements = stickyHideSetting.split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s !== ''; });
 
-  if (stickyBar) {
-    var stickyHideSetting = "{{ section.settings.sticky_hide | default: '' | strip }}";
-    var hideOnElements = stickyHideSetting.split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s !== ''; });
+        function checkStickyVisibility() {
+          var shouldHide = false;
 
-    function isElementInViewport(el) {
-      var rect = el.getBoundingClientRect();
-      return (
-        rect.top >= 0 &&
-        rect.left >= 0 &&
-        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-        rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-      );
-    }
-
-    function checkStickyVisibility() {
-      var shouldShow = true;
-      var elementsInView = [];
-
-      if (hideOnElements.length > 0) {
-        hideOnElements.forEach(function(selector) {
-          if (selector) {
-            var elements = document.querySelectorAll(selector);
-            elements.forEach(function(element) {
-              if (isElementInViewport(element)) {
-                shouldShow = false;
-                elementsInView.push(selector);
+          if (hideOnElements.length > 0) {
+            hideOnElements.forEach(function(selector) {
+              if (selector) {
+                var elements = document.querySelectorAll(selector);
+                elements.forEach(function(element) {
+                  var rect = element.getBoundingClientRect();
+                  if (rect.top < window.innerHeight && rect.bottom > 0) {
+                    shouldHide = true;
+                  }
+                });
               }
             });
           }
-        });
+
+          if (shouldHide) {
+            stickyBar.classList.remove("visible");
+          } else {
+            stickyBar.classList.add("visible");
+          }
+        }
+
+        window.addEventListener("scroll", checkStickyVisibility);
+        window.addEventListener("resize", checkStickyVisibility);
+        window.addEventListener("load", checkStickyVisibility);
+        checkStickyVisibility();
       }
-
-      if (shouldShow) {
-        stickyBar.classList.add("visible");
-      } else {
-        stickyBar.classList.remove("visible");
-      }
-
-      console.log("Window inner height:", window.innerHeight);
-      console.log("Document height:", document.documentElement.scrollHeight);
-      console.log("Scroll position:", window.pageYOffset);
-      console.log("Should show:", shouldShow);
-      console.log("Hide on elements:", hideOnElements);
-      console.log("Elements currently in view:", elementsInView);
-      console.log("Sticky bar classList:", stickyBar.classList);
-
-      hideOnElements.forEach(function(selector) {
-        var elements = document.querySelectorAll(selector);
-        elements.forEach(function(element, index) {
-          var rect = element.getBoundingClientRect();
-          console.log(selector + " #" + (index + 1) + " position:", {
-            top: rect.top,
-            bottom: rect.bottom,
-            height: rect.height
-          });
-        });
-      });
-    }
-
-    window.addEventListener("scroll", checkStickyVisibility);
-    window.addEventListener("resize", checkStickyVisibility);
-    window.addEventListener("load", checkStickyVisibility);
-
-    // Trigger initial check
-    setTimeout(checkStickyVisibility, 0);
-
-    // Debug logging
-    console.log("Sticky bar element:", stickyBar);
-    console.log("Initial sticky bar visibility:", stickyBar.classList.contains("visible"));
-  } else {
-    console.error("Sticky bar element not found");
-  }
-});
+    });
   </script>
 {% endif %}
 
@@ -123,11 +83,6 @@
       z-index: 50;
       width: 94vw;
       max-width: 500px; /* Adjust as needed */
-
-      @media screen and (max-width: 768px) {
-        bottom: 3vw;
-        left: 3vw;
-      }
     }
 
     .sticky-enabled .button-link.visible {
