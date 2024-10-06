@@ -12,9 +12,12 @@
 {% if section.settings.is_pass_url_parameters %}
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      var baseLink = document.getElementById('button-link').href;
-      var params = new URLSearchParams(window.location.search);
-      document.getElementById('button-link').href = baseLink + '?' + params.toString();
+      var buttonLink = document.getElementById('button-link');
+      if (buttonLink) {
+        var baseLink = buttonLink.href;
+        var params = new URLSearchParams(window.location.search);
+        buttonLink.href = baseLink + (baseLink.includes('?') ? '&' : '?') + params.toString();
+      }
     });
   </script>
 {% endif %}
@@ -24,36 +27,38 @@
   <script>
     document.addEventListener("DOMContentLoaded", function() {
       var stickyBar = document.getElementById("button-link");
-      var stickyHideSetting = "{{ section.settings.sticky_hide | default: '' | strip }}";
-      var hideOnElements = stickyHideSetting.split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s !== ''; });
+      if (stickyBar) {
+        var stickyHideSetting = "{{ section.settings.sticky_hide | default: '' | strip }}";
+        var hideOnElements = stickyHideSetting.split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s !== ''; });
 
-      function checkStickyVisibility() {
-        var shouldHide = false;
+        function checkStickyVisibility() {
+          var shouldHide = false;
 
-        if (hideOnElements.length > 0) {
-          hideOnElements.forEach(function(selector) {
-            if (selector) {
-              var elements = document.querySelectorAll(selector);
-              elements.forEach(function(element) {
-                var rect = element.getBoundingClientRect();
-                if (rect.top < window.innerHeight && rect.bottom > 0) {
-                  shouldHide = true;
-                }
-              });
-            }
-          });
+          if (hideOnElements.length > 0) {
+            hideOnElements.forEach(function(selector) {
+              if (selector) {
+                var elements = document.querySelectorAll(selector);
+                elements.forEach(function(element) {
+                  var rect = element.getBoundingClientRect();
+                  if (rect.top < window.innerHeight && rect.bottom > 0) {
+                    shouldHide = true;
+                  }
+                });
+              }
+            });
+          }
+
+          if (shouldHide) {
+            stickyBar.classList.remove("visible");
+          } else {
+            stickyBar.classList.add("visible");
+          }
         }
 
-        if (shouldHide) {
-          stickyBar.classList.remove("visible");
-        } else {
-          stickyBar.classList.add("visible");
-        }
+        window.addEventListener("scroll", checkStickyVisibility);
+        window.addEventListener("resize", checkStickyVisibility);
+        checkStickyVisibility();
       }
-
-      window.addEventListener("scroll", checkStickyVisibility);
-      window.addEventListener("resize", checkStickyVisibility);
-      checkStickyVisibility();
     });
   </script>
 {% endif %}
@@ -128,7 +133,7 @@
     }
   {% endif %}
 
-  {% if section.settings.padding_bottom != 50 and section.settings.padding_top != blank %}
+  {% if section.settings.padding_bottom != 50 and section.settings.padding_bottom != blank %}
     #shopify-section-{{ section.id }} {
       padding-bottom: {{ section.settings.padding_bottom }}px;
     }
