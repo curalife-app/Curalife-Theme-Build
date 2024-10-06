@@ -259,10 +259,12 @@
                 contentContainer.style.opacity = '0';
                 collectionLink.style.opacity = '1';
                 collectionLink.style.pointerEvents = 'auto';
+                collectionLink.style.maxHeight = collectionLink.scrollHeight + 'px';
                 setTimeout(function() {
                   itemsContainer.style.height = '0px';
                   itemsContainer.classList.remove('open');
                   collectionLink.classList.remove('open');
+                  collectionLink.style.maxHeight = collectionLink.scrollHeight + 'px';
                 }, 300);
               } else {
                 itemsContainer.style.height = contentContainer.scrollHeight + 'px';
@@ -270,6 +272,7 @@
                 collectionLink.classList.add('open');
                 collectionLink.style.opacity = '0';
                 collectionLink.style.pointerEvents = 'none';
+                collectionLink.style.maxHeight = '0px';
                 setTimeout(function() {
                   contentContainer.style.opacity = '1';
                 }, 50);
@@ -413,9 +416,11 @@
           #section-{{ section_id }} .collection-link {
             display: inline-flex;
             align-items: center;
-            transition: opacity 0.3s ease, transform 0.3s ease, margin 0.3s ease;
+            transition: opacity 0.3s ease, transform 0.3s ease, margin 0.3s ease, max-height 0.3s ease;
             cursor: pointer;
             margin-bottom: 1rem; /* Adjust as needed */
+            overflow: hidden;
+            max-height: 50px; /* Adjust this value based on your link's height */
           }
 
           #section-{{ section_id }} .collection-link .fa-chevron-down {
@@ -428,6 +433,7 @@
             pointer-events: none;
             transform: translateY(-10px);
             margin-bottom: 0; /* Remove bottom margin when hidden */
+            max-height: 0;
           }
 
           #section-{{ section_id }} .collection-link.open .fa-chevron-down {
@@ -439,6 +445,7 @@
               margin: auto;
               flex-direction: column;
               gap: 0.5rem;
+              max-height: 70px; /* Adjust this value for mobile */
             }
           }
         {% endif %}
