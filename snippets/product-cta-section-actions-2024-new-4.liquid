@@ -4,19 +4,17 @@
   <div class="purchase-options flex flex-col gap-2">
     {% for block in section.blocks %}
       {% if block.type == 'variant_box' %}
-        {% assign purchase_type = block.settings.purchase_type %}
-        {% for var in prod.variants %}
+        {% assign purchase_type =  %}
           {% render 'product-cta-section-actions-variant-2024-new-4',
             SID: SID,
-            prod: prod,
-            var: var,
+            prod: block.settings.prod,
+            var: block.settings.variant_id,
             buyBoxColor: buyBoxColor,
             pricePer: pricePer,
             saveFormat: saveFormat,
             index: forloop.index,
-            purchase_type: purchase_type
+            purchase_type: block.settings.purchase_type
           %}
-        {% endfor %}
       {% endif %}
     {% endfor %}
 
