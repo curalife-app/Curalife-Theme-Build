@@ -5,11 +5,22 @@
     <script>console.log("variant box rendering!!!")</script>
     {% for block in blocks %}
       <script>console.log("variant block rendering!!!!!!!")</script>
+
+      {% assign referenced_variant_product = block.settings.prod %}
+      {% assign referenced_variant = blank %}
+      {% assign blockVarID = block.settings.variant_id | plus: 0 %}
+      {% for vari in referenced_variant_product.variants %}
+        {% assign currVarID = vari.id | plus: 0 %}
+        {% if currVarID == blockVarID %}
+          {% assign referenced_variant = vari %}
+        {% endif %}
+      {% endfor %}
+
       {% if block.type == 'variant' %}
           {% render 'product-cta-section-actions-variant-2024-new-4',
             SID: SID,
             prod: block.settings.prod,
-            var: block.settings.variant_id,
+            var: referenced_variant,
             buyBoxColor: buyBoxColor,
             pricePer: pricePer,
             saveFormat: saveFormat,
