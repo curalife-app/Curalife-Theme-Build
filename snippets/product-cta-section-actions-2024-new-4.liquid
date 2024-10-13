@@ -91,66 +91,44 @@
     }
 
     function togglePurchaseBox(element) {
-      if (!element || element.classList.contains('selected')) return;
+      if (!element) return;
+      if (element.classList.contains('selected')) return;
 
-      document.querySelectorAll('.purchase-option-box').forEach(box => {
-        box.classList.remove('selected');
-        box.style.transform = 'translateY(0)';
-        box.style.boxShadow = 'none';
-      });
-
-      element.classList.add('selected');
-      element.style.transform = 'translateY(-5px)';
-      element.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
-
-      // Animate radio button
-      const radioLabel = element.querySelector('.radio-box label');
-      if (radioLabel) {
-        radioLabel.style.transform = 'scale(1.1)';
-        setTimeout(() => { radioLabel.style.transform = 'scale(1)'; }, 200);
+      for (let i = 0; i < purchaseOptionBoxes.length; i++) {
+        const box = purchaseOptionBoxes[i];
+        safelyRemoveClass(box, 'selected');
+        safelySetStyle(box, 'maxHeight', getClosedHeight());
       }
 
-      // Animate save title
-      const saveTitle = element.querySelector('.save-title');
-      if (saveTitle) {
-        saveTitle.style.opacity = '0';
-        saveTitle.style.transform = 'translateX(-10px)';
-        setTimeout(() => {
-          saveTitle.style.opacity = '1';
-          saveTitle.style.transform = 'translateX(0)';
-        }, 100);
-      }
-
-      // Animate price wrapper
-      const priceWrapper = element.querySelector('.price-wrapper');
-      if (priceWrapper) {
-        priceWrapper.style.opacity = '0';
-        setTimeout(() => { priceWrapper.style.opacity = '1'; }, 100);
-      }
-
-      // Animate terms
-      const terms = element.querySelector('.terms');
-      if (terms) {
-        terms.style.maxHeight = '0';
-        terms.style.opacity = '0';
-        setTimeout(() => {
-          terms.style.maxHeight = '100px';
-          terms.style.opacity = '1';
-        }, 100);
-      }
-
-      // Update variant and subscription plan
       const isSubscription = element.getAttribute('data-purchase-type') === 'subscribe';
       const subscriptionPlanID = isSubscription ? element.getAttribute('data-subscription-selling-plan-id') : '';
       const variantID = element.getAttribute('data-variant');
 
-      const submitSellingPlanIdInput = document.querySelector('.submit-selling-plan-id');
-      const submitVariantIdInput = document.querySelector('.submit-variant-id');
-      const submitButton = document.querySelector('.checkout-button button');
+      if (submitSellingPlanIdInput) {
+        submitSellingPlanIdInput.value = subscriptionPlanID;
+      }
 
-      if (submitSellingPlanIdInput) submitSellingPlanIdInput.value = subscriptionPlanID;
-      if (submitVariantIdInput) submitVariantIdInput.value = variantID;
-      if (submitButton) submitButton.textContent = isSubscription ? "Subscribe Now" : "Add to Cart";
+      if (submitVariantIdInput) {
+        submitVariantIdInput.value = variantID;
+      }
+
+      safelyAddClass(element, 'selected');
+      const radioInput = element.querySelector("input[type='radio']");
+      if (radioInput) {
+        radioInput.checked = true;
+      }
+      state.selectedBox = element;
+
+      updateVariantImage(element);
+
+      if (enableToggleAnimation) {
+        safelySetStyle(element, 'maxHeight', element.scrollHeight + 'px');
+      }
+
+      // Update submit button text
+      if (submitButton) {
+        submitButton.textContent = isSubscription ? "Subscribe Now" : "Add to Cart";
+      }
     }
 
     function updateVariantImage(element) {
@@ -433,60 +411,5 @@
         max-height: 16vw !important;
       }
     }
-  }
-
-  .purchase-option-box {
-    transition: all 0.3s ease-in-out;
-  }
-
-  .purchase-option-box:not(.selected) {
-    transform: translateY(0);
-  }
-
-  .purchase-option-box.selected {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  }
-
-  .radio-box label:after {
-    transition: all 0.2s ease-in-out;
-    transform: scale(0);
-  }
-
-  .purchase-option-box.selected .radio-box label:after {
-    transform: scale(1);
-  }
-
-  .save-title, .price-wrapper, .terms {
-    transition: all 0.3s ease-in-out;
-  }
-
-  .purchase-option-box:not(.selected) .save-title {
-    opacity: 0.7;
-    transform: translateX(-10px);
-  }
-
-  .purchase-option-box.selected .save-title {
-    opacity: 1;
-    transform: translateX(0);
-  }
-
-  .purchase-option-box:not(.selected) .price-wrapper {
-    opacity: 0.7;
-  }
-
-  .purchase-option-box.selected .price-wrapper {
-    opacity: 1;
-  }
-
-  .terms {
-    max-height: 0;
-    opacity: 0;
-    overflow: hidden;
-  }
-
-  .purchase-option-box.selected .terms {
-    max-height: 100px;
-    opacity: 1;
   }
 </style>
