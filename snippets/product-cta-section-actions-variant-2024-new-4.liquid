@@ -32,7 +32,7 @@
 {% endif %}
 
 {% comment %} HTML Structure {% endcomment %}
-<div class="purchase-option-box flex flex-col items-start overflow-hidden {% if index == 1 %}selected{% endif %} {{ purchase_type }}"
+<div id="purchase-option-box-{{ SID }}-{{ index }}" class="purchase-option-box flex flex-col items-start overflow-hidden {% if index == 1 %}selected{% endif %} {{ purchase_type }}"
   data-variant="{{ variant_id }}"
   data-original-variant="{{ var.id }}"
   data-subscription-selling-plan-id="{{ selling_plan_id }}"
@@ -155,3 +155,22 @@
     {% endif %}
   </div>
 </div>
+
+{% if badgeText != blank %}
+  <style>
+    #purchase-option-box-{{ SID }}-{{ index }}::before {
+      content: "{{ badgeText }}";
+      width: 120px;
+      height: 30px;
+      background: {{ buyBoxColor | default: 'var(--curalin)'}};
+      color: white;
+      display: flex;
+      justify-content: center;
+      position: absolute;
+      border-radius: 10px 10px 0 0;
+      top: -20px;
+      right: -1px;
+      z-index: 0;
+    }
+  </style>
+{% endif %}
