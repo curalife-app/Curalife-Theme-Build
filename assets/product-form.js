@@ -37,7 +37,7 @@ if (!customElements.get('product-form')) {
             'sections',
             this.cart.getSectionsToRender().map((section) => section.id)
           );
-          // formData.append('sections_url', window.location.pathname);
+          formData.append('sections_url', window.location.pathname);
           this.cart.setActiveElement(document.activeElement);
         }
         config.body = formData;
@@ -62,7 +62,7 @@ if (!customElements.get('product-form')) {
               this.error = true;
               return;
             } else if (!this.cart) {
-              // window.location = window.routes.cart_url;
+              window.location = window.routes.cart_url;
               return;
             }
 
