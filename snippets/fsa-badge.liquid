@@ -291,51 +291,55 @@
 </style>
 
 <script>
-  const hsaModal = document.getElementById('hsa-modal-{{ SID }}');
+  document.addEventListener('DOMContentLoaded', function() {
+    const hsaModal = document.getElementById('hsa-modal-{{ SID }}');
+    const hsaBadgeLink = document.getElementById('hsa-badge-link-{{ SID }}');
 
-  const toggleHSAModal = (show) => {
-    if (!hsaModal) return;
-
-    if (show) {
-      hsaModal.classList.add('show');
-      hsaModal.setAttribute('aria-hidden', 'false');
-      document.body.style.overflow = 'hidden';
-      const images = hsaModal.querySelectorAll('img[data-src]');
-      images.forEach(img => {
-        if (!img.getAttribute('src')) {
-          img.setAttribute('src', img.getAttribute('data-src'));
-        }
-      });
-    } else {
-      hsaModal.classList.remove('show');
-      hsaModal.setAttribute('aria-hidden', 'true');
-      document.body.style.overflow = '';
+    function toggleHSAModal(show) {
+      if (show) {
+        hsaModal.classList.add('show');
+        hsaModal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        const images = hsaModal.querySelectorAll('img[data-src]');
+        images.forEach(img => {
+          if (!img.getAttribute('src')) {
+            img.setAttribute('src', img.getAttribute('data-src'));
+          }
+        });
+      } else {
+        hsaModal.classList.remove('show');
+        hsaModal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+      }
     }
-  };
 
-  // Ensure the modal is hidden initially
-  window.addEventListener('DOMContentLoaded', () => {
+    // Ensure the modal is hidden initially
     hsaModal.style.opacity = '0';
     hsaModal.style.visibility = 'hidden';
-  });
 
-  document.getElementById('hsa-badge-link-{{ SID }}').addEventListener('click', (event) => {
-    event.preventDefault();
-    toggleHSAModal(true);
-  });
+    hsaBadgeLink.addEventListener('click', function(event) {
+      event.preventDefault();
+      toggleHSAModal(true);
+    });
 
-  hsaModal.querySelector('.close-icon').addEventListener('click', () => toggleHSAModal(false));
-  hsaModal.querySelector('.close-button').addEventListener('click', () => toggleHSAModal(false));
-
-  hsaModal.addEventListener('click', (event) => {
-    if (event.target === hsaModal || event.target.classList.contains('modal-backdrop')) {
+    hsaModal.querySelector('.close-icon').addEventListener('click', function() {
       toggleHSAModal(false);
-    }
-  });
+    });
 
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && hsaModal.classList.contains('show')) {
+    hsaModal.querySelector('.close-button').addEventListener('click', function() {
       toggleHSAModal(false);
-    }
+    });
+
+    hsaModal.addEventListener('click', function(event) {
+      if (event.target === hsaModal || event.target.classList.contains('modal-backdrop')) {
+        toggleHSAModal(false);
+      }
+    });
+
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape' && hsaModal.classList.contains('show')) {
+        toggleHSAModal(false);
+      }
+    });
   });
 </script>
