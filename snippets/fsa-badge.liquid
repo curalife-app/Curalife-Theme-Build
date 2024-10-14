@@ -107,11 +107,13 @@
     visibility: hidden;
     transition: opacity 0.3s, visibility 0.3s;
     background-color: #EFEEFE;
+    pointer-events: none; /* Prevent interactions when hidden */
   }
 
   #hsa-modal-{{ SID }}.show {
     opacity: 1;
     visibility: visible;
+    pointer-events: auto; /* Allow interactions when visible */
   }
 
   #hsa-modal-{{ SID }} .modal-backdrop {
@@ -292,16 +294,12 @@
   const hsaModal = document.getElementById('hsa-modal-{{ SID }}');
 
   const toggleHSAModal = (show) => {
-    if (!hsaModal) return; // Ensure the modal element exists
+    if (!hsaModal) return;
 
     if (show) {
-      hsaModal.style.opacity = '1';
-      hsaModal.style.visibility = 'visible';
       hsaModal.classList.add('show');
       hsaModal.setAttribute('aria-hidden', 'false');
-      // Prevent scrolling when modal is visible
       document.body.style.overflow = 'hidden';
-      // Load images with data-src attribute
       const images = hsaModal.querySelectorAll('img[data-src]');
       images.forEach(img => {
         if (!img.getAttribute('src')) {
@@ -309,40 +307,34 @@
         }
       });
     } else {
-      hsaModal.style.opacity = '0';
-      hsaModal.style.visibility = 'hidden';
       hsaModal.classList.remove('show');
       hsaModal.setAttribute('aria-hidden', 'true');
-      // Enable scrolling when modal is hidden
       document.body.style.overflow = '';
     }
   };
 
+  // Ensure the modal is hidden initially
+  window.addEventListener('DOMContentLoaded', () => {
+    hsaModal.style.opacity = '0';
+    hsaModal.style.visibility = 'hidden';
+  });
+
   document.getElementById('hsa-badge-link-{{ SID }}').addEventListener('click', (event) => {
     event.preventDefault();
-    console.log("Read more link clicked");
     toggleHSAModal(true);
   });
 
-  hsaModal.querySelector('.close-icon').addEventListener('click', () => {
-    console.log("Close icon clicked");
-    toggleHSAModal(false);
-  });
-  hsaModal.querySelector('.close-button').addEventListener('click', () => {
-    console.log("Close button clicked");
-    toggleHSAModal(false);
-  });
+  hsaModal.querySelector('.close-icon').addEventListener('click', () => toggleHSAModal(false));
+  hsaModal.querySelector('.close-button').addEventListener('click', () => toggleHSAModal(false));
 
   hsaModal.addEventListener('click', (event) => {
     if (event.target === hsaModal || event.target.classList.contains('modal-backdrop')) {
-      console.log("Backdrop clicked");
       toggleHSAModal(false);
     }
   });
 
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && hsaModal.classList.contains('show')) {
-      console.log("Escape key pressed");
       toggleHSAModal(false);
     }
   });
