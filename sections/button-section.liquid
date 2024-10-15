@@ -26,7 +26,7 @@
 
 <!-- Sticky Button -->
 {% if section.settings.is_sticky %}
-  <a id="sticky-bar" href="{{ buttonURL }}">
+  <a id="sticky-bar" href="{{ buttonURL }}" class="sticky-bar">
     <button class="sticky-button">{{ section.settings.button_text }}</button>
   </a>
 {% endif %}
@@ -67,8 +67,8 @@
         }
 
         if (shouldHide) {
-          stickyBar.classList.remove("visible");
           stickyBar.classList.add("hidden");
+          stickyBar.classList.remove("visible");
         } else {
           stickyBar.classList.remove("hidden");
           stickyBar.classList.add("visible");
@@ -91,14 +91,14 @@
     }
 
     /* Sticky Button Styles */
-    #sticky-bar {
+    .sticky-bar {
       position: fixed;
       bottom: 10px;
-      left: 10px;
+      left: 50%;
       transform: translateX(-50%) translateY(100%);
       opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+      visibility: hidden;
+      transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
       z-index: 50;
       width: 94vw;
       max-width: 300px; /* Adjust as needed */
@@ -108,6 +108,7 @@
         bottom: 3vw;
         left: 3vw;
         max-width: unset;
+        transform: translateY(100%);
 
         &::after {
           content: " ";
@@ -123,19 +124,27 @@
       }
     }
 
-    #sticky-bar.visible {
-      opacity: 1;
-      pointer-events: auto;
+    .sticky-bar.visible {
       transform: translateX(-50%) translateY(0);
+      opacity: 1;
+      visibility: visible;
+
+      @media screen and (max-width: 768px) {
+        transform: translateY(0);
+      }
     }
 
-    #sticky-bar.hidden {
-      opacity: 0;
-      pointer-events: none;
+    .sticky-bar.hidden {
       transform: translateX(-50%) translateY(100%);
+      opacity: 0;
+      visibility: hidden;
+
+      @media screen and (max-width: 768px) {
+        transform: translateY(100%);
+      }
     }
 
-    #sticky-bar .sticky-button {
+    .sticky-button {
       width: 100%;
       padding: 0.75rem 1rem;
       background-color: {{ section.settings.button_bg_color }};
@@ -149,44 +158,6 @@
       justify-content: center;
       border: none;
       cursor: pointer;
-    }
-
-    /* Animation */
-    @keyframes popIn {
-      0% {
-        opacity: 0;
-        transform: translateY(100%) scale(0.9);
-      }
-      80% {
-        opacity: 1;
-        transform: translateY(-10%) scale(1.05);
-      }
-      100% {
-        transform: translateY(0) scale(1);
-      }
-    }
-
-    @keyframes popOut {
-      0% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-      20% {
-        opacity: 1;
-        transform: translateY(-10%) scale(1.05);
-      }
-      100% {
-        opacity: 0;
-        transform: translateY(100%) scale(0.9);
-      }
-    }
-
-    #sticky-bar.visible {
-      animation: popIn 0.5s forwards;
-    }
-
-    #sticky-bar.hidden {
-      animation: popOut 0.5s forwards;
     }
   {% endif %}
 
