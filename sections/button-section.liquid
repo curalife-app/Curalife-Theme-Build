@@ -68,7 +68,9 @@
 
         if (shouldHide) {
           stickyBar.classList.remove("visible");
+          stickyBar.classList.add("hidden");
         } else {
+          stickyBar.classList.remove("hidden");
           stickyBar.classList.add("visible");
         }
       }
@@ -127,6 +129,12 @@
       transform: translateX(-50%) translateY(0);
     }
 
+    #sticky-bar.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-50%) translateY(100%);
+    }
+
     #sticky-bar .sticky-button {
       width: 100%;
       padding: 0.75rem 1rem;
@@ -158,8 +166,27 @@
       }
     }
 
+    @keyframes popOut {
+      0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+      20% {
+        opacity: 1;
+        transform: translateY(-10%) scale(1.05);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(100%) scale(0.9);
+      }
+    }
+
     #sticky-bar.visible {
       animation: popIn 0.5s forwards;
+    }
+
+    #sticky-bar.hidden {
+      animation: popOut 0.5s forwards;
     }
   {% endif %}
 
