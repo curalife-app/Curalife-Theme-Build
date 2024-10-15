@@ -17,9 +17,6 @@
   {% endif %}
 {% endif %}
 
-{% assign itemsCounter = section.blocks | where: 'type', 'item' | size %}
-{% assign videoCounter = section.blocks | where: 'type', 'video' | size %}
-
 {% assign imageClass = 'main-image relative z-auto object-contain' %}
 {% if is_hide_image_on_mobile %}
   {% assign imageClass = imageClass | append: ' mbl:hidden' %}
@@ -46,6 +43,7 @@
     {% if image_link != blank %}<a href="{{ image_link }}">{% endif %}
     {% if mainImage or mainMobileImage or videoURL != blank %}
       <div class="image-wrapper z-[1] h-auto w-auto mbl:w-full md:mb-0 {% if mainMobileImage and mainImage == blank %}mobile{% endif %} {% if itemsDirection == 'vertical' %}w-full{% endif %} {% if is_image_bottom %}self-end md:self-auto{% endif %}">
+        {% assign videoCounter = section.blocks | where: 'type', 'video' | size %}
         {% if videoCounter > 0 %}
           <div class="video-carousel swiper">
             <div class="swiper-wrapper">
@@ -215,6 +213,7 @@
     {% endif %}
   </div>
 
+  {% assign itemsCounter = section.blocks | where: 'type', 'item' | size %}
   {% if itemsCounter > 0 %}
     <div class="collection-container mt-8 {% if items_hidden_title == blank %}open{% endif %}">
       <div class="collection-content">
