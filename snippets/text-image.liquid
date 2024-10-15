@@ -97,25 +97,16 @@
           {% render 'video', main_image: mainImage, main_mobile_image: mainMobileImage, SID: section_id, videoInput: videoURL %}
         {% else %}
           {% if is_dont_lazyload == false %}{% assign lazyLoad = true %}{% endif %}
-          {% if customer.email contains 'yotam@curalife.com' or true %}
-            {% render 'image',
-              image: mainImage,
-              mobile_image: mainMobileImage,
-              sizes: '(min-width: 1200px) 1100px, (min-width: 769px) 750px, 100vw',
-              breakpoint: 768,
-              lazy: lazyLoad,
-              preload: false,
-              alt: mainImage.alt,
-              class: imageClass
-            %}
-          {% else %}
-            <picture>
-              {% if mainMobileImage %}
-                <source media="(max-width: 768px)" srcset="{{ mainMobileImage | image_url }}" width="{{ mainMobileImage.width }}" height="{{ mainMobileImage.height }}">
-              {% endif %}
-              <img class="{% if is_limit_image_size %}max-h-500px{% endif %} relative z-auto object-contain {% if is_hide_image_on_mobile %}md:hidden{% endif %} {% if is_image_overlap_style %} h-[calc(100%+135px)] object-cover object-left{% endif %}" src="{{ mainImage | default: mainMobileImage | image_url }}" alt="{{ mainImage.alt }}" width="{{ mainImage.width }}" height="{{ mainImage.height }}" {% unless is_dont_lazyload %}loading="lazy"{% endunless %} {% if image_animation != 'none'%}data-aos="{{ image_animation }}" data-aos-duration="{{ animation_duration }}"{% endif %}>
-            </picture>
-          {% endif %}
+          {% render 'image',
+            image: mainImage,
+            mobile_image: mainMobileImage,
+            sizes: '(min-width: 1200px) 1100px, (min-width: 769px) 750px, 100vw',
+            breakpoint: 768,
+            lazy: lazyLoad,
+            preload: false,
+            alt: mainImage.alt,
+            class: imageClass
+          %}
         {% endif %}
       </div>
     {% endif %}
@@ -202,32 +193,18 @@
                   {% assign blockMainImage = block.settings.image %}
                   {% assign blockMainMobileImage = block.settings.image_mobile %}
                 {% endif %}
-                {% if true %}
-                  {% render 'image',
-                    image: blockMainImage,
-                    mobile_image: blockMainMobileImage,
-                    sizes: '(min-width: 1200px) 1100px, (min-width: 769px) 750px, 100vw',
-                    breakpoint: 768,
-                    lazy: lazyLoad,
-                    preload: false,
-                    alt: blockMainImage.alt,
-                    link: block.settings.image_link,
-                    class: block.settings.additional_classes
-                  %}
-                {% else %}
-                  {% if block.settings.image_link %}<a {% if block.settings.is_image_full_width_mobile %}class="mbl:w-full"{% endif %} href="{{ block.settings.image_link }}">{% endif %}
-                    <picture id="text-{{ section_id }}" class="{% if block.settings.is_image_full_width_mobile %}mbl:w-full{% endif %} {{ block.settings.additional_classes }}">
-                      {% if block.settings.image_mobile %}
-                        <source media="(max-width: 768px)" srcset="{{ block.settings.image_mobile | image_url }}">
-                      {% endif %}
-                      <img class="block-image mbl:w-full object-contain" src="{% if block.settings.image %}{{ block.settings.image | image_url }}{% endif %}" alt="{{ block.settings.image.alt }}" {% unless is_dont_lazyload %}loading="lazy"{% endunless %}>
-                    </picture>
-                  {% if block.settings.image_link %}</a>{% endif %}
 
-                  {% if block.settings.is_image_before_content %}
-                    <script>$('#text-{{ section_id }}').prependTo('#shopify-section-{{ section.id }} .description');</script>
-                  {% endif %}
-                {% endif %}
+                {% render 'image',
+                  image: blockMainImage,
+                  mobile_image: blockMainMobileImage,
+                  sizes: '(min-width: 1200px) 1100px, (min-width: 769px) 750px, 100vw',
+                  breakpoint: 768,
+                  lazy: lazyLoad,
+                  preload: false,
+                  alt: blockMainImage.alt,
+                  link: block.settings.image_link,
+                  class: block.settings.additional_classes
+                %}
               {% when 'countdown' %}
                   {% render 'countdown-timer', section_id: section.id, day: block.settings.day, month: block.settings.month, year: block.settings.year, hour: block.settings.hour, minute: block.settings.minute, urgencyMinutes: block.settings.urgency_minutes, bgColor: block.settings.bg_color, isShowDays: block.settings.is_show_days %}
                   <style>#section-{{ section_id }} .content-wrapper {justify-content: right}</style>
