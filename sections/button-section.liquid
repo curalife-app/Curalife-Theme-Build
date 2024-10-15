@@ -31,16 +31,6 @@
   </a>
 {% endif %}
 
-{% if section.settings.is_pass_url_parameters %}
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      var baseLink = document.getElementById('button-link').href;
-      var params = new URLSearchParams(window.location.search);
-      document.getElementById('button-link').href = baseLink + '?' + params.toString();
-    });
-  </script>
-{% endif %}
-
 <!-- JavaScript for Sticky Button Behavior -->
 {% if section.settings.is_sticky %}
   <script>
@@ -48,6 +38,14 @@
       var stickyBar = document.getElementById("sticky-bar");
       var stickyHideSetting = "{{ section.settings.sticky_hide | default: '' | strip }}";
       var hideOnElements = stickyHideSetting.split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s !== ''; });
+      var debugElement = document.createElement('div');
+      debugElement.style.position = 'fixed';
+      debugElement.style.top = '10px';
+      debugElement.style.left = '10px';
+      debugElement.style.background = 'white';
+      debugElement.style.padding = '5px';
+      debugElement.style.zIndex = '9999';
+      document.body.appendChild(debugElement);
 
       function checkStickyVisibility() {
         var shouldHide = false;
@@ -69,9 +67,11 @@
         if (shouldHide) {
           stickyBar.classList.add("hidden");
           stickyBar.classList.remove("visible");
+          debugElement.textContent = 'Button hidden';
         } else {
           stickyBar.classList.remove("hidden");
           stickyBar.classList.add("visible");
+          debugElement.textContent = 'Button visible';
         }
       }
 
@@ -85,63 +85,30 @@
 <!-- CSS Styles -->
 <style>
   {% if section.settings.is_sticky %}
-    /* Hide the original button section when sticky button is active */
-    #button-section-{{ section.id }}.hidden {
-      display: none;
-    }
-
     /* Sticky Button Styles */
     .sticky-bar {
       position: fixed;
-      bottom: 10px;
+      bottom: 20px;
       left: 50%;
       transform: translateX(-50%) translateY(100%);
-      opacity: 0;
-      visibility: hidden;
-      transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
+      transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
       z-index: 50;
       width: 94vw;
-      max-width: 300px; /* Adjust as needed */
-      text-align: center;
-
-      @media screen and (max-width: 768px) {
-        bottom: 3vw;
-        left: 3vw;
-        max-width: unset;
-        transform: translateY(100%);
-
-        &::after {
-          content: " ";
-          width: 100vw;
-          height: 25vw;
-          display: inline-block;
-          background: linear-gradient(0deg, rgb(255 255 255) 50%, rgb(255 255 255 / 0%) 100%);
-          position: absolute;
-          left: -3vw;
-          bottom: -4vw;
-          z-index: -1;
-        }
-      }
+      max-width: 300px;
+      opacity: 0;
+      pointer-events: none;
     }
 
     .sticky-bar.visible {
       transform: translateX(-50%) translateY(0);
       opacity: 1;
-      visibility: visible;
-
-      @media screen and (max-width: 768px) {
-        transform: translateY(0);
-      }
+      pointer-events: auto;
     }
 
     .sticky-bar.hidden {
       transform: translateX(-50%) translateY(100%);
       opacity: 0;
-      visibility: hidden;
-
-      @media screen and (max-width: 768px) {
-        transform: translateY(100%);
-      }
+      pointer-events: none;
     }
 
     .sticky-button {
@@ -153,11 +120,25 @@
       font-size: 1.5rem;
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
       border-radius: 0.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       border: none;
       cursor: pointer;
+    }
+
+    @media screen and (max-width: 768px) {
+      .sticky-bar {
+        bottom: 10px;
+        left: 10px;
+        transform: translateY(100%);
+        max-width: calc(100% - 20px);
+      }
+
+      .sticky-bar.visible {
+        transform: translateY(0);
+      }
+
+      .sticky-bar.hidden {
+        transform: translateY(100%);
+      }
     }
   {% endif %}
 
