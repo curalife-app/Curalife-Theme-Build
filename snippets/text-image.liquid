@@ -305,21 +305,21 @@
         }
 
         if (shouldInitializeSwiper) {
-          var swiperData = {
-            slidesPerView: 1,
-            grabCursor: true,
-            navigation: {
-              nextEl: '#section-{{ section_id }} .swiper-button-next',
-              prevEl: '#section-{{ section_id }} .swiper-button-prev',
-            },
-            breakpoints: {
-              768: {
-                slidesPerView: 3,
-              }
-            },
-          };
-
-          loadSwiper('#section-{{ section_id }} .swiper.items', swiperData);
+          loadSwiper(() => {
+            initializeSwiper('#items-container-{{ section.id }}', {
+              slidesPerView: 1,
+              grabCursor: true,
+              navigation: {
+                nextEl: '#section-{{ section_id }} .swiper-button-next',
+                prevEl: '#section-{{ section_id }} .swiper-button-prev',
+              },
+              breakpoints: {
+                768: {
+                  slidesPerView: 3,
+                }
+              },
+            });
+          });
         } else {
           var swiperContainer = document.querySelector('#section-{{ section_id }} .swiper.items');
           if (swiperContainer) {
