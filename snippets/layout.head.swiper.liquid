@@ -13,7 +13,6 @@
 <script>
   window.isSwiperLoading = false;
 
-  // Function to conditionally load Swiper JS/CSS
   function loadSwiper(initializeCallback) {
     if (window.isSwiperLoaded) {
       console.log("Swiper already loaded, skipping load.");
@@ -40,11 +39,12 @@
         console.log("Swiper loaded! (on JS)");
 
         if (typeof initializeCallback === "function") {
+          console.log("Calling initializeCallback after Swiper is loaded.");
           initializeCallback();
         }
       };
       script.onerror = () => {
-        window.isSwiperLoading = false; // Reset the loading flag if it fails
+        window.isSwiperLoading = false;
         console.error("Failed to load Swiper script.");
       };
       document.body.appendChild(script);
@@ -73,18 +73,18 @@
       },
     };
 
-    // Merge the default settings with the provided swiperData
     const finalSwiperData = { ...defaultData, ...swiperData };
 
-    // Only try to initialize Swiper after it has been loaded
+    // Only initialize Swiper if it's available
     if (typeof Swiper !== 'undefined') {
       try {
+        console.log("Initializing Swiper with selector:", swiperElementSelector, "and data:", finalSwiperData);
         return new Swiper(swiperElementSelector, finalSwiperData);
       } catch (error) {
         console.error("Error initializing Swiper:", error);
       }
     } else {
-      console.warn("Swiper is not defined. Please check if Swiper is loaded correctly.");
+      console.warn("Swiper is not defined. Initialization skipped.");
     }
   }
 </script>
