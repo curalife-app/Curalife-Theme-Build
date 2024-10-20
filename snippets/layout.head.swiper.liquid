@@ -8,38 +8,66 @@
 {% endif %}
 
 <script>
-  window.isSwiperLoading = false;
+  // Global variables to track Swiper script loading status
+  window.isSwiperLoaded = window.isSwiperLoaded || false;
+  window.isSwiperLoading = window.isSwiperLoading || false;
 
+  // Function to load Swiper scripts dynamically
   function loadSwiper(initializeCallback) {
-    if (!window.isSwiperLoaded && !window.isSwiperLoading) {
-      window.isSwiperLoading = true;
-
-      const link = document.createElement("link");
-      link.rel = "stylesheet";
-      link.href = "https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css";
-      document.head.appendChild(link);
-
-      const script = document.createElement("script");
-      script.src = "https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js";
-      script.onload = () => {
-        window.isSwiperLoaded = true;
-        window.isSwiperLoading = false;
-        console.log("Swiper loaded! (on JS)");
-
-        if (typeof initializeCallback === "function") {
-          initializeCallback();
-        }
-      };
-      document.body.appendChild(script);
-    } else if (typeof initializeCallback === "function" && window.isSwiperLoaded) {
-      initializeCallback();
+    if (window.isSwiperLoaded) {
+      // Swiper is already loaded
+      if (typeof initializeCallback === "function") {
+        initializeCallback();
+      }
+      return;
     }
+
+    if (window.isSwiperLoading) {
+      // Swiper is currently loading; wait until it's loaded
+      var checkSwiperInterval = setInterval(function() {
+        if (window.isSwiperLoaded) {
+          clearInterval(checkSwiperInterval);
+          if (typeof initializeCallback === "function") {
+            initializeCallback();
+          }
+        }
+      }, 50);
+      return;
+    }
+
+    // Start loading Swiper scripts
+    window.isSwiperLoading = true;
+
+    // Load Swiper CSS
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css";
+    document.head.appendChild(link);
+
+    // Load Swiper JS
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js";
+    script.onload = () => {
+      window.isSwiperLoaded = true;
+      window.isSwiperLoading = false;
+      console.log("Swiper loaded dynamically");
+
+      if (typeof initializeCallback === "function") {
+        initializeCallback();
+      }
+    };
+    script.onerror = () => {
+      console.error("Failed to load Swiper");
+      window.isSwiperLoading = false;
+    };
+    document.body.appendChild(script);
   }
 
-  function initializeSwiper(swiperElementSelector, swiperData) {
+  // Function to initialize Swiper
+  function initializeSwiper(swiperElementSelector, swiperOptions) {
     if (typeof Swiper !== 'undefined') {
       console.log("Initializing Swiper for", swiperElementSelector);
-      return new Swiper(swiperElementSelector, swiperData);
+      return new Swiper(swiperElementSelector, swiperOptions);
     } else {
       console.error("Swiper is not loaded yet");
       return null;
