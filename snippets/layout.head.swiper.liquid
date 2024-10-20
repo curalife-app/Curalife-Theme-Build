@@ -48,7 +48,7 @@
       window.isSwiperLoaded = true;
       window.isSwiperLoading = false;
       console.log("Swiper loaded dynamically");
-
+      console.log("Swiper object:", Swiper); // Add this line
       if (typeof initializeCallback === "function") {
         initializeCallback();
       }
@@ -64,7 +64,17 @@
   function initializeSwiper(swiperElementSelector, swiperOptions) {
     if (typeof Swiper !== 'undefined') {
       console.log("Initializing Swiper for", swiperElementSelector);
-      return new Swiper(swiperElementSelector, swiperOptions);
+      console.log("Swiper options:", swiperOptions);
+      const swiperElement = document.querySelector(swiperElementSelector);
+      if (swiperElement) {
+        console.log("Swiper element found:", swiperElement);
+        const swiperInstance = new Swiper(swiperElementSelector, swiperOptions);
+        console.log("Swiper instance created:", swiperInstance);
+        return swiperInstance;
+      } else {
+        console.error("Swiper element not found:", swiperElementSelector);
+        return null;
+      }
     } else {
       console.error("Swiper is not loaded yet");
       return null;
