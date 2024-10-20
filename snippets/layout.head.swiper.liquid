@@ -12,11 +12,13 @@
 
 <script>
   window.isSwiperLoading = false;
+  window.isSwiperInitialized = false; // New flag to prevent re-initialization
 
   function loadSwiper(initializeCallback) {
     if (window.isSwiperLoaded) {
       console.log("Swiper already loaded, skipping load.");
-      if (typeof initializeCallback === "function") {
+      if (!window.isSwiperInitialized && typeof initializeCallback === "function") {
+        window.isSwiperInitialized = true; // Set this flag to prevent repeat initialization
         initializeCallback();
       }
       return;
@@ -38,8 +40,8 @@
         window.isSwiperLoading = false;
         console.log("Swiper loaded! (on JS)");
 
-        if (typeof initializeCallback === "function") {
-          console.log("Calling initializeCallback after Swiper is loaded.");
+        if (!window.isSwiperInitialized && typeof initializeCallback === "function") {
+          window.isSwiperInitialized = true; // Prevent repeat initialization
           initializeCallback();
         }
       };
