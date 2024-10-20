@@ -123,8 +123,6 @@
 
   {% if section.settings.is_slider %}
     <script>
-      loadSwiper();
-
       document.addEventListener('DOMContentLoaded', function() {
         var itemsContainer = document.getElementById('items-container-{{ section.id }}');
         var isMobile = window.innerWidth <= 768;
@@ -151,7 +149,7 @@
             item.classList.add('swiper-slide');
           });
 
-          var itemsSwiper = new Swiper('#items-container-{{ section.id }}', {
+          var itemsSwiperData = {
             spaceBetween: 15,
             grabCursor: true,
             slidesPerView: 'auto',
@@ -196,7 +194,9 @@
                 slidesPerView: {% if section.settings.items_in_row != 'all' %}{{ section.settings.items_in_row }}{% else %}'auto'{% endif %}
               }
             }
-          });
+          };
+
+          loadSwiper('#items-container-{{ section.id }}', itemsSwiperData);
         }
 
         function deactivateSwiper() {
