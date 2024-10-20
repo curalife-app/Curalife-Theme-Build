@@ -10,20 +10,29 @@
 
 
 <script>
+  // Add a separate flag to track if Swiper is currently being loaded
+  window.isSwiperLoading = false;
+
   function loadSwiper() {
-    if (!window.isSwiperLoaded) {
+    if (!window.isSwiperLoaded && !window.isSwiperLoading) {
+      // Set the loading flag to true to prevent multiple loads
+      window.isSwiperLoading = true;
+
+      // Load CSS
       const link = document.createElement("link");
       link.rel = "stylesheet";
       link.href = "https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css";
       document.head.appendChild(link);
 
+      // Load JavaScript
       const script = document.createElement("script");
       script.src = "https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js";
       script.onload = () => {
-        window.isSwiperLoaded = true;
+        window.isSwiperLoaded = true; // Mark Swiper as loaded
+        window.isSwiperLoading = false; // Reset the loading flag
+        console.log("Swiper loaded! (on JS)");
       };
       document.body.appendChild(script);
-      console.log("Swiper loaded! (on JS)");
     }
   }
 </script>
