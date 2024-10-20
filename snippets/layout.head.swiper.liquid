@@ -8,12 +8,10 @@
   <script>console.log("Swiper loaded! (on Liquid)");</script>
 {% endif %}
 
-
 <script>
-  // Add a separate flag to track if Swiper is currently being loaded
   window.isSwiperLoading = false;
 
-  function loadSwiper() {
+  function loadSwiper(initializeCallback) {
     if (!window.isSwiperLoaded && !window.isSwiperLoading) {
       window.isSwiperLoading = true;
 
@@ -28,8 +26,18 @@
         window.isSwiperLoaded = true;
         window.isSwiperLoading = false;
         console.log("Swiper loaded! (on JS)");
+
+        if (typeof initializeCallback === "function") {
+          initializeCallback();
+        }
       };
       document.body.appendChild(script);
+    } else if (typeof initializeCallback === "function" && window.isSwiperLoaded) {
+      initializeCallback();
     }
+  }
+
+  function initializeSwiper(swiperElementSelector, swiperData) {
+    new Swiper(swiperElementSelector, swiperData);
   }
 </script>
