@@ -4,13 +4,16 @@
 {% if loadOnPages contains currentPage or currentPage contains '/products/' or Activate %}
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-  <script>window.isSwiperLoaded = true;</script>
-  <script>console.log("Swiper loaded! (on Liquid)");</script>
+  <script>
+    window.isSwiperLoaded = true;
+    console.log("Swiper loaded! (on Liquid)");
+  </script>
 {% endif %}
 
 <script>
   window.isSwiperLoading = false;
 
+  // Function to conditionally load Swiper JS/CSS
   function loadSwiper(initializeCallback) {
     if (!window.isSwiperLoaded && !window.isSwiperLoading) {
       window.isSwiperLoading = true;
@@ -33,11 +36,40 @@
       };
       document.body.appendChild(script);
     } else if (typeof initializeCallback === "function" && window.isSwiperLoaded) {
+      // Run the callback immediately if already loaded
       initializeCallback();
     }
   }
 
-  function initializeSwiper(swiperElementSelector, swiperData) {
-    let newSwiper = new Swiper(swiperElementSelector, swiperData);
+  // Function to initialize Swiper with dynamic options
+  function initializeSwiper(swiperElementSelector, swiperData = {}) {
+    const defaultData = {
+      loop: true,
+      grabCursor: true,
+      autoplay: false,
+      speed: 300,
+      slidesPerView: 1,
+      spaceBetween: 0,
+      direction: 'horizontal',
+      effect: 'slide',
+      pagination: {
+        el: '.swiper-pagination',
+        clickable: true,
+      },
+      navigation: {
+        nextEl: '.swiper-button-next',
+        prevEl: '.swiper-button-prev',
+      },
+    };
+
+    // Merge the default settings with the provided swiperData
+    const finalSwiperData = { ...defaultData, ...swiperData };
+
+    // Only try to initialize Swiper after it has been loaded
+    if (typeof Swiper !== 'undefined') {
+      return new Swiper(swiperElementSelector, finalSwiperData);
+    } else {
+      console.warn("Swiper is not defined. Please check if Swiper is loaded correctly.");
+    }
   }
 </script>
