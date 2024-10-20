@@ -4,28 +4,15 @@
 {% if loadOnPages contains currentPage or currentPage contains '/products/' or Activate %}
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-  <script>
-    window.isSwiperLoaded = true;
-    console.log("Swiper loaded! (on Liquid)");
-  </script>
+  <script>window.isSwiperLoaded = true;</script>
+  <script>console.log("Swiper loaded! (on Liquid)");</script>
 {% endif %}
 
 <script>
   window.isSwiperLoading = false;
-  window.isSwiperInitialized = false;
 
   function loadSwiper(initializeCallback) {
-    if (window.isSwiperLoaded) {
-      console.log("Swiper already loaded, skipping load.");
-      if (!window.isSwiperInitialized && typeof initializeCallback === "function") {
-        window.isSwiperInitialized = true;
-        initializeCallback();
-      }
-      return;
-    }
-
-    if (!window.isSwiperLoading) {
-      console.log("Loading Swiper...");
+    if (!window.isSwiperLoaded && !window.isSwiperLoading) {
       window.isSwiperLoading = true;
 
       const link = document.createElement("link");
@@ -35,61 +22,22 @@
 
       const script = document.createElement("script");
       script.src = "https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js";
-
-      // Use a promise to ensure Swiper only initializes after the script is fully loaded
       script.onload = () => {
         window.isSwiperLoaded = true;
         window.isSwiperLoading = false;
         console.log("Swiper loaded! (on JS)");
 
-        if (!window.isSwiperInitialized && typeof initializeCallback === "function") {
-          window.isSwiperInitialized = true;
+        if (typeof initializeCallback === "function") {
           initializeCallback();
         }
       };
-
-      script.onerror = () => {
-        window.isSwiperLoading = false;
-        console.error("Failed to load Swiper script.");
-      };
-
       document.body.appendChild(script);
-    } else {
-      console.log("Swiper is currently loading, please wait.");
+    } else if (typeof initializeCallback === "function" && window.isSwiperLoaded) {
+      initializeCallback();
     }
   }
 
-  function initializeSwiper(swiperElementSelector, swiperData = {}) {
-    const defaultData = {
-      loop: true,
-      grabCursor: true,
-      autoplay: false,
-      speed: 300,
-      slidesPerView: 1,
-      spaceBetween: 0,
-      direction: 'horizontal',
-      effect: 'slide',
-      pagination: {
-        el: '.swiper-pagination',
-        clickable: true,
-      },
-      navigation: {
-        nextEl: '.swiper-button-next',
-        prevEl: '.swiper-button-prev',
-      },
-    };
-
-    const finalSwiperData = { ...defaultData, ...swiperData };
-
-    if (typeof Swiper !== 'undefined') {
-      try {
-        console.log("Initializing Swiper with selector:", swiperElementSelector, "and data:", finalSwiperData);
-        return new Swiper(swiperElementSelector, finalSwiperData);
-      } catch (error) {
-        console.error("Error initializing Swiper:", error);
-      }
-    } else {
-      console.warn("Swiper is not defined. Initialization skipped.");
-    }
+  function initializeSwiper(swiperElementSelector, swiperData) {
+    new Swiper(swiperElementSelector, swiperData);
   }
 </script>
