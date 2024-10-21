@@ -39,21 +39,28 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+  const productForm = document.querySelector('product-form');
+  if (!productForm) return;
+
+  const form = productForm.querySelector('form');
   const productActions = document.getElementById('product-actions-{{ SID }}');
   if (!productActions) return;
 
   const purchaseOptionBoxes = productActions.querySelectorAll('.purchase-option-box');
-  const submitVariantIdInput = document.querySelector('.submit-variant-id');
-  const submitSellingPlanIdInput = document.querySelector('.submit-selling-plan-id');
-  const submitButton = document.querySelector('#ProductSubmitButton-{{SID}}');
+  const variantInput = form.querySelector('input[name="id"]');
+  const sellingPlanInput = form.querySelector('input[name="selling_plan"]');
+  const submitButton = form.querySelector('button[type="submit"]');
 
   function updateFormInputs(selectedBox) {
     const variantId = selectedBox.getAttribute('data-variant');
     const sellingPlanId = selectedBox.getAttribute('data-subscription-selling-plan-id');
     const purchaseType = selectedBox.getAttribute('data-purchase-type');
 
-    submitVariantIdInput.value = variantId;
-    submitSellingPlanIdInput.value = purchaseType === 'subscribe' ? sellingPlanId : '';
+    variantInput.value = variantId;
+    sellingPlanInput.value = purchaseType === 'subscribe' ? sellingPlanId : '';
+
+    const buttonText = purchaseType === 'subscribe' ? "Subscribe Now" : "Add to Cart";
+    submitButton.querySelector('span').textContent = buttonText;
 
     console.log('Updated form inputs:', { variantId, sellingPlanId, purchaseType });
   }
@@ -65,9 +72,6 @@ document.addEventListener('DOMContentLoaded', function() {
     element.classList.add('selected');
 
     updateFormInputs(element);
-
-    const isSubscription = element.getAttribute('data-purchase-type') === 'subscribe';
-    submitButton.querySelector('.submit-title').textContent = isSubscription ? "Subscribe Now" : "Add to Cart";
   }
 
   productActions.addEventListener('click', (event) => {
@@ -83,6 +87,21 @@ document.addEventListener('DOMContentLoaded', function() {
   if (defaultSelectedBox) {
     updateFormInputs(defaultSelectedBox);
   }
+
+  // Override the onSubmitHandler to include our custom logic
+  const originalOnSubmitHandler = productForm.onSubmitHandler;
+  productForm.onSubmitHandler = function(evt) {
+    evt.preventDefault();
+    const submitButton = evt.submitter;
+    const selectedBox = productActions.querySelector('.purchase-option-box.selected');
+
+    if (selectedBox) {
+      updateFormInputs(selectedBox);
+    }
+
+    // Call the original onSubmitHandler
+    originalOnSubmitHandler.call(this, evt);
+  };
 });
 </script>
 
