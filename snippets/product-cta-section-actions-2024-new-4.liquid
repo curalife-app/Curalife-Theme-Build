@@ -103,6 +103,78 @@ document.addEventListener('DOMContentLoaded', function() {
     originalOnSubmitHandler.call(this, evt);
   };
 });
+
+// Subscription Handler
+class SubscriptionHandler {
+  constructor(formSelector, optionsSelector) {
+    this.form = document.querySelector(formSelector);
+    this.options = document.querySelectorAll(optionsSelector);
+    this.variantInput = this.form ? this.form.querySelector('input[name="id"]') : null;
+    this.sellingPlanInput = this.form ? this.form.querySelector('input[name="selling_plan"]') : null;
+    this.submitButton = this.form ? this.form.querySelector('button[type="submit"]') : null;
+
+    this.init();
+  }
+
+  init() {
+    if (!this.form || !this.options.length) {
+      console.error('Required elements not found');
+      return;
+    }
+
+    this.options.forEach(option => {
+      option.addEventListener('click', (e) => this.handleOptionClick(e));
+    });
+
+    this.form.addEventListener('submit', (e) => this.handleSubmit(e));
+
+    // Set initial state
+    const defaultOption = document.querySelector(`${optionsSelector}.selected`);
+    if (defaultOption) {
+      this.updateFormInputs(defaultOption);
+    }
+  }
+
+  handleOptionClick(event) {
+    const option = event.currentTarget;
+    if (option.classList.contains('selected')) return;
+
+    this.options.forEach(opt => opt.classList.remove('selected'));
+    option.classList.add('selected');
+
+    this.updateFormInputs(option);
+  }
+
+  updateFormInputs(option) {
+    if (!this.variantInput || !this.sellingPlanInput) return;
+
+    const variantId = option.getAttribute('data-variant');
+    const sellingPlanId = option.getAttribute('data-subscription-selling-plan-id');
+    const purchaseType = option.getAttribute('data-purchase-type');
+
+    this.variantInput.value = variantId;
+    this.sellingPlanInput.value = purchaseType === 'subscribe' ? sellingPlanId : '';
+
+    if (this.submitButton) {
+      const buttonText = purchaseType === 'subscribe' ? "Subscribe Now" : "Add to Cart";
+      this.submitButton.textContent = buttonText;
+    }
+
+    console.log('Updated form inputs:', { variantId, sellingPlanId, purchaseType });
+  }
+
+  handleSubmit(event) {
+    const selectedOption = document.querySelector(`${optionsSelector}.selected`);
+    if (selectedOption) {
+      this.updateFormInputs(selectedOption);
+    }
+  }
+}
+
+// Initialize the handler
+document.addEventListener('DOMContentLoaded', () => {
+  new SubscriptionHandler('form[action="/cart/add"]', '.purchase-option-box');
+});
 </script>
 
 <style>
