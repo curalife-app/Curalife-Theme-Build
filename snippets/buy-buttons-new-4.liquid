@@ -23,50 +23,56 @@
 
     if (buyButton) {
       buyButton.addEventListener('click', function(event) {
-        var submitButton = this;
-        var buttonText = submitButton.querySelector('.button-text');
-        var loadingSpinner = submitButton.querySelector('.loading-overlay__spinner');
+      event.preventDefault(); // Prevent the default form submission
 
+      var submitButton = this;
+      var buttonText = submitButton.querySelector('.button-text');
+      var loadingSpinner = submitButton.querySelector('.loading-overlay__spinner');
+
+      if (buttonText && loadingSpinner) {
+        buttonText.style.display = 'none';
+        loadingSpinner.classList.remove('hidden');
+      }
+
+      var variantIdInput = document.querySelector('.submit-variant-id');
+      var sellingPlanIdInput = document.querySelector('.submit-selling-plan-id');
+      var variantId = variantIdInput ? variantIdInput.value : '{{ variant | default: product.selected_or_first_available_variant.id }}';
+      var sellingPlanId = sellingPlanIdInput ? sellingPlanIdInput.value : '';
+      var quantity = 1;
+      var isSubscription = sellingPlanId !== '';
+      var data = {
+        "id": variantId,
+        "quantity": quantity
+      };
+
+      if (isSubscription) {
+        data["selling_plan"] = sellingPlanId;
+      }
+
+      console.log('Submitting data:', data); // Log the data being submitted
+
+      fetch('/cart/add.js', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+      .then(function(response) {
+        return response.json();
+      })
+      .then(function(data) {
+        console.log('Add to cart response:', data); // Log the response
+        window.location.href = '/checkout';
+      })
+      .catch(function(error) {
+        console.error('Error:', error);
         if (buttonText && loadingSpinner) {
-          buttonText.style.display = 'none';
-          loadingSpinner.classList.remove('hidden');
+          buttonText.style.display = '';
+          loadingSpinner.classList.add('hidden');
         }
-
-        var variantIdInput = document.querySelector('.submit-variant-id');
-        var sellingPlanIdInput = document.querySelector('.submit-selling-plan-id');
-        var variantId = variantIdInput ? variantIdInput.value : '{{ variant | default: product.selected_or_first_available_variant.id }}';
-        var sellingPlanId = sellingPlanIdInput ? sellingPlanIdInput.value : '';
-        var quantity = 1;
-        var isSubscription = sellingPlanId !== '';
-        var data = {
-          "id": variantId,
-          "quantity": quantity
-        };
-
-        if (isSubscription) {
-          data["selling_plan"] = sellingPlanId;
-        }
-
-        fetch('/cart/add.js', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(data),
-        })
-        .then(function(response) {
-          return response.json();
-        })
-        .then(function(data) {
-          window.location.href = '/checkout';
-        })
-        .catch(function(error) {
-          if (buttonText && loadingSpinner) {
-            buttonText.style.display = '';
-            loadingSpinner.classList.add('hidden');
-          }
-        });
       });
+    });
     } else {
       console.error('Buy button not found. Cannot attach event listener.');
     }
