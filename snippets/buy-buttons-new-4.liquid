@@ -23,19 +23,17 @@
 
     if (buyButton) {
       buyButton.addEventListener('click', function(event) {
-      event.preventDefault(); // Prevent the default form submission
+      event.preventDefault();
 
       var submitButton = this;
       var buttonText = submitButton.querySelector('.button-text');
       var loadingSpinner = submitButton.querySelector('.loading-overlay__spinner');
 
-      // Show loader and hide button text
       if (buttonText && loadingSpinner) {
         buttonText.style.display = 'none';
         loadingSpinner.classList.remove('hidden');
       }
 
-      // Use setTimeout to delay the form submission process
       setTimeout(function() {
         var variantIdInput = document.querySelector('.submit-variant-id');
         var sellingPlanIdInput = document.querySelector('.submit-selling-plan-id');
@@ -52,7 +50,7 @@
           data["selling_plan"] = sellingPlanId;
         }
 
-        console.log('Submitting data:', data); // Log the data being submitted
+        console.log('Submitting data:', data);
 
         fetch('/cart/add.js', {
           method: 'POST',
@@ -65,7 +63,7 @@
           return response.json();
         })
         .then(function(data) {
-          console.log('Add to cart response:', data); // Log the response
+          console.log('Add to cart response:', data);
           window.location.href = '/checkout';
         })
         .catch(function(error) {
@@ -75,7 +73,7 @@
             loadingSpinner.classList.add('hidden');
           }
         });
-      }, 50); // 50ms delay to ensure the loader is displayed
+      }, 10);
     });
     } else {
       console.error('Buy button not found. Cannot attach event listener.');
