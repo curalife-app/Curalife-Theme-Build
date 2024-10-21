@@ -51,9 +51,6 @@
           data["selling_plan"] = sellingPlanId;
         }
 
-        // Adding product to the cart
-        console.log('Sending request to add product to the cart:', data);
-
         fetch('/cart/add.js', {
           method: 'POST',
           headers: {
@@ -62,18 +59,13 @@
           body: JSON.stringify(data),
         })
         .then(function(response) {
-          console.log('Received response from add to cart:', response);
           return response.json();
         })
         .then(function(data) {
-          console.log('Product successfully added to cart:', data);
-          console.log('Redirecting to checkout.');
           window.location.href = '/checkout';
         })
         .catch(function(error) {
-          console.error('Error adding product to cart:', error);
           if (buttonText && loadingSpinner) {
-            console.log('An error occurred. Resetting button to normal state.');
             buttonText.style.display = '';
             loadingSpinner.classList.add('hidden');
           }
