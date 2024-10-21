@@ -61,7 +61,6 @@
 
     function togglePurchaseBox(element) {
       if (!element) return;
-      if (element.classList.contains('selected')) return;
 
       purchaseOptionBoxes.forEach(box => box.classList.remove('selected'));
 
@@ -85,6 +84,14 @@
       state.selectedBox = element;
 
       updateSubmitButtonText(isSubscription, buyType);
+
+      // Log the current state for debugging
+      console.log('Current selection:', {
+        isSubscription: isSubscription,
+        subscriptionPlanID: subscriptionPlanID,
+        variantID: variantID,
+        buyType: buyType
+      });
     }
 
     function updateSubmitButtonText(isSubscription, buyType) {
@@ -104,9 +111,6 @@
       const defaultBox = purchaseOptionBoxes[defaultVariantIndex - 1] || purchaseOptionBoxes[0];
 
       if (defaultBox) {
-        const isSubscription = defaultBox.getAttribute('data-purchase-type') === 'subscribe';
-        const buyType = defaultBox.getAttribute('data-buy-type');
-        updateSubmitButtonText(isSubscription, buyType);
         togglePurchaseBox(defaultBox);
       }
     }
