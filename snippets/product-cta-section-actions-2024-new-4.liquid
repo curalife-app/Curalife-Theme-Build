@@ -67,6 +67,7 @@
       const isSubscription = element.getAttribute('data-purchase-type') === 'subscribe';
       const subscriptionPlanID = isSubscription ? element.getAttribute('data-subscription-selling-plan-id') : '';
       const variantID = element.getAttribute('data-variant');
+      const buyType = element.getAttribute('data-buy-type');
 
       if (submitSellingPlanIdInput) {
         submitSellingPlanIdInput.value = subscriptionPlanID;
@@ -83,15 +84,18 @@
       }
       state.selectedBox = element;
 
-      updateSubmitButtonText(isSubscription);
-
-      console.log('Selected variant ID:', variantID);
-      console.log('Selected selling plan ID:', subscriptionPlanID);
+      updateSubmitButtonText(isSubscription, buyType);
     }
 
-    function updateSubmitButtonText(isSubscription) {
+    function updateSubmitButtonText(isSubscription, buyType) {
       if (submitButton) {
-        submitButton.textContent = isSubscription ? "Subscribe Now" : "Add to Cart";
+        if (isSubscription) {
+          submitButton.textContent = "Subscribe Now";
+        } else if (buyType === 'buy_now') {
+          submitButton.textContent = "Buy Now";
+        } else {
+          submitButton.textContent = "Add to Cart";
+        }
       }
     }
 
@@ -101,7 +105,8 @@
 
       if (defaultBox) {
         const isSubscription = defaultBox.getAttribute('data-purchase-type') === 'subscribe';
-        updateSubmitButtonText(isSubscription);
+        const buyType = defaultBox.getAttribute('data-buy-type');
+        updateSubmitButtonText(isSubscription, buyType);
         togglePurchaseBox(defaultBox);
       }
     }
@@ -113,26 +118,6 @@
         togglePurchaseBox(purchaseOptionBox);
       }
     });
-
-    function validateSubmission() {
-      const selectedBox = document.querySelector('.purchase-option-box.selected');
-      if (selectedBox) {
-        const isSubscription = selectedBox.getAttribute('data-purchase-type') === 'subscribe';
-        const variantId = selectedBox.getAttribute('data-variant');
-        const sellingPlanId = isSubscription ? selectedBox.getAttribute('data-subscription-selling-plan-id') : '';
-
-        submitVariantIdInput.value = variantId;
-        submitSellingPlanIdInput.value = sellingPlanId;
-
-        console.log('Submitting:', isSubscription ? 'Subscription' : 'One-time purchase');
-        console.log('Variant ID:', variantId);
-        console.log('Selling Plan ID:', sellingPlanId);
-      } else {
-        console.error('No option selected');
-        return false;
-      }
-      return true;
-    }
 
     initializePurchaseOptions();
   });
