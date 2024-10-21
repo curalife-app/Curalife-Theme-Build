@@ -127,13 +127,21 @@
           </div>
 
           {% if pricePer == 'month' %}
-            {% if original_item_cap > subscription_item_price or original_item_cap > item_price %}
+            {% if purchase_type == 'subscribe' and original_item_cap > subscription_item_price %}
+              <div class="compared-at-price text-[14px] font-normal line-through">
+                {{ original_item_cap | money }}
+              </div>
+            {% elsif purchase_type == 'buyonce' and original_item_cap > item_price %}
               <div class="compared-at-price text-[14px] font-normal line-through">
                 {{ original_item_cap | money }}
               </div>
             {% endif %}
           {% else %}
-            {% if original_item_cap_total > subscription_total_price or original_item_cap_total > var.price %}
+            {% if purchase_type == 'subscribe' and original_item_cap_total > subscription_total_price %}
+              <div class="compared-at-price text-[14px] font-normal line-through">
+                {{ original_item_cap_total | money }}
+              </div>
+            {% elsif purchase_type == 'buyonce' and original_item_cap_total > var.price %}
               <div class="compared-at-price text-[14px] font-normal line-through">
                 {{ original_item_cap_total | money }}
               </div>
