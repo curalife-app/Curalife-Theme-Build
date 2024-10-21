@@ -23,19 +23,15 @@
 
     if (buyButton) {
       buyButton.addEventListener('click', function(event) {
-        // Button states for loading
         var submitButton = this;
         var buttonText = submitButton.querySelector('.button-text');
         var loadingSpinner = submitButton.querySelector('.loading-overlay__spinner');
 
-        // Display loading spinner
         if (buttonText && loadingSpinner) {
-          console.log('Showing loading spinner and hiding button text.');
           buttonText.style.display = 'none';
           loadingSpinner.classList.remove('hidden');
         }
 
-        // Get the variant ID and selling plan ID from the hidden inputs
         var variantIdInput = document.querySelector('.submit-variant-id');
         var sellingPlanIdInput = document.querySelector('.submit-selling-plan-id');
         var variantId = variantIdInput ? variantIdInput.value : '{{ variant | default: product.selected_or_first_available_variant.id }}';
