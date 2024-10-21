@@ -39,18 +39,21 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
+    // Cache elements
     const productActions = document.getElementById('product-actions-{{ SID }}');
     if (!productActions) {
       console.error('Product actions element not found');
       return;
     }
-
     const SID = productActions.id.split('-').pop();
+
+    // Cache frequently used elements
     const purchaseOptionBoxes = productActions.querySelectorAll('.purchase-option-box');
     const submitButton = productActions.querySelector('.checkout-button button');
     const submitSellingPlanIdInput = document.querySelector('.submit-selling-plan-id');
     const submitVariantIdInput = document.querySelector('.submit-variant-id');
 
+    // Initialize state
     const state = {
       selectedBox: null,
     };
@@ -59,10 +62,7 @@
       if (!element) return;
       if (element.classList.contains('selected')) return;
 
-      for (let i = 0; i < purchaseOptionBoxes.length; i++) {
-        const box = purchaseOptionBoxes[i];
-        box.classList.remove('selected');
-      }
+      purchaseOptionBoxes.forEach(box => box.classList.remove('selected'));
 
       const isSubscription = element.getAttribute('data-purchase-type') === 'subscribe';
       const subscriptionPlanID = isSubscription ? element.getAttribute('data-subscription-selling-plan-id') : '';
@@ -83,19 +83,25 @@
       }
       state.selectedBox = element;
 
-      if (submitButton) {
-        submitButton.textContent = isSubscription ? "Subscribe Now" : "Add to Cart";
-      }
+      updateSubmitButtonText(isSubscription);
 
       console.log('Selected variant ID:', variantID);
       console.log('Selected selling plan ID:', subscriptionPlanID);
     }
 
+    function updateSubmitButtonText(isSubscription) {
+      if (submitButton) {
+        submitButton.textContent = isSubscription ? "Subscribe Now" : "Add to Cart";
+      }
+    }
+
     function initializePurchaseOptions() {
       const defaultVariantIndex = parseInt(productActions.getAttribute('data-default-variant-index')) || 0;
+      const defaultBox = purchaseOptionBoxes[defaultVariantIndex] || purchaseOptionBoxes[0];
 
-      const defaultBox = purchaseOptionBoxes[defaultVariantIndex - 1] || purchaseOptionBoxes[0];
       if (defaultBox) {
+        const isSubscription = defaultBox.getAttribute('data-purchase-type') === 'subscribe';
+        updateSubmitButtonText(isSubscription);
         togglePurchaseBox(defaultBox);
       }
     }
