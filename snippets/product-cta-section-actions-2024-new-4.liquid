@@ -31,7 +31,7 @@
     <div class="submit-wrap flex flex-col w-full">
       <div class="checkout-button">
         {% assign buttonSID = SID | append: '-checkout' %}
-        {% render 'buy-buttons', SID: buttonSID, product: prod, variant: '', buttonText: "Add to Cart", selling_plan_id: selling_plan_id, product_form_id: product_form_id, buyType: buyType, isBuyWithPrime: isBuyWithPrime %}
+        {% render 'buy-buttons-new-4', SID: buttonSID, product: prod, variant: '', buttonText: "Add to Cart", selling_plan_id: selling_plan_id, product_form_id: product_form_id, buyType: buyType, isBuyWithPrime: isBuyWithPrime %}
       </div>
     </div>
   </div>
@@ -113,6 +113,26 @@
         togglePurchaseBox(purchaseOptionBox);
       }
     });
+
+    function validateSubmission() {
+      const selectedBox = document.querySelector('.purchase-option-box.selected');
+      if (selectedBox) {
+        const isSubscription = selectedBox.getAttribute('data-purchase-type') === 'subscribe';
+        const variantId = selectedBox.getAttribute('data-variant');
+        const sellingPlanId = isSubscription ? selectedBox.getAttribute('data-subscription-selling-plan-id') : '';
+
+        submitVariantIdInput.value = variantId;
+        submitSellingPlanIdInput.value = sellingPlanId;
+
+        console.log('Submitting:', isSubscription ? 'Subscription' : 'One-time purchase');
+        console.log('Variant ID:', variantId);
+        console.log('Selling Plan ID:', sellingPlanId);
+      } else {
+        console.error('No option selected');
+        return false;
+      }
+      return true;
+    }
 
     initializePurchaseOptions();
   });
