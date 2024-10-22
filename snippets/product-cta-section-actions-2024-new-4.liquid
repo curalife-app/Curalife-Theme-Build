@@ -54,7 +54,14 @@
     function togglePurchaseBox(element) {
       if (!element) return;
 
-      purchaseOptionBoxes.forEach(box => box.classList.remove('selected'));
+      // Remove selected class and uncheck radio from all boxes
+      purchaseOptionBoxes.forEach(box => {
+        box.classList.remove('selected');
+        const radio = box.querySelector('input[type="radio"]');
+        if (radio) {
+          radio.checked = false;
+        }
+      });
 
       const isSubscription = element.getAttribute('data-purchase-type') === 'subscribe';
       const subscriptionPlanID = isSubscription ? element.getAttribute('data-subscription-selling-plan-id') : '';
@@ -68,19 +75,20 @@
         submitVariantIdInput.value = variantID;
       }
 
+      // Add selected class and check radio of clicked box
       element.classList.add('selected');
-      const radioInput = element.querySelector("input[type='radio']");
+      const radioInput = element.querySelector('input[type="radio"]');
       if (radioInput) {
         radioInput.checked = true;
       }
-      state.selectedBox = element;
 
+      state.selectedBox = element;
       updateSubmitButtonText(isSubscription, buyType);
     }
 
     function updateSubmitButtonText(isSubscription, buyType) {
-      let buttonText = submitButton.find('.button-text');
-      if (submitButton) {
+      const buttonText = submitButton.querySelector('.button-text');
+      if (buttonText) {
         if (isSubscription) {
           buttonText.textContent = "Subscribe Now";
         } else if (buyType === 'buy_now') {
@@ -120,15 +128,16 @@
     --text-color: #4a5568;
     --border-color: #cbcbcb;
 
-    /* Updated radio input styles */
     .radio-input {
       display: flex;
       align-items: center;
       justify-content: center;
+      position: relative;
     }
 
     .radio-input input[type='radio'] {
       appearance: none;
+      -webkit-appearance: none;
       width: 2em;
       height: 2em;
       background-color: #171717;
@@ -136,29 +145,32 @@
       border-radius: 50%;
       transition: .4s ease-in-out;
       display: block !important;
+      margin: 0;
+      position: relative;
+      z-index: 1;
     }
 
     .radio-input input[type='radio']:hover {
-      scale: 1.2;
+      transform: scale(1.2);
       cursor: pointer;
       box-shadow: none;
     }
 
     .radio-input .circle {
-      position: relative;
-      top: 0.01em;
-      left: -1.1em;
+      position: absolute;
       width: 0.6em;
       height: 0.6em;
-      background-color: var(--primary-color);
+      background-color: yellow;
       scale: 0;
-      border-radius: 10px;
+      border-radius: 50%;
       transition: .4s ease-in-out;
+      pointer-events: none;
+      z-index: 2;
     }
 
     .radio-input input[type='radio']:checked {
       box-shadow: none;
-      border: 1px solid var(--primary-color);
+      border: 1px solid yellow;
     }
 
     .radio-input input[type='radio']:checked + .circle {
@@ -166,7 +178,6 @@
       scale: 1;
     }
 
-    /* Rest of the existing styles */
     .product-container {
       grid-template-columns: 54% 42% !important;
     }
