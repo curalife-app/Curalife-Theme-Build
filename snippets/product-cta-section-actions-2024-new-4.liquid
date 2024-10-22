@@ -108,11 +108,33 @@
       }
     }
 
+    // Handle clicks on the purchase option box
     productActions.addEventListener('click', (event) => {
+      // Check if clicked on radio input or its parent
+      const radioInput = event.target.closest('input[type="radio"]');
       const purchaseOptionBox = event.target.closest('.purchase-option-box');
-      if (purchaseOptionBox) {
+
+      if (radioInput) {
+        // If radio input was clicked, find its parent purchase option box
+        const parentBox = radioInput.closest('.purchase-option-box');
+        if (parentBox) {
+          event.preventDefault(); // Prevent default radio behavior
+          togglePurchaseBox(parentBox);
+        }
+      } else if (purchaseOptionBox) {
+        // If purchase option box was clicked
         event.preventDefault();
         togglePurchaseBox(purchaseOptionBox);
+      }
+    });
+
+    // Add change event listener for radio inputs
+    productActions.addEventListener('change', (event) => {
+      if (event.target.type === 'radio') {
+        const parentBox = event.target.closest('.purchase-option-box');
+        if (parentBox) {
+          togglePurchaseBox(parentBox);
+        }
       }
     });
 
