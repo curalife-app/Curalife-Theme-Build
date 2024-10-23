@@ -76,7 +76,13 @@
 
       const initialVariantIndex = defaultVariant ? defaultVariant - 1 : 0;
 
+      // Handle initial inert state for subscription boxes
       purchaseOptionBoxes.forEach(box => {
+        const subscriptionSellingPlanId = box.dataset.subscriptionSellingPlanId;
+        if (!subscriptionSellingPlanId || subscriptionSellingPlanId === '0') {
+          box.setAttribute('inert', '');
+        }
+
         const subscriptionContent = box.querySelectorAll('.subscription-content');
         const buyOnceContent = box.querySelectorAll('.buy-once-content');
 
@@ -97,7 +103,12 @@
         if (radio) radio.checked = false;
       });
 
-      const defaultBox = purchaseOptionBoxes[initialVariantIndex];
+      // Find the first valid box for initial selection
+      let defaultBox = purchaseOptionBoxes[initialVariantIndex];
+      if (defaultBox && defaultBox.hasAttribute('inert')) {
+        defaultBox = Array.from(purchaseOptionBoxes).find(box => !box.hasAttribute('inert'));
+      }
+
       if (defaultBox) {
         defaultBox.classList.add('selected');
         adjustMaxHeight(defaultBox);
