@@ -222,7 +222,7 @@
               el.style.opacity = '1';
             });
           });
-        }, 300); // Match this with the CSS transition duration
+        }, 300);
 
         // Handle selling plan ID and inert state
         if (isSubscription) {
@@ -267,13 +267,49 @@
         }
       });
 
-      // Update selected box selling plan
+      // Check if currently selected box becomes inert
       const selectedBox = productActions.querySelector('.purchase-option-box.selected');
-      if (selectedBox) {
-        const submitSellingPlanElement = productActions.querySelector('.submit-selling-plan-id');
-        if (submitSellingPlanElement) {
-          submitSellingPlanElement.value = isSubscription ?
-            selectedBox.dataset.subscriptionSellingPlanId : '';
+      if (selectedBox && selectedBox.hasAttribute('inert')) {
+        // Find the first non-inert box
+        const firstAvailableBox = Array.from(purchaseOptionBoxes).find(box => !box.hasAttribute('inert'));
+        if (firstAvailableBox) {
+          // Deselect current box
+          selectedBox.classList.remove('selected');
+          selectedBox.style.maxHeight = '68px';
+          const selectedToggleIcon = selectedBox.querySelector('.toggle-icon');
+          if (selectedToggleIcon) selectedToggleIcon.style.display = 'none';
+
+          // Select new box
+          firstAvailableBox.classList.add('selected');
+          adjustMaxHeight(firstAvailableBox);
+          const newToggleIcon = firstAvailableBox.querySelector('.toggle-icon');
+          if (newToggleIcon) newToggleIcon.style.display = 'block';
+
+          // Update form values
+          const submitSellingPlanElement = productActions.querySelector('.submit-selling-plan-id');
+          const submitVariantElement = productActions.querySelector('.submit-variant-id');
+
+          if (submitSellingPlanElement) {
+            submitSellingPlanElement.value = isSubscription ?
+              firstAvailableBox.dataset.subscriptionSellingPlanId : '';
+          }
+          if (submitVariantElement) {
+            submitVariantElement.value = isSubscription ?
+              firstAvailableBox.dataset.originalVariant :
+              firstAvailableBox.dataset.variant;
+          }
+
+          // Update radio button
+          const radioInput = firstAvailableBox.querySelector("input[type='radio']");
+          if (radioInput) radioInput.checked = true;
+
+          // Update other UI elements
+          updateYotpoPointsWidget(firstAvailableBox);
+          {% if variantsAmount > 1 %}
+            {% if isSlideOnLoad %}
+              updateVariantImage(firstAvailableBox);
+            {% endif %}
+          {% endif %}
         }
       }
     }
