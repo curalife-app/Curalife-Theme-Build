@@ -49,360 +49,360 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    const productActions = document.getElementById(`product-actions-{{ SID }}`);
-    const purchaseOptionBoxes = productActions.querySelectorAll('.purchase-option-box');
+  const productActions = document.getElementById(`product-actions-{{ SID }}`);
+  const purchaseOptionBoxes = productActions.querySelectorAll('.purchase-option-box');
 
-    attachEventHandlers();
-    initializePurchaseOptions();
-    setupMutationObserver();
+  attachEventHandlers();
+  initializePurchaseOptions();
+  setupMutationObserver();
 
-    function isSubscriptionSelected() {
-      const selectedButton = productActions.querySelector('.purchase-type button.selected');
-      return selectedButton.classList.contains('subscription');
-    }
+  function isSubscriptionSelected() {
+    const selectedButton = productActions.querySelector('.purchase-type button.selected');
+    return selectedButton.classList.contains('subscription');
+  }
 
-    function initializePurchaseOptions() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const defaultVariant = urlParams.get('default-variant') ? parseInt(urlParams.get('default-variant')) : {{ defaultSelectionIndex | default: 1 }};
+  function initializePurchaseOptions() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const defaultVariant = urlParams.get('default-variant') ? parseInt(urlParams.get('default-variant')) : {{ defaultSelectionIndex | default: 1 }};
 
-      productActions.querySelector('.purchase-type .subscription').click();
+    productActions.querySelector('.purchase-type .subscription').click();
 
-      const InitialDefaultVariant = defaultVariant ? defaultVariant - 1 : 0;
-      const defaultBox = purchaseOptionBoxes[InitialDefaultVariant];
-      defaultBox.click();
-      defaultBox.querySelector("input[type='radio']").checked = true;
-    }
+    const InitialDefaultVariant = defaultVariant ? defaultVariant - 1 : 0;
+    const defaultBox = purchaseOptionBoxes[InitialDefaultVariant];
+    defaultBox.click();
+    defaultBox.querySelector("input[type='radio']").checked = true;
+  }
 
-    function setupMutationObserver() {
-      const observer = new MutationObserver(mutations => {
-        mutations.forEach(mutation => {
-          if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-            const targetBox = mutation.target.closest('.purchase-option-box');
-            if (targetBox && targetBox.classList.contains('selected')) {
-              adjustMaxHeight(targetBox);
-            }
+  function setupMutationObserver() {
+    const observer = new MutationObserver(mutations => {
+      mutations.forEach(mutation => {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+          const targetBox = mutation.target.closest('.purchase-option-box');
+          if (targetBox && targetBox.classList.contains('selected')) {
+            adjustMaxHeight(targetBox);
           }
-        });
-      });
-
-      purchaseOptionBoxes.forEach(element => {
-        observer.observe(element, { attributes: true, attributeFilter: ['class'] });
-      });
-    }
-
-    function attachEventHandlers() {
-      productActions.addEventListener('click', (event) => {
-        const purchaseBox = event.target.closest('.purchase-option-box');
-        if (purchaseBox) togglePurchaseBox(purchaseBox);
-
-        const purchaseTypeButton = event.target.closest('.purchase-type button');
-        if (purchaseTypeButton) handlePurchaseTypeClick(event, purchaseTypeButton);
-
-        const checkoutButton = event.target.closest('.checkout-button.subscription, .add-to-cart-button.buy-once, .submit-wrap button.main-btn');
-        if (checkoutButton) handleMainButtonClick(event, checkoutButton);
-      });
-    }
-
-    function handlePurchaseTypeClick(event, button) {
-      event.stopPropagation();
-      const isSubscriptionBtn = button.classList.contains('subscription');
-
-      productActions.querySelectorAll('.purchase-type button').forEach(btn =>
-        btn.classList.remove('selected'));
-      button.classList.add('selected');
-
-      togglePurchaseTypeAllVariants();
-    }
-
-    function togglePurchaseTypeAllVariants() {
-      purchaseOptionBoxes.forEach(box => togglePurchaseType(box));
-    }
-
-    function togglePurchaseType(parentBox) {
-      const isSubscription = isSubscriptionSelected();
-      const purchaseTypeButtons = productActions.querySelectorAll('.purchase-type button');
-      purchaseTypeButtons.forEach(btn => btn.classList.remove('selected'));
-
-      const buyOnceSubtitle = parentBox.querySelector('.subtitle.buy-once');
-      const subscriptionSubtitle = parentBox.querySelector('.subtitle.subscription');
-      const bwpButton = productActions.querySelector('.bwp-button');
-
-      if (isSubscription) {
-        productActions.querySelector('.purchase-type button.subscription').classList.add('selected');
-        {% unless product.metafields.custom.is_price_per_month %}
-          const perMonthElement = parentBox.querySelector('.per-month');
-          if (perMonthElement) perMonthElement.style.display = 'block';
-        {% endunless %}
-        if (bwpButton) bwpButton.style.display = 'none';
-
-        const selectedBox = productActions.querySelector('.purchase-option-box.selected');
-        const sellingPlanId = selectedBox?.dataset.subscriptionSellingPlanId;
-
-        fadeElements(buyOnceSubtitle, subscriptionSubtitle);
-
-        if (sellingPlanId > 0) {
-          const submitSellingPlanElement = productActions.querySelector('.submit-selling-plan-id');
-          if (submitSellingPlanElement) submitSellingPlanElement.value = sellingPlanId;
-        } else {
-          parentBox.setAttribute('inert', '');
-          parentBox.classList.remove('selected');
-          parentBox.removeAttribute('style');
-          const firstValidBox = Array.from(purchaseOptionBoxes).find(box => !box.hasAttribute('inert'));
-          if (firstValidBox) firstValidBox.click();
         }
+      });
+    });
 
-        purchaseOptionBoxes.forEach(box => {
-          const boxSellingPlanId = box.dataset.subscriptionSellingPlanId;
-          if (!boxSellingPlanId || boxSellingPlanId === '0') {
-            box.setAttribute('inert', '');
-          } else {
-            box.removeAttribute('inert');
-          }
-        });
-      } else {
-        productActions.querySelector('.purchase-type button.buy-once').classList.add('selected');
-        {% unless product.metafields.custom.is_price_per_month %}
-          const perMonthElement = parentBox.querySelector('.per-month');
-          if (perMonthElement) perMonthElement.style.display = 'none';
-        {% endunless %}
-        if (bwpButton) bwpButton.style.display = 'block';
+    purchaseOptionBoxes.forEach(element => {
+      observer.observe(element, { attributes: true, attributeFilter: ['class'] });
+    });
+  }
 
+  function attachEventHandlers() {
+    productActions.addEventListener('click', (event) => {
+      const purchaseBox = event.target.closest('.purchase-option-box');
+      if (purchaseBox) togglePurchaseBox(purchaseBox);
+
+      const purchaseTypeButton = event.target.closest('.purchase-type button');
+      if (purchaseTypeButton) handlePurchaseTypeClick(event, purchaseTypeButton);
+
+      const checkoutButton = event.target.closest('.checkout-button.subscription, .add-to-cart-button.buy-once, .submit-wrap button.main-btn');
+      if (checkoutButton) handleMainButtonClick(event, checkoutButton);
+    });
+  }
+
+  function handlePurchaseTypeClick(event, button) {
+    event.stopPropagation();
+    const isSubscriptionBtn = button.classList.contains('subscription');
+
+    productActions.querySelectorAll('.purchase-type button').forEach(btn =>
+      btn.classList.remove('selected'));
+    button.classList.add('selected');
+
+    togglePurchaseTypeAllVariants();
+  }
+
+  function togglePurchaseTypeAllVariants() {
+    purchaseOptionBoxes.forEach(box => togglePurchaseType(box));
+  }
+
+  function togglePurchaseType(parentBox) {
+    const isSubscription = isSubscriptionSelected();
+    const purchaseTypeButtons = productActions.querySelectorAll('.purchase-type button');
+    purchaseTypeButtons.forEach(btn => btn.classList.remove('selected'));
+
+    const buyOnceSubtitle = parentBox.querySelector('.subtitle.buy-once');
+    const subscriptionSubtitle = parentBox.querySelector('.subtitle.subscription');
+    const bwpButton = productActions.querySelector('.bwp-button');
+
+    if (isSubscription) {
+      productActions.querySelector('.purchase-type button.subscription').classList.add('selected');
+      {% unless product.metafields.custom.is_price_per_month %}
+        const perMonthElement = parentBox.querySelector('.per-month');
+        if (perMonthElement) perMonthElement.style.display = 'block';
+      {% endunless %}
+      if (bwpButton) bwpButton.style.display = 'none';
+
+      const selectedBox = productActions.querySelector('.purchase-option-box.selected');
+      const sellingPlanId = selectedBox?.dataset.subscriptionSellingPlanId;
+
+      fadeElements(buyOnceSubtitle, subscriptionSubtitle);
+
+      if (sellingPlanId > 0) {
         const submitSellingPlanElement = productActions.querySelector('.submit-selling-plan-id');
-        if (submitSellingPlanElement) submitSellingPlanElement.value = '';
-
-        parentBox.removeAttribute('inert');
-
-        fadeElements(subscriptionSubtitle, buyOnceSubtitle);
-
-        purchaseOptionBoxes.forEach(box => box.removeAttribute('inert'));
-      }
-
-      updateYotpoPointsWidget(parentBox);
-      togglePriceDisplay(parentBox);
-      updateComparedAtPriceDisplay(parentBox);
-    }
-
-    function fadeElements(fadeOutEl, fadeInEl) {
-      if (fadeOutEl) {
-        fadeOutEl.style.opacity = '0';
-        fadeOutEl.style.display = 'none';
-      }
-      if (fadeInEl) {
-        fadeInEl.style.display = 'block';
-        setTimeout(() => fadeInEl.style.opacity = '1', 10);
-      }
-    }
-
-    function handleMainButtonClick(event, button) {
-      event.stopPropagation();
-
-      {% if buyType == 'buy_now' %}
-        const selectedBox = productActions.querySelector('.purchase-option-box.selected');
-        const subscriptionPlanID = selectedBox ? selectedBox.dataset.subscriptionSellingPlanId : null;
-        buyButtonHandler(subscriptionPlanID, button);
-      {% else %}
-        const form = button.closest('form');
-        if (form) form.submit();
-      {% endif %}
-    }
-
-    function adjustMaxHeight(element) {
-      const openHeight = element.scrollHeight;
-      element.style.maxHeight = `${openHeight}px`;
-    }
-
-    function updateComparedAtPriceDisplay(parentBox) {
-      const itemPrice = parseFloat(parentBox.dataset.itemPrice);
-      const subscriptionItemPrice = parseFloat(parentBox.dataset.subscriptionItemPrice);
-      const originalItemCap = parseFloat(parentBox.dataset.originalItemCap);
-
-      const currentPrice = isSubscriptionSelected() ? subscriptionItemPrice : itemPrice;
-      const comparedAtPriceElement = parentBox.querySelector('.compared-at-price');
-
-      if (comparedAtPriceElement) {
-        if (originalItemCap > currentPrice) {
-          comparedAtPriceElement.style.display = 'block';
-          setTimeout(() => comparedAtPriceElement.style.opacity = '1', 10);
-        } else {
-          comparedAtPriceElement.style.opacity = '0';
-          setTimeout(() => comparedAtPriceElement.style.display = 'none', 200);
-        }
-      }
-    }
-
-    function togglePriceDisplay(parentBox) {
-      const subscriptionContent = parentBox.querySelector('.subscription-content');
-      const buyOnceContent = parentBox.querySelector('.buy-once-content');
-
-      let contentToHide, contentToShow;
-
-      if (isSubscriptionSelected()) {
-        contentToHide = buyOnceContent;
-        contentToShow = subscriptionContent;
+        if (submitSellingPlanElement) submitSellingPlanElement.value = sellingPlanId;
       } else {
-        contentToHide = subscriptionContent;
-        contentToShow = buyOnceContent;
+        parentBox.setAttribute('inert', '');
+        parentBox.classList.remove('selected');
+        parentBox.removeAttribute('style');
+        const firstValidBox = Array.from(purchaseOptionBoxes).find(box => !box.hasAttribute('inert'));
+        if (firstValidBox) firstValidBox.click();
       }
 
-      if (contentToHide) {
-        contentToHide.style.opacity = '0';
-        setTimeout(() => {
-          contentToHide.style.display = 'none';
-          if (contentToShow) {
-            contentToShow.style.display = 'block';
-            setTimeout(() => contentToShow.style.opacity = '1', 10);
-          }
-        }, 200);
-      }
-    }
-
-    function togglePurchaseBox(element) {
-      if (element.classList.contains('selected')) return;
-
-      const isSubscription = isSubscriptionSelected();
-      const subscriptionPlanID = isSubscription ? element.dataset.subscriptionSellingPlanId : '';
-      const variantID = isSubscriptionSelected() ? element.dataset.originalVariant : element.dataset.variant;
-
-      const previousSelected = productActions.querySelector('.purchase-option-box.selected');
-      if (previousSelected) {
-        previousSelected.classList.remove('selected');
-        previousSelected.style.maxHeight = '68px';
-        const toggleIcon = previousSelected.querySelector('.toggle-icon');
-        if (toggleIcon) toggleIcon.style.display = 'none';
-      }
+      purchaseOptionBoxes.forEach(box => {
+        const boxSellingPlanId = box.dataset.subscriptionSellingPlanId;
+        if (!boxSellingPlanId || boxSellingPlanId === '0') {
+          box.setAttribute('inert', '');
+        } else {
+          box.removeAttribute('inert');
+        }
+      });
+    } else {
+      productActions.querySelector('.purchase-type button.buy-once').classList.add('selected');
+      {% unless product.metafields.custom.is_price_per_month %}
+        const perMonthElement = parentBox.querySelector('.per-month');
+        if (perMonthElement) perMonthElement.style.display = 'none';
+      {% endunless %}
+      if (bwpButton) bwpButton.style.display = 'block';
 
       const submitSellingPlanElement = productActions.querySelector('.submit-selling-plan-id');
-      const submitVariantElement = productActions.querySelector('.submit-variant-id');
+      if (submitSellingPlanElement) submitSellingPlanElement.value = '';
 
-      if (submitSellingPlanElement) submitSellingPlanElement.value = subscriptionPlanID;
-      if (submitVariantElement) submitVariantElement.value = variantID;
+      parentBox.removeAttribute('inert');
 
-      element.classList.add('selected');
-      adjustMaxHeight(element);
+      fadeElements(subscriptionSubtitle, buyOnceSubtitle);
 
-      const radioInput = element.querySelector("input[type='radio']");
-      if (radioInput) radioInput.checked = true;
-
-      const toggleIcon = element.querySelector('.toggle-icon');
-      if (toggleIcon) toggleIcon.style.display = 'block';
-
-      updateYotpoPointsWidget(element);
-
-      {% if variantsAmount > 1 %}
-        {% if isSlideOnLoad %}
-          updateVariantImage(element);
-        {% else %}
-          if (window.hasInitialImageUpdateHappened) {
-            updateVariantImage(element);
-          }
-          window.hasInitialImageUpdateHappened = true;
-        {% endif %}
-      {% endif %}
+      purchaseOptionBoxes.forEach(box => box.removeAttribute('inert'));
     }
 
-    function updateYotpoPointsWidget(parentBox) {
-      const newPoints = Math.floor(Number(
-        isSubscriptionSelected()
-          ? parentBox.dataset.subscriptionItemPrice
-          : parentBox.dataset.itemPrice
-      ) / 100);
+    updateYotpoPointsWidget(parentBox);
+    togglePriceDisplay(parentBox);
+    updateComparedAtPriceDisplay(parentBox);
+  }
 
-      const pointsElement = productActions.querySelector('.reward-points-widget .current-price');
-      if (pointsElement) pointsElement.textContent = newPoints;
+  function fadeElements(fadeOutEl, fadeInEl) {
+    if (fadeOutEl) {
+      fadeOutEl.style.opacity = '0';
+      fadeOutEl.style.display = 'none';
     }
-
-    function updateVariantImage(element) {
-      if (!element.dataset.index) return;
-
-      const slideIndex = window.productSliderAllInOne{{ SID }}.slides.length -
-        ({{ variantsAmount | plus: 1 }} - parseInt(element.dataset.index));
-      window.productSliderAllInOne{{ SID }}.slideTo(slideIndex);
+    if (fadeInEl) {
+      fadeInEl.style.display = 'block';
+      setTimeout(() => fadeInEl.style.opacity = '1', 10);
     }
+  }
 
-    function buyButtonHandler(subscription_selling_plan_id, buttonElement) {
+  function handleMainButtonClick(event, button) {
+    event.stopPropagation();
+
+    {% if buyType == 'buy_now' %}
       const selectedBox = productActions.querySelector('.purchase-option-box.selected');
-      if (!selectedBox) return;
+      const subscriptionPlanID = selectedBox ? selectedBox.dataset.subscriptionSellingPlanId : null;
+      buyButtonHandler(subscriptionPlanID, button);
+    {% else %}
+      const form = button.closest('form');
+      if (form) form.submit();
+    {% endif %}
+  }
 
-      toggleButtonLoading(buttonElement, true);
+  function adjustMaxHeight(element) {
+    const openHeight = element.scrollHeight;
+    element.style.maxHeight = `${openHeight}px`;
+  }
 
-      if (isSubscriptionSelected()) {
-        const variant_id = selectedBox.dataset.originalVariant;
-        buySubscription(variant_id, 1, subscription_selling_plan_id);
+  function updateComparedAtPriceDisplay(parentBox) {
+    const itemPrice = parseFloat(parentBox.dataset.itemPrice);
+    const subscriptionItemPrice = parseFloat(parentBox.dataset.subscriptionItemPrice);
+    const originalItemCap = parseFloat(parentBox.dataset.originalItemCap);
+
+    const currentPrice = isSubscriptionSelected() ? subscriptionItemPrice : itemPrice;
+    const comparedAtPriceElement = parentBox.querySelector('.compared-at-price');
+
+    if (comparedAtPriceElement) {
+      if (originalItemCap > currentPrice) {
+        comparedAtPriceElement.style.display = 'block';
+        setTimeout(() => comparedAtPriceElement.style.opacity = '1', 10);
       } else {
-        const variant_id = selectedBox.dataset.variant;
-        const purchaseOptionBox = buttonElement.closest('.purchase-option-box');
-        const dc = purchaseOptionBox ? purchaseOptionBox.dataset.dc : null;
-        const giftElement = buttonElement.parentElement.nextElementSibling;
-        const giftProductID = giftElement ? giftElement.dataset.bundleProductId : null;
-
-        redirectToCheckout(variant_id, dc);
+        comparedAtPriceElement.style.opacity = '0';
+        setTimeout(() => comparedAtPriceElement.style.display = 'none', 200);
       }
     }
+  }
 
-    function redirectToCheckout(variant_id, dc) {
-      let checkoutLink = `https://${location.hostname}/cart/${variant_id}:1`;
-      if (dc) checkoutLink += "?discount=" + atob(dc);
-      window.location.href = checkoutLink;
+  function togglePriceDisplay(parentBox) {
+    const subscriptionContent = parentBox.querySelector('.subscription-content');
+    const buyOnceContent = parentBox.querySelector('.buy-once-content');
+
+    let contentToHide, contentToShow;
+
+    if (isSubscriptionSelected()) {
+      contentToHide = buyOnceContent;
+      contentToShow = subscriptionContent;
+    } else {
+      contentToHide = subscriptionContent;
+      contentToShow = buyOnceContent;
     }
 
-    function toggleButtonLoading(buttonElement, isLoading) {
-      const loader = buttonElement.querySelector('.loading-overlay__spinner');
-      const buttonText = buttonElement.querySelector('.button-text');
+    if (contentToHide) {
+      contentToHide.style.opacity = '0';
+      setTimeout(() => {
+        contentToHide.style.display = 'none';
+        if (contentToShow) {
+          contentToShow.style.display = 'block';
+          setTimeout(() => contentToShow.style.opacity = '1', 10);
+        }
+      }, 200);
+    }
+  }
 
-      if (!loader) {
-        console.error("Loader element not found");
-        return;
-      }
+  function togglePurchaseBox(element) {
+    if (element.classList.contains('selected')) return;
 
-      loader.style.display = isLoading ? 'block' : 'none';
-      buttonText.style.display = isLoading ? 'none' : 'block';
+    const isSubscription = isSubscriptionSelected();
+    const subscriptionPlanID = isSubscription ? element.dataset.subscriptionSellingPlanId : '';
+    const variantID = isSubscriptionSelected() ? element.dataset.originalVariant : element.dataset.variant;
+
+    const previousSelected = productActions.querySelector('.purchase-option-box.selected');
+    if (previousSelected) {
+      previousSelected.classList.remove('selected');
+      previousSelected.style.maxHeight = '68px';
+      const toggleIcon = previousSelected.querySelector('.toggle-icon');
+      if (toggleIcon) toggleIcon.style.display = 'none';
     }
 
-    async function clearCart() {
-      try {
-        const response = await fetch('/cart/clear.js', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-        if (!response.ok) throw new Error('Failed to clear cart');
-        console.log('Cart cleared');
-        return true;
-      } catch (error) {
-        console.log('Failed to clear cart:', error);
-        return false;
-      }
+    const submitSellingPlanElement = productActions.querySelector('.submit-selling-plan-id');
+    const submitVariantElement = productActions.querySelector('.submit-variant-id');
+
+    if (submitSellingPlanElement) submitSellingPlanElement.value = subscriptionPlanID;
+    if (submitVariantElement) submitVariantElement.value = variantID;
+
+    element.classList.add('selected');
+    adjustMaxHeight(element);
+
+    const radioInput = element.querySelector("input[type='radio']");
+    if (radioInput) radioInput.checked = true;
+
+    const toggleIcon = element.querySelector('.toggle-icon');
+    if (toggleIcon) toggleIcon.style.display = 'block';
+
+    updateYotpoPointsWidget(element);
+
+    {% if variantsAmount > 1 %}
+      {% if isSlideOnLoad %}
+        updateVariantImage(element);
+      {% else %}
+        if (window.hasInitialImageUpdateHappened) {
+          updateVariantImage(element);
+        }
+        window.hasInitialImageUpdateHappened = true;
+      {% endif %}
+    {% endif %}
+  }
+
+  function updateYotpoPointsWidget(parentBox) {
+    const newPoints = Math.floor(Number(
+      isSubscriptionSelected()
+        ? parentBox.dataset.subscriptionItemPrice
+        : parentBox.dataset.itemPrice
+    ) / 100);
+
+    const pointsElement = productActions.querySelector('.reward-points-widget .current-price');
+    if (pointsElement) pointsElement.textContent = newPoints;
+  }
+
+  function updateVariantImage(element) {
+    if (!element.dataset.index) return;
+
+    const slideIndex = window.productSliderAllInOne{{ SID }}.slides.length -
+      ({{ variantsAmount | plus: 1 }} - parseInt(element.dataset.index));
+    window.productSliderAllInOne{{ SID }}.slideTo(slideIndex);
+  }
+
+  function buyButtonHandler(subscription_selling_plan_id, buttonElement) {
+    const selectedBox = productActions.querySelector('.purchase-option-box.selected');
+    if (!selectedBox) return;
+
+    toggleButtonLoading(buttonElement, true);
+
+    if (isSubscriptionSelected()) {
+      const variant_id = selectedBox.dataset.originalVariant;
+      buySubscription(variant_id, 1, subscription_selling_plan_id);
+    } else {
+      const variant_id = selectedBox.dataset.variant;
+      const purchaseOptionBox = buttonElement.closest('.purchase-option-box');
+      const dc = purchaseOptionBox ? purchaseOptionBox.dataset.dc : null;
+      const giftElement = buttonElement.parentElement.nextElementSibling;
+      const giftProductID = giftElement ? giftElement.dataset.bundleProductId : null;
+
+      redirectToCheckout(variant_id, dc);
+    }
+  }
+
+  function redirectToCheckout(variant_id, dc) {
+    let checkoutLink = `https://${location.hostname}/cart/${variant_id}:1`;
+    if (dc) checkoutLink += "?discount=" + atob(dc);
+    window.location.href = checkoutLink;
+  }
+
+  function toggleButtonLoading(buttonElement, isLoading) {
+    const loader = buttonElement.querySelector('.loading-overlay__spinner');
+    const buttonText = buttonElement.querySelector('.button-text');
+
+    if (!loader) {
+      console.error("Loader element not found");
+      return;
     }
 
-    async function buySubscription(variant_id, qty, selling_plan) {
-      const cartCleared = await clearCart();
-      if (!cartCleared) return;
+    loader.style.display = isLoading ? 'block' : 'none';
+    buttonText.style.display = isLoading ? 'none' : 'block';
+  }
 
-      const data = {
-        "id": variant_id,
-        "quantity": qty,
-        "selling_plan": selling_plan
-      };
-
-      try {
-        const response = await fetch('/cart/add.js', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(data)
-        });
-
-        if (!response.ok) throw new Error('Failed to add item to cart');
-
-        console.log('success');
-        window.location.href = '/checkout';
-      } catch (error) {
-        console.log('Failed to add item to cart:', error);
-      }
+  async function clearCart() {
+    try {
+      const response = await fetch('/cart/clear.js', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!response.ok) throw new Error('Failed to clear cart');
+      console.log('Cart cleared');
+      return true;
+    } catch (error) {
+      console.log('Failed to clear cart:', error);
+      return false;
     }
-  });
+  }
+
+  async function buySubscription(variant_id, qty, selling_plan) {
+    const cartCleared = await clearCart();
+    if (!cartCleared) return;
+
+    const data = {
+      "id": variant_id,
+      "quantity": qty,
+      "selling_plan": selling_plan
+    };
+
+    try {
+      const response = await fetch('/cart/add.js', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) throw new Error('Failed to add item to cart');
+
+      console.log('success');
+      window.location.href = '/checkout';
+    } catch (error) {
+      console.log('Failed to add item to cart:', error);
+    }
+  }
+});
 </script>
 
 <style>
