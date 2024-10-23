@@ -358,39 +358,30 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    // Find all product action elements and handle them individually
     document.querySelectorAll('[id^="product-actions-"]').forEach(productActions => {
-      // Extract SID from the element ID
       const SID = productActions.id.replace('product-actions-', '');
-
-      // Initial variant selection based on URL params
       const urlParams = new URLSearchParams(window.location.search);
       const defaultVariant = urlParams.get('default-variant');
       const variantBoxes = Array.from(productActions.querySelectorAll('.variant-box'));
 
-      // Ensure we have variant boxes before proceeding
       if (variantBoxes.length > 0) {
         let selectedVariantBox;
 
         if (defaultVariant && variantBoxes[defaultVariant - 1]) {
           selectedVariantBox = variantBoxes[defaultVariant - 1];
         } else {
-          // Use defaultSelectionIndex if defined, otherwise select first variant
           const defaultIndex = typeof defaultSelectionIndex !== 'undefined' ? defaultSelectionIndex - 1 : 0;
           selectedVariantBox = variantBoxes[defaultIndex] || variantBoxes[0];
         }
 
         if (selectedVariantBox) {
-          // Find the radio input within the variant box
           const input = selectedVariantBox.querySelector(`input[name="pack${SID}"]`);
           if (input) {
             input.checked = true;
 
-            // Manually trigger all the update functions
             updateCTA(SID);
             updateSelectedVariantInformation(SID, 'data-save', '.save-badge');
 
-            // Update price if it's a monthly price product
             const isMonthlyPrice = window?.product?.metafields?.custom?.is_price_per_month;
             if (isMonthlyPrice) {
               const variantTotalPrice = input.dataset.price;
@@ -400,13 +391,11 @@
               }
             }
 
-            // Set initial click state
             window[`didClickVariant${SID}`] = true;
           }
         }
       }
 
-      // Buy button click handler
       const buyButton = productActions.querySelector('#buy-button');
       if (buyButton) {
         buyButton.addEventListener('click', function() {
@@ -434,7 +423,6 @@
         });
       }
 
-      // Variant box click handlers
       variantBoxes.forEach(box => {
         box.addEventListener('click', function() {
           const input = this.querySelector(`input[name="pack${SID}"]`);
@@ -456,7 +444,6 @@
             if (window[didClickVariantKey]) {
               const isB2B = window?.customer?.b2b;
               if (!isB2B) {
-                // Slide to Variant Image
                 const product = window.product || {};
                 const variantsAmount = (product?.variants?.length || 0) +
                   (product?.metafields?.custom?.additional_variants?.value?.length || 0);
@@ -478,7 +465,6 @@
     });
   });
 
-  // Helper function to trigger click event
   function triggerClick(element) {
     if (element) {
       const event = new Event('click', { bubbles: true });
@@ -486,7 +472,6 @@
     }
   }
 
-  // Update CTA function
   function updateCTA(SID) {
     if (typeof ctaTextType === 'undefined') return;
 
@@ -515,7 +500,6 @@
     });
   }
 
-  // Update variant information function
   function updateSelectedVariantInformation(SID, infoAttributeName, targetElementSelector) {
     const productActions = document.querySelector(`#product-actions-${SID}`);
     if (!productActions) return;
@@ -533,7 +517,6 @@
     });
   }
 
-  // Quantity increment/decrement functions
   function incrementQty() {
     const input = document.querySelector('input[name="quantity"]');
     const cartQty = document.querySelector(".cart-qty");
@@ -558,7 +541,6 @@
     }
   }
 
-  // Fade helpers
   function fadeOut(element, callback) {
     element.style.opacity = 1;
     (function fade() {
