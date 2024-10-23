@@ -283,89 +283,89 @@
           });
         }
 
-
         window.addEventListener('load', adjustHeights);
         window.addEventListener('resize', adjustHeights);
       });
     </script>
 
-  <style>
-    {% if section.settings.is_arrows_bottom %}
-      #section-{{ section.id }} {
-        @media (width > 768px) {
-          --swiper-navigation-sides-offset: 370px;
-          --swiper-navigation-top-offset: 95% !important;
-        }
-
-        @media (width <= 768px) {
-          --swiper-navigation-sides-offset: 0px !important;
-        }
-
-        .swiper {
-          padding-bottom: 80px !important;
-        }
-      }
-    {% elsif request.path contains 'lp-wl-curaslim-360' or request.path contains 'curaslim-b2b' %}
-      #section-{{ section.id }} {
-        @media (width > 768px) {
-          --swiper-navigation-top-offset: -50px !important;
-
-          .swiper-button-next {
-            right: 0;
+    <style>
+      {% if section.settings.is_arrows_bottom %}
+        #section-{{ section.id }} {
+          @media (width > 768px) {
+            --swiper-navigation-sides-offset: 370px;
+            --swiper-navigation-top-offset: 95% !important;
           }
 
-          .swiper-button-prev {
-            right: 60px;
-            left: unset;
+          @media (width <= 768px) {
+            --swiper-navigation-sides-offset: 0px !important;
+          }
+
+          .swiper {
+            padding-bottom: 80px !important;
           }
         }
+      {% elsif request.path contains 'lp-wl-curaslim-360' or request.path contains 'curaslim-b2b' %}
+        #section-{{ section.id }} {
+          @media (width > 768px) {
+            --swiper-navigation-top-offset: -50px !important;
 
-        @media (width <= 768px) {
-          --swiper-navigation-top-offset: 95% !important;
-          --swiper-navigation-sides-offset: 0px !important;
+            .swiper-button-next {
+              right: 0;
+            }
+
+            .swiper-button-prev {
+              right: 60px;
+              left: unset;
+            }
+          }
+
+          @media (width <= 768px) {
+            --swiper-navigation-top-offset: 95% !important;
+            --swiper-navigation-sides-offset: 0px !important;
+          }
         }
+      {% endif %}
+
+      #section-{{ section.id }} .swiper-slide {
+        opacity: 0;
+        transition: opacity 1s ease;
       }
-    {% endif %}
 
-    #section-{{ section.id }} .swiper-slide {
-      opacity: 0;
-      transition: opacity 1s ease;
-    }
-
-    #section-{{ section.id }} .swiper-slide-active {
-      opacity: 1;
-    }
-
-    {% if section.settings.items_in_row == 'all' %}
-      {% assign items_in_row = section.blocks.size %}
-    {% else %}
-      {% assign items_in_row = section.settings.items_in_row | minus: 1 %}
-    {% endif %}
-
-    {% for i in (1..items_in_row) %}
-      #section-{{ section.id }} .swiper-slide-active{% for j in (1..i) %} + .swiper-slide{% endfor %} {
-        opacity: 1;
-      }
-    {% endfor %}
-
-    @media (max-width: 768px) {
       #section-{{ section.id }} .swiper-slide-active {
         opacity: 1;
       }
 
-      {% if section.settings.items_in_row_mobile == 'all' %}
-        {% assign items_in_row_mobile = section.blocks.size %}
+      {% if section.settings.items_in_row == 'all' %}
+        {% assign items_in_row = section.blocks.size %}
       {% else %}
-        {% assign items_in_row_mobile = section.settings.items_in_row_mobile | minus: 1 %}
+        {% assign items_in_row = section.settings.items_in_row | minus: 1 %}
       {% endif %}
 
-      {% for i in (1..items_in_row_mobile) %}
+      {% for i in (1..items_in_row) %}
         #section-{{ section.id }} .swiper-slide-active{% for j in (1..i) %} + .swiper-slide{% endfor %} {
           opacity: 1;
         }
       {% endfor %}
-    }
-  </style>
+
+      @media (max-width: 768px) {
+        #section-{{ section.id }} .swiper-slide-active {
+          opacity: 1;
+        }
+
+        {% if section.settings.items_in_row_mobile == 'all' %}
+          {% assign items_in_row_mobile = section.blocks.size %}
+        {% else %}
+          {% assign items_in_row_mobile = section.settings.items_in_row_mobile | minus: 1 %}
+        {% endif %}
+
+        {% for i in (1..items_in_row_mobile) %}
+          #section-{{ section.id }} .swiper-slide-active{% for j in (1..i) %} + .swiper-slide{% endfor %} {
+            opacity: 1;
+          }
+        {% endfor %}
+      }
+    </style>
+  {% endif %}
 
   <style>
     {% if section.settings.is_ticker %}
@@ -544,8 +544,9 @@
   </style>
 
   {% if section.settings.is_bigger_center_item %}
-  {% assign centerPosition = section.blocks.size | divided_by: 2 | plus: 1 %}
-  {% assign centerElementSelector = "swiper-slide[aria-label='" | append: centerPosition | append: " / " | append: section.blocks.size | append: "']" %}
+    {% assign centerPosition = section.blocks.size | divided_by: 2 | plus: 1 %}
+    {% assign centerElementSelector = "swiper-slide[aria-label='" | append: centerPosition | append: " / " | append: section.blocks.size | append: "']" %}
+
     <style>
       #section-{{ section.id }} swiper-slide img {
         transition: .7s;
