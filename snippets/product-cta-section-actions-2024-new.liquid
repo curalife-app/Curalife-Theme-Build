@@ -52,7 +52,6 @@
     const productActions = document.getElementById(`product-actions-{{ SID }}`);
     const purchaseOptionBoxes = productActions.querySelectorAll('.purchase-option-box');
 
-    // Add transition styles dynamically
     const styleSheet = document.createElement("style");
     styleSheet.textContent = `
       .subscription-content, .buy-once-content {
@@ -70,25 +69,20 @@
     }
 
     function initializePurchaseOptions() {
-      // Get default variant from URL or use default index
       const urlParams = new URLSearchParams(window.location.search);
       const defaultVariant = urlParams.get('default-variant') ?
         parseInt(urlParams.get('default-variant')) :
         {{ defaultSelectionIndex | default: 1 }};
 
-      // Calculate initial variant index
       const initialVariantIndex = defaultVariant ? defaultVariant - 1 : 0;
 
-      // Set initial states for all boxes first
       purchaseOptionBoxes.forEach(box => {
         const subscriptionContent = box.querySelectorAll('.subscription-content');
         const buyOnceContent = box.querySelectorAll('.buy-once-content');
 
-        // Reset any previous selections
         box.classList.remove('selected');
         box.style.maxHeight = '68px';
 
-        // Set initial content visibility
         subscriptionContent.forEach(el => {
           el.style.display = 'block';
           el.style.opacity = '1';
@@ -99,12 +93,10 @@
           el.style.opacity = '0';
         });
 
-        // Reset radio buttons
         const radio = box.querySelector("input[type='radio']");
         if (radio) radio.checked = false;
       });
 
-      // Select initial variant box
       const defaultBox = purchaseOptionBoxes[initialVariantIndex];
       if (defaultBox) {
         defaultBox.classList.add('selected');
@@ -113,7 +105,6 @@
         const radio = defaultBox.querySelector("input[type='radio']");
         if (radio) radio.checked = true;
 
-        // Update form values
         const submitSellingPlanElement = productActions.querySelector('.submit-selling-plan-id');
         const submitVariantElement = productActions.querySelector('.submit-variant-id');
 
@@ -124,12 +115,10 @@
           submitVariantElement.value = defaultBox.dataset.originalVariant || defaultBox.dataset.variant;
         }
 
-        // Show toggle icon if exists
         const toggleIcon = defaultBox.querySelector('.toggle-icon');
         if (toggleIcon) toggleIcon.style.display = 'block';
       }
 
-      // Set initial purchase type (subscription)
       const subscriptionButton = productActions.querySelector('.purchase-type .subscription');
       const buyOnceButton = productActions.querySelector('.purchase-type .buy-once');
 
@@ -138,7 +127,6 @@
         buyOnceButton.classList.remove('selected');
       }
 
-      // Update points widget if exists
       if (defaultBox) {
         updateYotpoPointsWidget(defaultBox);
       }
