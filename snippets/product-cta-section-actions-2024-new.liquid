@@ -127,6 +127,9 @@
     const subscriptionSubtitle = parentBox.querySelector('.subtitle.subscription');
     const bwpButton = productActions.querySelector('.bwp-button');
 
+    // Immediately update price displays
+    togglePriceDisplay(parentBox);
+
     if (isSubscription) {
       productActions.querySelector('.purchase-type button.subscription').classList.add('selected');
       {% unless product.metafields.custom.is_price_per_month %}
@@ -177,19 +180,26 @@
       purchaseOptionBoxes.forEach(box => box.removeAttribute('inert'));
     }
 
+    // Update other displays
     updateYotpoPointsWidget(parentBox);
-    togglePriceDisplay(parentBox);
     updateComparedAtPriceDisplay(parentBox);
   }
 
   function fadeElements(fadeOutEl, fadeInEl) {
     if (fadeOutEl) {
+      fadeOutEl.style.transition = 'opacity 0.2s ease-out';
       fadeOutEl.style.opacity = '0';
-      fadeOutEl.style.display = 'none';
+      setTimeout(() => {
+        fadeOutEl.style.display = 'none';
+      }, 200);
     }
     if (fadeInEl) {
       fadeInEl.style.display = 'block';
-      setTimeout(() => fadeInEl.style.opacity = '1', 10);
+      fadeInEl.style.opacity = '0';
+      setTimeout(() => {
+        fadeInEl.style.transition = 'opacity 0.2s ease-in';
+        fadeInEl.style.opacity = '1';
+      }, 10);
     }
   }
 
@@ -234,26 +244,27 @@
     const subscriptionContent = parentBox.querySelector('.subscription-content');
     const buyOnceContent = parentBox.querySelector('.buy-once-content');
 
-    let contentToHide, contentToShow;
+    if (!subscriptionContent || !buyOnceContent) return;
 
-    if (isSubscriptionSelected()) {
-      contentToHide = buyOnceContent;
-      contentToShow = subscriptionContent;
-    } else {
-      contentToHide = subscriptionContent;
-      contentToShow = buyOnceContent;
-    }
+    const isSubscription = isSubscriptionSelected();
+    const contentToHide = isSubscription ? buyOnceContent : subscriptionContent;
+    const contentToShow = isSubscription ? subscriptionContent : buyOnceContent;
 
-    if (contentToHide) {
+    // First, set initial styles for transition
+    contentToHide.style.opacity = '1';
+    contentToShow.style.opacity = '0';
+    contentToShow.style.display = 'block';
+
+    // Start transition
+    requestAnimationFrame(() => {
       contentToHide.style.opacity = '0';
+      contentToShow.style.opacity = '1';
+
       setTimeout(() => {
         contentToHide.style.display = 'none';
-        if (contentToShow) {
-          contentToShow.style.display = 'block';
-          setTimeout(() => contentToShow.style.opacity = '1', 10);
-        }
+        contentToShow.style.display = 'block';
       }, 200);
-    }
+    });
   }
 
   function togglePurchaseBox(element) {
