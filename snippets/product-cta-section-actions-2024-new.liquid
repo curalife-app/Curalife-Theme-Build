@@ -536,24 +536,20 @@
       }
     }
 
-    // Add initialization check for slider
     function initializeProductSlider() {
       const sliderId = `productSliderAllInOne${window.SID || ''}`;
 
-      // Wait for slider to be available
       const checkSlider = setInterval(() => {
         if (window[sliderId] && window[sliderId].slides) {
           clearInterval(checkSlider);
           window.hasInitialImageUpdateHappened = false;
 
-          // Initialize slider events
           window[sliderId].on('init', () => {
             console.log(`${sliderId} initialized`);
           });
         }
       }, 100);
 
-      // Clear interval after 5 seconds to prevent infinite checking
       setTimeout(() => clearInterval(checkSlider), 5000);
     }
 
