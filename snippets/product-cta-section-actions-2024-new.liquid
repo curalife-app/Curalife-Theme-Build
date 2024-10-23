@@ -513,10 +513,51 @@
     function updateVariantImage(element) {
       if (!element.dataset.index) return;
 
-      const slideIndex = window.productSliderAllInOne{{ SID }}.slides.length -
-        ({{ variantsAmount | plus: 1 }} - parseInt(element.dataset.index));
-      window.productSliderAllInOne{{ SID }}.slideTo(slideIndex);
+      const sliderId = `productSliderAllInOne${window.SID || ''}`;
+      const slider = window[sliderId];
+
+      if (!slider || !slider.slides || !slider.slides.length) {
+        console.warn(`Slider ${sliderId} not initialized or has no slides`);
+        return;
+      }
+
+      try {
+        const variantsAmount = parseInt('{{ variantsAmount }}' || 0);
+        const elementIndex = parseInt(element.dataset.index);
+        const slideIndex = slider.slides.length - (variantsAmount + 1 - elementIndex);
+
+        if (slideIndex >= 0 && slideIndex < slider.slides.length) {
+          slider.slideTo(slideIndex);
+        } else {
+          console.warn(`Invalid slide index calculated: ${slideIndex}`);
+        }
+      } catch (error) {
+        console.error('Error updating variant image:', error);
+      }
     }
+
+    // Add initialization check for slider
+    function initializeProductSlider() {
+      const sliderId = `productSliderAllInOne${window.SID || ''}`;
+
+      // Wait for slider to be available
+      const checkSlider = setInterval(() => {
+        if (window[sliderId] && window[sliderId].slides) {
+          clearInterval(checkSlider);
+          window.hasInitialImageUpdateHappened = false;
+
+          // Initialize slider events
+          window[sliderId].on('init', () => {
+            console.log(`${sliderId} initialized`);
+          });
+        }
+      }, 100);
+
+      // Clear interval after 5 seconds to prevent infinite checking
+      setTimeout(() => clearInterval(checkSlider), 5000);
+    }
+
+    document.addEventListener('DOMContentLoaded', initializeProductSlider);
 
     function buyButtonHandler(subscription_selling_plan_id, buttonElement) {
       const selectedBox = productActions.querySelector('.purchase-option-box.selected');
