@@ -130,7 +130,8 @@
       if (isSubscription) {
         productActions.querySelector('.purchase-type button.subscription').classList.add('selected');
         {% unless product.metafields.custom.is_price_per_month %}
-          parentBox.querySelector('.per-month').style.display = 'block';
+          const perMonthElement = parentBox.querySelector('.per-month');
+          if (perMonthElement) perMonthElement.style.display = 'block';
         {% endunless %}
         if (bwpButton) bwpButton.style.display = 'none';
 
@@ -140,7 +141,8 @@
         fadeElements(buyOnceSubtitle, subscriptionSubtitle);
 
         if (sellingPlanId > 0) {
-          productActions.querySelector('.submit-selling-plan-id').value = sellingPlanId;
+          const submitSellingPlanElement = productActions.querySelector('.submit-selling-plan-id');
+          if (submitSellingPlanElement) submitSellingPlanElement.value = sellingPlanId;
         } else {
           parentBox.setAttribute('inert', '');
           parentBox.classList.remove('selected');
@@ -160,10 +162,14 @@
       } else {
         productActions.querySelector('.purchase-type button.buy-once').classList.add('selected');
         {% unless product.metafields.custom.is_price_per_month %}
-          parentBox.querySelector('.per-month').style.display = 'none';
+          const perMonthElement = parentBox.querySelector('.per-month');
+          if (perMonthElement) perMonthElement.style.display = 'none';
         {% endunless %}
         if (bwpButton) bwpButton.style.display = 'block';
-        productActions.querySelector('.submit-selling-plan-id').value = '';
+
+        const submitSellingPlanElement = productActions.querySelector('.submit-selling-plan-id');
+        if (submitSellingPlanElement) submitSellingPlanElement.value = '';
+
         parentBox.removeAttribute('inert');
 
         fadeElements(subscriptionSubtitle, buyOnceSubtitle);
@@ -191,10 +197,12 @@
       event.stopPropagation();
 
       {% if buyType == 'buy_now' %}
-        const subscriptionPlanID = productActions.querySelector('.purchase-option-box.selected')?.dataset.subscriptionSellingPlanId;
+        const selectedBox = productActions.querySelector('.purchase-option-box.selected');
+        const subscriptionPlanID = selectedBox ? selectedBox.dataset.subscriptionSellingPlanId : null;
         buyButtonHandler(subscriptionPlanID, button);
       {% else %}
-        button.closest('form').submit();
+        const form = button.closest('form');
+        if (form) form.submit();
       {% endif %}
     }
 
@@ -211,12 +219,40 @@
       const currentPrice = isSubscriptionSelected() ? subscriptionItemPrice : itemPrice;
       const comparedAtPriceElement = parentBox.querySelector('.compared-at-price');
 
-      if (originalItemCap > currentPrice) {
-        comparedAtPriceElement.style.display = 'block';
-        setTimeout(() => comparedAtPriceElement.style.opacity = '1', 10);
+      if (comparedAtPriceElement) {
+        if (originalItemCap > currentPrice) {
+          comparedAtPriceElement.style.display = 'block';
+          setTimeout(() => comparedAtPriceElement.style.opacity = '1', 10);
+        } else {
+          comparedAtPriceElement.style.opacity = '0';
+          setTimeout(() => comparedAtPriceElement.style.display = 'none', 200);
+        }
+      }
+    }
+
+    function togglePriceDisplay(parentBox) {
+      const subscriptionContent = parentBox.querySelector('.subscription-content');
+      const buyOnceContent = parentBox.querySelector('.buy-once-content');
+
+      let contentToHide, contentToShow;
+
+      if (isSubscriptionSelected()) {
+        contentToHide = buyOnceContent;
+        contentToShow = subscriptionContent;
       } else {
-        comparedAtPriceElement.style.opacity = '0';
-        setTimeout(() => comparedAtPriceElement.style.display = 'none', 200);
+        contentToHide = subscriptionContent;
+        contentToShow = buyOnceContent;
+      }
+
+      if (contentToHide) {
+        contentToHide.style.opacity = '0';
+        setTimeout(() => {
+          contentToHide.style.display = 'none';
+          if (contentToShow) {
+            contentToShow.style.display = 'block';
+            setTimeout(() => contentToShow.style.opacity = '1', 10);
+          }
+        }, 200);
       }
     }
 
@@ -231,16 +267,24 @@
       if (previousSelected) {
         previousSelected.classList.remove('selected');
         previousSelected.style.maxHeight = '68px';
-        previousSelected.querySelector('.toggle-icon')?.style.display = 'none';
+        const toggleIcon = previousSelected.querySelector('.toggle-icon');
+        if (toggleIcon) toggleIcon.style.display = 'none';
       }
 
-      productActions.querySelector('.submit-selling-plan-id').value = subscriptionPlanID;
-      productActions.querySelector('.submit-variant-id').value = variantID;
+      const submitSellingPlanElement = productActions.querySelector('.submit-selling-plan-id');
+      const submitVariantElement = productActions.querySelector('.submit-variant-id');
+
+      if (submitSellingPlanElement) submitSellingPlanElement.value = subscriptionPlanID;
+      if (submitVariantElement) submitVariantElement.value = variantID;
 
       element.classList.add('selected');
       adjustMaxHeight(element);
-      element.querySelector("input[type='radio']").checked = true;
-      element.querySelector('.toggle-icon').style.display = 'block';
+
+      const radioInput = element.querySelector("input[type='radio']");
+      if (radioInput) radioInput.checked = true;
+
+      const toggleIcon = element.querySelector('.toggle-icon');
+      if (toggleIcon) toggleIcon.style.display = 'block';
 
       updateYotpoPointsWidget(element);
 
@@ -256,25 +300,6 @@
       {% endif %}
     }
 
-    function togglePriceDisplay(parentBox) {
-      const subscriptionContent = parentBox.querySelector('.subscription-content');
-      const buyOnceContent = parentBox.querySelector('.buy-once-content');
-      const [contentToHide, contentToShow] = isSubscriptionSelected()
-        ? [buyOnceContent, subscriptionContent]
-        : [subscriptionContent, buyOnceContent];
-
-      if (contentToHide) {
-        contentToHide.style.opacity = '0';
-        setTimeout(() => {
-          contentToHide.style.display = 'none';
-          if (contentToShow) {
-            contentToShow.style.display = 'block';
-            setTimeout(() => contentToShow.style.opacity = '1', 10);
-          }
-        }, 200);
-      }
-    }
-
     function updateYotpoPointsWidget(parentBox) {
       const newPoints = Math.floor(Number(
         isSubscriptionSelected()
@@ -287,6 +312,8 @@
     }
 
     function updateVariantImage(element) {
+      if (!element.dataset.index) return;
+
       const slideIndex = window.productSliderAllInOne{{ SID }}.slides.length -
         ({{ variantsAmount | plus: 1 }} - parseInt(element.dataset.index));
       window.productSliderAllInOne{{ SID }}.slideTo(slideIndex);
@@ -294,6 +321,8 @@
 
     function buyButtonHandler(subscription_selling_plan_id, buttonElement) {
       const selectedBox = productActions.querySelector('.purchase-option-box.selected');
+      if (!selectedBox) return;
+
       toggleButtonLoading(buttonElement, true);
 
       if (isSubscriptionSelected()) {
@@ -301,8 +330,10 @@
         buySubscription(variant_id, 1, subscription_selling_plan_id);
       } else {
         const variant_id = selectedBox.dataset.variant;
-        const dc = buttonElement.closest('.purchase-option-box')?.dataset.dc;
-        const giftProductID = buttonElement.parentElement.nextElementSibling?.dataset.bundleProductId;
+        const purchaseOptionBox = buttonElement.closest('.purchase-option-box');
+        const dc = purchaseOptionBox ? purchaseOptionBox.dataset.dc : null;
+        const giftElement = buttonElement.parentElement.nextElementSibling;
+        const giftProductID = giftElement ? giftElement.dataset.bundleProductId : null;
 
         redirectToCheckout(variant_id, dc);
       }
@@ -329,11 +360,17 @@
 
     async function clearCart() {
       try {
-        await fetch('/cart/clear.js', { method: 'POST' });
+        const response = await fetch('/cart/clear.js', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        if (!response.ok) throw new Error('Failed to clear cart');
         console.log('Cart cleared');
         return true;
       } catch (error) {
-        console.log('Failed to clear cart');
+        console.log('Failed to clear cart:', error);
         return false;
       }
     }
@@ -349,17 +386,20 @@
       };
 
       try {
-        await fetch('/cart/add.js', {
+        const response = await fetch('/cart/add.js', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify(data)
         });
+
+        if (!response.ok) throw new Error('Failed to add item to cart');
+
         console.log('success');
         window.location.href = '/checkout';
       } catch (error) {
-        console.log('Failed to add item to cart');
+        console.log('Failed to add item to cart:', error);
       }
     }
   });
