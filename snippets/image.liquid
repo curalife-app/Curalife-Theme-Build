@@ -23,8 +23,12 @@ assign mobile_image = mobile_image | default: image
 assign image_name = desktop_image.src | split: '.' | first
 assign image_ext = desktop_image.src | split: '.' | last
 assign retina_src = image_name | append: '-x2.' | append: image_ext
-assign retina_url = retina_src | image_url
-assign retina_image = retina_url | nil_or_empty? | unless: retina_src
+assign retina_url = retina_src | file_url
+
+assign retina_image = nil
+unless retina_url == blank
+  assign retina_image = retina_src
+endif
 
 # Auto-detect mobile retina image if mobile image is different
 assign mobile_retina_image = nil
@@ -32,8 +36,11 @@ if mobile_image != desktop_image
   assign mobile_image_name = mobile_image.src | split: '.' | first
   assign mobile_image_ext = mobile_image.src | split: '.' | last
   assign mobile_retina_src = mobile_image_name | append: '-x2.' | append: mobile_image_ext
-  assign mobile_retina_url = mobile_retina_src | image_url
-  assign mobile_retina_image = mobile_retina_url | nil_or_empty? | unless: mobile_retina_src
+  assign mobile_retina_url = mobile_retina_src | file_url
+
+  unless mobile_retina_url == blank
+    assign mobile_retina_image = mobile_retina_src
+  endif
 else
   assign mobile_retina_image = retina_image
 endif
