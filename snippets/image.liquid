@@ -1,18 +1,30 @@
+{% comment %}
+  Updated Shopify CDN Responsive Image Component
+
+  Accepts:
+  - image: The main image object (required)
+  - mobile_image: An optional image object for mobile devices
+  - sizes: Custom sizes attribute (optional, default provided)
+  - breakpoint: Custom breakpoint in pixels (optional, default: 768)
+  - lazy: Enable lazy loading (optional, default: true)
+  - alt: Alt text for the image (required for accessibility)
+  - class: Additional CSS classes (optional)
+  - link: URL to wrap the image in a link (optional)
+
+  Usage:
+  {% render 'shopify-cdn-image',
+    image: product.featured_image,
+    mobile_image: product.images[1],
+    sizes: '(min-width: 1200px) 1100px, (min-width: 769px) 750px, 100vw',
+    breakpoint: 768,
+    lazy: true,
+    alt: product.title,
+    class: 'my-custom-class',
+    link: product.url
+  %}
+{% endcomment %}
+
 {% if customer.email contains 'yotam' %}
-  {% comment %}Debug logs will be wrapped in HTML comments{% endcomment %}
-
-  <!-- DEBUG: Component Start -->
-  <!-- Input Parameters:
-    image: {{ image.src }}
-    mobile_image: {{ mobile_image.src | default: 'not provided' }}
-    sizes: {{ sizes | default: 'default' }}
-    breakpoint: {{ breakpoint | default: '768' }}
-    lazy: {{ lazy | default: 'true' }}
-    alt: {{ alt }}
-    class: {{ class | default: 'none' }}
-    link: {{ link | default: 'none' }}
-  -->
-
   {%- liquid
   assign desktop_image = image
   assign mobile_image = mobile_image | default: image
@@ -138,32 +150,6 @@
   {%- if link_url -%}</a>{%- endif -%}
   </div>
 {% else %}
-  {% comment %}
-    Updated Shopify CDN Responsive Image Component
-
-    Accepts:
-    - image: The main image object (required)
-    - mobile_image: An optional image object for mobile devices
-    - sizes: Custom sizes attribute (optional, default provided)
-    - breakpoint: Custom breakpoint in pixels (optional, default: 768)
-    - lazy: Enable lazy loading (optional, default: true)
-    - alt: Alt text for the image (required for accessibility)
-    - class: Additional CSS classes (optional)
-    - link: URL to wrap the image in a link (optional)
-
-    Usage:
-    {% render 'shopify-cdn-image',
-      image: product.featured_image,
-      mobile_image: product.images[1],
-      sizes: '(min-width: 1200px) 1100px, (min-width: 769px) 750px, 100vw',
-      breakpoint: 768,
-      lazy: true,
-      alt: product.title,
-      class: 'my-custom-class',
-      link: product.url
-    %}
-  {% endcomment %}
-
   {%- liquid
   assign desktop_image = image
   assign mobile_image = mobile_image | default: image
