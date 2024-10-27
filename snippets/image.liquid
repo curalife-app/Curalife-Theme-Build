@@ -24,7 +24,16 @@ assign filename = path_parts | last
 assign image_name = filename | split: '.' | first
 assign image_ext = filename | split: '.' | last
 assign retina_src = image_name | append: '-x2.' | append: image_ext
-assign retina_check = retina_src | file_url
+
+# Try to get the retina image from the images array
+assign retina_image = nil
+for img in images
+  assign img_filename = img.src | split: '/' | last
+  if img_filename == retina_src
+    assign retina_image = img
+    break
+  endif
+endfor
 
 echo '<!-- DEBUG: Desktop Image Detection'
 echo '  Original image src: ' | append: desktop_image.src
@@ -32,16 +41,8 @@ echo '  Filename: ' | append: filename
 echo '  Image name: ' | append: image_name
 echo '  Image extension: ' | append: image_ext
 echo '  Looking for retina at: ' | append: retina_src
-echo '  Retina check URL: ' | append: retina_check
+echo '  Retina found: ' | append: retina_image.src | default: 'not found'
 echo '-->'
-
-assign retina_image = nil
-unless retina_check == blank
-  assign retina_image = retina_src
-  echo '<!-- DEBUG: Retina image found: ' | append: retina_src | append: ' -->'
-else
-  echo '<!-- DEBUG: No retina image found for desktop -->'
-endunless
 
 # Auto-detect mobile retina image if mobile image is different
 assign mobile_retina_image = nil
@@ -52,7 +53,15 @@ if mobile_image != desktop_image
   assign mobile_image_name = mobile_filename | split: '.' | first
   assign mobile_image_ext = mobile_filename | split: '.' | last
   assign mobile_retina_src = mobile_image_name | append: '-x2.' | append: mobile_image_ext
-  assign mobile_retina_check = mobile_retina_src | file_url
+
+  # Try to get the mobile retina image from the images array
+  for img in images
+    assign img_filename = img.src | split: '/' | last
+    if img_filename == mobile_retina_src
+      assign mobile_retina_image = img
+      break
+    endif
+  endfor
 
   echo '<!-- DEBUG: Mobile Image Detection'
   echo '  Mobile image src: ' | append: mobile_image.src
@@ -60,15 +69,8 @@ if mobile_image != desktop_image
   echo '  Mobile image name: ' | append: mobile_image_name
   echo '  Mobile image extension: ' | append: mobile_image_ext
   echo '  Looking for mobile retina at: ' | append: mobile_retina_src
-  echo '  Mobile retina check URL: ' | append: mobile_retina_check
+  echo '  Mobile retina found: ' | append: mobile_retina_image.src | default: 'not found'
   echo '-->'
-
-  unless mobile_retina_check == blank
-    assign mobile_retina_image = mobile_retina_src
-    echo '<!-- DEBUG: Mobile retina image found: ' | append: mobile_retina_src | append: ' -->'
-  else
-    echo '<!-- DEBUG: No retina image found for mobile -->'
-  endunless
 else
   assign mobile_retina_image = retina_image
   echo '<!-- DEBUG: Using desktop retina for mobile (same image) -->'
