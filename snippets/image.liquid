@@ -1,9 +1,10 @@
 {% if customer.email contains 'yotam' %}
   {% comment %}
-  Updated Shopify CDN Responsive Image Component with Retina Support
+  Updated Shopify CDN Responsive Image Component with Optional Retina Support
 
   Accepts:
   - image: The main image object (required)
+  - retina_image: The retina version of the image (optional)
   - mobile_image: An optional image object for mobile devices
   - sizes: Custom sizes attribute (optional, default provided)
   - breakpoint: Custom breakpoint in pixels (optional, default: 768)
@@ -15,6 +16,7 @@
 
 {%- liquid
 assign desktop_image = image
+assign retina_image = retina_image
 assign mobile_image = mobile_image | default: image
 assign lazy_load = lazy | default: true
 assign breakpoint = breakpoint | default: 768
@@ -30,19 +32,15 @@ assign unique_id = 'img-' | append: desktop_image.id | append: '-' | append: mob
 assign display_width = desktop_image.width
 assign display_height = desktop_image.height
 
-# Check if the source image is already retina
-assign filename = desktop_image.src | split: '/' | last
-if filename contains 'X2' or filename contains 'x2'
-  assign display_width = display_width | divided_by: 2
-  assign display_height = display_height | divided_by: 2
-endif
-
-# Generate base and retina image URLs with explicit parameters
+# Generate base URLs
 assign base_url = desktop_image | image_url: width: 1100
-assign retina_url = desktop_image | image_url: width: 2200
-
 assign mobile_base_url = mobile_image | image_url: width: 750
-assign mobile_retina_url = mobile_image | image_url: width: 1500
+
+# Generate retina URLs only if retina image is provided
+if retina_image
+  assign retina_url = retina_image | image_url: width: 2200
+  assign mobile_retina_url = retina_image | image_url: width: 1500
+endif
 -%}
 
 <div class="relative overflow-hidden">
@@ -53,8 +51,11 @@ assign mobile_retina_url = mobile_image | image_url: width: 1500
     media="(max-width: {{ breakpoint }}px)"
     srcset="
       {%- for width in base_widths_array -%}
-        {{ mobile_image | image_url: width: width }} {{ width }}w,
-        {{ mobile_image | image_url: width: width | times: 2 }} {{ width | times: 2 }}w,
+        {{ mobile_image | image_url: width: width }} {{ width }}w
+        {%- if retina_image -%}
+          ,{{ retina_image | image_url: width: width | times: 2 }} {{ width | times: 2 }}w
+        {%- endif -%}
+        {%- unless forloop.last -%},{%- endunless -%}
       {%- endfor -%}
     "
     sizes="{{ sizes }}"
@@ -65,8 +66,11 @@ assign mobile_retina_url = mobile_image | image_url: width: 1500
     media="(min-width: {{ breakpoint | plus: 1 }}px)"
     srcset="
       {%- for width in base_widths_array -%}
-        {{ desktop_image | image_url: width: width }} {{ width }}w,
-        {{ desktop_image | image_url: width: width | times: 2 }} {{ width | times: 2 }}w,
+        {{ desktop_image | image_url: width: width }} {{ width }}w
+        {%- if retina_image -%}
+          ,{{ retina_image | image_url: width: width | times: 2 }} {{ width | times: 2 }}w
+        {%- endif -%}
+        {%- unless forloop.last -%},{%- endunless -%}
       {%- endfor -%}
     "
     sizes="{{ sizes }}"
@@ -75,14 +79,19 @@ assign mobile_retina_url = mobile_image | image_url: width: 1500
   <img
     id="{{ unique_id }}"
     src="{{ base_url }}"
+    {%- if retina_image -%}
     srcset="{{ retina_url }} 2x"
+    {%- endif -%}
     {% if lazy_load %}loading="lazy"{% endif %}
     {% if lazy_load %}
       data-src="{{ base_url }}"
       data-srcset="
         {%- for width in base_widths_array -%}
-          {{ desktop_image | image_url: width: width }} {{ width }}w,
-          {{ desktop_image | image_url: width: width | times: 2 }} {{ width | times: 2 }}w,
+          {{ desktop_image | image_url: width: width }} {{ width }}w
+          {%- if retina_image -%}
+            ,{{ retina_image | image_url: width: width | times: 2 }} {{ width | times: 2 }}w
+          {%- endif -%}
+          {%- unless forloop.last -%},{%- endunless -%}
         {%- endfor -%}
       "
     {% endif %}
@@ -92,7 +101,9 @@ assign mobile_retina_url = mobile_image | image_url: width: 1500
     class="block h-auto opacity-0 transition-opacity duration-300 ease-in-out {% if class %}{{ class }}{% endif %}"
     onload="this.classList.add('opacity-100');"
     data-original-url="{{ base_url }}"
+    {%- if retina_image -%}
     data-retina-url="{{ retina_url }}"
+    {%- endif -%}
   >
 </picture>
 {%- if link_url -%}</a>{%- endif -%}
