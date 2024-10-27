@@ -107,18 +107,20 @@
               background-position: center;
             }
 
-            @media screen and (max-width: 768px) {
-              #{{ itemID }} {
-                background-image: -webkit-image-set(
-                  url('{{ imageMobileLink | image_url }}') 1x
-                  {% if retinaMobileImage %}, url('{{ retinaMobileImage | image_url }}') 2x{% endif %}
-                ) !important;
-                background-image: image-set(
-                  url('{{ imageMobileLink | image_url }}') 1x
-                  {% if retinaMobileImage %}, url('{{ retinaMobileImage | image_url }}') 2x{% endif %}
-                ) !important;
+            {% if imageMobileLink or retinaMobileImage %}
+              @media screen and (max-width: 768px) {
+                #{{ itemID }} {
+                  background-image: -webkit-image-set(
+                    url('{{ imageMobileLink | image_url }}') 1x
+                    {% if retinaMobileImage %}, url('{{ retinaMobileImage | image_url }}') 2x{% endif %}
+                  ) !important;
+                  background-image: image-set(
+                    url('{{ imageMobileLink | image_url }}') 1x
+                    {% if retinaMobileImage %}, url('{{ retinaMobileImage | image_url }}') 2x{% endif %}
+                  ) !important;
+                }
               }
-            }
+            {% endif %}
           </style>
 
         {% endif %}
