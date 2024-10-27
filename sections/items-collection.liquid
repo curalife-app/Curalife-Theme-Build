@@ -91,24 +91,15 @@
         {% if block.settings.is_image_background %}
           <style>
             #{{ itemID }} {
-              background-image: url("{{ imageLink | image_url }}") !important;
+              background-image: -webkit-image-set(
+                url('{{ imageLink | image_url }}') 1x,
+                url('{{ retinaImage | image_url }}') 2x);
+              background-image: image-set(
+                url('{{ imageLink | image_url }}') 1x,
+                url('{{ retinaImage | image_url }}') 2x);
               background-size: cover;
               background-position: center;
             }
-
-            {% if retinaImage %}
-              @media
-              only screen and (-webkit-min-device-pixel-ratio: 2),
-              only screen and (   min--moz-device-pixel-ratio: 2),
-              only screen and (     -o-min-device-pixel-ratio: 2/1),
-              only screen and (        min-device-pixel-ratio: 2),
-              only screen and (                min-resolution: 192dpi),
-              only screen and (                min-resolution: 2dppx) {
-                #{{ itemID }} {
-                  background-image: url("{{ retinaImage | image_url }}") !important;
-                }
-              }
-            {% endif %}
           </style>
         {% endif %}
       {% endfor %}
