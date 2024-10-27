@@ -1,19 +1,17 @@
 {% if customer.email contains 'yotam' %}
-{% comment %}
-  Updated Shopify CDN Responsive Image Component with Automatic Retina Support
+{% comment %}Debug logs will be wrapped in HTML comments{% endcomment %}
 
-  Accepts:
-  - image: The main image object (required)
-  - mobile_image: An optional image object for mobile devices
-  - sizes: Custom sizes attribute (optional, default provided)
-  - breakpoint: Custom breakpoint in pixels (optional, default: 768)
-  - lazy: Enable lazy loading (optional, default: true)
-  - alt: Alt text for the image (required for accessibility)
-  - class: Additional CSS classes (optional)
-  - link: URL to wrap the image in a link (optional)
-
-  Note: Retina images are automatically detected by looking for "-x2" suffix
-{% endcomment %}
+<!-- DEBUG: Component Start -->
+<!-- Input Parameters:
+  image: {{ image.src }}
+  mobile_image: {{ mobile_image.src | default: 'not provided' }}
+  sizes: {{ sizes | default: 'default' }}
+  breakpoint: {{ breakpoint | default: '768' }}
+  lazy: {{ lazy | default: 'true' }}
+  alt: {{ alt }}
+  class: {{ class | default: 'none' }}
+  link: {{ link | default: 'none' }}
+-->
 
 {%- liquid
 assign desktop_image = image
@@ -25,9 +23,20 @@ assign image_ext = desktop_image.src | split: '.' | last
 assign retina_src = image_name | append: '-x2.' | append: image_ext
 assign retina_check = retina_src | image_url
 
+echo '<!-- DEBUG: Desktop Image Detection'
+echo '  Original image src: ' | append: desktop_image.src
+echo '  Image name: ' | append: image_name
+echo '  Image extension: ' | append: image_ext
+echo '  Looking for retina at: ' | append: retina_src
+echo '  Retina check URL: ' | append: retina_check
+echo '-->'
+
 assign retina_image = nil
 unless retina_check == blank
   assign retina_image = retina_src
+  echo '<!-- DEBUG: Retina image found: ' | append: retina_src | append: ' -->'
+else
+  echo '<!-- DEBUG: No retina image found for desktop -->'
 endunless
 
 # Auto-detect mobile retina image if mobile image is different
@@ -38,11 +47,23 @@ if mobile_image != desktop_image
   assign mobile_retina_src = mobile_image_name | append: '-x2.' | append: mobile_image_ext
   assign mobile_retina_check = mobile_retina_src | image_url
 
+  echo '<!-- DEBUG: Mobile Image Detection'
+  echo '  Mobile image src: ' | append: mobile_image.src
+  echo '  Mobile image name: ' | append: mobile_image_name
+  echo '  Mobile image extension: ' | append: mobile_image_ext
+  echo '  Looking for mobile retina at: ' | append: mobile_retina_src
+  echo '  Mobile retina check URL: ' | append: mobile_retina_check
+  echo '-->'
+
   unless mobile_retina_check == blank
     assign mobile_retina_image = mobile_retina_src
+    echo '<!-- DEBUG: Mobile retina image found: ' | append: mobile_retina_src | append: ' -->'
+  else
+    echo '<!-- DEBUG: No retina image found for mobile -->'
   endunless
 else
   assign mobile_retina_image = retina_image
+  echo '<!-- DEBUG: Using desktop retina for mobile (same image) -->'
 endif
 
 assign lazy_load = lazy | default: true
@@ -63,18 +84,35 @@ assign display_height = desktop_image.height
 assign base_url = desktop_image | image_url: width: 1100
 assign mobile_base_url = mobile_image | image_url: width: 750
 
+echo '<!-- DEBUG: Generated URLs'
+echo '  Base desktop URL: ' | append: base_url
+echo '  Base mobile URL: ' | append: mobile_base_url
+echo '-->'
+
 # Generate retina URLs if retina images are provided
 if retina_image
   assign desktop_retina_url = retina_image | image_url: width: 2200
+  echo '<!-- DEBUG: Generated desktop retina URL: ' | append: desktop_retina_url | append: ' -->'
 endif
 
 if mobile_retina_image
   assign mobile_retina_url = mobile_retina_image | image_url: width: 1500
+  echo '<!-- DEBUG: Generated mobile retina URL: ' | append: mobile_retina_url | append: ' -->'
 endif
+
+echo '<!-- DEBUG: Final Configuration'
+echo '  Unique ID: ' | append: unique_id
+echo '  Display dimensions: ' | append: display_width | append: 'x' | append: display_height
+echo '  Lazy loading: ' | append: lazy_load
+echo '  Breakpoint: ' | append: breakpoint
+echo '  Sizes: ' | append: sizes
+echo '-->'
 -%}
 
 <div class="relative overflow-hidden">
-{%- if link_url -%}<a href="{{ link_url | escape }}">{%- endif -%}
+{%- if link_url -%}
+<!-- DEBUG: Adding link wrapper: {{ link_url }} -->
+<a href="{{ link_url | escape }}">{%- endif -%}
 <picture>
   {%- comment -%} Mobile Source {%- endcomment -%}
   <source
@@ -90,6 +128,7 @@ endif
     "
     sizes="{{ sizes }}"
   >
+  <!-- DEBUG: Mobile srcset generated -->
 
   {%- comment -%} Desktop Source {%- endcomment -%}
   <source
@@ -105,6 +144,7 @@ endif
     "
     sizes="{{ sizes }}"
   >
+  <!-- DEBUG: Desktop srcset generated -->
 
   <img
     id="{{ unique_id }}"
@@ -138,9 +178,11 @@ endif
     data-mobile-retina-url="{{ mobile_retina_url }}"
     {%- endif -%}
   >
+  <!-- DEBUG: Image element generated -->
 </picture>
 {%- if link_url -%}</a>{%- endif -%}
 </div>
+<!-- DEBUG: Component End -->
 {% else %}
   {% comment %}
     Updated Shopify CDN Responsive Image Component
