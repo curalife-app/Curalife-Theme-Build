@@ -6,6 +6,7 @@
   - image: The main image object (required)
   - retina_image: The retina version of the image (optional)
   - mobile_image: An optional image object for mobile devices
+  - mobile_retina_image: The retina version of the mobile image (optional)
   - sizes: Custom sizes attribute (optional, default provided)
   - breakpoint: Custom breakpoint in pixels (optional, default: 768)
   - lazy: Enable lazy loading (optional, default: true)
@@ -18,6 +19,7 @@
 assign desktop_image = image
 assign retina_image = retina_image
 assign mobile_image = mobile_image | default: image
+assign mobile_retina_image = mobile_retina_image | default: retina_image
 assign lazy_load = lazy | default: true
 assign breakpoint = breakpoint | default: 768
 assign sizes = sizes | default: '(min-width: 1200px) 1100px, (min-width: 769px) 750px, 100vw'
@@ -36,10 +38,13 @@ assign display_height = desktop_image.height
 assign base_url = desktop_image | image_url: width: 1100
 assign mobile_base_url = mobile_image | image_url: width: 750
 
-# Generate retina URLs only if retina image is provided
+# Generate retina URLs if retina images are provided
 if retina_image
-  assign retina_url = retina_image | image_url: width: 2200
-  assign mobile_retina_url = retina_image | image_url: width: 1500
+  assign desktop_retina_url = retina_image | image_url: width: 2200
+endif
+
+if mobile_retina_image
+  assign mobile_retina_url = mobile_retina_image | image_url: width: 1500
 endif
 -%}
 
@@ -52,8 +57,8 @@ endif
     srcset="
       {%- for width in base_widths_array -%}
         {{ mobile_image | image_url: width: width }} {{ width }}w
-        {%- if retina_image -%}
-          ,{{ retina_image | image_url: width: width | times: 2 }} {{ width | times: 2 }}w
+        {%- if mobile_retina_image -%}
+          ,{{ mobile_retina_image | image_url: width: width | times: 2 }} {{ width | times: 2 }}w
         {%- endif -%}
         {%- unless forloop.last -%},{%- endunless -%}
       {%- endfor -%}
@@ -80,7 +85,7 @@ endif
     id="{{ unique_id }}"
     src="{{ base_url }}"
     {%- if retina_image -%}
-    srcset="{{ retina_url }} 2x"
+    srcset="{{ desktop_retina_url }} 2x"
     {%- endif -%}
     {% if lazy_load %}loading="lazy"{% endif %}
     {% if lazy_load %}
@@ -102,7 +107,10 @@ endif
     onload="this.classList.add('opacity-100');"
     data-original-url="{{ base_url }}"
     {%- if retina_image -%}
-    data-retina-url="{{ retina_url }}"
+    data-desktop-retina-url="{{ desktop_retina_url }}"
+    {%- endif -%}
+    {%- if mobile_retina_image -%}
+    data-mobile-retina-url="{{ mobile_retina_url }}"
     {%- endif -%}
   >
 </picture>
