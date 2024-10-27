@@ -94,24 +94,16 @@
         {% if block.settings.is_image_background %}
           <style>
             #{{ itemID }} {
-              background-image: -webkit-image-set(
-                url('{{ imageLink | image_url }}') 1x,
-                url('{{ retinaImage | image_url }}') 2x);
-              background-image: image-set(
-                url('{{ imageLink | image_url }}') 1x,
-                url('{{ retinaImage | image_url }}') 2x);
+              background-image: -webkit-image-set(url('{{ imageLink | image_url }}') 1x{{ if retinaImage }}, url('{{ retinaImage | image_url }}') 2x{{ endif }}) !important;
+              background-image: image-set(url('{{ imageLink | image_url }}') 1x{{ if retinaImage }}, url('{{ retinaImage | image_url }}') 2x{{ endif }}) !important;
               background-size: cover;
               background-position: center;
             }
 
             @media screen and (max-width: 768px) {
               #{{ itemID }} {
-                background-image: -webkit-image-set(
-                  url('{{ imageMobileLink | image_url }}') 1x,
-                  url('{{ retinaMobileImage | image_url }}') 2x);
-                background-image: image-set(
-                  url('{{ imageMobileLink | image_url }}') 1x,
-                  url('{{ retinaMobileImage | image_url }}') 2x);
+                background-image: -webkit-image-set(url('{{ imageMobileLink | image_url }}') 1x{{ if retinaMobileImage }}, url('{{ retinaMobileImage | image_url }}') 2x{{ endif }}) !important;
+                background-image: image-set(url('{{ imageMobileLink | image_url }}') 1x{{ if retinaMobileImage }}, url('{{ retinaMobileImage | image_url }}') 2x{{ endif }}) !important;
               }
             }
           </style>
