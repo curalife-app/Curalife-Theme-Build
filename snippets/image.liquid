@@ -1,25 +1,43 @@
 {% if customer.email contains 'yotam' %}
-  {% comment %}
-  Updated Shopify CDN Responsive Image Component with Optional Retina Support
+{% comment %}
+  Updated Shopify CDN Responsive Image Component with Automatic Retina Support
 
   Accepts:
   - image: The main image object (required)
-  - retina_image: The retina version of the image (optional)
   - mobile_image: An optional image object for mobile devices
-  - mobile_retina_image: The retina version of the mobile image (optional)
   - sizes: Custom sizes attribute (optional, default provided)
   - breakpoint: Custom breakpoint in pixels (optional, default: 768)
   - lazy: Enable lazy loading (optional, default: true)
   - alt: Alt text for the image (required for accessibility)
   - class: Additional CSS classes (optional)
   - link: URL to wrap the image in a link (optional)
+
+  Note: Retina images are automatically detected by looking for "-x2" suffix
 {% endcomment %}
 
 {%- liquid
 assign desktop_image = image
-assign retina_image = retina_image
 assign mobile_image = mobile_image | default: image
-assign mobile_retina_image = mobile_retina_image | default: retina_image
+
+# Auto-detect retina images based on filename
+assign image_name = desktop_image.src | split: '.' | first
+assign image_ext = desktop_image.src | split: '.' | last
+assign retina_src = image_name | append: '-x2.' | append: image_ext
+assign retina_url = retina_src | image_url
+assign retina_image = retina_url | nil_or_empty? | unless: retina_src
+
+# Auto-detect mobile retina image if mobile image is different
+assign mobile_retina_image = nil
+if mobile_image != desktop_image
+  assign mobile_image_name = mobile_image.src | split: '.' | first
+  assign mobile_image_ext = mobile_image.src | split: '.' | last
+  assign mobile_retina_src = mobile_image_name | append: '-x2.' | append: mobile_image_ext
+  assign mobile_retina_url = mobile_retina_src | image_url
+  assign mobile_retina_image = mobile_retina_url | nil_or_empty? | unless: mobile_retina_src
+else
+  assign mobile_retina_image = retina_image
+endif
+
 assign lazy_load = lazy | default: true
 assign breakpoint = breakpoint | default: 768
 assign sizes = sizes | default: '(min-width: 1200px) 1100px, (min-width: 769px) 750px, 100vw'
