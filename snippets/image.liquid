@@ -5,7 +5,7 @@
   - image: The main image object (required)
   - mobile_image: An optional image object for mobile devices
   - sizes: Custom sizes attribute (optional, default provided)
-  - breakpoint: Custom breakpoint in pixels (optional, default: 768)
+  - mobile_breakpoint: Custom mobile_breakpoint in pixels (optional, default: 768)
   - lazy: Enable lazy loading (optional, default: true)
   - alt: Alt text for the image (required for accessibility)
   - class: Additional CSS classes (optional)
@@ -16,7 +16,7 @@
     image: product.featured_image,
     mobile_image: product.images[1],
     sizes: '(min-width: 1200px) 1100px, (min-width: 769px) 750px, 100vw',
-    breakpoint: 768,
+    mobile_breakpoint: 768,
     lazy: true,
     alt: product.title,
     class: 'my-custom-class',
@@ -60,8 +60,8 @@
   endif
 
   assign lazy_load = lazy | default: true
-  assign breakpoint = breakpoint | default: 768
-  assign sizes = sizes | default: '(min-width: 1200px) 1100px, (min-width: 769px) 750px, 100vw'
+  assign mobile_breakpoint = 768
+  assign sizes = '(min-width: 1200px) 1100px, (min-width: 769px) 750px, 100vw'
   assign link_url = link
 
   assign base_widths = '375,750,1080,1500,2200'
@@ -86,7 +86,7 @@
   {%- if link_url -%}<a href="{{ link_url | escape }}">{%- endif -%}
   <picture>
     <source
-      media="(max-width: {{ breakpoint }}px)"
+      media="(max-width: {{ mobile_breakpoint }}px)"
       srcset="
         {%- for width in base_widths_array -%}
           {{ mobile_image | image_url: width: width }} {{ width }}w
@@ -100,7 +100,7 @@
     >
 
     <source
-      media="(min-width: {{ breakpoint | plus: 1 }}px)"
+      media="(min-width: {{ mobile_breakpoint | plus: 1 }}px)"
       srcset="
         {%- for width in base_widths_array -%}
           {{ desktop_image | image_url: width: width }} {{ width }}w
@@ -152,7 +152,7 @@
   assign desktop_image = image
   assign mobile_image = mobile_image | default: image
   assign lazy_load = lazy | default: true
-  assign breakpoint = breakpoint | default: 768
+  assign mobile_breakpoint = mobile_breakpoint | default: 768
   assign sizes = sizes | default: '(min-width: 1200px) 1100px, (min-width: 769px) 750px, 100vw'
   assign link_url = link
   assign widths = '375,750,1080,1500,2200,3000'
@@ -180,7 +180,7 @@
   {%- if link_url -%}<a href="{{ link_url | escape }}">{%- endif -%}
   <picture>
     <source
-      media="(max-width: {{ breakpoint }}px)"
+      media="(max-width: {{ mobile_breakpoint }}px)"
       srcset="
         {%- for width in widths_array -%}
           {{ mobile_image | image_url: width: width }} {{ width }}w,
@@ -188,7 +188,7 @@
       "
       sizes="{{ sizes }}">
     <source
-      media="(min-width: {{ breakpoint | plus: 1 }}px)"
+      media="(min-width: {{ mobile_breakpoint | plus: 1 }}px)"
       srcset="
         {%- for width in widths_array -%}
           {{ desktop_image | image_url: width: width }} {{ width }}w,
