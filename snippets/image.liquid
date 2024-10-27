@@ -38,11 +38,11 @@ if filename contains 'X2' or filename contains 'x2'
 endif
 
 # Generate base and retina image URLs with explicit parameters
-assign base_url = desktop_image | image_url: width: 1100, format: 'jpg', quality: 90
-assign retina_url = desktop_image | image_url: width: 2200, format: 'jpg', quality: 90, _2x: true
+assign base_url = desktop_image | image_url: width: 1100, format: 'jpg'
+assign retina_url = desktop_image | image_url: width: 2200, format: 'jpg', _2x: true
 
-assign mobile_base_url = mobile_image | image_url: width: 750, format: 'jpg', quality: 90
-assign mobile_retina_url = mobile_image | image_url: width: 1500, format: 'jpg', quality: 90, _2x: true
+assign mobile_base_url = mobile_image | image_url: width: 750, format: 'jpg'
+assign mobile_retina_url = mobile_image | image_url: width: 1500, format: 'jpg', _2x: true
 -%}
 
 <div class="relative w-full overflow-hidden">
@@ -53,8 +53,8 @@ assign mobile_retina_url = mobile_image | image_url: width: 1500, format: 'jpg',
     media="(max-width: {{ breakpoint }}px)"
     srcset="
       {%- for width in base_widths_array -%}
-        {{ mobile_image | image_url: width: width, format: 'jpg', quality: 90 }} {{ width }}w,
-        {{ mobile_image | image_url: width: width | times: 2, format: 'jpg', quality: 90, _2x: true }} {{ width | times: 2 }}w,
+        {{ mobile_image | image_url: width: width, format: 'jpg' }} {{ width }}w,
+        {{ mobile_image | image_url: width: width | times: 2, format: 'jpg', _2x: true }} {{ width | times: 2 }}w,
       {%- endfor -%}
     "
     sizes="{{ sizes }}"
@@ -65,8 +65,8 @@ assign mobile_retina_url = mobile_image | image_url: width: 1500, format: 'jpg',
     media="(min-width: {{ breakpoint | plus: 1 }}px)"
     srcset="
       {%- for width in base_widths_array -%}
-        {{ desktop_image | image_url: width: width, format: 'jpg', quality: 90 }} {{ width }}w,
-        {{ desktop_image | image_url: width: width | times: 2, format: 'jpg', quality: 90, _2x: true }} {{ width | times: 2 }}w,
+        {{ desktop_image | image_url: width: width, format: 'jpg' }} {{ width }}w,
+        {{ desktop_image | image_url: width: width | times: 2, format: 'jpg', _2x: true }} {{ width | times: 2 }}w,
       {%- endfor -%}
     "
     sizes="{{ sizes }}"
@@ -81,8 +81,8 @@ assign mobile_retina_url = mobile_image | image_url: width: 1500, format: 'jpg',
       data-src="{{ base_url }}"
       data-srcset="
         {%- for width in base_widths_array -%}
-          {{ desktop_image | image_url: width: width, format: 'jpg', quality: 90 }} {{ width }}w,
-          {{ desktop_image | image_url: width: width | times: 2, format: 'jpg', quality: 90, _2x: true }} {{ width | times: 2 }}w,
+          {{ desktop_image | image_url: width: width, format: 'jpg' }} {{ width }}w,
+          {{ desktop_image | image_url: width: width | times: 2, format: 'jpg', _2x: true }} {{ width | times: 2 }}w,
         {%- endfor -%}
       "
     {% endif %}
