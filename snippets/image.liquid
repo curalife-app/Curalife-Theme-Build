@@ -100,14 +100,38 @@
 <script>
   {{ error_log }}
 
-  // Consolidated error logging function
   if (!window.logImageError) {
+    window.debouncedDisplayErrors = (function() {
+      let timeoutId = null;
+      return function() {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+        timeoutId = setTimeout(() => {
+          const errors = window.imageErrors;
+          const hasErrors = Object.values(errors).some(arr => arr.length > 0);
+
+          if (hasErrors) {
+            console.warn('🚨 Image Component Errors Summary:', {
+              totalErrors: Object.values(errors).reduce((sum, arr) => sum + arr.length, 0),
+              breakdownByType: {
+                missingRequirements: errors.missing_requirements.length,
+                missingRetina: errors.missing_retina.length,
+                loadErrors: errors.load_errors.length
+              },
+              details: errors
+            });
+          }
+          timeoutId = null;
+        }, 100);
+      };
+    })();
+
     window.logImageError = function(type, data) {
       if (!window.imageErrors[type]) {
         window.imageErrors[type] = [];
       }
 
-      // Add timestamp and deduplicate based on imageId and type
       data.timestamp = new Date().toISOString();
       const existingError = window.imageErrors[type].find(
         error => error.imageId === data.imageId && error.type === data.type
@@ -115,39 +139,16 @@
 
       if (!existingError) {
         window.imageErrors[type].push(data);
-        // Log individual error
-        console.warn(`Image Error (${type}):`, data);
-        // Check and display consolidated errors
-        displayConsolidatedErrors();
+        window.debouncedDisplayErrors();
       }
     };
   }
 
-  // Function to display consolidated errors
-  if (!window.displayConsolidatedErrors) {
-    window.displayConsolidatedErrors = function() {
-      const errors = window.imageErrors;
-      const hasErrors = Object.values(errors).some(arr => arr.length > 0);
-
-      if (hasErrors) {
-        console.warn('🚨 Image Component Errors Summary:', {
-          totalErrors: Object.values(errors).reduce((sum, arr) => sum + arr.length, 0),
-          breakdownByType: {
-            missingRequirements: errors.missing_requirements.length,
-            missingRetina: errors.missing_retina.length,
-            loadErrors: errors.load_errors.length
-          },
-          details: errors
-        });
-      }
-    };
-  }
-
-  // Initial check for errors from liquid validation
   if (window.imageErrors) {
-    window.displayConsolidatedErrors();
+    window.debouncedDisplayErrors();
   }
 </script>
+
 <picture>
   {%- # WebP format source with retina for mobile -%}
   <source
