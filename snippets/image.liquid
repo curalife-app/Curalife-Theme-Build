@@ -55,13 +55,21 @@
 {% endcomment %}
 
 {%- liquid
-  # Input validation
+  # Input validation with inline error handling
   if image == blank
-    render 'error-message', message: 'Image is required'
+    echo '<div class="px-4 py-3 text-red-700 bg-red-100 border border-red-400 rounded" role="alert">
+      <strong class="font-bold">Error:</strong>
+      <span class="sm:inline block">Image is required</span>
+    </div>'
+    return
   endif
 
   if alt == blank
-    render 'error-message', message: 'Alt text is required for accessibility'
+    echo '<div class="px-4 py-3 text-red-700 bg-red-100 border border-red-400 rounded" role="alert">
+      <strong class="font-bold">Error:</strong>
+      <span class="sm:inline block">Alt text is required for accessibility</span>
+    </div>'
+    return
   endif
 
   # Initialize debug session storage if not exists
@@ -76,6 +84,7 @@
   assign is_priority = priority | default: false
   assign mobile_breakpoint = mobile_breakpoint | default: 768
   assign sizes = sizes | default: '(min-width: 1200px) 1100px, (min-width: 769px) 750px, 100vw'
+  assign breakpoints = '375,640,750,1080,1500,1920,2560' | split: ','
 
   # Retina image detection for desktop
   assign full_path = desktop_image.src
@@ -139,7 +148,6 @@
   assign unique_id = 'img-' | append: desktop_image.id | append: '-' | append: mobile_image.id | append: '-' | now | date: '%N'
   assign aspect_ratio = desktop_image.aspect_ratio | default: 1
   assign padding_top = 1 | divided_by: aspect_ratio | times: 100 | append: '%'
-  assign breakpoints = '375,640,750,1080,1500,1920,2560' | split: ','
 
   assign base_desktop_url = desktop_image | image_url: width: 1100, format: 'webp'
   assign base_mobile_url = mobile_image | image_url: width: 750, format: 'webp'
