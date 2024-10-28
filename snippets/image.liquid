@@ -10,17 +10,17 @@
 
 {%- liquid
   # Initialize error collection object
-  assign error_log = 'window.imageErrors = window.imageErrors || { missing_requirements: [], missing_retina: [], load_errors: []};'
+  assign error_log = 'window.imageErrors = window.imageErrors || { missing_alt: [], missing_retina: [], load_errors: []};'
 
   # Input validation with consolidated warnings
   if image == blank
-    assign validation_error = '{ type: "missing_requirements",  message: "Image is required", timestamp: "' | append: 'now' | date: '%Y-%m-%d %H:%M:%S' | append: '" }'
-    assign error_log = error_log | append: 'window.imageErrors.missing_requirements.push(' | append: validation_error | append: ');'
+    assign validation_error = '{ type: "missing_alt",  message: "Image is required", timestamp: "' | append: 'now' | date: '%Y-%m-%d %H:%M:%S' | append: '" }'
+    assign error_log = error_log | append: 'window.imageErrors.missing_alt.push(' | append: validation_error | append: ');'
   endif
 
   if alt == blank
-    assign validation_error = '{ type: "missing_requirements", message: "Alt text is required for accessibility", timestamp: "' | append: 'now' | date: '%Y-%m-%d %H:%M:%S' | append: '" }'
-    assign error_log = error_log | append: 'window.imageErrors.missing_requirements.push(' | append: validation_error | append: ');'
+    assign validation_error = '{ type: "missing_alt", message: "Alt text is required for accessibility", timestamp: "' | append: 'now' | date: '%Y-%m-%d %H:%M:%S' | append: '" }'
+    assign error_log = error_log | append: 'window.imageErrors.missing_alt.push(' | append: validation_error | append: ');'
   endif
 
   # Initialize variables with defaults
@@ -121,7 +121,7 @@
               console.warn('🚨 Image Component Errors Summary:', {
                 totalErrors: Object.values(errors).reduce((sum, arr) => sum + arr.length, 0),
                 breakdownByType: {
-                  missingRequirements: errors.missing_requirements.length,
+                  missingAlt: errors.missing_alt.length,
                   missingRetina: errors.missing_retina.length,
                   loadErrors: errors.load_errors.length
                 },
