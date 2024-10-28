@@ -55,13 +55,15 @@
 {% endcomment %}
 
 {%- liquid
-  # Input validation with inline error handling
+  # Input validation with console warnings
   if image == blank
-    echo '<div class="px-4 py-3 text-red-700 bg-red-100 border border-red-400 rounded" role="alert"><strong class="font-bold">Error:</strong><span class="sm:inline block">Image is required</span></div>'
+    echo '<script>console.warn("Image Component Error: Image is required");</script>'
+    return
   endif
 
   if alt == blank
-    echo '<div class="px-4 py-3 text-red-700 bg-red-100 border border-red-400 rounded" role="alert"><strong class="font-bold">Error:</strong><span class="sm:inline block">Alt text is required for accessibility</span></div>'
+    echo '<script>console.warn("Image Component Error: Alt text is required for accessibility");</script>'
+    return
   endif
 
   # Initialize debug session storage if not exists
