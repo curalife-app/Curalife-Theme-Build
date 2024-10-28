@@ -155,9 +155,6 @@
 
   # Generate unique ID and other variables
   assign unique_id = 'img-' | append: desktop_image.id | append: '-' | append: mobile_image.id | append: '-' | now | date: '%N'
-  assign aspect_ratio = desktop_image.aspect_ratio | default: 1
-  assign padding_top = 1 | divided_by: aspect_ratio | times: 100 | append: '%'
-
   assign base_desktop_url = desktop_image | image_url: width: 1100, format: 'webp'
   assign base_mobile_url = mobile_image | image_url: width: 750, format: 'webp'
   assign fallback_url = desktop_image | image_url: width: 1100
@@ -197,9 +194,8 @@
   {%- endif -%}
 {%- endunless -%}
 
-<div class="relative w-full" style="padding-top: {{ padding_top }}">
 {%- if link -%}<a href="{{ link | escape }}">{%- endif -%}
-<picture>
+<picture class="relative">
   {%- # WebP format source with retina for mobile -%}
   <source
     type="image/webp"
@@ -292,7 +288,6 @@
   >
 </picture>
 {%- if link -%}</a>{%- endif -%}
-</div>
 {% else %}
   {%- liquid
   assign desktop_image = image
