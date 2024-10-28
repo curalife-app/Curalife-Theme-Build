@@ -86,7 +86,8 @@
   assign retina_image = nil
   assign debug_data = nil
 
-  unless retina_check == blank
+  # Only assign retina_image if the file actually exists
+  if retina_check contains '/files/'
     assign retina_image = retina_src
   else
     unless settings.disable_retina_debug
@@ -99,7 +100,7 @@
       assign debug_data = debug_data | append: '"page":"' | append: request.page_type | append: '"'
       assign debug_data = debug_data | append: '});'
     endunless
-  endunless
+  endif
 
   # Retina image detection for mobile
   assign mobile_retina_image = nil
@@ -114,7 +115,8 @@
     assign mobile_retina_src = mobile_image_name | append: '-x2.' | append: mobile_image_ext
     assign mobile_retina_check = mobile_retina_src | file_url
 
-    unless mobile_retina_check == blank
+    # Only assign mobile_retina_image if the file actually exists
+    if mobile_retina_check contains '/files/'
       assign mobile_retina_image = mobile_retina_src
     else
       unless settings.disable_retina_debug
@@ -127,7 +129,7 @@
         assign mobile_debug_data = mobile_debug_data | append: '"page":"' | append: request.page_type | append: '"'
         assign mobile_debug_data = mobile_debug_data | append: '});'
       endunless
-    endunless
+    endif
   else
     assign mobile_retina_image = retina_image
   endif
@@ -185,7 +187,7 @@
     srcset="
       {%- for width in breakpoints -%}
         {{ mobile_image | image_url: width: width, format: 'webp' }} {{ width }}w
-        {%- if mobile_retina_image -%}
+        {%- if mobile_retina_image contains '/files/' -%}
           ,{{ mobile_retina_image | file_url }} {{ width | times: 2 }}w
         {%- endif -%}
         {%- unless forloop.last -%},{%- endunless -%}
@@ -201,7 +203,7 @@
     srcset="
       {%- for width in breakpoints -%}
         {{ desktop_image | image_url: width: width, format: 'webp' }} {{ width }}w
-        {%- if retina_image -%}
+        {%- if retina_image contains '/files/' -%}
           ,{{ retina_image | file_url }} {{ width | times: 2 }}w
         {%- endif -%}
         {%- unless forloop.last -%},{%- endunless -%}
@@ -216,7 +218,7 @@
     srcset="
       {%- for width in breakpoints -%}
         {{ mobile_image | image_url: width: width }} {{ width }}w
-        {%- if mobile_retina_image -%}
+        {%- if mobile_retina_image contains '/files/' -%}
           ,{{ mobile_retina_image | file_url }} {{ width | times: 2 }}w
         {%- endif -%}
         {%- unless forloop.last -%},{%- endunless -%}
@@ -231,7 +233,7 @@
     srcset="
       {%- for width in breakpoints -%}
         {{ desktop_image | image_url: width: width }} {{ width }}w
-        {%- if retina_image -%}
+        {%- if retina_image contains '/files/' -%}
           ,{{ retina_image | file_url }} {{ width | times: 2 }}w
         {%- endif -%}
         {%- unless forloop.last -%},{%- endunless -%}
@@ -243,7 +245,7 @@
   <img
     id="{{ unique_id }}"
     src="{{ fallback_url }}"
-    {%- if retina_image -%}
+    {%- if retina_image contains '/files/' -%}
       srcset="{{ retina_image | file_url }} 2x"
     {%- endif -%}
     {% if lazy_load and is_priority != true %}
@@ -261,10 +263,10 @@
     onload="this.classList.add('opacity-100');"
     onerror="this.onerror=null; this.src='{{ fallback_url }}'"
     data-original-url="{{ fallback_url }}"
-    {%- if retina_image -%}
+    {%- if retina_image contains '/files/' -%}
       data-desktop-retina-url="{{ desktop_retina_url }}"
     {%- endif -%}
-    {%- if mobile_retina_image -%}
+    {%- if mobile_retina_image contains '/files/' -%}
       data-mobile-retina-url="{{ mobile_retina_url }}"
     {%- endif -%}
   >
