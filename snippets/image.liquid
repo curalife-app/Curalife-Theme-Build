@@ -50,27 +50,6 @@
   - link: URL to wrap image in (optional)
 {% endcomment %}
 
-{%- liquid
-  # Initialize debug session storage if not exists
-  unless settings.disable_retina_debug
-    assign missing_retina_log = 'window.missingRetinaImages = window.missingRetinaImages || [];'
-  endunless
--%}
-
-<script>
-  {{ missing_retina_log }}
-
-  // Create debug logger if it doesn't exist
-  if (!window.logMissingRetina) {
-    window.logMissingRetina = function(data) {
-      if (!window.missingRetinaImages.some(item => item.filename === data.filename)) {
-        window.missingRetinaImages.push(data);
-        console.warn('Missing retina image:', data);
-      }
-    }
-  }
-</script>
-
 {% comment %}
   Main image component
 {% endcomment %}
@@ -84,6 +63,11 @@
   if alt == blank
     render 'error-message', message: 'Alt text is required for accessibility'
   endif
+
+  # Initialize debug session storage if not exists
+  unless settings.disable_retina_debug
+    assign missing_retina_log = 'window.missingRetinaImages = window.missingRetinaImages || [];'
+  endunless
 
   # Initialize variables with defaults
   assign desktop_image = image
@@ -118,7 +102,7 @@
       assign debug_data = debug_data | append: '"page":"' | append: request.page_type | append: '"'
       assign debug_data = debug_data | append: '});'
     endunless
-  endif
+  endunless
 
   # Retina image detection for mobile
   assign mobile_retina_image = nil
@@ -146,7 +130,7 @@
         assign mobile_debug_data = mobile_debug_data | append: '"page":"' | append: request.page_type | append: '"'
         assign mobile_debug_data = mobile_debug_data | append: '});'
       endunless
-    endif
+    endunless
   else
     assign mobile_retina_image = retina_image
   endif
@@ -155,6 +139,7 @@
   assign unique_id = 'img-' | append: desktop_image.id | append: '-' | append: mobile_image.id | append: '-' | now | date: '%N'
   assign aspect_ratio = desktop_image.aspect_ratio | default: 1
   assign padding_top = 1 | divided_by: aspect_ratio | times: 100 | append: '%'
+  assign breakpoints = '375,640,750,1080,1500,1920,2560' | split: ','
 
   assign base_desktop_url = desktop_image | image_url: width: 1100, format: 'webp'
   assign base_mobile_url = mobile_image | image_url: width: 750, format: 'webp'
@@ -168,6 +153,21 @@
     assign mobile_retina_url = mobile_retina_image | image_url: width: 1500
   endif
 -%}
+
+{%- # Initialize debug logging -%}
+<script>
+  {{ missing_retina_log }}
+
+  // Create debug logger if it doesn't exist
+  if (!window.logMissingRetina) {
+    window.logMissingRetina = function(data) {
+      if (!window.missingRetinaImages.some(item => item.filename === data.filename)) {
+        window.missingRetinaImages.push(data);
+        console.warn('Missing retina image:', data);
+      }
+    }
+  }
+</script>
 
 {%- # Output debug scripts if needed -%}
 {%- unless settings.disable_retina_debug -%}
