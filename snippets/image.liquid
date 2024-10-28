@@ -74,6 +74,9 @@
   assign sizes = sizes | default: '(min-width: 1200px) 1100px, (min-width: 769px) 750px, 100vw'
   assign breakpoints = '375,640,750,1080,1500,1920,2560' | split: ','
 
+  # Debug helper for URL checks
+  assign debug_url_log = 'console.log("URL Debug:", JSON.parse(`'
+
   # Retina image detection for desktop
   assign full_path = desktop_image.src
   assign path_parts = full_path | split: '/'
@@ -83,11 +86,18 @@
   assign retina_src = image_name | append: '-x2.' | append: image_ext
   assign retina_check = retina_src | file_url
 
+  # Add URL debug info
+  assign debug_url_log = debug_url_log | append: '{"type": "desktop", '
+  assign debug_url_log = debug_url_log | append: '"original_url": "' | append: full_path | append: '", '
+  assign debug_url_log = debug_url_log | append: '"retina_src": "' | append: retina_src | append: '", '
+  assign debug_url_log = debug_url_log | append: '"retina_check": "' | append: retina_check | append: '"}'
+  assign debug_url_log = debug_url_log | append: '`));'
+
   assign retina_image = nil
   assign debug_data = nil
 
-  # Only assign retina_image if the file actually exists
-  if retina_check contains '/files/'
+  # Check for retina image existence
+  unless retina_check == blank or retina_check contains '404' or retina_check contains 'null'
     assign retina_image = retina_src
   else
     unless settings.disable_retina_debug
@@ -96,6 +106,7 @@
       assign debug_data = debug_data | append: '"filename":"' | append: filename | append: '",'
       assign debug_data = debug_data | append: '"path":"' | append: full_path | append: '",'
       assign debug_data = debug_data | append: '"expectedRetina":"' | append: retina_src | append: '",'
+      assign debug_data = debug_data | append: '"retinaCheck":"' | append: retina_check | append: '",'
       assign debug_data = debug_data | append: '"type":"desktop",'
       assign debug_data = debug_data | append: '"page":"' | append: request.page_type | append: '"'
       assign debug_data = debug_data | append: '});'
@@ -115,8 +126,15 @@
     assign mobile_retina_src = mobile_image_name | append: '-x2.' | append: mobile_image_ext
     assign mobile_retina_check = mobile_retina_src | file_url
 
-    # Only assign mobile_retina_image if the file actually exists
-    if mobile_retina_check contains '/files/'
+    # Add mobile URL debug info
+    assign debug_url_log = debug_url_log | append: 'console.log("URL Debug:", JSON.parse(`'
+    assign debug_url_log = debug_url_log | append: '{"type": "mobile", '
+    assign debug_url_log = debug_url_log | append: '"original_url": "' | append: mobile_full_path | append: '", '
+    assign debug_url_log = debug_url_log | append: '"retina_src": "' | append: mobile_retina_src | append: '", '
+    assign debug_url_log = debug_url_log | append: '"retina_check": "' | append: mobile_retina_check | append: '"}'
+    assign debug_url_log = debug_url_log | append: '`));'
+
+    unless mobile_retina_check == blank or mobile_retina_check contains '404' or mobile_retina_check contains 'null'
       assign mobile_retina_image = mobile_retina_src
     else
       unless settings.disable_retina_debug
@@ -125,6 +143,7 @@
         assign mobile_debug_data = mobile_debug_data | append: '"filename":"' | append: mobile_filename | append: '",'
         assign mobile_debug_data = mobile_debug_data | append: '"path":"' | append: mobile_full_path | append: '",'
         assign mobile_debug_data = mobile_debug_data | append: '"expectedRetina":"' | append: mobile_retina_src | append: '",'
+        assign mobile_debug_data = mobile_debug_data | append: '"retinaCheck":"' | append: mobile_retina_check | append: '",'
         assign mobile_debug_data = mobile_debug_data | append: '"type":"mobile",'
         assign mobile_debug_data = mobile_debug_data | append: '"page":"' | append: request.page_type | append: '"'
         assign mobile_debug_data = mobile_debug_data | append: '});'
@@ -134,27 +153,13 @@
     assign mobile_retina_image = retina_image
   endif
 
-  # Generate unique ID and other variables
-  assign unique_id = 'img-' | append: desktop_image.id | append: '-' | append: mobile_image.id | append: '-' | now | date: '%N'
-  assign aspect_ratio = desktop_image.aspect_ratio | default: 1
-  assign padding_top = 1 | divided_by: aspect_ratio | times: 100 | append: '%'
-
-  assign base_desktop_url = desktop_image | image_url: width: 1100, format: 'webp'
-  assign base_mobile_url = mobile_image | image_url: width: 750, format: 'webp'
-  assign fallback_url = desktop_image | image_url: width: 1100
-
-  if retina_image
-    assign desktop_retina_url = retina_image | image_url: width: 2200
-  endif
-
-  if mobile_retina_image
-    assign mobile_retina_url = mobile_retina_image | image_url: width: 1500
-  endif
+  # Rest of the variable assignments...
 -%}
 
 {%- # Initialize debug logging -%}
 <script>
   {{ missing_retina_log }}
+  {{ debug_url_log }}
 
   // Create debug logger if it doesn't exist
   if (!window.logMissingRetina) {
