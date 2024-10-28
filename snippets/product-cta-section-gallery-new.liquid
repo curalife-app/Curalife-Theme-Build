@@ -376,6 +376,9 @@
   document.addEventListener('DOMContentLoaded', function() {
     loadSwiper(() => {
       window.productSliderAllInOne{{ SID }} = initializeSwiper('#product-main-slider-sc-{{ section.id }}', {
+        thumbs: {
+          swiper: window.productThumbsSlider{{ SID }}
+        },
         slidesPerView: 1,
         spaceBetween: 15,
         watchSlidesVisibility: true,
@@ -394,6 +397,19 @@
             allowTouchMove: false,
             grabCursor: true,
             navigation: {}
+          }
+        },
+        on: {
+          slideChange: function () {
+            let activeIndex = this.activeIndex + 1;
+            let nextSlide = this.thumbs.swiper.$el[0].querySelector(`.swiper-slide:nth-child(${activeIndex + 1})`);
+            let prevSlide = this.thumbs.swiper.$el[0].querySelector(`.swiper-slide:nth-child(${activeIndex - 1})`);
+
+            if (nextSlide && !nextSlide.classList.contains('swiper-slide-visible')) {
+                this.thumbs.swiper.slideNext()
+            } else if (prevSlide && !prevSlide.classList.contains('swiper-slide-visible')) {
+                this.thumbs.swiper.slidePrev()
+            }
           }
         }
       });
