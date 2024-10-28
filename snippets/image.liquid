@@ -9,10 +9,8 @@
 {% endcomment %}
 
 {%- liquid
-  # Initialize error collection object
   assign error_log = 'window.imageErrors = window.imageErrors || { missing_alt: [], missing_retina: [], load_errors: []};'
 
-  # Input validation with consolidated warnings
   if image == blank
     assign validation_error = '{ type: "missing_alt", message: "Image is required" }'
     assign error_log = error_log | append: 'window.imageErrors.missing_alt.push(' | append: validation_error | append: ');'
@@ -32,7 +30,6 @@
   assign sizes = sizes | default: '(min-width: 1200px) 1200px, (min-width: 768px) 768px, 100vw'
   assign breakpoints = '375,640,768,1080,1200,1920,2560' | split: ','
 
-  # Retina image detection for desktop
   assign full_path = desktop_image.src
   assign path_parts = full_path | split: '/'
   assign filename = path_parts | last
@@ -44,18 +41,15 @@
   assign retina_image = nil
   assign debug_data = nil
 
-  # Check for retina image existence
   unless retina_check == blank or retina_check contains '404' or retina_check contains 'null'
     assign retina_image = retina_src
   endunless
 
   unless retina_image and settings.disable_retina_debug
-    # Prepare debug data
     assign debug_data = '{ type: "missing_retina", imageId: "' | append: desktop_image.id | append: '", filename: "' | append: filename | append: '", path: "' | append: full_path | append: '", expectedRetina: "' | append: retina_src | append: '", retinaCheck: "' | append: retina_check | append: '", variant: "desktop", timestamp: "' | append: 'now' | date: '%Y-%m-%d %H:%M:%S' | append: '" }'
     assign error_log = error_log | append: 'window.imageErrors.missing_retina.push(' | append: debug_data | append: ');'
   endunless
 
-  # Retina image detection for mobile
   assign mobile_retina_image = nil
   assign mobile_debug_data = nil
 
@@ -73,7 +67,6 @@
     endunless
 
     unless mobile_retina_image and settings.disable_retina_debug
-      # Prepare mobile debug data
       assign mobile_debug_data = '{ type: "missing_retina", imageId: "' | append: mobile_image.id | append: '", filename: "' | append: mobile_filename | append: '", path: "' | append: mobile_full_path | append: '", expectedRetina: "' | append: mobile_retina_src | append: '", retinaCheck: "' | append: mobile_retina_check | append: '", variant: "mobile", timestamp: "' | append: 'now' | date: '%Y-%m-%d %H:%M:%S' | append: '" }'
       assign error_log = error_log | append: 'window.imageErrors.missing_retina.push(' | append: mobile_debug_data | append: ');'
     endunless
@@ -81,7 +74,6 @@
     assign mobile_retina_image = retina_image
   endif
 
-  # Generate unique ID and other variables
   assign unique_id = 'img-' | append: desktop_image.id | append: '-' | append: mobile_image.id | append: '-' | now | date: '%N'
   assign base_desktop_url = desktop_image | image_url: width: 1100, format: 'webp'
   assign base_mobile_url = mobile_image | image_url: width: 750, format: 'webp'
@@ -96,16 +88,12 @@
   endif
 -%}
 
-{%- # Initialize error logging system -%}
 <script>
   {{ error_log }}
 
-  // Consolidated error logging function with single display
   if (!window.logImageError) {
-    // Create a flag to track if we've shown the warning
     window.hasDisplayedImageErrors = false;
 
-    // Create debounced function for displaying errors
     window.debouncedDisplayErrors = (function() {
       let timeoutId = null;
       return function() {
@@ -127,12 +115,12 @@
                 },
                 details: errors
               });
-              // Set flag to prevent further displays
+
               window.hasDisplayedImageErrors = true;
             }
           }
           timeoutId = null;
-        }, 1000); // Increased to 1 second to ensure we catch all initial errors
+        }, 1000);
       };
     })();
 
@@ -141,7 +129,6 @@
         window.imageErrors[type] = [];
       }
 
-      // Add timestamp and deduplicate based on imageId and type
       data.timestamp = new Date().toISOString();
       const existingError = window.imageErrors[type].find(
         error => error.imageId === data.imageId && error.type === data.type
@@ -149,20 +136,17 @@
 
       if (!existingError) {
         window.imageErrors[type].push(data);
-        // Trigger debounced display
         window.debouncedDisplayErrors();
       }
     };
   }
 
-  // If we have initial errors from liquid validation, trigger the display
   if (window.imageErrors && !window.hasDisplayedImageErrors) {
     window.debouncedDisplayErrors();
   }
 </script>
 
 <picture>
-  {%- # WebP format source with retina for mobile -%}
   <source
     type="image/webp"
     media="(max-width: {{ mobile_breakpoint }}px)"
@@ -178,7 +162,6 @@
     sizes="{{ sizes }}"
   >
 
-  {%- # WebP format source with retina for desktop -%}
   <source
     type="image/webp"
     media="(min-width: {{ mobile_breakpoint | plus: 1 }}px)"
@@ -194,7 +177,6 @@
     sizes="{{ sizes }}"
   >
 
-  {%- # Fallback sources with retina for mobile -%}
   <source
     media="(max-width: {{ mobile_breakpoint }}px)"
     srcset="
@@ -209,7 +191,6 @@
     sizes="{{ sizes }}"
   >
 
-  {%- # Fallback sources with retina for desktop -%}
   <source
     media="(min-width: {{ mobile_breakpoint | plus: 1 }}px)"
     srcset="
