@@ -196,21 +196,23 @@
         on: {
           slideChange: function () {
             {% unless isHideThumbs %}
-            if (this.thumbs && this.thumbs.swiper) {
-              const activeIndex = this.activeIndex;
+            try {
+              if (!this.thumbs || !this.thumbs.swiper) return;
+
               const thumbsSwiper = this.thumbs.swiper;
-              const thumbsWrapper = thumbsSwiper.$el[0].querySelector('.swiper-wrapper');
+              if (!thumbsSwiper.slides || thumbsSwiper.slides.length === 0) return;
 
-              if (thumbsWrapper) {
-                const nextSlide = thumbsWrapper.querySelector(`.swiper-slide:nth-child(${activeIndex + 2})`);
-                const prevSlide = thumbsWrapper.querySelector(`.swiper-slide:nth-child(${activeIndex})`);
+              const activeIndex = this.activeIndex;
+              const visibleSlidesStart = thumbsSwiper.activeIndex;
+              const visibleSlidesEnd = visibleSlidesStart + thumbsSwiper.params.slidesPerView;
 
-                if (nextSlide && !nextSlide.classList.contains('swiper-slide-visible')) {
-                  thumbsSwiper.slideNext();
-                } else if (prevSlide && !prevSlide.classList.contains('swiper-slide-visible')) {
-                  thumbsSwiper.slidePrev();
-                }
+              if (activeIndex + 1 >= visibleSlidesEnd) {
+                thumbsSwiper.slideNext();
+              } else if (activeIndex < visibleSlidesStart) {
+                thumbsSwiper.slidePrev();
               }
+            } catch (error) {
+              console.warn('Thumb navigation error:', error);
             }
             {% endunless %}
           }
