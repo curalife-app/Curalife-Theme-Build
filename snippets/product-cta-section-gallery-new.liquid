@@ -374,27 +374,8 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    {% unless isHideThumbs %}
-      loadSwiper(() => {
-        window.productThumbsSlider{{ SID }} = initializeSwiper('#thumbs-slider-{{ section.id }}', {
-          direction: 'vertical',
-          spaceBetween: 10,
-          watchSlidesVisibility: false,
-          grabCursor: true,
-          slideToClickedSlide: true,
-          slidesPerView: 3,
-          navigation: {
-            nextEl: '#product-thumbs-slider-nav-next-{{ section.id }}',
-            prevEl: '#product-thumbs-slider-nav-prev-{{ section.id }}',
-            disabledClass: 'disabled'
-          }
-        });
-      });
-    {% endunless %}
-
     loadSwiper(() => {
       window.productSliderAllInOne{{ SID }} = initializeSwiper('#product-main-slider-sc-{{ section.id }}', {
-        {% unless isHideThumbs %}thumbs: {swiper: window.productThumbsSlider{{ SID }}},{% endunless %}
         slidesPerView: 1,
         spaceBetween: 15,
         watchSlidesVisibility: true,
@@ -417,5 +398,26 @@
         }
       });
     });
+
+    {% unless isHideThumbs %}
+      loadSwiper(() => {
+        window.productThumbsSlider{{ SID }} = initializeSwiper('#thumbs-slider-{{ section.id }}', {
+          direction: 'vertical',
+          spaceBetween: 10,
+          watchSlidesVisibility: false,
+          grabCursor: true,
+          slideToClickedSlide: true,
+          slidesPerView: 3,
+          navigation: {
+            nextEl: '#product-thumbs-slider-nav-next-{{ section.id }}',
+            prevEl: '#product-thumbs-slider-nav-prev-{{ section.id }}',
+            disabledClass: 'disabled'
+          }
+        });
+      });
+
+      window.productSliderAllInOne{{ SID }}.controller.control = window.productThumbsSlider{{ SID }};
+      window.productThumbsSlider{{ SID }}.controller.control = window.productSliderAllInOne{{ SID }};
+    {% endunless %}
   });
 </script>
