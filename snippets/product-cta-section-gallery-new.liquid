@@ -376,9 +376,7 @@
   document.addEventListener('DOMContentLoaded', function() {
     loadSwiper(() => {
       window.productSliderAllInOne{{ SID }} = initializeSwiper('#product-main-slider-sc-{{ section.id }}', {
-        thumbs: {
-          swiper: window.productThumbsSlider{{ SID }}
-        },
+        {% unless isHideThumbs %}thumbs: {swiper: window.productThumbsSlider{{ SID }}},{% endunless %}
         slidesPerView: 1,
         spaceBetween: 15,
         watchSlidesVisibility: true,
@@ -431,9 +429,6 @@
           }
         });
       });
-
-      window.productSliderAllInOne{{ SID }}.controller.control = window.productThumbsSlider{{ SID }};
-      window.productThumbsSlider{{ SID }}.controller.control = window.productSliderAllInOne{{ SID }};
     {% endunless %}
   });
 </script>
