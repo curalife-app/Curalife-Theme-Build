@@ -59,16 +59,18 @@
               <style>#product-main-slider-sc-{{ section.id }} .swiper-nav {display: none !important}</style>
             {% else %}
               {% comment %} Render Product Images on Main Slider {% endcomment %}
-              {% for img in product.images %}
-                {% if forloop.index == 1 %}
-                  {% assign currentImg = img %}
-                  {% assign img = thumbnailImage | default: currentImg %}
-                {% endif %}
+              {% if isProductThumbs %}
+                {% for img in product.images %}
+                  {% if forloop.index == 1 %}
+                    {% assign currentImg = img %}
+                    {% assign img = thumbnailImage | default: currentImg %}
+                  {% endif %}
 
-                <div class="swiper-slide product-image-slide">
-                  <img src="{{ img | image_url }}" alt="{{ img.alt | escape }}">
-                </div>
-              {% endfor %}
+                  <div class="swiper-slide product-image-slide">
+                    <img src="{{ img | image_url }}" alt="{{ img.alt | escape }}">
+                  </div>
+                {% endfor %}
+              {% endif %}
 
               {% if badgeImage %}
                 <img src="{{ badgeImage | image_url }}" alt="Curalin" class="sale-badge" loading="lazy">
