@@ -10,28 +10,16 @@
 
 {%- liquid
   # Initialize error collection object
-  assign error_log = 'window.imageErrors = window.imageErrors || {
-    missing_requirements: [],
-    missing_retina: [],
-    load_errors: []
-  };'
+  assign error_log = 'window.imageErrors = window.imageErrors || { missing_requirements: [], missing_retina: [], load_errors: []};'
 
   # Input validation with consolidated warnings
   if image == blank
-    assign validation_error = '{
-      type: "missing_requirements",
-      message: "Image is required",
-      timestamp: "' | append: 'now' | date: '%Y-%m-%d %H:%M:%S' | append: '"
-    }'
+    assign validation_error = '{ type: "missing_requirements",  message: "Image is required", timestamp: "' | append: 'now' | date: '%Y-%m-%d %H:%M:%S' | append: '" }'
     assign error_log = error_log | append: 'window.imageErrors.missing_requirements.push(' | append: validation_error | append: ');'
   endif
 
   if alt == blank
-    assign validation_error = '{
-      type: "missing_requirements",
-      message: "Alt text is required for accessibility",
-      timestamp: "' | append: 'now' | date: '%Y-%m-%d %H:%M:%S' | append: '"
-    }'
+    assign validation_error = '{ type: "missing_requirements", message: "Alt text is required for accessibility", timestamp: "' | append: 'now' | date: '%Y-%m-%d %H:%M:%S' | append: '" }'
     assign error_log = error_log | append: 'window.imageErrors.missing_requirements.push(' | append: validation_error | append: ');'
   endif
 
@@ -63,16 +51,7 @@
 
   unless retina_image and settings.disable_retina_debug
     # Prepare debug data
-    assign debug_data = '{
-      type: "missing_retina",
-      imageId: "' | append: desktop_image.id | append: '",
-      filename: "' | append: filename | append: '",
-      path: "' | append: full_path | append: '",
-      expectedRetina: "' | append: retina_src | append: '",
-      retinaCheck: "' | append: retina_check | append: '",
-      variant: "desktop",
-      timestamp: "' | append: 'now' | date: '%Y-%m-%d %H:%M:%S' | append: '"
-    }'
+    assign debug_data = '{ type: "missing_retina", imageId: "' | append: desktop_image.id | append: '", filename: "' | append: filename | append: '", path: "' | append: full_path | append: '", expectedRetina: "' | append: retina_src | append: '", retinaCheck: "' | append: retina_check | append: '", variant: "desktop", timestamp: "' | append: 'now' | date: '%Y-%m-%d %H:%M:%S' | append: '" }'
     assign error_log = error_log | append: 'window.imageErrors.missing_retina.push(' | append: debug_data | append: ');'
   endunless
 
@@ -95,16 +74,7 @@
 
     unless mobile_retina_image and settings.disable_retina_debug
       # Prepare mobile debug data
-      assign mobile_debug_data = '{
-        type: "missing_retina",
-        imageId: "' | append: mobile_image.id | append: '",
-        filename: "' | append: mobile_filename | append: '",
-        path: "' | append: mobile_full_path | append: '",
-        expectedRetina: "' | append: mobile_retina_src | append: '",
-        retinaCheck: "' | append: mobile_retina_check | append: '",
-        variant: "mobile",
-        timestamp: "' | append: 'now' | date: '%Y-%m-%d %H:%M:%S' | append: '"
-      }'
+      assign mobile_debug_data = '{ type: "missing_retina", imageId: "' | append: mobile_image.id | append: '", filename: "' | append: mobile_filename | append: '", path: "' | append: mobile_full_path | append: '", expectedRetina: "' | append: mobile_retina_src | append: '", retinaCheck: "' | append: mobile_retina_check | append: '", variant: "mobile", timestamp: "' | append: 'now' | date: '%Y-%m-%d %H:%M:%S' | append: '" }'
       assign error_log = error_log | append: 'window.imageErrors.missing_retina.push(' | append: mobile_debug_data | append: ');'
     endunless
   else
