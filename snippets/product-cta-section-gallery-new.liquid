@@ -153,7 +153,7 @@
         window.productThumbsSlider{{ SID }} = initializeSwiper('#thumbs-slider-{{ section.id }}', {
           direction: 'vertical',
           spaceBetween: 10,
-          watchSlidesVisibility: false,
+          watchSlidesVisibility: true,
           grabCursor: true,
           slideToClickedSlide: true,
           slidesPerView: 3,
@@ -168,7 +168,11 @@
 
     loadSwiper(() => {
       window.productSliderAllInOne{{ SID }} = initializeSwiper('#product-main-slider-sc-{{ section.id }}', {
-        {% unless isHideThumbs %}thumbs: {swiper: window.productThumbsSlider{{ SID }}},{% endunless %}
+        {% unless isHideThumbs %}
+        thumbs: {
+          swiper: window.productThumbsSlider{{ SID }}
+        },
+        {% endunless %}
         slidesPerView: 1,
         spaceBetween: 15,
         watchSlidesVisibility: true,
@@ -191,15 +195,24 @@
         },
         on: {
           slideChange: function () {
-            let activeIndex = this.activeIndex + 1;
-            let nextSlide = this.thumbs.swiper.$el[0].querySelector(`.swiper-slide:nth-child(${activeIndex + 1})`);
-            let prevSlide = this.thumbs.swiper.$el[0].querySelector(`.swiper-slide:nth-child(${activeIndex - 1})`);
+            {% unless isHideThumbs %}
+            if (this.thumbs && this.thumbs.swiper) {
+              const activeIndex = this.activeIndex;
+              const thumbsSwiper = this.thumbs.swiper;
+              const thumbsWrapper = thumbsSwiper.$el[0].querySelector('.swiper-wrapper');
 
-            if (nextSlide && !nextSlide.classList.contains('swiper-slide-visible')) {
-                this.thumbs.swiper.slideNext()
-            } else if (prevSlide && !prevSlide.classList.contains('swiper-slide-visible')) {
-                this.thumbs.swiper.slidePrev()
+              if (thumbsWrapper) {
+                const nextSlide = thumbsWrapper.querySelector(`.swiper-slide:nth-child(${activeIndex + 2})`);
+                const prevSlide = thumbsWrapper.querySelector(`.swiper-slide:nth-child(${activeIndex})`);
+
+                if (nextSlide && !nextSlide.classList.contains('swiper-slide-visible')) {
+                  thumbsSwiper.slideNext();
+                } else if (prevSlide && !prevSlide.classList.contains('swiper-slide-visible')) {
+                  thumbsSwiper.slidePrev();
+                }
+              }
             }
+            {% endunless %}
           }
         }
       });
