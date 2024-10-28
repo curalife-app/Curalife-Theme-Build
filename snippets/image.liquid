@@ -100,7 +100,12 @@
 <script>
   {{ error_log }}
 
+  // Consolidated error logging function with single display
   if (!window.logImageError) {
+    // Create a flag to track if we've shown the warning
+    window.hasDisplayedImageErrors = false;
+
+    // Create debounced function for displaying errors
     window.debouncedDisplayErrors = (function() {
       let timeoutId = null;
       return function() {
@@ -108,22 +113,26 @@
           clearTimeout(timeoutId);
         }
         timeoutId = setTimeout(() => {
-          const errors = window.imageErrors;
-          const hasErrors = Object.values(errors).some(arr => arr.length > 0);
+          if (!window.hasDisplayedImageErrors) {
+            const errors = window.imageErrors;
+            const hasErrors = Object.values(errors).some(arr => arr.length > 0);
 
-          if (hasErrors) {
-            console.warn('🚨 Image Component Errors Summary:', {
-              totalErrors: Object.values(errors).reduce((sum, arr) => sum + arr.length, 0),
-              breakdownByType: {
-                missingRequirements: errors.missing_requirements.length,
-                missingRetina: errors.missing_retina.length,
-                loadErrors: errors.load_errors.length
-              },
-              details: errors
-            });
+            if (hasErrors) {
+              console.warn('🚨 Image Component Errors Summary:', {
+                totalErrors: Object.values(errors).reduce((sum, arr) => sum + arr.length, 0),
+                breakdownByType: {
+                  missingRequirements: errors.missing_requirements.length,
+                  missingRetina: errors.missing_retina.length,
+                  loadErrors: errors.load_errors.length
+                },
+                details: errors
+              });
+              // Set flag to prevent further displays
+              window.hasDisplayedImageErrors = true;
+            }
           }
           timeoutId = null;
-        }, 100);
+        }, 1000); // Increased to 1 second to ensure we catch all initial errors
       };
     })();
 
@@ -132,6 +141,7 @@
         window.imageErrors[type] = [];
       }
 
+      // Add timestamp and deduplicate based on imageId and type
       data.timestamp = new Date().toISOString();
       const existingError = window.imageErrors[type].find(
         error => error.imageId === data.imageId && error.type === data.type
@@ -139,12 +149,14 @@
 
       if (!existingError) {
         window.imageErrors[type].push(data);
+        // Trigger debounced display
         window.debouncedDisplayErrors();
       }
     };
   }
 
-  if (window.imageErrors) {
+  // If we have initial errors from liquid validation, trigger the display
+  if (window.imageErrors && !window.hasDisplayedImageErrors) {
     window.debouncedDisplayErrors();
   }
 </script>
