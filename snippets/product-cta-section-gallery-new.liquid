@@ -146,6 +146,67 @@
   </div>
 </div>
 
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    {% unless isHideThumbs %}
+      loadSwiper(() => {
+        window.productThumbsSlider{{ SID }} = initializeSwiper('#thumbs-slider-{{ section.id }}', {
+          direction: 'vertical',
+          spaceBetween: 10,
+          watchSlidesVisibility: false,
+          grabCursor: true,
+          slideToClickedSlide: true,
+          slidesPerView: 3,
+          navigation: {
+            nextEl: '#product-thumbs-slider-nav-next-{{ section.id }}',
+            prevEl: '#product-thumbs-slider-nav-prev-{{ section.id }}',
+            disabledClass: 'disabled'
+          }
+        });
+      });
+    {% endunless %}
+
+    loadSwiper(() => {
+      window.productSliderAllInOne{{ SID }} = initializeSwiper('#product-main-slider-sc-{{ section.id }}', {
+        {% unless isHideThumbs %}thumbs: {swiper: window.productThumbsSlider{{ SID }}},{% endunless %}
+        slidesPerView: 1,
+        spaceBetween: 15,
+        watchSlidesVisibility: true,
+        grabCursor: false,
+        slideToClickedSlide: true,
+        breakpoints: {
+          0: {
+            allowTouchMove: false,
+            navigation: {
+              nextEl: '#product-main-slider-nav-next-{{ section.id }}',
+              prevEl: '#product-main-slider-nav-prev-{{ section.id }}',
+              disabledClass: 'disabled'
+            }
+          },
+          760: {
+            allowTouchMove: false,
+            grabCursor: true,
+            navigation: {}
+          }
+        },
+        on: {
+          slideChange: function () {
+            let activeIndex = this.activeIndex + 1;
+            let nextSlide = this.thumbs.swiper.$el[0].querySelector(`.swiper-slide:nth-child(${activeIndex + 1})`);
+            let prevSlide = this.thumbs.swiper.$el[0].querySelector(`.swiper-slide:nth-child(${activeIndex - 1})`);
+
+            if (nextSlide && !nextSlide.classList.contains('swiper-slide-visible')) {
+                this.thumbs.swiper.slideNext()
+            } else if (prevSlide && !prevSlide.classList.contains('swiper-slide-visible')) {
+                this.thumbs.swiper.slidePrev()
+            }
+          }
+        }
+      });
+    });
+  });
+</script>
+
 <style>
   {% if first_3d_model %}
     #product-thumbnails-{{ section.id }} .model-icon {
@@ -371,64 +432,3 @@
     }
   }
 </style>
-
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    {% unless isHideThumbs %}
-      loadSwiper(() => {
-        window.productThumbsSlider{{ SID }} = initializeSwiper('#thumbs-slider-{{ section.id }}', {
-          direction: 'vertical',
-          spaceBetween: 10,
-          watchSlidesVisibility: false,
-          grabCursor: true,
-          slideToClickedSlide: true,
-          slidesPerView: 3,
-          navigation: {
-            nextEl: '#product-thumbs-slider-nav-next-{{ section.id }}',
-            prevEl: '#product-thumbs-slider-nav-prev-{{ section.id }}',
-            disabledClass: 'disabled'
-          }
-        });
-      });
-    {% endunless %}
-
-    loadSwiper(() => {
-      window.productSliderAllInOne{{ SID }} = initializeSwiper('#product-main-slider-sc-{{ section.id }}', {
-        {% unless isHideThumbs %}thumbs: {swiper: window.productThumbsSlider{{ SID }}},{% endunless %}
-        slidesPerView: 1,
-        spaceBetween: 15,
-        watchSlidesVisibility: true,
-        grabCursor: false,
-        slideToClickedSlide: true,
-        breakpoints: {
-          0: {
-            allowTouchMove: false,
-            navigation: {
-              nextEl: '#product-main-slider-nav-next-{{ section.id }}',
-              prevEl: '#product-main-slider-nav-prev-{{ section.id }}',
-              disabledClass: 'disabled'
-            }
-          },
-          760: {
-            allowTouchMove: false,
-            grabCursor: true,
-            navigation: {}
-          }
-        },
-        on: {
-          slideChange: function () {
-            let activeIndex = this.activeIndex + 1;
-            let nextSlide = this.thumbs.swiper.$el[0].querySelector(`.swiper-slide:nth-child(${activeIndex + 1})`);
-            let prevSlide = this.thumbs.swiper.$el[0].querySelector(`.swiper-slide:nth-child(${activeIndex - 1})`);
-
-            if (nextSlide && !nextSlide.classList.contains('swiper-slide-visible')) {
-                this.thumbs.swiper.slideNext()
-            } else if (prevSlide && !prevSlide.classList.contains('swiper-slide-visible')) {
-                this.thumbs.swiper.slidePrev()
-            }
-          }
-        }
-      });
-    });
-  });
-</script>
