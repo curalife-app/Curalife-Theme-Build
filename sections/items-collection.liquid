@@ -39,14 +39,10 @@
           {% assign imageLink = block.settings.image_global | default: block.settings.image %}
           {% assign imageMobileLink = block.settings.image_mobile_global | default: block.settings.image_mobile %}
           {% assign linkUrl = block.settings.link_url_global | default: block.settings.link_url %}
-          {% assign retinaImage = block.settings.retina_image_global | default: block.settings.retina_image %}
-          {% assign retinaMobileImage = block.settings.mobile_retina_image_global | default: block.settings.mobile_retina_image %}
         {% else %}
           {% assign imageLink = block.settings.image %}
           {% assign imageMobileLink = block.settings.image_mobile %}
           {% assign linkUrl = block.settings.link_url %}
-          {% assign retinaImage = block.settings.retina_image %}
-          {% assign retinaMobileImage = block.settings.mobile_retina_image %}
         {% endif %}
 
         {% if linkUrl and section.settings.link_style == 'item' %}<a class="contents">{% endif %}
@@ -60,8 +56,6 @@
                   {% render 'image',
                     image: imageLink,
                     mobile_image: imageMobileLink,
-                    retina_image: retinaImage,
-                    mobile_retina_image: retinaMobileImage,
                     lazy: lazyLoad,
                     preload: false,
                     alt: imageLink.alt,
@@ -94,14 +88,7 @@
         {% if block.settings.is_image_background %}
           <style>
             #{{ itemID }} {
-              background-image: -webkit-image-set(
-                url('{{ imageLink | image_url }}') 1x
-                {% if retinaImage %}, url('{{ retinaImage | image_url }}') 2x{% endif %}
-              ) !important;
-              background-image: image-set(
-                url('{{ imageLink | image_url }}') 1x
-                {% if retinaImage %}, url('{{ retinaImage | image_url }}') 2x{% endif %}
-              ) !important;
+              background: url('{{ imageLink | image_url }}') no-repeat;
               background-size: cover;
               background-position: center;
             }
@@ -109,14 +96,7 @@
             {% if imageMobileLink or retinaMobileImage %}
               @media screen and (max-width: 768px) {
                 #{{ itemID }} {
-                  background-image: -webkit-image-set(
-                    url('{{ imageMobileLink | image_url }}') 1x
-                    {% if retinaMobileImage %}, url('{{ retinaMobileImage | image_url }}') 2x{% endif %}
-                  ) !important;
-                  background-image: image-set(
-                    url('{{ imageMobileLink | image_url }}') 1x
-                    {% if retinaMobileImage %}, url('{{ retinaMobileImage | image_url }}') 2x{% endif %}
-                  ) !important;
+                  background-image: url('{{ imageMobileLink | image_url }}');
                 }
               }
             {% endif %}
