@@ -51,80 +51,135 @@
 {% endcomment %}
 
 {%- liquid
-# Input validation
-if image == blank
-  render 'error-message', message: 'Image is required'
-  return
-endif
-
-if alt == blank
-  render 'error-message', message: 'Alt text is required for accessibility'
-  return
-endif
-
-# Initialize variables with defaults
-assign desktop_image = image
-assign mobile_image = mobile_image | default: image
-assign lazy_load = lazy | default: true
-assign is_priority = priority | default: false
-assign mobile_breakpoint = mobile_breakpoint | default: 768
-assign sizes = sizes | default: '(min-width: 1200px) 1100px, (min-width: 769px) 750px, 100vw'
-
-# Retina image detection for desktop
-assign full_path = desktop_image.src
-assign path_parts = full_path | split: '/'
-assign filename = path_parts | last
-assign image_name = filename | split: '.' | first
-assign image_ext = filename | split: '.' | last
-assign retina_src = image_name | append: '-x2.' | append: image_ext
-assign retina_check = retina_src | file_url
-
-assign retina_image = nil
-unless retina_check == blank
-  assign retina_image = retina_src
-endunless
-
-# Retina image detection for mobile
-assign mobile_retina_image = nil
-if mobile_image != desktop_image
-  assign mobile_full_path = mobile_image.src
-  assign mobile_path_parts = mobile_full_path | split: '/'
-  assign mobile_filename = mobile_path_parts | last
-  assign mobile_image_name = mobile_filename | split: '.' | first
-  assign mobile_image_ext = mobile_filename | split: '.' | last
-  assign mobile_retina_src = mobile_image_name | append: '-x2.' | append: mobile_image_ext
-  assign mobile_retina_check = mobile_retina_src | file_url
-
-  unless mobile_retina_check == blank
-    assign mobile_retina_image = mobile_retina_src
+  # Initialize debug session storage if not exists
+  unless settings.disable_retina_debug
+    assign missing_retina_log = 'window.missingRetinaImages = window.missingRetinaImages || [];'
   endunless
-else
-  assign mobile_retina_image = retina_image
-endif
-
-# Optimized breakpoints for better performance
-assign breakpoints = '375,640,768,1080,1200,1920,2560' | split: ','
-
-# Generate unique ID for debugging and tracking
-assign unique_id = 'img-' | append: desktop_image.id | append: '-' | append: mobile_image.id | append: '-' | now | date: '%N'
-
-# Calculate aspect ratio for preventing layout shift
-assign aspect_ratio = desktop_image.aspect_ratio | default: 1
-assign padding_top = 1 | divided_by: aspect_ratio | times: 100 | append: '%'
-
-# Base URLs with WebP format when supported
-assign base_desktop_url = desktop_image | image_url: width: 1100, format: 'webp'
-assign base_mobile_url = mobile_image | image_url: width: 750, format: 'webp'
-assign fallback_url = desktop_image | image_url: width: 1100
-
-if retina_image
-  assign desktop_retina_url = retina_image | image_url: width: 2200
-endif
-
-if mobile_retina_image
-  assign mobile_retina_url = mobile_retina_image | image_url: width: 1500
-endif
 -%}
+
+<script>
+  {{ missing_retina_log }}
+
+  // Create debug logger if it doesn't exist
+  if (!window.logMissingRetina) {
+    window.logMissingRetina = function(data) {
+      if (!window.missingRetinaImages.some(item => item.filename === data.filename)) {
+        window.missingRetinaImages.push(data);
+        console.warn('Missing retina image:', data);
+      }
+    }
+  }
+</script>
+
+{% comment %}
+  Main image component
+{% endcomment %}
+
+{%- liquid
+  # Input validation
+  if image == blank
+    render 'error-message', message: 'Image is required'
+    return
+  endif
+
+  if alt == blank
+    render 'error-message', message: 'Alt text is required for accessibility'
+    return
+  endif
+
+  # Initialize variables with defaults
+  assign desktop_image = image
+  assign mobile_image = mobile_image | default: image
+  assign lazy_load = lazy | default: true
+  assign is_priority = priority | default: false
+  assign mobile_breakpoint = mobile_breakpoint | default: 768
+  assign sizes = sizes | default: '(min-width: 1200px) 1100px, (min-width: 769px) 750px, 100vw'
+
+  # Retina image detection for desktop
+  assign full_path = desktop_image.src
+  assign path_parts = full_path | split: '/'
+  assign filename = path_parts | last
+  assign image_name = filename | split: '.' | first
+  assign image_ext = filename | split: '.' | last
+  assign retina_src = image_name | append: '-x2.' | append: image_ext
+  assign retina_check = retina_src | file_url
+
+  assign retina_image = nil
+  assign debug_data = nil
+
+  unless retina_check == blank
+    assign retina_image = retina_src
+  else
+    unless settings.disable_retina_debug
+      # Prepare debug data
+      assign debug_data = 'logMissingRetina({'
+      assign debug_data = debug_data | append: '"filename":"' | append: filename | append: '",'
+      assign debug_data = debug_data | append: '"path":"' | append: full_path | append: '",'
+      assign debug_data = debug_data | append: '"expectedRetina":"' | append: retina_src | append: '",'
+      assign debug_data = debug_data | append: '"type":"desktop",'
+      assign debug_data = debug_data | append: '"page":"' | append: request.page_type | append: '"'
+      assign debug_data = debug_data | append: '});'
+    endunless
+  endif
+
+  # Retina image detection for mobile
+  assign mobile_retina_image = nil
+  assign mobile_debug_data = nil
+
+  if mobile_image != desktop_image
+    assign mobile_full_path = mobile_image.src
+    assign mobile_path_parts = mobile_full_path | split: '/'
+    assign mobile_filename = mobile_path_parts | last
+    assign mobile_image_name = mobile_filename | split: '.' | first
+    assign mobile_image_ext = mobile_filename | split: '.' | last
+    assign mobile_retina_src = mobile_image_name | append: '-x2.' | append: mobile_image_ext
+    assign mobile_retina_check = mobile_retina_src | file_url
+
+    unless mobile_retina_check == blank
+      assign mobile_retina_image = mobile_retina_src
+    else
+      unless settings.disable_retina_debug
+        # Prepare mobile debug data
+        assign mobile_debug_data = 'logMissingRetina({'
+        assign mobile_debug_data = mobile_debug_data | append: '"filename":"' | append: mobile_filename | append: '",'
+        assign mobile_debug_data = mobile_debug_data | append: '"path":"' | append: mobile_full_path | append: '",'
+        assign mobile_debug_data = mobile_debug_data | append: '"expectedRetina":"' | append: mobile_retina_src | append: '",'
+        assign mobile_debug_data = mobile_debug_data | append: '"type":"mobile",'
+        assign mobile_debug_data = mobile_debug_data | append: '"page":"' | append: request.page_type | append: '"'
+        assign mobile_debug_data = mobile_debug_data | append: '});'
+      endunless
+    endif
+  else
+    assign mobile_retina_image = retina_image
+  endif
+
+  # Generate unique ID and other variables
+  assign unique_id = 'img-' | append: desktop_image.id | append: '-' | append: mobile_image.id | append: '-' | now | date: '%N'
+  assign aspect_ratio = desktop_image.aspect_ratio | default: 1
+  assign padding_top = 1 | divided_by: aspect_ratio | times: 100 | append: '%'
+
+  assign base_desktop_url = desktop_image | image_url: width: 1100, format: 'webp'
+  assign base_mobile_url = mobile_image | image_url: width: 750, format: 'webp'
+  assign fallback_url = desktop_image | image_url: width: 1100
+
+  if retina_image
+    assign desktop_retina_url = retina_image | image_url: width: 2200
+  endif
+
+  if mobile_retina_image
+    assign mobile_retina_url = mobile_retina_image | image_url: width: 1500
+  endif
+-%}
+
+{%- # Output debug scripts if needed -%}
+{%- unless settings.disable_retina_debug -%}
+  {%- if debug_data or mobile_debug_data -%}
+    <script>
+      {%- if debug_data -%}{{ debug_data }}{%- endif -%}
+      {%- if mobile_debug_data -%}{{ mobile_debug_data }}{%- endif -%}
+    </script>
+  {%- endif -%}
+{%- endunless -%}
 
 <div class="relative w-full" style="padding-top: {{ padding_top }}">
 {%- if link -%}<a href="{{ link | escape }}">{%- endif -%}
