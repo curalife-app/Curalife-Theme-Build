@@ -157,10 +157,18 @@
           grabCursor: true,
           slideToClickedSlide: true,
           slidesPerView: 3,
+          watchSlidesProgress: true, // Added to ensure thumb tracking works
           navigation: {
             nextEl: '#product-thumbs-slider-nav-next-{{ section.id }}',
             prevEl: '#product-thumbs-slider-nav-prev-{{ section.id }}',
             disabledClass: 'disabled'
+          },
+          on: {
+            slideChange: function() {
+              if (window.productSliderAllInOne{{ SID }}) {
+                window.productSliderAllInOne{{ SID }}.slideTo(this.activeIndex);
+              }
+            }
           }
         });
       });
@@ -170,7 +178,8 @@
       window.productSliderAllInOne{{ SID }} = initializeSwiper('#product-main-slider-sc-{{ section.id }}', {
         {% unless isHideThumbs %}
         thumbs: {
-          swiper: window.productThumbsSlider{{ SID }}
+          swiper: window.productThumbsSlider{{ SID }},
+          multipleActiveThumbs: false // Ensures only one thumb is active at a time
         },
         {% endunless %}
         slidesPerView: 1,
