@@ -575,27 +575,13 @@
       const SID = window.SID || '';
       const sliderId = `productSliderAllInOne${SID}`;
 
-      console.log('Starting slider initialization:', sliderId);
-
       return new Promise((resolve, reject) => {
         const checkSlider = setInterval(() => {
           const slider = window[sliderId];
           sliderInitializationAttempts++;
 
-          console.log(`Attempt ${sliderInitializationAttempts} - Checking slider:`, slider);
-
           if (slider && slider.slides && slider.slides.length > 0) {
             clearInterval(checkSlider);
-            console.log(`Slider ${sliderId} successfully initialized with ${slider.slides.length} slides`);
-
-            // Add event listeners for debugging
-            slider.on('slideChange', () => {
-              console.log('Slide changed to:', slider.activeIndex);
-            });
-
-            slider.on('transitionEnd', () => {
-              console.log('Slide transition ended at:', slider.activeIndex);
-            });
 
             resolve(slider);
           } else if (sliderInitializationAttempts >= MAX_INITIALIZATION_ATTEMPTS) {
@@ -617,15 +603,15 @@
       const sliderId = `productSliderAllInOne${SID}`;
       const slider = window[sliderId];
 
-      console.log('Updating variant image:', {
-        element: element,
-        dataIndex: element.dataset.index,
-        sliderId: sliderId,
-        slider: slider
-      });
-
       if (!slider || !slider.slides || !slider.slides.length) {
-        console.warn('Slider not ready, attempting initialization...');
+        let updateImageData = {
+          element: element,
+          dataIndex: element.dataset.index,
+          sliderId: sliderId,
+          slider: slider
+        });
+
+        console.warn('Slider not ready, attempting initialization...', updateImageData);
 
         initializeProductSlider()
           .then((initializedSlider) => {
