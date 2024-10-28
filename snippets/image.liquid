@@ -115,12 +115,39 @@
 
       if (!existingError) {
         window.imageErrors[type].push(data);
+        // Log individual error
         console.warn(`Image Error (${type}):`, data);
+        // Check and display consolidated errors
+        displayConsolidatedErrors();
       }
     };
   }
-</script>
 
+  // Function to display consolidated errors
+  if (!window.displayConsolidatedErrors) {
+    window.displayConsolidatedErrors = function() {
+      const errors = window.imageErrors;
+      const hasErrors = Object.values(errors).some(arr => arr.length > 0);
+
+      if (hasErrors) {
+        console.warn('🚨 Image Component Errors Summary:', {
+          totalErrors: Object.values(errors).reduce((sum, arr) => sum + arr.length, 0),
+          breakdownByType: {
+            missingRequirements: errors.missing_requirements.length,
+            missingRetina: errors.missing_retina.length,
+            loadErrors: errors.load_errors.length
+          },
+          details: errors
+        });
+      }
+    };
+  }
+
+  // Initial check for errors from liquid validation
+  if (window.imageErrors) {
+    window.displayConsolidatedErrors();
+  }
+</script>
 <picture>
   {%- # WebP format source with retina for mobile -%}
   <source
