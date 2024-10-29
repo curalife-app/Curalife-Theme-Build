@@ -1,4 +1,4 @@
-{%- comment -%} If store is US {%- endcomment -%}
+{%- comment -%} Keep existing Liquid logic {%- endcomment -%}
 {% if shop.name == 'CuraLife' %}
   {% assign invoice_id = "51da85a3c3dfa1f360b48852b64218b2" %}
   {% assign manage_subscription_url = '/tools/recurring/login' %}
@@ -11,216 +11,293 @@
   {% assign show_curalifer_tab = true %}
 {% endif %}
 
-<section class="account-page">
-  <div class="container">
-    <h1 class="hidden text-center mb-[30px]">My Account</h1>
-    <div id="tabs">
-      <div class="account-content">
-        <div class="account-menu desktop">
-          <div class="menu-list">
-            <div class="tabs">
-              {% if show_curalifer_tab %}
-                <div class="tab"><a href="#curalifer"><span><i class="fa-thin fa-user-crown"></i></span>Curalifer</a></div>
-              {% endif %}
-              <div class="tab"><a href="#a" class="tab"><span><i class="fa-thin fa-user"></i></span>My Profile</a></div>
-              <div class="tab"><a href="#b" class="tab"><span><i class="fa-thin fa-credit-card"></i></span>Orders</a></div>
-              {% comment %} <li><a href="#c"><span class="icon-payment"></span>Manage Payments</a></li> {% endcomment %}
-              {% comment %} <li style="display:none;"><a href="#d"><span class="icon-refer-friend"></span>Refer a Friend</a></li> {% endcomment %}
-              <div class="tab"><a href="#e" class="tab"><span><i class="fa-thin fa-people-group"></i></span>Loyalty</a></div>
-              <div class="tab"><a href="#f" class="tab"><span><i class="fa-thin fa-key"></i></span>Change password</a></div>
-              <a id="subscription-tab" href="{{ manage_subscription_url }}"><div class="tab"><span class="min-w-[25px]"><i class="fa-thin fa-calendar"></i></span>Subscriptions</div></a>
-              <a class="logout lgoutlnk" href="/account/logout/"><div class="tab"><span class="min-w-[25px]"><i class="fa-thin fa-right-from-bracket"></i></span>Logout</div></a>
-            </div>
-          </div>
-        </div>
+<section class="account-page bg-[#F5F5F5] py-12">
+  <div class="max-w-7xl container px-4 mx-auto">
+    <h1 class="mb-12 text-3xl font-bold text-center text-gray-800">My Account</h1>
 
-        <div class="account-menu-mobile-dropdown mobile w-full">
-          <select id="mobile-dropdown" onchange="changeContent()">
+    <div class="account-wrapper rounded-xl bg-white shadow-sm">
+      <div class="account-content flex flex-col md:flex-row min-h-[600px]">
+        <!-- Desktop Navigation -->
+        <nav class="account-nav md:block w-80 hidden border-r border-gray-100">
+          <div class="p-6">
+            <div class="flex items-center gap-3 mb-8">
+              <div class="bg-blue-50 flex items-center justify-center w-12 h-12 rounded-full">
+                <span class="text-xl font-semibold text-blue-600">{{ customer.first_name | slice: 0 }}</span>
+              </div>
+              <div>
+                <p class="font-semibold text-gray-900">{{ customer.first_name }} {{ customer.last_name }}</p>
+                <p class="text-sm text-gray-500">{{ customer.email }}</p>
+              </div>
+            </div>
+
+            <ul class="space-y-2">
+              {% if show_curalifer_tab %}
+                <li class="nav-item">
+                  <a href="#curalifer" class="nav-link">
+                    <i class="fa-thin fa-user-crown"></i>
+                    <span>Curalifer</span>
+                  </a>
+                </li>
+              {% endif %}
+
+              <li class="nav-item">
+                <a href="#profile" class="nav-link">
+                  <i class="fa-thin fa-user"></i>
+                  <span>My Profile</span>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="#orders" class="nav-link">
+                  <i class="fa-thin fa-credit-card"></i>
+                  <span>Orders</span>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="#loyalty" class="nav-link">
+                  <i class="fa-thin fa-people-group"></i>
+                  <span>Loyalty</span>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="#password" class="nav-link">
+                  <i class="fa-thin fa-key"></i>
+                  <span>Change Password</span>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="{{ manage_subscription_url }}" class="nav-link">
+                  <i class="fa-thin fa-calendar"></i>
+                  <span>Subscriptions</span>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="/account/logout" class="nav-link text-red-600">
+                  <i class="fa-thin fa-right-from-bracket"></i>
+                  <span>Logout</span>
+                </a>
+              </li>
+            </ul>
+          </div>
+        </nav>
+
+        <!-- Mobile Navigation -->
+        <div class="md:hidden p-4">
+          <select id="mobile-dropdown" class="focus:border-blue-500 w-full px-4 py-3 text-gray-700 border-gray-200 rounded-lg">
             {% if show_curalifer_tab %}
-              <option value="#curalifer"><i class="fa-thin fa-user-crown"></i>Curalifer</option>
+              <option value="#curalifer">Curalifer</option>
             {% endif %}
-            <option value="#a"><i class="fa-thin fa-user"></i>My Profile</option>
-            <option value="#b"><i class="fa-thin fa-credit-card"></i>Orders</option>
-            <option value="#e"><i class="fa-thin fa-people-group"></i>Loyalty</option>
-            <option value="#f"><i class="fa-thin fa-key"></i>Change password</option>
-            <option value="{{ manage_subscription_url }}"><i class="fa-thin fa-calendar"></i>Subscriptions</option>
-            <option value="/account/logout/"><i class="fa-thin fa-right-from-bracket"></i>Logout</option>
+            <option value="#profile">My Profile</option>
+            <option value="#orders">Orders</option>
+            <option value="#loyalty">Loyalty</option>
+            <option value="#password">Change Password</option>
+            <option value="{{ manage_subscription_url }}">Subscriptions</option>
+            <option value="/account/logout">Logout</option>
           </select>
         </div>
 
-        <div class="account-data">
+        <!-- Content Area -->
+        <div class="account-content flex-1 p-6">
           {% if show_curalifer_tab %}
-            <div class="data-row" id="curalifer">
-              <div class="titles w-full">
-                <h2>My Curalife</h2>
-                <p>Your exclusive access to our recipies and workouts to help you live a healthier life.</p>
-              </div>
+            <div id="curalifer" class="tab-content">
+              <div class="max-w-2xl">
+                <h2 class="mb-2 text-2xl font-bold">My Curalife</h2>
+                <p class="mb-8 text-gray-600">Your exclusive access to our recipes and workouts to help you live a healthier life.</p>
 
-              <div class="data-wrap with-border p-[10px]">
-                <a href="/blogs/recipes">
-                  <img src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/curalifer_recipies.png" alt="Curalife Recipes">
-                  <h5 class="data-title m-0">Recipes</h5>
-                </a>
-              </div>
+                <div class="md:grid-cols-2 grid gap-6">
+                  <a href="/blogs/recipes" class="group block">
+                    <div class="aspect-video rounded-xl relative overflow-hidden">
+                      <img src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/curalifer_recipies.png" alt="Recipes" class="group-hover:scale-105 object-cover w-full h-full transition duration-300">
+                      <div class="bg-gradient-to-t from-black/60 to-transparent absolute inset-0 flex items-end p-6">
+                        <h3 class="text-xl font-bold text-white">Recipes</h3>
+                      </div>
+                    </div>
+                  </a>
 
-              <div class="data-wrap with-border p-[10px]">
-                <a href="/blogs/workouts">
-                  <img src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/curalifer_exercise.png" alt="Curalife Workouts">
-                  <h5 class="data-title m-0">Workouts</h5>
-                </a>
+                  <a href="/blogs/workouts" class="group block">
+                    <div class="aspect-video rounded-xl relative overflow-hidden">
+                      <img src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/curalifer_exercise.png" alt="Workouts" class="group-hover:scale-105 object-cover w-full h-full transition duration-300">
+                      <div class="bg-gradient-to-t from-black/60 to-transparent absolute inset-0 flex items-end p-6">
+                        <h3 class="text-xl font-bold text-white">Workouts</h3>
+                      </div>
+                    </div>
+                  </a>
+                </div>
               </div>
             </div>
           {% endif %}
 
-          <div class="data-row" id="a">
-            <div class="data-wrap with-border">
-              <h5 class="data-title m-0">Contact Information</h5>
-
-              <div class="data-content">
-                <div class="contact-info">
-                  <ul>
-                    <li><p>First Name<span>{{ customer.first_name }}</span></p></li>
-                    <li><p>Last Name<span>{{ customer.last_name }}</span></p></li>
-                    <li><p>Email<span>{{ customer.email }}</span></p></li>
-                  </ul>
+          <div id="profile" class="tab-content">
+            <div class="max-w-2xl space-y-6">
+              <!-- Contact Information -->
+              <div class="rounded-xl overflow-hidden bg-white border border-gray-100">
+                <div class="flex items-center justify-between p-6 border-b border-gray-100">
+                  <h3 class="font-semibold">Contact Information</h3>
+                  <a href="/account/addresses" class="hover:text-blue-700 text-sm font-medium text-blue-600">Edit</a>
                 </div>
 
-                <div class="data-btn">
-                  <a class="main-btn blank" href="/account/addresses">Edit</a>
+                <div class="p-6 space-y-4">
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <p class="text-sm text-gray-500">First Name</p>
+                      <p class="font-medium">{{ customer.first_name }}</p>
+                    </div>
+                    <div>
+                      <p class="text-sm text-gray-500">Last Name</p>
+                      <p class="font-medium">{{ customer.last_name }}</p>
+                    </div>
+                    <div class="col-span-2">
+                      <p class="text-sm text-gray-500">Email</p>
+                      <p class="font-medium">{{ customer.email }}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div class="data-wrap with-border">
-              <h5 class="data-title m-0">Shipping Address</h5>
-
-              <div class="data-content">
-                <div class="shipping-addresses">
-                  {% assign address = customer.default_address %}
-                  {% if address %}
-                    <div class="view_address">
-                      <p>{{ address.first_name }} {{address.last_name }}
-                      {% if address.company != blank %}<br />{{ address.company }}{% endif %}
-                      {% if address.street != blank %}<br />{{ address.street }}{% endif %}
-                      <br />{{ address.city }} {% if address.province_code != blank %}, {{ address.province_code }}{% endif %}
-                      <br />{{ address.country }} {{ address.zip }}
-                      {% if address.phone != blank %}<br />{{ address.phone }}</p>{% endif %}
-                    </div>
-                  {% else %}
-
-                  <div class="empty-text">
-                    <p><span class="icon-shipping"></span>You don't have a shipping address yet.</p>
-                  </div>
-                  {% endif %}
+              <!-- Shipping Address -->
+              <div class="rounded-xl overflow-hidden bg-white border border-gray-100">
+                <div class="flex items-center justify-between p-6 border-b border-gray-100">
+                  <h3 class="font-semibold">Shipping Address</h3>
+                  <a href="/account/addresses" class="hover:text-blue-700 text-sm font-medium text-blue-600">Edit</a>
                 </div>
 
-                <div class="data-btn">
-                  <a class="main-btn blank" href="/account/addresses">add address</a>
+                <div class="p-6">
+                  {% assign address = customer.default_address %}
+                  {% if address %}
+                    <div class="space-y-1">
+                      <p class="font-medium">{{ address.first_name }} {{ address.last_name }}</p>
+                      {% if address.company != blank %}<p>{{ address.company }}</p>{% endif %}
+                      {% if address.street != blank %}<p>{{ address.street }}</p>{% endif %}
+                      <p>{{ address.city }}{% if address.province_code != blank %}, {{ address.province_code }}{% endif %}</p>
+                      <p>{{ address.country }} {{ address.zip }}</p>
+                      {% if address.phone != blank %}<p>{{ address.phone }}</p>{% endif %}
+                    </div>
+                  {% else %}
+                    <div class="py-8 text-center">
+                      <p class="text-gray-500">You haven't added any shipping addresses yet.</p>
+                      <a href="/account/addresses" class="hover:bg-blue-700 inline-block px-6 py-2 mt-4 text-white bg-blue-600 rounded-lg">Add Address</a>
+                    </div>
+                  {% endif %}
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="data-row w-full" id="b">
-            <div class="data-wrap w-full">
+          <div id="orders" class="tab-content">
+            <div class="max-w-4xl">
               {% render 'account-orders' %}
             </div>
           </div>
 
-        <div class="data-row" id="e">
-          <div class="data-wrap">
+          <div id="loyalty" class="tab-content">
             {% render 'account-rewards' %}
           </div>
-        </div>
 
-        <div class="data-row" id="f">
-          <div class="data-wrap with-border">
+          <div id="password" class="tab-content">
             {% render 'account-change-password' %}
           </div>
-        </div>
         </div>
       </div>
     </div>
   </div>
 </section>
 
+<style>
+  .nav-item {
+    @apply relative;
+  }
+
+  .nav-link {
+    @apply flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-colors;
+  }
+
+  .nav-link.active {
+    @apply text-blue-600 bg-blue-50 font-medium;
+  }
+
+  .nav-link i {
+    @apply w-5 h-5 flex items-center justify-center;
+  }
+
+  .tab-content {
+    @apply hidden;
+  }
+
+  .tab-content.active {
+    @apply block;
+  }
+
+  /* Animations */
+  .tab-content {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>
+
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const accountData = document.querySelector('.account-data'); // Initialize once at the top
+  document.addEventListener("DOMContentLoaded", function() {
+    const tabContents = document.querySelectorAll('.tab-content');
+    const navLinks = document.querySelectorAll('.nav-link');
+    const mobileDropdown = document.getElementById('mobile-dropdown');
 
-    if (!accountData) {
-      console.error("accountData element is not found");
-      return;
-    }
+    function setActiveTab(tabId) {
+      // Hide all tab contents
+      tabContents.forEach(content => content.classList.remove('active'));
 
-    function changeContent() {
-      let selectedTab = document.querySelector('#mobile-dropdown').value;
-      let tabLink = document.querySelector(`.tabs .tab a[href="${selectedTab}"]`);
-      if (tabLink) {
-        tabLink.click();
+      // Remove active class from all nav links
+      navLinks.forEach(link => link.classList.remove('active'));
+
+      // Show selected tab content
+      const selectedTab = document.querySelector(tabId);
+      if (selectedTab) {
+        selectedTab.classList.add('active');
+      }
+
+      // Add active class to selected nav link
+      const selectedLink = document.querySelector(`a[href="${tabId}"]`);
+      if (selectedLink) {
+        selectedLink.classList.add('active');
       }
     }
 
-    function setActiveTab(targetLink) {
-      const tabs = document.querySelector('#tabs');
-      const tabLinks = Array.from(tabs.querySelectorAll('.tabs .tab a'));
-      const allTabPanes = Array.from(tabs.querySelectorAll('.account-data .data-row'));
-
-      const href = (targetLink && targetLink.getAttribute('href')) ? targetLink.getAttribute('href').substr(1) : null;
-      const tabPane = href ? document.getElementById(href) : null;
-
-      allTabPanes.forEach(pane => {
-        pane.classList.remove("active");
-        pane.style.pointerEvents = "none";
-      });
-
-      tabLinks.forEach(link => link.parentElement.classList.remove("active"));
-
-      if (tabPane && accountData) { // Check if accountData is available
-        tabPane.classList.add("active");
-        tabPane.style.pointerEvents = "auto";
-        const tabPaneWrap = tabPane.querySelector('.data-wrap');
-        accountData.style.height = `${tabPaneWrap.offsetHeight}px`;
-      }
-
-      targetLink.parentElement.classList.add("active");
-    }
-
-    const tabs = document.querySelector('#tabs');
-    const tabLinks = Array.from(tabs.querySelectorAll('.tabs .tab a'));
-
-    if (tabLinks.length > 0) {
-      setActiveTab(tabLinks[0]);
-    }
-
-    tabLinks.forEach(link => {
-      link.addEventListener('click', function (e) {
-        e.preventDefault();
-        setActiveTab(e.target);
-      });
-    });
-
-    const allTabPanes = Array.from(tabs.querySelectorAll('.account-data .data-row'));
-
-    allTabPanes.forEach(pane => {
-      pane.addEventListener('transitionend', function () {
-        const activeTabPane = tabs.querySelector('.account-data .data-row.active');
-        if (activeTabPane) {
-          accountData.style.height = `${activeTabPane.clientHeight}px`;
+    // Handle desktop navigation clicks
+    navLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        const href = e.currentTarget.getAttribute('href');
+        if (href.startsWith('#')) {
+          e.preventDefault();
+          setActiveTab(href);
         }
       });
     });
 
-    const mobileDropdown = document.querySelector('#mobile-dropdown');
+    // Handle mobile dropdown changes
     mobileDropdown.addEventListener('change', function() {
-      if (this.value.charAt(0) != '#') {
-        window.location.href = this.value;
-        return;
-      }
-      else {
-        changeContent()
+      const value = this.value;
+      if (!value.startsWith('#')) {
+        window.location.href = value;
+      } else {
+        setActiveTab(value);
       }
     });
+
+    // Set initial active tab
+    const initialTab = window.location.hash || '#profile';
+    setActiveTab(initialTab);
   });
 </script>
 
