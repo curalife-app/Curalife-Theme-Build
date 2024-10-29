@@ -144,107 +144,6 @@
   </div>
 </section>
 
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    // Cache DOM elements
-    const elements = {
-      accountData: document.querySelector('.account-data'),
-      tabs: document.querySelector('#tabs'),
-      mobileDropdown: document.querySelector('#mobile-dropdown')
-    };
-
-    // Early return if required elements are missing
-    if (!elements.accountData || !elements.tabs || !elements.mobileDropdown) {
-      console.error("Required elements not found");
-      return;
-    }
-
-    // Cache tab-related elements
-    const tabElements = {
-      links: [...elements.tabs.querySelectorAll('.tabs .tab a')],
-      panes: [...elements.tabs.querySelectorAll('.account-data .data-row')]
-    };
-
-    // Helper functions
-    const updateTabPane = (tabPane) => {
-      if (!tabPane) return;
-
-      const tabPaneWrap = tabPane.querySelector('.data-wrap');
-      if (tabPaneWrap) {
-        elements.accountData.style.height = `${tabPaneWrap.offsetHeight}px`;
-      }
-    };
-
-    const resetTabs = () => {
-      tabElements.panes.forEach(pane => {
-        pane.classList.remove("active");
-        pane.style.pointerEvents = "none";
-      });
-      tabElements.links.forEach(link =>
-        link.parentElement.classList.remove("active")
-      );
-    };
-
-    const setActiveTab = (targetLink) => {
-      if (!targetLink) return;
-
-      resetTabs();
-
-      const href = targetLink.getAttribute('href')?.substr(1);
-      const tabPane = href ? document.getElementById(href) : null;
-
-      if (tabPane) {
-        tabPane.classList.add("active");
-        tabPane.style.pointerEvents = "auto";
-        updateTabPane(tabPane);
-      }
-
-      targetLink.parentElement.classList.add("active");
-    };
-
-    // Event handlers
-    const handleTabClick = (e) => {
-      e.preventDefault();
-      setActiveTab(e.target);
-    };
-
-    const handleTransitionEnd = () => {
-      const activePane = elements.tabs.querySelector('.data-row.active');
-      if (activePane) {
-        elements.accountData.style.height = `${activePane.clientHeight}px`;
-      }
-    };
-
-    const handleMobileDropdown = (e) => {
-      const value = e.target.value;
-      if (value.charAt(0) !== '#') {
-        window.location.href = value;
-        return;
-      }
-
-      const tabLink = elements.tabs.querySelector(`.tabs .tab a[href="${value}"]`);
-      if (tabLink) {
-        setActiveTab(tabLink);
-      }
-    };
-
-    // Initialize and attach event listeners
-    if (tabElements.links.length) {
-      setActiveTab(tabElements.links[0]);
-    }
-
-    tabElements.links.forEach(link =>
-      link.addEventListener('click', handleTabClick)
-    );
-
-    tabElements.panes.forEach(pane =>
-      pane.addEventListener('transitionend', handleTransitionEnd)
-    );
-
-    elements.mobileDropdown.addEventListener('change', handleMobileDropdown);
-  });
-</script>
-
 <style>
   main {
     background: var(--beige);
@@ -296,7 +195,7 @@
   }
 
   .account-menu {
-    width: 400px;
+    width: 300px;
     border-radius: 10px;
   }
 
@@ -550,6 +449,106 @@
   }
 </style>
 
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // Cache DOM elements
+    const elements = {
+      accountData: document.querySelector('.account-data'),
+      tabs: document.querySelector('#tabs'),
+      mobileDropdown: document.querySelector('#mobile-dropdown')
+    };
+
+    // Early return if required elements are missing
+    if (!elements.accountData || !elements.tabs || !elements.mobileDropdown) {
+      console.error("Required elements not found");
+      return;
+    }
+
+    // Cache tab-related elements
+    const tabElements = {
+      links: [...elements.tabs.querySelectorAll('.tabs .tab a')],
+      panes: [...elements.tabs.querySelectorAll('.account-data .data-row')]
+    };
+
+    // Helper functions
+    const updateTabPane = (tabPane) => {
+      if (!tabPane) return;
+
+      const tabPaneWrap = tabPane.querySelector('.data-wrap');
+      if (tabPaneWrap) {
+        elements.accountData.style.height = `${tabPaneWrap.offsetHeight}px`;
+      }
+    };
+
+    const resetTabs = () => {
+      tabElements.panes.forEach(pane => {
+        pane.classList.remove("active");
+        pane.style.pointerEvents = "none";
+      });
+      tabElements.links.forEach(link =>
+        link.parentElement.classList.remove("active")
+      );
+    };
+
+    const setActiveTab = (targetLink) => {
+      if (!targetLink) return;
+
+      resetTabs();
+
+      const href = targetLink.getAttribute('href')?.substr(1);
+      const tabPane = href ? document.getElementById(href) : null;
+
+      if (tabPane) {
+        tabPane.classList.add("active");
+        tabPane.style.pointerEvents = "auto";
+        updateTabPane(tabPane);
+      }
+
+      targetLink.parentElement.classList.add("active");
+    };
+
+    // Event handlers
+    const handleTabClick = (e) => {
+      e.preventDefault();
+      setActiveTab(e.target);
+    };
+
+    const handleTransitionEnd = () => {
+      const activePane = elements.tabs.querySelector('.data-row.active');
+      if (activePane) {
+        elements.accountData.style.height = `${activePane.clientHeight}px`;
+      }
+    };
+
+    const handleMobileDropdown = (e) => {
+      const value = e.target.value;
+      if (value.charAt(0) !== '#') {
+        window.location.href = value;
+        return;
+      }
+
+      const tabLink = elements.tabs.querySelector(`.tabs .tab a[href="${value}"]`);
+      if (tabLink) {
+        setActiveTab(tabLink);
+      }
+    };
+
+    // Initialize and attach event listeners
+    if (tabElements.links.length) {
+      setActiveTab(tabElements.links[0]);
+    }
+
+    tabElements.links.forEach(link =>
+      link.addEventListener('click', handleTabClick)
+    );
+
+    tabElements.panes.forEach(pane =>
+      pane.addEventListener('transitionend', handleTransitionEnd)
+    );
+
+    elements.mobileDropdown.addEventListener('change', handleMobileDropdown);
+  });
+</script>
 
 {% schema %}
 {
