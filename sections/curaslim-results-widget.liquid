@@ -63,6 +63,20 @@
     };
 
     function createUsageSection(period, data) {
+        // Create placeholder div for the image
+        const imagePlaceholder = data.image ? `
+            <div class="image-container">
+                <div class="image-placeholder"></div>
+                <img
+                    class="lazy-image"
+                    data-src="${data.image}"
+                    src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+                    alt="Result illustration"
+                    loading="lazy"
+                />
+            </div>
+        ` : '';
+
         return `
             <div class="usage-section">
                 <div class="months-usage">
@@ -70,9 +84,29 @@
                     <div>${period === '1' ? 'month usage' : 'months usage'}</div>
                 </div>
                 <div class="description">${data.text}</div>
-                ${data.image ? `<div class="image" style="background-image: url('${data.image}')"></div>` : ''}
+                ${imagePlaceholder}
             </div>
         `;
+    }
+
+    function observeImages() {
+        const imageObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    img.src = img.dataset.src;
+                    img.classList.add('loaded');
+                    observer.unobserve(img);
+                }
+            });
+        }, {
+            rootMargin: '50px 0px',
+            threshold: 0.1
+        });
+
+        document.querySelectorAll('.lazy-image').forEach(img => {
+            imageObserver.observe(img);
+        });
     }
 
     function updateContent(tab) {
@@ -87,6 +121,9 @@
         }
 
         contentDiv.innerHTML = html;
+
+        // Initialize lazy loading for new images
+        observeImages();
 
         // Add visibility class with a slight delay for animation
         setTimeout(() => {
@@ -108,6 +145,7 @@
         });
     });
 
+    // Initialize the first tab
     updateContent('weight-loss');
 </script>
 
@@ -250,6 +288,50 @@
         background-repeat: no-repeat;
         background-position: center;
     }
+
+		.results-widget .image-container {
+    width: 180px;
+    height: 100px;
+    position: relative;
+}
+
+.results-widget .image-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #f0f0f0;
+    animation: pulse 1.5s infinite;
+}
+
+.results-widget .lazy-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.results-widget .lazy-image.loaded {
+    opacity: 1;
+}
+
+@keyframes pulse {
+    0% {
+        background-color: #f0f0f0;
+    }
+    50% {
+        background-color: #e0e0e0;
+    }
+    100% {
+        background-color: #f0f0f0;
+    }
+}
+
 
     /* Responsive Styles */
     @media screen and (max-width: 768px) {
