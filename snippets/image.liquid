@@ -229,11 +229,7 @@ This Liquid snippet creates a responsive image component with the following feat
   }
 </script>
 
-{%- if link -%}
-<a href="{{ link }}" class="cursor-pointer">
-{%- endif -%}
-
-<picture class="contents">
+<picture>
   <source
     media="(max-width: {{ mobile_breakpoint }}px)"
     srcset="
@@ -279,8 +275,9 @@ This Liquid snippet creates a responsive image component with the following feat
     alt="{{ alt | escape }}"
     width="{{ desktop_image.width }}"
     height="{{ desktop_image.height }}"
-    class="object-cover opacity-0 m-0 transition-opacity duration-300 ease-in-out {% if class %}{{ class }}{% endif %}"
+    class="object-cover opacity-0 m-0 transition-opacity duration-300 ease-in-out {% if link %}cursor-pointer{% endif %} {% if class %}{{ class }}{% endif %}"
     onload="this.classList.add('opacity-100');"
+    onclick="{% if link %}window.location.href='{{ link }}'{% endif %}"
     onerror="window.logImageError('load_errors', {
       imageId: '{{ desktop_image.id }}',
       elementId: '{{ unique_id }}',
@@ -294,9 +291,8 @@ This Liquid snippet creates a responsive image component with the following feat
     {%- if mobile_retina_image contains '/files/' -%}
       data-mobile-retina-url="{{ mobile_retina_url }}"
     {%- endif -%}
+    {%- if link -%}
+      data-href="{{ link }}"
+    {%- endif -%}
   >
 </picture>
-
-{%- if link -%}
-</a>
-{%- endif -%}
