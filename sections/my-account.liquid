@@ -11,525 +11,339 @@
   {% assign show_curalifer_tab = true %}
 {% endif %}
 
-<section class="account-page">
-  <div class="container">
-    <h1 class="hidden text-center mb-[30px]">My Account</h1>
-    <div id="tabs">
+<section class="account-page py-12">
+  <div class="container px-4 mx-auto">
+    <h1 class="mb-8 text-3xl font-bold text-center">My Account</h1>
+
+    <div id="tabs" class="account-dashboard">
       <div class="account-content">
-        <div class="account-menu desktop">
-          <div class="menu-list">
-            <div class="tabs">
+        <!-- Desktop Navigation -->
+        <nav class="account-menu desktop" aria-label="Account Navigation">
+          <div class="menu-list p-4 bg-white rounded-lg shadow-lg">
+            <div class="tabs space-y-2">
               {% if show_curalifer_tab %}
-                <div class="tab"><a href="#curalifer"><span><i class="fa-thin fa-user-crown"></i></span>Curalifer</a></div>
+                <div class="tab-item">
+                  <a href="#curalifer" class="tab-link" role="tab">
+                    <i class="fa-thin fa-user-crown" aria-hidden="true"></i>
+                    <span>Curalifer</span>
+                  </a>
+                </div>
               {% endif %}
-              <div class="tab"><a href="#a" class="tab"><span><i class="fa-thin fa-user"></i></span>My Profile</a></div>
-              <div class="tab"><a href="#b" class="tab"><span><i class="fa-thin fa-credit-card"></i></span>Orders</a></div>
-              {% comment %} <li><a href="#c"><span class="icon-payment"></span>Manage Payments</a></li> {% endcomment %}
-              {% comment %} <li style="display:none;"><a href="#d"><span class="icon-refer-friend"></span>Refer a Friend</a></li> {% endcomment %}
-              <div class="tab"><a href="#e" class="tab"><span><i class="fa-thin fa-people-group"></i></span>Loyalty</a></div>
-              <div class="tab"><a href="#f" class="tab"><span><i class="fa-thin fa-key"></i></span>Change password</a></div>
-              <a id="subscription-tab" href="{{ manage_subscription_url }}"><div class="tab"><span class="min-w-[25px]"><i class="fa-thin fa-calendar"></i></span>Subscriptions</div></a>
-              <a class="logout lgoutlnk" href="/account/logout/"><div class="tab"><span class="min-w-[25px]"><i class="fa-thin fa-right-from-bracket"></i></span>Logout</div></a>
-            </div>
-          </div>
-        </div>
 
-        <div class="account-menu-mobile-dropdown mobile w-full">
-          <select id="mobile-dropdown" onchange="changeContent()">
-            {% if show_curalifer_tab %}
-              <option value="#curalifer"><i class="fa-thin fa-user-crown"></i>Curalifer</option>
-            {% endif %}
-            <option value="#a"><i class="fa-thin fa-user"></i>My Profile</option>
-            <option value="#b"><i class="fa-thin fa-credit-card"></i>Orders</option>
-            <option value="#e"><i class="fa-thin fa-people-group"></i>Loyalty</option>
-            <option value="#f"><i class="fa-thin fa-key"></i>Change password</option>
-            <option value="{{ manage_subscription_url }}"><i class="fa-thin fa-calendar"></i>Subscriptions</option>
-            <option value="/account/logout/"><i class="fa-thin fa-right-from-bracket"></i>Logout</option>
-          </select>
-        </div>
-
-        <div class="account-data">
-          {% if show_curalifer_tab %}
-            <div class="data-row" id="curalifer">
-              <div class="titles w-full">
-                <h2>My Curalife</h2>
-                <p>Your exclusive access to our recipies and workouts to help you live a healthier life.</p>
-              </div>
-
-              <div class="data-wrap with-border p-[10px]">
-                <a href="/blogs/recipes">
-                  <img src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/curalifer_recipies.png" alt="Curalife Recipes">
-                  <h5 class="data-title m-0">Recipes</h5>
+              <div class="tab-item">
+                <a href="#profile" class="tab-link" role="tab">
+                  <i class="fa-thin fa-user" aria-hidden="true"></i>
+                  <span>My Profile</span>
                 </a>
               </div>
 
-              <div class="data-wrap with-border p-[10px]">
-                <a href="/blogs/workouts">
-                  <img src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/curalifer_exercise.png" alt="Curalife Workouts">
-                  <h5 class="data-title m-0">Workouts</h5>
+              <div class="tab-item">
+                <a href="#orders" class="tab-link" role="tab">
+                  <i class="fa-thin fa-credit-card" aria-hidden="true"></i>
+                  <span>Orders</span>
+                </a>
+              </div>
+
+              <div class="tab-item">
+                <a href="#loyalty" class="tab-link" role="tab">
+                  <i class="fa-thin fa-people-group" aria-hidden="true"></i>
+                  <span>Loyalty</span>
+                </a>
+              </div>
+
+              <div class="tab-item">
+                <a href="#password" class="tab-link" role="tab">
+                  <i class="fa-thin fa-key" aria-hidden="true"></i>
+                  <span>Change Password</span>
+                </a>
+              </div>
+
+              <a href="{{ manage_subscription_url }}" class="tab-link">
+                <i class="fa-thin fa-calendar" aria-hidden="true"></i>
+                <span>Subscriptions</span>
+              </a>
+
+              <a href="/account/logout" class="tab-link text-red-600">
+                <i class="fa-thin fa-right-from-bracket" aria-hidden="true"></i>
+                <span>Logout</span>
+              </a>
+            </div>
+          </div>
+        </nav>
+
+        <!-- Mobile Navigation -->
+        <div class="account-menu-mobile md:hidden w-full mb-6">
+          <select id="mobile-dropdown" class="w-full p-4 bg-white border border-gray-200 rounded-lg shadow-sm" aria-label="Navigation Menu">
+            {% if show_curalifer_tab %}
+              <option value="#curalifer">Curalifer</option>
+            {% endif %}
+            <option value="#profile">My Profile</option>
+            <option value="#orders">Orders</option>
+            <option value="#loyalty">Loyalty</option>
+            <option value="#password">Change Password</option>
+            <option value="{{ manage_subscription_url }}">Subscriptions</option>
+            <option value="/account/logout">Logout</option>
+          </select>
+        </div>
+
+        <!-- Content Panels -->
+        <div class="account-data flex-1">
+          {% if show_curalifer_tab %}
+            <div id="curalifer" class="tab-panel" role="tabpanel">
+              <div class="panel-header">
+                <h2 class="mb-2 text-2xl font-bold">My Curalife</h2>
+                <p class="mb-6 text-gray-600">Your exclusive access to our recipes and workouts to help you live a healthier life.</p>
+              </div>
+
+              <div class="md:grid-cols-2 grid gap-6">
+                <a href="/blogs/recipes" class="resource-card">
+                  <div class="hover:shadow-lg p-6 transition-shadow bg-white rounded-lg">
+                    <img src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/curalifer_recipies.png" alt="" class="object-cover w-full h-48 mb-4 rounded">
+                    <h3 class="text-xl font-bold text-center">Recipes</h3>
+                  </div>
+                </a>
+
+                <a href="/blogs/workouts" class="resource-card">
+                  <div class="hover:shadow-lg p-6 transition-shadow bg-white rounded-lg">
+                    <img src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/curalifer_exercise.png" alt="" class="object-cover w-full h-48 mb-4 rounded">
+                    <h3 class="text-xl font-bold text-center">Workouts</h3>
+                  </div>
                 </a>
               </div>
             </div>
           {% endif %}
 
-          <div class="data-row" id="a">
-            <div class="data-wrap with-border">
-              <h5 class="data-title m-0">Contact Information</h5>
-
-              <div class="data-content">
-                <div class="contact-info">
-                  <ul>
-                    <li><p>First Name<span>{{ customer.first_name }}</span></p></li>
-                    <li><p>Last Name<span>{{ customer.last_name }}</span></p></li>
-                    <li><p>Email<span>{{ customer.email }}</span></p></li>
-                  </ul>
+          <div id="profile" class="tab-panel" role="tabpanel">
+            <div class="md:grid-cols-2 grid gap-6">
+              <!-- Contact Information -->
+              <div class="p-6 bg-white rounded-lg shadow-lg">
+                <div class="flex items-center justify-between mb-6">
+                  <h3 class="text-xl font-bold">Contact Information</h3>
+                  <a href="/account/addresses" class="btn-secondary">Edit</a>
                 </div>
 
-                <div class="data-btn">
-                  <a class="main-btn blank" href="/account/addresses">Edit</a>
-                </div>
-              </div>
-            </div>
-
-            <div class="data-wrap with-border">
-              <h5 class="data-title m-0">Shipping Address</h5>
-
-              <div class="data-content">
-                <div class="shipping-addresses">
-                  {% assign address = customer.default_address %}
-                  {% if address %}
-                    <div class="view_address">
-                      <p>{{ address.first_name }} {{address.last_name }}
-                      {% if address.company != blank %}<br />{{ address.company }}{% endif %}
-                      {% if address.street != blank %}<br />{{ address.street }}{% endif %}
-                      <br />{{ address.city }} {% if address.province_code != blank %}, {{ address.province_code }}{% endif %}
-                      <br />{{ address.country }} {{ address.zip }}
-                      {% if address.phone != blank %}<br />{{ address.phone }}</p>{% endif %}
-                    </div>
-                  {% else %}
-
-                  <div class="empty-text">
-                    <p><span class="icon-shipping"></span>You don't have a shipping address yet.</p>
+                <dl class="space-y-4">
+                  <div class="flex justify-between">
+                    <dt class="text-gray-600">First Name</dt>
+                    <dd class="font-semibold">{{ customer.first_name }}</dd>
                   </div>
-                  {% endif %}
+                  <div class="flex justify-between">
+                    <dt class="text-gray-600">Last Name</dt>
+                    <dd class="font-semibold">{{ customer.last_name }}</dd>
+                  </div>
+                  <div class="flex justify-between">
+                    <dt class="text-gray-600">Email</dt>
+                    <dd class="font-semibold">{{ customer.email }}</dd>
+                  </div>
+                </dl>
+              </div>
+
+              <!-- Shipping Address -->
+              <div class="p-6 bg-white rounded-lg shadow-lg">
+                <div class="flex items-center justify-between mb-6">
+                  <h3 class="text-xl font-bold">Shipping Address</h3>
+                  <a href="/account/addresses" class="btn-secondary">Manage</a>
                 </div>
 
-                <div class="data-btn">
-                  <a class="main-btn blank" href="/account/addresses">add address</a>
-                </div>
+                {% assign address = customer.default_address %}
+                {% if address %}
+                  <address class="not-italic">
+                    <p class="mb-1">{{ address.first_name }} {{ address.last_name }}</p>
+                    {% if address.company != blank %}<p class="mb-1">{{ address.company }}</p>{% endif %}
+                    <p class="mb-1">{{ address.street }}</p>
+                    <p class="mb-1">{{ address.city }}{% if address.province_code != blank %}, {{ address.province_code }}{% endif %}</p>
+                    <p class="mb-1">{{ address.country }} {{ address.zip }}</p>
+                    {% if address.phone != blank %}<p class="mb-1">{{ address.phone }}</p>{% endif %}
+                  </address>
+                {% else %}
+                  <div class="text-center text-gray-500">
+                    <i class="fa-thin fa-house-circle-xmark mb-2 text-4xl"></i>
+                    <p>No shipping address added yet.</p>
+                  </div>
+                {% endif %}
               </div>
             </div>
           </div>
 
-          <div class="data-row w-full" id="b">
-            <div class="data-wrap w-full">
+          <div id="orders" class="tab-panel w-full" role="tabpanel">
+            <div class="p-6 bg-white rounded-lg shadow-lg">
               {% render 'account-orders' %}
             </div>
           </div>
 
-        <div class="data-row" id="e">
-          <div class="data-wrap">
-            {% render 'account-rewards' %}
+          <div id="loyalty" class="tab-panel" role="tabpanel">
+            <div class="p-6 bg-white rounded-lg shadow-lg">
+              {% render 'account-rewards' %}
+            </div>
           </div>
-        </div>
 
-        <div class="data-row" id="f">
-          <div class="data-wrap with-border">
-            {% render 'account-change-password' %}
+          <div id="password" class="tab-panel" role="tabpanel">
+            <div class="p-6 bg-white rounded-lg shadow-lg">
+              {% render 'account-change-password' %}
+            </div>
           </div>
-        </div>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const accountData = document.querySelector('.account-data'); // Initialize once at the top
-
-    if (!accountData) {
-      console.error("accountData element is not found");
-      return;
-    }
-
-    function changeContent() {
-      let selectedTab = document.querySelector('#mobile-dropdown').value;
-      let tabLink = document.querySelector(`.tabs .tab a[href="${selectedTab}"]`);
-      if (tabLink) {
-        tabLink.click();
-      }
-    }
-
-    function setActiveTab(targetLink) {
-      const tabs = document.querySelector('#tabs');
-      const tabLinks = Array.from(tabs.querySelectorAll('.tabs .tab a'));
-      const allTabPanes = Array.from(tabs.querySelectorAll('.account-data .data-row'));
-
-      const href = (targetLink && targetLink.getAttribute('href')) ? targetLink.getAttribute('href').substr(1) : null;
-      const tabPane = href ? document.getElementById(href) : null;
-
-      allTabPanes.forEach(pane => {
-        pane.classList.remove("active");
-        pane.style.pointerEvents = "none";
-      });
-
-      tabLinks.forEach(link => link.parentElement.classList.remove("active"));
-
-      if (tabPane && accountData) { // Check if accountData is available
-        tabPane.classList.add("active");
-        tabPane.style.pointerEvents = "auto";
-        const tabPaneWrap = tabPane.querySelector('.data-wrap');
-        accountData.style.height = `${tabPaneWrap.offsetHeight}px`;
-      }
-
-      targetLink.parentElement.classList.add("active");
-    }
-
-    const tabs = document.querySelector('#tabs');
-    const tabLinks = Array.from(tabs.querySelectorAll('.tabs .tab a'));
-
-    if (tabLinks.length > 0) {
-      setActiveTab(tabLinks[0]);
-    }
-
-    tabLinks.forEach(link => {
-      link.addEventListener('click', function (e) {
-        e.preventDefault();
-        setActiveTab(e.target);
-      });
-    });
-
-    const allTabPanes = Array.from(tabs.querySelectorAll('.account-data .data-row'));
-
-    allTabPanes.forEach(pane => {
-      pane.addEventListener('transitionend', function () {
-        const activeTabPane = tabs.querySelector('.account-data .data-row.active');
-        if (activeTabPane) {
-          accountData.style.height = `${activeTabPane.clientHeight}px`;
-        }
-      });
-    });
-
-    const mobileDropdown = document.querySelector('#mobile-dropdown');
-    mobileDropdown.addEventListener('change', function() {
-      if (this.value.charAt(0) != '#') {
-        window.location.href = this.value;
-        return;
-      }
-      else {
-        changeContent()
-      }
-    });
-  });
-</script>
-
 <style>
-  main {
-    background: var(--beige);
+  :root {
+    --primary-color: #0066CC;
+    --primary-hover: #0052a3;
+    --danger-color: #DC2626;
+    --success-color: #059669;
   }
 
-  section:has(.rc-login) {
-    padding: 0;
-  }
-  .rc-login a {
-    display: inline-flex;
-    padding: 10px 20px;
-    background: var(--blue);
-    color: white;
-    font-weight: bold;
-    border-radius: 5px;
-  }
-</style>
-
-<style>
-  .account-page li:before {
-    display: none;
-  }
-
-  .account-data {
-    position: relative;
-  }
-
-  #mobile-dropdown {
-    width: 100%;
-    background: white;
-    padding: 10px;
-    font-weight: bold;
-    box-shadow: 1px 4px 18px -16px rgba(0,0,0,0.75);
-  }
-
-  .data-row {
-    position: absolute;
-    opacity: 0;
-    transition: opacity 0.5s ease;
-  }
-
-  .data-row.active {
-    opacity: 1;
+  .account-dashboard {
+    @apply max-w-7xl mx-auto;
   }
 
   .account-content {
-    display: flex;
-    gap: 30px;
+    @apply flex flex-col md:flex-row gap-8;
   }
 
-  .account-menu {
-    width: 400px;
-    border-radius: 10px;
+  .account-menu.desktop {
+    @apply hidden md:block w-full md:w-80 shrink-0;
   }
 
-  .account-menu .menu-list .tabs {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+  .tab-link {
+    @apply flex items-center gap-3 w-full p-4 rounded-lg transition-colors;
+    @apply hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary;
   }
 
-  .account-menu .menu-list .tabs .tab.active,
-  .account-menu .menu-list .tabs .tab:hover {
-    box-shadow: unset;
+  .tab-link.active {
+    @apply bg-primary text-white hover:bg-primary-hover;
   }
 
-  .account-data {
-    width: -webkit-fill-available;
+  .tab-panel {
+    @apply opacity-0 pointer-events-none absolute w-full transition-opacity duration-300;
   }
 
-  .account-data .data-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
+  .tab-panel.active {
+    @apply opacity-100 pointer-events-auto relative;
   }
 
-  .account-data .data-row .data-wrap {
-    display: flex;
-    flex-direction: column;
-    min-width: 390px;
-    border-radius: 10px;
-    background: white;
-    box-shadow: 1px 4px 18px -16px rgba(0,0,0,0.75);
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-6 py-3 rounded-lg;
+    @apply bg-primary text-white font-semibold transition-colors;
+    @apply hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
   }
 
-  .account-data .data-title {
-    padding: 16px 15px;
-    text-align: center;
-    font-weight: bold;
-    font-size: 20px;
+  .btn-secondary {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg;
+    @apply border border-gray-300 bg-white text-gray-700 font-semibold transition-colors;
+    @apply hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
   }
 
-  .account-data .data-content {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    flex: 1;
-    padding: 30px;
+  .resource-card {
+    @apply block transition-transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-primary;
   }
 
-  .contact-info ul li:first-child {
-    padding-top: 0;
-  }
-  .contact-info ul li {
-    display: block;
-    padding: 15px 0;
-  }
-
-  .account-page ul li {
-    padding-left: unset;
-  }
-
-  .account-page ul li::before {
-    content: '';
-  }
-
-  .main-btn {
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: #fff;
-    background: var(--blue);
-    border-radius: 2px;
-    min-height: 50px;
-    width: -webkit-fill-available;
-  }
-
-  .account-menu .menu-list .tabs .tab {
-    padding-left: unset;
-  }
-
-  .account-menu .menu-list .tabs .tab a span {
-    display: flex;
-    min-width: 25px;
-  }
-
-  .account-menu .menu-list .tabs .tab a,
-  .account-menu .menu-list .tabs .tab:last-child{
-    display: flex;
-    align-items: center;
-    color: inherit;
-    transition: color var(--transition);
-    gap: 10px;
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 1px 4px 18px -16px rgba(0,0,0,0.75);
-  }
-
-  .contact-info ul li p span {
-    display: block;
-    padding-left: 15px;
-    font-weight: 700;
-    font-size: 16px;
-    text-transform: uppercase;
-    color: #333;
-  }
-
-  .contact-info ul li {
-    display: block;
-    padding: 15px 0;
-    min-width: 300px;
-    border-bottom: 1px solid #efefef;
-  }
-
-  .contact-info ul li:first-child {
-    padding-top: 0;
-  }
-
-  .contact-info ul li p {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    margin: 0;
-    font-weight: 400;
-    font-size: 14px;
-    line-height: 1.29;
-    color: var(--dark);
-  }
-
-  .account-data .form-text {
-    text-align: center;
-  }
-
-  .form-fields {
-    display: flex;
-    flex-wrap: wrap;
-  }
-
-  .form-fields label.full-size {
-    width: 100%;
-  }
-
-  .form-fields label {
-    display: block;
-    margin: 10px;
-    position: relative;
-  }
-
-  .form-fields label input {
-    width: 100%;
-    padding: 17px 21px;
-    font-weight: 400;
-    font-size: 16px;
-    line-height: 1.5;
-    color: #737373;
-    background: #fff;
-    border: 1px solid #ebebeb;
-    box-sizing: border-box;
-    border-radius: 2px;
-  }
-
-  .form-wrap {
-    max-width: 600px;
-    margin: auto;
-    text-align: center;
-  }
-
-  @media screen and (max-width: 1200px){
-    .account-menu .menu-list .tabs .tab {
-      margin: 5px 0;
-      padding-left: 16px;
-      font-size: 14px;
-    }
-
-    .account-data {
-      width: calc(100% - 230px);
-      padding-left: 10px;
-    }
-
-    .account-data .data-title {
-      padding: 13px 15px;
-    }
-    .account-data .data-title h3 {
-      font-size: 14px;
-    }
-    .account-data .data-content {
-      padding: 22px 19px;
-    }
-    .contact-info ul li {
-      padding: 12px 0;
-    }
-
-    .contact-info ul li {
-      padding: 12px 0;
-    }
-  }
-
-  @media screen and (max-width: 768px) {
-    .account-menu {
-      width: 100%;
-    }
-
-    .account-menu .menu-list .tabs .tab {
-      margin: unset;
-      gap: 5px;
-      padding-left: 25px;
-      font-size: 16px;
-    }
-
-    .account-data {
-      width: 100%;
-      padding-left: 0;
-      margin-top: 18px;
-    }
-    .account-data .data-row .data-wrap {
-      min-width: -webkit-fill-available;
-      margin: unset;
-    }
-    .account-data .data-title {
-      padding: 16px 15px;
-    }
-    .account-data .data-title h3 {
-      font-size: 16px;
-    }
-    .account-data .data-content {
-      padding: 20px 12px;
-    }
-    .contact-info {
-      padding: 0 8px 14px;
-    }
-    .contact-info ul li:first-child {
-      padding-top: 12px;
-      border-top: 1px solid #efefef;
-    }
-
-    .contact-info ul li p span {
-      font-size: 16px;
-    }
-    .contact-info ul li:first-child {
-      padding-top: 12px;
-      border-top: 1px solid #efefef;
-    }
-    .contact-info ul li p {
-      font-size: 14px;
-    }
-
+  @media (max-width: 768px) {
     .account-content {
-      flex-wrap: wrap;
+      gap: 4;
     }
   }
 </style>
 
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const tabs = document.querySelector('#tabs');
+  const tabPanels = document.querySelectorAll('.tab-panel');
+  const tabLinks = document.querySelectorAll('.tab-link[role="tab"]');
+  const mobileDropdown = document.querySelector('#mobile-dropdown');
 
+  function activateTab(tabId) {
+    // Deactivate all tabs
+    tabLinks.forEach(link => {
+      link.classList.remove('active');
+      link.setAttribute('aria-selected', 'false');
+    });
+
+    tabPanels.forEach(panel => {
+      panel.classList.remove('active');
+    });
+
+    // Activate selected tab
+    const selectedTab = document.querySelector(`a[href="${tabId}"]`);
+    const selectedPanel = document.querySelector(tabId);
+
+    if (selectedTab && selectedPanel) {
+      selectedTab.classList.add('active');
+      selectedTab.setAttribute('aria-selected', 'true');
+      selectedPanel.classList.add('active');
+    }
+  }
+
+  // Handle click events
+  tabLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const tabId = link.getAttribute('href');
+      activateTab(tabId);
+
+      // Update mobile dropdown
+      if (mobileDropdown) {
+        mobileDropdown.value = tabId;
+      }
+    });
+  });
+
+  // Handle mobile dropdown change
+  if (mobileDropdown) {
+    mobileDropdown.addEventListener('change', function() {
+      const selectedValue = this.value;
+
+      if (selectedValue.startsWith('#')) {
+        activateTab(selectedValue);
+      } else {
+        window.location.href = selectedValue;
+      }
+    });
+  }
+
+  // Handle keyboard navigation
+  tabLinks.forEach(link => {
+    link.addEventListener('keydown', (e) => {
+      const currentTab = document.querySelector('.tab-link.active');
+      let nextTab;
+
+      switch(e.key) {
+        case 'ArrowRight':
+        case 'ArrowDown':
+          e.preventDefault();
+          nextTab = currentTab.parentElement.nextElementSibling?.querySelector('.tab-link') ||
+                   tabLinks[0];
+          nextTab.focus();
+          break;
+        case 'ArrowLeft':
+        case 'ArrowUp':
+          e.preventDefault();
+          nextTab = currentTab.parentElement.previousElementSibling?.querySelector('.tab-link') ||
+                   tabLinks[tabLinks.length - 1];
+          nextTab.focus();
+          break;
+        case 'Home':
+          e.preventDefault();
+          tabLinks[0].focus();
+          break;
+        case 'End':
+          e.preventDefault();
+          tabLinks[tabLinks.length - 1].focus();
+          break;
+      }
+    });
+  });
+
+  // Activate first tab by default
+  const firstTab = tabLinks[0]?.getAttribute('href');
+  if (firstTab) {
+    activateTab(firstTab);
+  }
+});
+</script>
 {% schema %}
 {
   "name": "My Account",
