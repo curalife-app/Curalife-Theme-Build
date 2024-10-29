@@ -1,1318 +1,296 @@
-{% if section.settings.display_on_pages != blank %}
-  {% assign isDisplayOnThisPage = false %}
-  {% assign displayOnPagesArray = section.settings.display_on_pages | split: ',' %}
+{%- comment -%}
+# Responsive Image Component Documentation
 
-  {% for currentPage in displayOnPagesArray %}
-    {% if currentPage == request.path %}
-      {% assign isDisplayOnThisPage = true %}
-    {% endif %}
-  {% endfor %}
+This Liquid snippet creates a responsive image component with the following features:
+- Responsive images with desktop/mobile variants
+- Retina image support
+- Lazy loading with priority options
+- Error logging and fallback handling
+- WebP format support
+- Configurable breakpoints and sizes
+- Link wrapper functionality
 
-  {% unless isDisplayOnThisPage %}
-    {% assign hideSection = true %}
-  {% endunless %}
-{% elsif shop.name == 'CuraLife Global' %}
-  {% if section.settings.is_hide_on_global %}
-    {% assign hideSection = true %}
-  {% elsif section.settings.section_additional_classes contains 'prime' or section.settings.section_additional_classes contains 'subscription' %}
-    {% assign hideSection = true %}
-  {% endif %}
-{% endif %}
+## Parameters
 
-{% unless hideSection %}
-  <section id="section-{{ section.id }}" class="items-collection {% if section.settings.is_decor_relative_full %}static{% endif %} {{ section.settings.section_additional_classes }} {% if section.settings.display_on_utm_parmeters != blank %}!hidden{% endif %}">
-    <div class="container main-container {% if section.settings.is_decor_relative_full %}static{% endif %}">
-      {% assign mainTitle = section.settings.main_title | default: section.settings.main_title_rich %}
-      {% if mainTitle != blank or section.settings.main_subtitle != blank %}
-        {% render 'title', section_id: section.id, title: mainTitle, title_tag: 'h2', subtitle: section.settings.main_subtitle, title_color: section.settings.title_color, span_color: section.settings.title_highlight_color, is_balance_text: true, padding_bottom: '0', padding_top: 0 %}
-      {% endif %}
+### Required Parameters
+- `image`: The main/desktop image object
+  - Type: Shopify Image object
+  - Usage: Primary image to display on desktop viewports
 
-      {% if section.settings.is_slider %}
-        <div class="swiper items !overflow-{{ section.settings.overflow }} z-10 {% if section.settings.is_dots or section.settings.is_scrollbar %}!pb-12{% endif %}" id="items-container-{{ section.id }}" {% if section.settings.animation %}data-aos="{{ section.settings.animation }}"{% endif %}>
-          <div class="swiper-wrapper">
-      {% else %}
-        <div class="items !overflow-{{ section.settings.overflow }} z-10 py-8 flex flex-wrap {% if section.settings.items_align == 'center' %}items-center{% else %}items-start{% endif %} {% if section.settings.collection_align == 'center' %}m-auto{% endif %} justify-center overflow-visible" id="items-container-{{ section.id }}" {% if section.settings.animation %}data-aos="{{ section.settings.animation }}"{% endif %}>
-      {% endif %}
+### Optional Parameters
+- `mobile_image`: Alternative image for mobile devices
+  - Type: Shopify Image object
+  - Default: Uses main `image`
 
-      {% for block in section.blocks %}
-        {% if shop.name == 'CuraLife Global' %}
-          {% assign imageLink = block.settings.image_global | default: block.settings.image %}
-          {% assign imageMobileLink = block.settings.image_mobile_global | default: block.settings.image_mobile %}
-          {% assign linkUrl = block.settings.link_url_global | default: block.settings.link_url %}
-        {% else %}
-          {% assign imageLink = block.settings.image %}
-          {% assign imageMobileLink = block.settings.image_mobile %}
-          {% assign linkUrl = block.settings.link_url %}
-        {% endif %}
+- `lazy`: Controls lazy loading behavior
+  - Type: Boolean
+  - Default: true
 
-        {% if linkUrl and section.settings.link_style == 'item' %}<a class="contents">{% endif %}
-        {% assign itemID = 'item-' | append: section.id | append: forloop.index %}
+- `priority`: Sets loading priority
+  - Type: Boolean
+  - Default: false
+  - Effect: When true, sets eager loading and high fetch priority
 
-        <div class="{% if section.settings.is_slider %}swiper-slide{% endif %} item relative !h-auto" id="{{ itemID }}">
-          <div class="item-content flex flex-col items-center justify-{% if section.settings.item_layout_mobile == 'row' %}start{% else %}center{% endif %} text-center gap-4 m-auto">
-            {% unless block.settings.is_image_background %}
-              <div class="img-wrapper flex items-center">
-                {% if imageLink != blank or imageMobileLink != blank %}
-                  {% render 'image',
-                    image: imageLink,
-                    mobile_image: imageMobileLink,
-                    lazy: lazyLoad,
-                    preload: false,
-                    alt: imageLink.alt,
-                    link: linkUrl,
-                    class: 'max-h-350px object-contain m-0'
-                  %}
-                {% elsif block.settings.icon != blank %}
-                  <i class="{{ block.settings.icon }}"></i>
-                {% endif %}
-              </div>
+- `mobile_breakpoint`: Viewport width to switch between mobile/desktop
+  - Type: Number
+  - Default: 768
+  - Unit: Pixels
 
-              {% if block.settings.title != blank or block.settings.description != blank or block.settings.link_title != blank %}
-                <div class="text-wrapper flex flex-col gap-2 {% if section.settings.item_layout_mobile == 'row' %}md:items-start md:w-[70vw]{% endif %}">
-                  {% if block.settings.title != blank %}<h3 class="title-tag text-wrap flex gap-1 w-fit justify-center items-center {% if block.settings.description != blank %}m-auto{% else %}!m-0{% endif %} {{ section.settings.title_tag }}">{{ block.settings.title }}</h3>{% endif %}
-                  {% if block.settings.description != blank %}<div class="description">{{ block.settings.description }}</div>{% endif %}
-                  {% if section.settings.link_style == 'a' %}
-                    <a class="underline" href="{{ linkUrl }}">{{ block.settings.link_title }}</a>
-                  {% elsif section.settings.link_style == 'button' %}
-                    <a class="w-max m-auto" href="{{ linkUrl }}"><button>{{ block.settings.link_title }}</button></a>
-                  {% endif %}
-                </div>
-              {% endif %}
-            {% endunless %}
-          </div>
-        </div>
+- `sizes`: Responsive sizes attribute
+  - Type: String
+  - Default: '(min-width: 1200px) 1200px, (min-width: 768px) 768px, 100vw'
 
-        {% if linkUrl and section.settings.link_style == 'item' %}</a>{% endif %}
+- `alt`: Image alt text
+  - Type: String
+  - Default: image.alt
 
+- `class`: Additional CSS classes
+  - Type: String
+  - Default: none
 
-        {% if block.settings.is_image_background %}
-          <style>
-            #{{ itemID }} {
-              background: url('{{ imageLink | image_url }}') no-repeat !important;
-              background-size: cover;
-              background-position: center;
-            }
+- `link`: URL for making the image clickable
+  - Type: String
+  - Default: none
+  - Effect: Wraps image in an anchor tag when provided
 
-            {% if imageMobileLink %}
-              @media screen and (max-width: 768px) {
-                #{{ itemID }} {
-                  background: url('{{ imageMobileLink | image_url }}') !important;
-                }
-              }
-            {% endif %}
-          </style>
+## Features
 
-        {% endif %}
-      {% endfor %}
-    </div>
+### Retina Support
+- Automatically detects and serves retina versions of images
+- Expects retina images with "-x2" suffix
+- Logs missing retina images for debugging
 
-      {% if section.settings.is_slider %}
-        <div class="swiper-navigations">
-          {% if section.settings.is_arrows %}
-            <div class="swiper-nav swiper-button-next" name="track:Slider Arrow - Next"></div>
-            <div class="swiper-nav swiper-button-prev" name="track:Slider Arrow - Preview"></div>
-          {% endif %}
-          {% if section.settings.is_dots %}
-            <div class="swiper-pagination"></div>
-          {% endif %}
-          {% if section.settings.is_scrollbar %}
-            <div class="swiper-scrollbar"></div>
-          {% endif %}
-        </div>
-      {% endif %}
+### Error Handling
+- Client-side error logging for:
+  - Missing alt text
+  - Missing retina images
+  - Image load failures
+- Fallback mechanisms for failed loads
+- Debug console output
 
-      {% if section.settings.is_slider %}</div>{% endif %}
+### Responsive Design
+- Configurable breakpoints (375,640,768,1080,1200,1920,2560)
+- Separate mobile/desktop image sources
+- WebP format support with fallbacks
+- Flexible sizing system
 
-      {% if section.settings.decor_img %}
-        {% render 'decoration', id: section.id, decor_img: section.settings.decor_img, decor_position_top: section.settings.decor_position_top, decor_position_left: section.settings.decor_position_left, decor_position_top_mobile: section.settings.decor_position_top_mobile, decor_position_left_mobile: section.settings.decor_position_left_mobile, decor_opacity: section.settings.decor_opacity, decor_max_width: section.settings.decor_max_width, is_decor_above: section.settings.is_decor_above, is_decor_bg: section.settings.is_decor_bg, is_decor_relative_full: section.settings.is_decor_relative_full, is_decor_remove_on_mobile: section.settings.is_decor_remove_on_mobile %}
-      {% endif %}
-    </div>
-  </section>
+### Performance
+- Optional lazy loading
+- Priority loading for important images
+- Async decoding when appropriate
+- Progressive loading with opacity transition
 
-  {% if section.settings.is_slider %}
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        function getMaxHeightOfElements(selector) {
-          let maxHeight = 0;
-          document.querySelectorAll(selector).forEach(function(element) {
-            element.style.height = '';
-            maxHeight = Math.max(maxHeight, element.offsetHeight);
-          });
-          return maxHeight;
+## Usage Example
+
+```liquid
+{% render 'responsive-image',
+  image: product.featured_image,
+  mobile_image: product.mobile_image,
+  lazy: true,
+  priority: false,
+  alt: "Product Image",
+  class: "rounded-lg",
+  link: "/products/example"
+%}
+```
+{%- endcomment -%}
+
+{%- liquid
+  # Initialize variables with defaults
+  assign desktop_image = image
+  assign mobile_image = mobile_image | default: image
+  assign lazy_load = lazy | default: true
+  assign is_priority = priority | default: false
+  assign mobile_breakpoint = mobile_breakpoint | default: 768
+  assign sizes = sizes | default: '(min-width: 1200px) 1200px, (min-width: 768px) 768px, 100vw'
+  assign breakpoints = '375,640,768,1080,1200,1920,2560' | split: ','
+  assign alt = alt | default: image.alt
+
+  assign full_path = desktop_image.src
+  assign path_parts = full_path | split: '/'
+  assign filename = path_parts | last
+  assign image_name = filename | split: '.' | first
+  assign image_ext = filename | split: '.' | last
+  assign retina_src = image_name | append: '-x2.' | append: image_ext
+  assign retina_check = retina_src | file_url
+
+  assign error_log = 'window.imageErrors = window.imageErrors || { missing_alt: [], missing_retina: [], load_errors: []};'
+
+  if image == blank
+    assign validation_error = '{ type: "missing_alt", message: "Image is required" }'
+    assign error_log = error_log | append: 'window.imageErrors.missing_alt.push(' | append: validation_error | append: ');'
+  endif
+
+  if alt == blank
+    assign validation_error = '{ type: "missing_alt", message: "Image Alt text is required", imageId: "' | append: image.id | append: '", src: "' | append: image.src | append: '" }'
+    assign error_log = error_log | append: 'window.imageErrors.missing_alt.push(' | append: validation_error | append: ');'
+  endif
+
+  assign retina_image = nil
+  assign debug_data = nil
+
+  unless retina_check == blank or retina_check contains '404' or retina_check contains 'null'
+    assign retina_image = retina_src
+  endunless
+
+  unless retina_image and settings.disable_retina_debug
+    assign debug_data = '{ type: "missing_retina", imageId: "' | append: desktop_image.id | append: '", filename: "' | append: filename | append: '", path: "' | append: full_path | append: '", expectedRetina: "' | append: retina_src | append: '", retinaCheck: "' | append: retina_check | append: '", variant: "desktop", timestamp: "' | append: 'now' | date: '%Y-%m-%d %H:%M:%S' | append: '" }'
+    assign error_log = error_log | append: 'window.imageErrors.missing_retina.push(' | append: debug_data | append: ');'
+  endunless
+
+  assign mobile_retina_image = nil
+  assign mobile_debug_data = nil
+
+  if mobile_image != desktop_image
+    assign mobile_full_path = mobile_image.src
+    assign mobile_path_parts = mobile_full_path | split: '/'
+    assign mobile_filename = mobile_path_parts | last
+    assign mobile_image_name = mobile_filename | split: '.' | first
+    assign mobile_image_ext = mobile_filename | split: '.' | last
+    assign mobile_retina_src = mobile_image_name | append: '-x2.' | append: mobile_image_ext
+    assign mobile_retina_check = mobile_retina_src | file_url
+
+    unless mobile_retina_check == blank or mobile_retina_check contains '404' or mobile_retina_check contains 'null'
+      assign mobile_retina_image = mobile_retina_src
+    endunless
+
+    unless mobile_retina_image and settings.disable_retina_debug
+      assign mobile_debug_data = '{ type: "missing_retina", imageId: "' | append: mobile_image.id | append: '", filename: "' | append: mobile_filename | append: '", path: "' | append: mobile_full_path | append: '", expectedRetina: "' | append: mobile_retina_src | append: '", retinaCheck: "' | append: mobile_retina_check | append: '", variant: "mobile", timestamp: "' | append: 'now' | date: '%Y-%m-%d %H:%M:%S' | append: '" }'
+      assign error_log = error_log | append: 'window.imageErrors.missing_retina.push(' | append: mobile_debug_data | append: ');'
+    endunless
+  else
+    assign mobile_retina_image = retina_image
+  endif
+
+  assign unique_id = 'img-' | append: desktop_image.id | append: '-' | append: mobile_image.id | append: '-' | now | date: '%N'
+  assign base_desktop_url = desktop_image | image_url: width: 1100, format: 'webp'
+  assign base_mobile_url = mobile_image | image_url: width: 750, format: 'webp'
+  assign fallback_url = desktop_image | image_url: width: 1100
+
+  if retina_image
+    assign desktop_retina_url = retina_image | image_url: width: 2200
+  endif
+
+  if mobile_retina_image
+    assign mobile_retina_url = mobile_retina_image | image_url: width: 1500
+  endif
+-%}
+
+<script>
+  {{ error_log }}
+
+  if (!window.logImageError) {
+    window.hasDisplayedImageErrors = false;
+
+    window.debouncedDisplayErrors = (function() {
+      let timeoutId = null;
+      return function() {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
         }
+        timeoutId = setTimeout(() => {
+          if (!window.hasDisplayedImageErrors) {
+            const errors = window.imageErrors;
+            const hasErrors = Object.values(errors).some(arr => arr.length > 0);
 
-        function setHeightOfElements(selector, height) {
-          document.querySelectorAll(selector).forEach(function(element) {
-            element.style.height = height + 'px';
-          });
-        }
+            if (hasErrors) {
+              console.warn('🚨 Image Component Errors Summary:', {
+                totalErrors: Object.values(errors).reduce((sum, arr) => sum + arr.length, 0),
+                Errors: errors
+              });
 
-        function adjustTitleHeight() {
-          const titleMaxHeight = getMaxHeightOfElements(`#section-{{ section.id }} .title-tag`);
-          setHeightOfElements(`#section-{{ section.id }} .title-tag`, titleMaxHeight);
-        }
-
-        function adjustHeights() {
-          adjustTitleHeight();
-        }
-
-        function initSwiper(itemsContainer) {
-          itemsContainer.classList.add('swiper');
-          itemsContainer.classList.remove('items', 'flex', 'flex-wrap');
-          const items = itemsContainer.querySelectorAll('.item');
-          items.forEach(item => item.classList.add('swiper-slide'));
-
-          loadSwiper(() => {
-            let swiper = initializeSwiper('#items-container-{{ section.id }}', {
-              spaceBetween: 15,
-              grabCursor: true,
-              slidesPerView: 'auto',
-              autoHeight: {{ section.settings.is_auto_height }},
-              {% if section.settings.is_arrows %}
-              navigation: {
-                nextEl: '#items-container-{{ section.id }} .swiper-button-next',
-                prevEl: '#items-container-{{ section.id }} .swiper-button-prev',
-              },
-              {% endif %}
-              {% if section.settings.is_dots %}
-              pagination: {
-                el: '#items-container-{{ section.id }} .swiper-pagination',
-                clickable: true
-              },
-              {% endif %}
-              {% if section.settings.is_scrollbar %}
-              scrollbar: {
-                el: '#items-container-{{ section.id }} .swiper-scrollbar'
-              },
-              {% endif %}
-              {% if section.settings.is_ticker %}
-              loop: true,
-              speed: 1500,
-              autoplay: {
-                delay: 0,
-                disableOnInteraction: false
-              },
-              {% elsif section.settings.slider_autoplay_speed > 0 %}
-              loop: true,
-              speed: {{ section.settings.slider_autoplay_speed }},
-              autoplay: {
-                delay: {{ section.settings.slider_autoplay_speed }},
-              },
-              {% endif %}
-              lazy: true,
-              breakpoints: {
-                768: {
-                  slidesPerView: {{ section.settings.items_in_row_mobile }},
-                },
-                1200: {
-                  slidesPerView: {% if section.settings.items_in_row != 'all' %}{{ section.settings.items_in_row }}{% else %}'auto'{% endif %}
-                }
-              }
-            });
-          });
-        }
-
-        function deactivateSwiper(itemsContainer) {
-          itemsContainer.classList.remove('swiper');
-          itemsContainer.classList.add('items', 'flex', 'flex-wrap');
-          const items = itemsContainer.querySelectorAll('.item');
-          items.forEach(item => item.classList.remove('swiper-slide'));
-        }
-
-        function hideArrows(arrows) {
-          arrows.forEach(arrow => arrow.style.display = 'none');
-        }
-
-        function showArrows(arrows) {
-          arrows.forEach(arrow => arrow.style.display = '');
-        }
-
-        const displayOnUrlParameter = '{{ section.settings.display_on_utm_parmeters }}';
-
-        if (displayOnUrlParameter) {
-          const section = document.getElementById('section-{{ section.id }}');
-
-          if (window.location.href.includes(displayOnUrlParameter)) {
-            section.classList.remove('!hidden');
-          } else {
-            document.querySelectorAll('.shopify-section').forEach(shopifySection => {
-              shopifySection.style.marginTop = '0';
-            });
-          }
-        }
-
-        const itemsContainer = document.getElementById('items-container-{{ section.id }}');
-        if (itemsContainer) {
-          let isMobile = window.innerWidth <= 768;
-          const arrows = document.querySelectorAll('#section-{{ section.id }} .swiper-button-next, #section-{{ section.id }} .swiper-button-prev');
-
-          {% if section.settings.items_in_row == 'all' %}
-            if (isMobile) {
-              initSwiper(itemsContainer);
-              showArrows(arrows);
-            } else {
-              deactivateSwiper(itemsContainer);
-              hideArrows(arrows);
-            }
-          {% else %}
-            initSwiper(itemsContainer);
-            showArrows(arrows);
-          {% endif %}
-
-          window.addEventListener('resize', function() {
-            const newIsMobile = window.innerWidth <= 768;
-            if (isMobile !== newIsMobile) {
-              isMobile = newIsMobile;
-              {% if section.settings.items_in_row == 'all' %}
-                if (isMobile) {
-                  initSwiper(itemsContainer);
-                  showArrows(arrows);
-                } else {
-                  deactivateSwiper(itemsContainer);
-                  hideArrows(arrows);
-                }
-              {% endif %}
-            }
-          });
-        }
-
-        window.addEventListener('load', adjustHeights);
-        window.addEventListener('resize', adjustHeights);
-      });
-    </script>
-
-    <style>
-      {% if section.settings.is_arrows_bottom %}
-        #section-{{ section.id }} {
-          @media (width > 768px) {
-            --swiper-navigation-sides-offset: 370px;
-            --swiper-navigation-top-offset: 95% !important;
-          }
-
-          @media (width <= 768px) {
-            --swiper-navigation-sides-offset: 0px !important;
-          }
-
-          .swiper {
-            padding-bottom: 80px !important;
-          }
-        }
-      {% elsif request.path contains 'lp-wl-curaslim-360' or request.path contains 'curaslim-b2b' %}
-        #section-{{ section.id }} {
-          @media (width > 768px) {
-            --swiper-navigation-top-offset: -50px !important;
-
-            .swiper-button-next {
-              right: 0;
-            }
-
-            .swiper-button-prev {
-              right: 60px;
-              left: unset;
+              window.hasDisplayedImageErrors = true;
             }
           }
+          timeoutId = null;
+        }, 1000);
+      };
+    })();
 
-          @media (width <= 768px) {
-            --swiper-navigation-top-offset: 95% !important;
-            --swiper-navigation-sides-offset: 0px !important;
-          }
-        }
-      {% endif %}
-
-      #section-{{ section.id }} .swiper-slide {
-        opacity: 0;
-        transition: opacity 1s ease;
+    window.logImageError = function(type, data) {
+      if (!window.imageErrors[type]) {
+        window.imageErrors[type] = [];
       }
 
-      #section-{{ section.id }} .swiper-slide-active {
-        opacity: 1;
+      data.timestamp = new Date().toISOString();
+      const existingError = window.imageErrors[type].find(
+        error => error.imageId === data.imageId && error.type === data.type
+      );
+
+      if (!existingError) {
+        window.imageErrors[type].push(data);
+        window.debouncedDisplayErrors();
       }
+    };
+  }
 
-      {% if section.settings.items_in_row == 'all' %}
-        {% assign items_in_row = section.blocks.size %}
-      {% else %}
-        {% assign items_in_row = section.settings.items_in_row | minus: 1 %}
-      {% endif %}
+  if (window.imageErrors && !window.hasDisplayedImageErrors) {
+    window.debouncedDisplayErrors();
+  }
+</script>
 
-      {% for i in (1..items_in_row) %}
-        #section-{{ section.id }} .swiper-slide-active{% for j in (1..i) %} + .swiper-slide{% endfor %} {
-          opacity: 1;
-        }
-      {% endfor %}
+{%- if link -%}<a href="{{ link }}">{%- endif -%}
+<picture>
+  <source
+    media="(max-width: {{ mobile_breakpoint }}px)"
+    srcset="
+      {%- for width in breakpoints -%}
+        {{ mobile_image | image_url: width: width }} {{ width }}w
+        {%- if mobile_retina_image contains '/files/' -%}
+          ,{{ mobile_retina_image | file_url }} {{ width | times: 2 }}w
+        {%- endif -%}
+        {%- unless forloop.last -%},{%- endunless -%}
+      {%- endfor -%}
+    "
+    sizes="{{ sizes }}"
+  >
 
-      @media (max-width: 768px) {
-        #section-{{ section.id }} .swiper-slide-active {
-          opacity: 1;
-        }
+  <source
+    media="(min-width: {{ mobile_breakpoint | plus: 1 }}px)"
+    srcset="
+      {%- for width in breakpoints -%}
+        {{ desktop_image | image_url: width: width }} {{ width }}w
+        {%- if retina_image contains '/files/' -%}
+          ,{{ retina_image | file_url }} {{ width | times: 2 }}w
+        {%- endif -%}
+        {%- unless forloop.last -%},{%- endunless -%}
+      {%- endfor -%}
+    "
+    sizes="{{ sizes }}"
+  >
 
-        {% if section.settings.items_in_row_mobile == 'all' %}
-          {% assign items_in_row_mobile = section.blocks.size %}
-        {% else %}
-          {% assign items_in_row_mobile = section.settings.items_in_row_mobile | minus: 1 %}
-        {% endif %}
-
-        {% for i in (1..items_in_row_mobile) %}
-          #section-{{ section.id }} .swiper-slide-active{% for j in (1..i) %} + .swiper-slide{% endfor %} {
-            opacity: 1;
-          }
-        {% endfor %}
-      }
-    </style>
-  {% endif %}
-
-  <style>
-    {% if section.settings.is_ticker %}
-      :root {
-        --swiper-transition-timing-function: linear;
-      }
+  <img
+    id="{{ unique_id }}"
+    src="{{ fallback_url }}"
+    {%- if retina_image contains '/files/' -%}
+      srcset="{{ retina_image | file_url }} 2x"
+    {%- endif -%}
+    {% if lazy_load and is_priority != true %}
+      loading="lazy"
+      decoding="async"
+    {% else %}
+      loading="eager"
+      decoding="sync"
+      fetchpriority="high"
     {% endif %}
-
-    #section-{{ section.id }} .items {
-      width: {{ section.settings.collection_width }}%;
-      row-gap: {{ section.settings.row_gap }}rem;
-      column-gap: {{ section.settings.column_gap }}rem;
-      align-items: stretch;
-    }
-
-    #section-{{ section.id }} {
-      background-color: {{ section.settings.bg_color }};
-    }
-
-    {% if section.settings.container_color != blank %}
-      #section-{{ section.id }} .main-container {
-        background-color: {{ section.settings.container_color }};
-        border: 1px solid black;
-        border-radius: 10px;
-        padding: 30px;
-      }
-
-      @media screen and (max-width: 768px) {
-        #section-{{ section.id }} .main-container {
-          width: 90vw;
-          padding: 5vw;
-        }
-      }
-    {% endif %}
-
-    #section-{{ section.id }} .item {
-      {% if section.settings.items_in_row == 'all' %}
-        {% assign itemsInRow = section.blocks.size %}
-      {% else %}
-        {% assign itemsInRow = section.settings.items_in_row %}
-      {% endif %}
-
-      {% assign gapsInRow = itemsInRow | minus: 1 %}
-
-      width: calc((100% / {{ itemsInRow }}) - ({{ gapsInRow }} * ({{ section.settings.column_gap }}rem / {{ itemsInRow }})));
-      padding: {{ section.settings.item_padding }}rem;
-      align-self: stretch;
-      border-radius: 15px;
-    }
-
-    #section-{{ section.id }} .item-content {
-      max-width: {{ section.settings.item_content_width }}%;
-      flex-direction: {{ section.settings.item_layout }};
-      text-align: {{ section.settings.item_content_align }};
-      justify-content: {{ section.settings.item_content_align }};
-      color: {{ section.settings.text_color }};
-    }
-
-    #section-{{ section.id }} .item-content svg {
-      font-size: 40px;
-    }
-
-    #section-{{ section.id }} .item-content .text-wrapper strong {
-      background: var(--blue);
-      color: white;
-      border-radius: 5px;
-      padding: 0 5px;
-      font-size: 0.8em;
-      position: relative;
-      bottom: 0.1em;
-    }
-
-    #section-{{ section.id }} .item-content .description p:last-child {
-      margin-bottom: 0;
-    }
-
-    #section-{{ section.id }} .item-content .description ul li {
-      text-indent: -1.7rem;
-    }
-
-    #section-{{ section.id }} .item-content .description ul li::before {
-      content: "✔";
-      background-color: var(--blue);
-      border-radius: 50%;
-      color: white;
-      font-size: 16px;
-      width: 1.3rem;
-      height: 1.3rem;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      text-indent: initial;
-      position: static;
-      top: 0;
-      margin-right: 0.5rem;
-    }
-
-    #section-{{ section.id }} .item-content .title-tag {
-      color: {% if section.settings.item_title_color != transparent %}{{ section.settings.item_title_color }}{% else %}inherit{% endif %};
-    }
-
-    #section-{{ section.id }} .item-content .title-tag.p {
-      margin: unset;
-      line-height: 1.2;
-    }
-
-    {% if section.settings.padding_top != 50 and section.settings.padding_top != blank %}
-      #section-{{ section.id }} {
-        padding-top: {{ section.settings.padding_top }}px;
-      }
-    {% endif %}
-
-    {% if section.settings.padding_bottom != 50 and section.settings.padding_top != blank %}
-      #section-{{ section.id }} {
-        padding-bottom: {{ section.settings.padding_bottom }}px;
-      }
-    {% endif %}
-
-    {% if section.settings.padding_top_mobile != blank %}
-      @media screen and (max-width: 768px) {
-        #section-{{ section.id }} {
-          padding-top: {{ section.settings.padding_top_mobile }}vw;
-        }
-      }
-    {% endif %}
-
-    {% if section.settings.padding_bottom_mobile != blank %}
-      @media screen and (max-width: 768px) {
-        #section-{{ section.id }} {
-          padding-bottom: {{ section.settings.padding_bottom_mobile }}vw;
-        }
-      }
-    {% endif %}
-
-    @media screen and (max-width: 768px) {
-      #section-{{ section.id }} .items {
-        width: 100%;
-      }
-
-      #section-{{ section.id }} .item {
-        {% if section.settings.items_in_row_mobile == 'all' %}
-          {% assign itemsInRowMobile = section.blocks.size %}
-          {% for block in section.blocks %}
-            {% if block.settings.is_hide_on_mobile %}
-              {% assign itemsInRowMobile = itemsInRowMobile | minus: 1 %}
-            {% endif %}
-          {% endfor %}
-        {% else %}
-          {% assign itemsInRowMobile = section.settings.items_in_row_mobile %}
-        {% endif %}
-
-        {% assign gapsInRowMobile = itemsInRowMobile | minus: 1 %}
-        width: calc((100% / {{ itemsInRowMobile }}) - ({{ gapsInRowMobile }} * ({{ section.settings.column_gap }}rem / {{ itemsInRowMobile }})));
-        max-width: unset;
-      }
-
-      #section-{{ section.id }} .item-content {
-        flex-direction: {{ section.settings.item_layout_mobile }};
-        text-align: {{ section.settings.item_content_align_mobile }};
-        max-width: unset;
-      }
-
-      {% unless section.settings.item_content_align_mobile == 'center' %}
-        #section-{{ section.id }} .item-content .title-tag {
-          margin: unset;
-        }
-      {% endunless %}
-
-      {% if section.settings.items_in_row_mobile == 'all' %}
-        #section-{{ section.id }} .item-content .title-tag {
-          font-size: 3vw;
-          min-height: 7vw;
-        }
-      {% endif %}
-    }
-  </style>
-
-  {% if section.settings.is_bigger_center_item %}
-    {% assign centerPosition = section.blocks.size | divided_by: 2 | plus: 1 %}
-    {% assign centerElementSelector = "swiper-slide[aria-label='" | append: centerPosition | append: " / " | append: section.blocks.size | append: "']" %}
-
-    <style>
-      #section-{{ section.id }} swiper-slide img {
-        transition: .7s;
-      }
-
-      #section-{{ section.id }} swiper-container {
-        margin-top: 30px;
-      }
-
-      #section-{{ section.id }} {{ centerElementSelector }} img {
-        z-index: 1;
-        transform: scale(1.3);
-      }
-
-      #section-{{ section.id }} {{ centerElementSelector }} .title-tag {
-        margin-top: 1.5em;
-      }
-
-      @media screen and (max-width: 768px) {
-        {% if section.settings.is_bigger_center_item %}
-          #section-{{ section.id }} swiper-container {
-            padding-bottom: 10vw;
-          }
-        {% endif %}
-
-        #section-{{ section.id }} swiper-slide {
-          padding: 0 10px;
-        }
-
-        #section-{{ section.id }} swiper-slide img {
-          transform: scale(0.8);
-          margin-bottom: -2em;
-        }
-
-        #section-{{ section.id }} {{ centerElementSelector }} img {
-          transform: scale(0.8);
-        }
-
-        #section-{{ section.id }} {{ centerElementSelector }} .title-tag {
-          margin-top: 0;
-        }
-
-        #section-{{ section.id }} .swiper-slide-active img {
-          transform: scale(1) !important;
-          margin-bottom: 0;
-        }
-      }
-    </style>
-  {% endif %}
-{% endunless %}
-
-{% schema %}
-{
-  "name": "Items collection",
-  "class": "items-collection relative",
-  "settings": [
-    {
-      "type": "header",
-      "content": "Colors"
-    },
-    {
-      "type": "color",
-      "id": "bg_color",
-      "label": "Background Color"
-    },
-    {
-      "type": "color",
-      "id": "container_color",
-      "label": "Container Color"
-    },
-    {
-      "type": "color",
-      "id": "title_color",
-      "label": "Title Color"
-    },
-    {
-      "type": "color",
-      "id": "item_title_color",
-      "label": "Items Title Color"
-    },
-    {
-      "type": "color",
-      "id": "text_color",
-      "label": "Text Color"
-    },
-    {
-      "type": "header",
-      "content": "Main Title"
-    },
-    {
-      "type": "text",
-      "id": "main_title",
-      "label": "Main Title"
-    },
-    {
-      "type": "richtext",
-      "id": "main_title_rich",
-      "label": "Main Title (Rich Text)"
-    },
-    {
-      "type": "text",
-      "id": "main_subtitle",
-      "label": "Main Subtitle"
-    },
-    {
-      "type": "color",
-      "id": "title_highlight_color",
-      "label": "Title Highlight Color (<strong>)"
-    },
-    {
-      "type": "select",
-      "id": "item_layout",
-      "label": "Item Layout",
-      "options": [
-        {
-          "value": "column",
-          "label": "Vertical"
-        },
-        {
-          "value": "row",
-          "label": "Horizontal"
-        }
-      ],
-      "default": "column"
-    },
-    {
-      "type": "select",
-      "id": "collection_align",
-      "label": "Collection Alignment",
-      "options": [
-        {
-          "value": "start",
-          "label": "Start"
-        },
-        {
-          "value": "center",
-          "label": "Center"
-        }
-      ],
-      "default": "center"
-    },
-    {
-      "type": "select",
-      "id": "items_align",
-      "label": "Items Alignment",
-      "options": [
-        {
-          "value": "start",
-          "label": "Start"
-        },
-        {
-          "value": "center",
-          "label": "Center"
-        }
-      ],
-      "default": "start"
-    },
-    {
-      "type": "select",
-      "id": "item_layout_mobile",
-      "label": "Item Layout on Mobile",
-      "options": [
-        {
-          "value": "column",
-          "label": "Vertical"
-        },
-        {
-          "value": "row",
-          "label": "Horizontal"
-        }
-      ],
-      "default": "column"
-    },
-    {
-      "type": "select",
-      "id": "item_content_align",
-      "label": "Item Conetnt Alignment",
-      "options": [
-        {
-          "value": "start",
-          "label": "Left"
-        },
-        {
-          "value": "center",
-          "label": "Center"
-        }
-      ],
-      "default": "center"
-    },
-    {
-      "type": "select",
-      "id": "item_content_align_mobile",
-      "label": "Item Conetnt Alignment on Mobile",
-      "options": [
-        {
-          "value": "start",
-          "label": "Left"
-        },
-        {
-          "value": "center",
-          "label": "Center"
-        }
-      ],
-      "default": "center"
-    },
-    {
-      "type": "select",
-      "id": "title_tag",
-      "label": "Title Tag",
-      "options": [
-        {
-          "value": "h3",
-          "label": "H3"
-        },
-        {
-          "value": "h4",
-          "label": "H4"
-        },
-        {
-          "value": "h5",
-          "label": "H5"
-        },
-        {
-          "value": "h6",
-          "label": "H6"
-        },
-        {
-          "value": "p",
-          "label": "P"
-        }
-      ],
-      "default": "h5"
-    },
-    {
-      "type": "select",
-      "id": "items_in_row",
-      "label": "Items In Row",
-      "options": [
-        {
-          "value": "1",
-          "label": "1"
-        },
-        {
-          "value": "2",
-          "label": "2"
-        },
-        {
-          "value": "3",
-          "label": "3"
-        },
-        {
-          "value": "4",
-          "label": "4"
-        },
-        {
-          "value": "5",
-          "label": "5"
-        },
-        {
-          "value": "all",
-          "label": "All"
-        }
-      ],
-      "default": "all"
-    },
-    {
-      "type": "select",
-      "id": "items_in_row_mobile",
-      "label": "Items In Row - On Mobile",
-      "options": [
-        {
-          "value": "1",
-          "label": "1"
-        },
-        {
-          "value": "2",
-          "label": "2"
-        },
-        {
-          "value": "3",
-          "label": "3"
-        },
-        {
-          "value": "all",
-          "label": "All"
-        }
-      ],
-      "default": "1"
-    },
-    {
-      "type": "range",
-      "id": "item_padding",
-      "label": "Item Padding",
-      "min": 0,
-      "max": 5,
-      "step": 1,
-      "unit": "rem",
-      "default": 1
-    },
-    {
-      "type": "range",
-      "id": "column_gap",
-      "label": "Column Gap",
-      "min": 0,
-      "max": 5,
-      "step": 1,
-      "unit": "rem",
-      "default": 0
-    },
-    {
-      "type": "range",
-      "id": "row_gap",
-      "label": "Row Gap",
-      "min": 0,
-      "max": 5,
-      "step": 1,
-      "unit": "rem",
-      "default": 1
-    },
-    {
-      "type": "range",
-      "id": "collection_width",
-      "label": "Collection Width",
-      "min": 50,
-      "max": 100,
-      "step": 5,
-      "unit": "%",
-      "default": 100
-    },
-    {
-      "type": "range",
-      "id": "item_content_width",
-      "label": "Item Content Width",
-      "min": 50,
-      "max": 100,
-      "step": 5,
-      "unit": "%",
-      "default": 100
-    },
-    {
-      "type": "select",
-      "id": "link_style",
-      "label": "Link Style",
-      "options": [
-        {
-          "value": "item",
-          "label": "Item"
-        },
-        {
-          "value": "a",
-          "label": "Link"
-        },
-        {
-          "value": "button",
-          "label": "Button"
-        }
-      ],
-      "default": "item"
-    },
-    {
-      "type": "select",
-      "id": "overflow",
-      "label": "Overflow",
-      "options": [
-        {
-          "value": "visible",
-          "label": "Visible"
-        },
-        {
-          "value": "hidden",
-          "label": "Hidden"
-        }
-      ],
-      "default": "visible"
-    },
-    {
-      "type": "header",
-      "content": "Slider Settings"
-    },
-    {
-      "type": "range",
-      "id": "slider_autoplay_speed",
-      "label": "Autoplay Speed",
-      "min": 0,
-      "max": 5000,
-      "step": 100,
-      "unit": "mls",
-      "default": 0
-    },
-    {
-      "type": "checkbox",
-      "id": "is_slider",
-      "label": "Slider Functionality"
-    },
-    {
-      "type": "checkbox",
-      "id": "is_ticker",
-      "label": "Slider Ticker Animation"
-    },
-    {
-      "type": "checkbox",
-      "id": "is_arrows",
-      "label": "Show Arrows",
-      "default": true
-    },
-    {
-      "type": "checkbox",
-      "id": "is_dots",
-      "label": "Show Dots",
-      "default": true
-    },
-    {
-      "type": "checkbox",
-      "id": "is_scrollbar",
-      "label": "Show ScrollBar"
-    },
-    {
-      "type": "checkbox",
-      "id": "is_arrows_bottom",
-      "label": "Arrows On Bottom"
-    },
-    {
-      "type": "checkbox",
-      "id": "is_auto_height",
-      "label": "Auto Height"
-    },
-    {
-      "type": "checkbox",
-      "id": "is_bigger_center_item",
-      "label": "Bigger Center Item"
-    },
-    {
-      "type": "header",
-      "content": "Section Settings"
-    },
-    {
-      "type": "text",
-      "id": "section_additional_classes",
-      "label": "Additional Classes"
-    },
-    {
-      "type": "header",
-      "content": "Visibility"
-    },
-    {
-      "type": "checkbox",
-      "id": "is_hide_on_global",
-      "label": "Hide Section On Global"
-    },
-    {
-      "type": "text",
-      "id": "display_on_pages",
-      "label": "Display Only On Pages",
-      "info": "Comma separated list of page paths to display this section only on those pages. blank = all pages."
-    },
-    {
-      "type": "text",
-      "id": "display_on_utm_parmeters",
-      "label": "Display Only On UTM Parameters",
-      "info": "Enter a UTM Prameter needs to be to the banner to. example: 'sale=flash'. Leave blank to display on all pages."
-    },
-    {
-      "type": "header",
-      "content": "Padding"
-    },
-    {
-      "type": "number",
-      "id": "padding_top",
-      "label": "Padding Top (px unit)",
-      "default": 50
-    },
-    {
-      "type": "number",
-      "id": "padding_bottom",
-      "label": "Padding Bottom (px unit)",
-      "default": 50
-    },
-    {
-      "type": "number",
-      "id": "padding_top_mobile",
-      "label": "Padding Top on Mobile (vw unit)"
-    },
-    {
-      "type": "number",
-      "id": "padding_bottom_mobile",
-      "label": "Padding Bottom on Mobile (vw unit)"
-    },
-    {
-      "type": "select",
-      "id": "animation",
-      "label": "Animation",
-      "options": [
-        {
-          "value": "none",
-          "label": "None"
-        },
-        {
-          "value": "fade-zoom-in",
-          "label": "Fade"
-        },
-        {
-          "value": "fade-up",
-          "label": "Fade Up"
-        },
-        {
-          "value": "fade-down",
-          "label": "Fade Down"
-        },
-        {
-          "value": "fade-left",
-          "label": "Fade Left"
-        },
-        {
-          "value": "fade-right",
-          "label": "Fade Right"
-        },
-        {
-          "value": "fade-up-right",
-          "label": "Fade Up Right"
-        },
-        {
-          "value": "fade-up-left",
-          "label": "Fade Up Left"
-        },
-        {
-          "value": "fade-down-right",
-          "label": "Fade Down Right"
-        },
-        {
-          "value": "fade-down-left",
-          "label": "Fade Down Left"
-        },
-        {
-          "value": "flip-up",
-          "label": "Flip Up"
-        },
-        {
-          "value": "flip-down",
-          "label": "Flip Down"
-        },
-        {
-          "value": "flip-left",
-          "label": "Flip Left"
-        },
-        {
-          "value": "flip-right",
-          "label": "Flip Right"
-        },
-        {
-          "value": "slide-up",
-          "label": "Slide Up"
-        },
-        {
-          "value": "slide-down",
-          "label": "Slide Down"
-        },
-        {
-          "value": "slide-left",
-          "label": "Slide Left"
-        },
-        {
-          "value": "slide-right",
-          "label": "Slide Right"
-        },
-        {
-          "value": "zoom-in",
-          "label": "Zoom In"
-        },
-        {
-          "value": "zoom-in-up",
-          "label": "Zoom In Up"
-        },
-        {
-          "value": "zoom-in-down",
-          "label": "Zoom In Down"
-        },
-        {
-          "value": "zoom-in-left",
-          "label": "Zoom In Left"
-        },
-        {
-          "value": "zoom-in-right",
-          "label": "Zoom In Right"
-        },
-        {
-          "value": "zoom-out",
-          "label": "Zoom Out"
-        },
-        {
-          "value": "zoom-out-up",
-          "label": "Zoom Out Up"
-        },
-        {
-          "value": "zoom-out-down",
-          "label": "Zoom Out Down"
-        },
-        {
-          "value": "zoom-out-left",
-          "label": "Zoom Out Left"
-        },
-        {
-          "value": "zoom-out-right",
-          "label": "Zoom Out Right"
-        }
-      ],
-      "default": "none"
-    },
-    {
-      "type": "header",
-      "content": "Decoration Image"
-    },
-    {
-      "type": "image_picker",
-      "id": "decor_img",
-      "label": "Decoration Image"
-    },
-    {
-      "type": "range",
-      "id": "decor_opacity",
-      "label": "Decoration Opacity",
-      "min": 0,
-      "max": 100,
-      "step": 1,
-      "unit": "%",
-      "default": 100
-    },
-    {
-      "type": "range",
-      "id": "decor_max_width",
-      "label": "Decoration Maximum Width",
-      "min": 0,
-      "max": 100,
-      "step": 1,
-      "unit": "%",
-      "default": 50
-    },
-    {
-      "type": "range",
-      "id": "decor_position_top",
-      "label": "Decoration Position Top",
-      "min": 0,
-      "max": 100,
-      "step": 1,
-      "unit": "%",
-      "default": 0
-    },
-    {
-      "type": "range",
-      "id": "decor_position_left",
-      "label": "Decoration Position Left",
-      "min": 0,
-      "max": 100,
-      "step": 1,
-      "unit": "%",
-      "default": 0
-    },
-    {
-      "type": "range",
-      "id": "decor_position_top_mobile",
-      "label": "Decoration Mobile Top",
-      "min": 0,
-      "max": 100,
-      "step": 1,
-      "unit": "%",
-      "default": 0
-    },
-    {
-      "type": "range",
-      "id": "decor_position_left_mobile",
-      "label": "Decoration Mobile Left",
-      "min": 0,
-      "max": 100,
-      "step": 1,
-      "unit": "%",
-      "default": 0
-    },
-    {
-      "type": "checkbox",
-      "id": "is_decor_above",
-      "label": "Decoration Above Content"
-    },
-    {
-      "type": "checkbox",
-      "id": "is_decor_bg",
-      "label": "Decoration is a Background"
-    },
-    {
-      "type": "checkbox",
-      "id": "is_decor_relative_full",
-      "label": "Decoration Relative to Full Width"
-    },
-    {
-      "type": "checkbox",
-      "id": "is_decor_remove_on_mobile",
-      "label": "Remove Decoration On Mobile"
-    }
-  ],
-  "blocks": [
-    {
-      "type": "item",
-      "name": "Item",
-      "settings": [
-        {
-          "type": "image_picker",
-          "id": "image",
-          "label": "Image"
-        },
-        {
-          "type": "image_picker",
-          "id": "image_mobile",
-          "label": "Image on Mobile"
-        },
-        {
-          "type": "text",
-          "id": "icon",
-          "label": "Icon (class)"
-        },
-        {
-          "type": "text",
-          "id": "title",
-          "label": "Title"
-        },
-        {
-          "type": "richtext",
-          "id": "description",
-          "label": "Description"
-        },
-        {
-          "type": "checkbox",
-          "id": "is_image_background",
-          "label": "Image is Background"
-        },
-        {
-          "type": "checkbox",
-          "id": "is_hide_on_mobile",
-          "label": "Hide on mobile"
-        },
-        {
-          "type": "text",
-          "id": "link_title",
-          "label": "Link Title"
-        },
-        {
-          "type": "url",
-          "id": "link_url",
-          "label": "Link URL"
-        },
-        {
-          "type": "header",
-          "content": "Global Store Settings"
-        },
-        {
-          "type": "image_picker",
-          "id": "image_global",
-          "label": "Image - Global"
-        },
-        {
-          "type": "image_picker",
-          "id": "image_mobile_global",
-          "label": "Image on Mobile - Global"
-        },
-        {
-          "type": "url",
-          "id": "link_url_global",
-          "label": "Link URL - Global"
-        }
-      ]
-    }
-  ],
-  "presets": [
-    {
-      "name": "Items collection"
-    }
-  ]
-}
-{% endschema %}
+    alt="{{ alt | escape }}"
+    width="{{ desktop_image.width }}"
+    height="{{ desktop_image.height }}"
+    class="object-cover opacity-0 m-0 transition-opacity duration-300 ease-in-out {% if class %}{{ class }}{% endif %}"
+    onload="this.classList.add('opacity-100');"
+    onerror="window.logImageError('load_errors', {
+      imageId: '{{ desktop_image.id }}',
+      elementId: '{{ unique_id }}',
+      fallbackUrl: '{{ fallback_url }}',
+      originalSrc: this.src
+    }); this.onerror=null; this.src='{{ fallback_url }}'"
+    data-original-url="{{ fallback_url }}"
+    {%- if retina_image contains '/files/' -%}
+      data-desktop-retina-url="{{ desktop_retina_url }}"
+    {%- endif -%}
+    {%- if mobile_retina_image contains '/files/' -%}
+      data-mobile-retina-url="{{ mobile_retina_url }}"
+    {%- endif -%}
+  >
+</picture>
+{%- if link -%}</a>{%- endif -%}
