@@ -263,22 +263,32 @@
 </style>
 
 <script>
-  $("#cta-section-{{ SID }} .variant-box").click(function() {
-    $(this).find("input[type=radio]").prop("checked", true);
-    $("#cta-section-{{ SID }} .product-form input[name='id']").val($(this).find("input[type=radio").val());
+  document.querySelectorAll("#cta-section-{{ SID }} .variant-box").forEach(function(variantBox) {
+    variantBox.addEventListener("click", function() {
+      variantBox.querySelector("input[type=radio]").checked = true;
+
+      document.querySelector("#cta-section-{{ SID }} .product-form input[name='id']").value =
+        variantBox.querySelector("input[type=radio]").value;
+    });
   });
 </script>
 
 <script>
-  $(document).ready(function() {
+  document.addEventListener("DOMContentLoaded", function() {
     let urlParams = new URLSearchParams(window.location.search);
     let defaultVariant = urlParams.get('default-variant');
+    let variantBoxes = document.querySelectorAll("#cta-section-{{ SID }} .variant-box");
 
     if (defaultVariant) {
-      $("#cta-section-{{ SID }} .variant-box").eq(defaultVariant - 1).trigger("click");
-    }
-    else {
-      $("#cta-section-{{ SID }} .variant-box").{% if product.variants.size == 1 or request.path contains 'prime' %}first(){% elsif defaultSelectionIndex %}eq({{ defaultSelectionIndex | minus: 1 }}){% else %}first(){% endif %}.trigger( "click" );
+      variantBoxes[defaultVariant - 1]?.click();
+    } else {
+      {% if product.variants.size == 1 or request.path contains 'prime' %}
+        variantBoxes[0]?.click();
+      {% elsif defaultSelectionIndex %}
+        variantBoxes[{{ defaultSelectionIndex | minus: 1 }}]?.click();
+      {% else %}
+        variantBoxes[0]?.click();
+      {% endif %}
     }
   });
 </script>
