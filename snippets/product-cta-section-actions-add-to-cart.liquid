@@ -281,15 +281,4 @@
       $("#cta-section-{{ SID }} .variant-box").{% if product.variants.size == 1 or request.path contains 'prime' %}first(){% elsif defaultSelectionIndex %}eq({{ defaultSelectionIndex | minus: 1 }}){% else %}first(){% endif %}.trigger( "click" );
     }
   });
-
-  {% comment %}
-  // On Buy Button Click
-  $(document).on("click", "#ProductSubmitButton-{{ section.id }}", function () {
-    console.log("Buy Button Pushed!")
-    let checkedPack = $('#cta-section-{{ SID }} input[name=pack]:checked').val();
-    let checkedQuantity = {% if isBuyQuantity %}$('#cta-section-{{ SID }} input[name=quantity]').val(){% else %}1{% endif %};
-    let checkoutLink = "https://" + location.hostname + "/cart/" + checkedPack + ":" + checkedQuantity;
-    window.location.href = checkoutLink;
-  });
-  {% endcomment %}
 </script>
