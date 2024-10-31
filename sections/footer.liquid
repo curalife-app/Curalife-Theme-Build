@@ -1,4 +1,4 @@
-{% if section.settings.hide_on_affiliate_pages == false and request.path contains '-aff' %}
+{% unless section.settings.hide_on_affiliate_pages and request.path contains '-aff' %}
   <footer>
     <div class="top-info">
       <div class="container">
@@ -61,16 +61,7 @@
       </div>
     </div>
   </footer>
-
-  <script>
-    Array.from(document.getElementsByClassName("show-phone-btn")).forEach(function(e) {
-      e.addEventListener('click', (event) => {
-        event.target.style.display = 'none';
-        event.target.nextElementSibling.style.display = 'block';
-      })
-    })
-  </script>
-{% endif %}
+{% endunless %}
 
 <style>
   footer {
