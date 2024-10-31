@@ -547,37 +547,44 @@
     }
 
     function handleSubmit(event) {
-        event.preventDefault();
-        const isSubscription = productActions.querySelector('input[name="purchase-type"]:checked').value === 'subscription';
-        const selector = isSubscription ? 'input[name="subscription-quantity"]:checked' : 'input[name="quantity"]:checked';
-        const selectedOption = productActions.querySelector(selector).closest('.quantity-option');
-        const variantId = selectedOption.dataset.variantId;
-        const quantity = selectedOption.dataset.quantity;
+      event.preventDefault();
+      toggleButtonLoading(true);
 
-        // Additional item to add (product-id: 8606178836631, variant-id: 44747896520855)
-        const additionalVariantId = '44747896520855';
-        const additionalQuantity = 1;
+      const isSubscription = productActions.querySelector('input[name="purchase-type"]:checked').value === 'subscription';
+      const selector = isSubscription ? 'input[name="subscription-quantity"]:checked' : 'input[name="quantity"]:checked';
+      const selectedOption = productActions.querySelector(selector).closest('.quantity-option');
+      const variantId = selectedOption.dataset.variantId;
+      const quantity = selectedOption.dataset.quantity;
 
-        // Prepare items to add to cart
-        const items = [
-            { id: variantId, quantity: parseInt(quantity) },
-            { id: additionalVariantId, quantity: additionalQuantity }
-        ];
+      // Additional item to add (product-id: 8606178836631, variant-id: 44747896520855)
+      const additionalVariantId = '44747896520855';
+      const additionalQuantity = 1;
 
-        // Add items to cart and proceed to checkout
-        fetch('/cart/add.js', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ items })
-        })
+      // Prepare items to add to cart
+      const items = [
+        { id: variantId, quantity: parseInt(quantity) },
+        { id: additionalVariantId, quantity: additionalQuantity }
+      ];
+
+      // Clear cart and add items
+      fetch('/cart/clear.js', { method: 'POST' })
+        .then(() => fetch('/cart/add.js', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items })
+        }))
         .then(response => {
-            if (response.ok) {
-                window.location.href = '/checkout';
-            } else {
-                console.error('Failed to add items to cart.');
-            }
+          if (response.ok) {
+            window.location.href = '/checkout';
+          } else {
+            console.error('Failed to add items to cart.');
+            toggleButtonLoading(false);
+          }
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+          console.error('Error:', error);
+          toggleButtonLoading(false);
+        });
     }
 
     function toggleButtonLoading(isLoading) {
