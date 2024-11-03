@@ -553,17 +553,27 @@
       const isSubscription = productActions.querySelector('input[name="purchase-type"]:checked').value === 'subscription';
       const selector = isSubscription ? 'input[name="subscription-quantity"]:checked' : 'input[name="quantity"]:checked';
       const selectedOption = productActions.querySelector(selector).closest('.quantity-option');
+
       const variantId = selectedOption.dataset.variantId;
       const quantity = selectedOption.dataset.quantity;
+      const subscriptionPlanId = isSubscription ? selectedOption.dataset.subscriptionPlanId : null;
 
-      // Additional item to add (product-id: 8606178836631, variant-id: 44747896520855)
+      // Additional BOGO item (always one-time purchase)
       const additionalVariantId = '44747896520855';
       const additionalQuantity = 1;
 
-      // Prepare items to add to cart
+      // Prepare cart items
       const items = [
-        { id: variantId, quantity: parseInt(quantity) },
-        { id: additionalVariantId, quantity: additionalQuantity }
+        {
+          id: variantId,
+          quantity: parseInt(quantity),
+          ...(subscriptionPlanId && { selling_plan: subscriptionPlanId })
+        },
+        {
+          id: additionalVariantId,
+          quantity: additionalQuantity
+          // No selling_plan for BOGO item
+        }
       ];
 
       // Clear cart and add items
