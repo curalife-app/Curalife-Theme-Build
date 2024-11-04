@@ -81,22 +81,60 @@
     padding: 2rem 0;
   }
 
+  footer .bottom-info {
+    padding: 10px 0;
+    border-top: 1px solid rgba(239,239,239,.37);
+
+    .info-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10px;
+
+      .text p {
+        color: white !important;
+      }
+    }
+  }
+
+  footer .footer-column {
+    padding-top: 20px;
+  }
+
   footer .disclaimer {
     font-size: 0.7em;
   }
 
-  footer .bottom-info .info-wrap .text p {
-    color: white !important;
+  .main-side .menu-list ul {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
   }
 
-  footer .payment-methods ul:nth-child(2) {
-    display: none;
+  footer .payment-methods {
+    ul {
+      display: flex;
+      gap: 20px;
+
+      &:nth-child(2) {
+        display: none;
+      }
+    }
   }
 
   footer .support-contacts ul {
     display: flex;
     flex-direction: column;
     gap: 10px;
+
+    li {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      line-height: 1;
+      gap: 10px;
+      min-height: 30px;
+    }
   }
 
   footer .show-phone-btn {
@@ -117,23 +155,28 @@
 
   footer .right-column {
     min-width: 80%;
-  }
 
-  footer .footer-column {
-    padding-top: 20px;
-  }
+    .menu-list {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 20px;
+      padding-top: 0.7em;
 
-  .main-side .menu-list ul {
-    display: flex;
-    flex-direction: column;
-    flex-wrap: wrap;
-  }
+      .menu-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
 
-  .right-column .menu-list {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 20px;
+      ul {
+        font-weight: lighter;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        font-size: 16px;
+      }
+    }
   }
 
   footer .h6 {
@@ -142,72 +185,35 @@
     font-weight: bold;
   }
 
-  .right-column .menu-list .menu-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .right-column .menu-list {
-    padding-top: 0.7em;
-  }
-
-  .right-column .menu-list ul {
-    font-weight: lighter;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    font-size: 16px;
-  }
-
-  footer .support-contacts ul li {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    line-height: 1;
-    gap: 10px;
-    min-height: 30px;
-  }
-
   .disclaimer-and-other {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
+
+    a {
+      font-family: 'PP Radio Grotesk';
+      font-weight: lighter;
+      text-decoration-line: underline;
+      color: {{ section.settings.titles_color }};
+    }
   }
 
-  .disclaimer-and-other a {
-    font-family: 'PP Radio Grotesk';
-    font-weight: lighter;
-    text-decoration-line: underline;
-    color: {{ section.settings.titles_color }};
-  }
+  .social-bar {
+    ul {
+      display: flex;
+      gap: 20px;
 
-  .social-bar ul {
-    display: flex;
-    gap: 20px;
-  }
+      li {
+        width: 50%;
+        padding: 10px 0;
 
-  footer .social-bar ul li {
-    width: 50%;
-    padding: 10px 0;
-  }
-
-  footer .social-bar ul li a {
-    color: inherit;
-    transition: opacity var(--transition);
-    font-size: 28px;
-  }
-
-  footer .bottom-info {
-    padding: 10px 0;
-    border-top: 1px solid rgba(239,239,239,.37);
-  }
-
-  footer .bottom-info .info-wrap {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 10px;
+        a {
+          color: inherit;
+          transition: opacity var(--transition);
+          font-size: 28px;
+        }
+      }
+    }
   }
 
   .pre-bottom-text {
@@ -215,11 +221,6 @@
     margin-bottom: 1.5em;
     font-size: 10px;
     color: rgba(255, 255, 255, 0.7);
-  }
-
-  .payment-methods ul {
-    display: flex;
-    gap: 20px;
   }
 
   @media screen and (max-width: 768px) {
@@ -232,18 +233,18 @@
       display: unset;
     }
 
-    .main-side .menu-list ul {
+    .main-side .menu-list .menu {
       flex-wrap: nowrap;
       max-height: unset;
-    }
-
-    .right-column .menu-list ul {
-      margin-bottom: 20px;
     }
 
     .right-column .menu-list {
       flex-direction: column;
       gap: 5vw;
+
+      .menu {
+        margin-bottom: 20px;
+      }
     }
 
     .disclaimer-and-other {
@@ -251,7 +252,8 @@
       padding-bottom: 10px;
     }
 
-    .social-bar ul {
+    .social-bar .payments,
+    .payment-methods .payments {
       gap: 2vw;
     }
 
@@ -261,14 +263,7 @@
       line-height: 1.8em;
     }
 
-    .payment-methods ul {
-      gap: 2vw;
-    }
-
-    .copy-write {
-      font-size: 2vw;
-    }
-
+    .copy-write,
     .rights-reserved {
       font-size: 2vw;
       margin-left: 2vw;
