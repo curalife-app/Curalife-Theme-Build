@@ -1,57 +1,86 @@
 {% unless section.settings.hide_on_affiliate_pages and request.path contains '-aff' %}
-  {%- # Cache commonly used values -%}
-  {%- assign current_year = 'now' | date: '%Y' -%}
-  {%- assign shop_name = shop.name -%}
+  {%- liquid
+    assign current_year = 'now' | date: '%Y'
+    assign shop_name = shop.name
+    assign has_disclaimer = section.settings.disclaimer != blank
+    assign has_payment_methods = false
+    for block in section.blocks
+      if block.type == 'payment' and block.settings.payment_img != blank
+        assign has_payment_methods = true
+        break
+      endif
+    endfor
+  -%}
 
-  <footer class="bg-[--primary] text-footer-custom" style="--footer-text-color: {{ section.settings.text_color }}; --footer-titles-color: {{ section.settings.titles_color }};">
+  <footer
+    class="bg-primary text-white"
+    style="
+      --footer-text-color: {{ section.settings.text_color }};
+      --footer-titles-color: {{ section.settings.titles_color }};
+    ">
     <div class="top-info pt-8 pb-4">
       <div class="container mx-auto px-4">
-        <div class="flex justify-between gap-16">
+        <div class="flex flex-col md:flex-row justify-between gap-8 md:gap-16">
           {%- # Main Column -%}
-          <div class="footer-column md:w-auto pt-5">
-            <a href="/" class="block">
-              {%- # Use native lazy loading and exact dimensions -%}
-              <img
-                class="logo invert max-w-[150px]"
-                src="{{ 'logo-new.svg' | asset_url }}"
-                alt="{{ shop_name }} logo"
-                width="134"
-                height="32"
-                loading="lazy"
-                decoding="async">
+          <div class="footer-column md:w-auto">
+            <a href="/" class="inline-block">
+              {%- render 'image',
+                src: 'logo-new.svg' | asset_url,
+                class: 'logo invert max-w-[150px]',
+                alt: shop_name | append: ' logo',
+                width: 134,
+                height: 32,
+                loading: 'lazy',
+                decoding: 'async'
+              -%}
             </a>
 
             {%- # Social Links -%}
-            <div class="social-links flex gap-4 text-2xl mt-4">
-              {%- for block in section.blocks -%}
-                {%- if block.type == 'social' and block.settings.social_link != blank -%}
-                  <a
-                    href="{{ block.settings.social_link }}"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Visit our {{ block.settings.social_icon_class | remove: 'fa-' | remove: 'fab' | capitalize }}">
-                    <i class="{{ block.settings.social_icon_class }} text-white"></i>
-                  </a>
-                {%- endif -%}
-              {%- endfor -%}
-            </div>
+            {%- assign has_social = false -%}
+            {%- for block in section.blocks -%}
+              {%- if block.type == 'social' and block.settings.social_link != blank -%}
+                {%- unless has_social -%}
+                  <div class="social-links flex gap-4 text-2xl mt-4">
+                  {%- assign has_social = true -%}
+                {%- endunless -%}
+                <a
+                  href="{{ block.settings.social_link | escape }}"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="hover:opacity-80 transition-opacity"
+                  aria-label="Visit our {{ block.settings.social_icon_class | remove: 'fa-' | remove: 'fab' | capitalize }}">
+                  <i class="{{ block.settings.social_icon_class }} text-white"></i>
+                </a>
+              {%- endif -%}
+            {%- endfor -%}
+            {%- if has_social -%}
+              </div>
+            {%- endif -%}
           </div>
 
           {%- # Menu Column -%}
-          <div class="footer-column w-full md:w-4/5 pt-5">
-            <div class="menu-list flex flex-wrap justify-between gap-5">
+          <div class="footer-column w-full md:w-4/5">
+            <div class="menu-list flex flex-col md:flex-row flex-wrap justify-between gap-5">
               {%- for block in section.blocks -%}
                 {%- if block.type == 'menu' and block.settings.footer_linklist != blank -%}
                   {%- assign footer_linklist = block.settings.footer_linklist -%}
-                  {%- if linklists[footer_linklist].links.size > 0 -%}
+                  {%- assign links = linklists[footer_linklist].links -%}
+                  {%- if links.size > 0 -%}
                     <div class="menu-wrapper flex flex-col gap-2.5">
-                      <h2 class="h6 text-[--footer-titles-color] uppercase font-bold">{{ block.settings.menu_title }}</h2>
-                      <nav class="menu flex flex-col gap-4">
-                        {%- for link in linklists[footer_linklist].links -%}
+                      {%- if block.settings.menu_title != blank -%}
+                        <h2 class="h6 text-[--footer-titles-color] uppercase font-bold">
+                          {{- block.settings.menu_title -}}
+                        </h2>
+                      {%- endif -%}
+                      <nav class="menu flex flex-col gap-4" aria-label="{{ block.settings.menu_title | escape }}">
+                        {%- for link in links -%}
                           <a
-                            href="{{ link.url }}"
-                            class="font-light text-[16px] text-white hover:opacity-80 transition-opacity">
-                            {{ link.title }}
+                            href="{{ link.url | escape }}"
+                            class="font-light text-base hover:opacity-80 transition-opacity"
+                            {%- if link.url contains 'professionals' or link.url contains 'retail' -%}
+                              rel="nofollow"
+                            {%- endif -%}>
+                            {{- link.title -}}
                           </a>
                         {%- endfor -%}
                       </nav>
@@ -64,8 +93,10 @@
         </div>
 
         {%- # Disclaimer -%}
-        {%- if section.settings.disclaimer != blank -%}
-          <div class="mt-8 text-xs text-white/70">{{ section.settings.disclaimer }}</div>
+        {%- if has_disclaimer -%}
+          <div class="mt-8 text-xs text-white/70">
+            {{- section.settings.disclaimer -}}
+          </div>
         {%- endif -%}
       </div>
     </div>
@@ -73,23 +104,26 @@
     {%- # Footer Bottom -%}
     <div class="bottom-info py-2.5 border-t border-white/40">
       <div class="container mx-auto px-4">
-        <div class="flex text-white items-center justify-between text-xs">
-          <p>&copy; {{ current_year }} {{ shop_name }}</p>
+        <div class="flex items-center justify-between text-xs">
+          <p>&copy; {{ current_year }} {{ shop_name | escape }}</p>
 
           {%- # Payment Methods -%}
-          <div class="flex gap-5">
-            {%- for block in section.blocks -%}
-              {%- if block.type == 'payment' and block.settings.payment_img != blank -%}
-                <img
-                  src="{{ block.settings.payment_img | img_url: '51x32' }}"
-                  width="51"
-                  height="32"
-                  alt="Payment method"
-                  loading="lazy"
-                  decoding="async">
-              {%- endif -%}
-            {%- endfor -%}
-          </div>
+          {%- if has_payment_methods -%}
+            <div class="flex gap-5">
+              {%- for block in section.blocks -%}
+                {%- if block.type == 'payment' and block.settings.payment_img != blank -%}
+                  {%- render 'image',
+                    src: block.settings.payment_img | img_url: '51x32',
+                    alt: 'Payment method',
+                    width: 51,
+                    height: 32,
+                    loading: 'lazy',
+                    decoding: 'async'
+                  -%}
+                {%- endif -%}
+              {%- endfor -%}
+            </div>
+          {%- endif -%}
 
           <p>All Rights Reserved</p>
         </div>
@@ -98,27 +132,12 @@
   </footer>
 {% endunless %}
 
-{%- # Styles - Consider moving to a separate CSS file -%}
+{%- # Responsive styles -%}
 <style>
-  footer {
-    --footer-titles-color: {{ section.settings.titles_color }};
-  }
-
   @media screen and (max-width: 768px) {
     .menu-list {
-      flex-direction: column;
-      gap: 5vw;
-    }
-
-    .pre-bottom-text {
-      font-size: 3vw;
-      line-height: 1.8em;
-    }
-
-    .copy-write,
-    .rights-reserved {
-      font-size: 2vw;
-      margin-left: 2vw;
+      --gap: max(20px, 5vw);
+      gap: var(--gap);
     }
   }
 </style>
@@ -157,7 +176,8 @@
     {
       "type": "checkbox",
       "id": "hide_on_affiliate_pages",
-      "label": "Hide on affiliate pages"
+      "label": "Hide on affiliate pages",
+      "info": "When enabled, footer will be hidden on affiliate pages"
     }
   ],
   "blocks": [
@@ -184,7 +204,8 @@
         {
           "type": "text",
           "id": "social_icon_class",
-          "label": "Social Icon Class"
+          "label": "Social Icon Class",
+          "info": "Font Awesome class name (e.g., fab fa-facebook)"
         },
         {
           "id": "social_link",
@@ -200,7 +221,8 @@
         {
           "type": "image_picker",
           "id": "payment_img",
-          "label": "Select Payment Image"
+          "label": "Select Payment Image",
+          "info": "51x32px recommended"
         }
       ]
     }
