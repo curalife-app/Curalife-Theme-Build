@@ -1,241 +1,117 @@
 {% unless section.settings.hide_on_affiliate_pages and request.path contains '-aff' %}
-  <footer>
-    <div class="top-info">
-      <div class="container">
-        <div class="info-wrap">
-          <div class="main-side footer-column">
-            <a href="/"><img class="logo invert" src="{{ 'logo-new.svg' | asset_url }}" alt="curalife logo" width="134" height="32" loading="lazy"></a>
-            <div class="social-links flex gap-4 text-[24px] mt-4">
-              {% for block in section.blocks %}
-                {% if block.type == 'social' %}
-                  <a href="{{ block.settings.social_link }}" target="_blank"><i class="{{ block.settings.social_icon_class }}"></i></a>
-                {% endif %}
-              {% endfor %}
-            </div>
-        </div>
+  {%- # Cache commonly used values -%}
+  {%- assign current_year = 'now' | date: '%Y' -%}
+  {%- assign shop_name = shop.name -%}
 
-          <div class="right-column footer-column">
-            <div class="menu-list">
-              {% for block in section.blocks %}
-                {% if block.type == 'menu' %}
-                  <div class="menu-wrapper">
-                    <div class="h6">{{ block.settings.menu_title }}</div>
-                    {% assign footer_linklist = block.settings.footer_linklist %}
-                    {% if linklists[footer_linklist].links.size > 0 %}
-                      <div class="menu">
-                        {% for link in linklists[footer_linklist].links %}
-                          <div class="item"><a href="{{ link.url }}"{% if link.url contains 'professionals' or link.url contains 'retail' %} rel="nofollow"{% endif %}>{{ link.title }}</a></div>
-                        {% endfor %}
-                      </div>
-                    {% endif %}
-                  </div>
-                {% endif %}
-              {% endfor %}
+  <footer class="bg-primary text-footer-custom" style="--footer-text-color: {{ section.settings.text_color }}; --footer-titles-color: {{ section.settings.titles_color }};">
+    <div class="top-info py-8">
+      <div class="container mx-auto px-4">
+        <div class="flex flex-wrap justify-between">
+          {%- # Main Column -%}
+          <div class="footer-column w-full md:w-auto pt-5">
+            <a href="/" class="block">
+              {%- # Use native lazy loading and exact dimensions -%}
+              <img
+                class="logo invert max-w-[150px]"
+                src="{{ 'logo-new.svg' | asset_url }}"
+                alt="{{ shop_name }} logo"
+                width="134"
+                height="32"
+                loading="lazy"
+                decoding="async">
+            </a>
+
+            {%- # Social Links -%}
+            <div class="social-links flex gap-4 text-2xl mt-4">
+              {%- for block in section.blocks -%}
+                {%- if block.type == 'social' and block.settings.social_link != blank -%}
+                  <a
+                    href="{{ block.settings.social_link }}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Visit our {{ block.settings.social_icon_class | remove: 'fa-' | remove: 'fab' | capitalize }}">
+                    <i class="{{ block.settings.social_icon_class }}"></i>
+                  </a>
+                {%- endif -%}
+              {%- endfor -%}
+            </div>
+          </div>
+
+          {%- # Menu Column -%}
+          <div class="footer-column w-full md:w-4/5 pt-5">
+            <div class="menu-list flex flex-wrap justify-between gap-5 pt-3">
+              {%- for block in section.blocks -%}
+                {%- if block.type == 'menu' and block.settings.footer_linklist != blank -%}
+                  {%- assign footer_linklist = block.settings.footer_linklist -%}
+                  {%- if linklists[footer_linklist].links.size > 0 -%}
+                    <div class="menu-wrapper flex flex-col gap-2.5">
+                      <h2 class="h6 text-footer-title uppercase font-bold">{{ block.settings.menu_title }}</h2>
+                      <nav class="menu flex flex-col gap-4">
+                        {%- for link in linklists[footer_linklist].links -%}
+                          <a
+                            href="{{ link.url }}"
+                            class="text-base font-light hover:opacity-80 transition-opacity"
+                            {%- if link.url contains 'professionals' or link.url contains 'retail' -%}
+                              rel="nofollow"
+                            {%- endif -%}>
+                            {{ link.title }}
+                          </a>
+                        {%- endfor -%}
+                      </nav>
+                    </div>
+                  {%- endif -%}
+                {%- endif -%}
+              {%- endfor -%}
             </div>
           </div>
         </div>
 
-        <div class="pre-bottom-text">{{ section.settings.disclaimer }}</div>
+        {%- # Disclaimer -%}
+        {%- if section.settings.disclaimer != blank -%}
+          <div class="mt-5 mb-6 text-xs text-white/70">
+            {{ section.settings.disclaimer }}
+          </div>
+        {%- endif -%}
       </div>
     </div>
 
-    <div class="bottom-info">
-      <div class="container">
-        <div class="info-wrap">
-          <div class="text"><p class="copy-write">&copy; {{ 'now' | date: '%Y' }} {{ shop.name }}</p> </div>
+    {%- # Footer Bottom -%}
+    <div class="bottom-info py-2.5 border-t border-white/40">
+      <div class="container mx-auto px-4">
+        <div class="flex items-center justify-between text-xs">
+          <p class="text-white">&copy; {{ current_year }} {{ shop_name }}</p>
 
-          <div class="payment-methods">
-            <div class="payments">
-              {% for block in section.blocks %}
-                {% if block.type == 'payment' %}
-                  {% if block.settings.payment_img != blank %}
-                    <div class="payment"><span><img src="{{ block.settings.payment_img | img_url: '' }}" width="51px" height="32px" alt=""></span></div>
-                  {% endif %}
-                {% endif %}
-              {% endfor %}
-            </div>
+          {%- # Payment Methods -%}
+          <div class="flex gap-5">
+            {%- for block in section.blocks -%}
+              {%- if block.type == 'payment' and block.settings.payment_img != blank -%}
+                <img
+                  src="{{ block.settings.payment_img | img_url: '51x32' }}"
+                  width="51"
+                  height="32"
+                  alt="Payment method"
+                  loading="lazy"
+                  decoding="async">
+              {%- endif -%}
+            {%- endfor -%}
           </div>
 
-          <p class="rights-reserved">All Rights Reserved</p>
+          <p>All Rights Reserved</p>
         </div>
       </div>
     </div>
   </footer>
+{% endunless %}
 
-
+{%- # Styles - Consider moving to a separate CSS file -%}
 <style>
-  footer {
-    --footer-text-color: {{ section.settings.text_color }};
-    --footer-titles-color: {{ section.settings.titles_color }};
-  }
-</style>
-
-
-<style>
-  footer {
-    background: var(--primary);
-    color: var(--footer-text-color);
-  }
-
-  footer .logo {
-    max-width: 150px;
-    margin: unset;
-  }
-
-  footer .top-info .info-wrap {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    padding: 2rem 0;
-  }
-
-  footer .bottom-info {
-    padding: 10px 0;
-    border-top: 1px solid rgba(239,239,239,.37);
-
-    .info-wrap {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 10px;
-
-      .text p {
-        color: white !important;
-      }
-    }
-  }
-
-  footer .footer-column {
-    padding-top: 20px;
-  }
-
-  footer .disclaimer {
-    font-size: 0.7em;
-  }
-
-  .menu-list .menu {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-
-  footer .payment-methods {
-    .payments {
-      display: flex;
-      gap: 20px;
-
-      &:nth-child(2) {
-        display: none;
-      }
-    }
-  }
-
-  footer .right-column {
-    min-width: 80%;
-
-    .menu-list {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      gap: 20px;
-      padding-top: 0.7em;
-
-      .menu-wrapper {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-      }
-
-      ul {
-        font-weight: lighter;
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-        font-size: 16px;
-      }
-    }
-  }
-
-  footer .h6 {
-    color: var(--footer-titles-color);
-    text-transform: uppercase;
-    font-weight: bold;
-  }
-
-  .disclaimer-and-other {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-
-    a {
-      font-family: 'PP Radio Grotesk';
-      font-weight: lighter;
-      text-decoration-line: underline;
-      color: var(--footer-titles-color);
-    }
-  }
-
-  .social-bar {
-    ul {
-      display: flex;
-      gap: 20px;
-
-      li {
-        width: 50%;
-        padding: 10px 0;
-
-        a {
-          color: inherit;
-          transition: opacity var(--transition);
-          font-size: 28px;
-        }
-      }
-    }
-  }
-
-  .pre-bottom-text {
-    margin-top: 1.2em;
-    margin-bottom: 1.5em;
-
-    p {
-      font-size: 10px;
-      color: rgba(255, 255, 255, 0.7);
-    }
-  }
-
   @media screen and (max-width: 768px) {
-    footer .footer-columns {
-      font-size: 20px;
-    }
-
-    footer .top-info .info-wrap {
-      padding-bottom: unset;
-      display: unset;
-    }
-
-    .main-side .menu-list .menu {
-      flex-wrap: nowrap;
-      max-height: unset;
-    }
-
-    .right-column .menu-list {
+    .menu-list {
       flex-direction: column;
       gap: 5vw;
     }
 
-    .disclaimer-and-other {
-      flex-direction: column;
-      padding-bottom: 10px;
-    }
-
-    .social-bar .payments,
-    .payment-methods .payments {
-      gap: 2vw;
-    }
-
     .pre-bottom-text {
-      font-weight: 400;
       font-size: 3vw;
       line-height: 1.8em;
     }
@@ -247,7 +123,6 @@
     }
   }
 </style>
-{% endunless %}
 
 {% schema %}
 {
@@ -274,20 +149,6 @@
       "type": "image_picker",
       "id": "logo_img",
       "label": "Logo image"
-    },
-    {
-      "type": "header",
-      "content": "Bottom Menu"
-    },
-    {
-      "type": "text",
-      "id": "bottom_menu_title",
-      "label": "Bottom Menu Title"
-    },
-    {
-      "type": "link_list",
-      "id": "bottom_linklist",
-      "label": "Bottom Menu"
     },
     {
       "type": "richtext",
