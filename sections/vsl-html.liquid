@@ -90,10 +90,83 @@
 <!-- FAQ Section -->
 <section class="faq-section py-8">
     <div class="container">
-        <h2 class="text-center mb-8">FAQs</h2>
-        <div class="faq flex flex-col gap-4">
-            <!-- FAQ items would go here -->
+      <div class="max-w-4xl mx-auto">
+        <div id="faq-section" class="flex flex-col gap-4">
+            <!-- FAQ items will be inserted here by JavaScript -->
         </div>
+    </div>
+
+    <script>
+        const faqData = [
+            {
+                question: "What is the recommended daily usage of Curalin?",
+                answer: "Take 2 capsules of Curalin following each meal, three times a day. Ideally, take it within 30 minutes after meals, but since balancing blood sugar is so individual and varies from person to person, the best time for you depends on your individual preferences.<br><br>Some users report positive outcomes taking it approximately 20 minutes before meals as this approach could potentially enhance the absorption of the capsules within your body, as they would be less diluted compared to when taken with food."
+            },
+            {
+                question: "When will I notice the benefits of taking Curalin?",
+                answer: "Many users feel more energetic and notice a helping hand in keeping their blood sugar levels healthy within the first few weeks. Like any natural supplement, the benefits of Curalin build over time, with ongoing use enhancing its supportive effects."
+            },
+            {
+                question: "Why should I choose Curalin if I'm already focusing on my diet for blood sugar management?",
+                answer: "Curalin complements your dietary efforts by providing additional support for healthy blood glucose levels. Its natural ingredients work alongside your food choices to help optimize your blood sugar control."
+            },
+            {
+                question: "What differentiates Curalin from other blood sugar support supplements?",
+                answer: "Curalin's unique blend of natural ingredients is specifically designed to support multiple aspects of blood sugar management, including glucose uptake and insulin sensitivity, setting it apart from other supplements that may focus on a single aspect of blood sugar control. In addition, Curalin is one of the only supplements in the world that went though a full clinical trial on it's finished formula and not only it's ingredients."
+            },
+            {
+                question: "What effects can I expect from taking Curalin?",
+                answer: "By taking Curalin, you're supporting your body's natural ability to manage blood sugar levels, which can lead to improved energy levels, and may assist in maintaining a healthy weight."
+            },
+            {
+                question: "How much Curalin should I order to start?",
+                answer: "We recommend beginning with at least a 3-month supply of Curalin to allow your body to adapt and respond to its ingredients. Many of our customers opt for a 6-month supply - to ensure consistent support and to benefit from our discounted pricing on larger orders."
+            }
+        ];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const faqSection = document.getElementById('faq-section');
+
+            faqData.forEach((item, index) => {
+                const faqItem = document.createElement('div');
+                faqItem.className = 'faq-item bg-white rounded-2xl shadow-sm transition-all duration-200';
+                faqItem.innerHTML = `
+                    <div class="px-6 py-5">
+                        <h3 class="faq-question font-semibold text-xl text-gray-900 font-['DM_Sans'] cursor-pointer flex items-center justify-between">
+                            ${item.question}
+                        </h3>
+                        <div class="faq-answer text-gray-700">
+                            ${item.answer}
+                        </div>
+                    </div>
+                `;
+                faqSection.appendChild(faqItem);
+
+                const question = faqItem.querySelector('.faq-question');
+                const answer = faqItem.querySelector('.faq-answer');
+
+                question.addEventListener('click', () => {
+                    const isActive = faqItem.classList.contains('active');
+
+                    // Close all other items
+                    document.querySelectorAll('.faq-item').forEach(item => {
+                        if (item !== faqItem && item.classList.contains('active')) {
+                            item.classList.remove('active');
+                            item.querySelector('.faq-answer').style.maxHeight = '0';
+                        }
+                    });
+
+                    // Toggle current item
+                    faqItem.classList.toggle('active');
+                    if (!isActive) {
+                        answer.style.maxHeight = answer.scrollHeight + 'px';
+                    } else {
+                        answer.style.maxHeight = '0';
+                    }
+                });
+            });
+        });
+    </script>
     </div>
 </section>
 
