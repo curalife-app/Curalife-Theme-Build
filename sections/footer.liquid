@@ -1,22 +1,18 @@
-{%- liquid
-  # Cache common values
-  assign current_year = 'now' | date: '%Y'
-  assign shop_name = shop.name
-  assign has_disclaimer = section.settings.disclaimer != blank
+{%- # Proper way to handle conditions in Liquid assignments -%}
+{%- assign current_year = 'now' | date: '%Y' -%}
+{%- assign shop_name = shop.name -%}
 
-  # Pre-process blocks for performance
-  assign menu_blocks = section.blocks | where: 'type', 'menu'
-  assign social_blocks = section.blocks | where: 'type', 'social'
-  assign payment_blocks = section.blocks | where: 'type', 'payment'
-  assign has_payment_methods = payment_blocks.size > 0
-  assign has_social = social_blocks.size > 0
+{%- # Process blocks for performance -%}
+{%- assign menu_blocks = section.blocks | where: 'type', 'menu' -%}
+{%- assign social_blocks = section.blocks | where: 'type', 'social' -%}
+{%- assign payment_blocks = section.blocks | where: 'type', 'payment' -%}
 
-  # Cache visibility condition
-  assign show_footer = true
-  if section.settings.hide_on_affiliate_pages and request.path contains '-aff'
-    assign show_footer = false
-  endif
--%}
+{%- # Check conditions -%}
+{%- if section.settings.hide_on_affiliate_pages and request.path contains '-aff' -%}
+  {%- assign show_footer = false -%}
+{%- else -%}
+  {%- assign show_footer = true -%}
+{%- endif -%}
 
 {%- if show_footer -%}
   <footer
@@ -40,11 +36,10 @@
             </a>
 
             {%- # Social Links Section -%}
-            {%- if has_social -%}
+            {%- if social_blocks.size > 0 -%}
               <div class="social-links flex gap-4 text-2xl mt-4">
                 {%- for block in social_blocks -%}
                   {%- if block.settings.social_link != blank -%}
-                    {%- # Extract social media name for better accessibility -%}
                     {%- assign social_name = block.settings.social_icon_class | split: '-' | last | capitalize -%}
                     <a
                       href="{{ block.settings.social_link | escape }}"
@@ -82,9 +77,9 @@
                           <a
                             href="{{ link.url | escape }}"
                             class="font-light text-base hover:opacity-80 transition-opacity focus:outline-none focus:text-white/80"
-                            {% if link.url contains 'professionals' or link.url contains 'retail' %}
+                            {%- if link.url contains 'professionals' or link.url contains 'retail' -%}
                               rel="nofollow"
-                            {% endif %}>
+                            {%- endif -%}>
                             {{- link.title -}}
                           </a>
                         {%- endfor -%}
@@ -98,7 +93,7 @@
         </div>
 
         {%- # Disclaimer Section -%}
-        {%- if has_disclaimer -%}
+        {%- if section.settings.disclaimer != blank -%}
           <div class="mt-8 text-xs text-white/70 max-w-3xl">
             {{- section.settings.disclaimer -}}
           </div>
@@ -111,7 +106,7 @@
           <p class="order-2 md:order-1">&copy; {{ current_year }} {{ shop_name | escape }}</p>
 
           {%- # Payment Methods -%}
-          {%- if has_payment_methods -%}
+          {%- if payment_blocks.size > 0 -%}
             <div class="flex flex-wrap justify-center gap-5 order-1 md:order-2">
               {%- for block in payment_blocks -%}
                 {%- if block.settings.payment_img != blank -%}
