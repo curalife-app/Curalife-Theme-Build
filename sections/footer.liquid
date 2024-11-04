@@ -1,4 +1,3 @@
-{%- # Proper way to handle conditions in Liquid assignments -%}
 {%- assign current_year = 'now' | date: '%Y' -%}
 {%- assign shop_name = shop.name -%}
 
@@ -21,18 +20,18 @@
     <div class="container mx-auto px-4">
       {%- # Top Section -%}
       <div class="py-8">
-        <div class="flex flex-col md:flex-row justify-between gap-8 md:gap-16">
+        <div class="flex flex-col md:flex-row justify-between gap-8">
           {%- # Brand & Social Column -%}
-          <div class="md:w-auto">
-            <a href="/" class="block">
-              <img
-                class="logo invert max-w-[150px]"
-                src="{{ 'logo-new.svg' | asset_url }}"
-                alt="{{ shop_name }} logo"
-                width="134"
-                height="32"
-                loading="lazy"
-                decoding="async">
+          <div class="shrink-0 md:w-auto">
+            <a href="{{ routes.root_url }}" class="inline-block">
+              {%- render 'image-element',
+                image: 'logo-new.svg' | asset_url,
+                class: 'logo invert max-w-[150px]',
+                alt: shop_name | append: ' logo',
+                width: 134,
+                height: 32,
+                priority: true
+              -%}
             </a>
 
             {%- # Social Links Section -%}
@@ -58,13 +57,13 @@
 
           {%- # Menu Columns -%}
           {%- if menu_blocks.size > 0 -%}
-            <div class="w-full md:w-4/5">
-              <div class="grid grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-5">
+            <div class="grow">
+              <div class="flex flex-col md:flex-row md:justify-end gap-8 md:gap-16">
                 {%- for block in menu_blocks -%}
                   {%- assign footer_linklist = block.settings.footer_linklist -%}
                   {%- assign links = linklists[footer_linklist].links -%}
                   {%- if links.size > 0 -%}
-                    <div class="flex flex-col gap-2.5" {{ block.shopify_attributes }}>
+                    <div class="flex flex-col gap-2.5 min-w-[150px]" {{ block.shopify_attributes }}>
                       {%- if block.settings.menu_title != blank -%}
                         <h2 class="text-[--footer-titles-color] uppercase font-bold text-sm">
                           {{- block.settings.menu_title -}}
@@ -76,7 +75,7 @@
                         {%- for link in links -%}
                           <a
                             href="{{ link.url | escape }}"
-                            class="font-light text-base hover:opacity-80 transition-opacity focus:outline-none focus:text-white/80"
+                            class="font-light text-base hover:opacity-80 transition-opacity focus:outline-none focus:text-white/80 whitespace-nowrap"
                             {%- if link.url contains 'professionals' or link.url contains 'retail' -%}
                               rel="nofollow"
                             {%- endif -%}>
