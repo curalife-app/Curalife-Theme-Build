@@ -1,9 +1,4 @@
 {%- liquid
-  # Early return if we should hide the footer
-  if section.settings.hide_on_affiliate_pages and request.path contains '-aff'
-    return
-  endif
-
   # Cache common values
   assign current_year = 'now' | date: '%Y'
   assign shop_name = shop.name
@@ -15,118 +10,131 @@
   assign payment_blocks = section.blocks | where: 'type', 'payment'
   assign has_payment_methods = payment_blocks.size > 0
   assign has_social = social_blocks.size > 0
+
+  # Cache visibility condition
+  assign show_footer = true
+  if section.settings.hide_on_affiliate_pages and request.path contains '-aff'
+    assign show_footer = false
+  endif
 -%}
 
-<footer
-  class="bg-primary text-white"
-  style="--footer-titles-color: {{ section.settings.titles_color }};">
-  <div class="container mx-auto px-4">
-    {%- # Top Section -%}
-    <div class="py-8">
-      <div class="flex flex-col md:flex-row justify-between gap-8 md:gap-16">
-        {%- # Brand & Social Column -%}
-        <div class="md:w-auto">
-          <a href="{{ routes.root_url }}" class="inline-block">
-            {%- render 'image-element',
-              image: 'logo-new.svg' | asset_url,
-              class: 'logo invert max-w-[150px]',
-              alt: shop_name | append: ' logo',
-              width: 134,
-              height: 32,
-              priority: true
-            -%}
-          </a>
+{%- if show_footer -%}
+  <footer
+    class="bg-primary text-white print:hidden"
+    style="--footer-titles-color: {{ section.settings.titles_color }};">
+    <div class="container mx-auto px-4">
+      {%- # Top Section -%}
+      <div class="py-8">
+        <div class="flex flex-col md:flex-row justify-between gap-8 md:gap-16">
+          {%- # Brand & Social Column -%}
+          <div class="md:w-auto">
+            <a href="{{ routes.root_url }}" class="inline-block">
+              {%- render 'image-element',
+                image: 'logo-new.svg' | asset_url,
+                class: 'logo invert max-w-[150px]',
+                alt: shop_name | append: ' logo',
+                width: 134,
+                height: 32,
+                priority: true
+              -%}
+            </a>
 
-          {%- # Social Links Section -%}
-          {%- if has_social -%}
-            <div class="social-links flex gap-4 text-2xl mt-4">
-              {%- for block in social_blocks -%}
-                {%- if block.settings.social_link != blank -%}
-                  {%- # Extract social media name for better accessibility -%}
-                  {%- assign social_name = block.settings.social_icon_class | split: '-' | last | capitalize -%}
-                  <a
-                    href="{{ block.settings.social_link | escape }}"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-white/20 rounded-full p-1"
-                    aria-label="Visit {{ shop_name }} on {{ social_name }}">
-                    <i class="{{ block.settings.social_icon_class }} text-white"></i>
-                  </a>
-                {%- endif -%}
-              {%- endfor -%}
+            {%- # Social Links Section -%}
+            {%- if has_social -%}
+              <div class="social-links flex gap-4 text-2xl mt-4">
+                {%- for block in social_blocks -%}
+                  {%- if block.settings.social_link != blank -%}
+                    {%- # Extract social media name for better accessibility -%}
+                    {%- assign social_name = block.settings.social_icon_class | split: '-' | last | capitalize -%}
+                    <a
+                      href="{{ block.settings.social_link | escape }}"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-white/20 rounded-full p-1"
+                      aria-label="Visit {{ shop_name }} on {{ social_name }}"
+                      {{ block.shopify_attributes }}>
+                      <i class="{{ block.settings.social_icon_class }} text-white"></i>
+                    </a>
+                  {%- endif -%}
+                {%- endfor -%}
+              </div>
+            {%- endif -%}
+          </div>
+
+          {%- # Menu Columns -%}
+          {%- if menu_blocks.size > 0 -%}
+            <div class="w-full md:w-4/5">
+              <div class="grid grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-5">
+                {%- for block in menu_blocks -%}
+                  {%- assign footer_linklist = block.settings.footer_linklist -%}
+                  {%- assign links = linklists[footer_linklist].links -%}
+                  {%- if links.size > 0 -%}
+                    <div class="flex flex-col gap-2.5" {{ block.shopify_attributes }}>
+                      {%- if block.settings.menu_title != blank -%}
+                        <h2 class="text-[--footer-titles-color] uppercase font-bold text-sm">
+                          {{- block.settings.menu_title -}}
+                        </h2>
+                      {%- endif -%}
+                      <nav
+                        class="flex flex-col gap-4"
+                        aria-label="{{ block.settings.menu_title | default: 'Footer menu' | escape }}">
+                        {%- for link in links -%}
+                          <a
+                            href="{{ link.url | escape }}"
+                            class="font-light text-base hover:opacity-80 transition-opacity focus:outline-none focus:text-white/80"
+                            {% if link.url contains 'professionals' or link.url contains 'retail' %}
+                              rel="nofollow"
+                            {% endif %}>
+                            {{- link.title -}}
+                          </a>
+                        {%- endfor -%}
+                      </nav>
+                    </div>
+                  {%- endif -%}
+                {%- endfor -%}
+              </div>
             </div>
           {%- endif -%}
         </div>
 
-        {%- # Menu Columns -%}
-        {%- if menu_blocks.size > 0 -%}
-          <div class="w-full md:w-4/5">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
-              {%- for block in menu_blocks -%}
-                {%- assign footer_linklist = block.settings.footer_linklist -%}
-                {%- assign links = linklists[footer_linklist].links -%}
-                {%- if links.size > 0 -%}
-                  <div class="flex flex-col gap-2.5">
-                    {%- if block.settings.menu_title != blank -%}
-                      <h2 class="text-[--footer-titles-color] uppercase font-bold text-sm">
-                        {{- block.settings.menu_title -}}
-                      </h2>
-                    {%- endif -%}
-                    <nav
-                      class="flex flex-col gap-4"
-                      aria-label="{{ block.settings.menu_title | default: 'Footer menu' | escape }}">
-                      {%- for link in links -%}
-                        <a
-                          href="{{ link.url | escape }}"
-                          class="font-light text-base hover:opacity-80 transition-opacity focus:outline-none focus:text-white/80"
-                          {% if link.url contains 'professionals' or link.url contains 'retail' %}
-                            rel="nofollow"
-                          {% endif %}>
-                          {{- link.title -}}
-                        </a>
-                      {%- endfor -%}
-                    </nav>
+        {%- # Disclaimer Section -%}
+        {%- if has_disclaimer -%}
+          <div class="mt-8 text-xs text-white/70 max-w-3xl">
+            {{- section.settings.disclaimer -}}
+          </div>
+        {%- endif -%}
+      </div>
+
+      {%- # Footer Bottom -%}
+      <div class="py-2.5 border-t border-white/40">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
+          <p class="order-2 md:order-1">&copy; {{ current_year }} {{ shop_name | escape }}</p>
+
+          {%- # Payment Methods -%}
+          {%- if has_payment_methods -%}
+            <div class="flex flex-wrap justify-center gap-5 order-1 md:order-2">
+              {%- for block in payment_blocks -%}
+                {%- if block.settings.payment_img != blank -%}
+                  <div {{ block.shopify_attributes }}>
+                    {%- render 'image-element',
+                      image: block.settings.payment_img,
+                      alt: 'Payment method',
+                      width: 51,
+                      height: 32,
+                      class: 'payment-icon'
+                    -%}
                   </div>
                 {%- endif -%}
               {%- endfor -%}
             </div>
-          </div>
-        {%- endif -%}
-      </div>
+          {%- endif -%}
 
-      {%- # Disclaimer Section -%}
-      {%- if has_disclaimer -%}
-        <div class="mt-8 text-xs text-white/70 max-w-3xl">{{- section.settings.disclaimer -}}</div>
-      {%- endif -%}
-    </div>
-
-    {%- # Footer Bottom -%}
-    <div class="py-2.5 border-t border-white/40">
-      <div class="flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
-        <p class="order-2 md:order-1">&copy; {{ current_year }} {{ shop_name | escape }}</p>
-
-        {%- # Payment Methods -%}
-        {%- if has_payment_methods -%}
-          <div class="flex gap-5 order-1 md:order-2">
-            {%- for block in payment_blocks -%}
-              {%- if block.settings.payment_img != blank -%}
-                {%- render 'image-element',
-                  image: block.settings.payment_img,
-                  alt: 'Payment method',
-                  width: 51,
-                  height: 32,
-                  class: 'payment-icon'
-                -%}
-              {%- endif -%}
-            {%- endfor -%}
-          </div>
-        {%- endif -%}
-
-        <p class="order-3">All Rights Reserved</p>
+          <p class="order-3">All Rights Reserved</p>
+        </div>
       </div>
     </div>
-  </div>
-</footer>
+  </footer>
+{%- endif -%}
 
 {% schema %}
 {
