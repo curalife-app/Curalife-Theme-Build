@@ -89,13 +89,17 @@ This Liquid snippet creates a responsive image component with the following feat
     assign mobile_check = mobile_src | file_url
 
     unless mobile_check == blank or mobile_check contains '404' or mobile_check contains 'null'
-      assign mobile_image = mobile_check
+      # Since we found a mobile variant, we'll still use the desktop image object
+      # but track that we have a mobile URL to use
+      assign has_mobile_variant = true
+      assign mobile_variant_url = mobile_check
     else
-      assign mobile_image = desktop_image
+      assign has_mobile_variant = false
     endunless
-  else
-    assign mobile_image = mobile_image | default: desktop_image
   endif
+
+  # Set mobile image to either the provided mobile image or desktop image
+  assign mobile_image = mobile_image | default: desktop_image
 
   assign error_log = 'window.imageErrors = window.imageErrors || { missing_alt: [], missing_retina: [], missing_mobile: [], load_errors: []};'
 
@@ -147,7 +151,7 @@ This Liquid snippet creates a responsive image component with the following feat
     endunless
 
     # Log auto-detected mobile variant
-    if load_mobile and mobile_check and mobile_image == mobile_check
+    if has_mobile_variant
       assign mobile_debug_data = '{ type: "Auto-detected Mobile Image", filename: "' | append: filename | append: '", detectedMobile: "' | append: mobile_src | append: '", timestamp: "' | append: 'now' | date: '%Y-%m-%d %H:%M:%S' | append: '" }'
       assign error_log = error_log | append: 'console.info("📱 Auto-detected mobile variant:", ' | append: mobile_debug_data | append: ');'
     endif
@@ -226,13 +230,20 @@ This Liquid snippet creates a responsive image component with the following feat
   <source
     media="(max-width: {{ mobile_breakpoint }}px)"
     srcset="
-      {%- for width in breakpoints -%}
-        {{ mobile_image | image_url: width: width }} {{ width }}w
+      {%- if has_mobile_variant -%}
+        {{ mobile_variant_url }} 1x
         {%- if mobile_retina_image contains '/files/' -%}
-          ,{{ mobile_retina_image | file_url }} {{ width | times: 2 }}w
+          ,{{ mobile_retina_image | file_url }} 2x
         {%- endif -%}
-        {%- unless forloop.last -%},{%- endunless -%}
-      {%- endfor -%}
+      {%- else -%}
+        {%- for width in breakpoints -%}
+          {{ mobile_image | image_url: width: width }} {{ width }}w
+          {%- if mobile_retina_image contains '/files/' -%}
+            ,{{ mobile_retina_image | file_url }} {{ width | times: 2 }}w
+          {%- endif -%}
+          {%- unless forloop.last -%},{%- endunless -%}
+        {%- endfor -%}
+      {%- endif -%}
     "
     sizes="{{ sizes }}"
   >
