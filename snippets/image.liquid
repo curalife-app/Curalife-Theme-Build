@@ -323,40 +323,47 @@ This Liquid snippet creates a responsive image component with the following feat
   }
 </script>
 
+{%- liquid
+  # [Previous initialization code remains the same until picture tag]
+-%}
+
 <picture>
   {% if has_mobile_variant %}
   <source
     media="(max-width: {{ mobile_breakpoint }}px)"
-    srcset="{{ mobile_variant_url }} 1x{% if has_mobile_retina %},{{ mobile_retina_url }} 2x{% endif %}"
+    {% if has_mobile_retina %}
+    srcset="{{ mobile_variant_url }} 1x,{{ mobile_retina_url }} 2x"
+    {% else %}
+    srcset="{{ mobile_variant_url }}"
+    {% endif %}
     sizes="{{ sizes }}"
   >
   {% endif %}
 
   <source
     media="(min-width: {{ mobile_breakpoint | plus: 1 }}px)"
-    srcset="
-      {%- if has_global_variant -%}
-        {{ global_variant_url }} 1x
-        {%- if has_global_retina -%},{{ global_retina_url }} 2x{%- endif -%}
-      {%- else -%}
+    {% if has_global_variant %}
+      {% if has_global_retina %}
+      srcset="{{ global_variant_url }} 1x,{{ global_retina_url }} 2x"
+      {% else %}
+      srcset="{{ global_variant_url }}"
+      {% endif %}
+    {% else %}
+      srcset="
         {%- for width in breakpoints -%}
           {{ desktop_image | image_url: width: width }} {{ width }}w
           {%- if retina_image -%},{{ retina_image | file_url }} {{ width | times: 2 }}w{%- endif -%}
           {%- unless forloop.last -%},{%- endunless -%}
         {%- endfor -%}
-      {%- endif -%}
-    "
+      "
+    {% endif %}
     sizes="{{ sizes }}"
   >
 
   <img
     id="{{ unique_id }}"
     src="{% if has_global_variant %}{{ global_variant_url }}{% else %}{{ fallback_url }}{% endif %}"
-    {%- if has_global_variant and has_global_retina -%}
-      srcset="{{ global_retina_url }} 2x"
-    {%- elsif retina_image -%}
-      srcset="{{ retina_image | file_url }} 2x"
-    {%- endif -%}
+    {% if has_global_variant and has_global_retina %}srcset="{{ global_retina_url }} 2x"{% endif %}
     {% if lazy_load and is_priority != true %}
       loading="lazy"
       decoding="async"
