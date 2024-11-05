@@ -97,14 +97,28 @@ This Liquid snippet creates a responsive image component with the following feat
     assign global_src = image_name | append: '-global.' | append: image_ext
     assign global_check = global_src | file_url
 
+    # Debug output
+    echo 'DEBUG - Global Check:'
+    echo 'Store is global? ' | append: is_global_store
+    echo 'Load global enabled? ' | append: load_global
+    echo 'Original image name: ' | append: image_name
+    echo 'Global source: ' | append: global_src
+    echo 'Global check URL: ' | append: global_check
+
     unless global_check == blank or global_check contains '404' or global_check contains 'null'
       assign has_global_variant = true
       assign global_variant_url = global_check
       # Update the image name for subsequent checks (retina, mobile) to use the global version
       assign image_name = image_name | append: '-global'
+      echo 'Global variant found: ' | append: global_variant_url
     else
       assign has_global_variant = false
+      echo 'No global variant found'
     endunless
+  else
+    echo 'DEBUG - Global Check Skipped:'
+    echo 'Store is global? ' | append: is_global_store
+    echo 'Load global enabled? ' | append: load_global
   endif
 
   # Check for retina variant
