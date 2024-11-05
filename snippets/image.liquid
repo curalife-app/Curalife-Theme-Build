@@ -126,9 +126,9 @@ This Liquid snippet creates a responsive image component with the following feat
   assign retina_src = base_image_name | append: '-x2.' | append: image_ext
   assign retina_check = retina_src | file_url
 
-  unless retina_check == blank or retina_check contains '404' or retina_check contains 'null'
-    assign retina_image = retina_src
-  endunless
+	if retina_check contains '/files/'
+		assign retina_image = retina_src
+	endif
 
   # Check for mobile variant if enabled and not explicitly provided
   if load_mobile and mobile_image == blank
