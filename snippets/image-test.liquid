@@ -97,36 +97,27 @@ This Liquid snippet creates a responsive image component with the following feat
     assign global_src = image_name | append: '-global.' | append: image_ext
     assign global_check = global_src | file_url
 
-    assign error_log = error_log | append: 'window.globalDebug = {
-      isGlobalStore: ' | append: is_global_store | append: ',
-      loadGlobal: ' | append: load_global | append: ',
-      shopName: "' | append: shop_name | append: '",
-      imageName: "' | append: image_name | append: '",
-      globalSrc: "' | append: global_src | append: '",
-      globalCheck: "' | append: global_check | append: '"
-    };'
+    assign debug_data = 'window.globalDebug = { isGlobalStore: "' | append: is_global_store | append: '", loadGlobal: "' | append: load_global | append: '", shopName: "' | append: shop_name | append: '", imageName: "' | append: image_name | append: '", globalSrc: "' | append: global_src | append: '", globalCheck: "' | append: global_check | append: '" };'
+    assign error_log = error_log | append: debug_data
 
     unless global_check == blank or global_check contains '404' or global_check contains 'null'
       assign has_global_variant = true
       assign global_variant_url = global_check
       # Update the image name for subsequent checks (retina, mobile) to use the global version
       assign image_name = image_name | append: '-global'
-      assign error_log = error_log | append: 'window.globalDebug.variantFound = true; window.globalDebug.globalVariantUrl = "' | append: global_variant_url | append: '";'
+      assign debug_found = 'window.globalDebug.variantFound = true; window.globalDebug.globalVariantUrl = "' | append: global_variant_url | append: '";'
+      assign error_log = error_log | append: debug_found
     else
       assign has_global_variant = false
       assign error_log = error_log | append: 'window.globalDebug.variantFound = false;'
     endunless
   else
-    assign error_log = error_log | append: 'window.globalDebug = {
-      isGlobalStore: ' | append: is_global_store | append: ',
-      loadGlobal: ' | append: load_global | append: ',
-      shopName: "' | append: shop_name | append: '",
-      skipped: true
-    };'
+    assign debug_skip = 'window.globalDebug = { isGlobalStore: "' | append: is_global_store | append: '", loadGlobal: "' | append: load_global | append: '", shopName: "' | append: shop_name | append: '", skipped: true };'
+    assign error_log = error_log | append: debug_skip
   endif
 
   # Add console logging script
-  assign error_log = error_log | append: '
+  assign debug_script = '
   (function() {
     const debug = window.globalDebug;
     console.group("🌍 Global Image Detection Debug");
@@ -145,6 +136,7 @@ This Liquid snippet creates a responsive image component with the following feat
 
     console.groupEnd();
   })();'
+  assign error_log = error_log | append: debug_script
 
   # Check for retina variant
   assign retina_src = image_name | append: '-x2.' | append: image_ext
