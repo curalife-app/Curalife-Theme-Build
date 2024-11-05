@@ -141,11 +141,12 @@ This Liquid snippet creates a responsive image component with the following feat
         assign has_mobile_variant = true
         assign mobile_variant_url = mobile_check
 
-        # Check for retina variant of the global mobile image
+        # Check for mobile retina variant with correct -mbl-x2 pattern
         assign mobile_retina_src = base_image_name | append: '-global-mbl-x2.' | append: image_ext
         assign mobile_retina_check = mobile_retina_src | file_url
         unless mobile_retina_check == blank or mobile_retina_check contains '404' or mobile_retina_check contains 'null'
-          assign mobile_retina_image = mobile_retina_src
+          assign has_mobile_retina = true
+          assign mobile_retina_url = mobile_retina_check
         endunless
       else
         # Fallback to regular mobile variant
@@ -156,11 +157,12 @@ This Liquid snippet creates a responsive image component with the following feat
           assign has_mobile_variant = true
           assign mobile_variant_url = mobile_check
 
-          # Check for retina variant of the regular mobile image
+          # Check for mobile retina variant with correct -mbl-x2 pattern
           assign mobile_retina_src = base_image_name | append: '-mbl-x2.' | append: image_ext
           assign mobile_retina_check = mobile_retina_src | file_url
           unless mobile_retina_check == blank or mobile_retina_check contains '404' or mobile_retina_check contains 'null'
-            assign mobile_retina_image = mobile_retina_src
+            assign has_mobile_retina = true
+            assign mobile_retina_url = mobile_retina_check
           endunless
         else
           assign has_mobile_variant = false
@@ -175,11 +177,12 @@ This Liquid snippet creates a responsive image component with the following feat
         assign has_mobile_variant = true
         assign mobile_variant_url = mobile_check
 
-        # Check for retina variant of the mobile image
+        # Check for mobile retina variant with correct -mbl-x2 pattern
         assign mobile_retina_src = base_image_name | append: '-mbl-x2.' | append: image_ext
         assign mobile_retina_check = mobile_retina_src | file_url
         unless mobile_retina_check == blank or mobile_retina_check contains '404' or mobile_retina_check contains 'null'
-          assign mobile_retina_image = mobile_retina_src
+          assign has_mobile_retina = true
+          assign mobile_retina_url = mobile_retina_check
         endunless
       else
         assign has_mobile_variant = false
@@ -326,7 +329,7 @@ This Liquid snippet creates a responsive image component with the following feat
     srcset="
       {%- if has_mobile_variant -%}
         {{ mobile_variant_url }} 1x
-        {%- if mobile_retina_image -%},{{ mobile_retina_image | file_url }} 2x{%- endif -%}
+        {%- if has_mobile_retina -%},{{ mobile_retina_url }} 2x{%- endif -%}
       {%- elsif has_global_variant -%}
         {{ global_variant_url }} 1x
         {%- if has_global_retina -%},{{ global_retina_url }} 2x{%- endif -%}
@@ -392,8 +395,8 @@ This Liquid snippet creates a responsive image component with the following feat
     {%- elsif retina_image -%}
       data-desktop-retina-url="{{ retina_image | file_url }}"
     {%- endif -%}
-    {%- if mobile_retina_image -%}
-      data-mobile-retina-url="{{ mobile_retina_image | file_url }}"
+    {%- if has_mobile_retina -%}
+      data-mobile-retina-url="{{ mobile_retina_url }}"
     {%- endif -%}
     {%- if link -%}
       data-href="{{ link }}"
