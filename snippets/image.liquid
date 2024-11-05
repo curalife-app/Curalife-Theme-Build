@@ -323,10 +323,6 @@ This Liquid snippet creates a responsive image component with the following feat
   }
 </script>
 
-{%- liquid
-  # [Previous initialization code remains the same until picture tag]
--%}
-
 <picture>
   {% if has_mobile_variant %}
   <source
@@ -349,13 +345,11 @@ This Liquid snippet creates a responsive image component with the following feat
       srcset="{{ global_variant_url }}"
       {% endif %}
     {% else %}
-      srcset="
-        {%- for width in breakpoints -%}
-          {{ desktop_image | image_url: width: width }} {{ width }}w
-          {%- if retina_image -%},{{ retina_image | file_url }} {{ width | times: 2 }}w{%- endif -%}
-          {%- unless forloop.last -%},{%- endunless -%}
-        {%- endfor -%}
-      "
+      {% if retina_image %}
+      srcset="{{ desktop_image | image_url: width: 1200 }} 1x,{{ retina_image | file_url }} 2x"
+      {% else %}
+      srcset="{{ desktop_image | image_url: width: 1200 }}"
+      {% endif %}
     {% endif %}
     sizes="{{ sizes }}"
   >
