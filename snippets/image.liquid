@@ -147,6 +147,8 @@ This Liquid snippet creates a responsive image component with the following feat
         unless mobile_retina_check == blank or mobile_retina_check contains '404' or mobile_retina_check contains 'null'
           assign has_mobile_retina = true
           assign mobile_retina_url = mobile_retina_check
+        else
+          assign has_mobile_retina = false
         endunless
       else
         # Fallback to regular mobile variant
@@ -163,6 +165,8 @@ This Liquid snippet creates a responsive image component with the following feat
           unless mobile_retina_check == blank or mobile_retina_check contains '404' or mobile_retina_check contains 'null'
             assign has_mobile_retina = true
             assign mobile_retina_url = mobile_retina_check
+          else
+            assign has_mobile_retina = false
           endunless
         else
           assign has_mobile_variant = false
@@ -183,6 +187,8 @@ This Liquid snippet creates a responsive image component with the following feat
         unless mobile_retina_check == blank or mobile_retina_check contains '404' or mobile_retina_check contains 'null'
           assign has_mobile_retina = true
           assign mobile_retina_url = mobile_retina_check
+        else
+          assign has_mobile_retina = false
         endunless
       else
         assign has_mobile_variant = false
@@ -327,11 +333,7 @@ This Liquid snippet creates a responsive image component with the following feat
   {% if has_mobile_variant %}
   <source
     media="(max-width: {{ mobile_breakpoint }}px)"
-    {% if has_mobile_retina %}
-    srcset="{{ mobile_variant_url }} 1x,{{ mobile_retina_url }} 2x"
-    {% else %}
-    srcset="{{ mobile_variant_url }}"
-    {% endif %}
+    srcset="{{ mobile_variant_url }}{% if has_mobile_retina %} 1x,{{ mobile_retina_url }} 2x{% endif %}"
     sizes="{{ sizes }}"
   >
   {% endif %}
