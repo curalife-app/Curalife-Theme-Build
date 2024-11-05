@@ -92,41 +92,50 @@ This Liquid snippet creates a responsive image component with the following feat
   assign image_name = filename | split: '.' | first
   assign image_ext = filename | split: '.' | last
 
-  # Check for global variant if enabled and store is global
-  assign debug_global = '
+  # Debug data preparation
+  assign global_debug = '{
+    "is_global_store": ' | append: is_global_store | append: ',
+    "load_global": ' | append: load_global | append: ',
+    "shop_name": "' | append: shop_name | append: '",
+    "image_name": "' | append: image_name | append: '"'
+  if load_global and is_global_store
+    assign global_debug = global_debug | append: ',
+    "global_src": "' | append: global_src | append: '",
+    "global_check": "' | append: global_check | append: '"
+    }'
+  else
+    assign global_debug = global_debug | append: '}'
+  endif
+
+  assign error_log = error_log | append: '
     console.group("🌍 Global Image Detection Debug");
-    console.log("Store is global?", ' | append: is_global_store | append: ');
-    console.log("Load global enabled?", ' | append: load_global | append: ');
-    console.log("Shop name:", "' | append: shop_name | append: '");
-    console.log("Original image name:", "' | append: image_name | append: '");
-  '
-  assign error_log = error_log | append: debug_global
+    const globalDebug = ' | append: global_debug | append: ';
+    console.log("Store is global?", globalDebug.is_global_store);
+    console.log("Load global enabled?", globalDebug.load_global);
+    console.log("Shop name:", globalDebug.shop_name);
+    console.log("Original image name:", globalDebug.image_name);'
 
   if load_global and is_global_store
-    assign global_src = image_name | append: '-global.' | append: image_ext
-    assign global_check = global_src | file_url
-
-    assign debug_check = '
-      console.log("Global source:", "' | append: global_src | append: '");
-      console.log("Global check URL:", "' | append: global_check | append: '");
-    '
-    assign error_log = error_log | append: debug_check
+    assign error_log = error_log | append: '
+    console.log("Global source:", globalDebug.global_src);
+    console.log("Global check URL:", globalDebug.global_check);'
 
     unless global_check == blank or global_check contains '404' or global_check contains 'null'
       assign has_global_variant = true
       assign global_variant_url = global_check
       # Update the image name for subsequent checks (retina, mobile) to use the global version
       assign image_name = image_name | append: '-global'
-      assign debug_found = 'console.log("✅ Global variant found:", "' | append: global_variant_url | append: '");'
-      assign error_log = error_log | append: debug_found
+      assign error_log = error_log | append: '
+      console.log("✅ Global variant found:", "' | append: global_variant_url | append: '");'
     else
       assign has_global_variant = false
-      assign debug_not_found = 'console.log("❌ No global variant found");'
-      assign error_log = error_log | append: debug_not_found
+      assign error_log = error_log | append: '
+      console.log("❌ No global variant found");'
     endunless
   endif
 
-  assign error_log = error_log | append: 'console.groupEnd();'
+  assign error_log = error_log | append: '
+    console.groupEnd();'
 
   # Check for retina variant
   assign retina_src = image_name | append: '-x2.' | append: image_ext
