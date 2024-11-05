@@ -345,8 +345,8 @@ This Liquid snippet creates a responsive image component with the following feat
       srcset="{{ global_variant_url }}"
       {% endif %}
     {% else %}
-      {% if retina_image %}
-      srcset="{{ desktop_image | image_url: width: 1200 }} 1x,{{ retina_image | file_url }} 2x"
+      {% if retina_check and retina_check contains 'http' and retina_check != blank and retina_check contains '.png' %}
+      srcset="{{ desktop_image | image_url: width: 1200 }} 1x,{{ retina_check }} 2x"
       {% else %}
       srcset="{{ desktop_image | image_url: width: 1200 }}"
       {% endif %}
@@ -381,8 +381,8 @@ This Liquid snippet creates a responsive image component with the following feat
     data-original-url="{{ fallback_url }}"
     {%- if has_global_variant and has_global_retina -%}
       data-desktop-retina-url="{{ global_retina_url }}"
-    {%- elsif retina_image -%}
-      data-desktop-retina-url="{{ retina_image | file_url }}"
+    {%- elsif retina_check and retina_check contains 'http' and retina_check != blank and retina_check contains '.png' -%}
+      data-desktop-retina-url="{{ retina_check }}"
     {%- endif -%}
     {%- if has_mobile_retina -%}
       data-mobile-retina-url="{{ mobile_retina_url }}"
