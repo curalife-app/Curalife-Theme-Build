@@ -2,9 +2,9 @@
 # Responsive Image Component Documentation
 
 This Liquid snippet creates a responsive image component with the following features:
-- Responsive images with automatic desktop/mobile variants detection
+- Responsive images with desktop/mobile variants
+- Optional automatic mobile image detection
 - Retina image support
-- Auto-detection of mobile variants with "-mbl" suffix
 - Lazy loading with priority options
 - Error logging and fallback handling
 - WebP format support
@@ -28,7 +28,36 @@ This Liquid snippet creates a responsive image component with the following feat
   - Type: Shopify Image object
   - Default: Uses main `image` (or auto-detected mobile variant if load_mobile is true)
 
-[Previous documentation remains the same...]
+- `lazy`: Controls lazy loading behavior
+  - Type: Boolean
+  - Default: true
+
+- `priority`: Sets loading priority
+  - Type: Boolean
+  - Default: false
+  - Effect: When true, sets eager loading and high fetch priority
+
+- `mobile_breakpoint`: Viewport width to switch between mobile/desktop
+  - Type: Number
+  - Default: 768
+  - Unit: Pixels
+
+- `sizes`: Responsive sizes attribute
+  - Type: String
+  - Default: '(min-width: 1200px) 1200px, (min-width: 768px) 768px, 100vw'
+
+- `alt`: Image alt text
+  - Type: String
+  - Default: image.alt
+
+- `class`: Additional CSS classes
+  - Type: String
+  - Default: none
+
+- `link`: URL for making the image clickable
+  - Type: String
+  - Default: none
+  - Effect: Wraps image in an anchor tag when provided
 {%- endcomment -%}
 
 {%- liquid
@@ -54,8 +83,8 @@ This Liquid snippet creates a responsive image component with the following feat
   assign retina_src = image_name | append: '-x2.' | append: image_ext
   assign retina_check = retina_src | file_url
 
-  # Check for mobile variant if not explicitly provided
-  unless mobile_image
+  # Check for mobile variant if enabled and not explicitly provided
+  if load_mobile and mobile_image == blank
     assign mobile_src = image_name | append: '-mbl.' | append: image_ext
     assign mobile_check = mobile_src | file_url
 
@@ -64,7 +93,9 @@ This Liquid snippet creates a responsive image component with the following feat
     else
       assign mobile_image = desktop_image
     endunless
-  endunless
+  else
+    assign mobile_image = mobile_image | default: desktop_image
+  endif
 
   assign error_log = 'window.imageErrors = window.imageErrors || { missing_alt: [], missing_retina: [], missing_mobile: [], load_errors: []};'
 
@@ -116,7 +147,7 @@ This Liquid snippet creates a responsive image component with the following feat
     endunless
 
     # Log auto-detected mobile variant
-    if mobile_check and mobile_image == mobile_check
+    if load_mobile and mobile_check and mobile_image == mobile_check
       assign mobile_debug_data = '{ type: "Auto-detected Mobile Image", filename: "' | append: filename | append: '", detectedMobile: "' | append: mobile_src | append: '", timestamp: "' | append: 'now' | date: '%Y-%m-%d %H:%M:%S' | append: '" }'
       assign error_log = error_log | append: 'console.info("📱 Auto-detected mobile variant:", ' | append: mobile_debug_data | append: ');'
     endif
