@@ -94,7 +94,7 @@ This Liquid snippet creates a responsive image component with the following feat
 
   # Check for global variant if enabled and store is global
   if load_global and is_global_store
-    assign global_src = image_name | append: '-global.' | append: image_ext
+    assign global_src = image_name | append: '-glb.' | append: image_ext
     assign global_check = global_src | file_url
 
     unless global_check == blank or global_check contains '404' or global_check contains 'null'
@@ -104,7 +104,7 @@ This Liquid snippet creates a responsive image component with the following feat
       assign original_desktop_url = desktop_image.src
       # Update the image name for subsequent checks (retina, mobile) to use the global version
       assign base_image_name = image_name
-      assign image_name = image_name | append: '-global'
+      assign image_name = image_name | append: '-glb'
     else
       assign has_global_variant = false
       assign base_image_name = image_name
@@ -117,7 +117,7 @@ This Liquid snippet creates a responsive image component with the following feat
   if load_mobile and mobile_image == blank
     # Check for mobile variant of global image if global variant exists
     if has_global_variant
-      assign mobile_src = base_image_name | append: '-global-mbl.' | append: image_ext
+      assign mobile_src = base_image_name | append: '-glb-mbl.' | append: image_ext
       assign mobile_check = mobile_src | file_url
 
       unless mobile_check == blank or mobile_check contains '404' or mobile_check contains 'null'
