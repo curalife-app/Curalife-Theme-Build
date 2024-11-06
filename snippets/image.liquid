@@ -44,6 +44,16 @@ assign image_ext = filename | split: '.' | last
 assign base_image_name = image_name
 
 #######################################
+# Process desktop image path
+#######################################
+assign full_path = desktop_image.src
+assign path_parts = full_path | split: '/'
+assign filename = path_parts | last
+assign image_name = filename | split: '.' | first
+assign image_ext = filename | split: '.' | last
+assign base_image_name = image_name
+
+#######################################
 # Construct Global Variant URL if Enabled
 #######################################
 assign has_global_variant = false
@@ -53,7 +63,10 @@ if load_global and is_global_store
   assign has_global_variant = true
 endif
 
-assign desktop_variant_url = filename | file_url
+assign base_url = full_path | remove: filename
+
+# Reconstruct the desktop variant URL
+assign desktop_variant_url = base_url | append: image_name | append: '.' | append: image_ext | img_url: '1100x'
 
 #######################################
 # Handle Mobile Variant
