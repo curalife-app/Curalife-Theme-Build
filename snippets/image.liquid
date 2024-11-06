@@ -86,14 +86,22 @@ This Liquid snippet creates a responsive image component with the following feat
     assign debug_logs = debug_logs | append: 'Mobile image provided directly.\n'
   elsif load_mobile
     # Construct mobile variant URL based on naming convention
-    assign has_mobile_variant = true
     if has_global_variant
       assign mobile_variant_filename = image_name | append: '-mbl.' | append: image_ext
     else
       assign mobile_variant_filename = base_image_name | append: '-mbl.' | append: image_ext
     endif
     assign mobile_variant_url = mobile_variant_filename | file_url
-    assign debug_logs = debug_logs | append: 'Mobile variant URL constructed: ' | append: mobile_variant_url | append: '\n'
+
+    # Check if the mobile variant URL exists
+    unless mobile_variant_url == blank or mobile_variant_url contains '404' or mobile_variant_url contains 'no-image' or mobile_variant_url contains 'null'
+      assign has_mobile_variant = true
+      assign debug_logs = debug_logs | append: 'Mobile variant URL exists: ' | append: mobile_variant_url | append: '\n'
+    else
+      assign has_mobile_variant = false
+      assign mobile_variant_url = ''
+      assign debug_logs = debug_logs | append: 'Mobile variant URL does not exist.\n'
+    endunless
   else
     assign debug_logs = debug_logs | append: 'Mobile variant not enabled.\n'
   endif
