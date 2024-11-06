@@ -53,7 +53,11 @@ if load_global and is_global_store
   assign has_global_variant = true
 endif
 
-assign desktop_variant_url = filename | file_url
+if desktop_image.src contains '?v='
+	assign desktop_variant_url = desktop_image.src
+else
+	assign desktop_variant_url = filename | file_url
+endif
 
 #######################################
 # Handle Mobile Variant
