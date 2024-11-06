@@ -27,12 +27,21 @@ This Liquid snippet creates a responsive image component with the following feat
   assign breakpoints = '375,640,768,1080,1200,1920,2560' | split: ','
 
   #######################################
+  # Initialize debug logs
+  #######################################
+  assign debug_logs = ''
+  assign debug_logs = debug_logs | append: 'Initializing variables with defaults...\n'
+
+  #######################################
   # Check if store is global
   #######################################
   assign shop_name = shop.name | downcase
   assign is_global_store = false
   if shop_name contains 'global'
     assign is_global_store = true
+    assign debug_logs = debug_logs | append: 'Store is identified as global.\n'
+  else
+    assign debug_logs = debug_logs | append: 'Store is not global.\n'
   endif
 
   #######################################
@@ -45,6 +54,10 @@ This Liquid snippet creates a responsive image component with the following feat
   assign image_ext = filename | split: '.' | last
   assign base_image_name = image_name
 
+  assign debug_logs = debug_logs | append: 'Processing desktop image path...\n'
+  assign debug_logs = debug_logs | append: 'Image name: ' | append: image_name | append: '\n'
+  assign debug_logs = debug_logs | append: 'Image extension: ' | append: image_ext | append: '\n'
+
   #######################################
   # Check for global variant if enabled
   #######################################
@@ -53,32 +66,41 @@ This Liquid snippet creates a responsive image component with the following feat
     assign global_src = image_name | append: '-global.' | append: image_ext
     assign global_check = global_src | file_url
 
+    assign debug_logs = debug_logs | append: 'Checking for global variant...\n'
+
     unless global_check == blank or global_check contains '404' or global_check contains 'null'
       assign has_global_variant = true
       assign global_variant_url = global_check
       assign original_desktop_url = desktop_image.src
       assign image_name = image_name | append: '-global'
+
+      assign debug_logs = debug_logs | append: 'Global variant found: ' | append: global_variant_url | append: '\n'
+    else
+      assign debug_logs = debug_logs | append: 'Global variant not found.\n'
     endunless
   endif
 
   #######################################
-	# Initialize mobile variant flags
-	#######################################
-	assign has_mobile_variant = false
-	assign mobile_variant_url = nil
+  # Initialize mobile variant flags
+  #######################################
+  assign has_mobile_variant = false
+  assign mobile_variant_url = nil
 
-	#######################################
-	# Check for mobile variant if provided
-	#######################################
-	if mobile_image != blank and mobile_image != desktop_image
-		assign has_mobile_variant = true
-		assign mobile_variant_url = mobile_image.src
-	endif
+  #######################################
+  # Check for mobile variant if provided
+  #######################################
+  if mobile_image != blank and mobile_image != desktop_image
+    assign has_mobile_variant = true
+    assign mobile_variant_url = mobile_image.src
+
+    assign debug_logs = debug_logs | append: 'Mobile variant provided directly.\n'
+  endif
 
   #######################################
   # Check for mobile variant if enabled
   #######################################
   if load_mobile and mobile_image == blank
+    assign debug_logs = debug_logs | append: 'Attempting to detect mobile variant automatically...\n'
     if has_global_variant
       assign mobile_src = base_image_name | append: '-global-mbl.' | append: image_ext
       assign mobile_check = mobile_src | file_url
@@ -86,6 +108,8 @@ This Liquid snippet creates a responsive image component with the following feat
       unless mobile_check == blank or mobile_check contains '404' or mobile_check contains 'null'
         assign has_mobile_variant = true
         assign mobile_variant_url = mobile_check
+
+        assign debug_logs = debug_logs | append: 'Global mobile variant found: ' | append: mobile_variant_url | append: '\n'
       else
         # Fallback to regular mobile variant
         assign mobile_src = base_image_name | append: '-mbl.' | append: image_ext
@@ -94,6 +118,10 @@ This Liquid snippet creates a responsive image component with the following feat
         unless mobile_check == blank or mobile_check contains '404' or mobile_check contains 'null'
           assign has_mobile_variant = true
           assign mobile_variant_url = mobile_check
+
+          assign debug_logs = debug_logs | append: 'Regular mobile variant found: ' | append: mobile_variant_url | append: '\n'
+        else
+          assign debug_logs = debug_logs | append: 'No mobile variant found.\n'
         endunless
       endunless
     else
@@ -104,6 +132,10 @@ This Liquid snippet creates a responsive image component with the following feat
       unless mobile_check == blank or mobile_check contains '404' or mobile_check contains 'null'
         assign has_mobile_variant = true
         assign mobile_variant_url = mobile_check
+
+        assign debug_logs = debug_logs | append: 'Regular mobile variant found: ' | append: mobile_variant_url | append: '\n'
+      else
+        assign debug_logs = debug_logs | append: 'No mobile variant found.\n'
       endunless
     endif
   endif
@@ -117,13 +149,15 @@ This Liquid snippet creates a responsive image component with the following feat
   # Validation checks
   #######################################
   if image == blank
-    assign validation_error = '{ type: "Missing Alt Test", message: "Image is required" }'
+    assign validation_error = '{ type: "Missing Image", message: "Image is required" }'
     assign error_log = error_log | append: 'window.imageErrors.missing_alt.push(' | append: validation_error | append: ');'
+    assign debug_logs = debug_logs | append: 'Validation error: Image is required.\n'
   endif
 
   if alt == blank
-    assign validation_error = '{ type: "Missing Alt Test", message: "Image Alt text is required", src: "' | append: image.src | append: '" }'
+    assign validation_error = '{ type: "Missing Alt", message: "Image Alt text is required", src: "' | append: image.src | append: '" }'
     assign error_log = error_log | append: 'window.imageErrors.missing_alt.push(' | append: validation_error | append: ');'
+    assign debug_logs = debug_logs | append: 'Validation error: Image Alt text is required.\n'
   endif
 
   #######################################
@@ -135,6 +169,45 @@ This Liquid snippet creates a responsive image component with the following feat
   if has_mobile_variant
     assign base_mobile_url = mobile_image | image_url: width: 750, format: 'webp'
   endif
+
+  assign debug_logs = debug_logs | append: 'Generated unique ID: ' | append: unique_id | append: '\n'
+  assign debug_logs = debug_logs | append: 'Fallback URL: ' | append: fallback_url | append: '\n'
+
+  #######################################
+  # Prepare debug data for JavaScript
+  #######################################
+  assign debug_data = {
+    'unique_id': unique_id,
+    'desktop_image': {
+      'id': desktop_image.id,
+      'src': desktop_image.src,
+      'width': desktop_image.width,
+      'height': desktop_image.height,
+      'alt': desktop_image.alt
+    },
+    'mobile_image': {
+      'id': mobile_image.id,
+      'src': mobile_image.src,
+      'width': mobile_image.width,
+      'height': mobile_image.height,
+      'alt': mobile_image.alt
+    },
+    'lazy_load': lazy_load,
+    'is_priority': is_priority,
+    'load_mobile': load_mobile,
+    'load_global': load_global,
+    'alt': alt,
+    'mobile_breakpoint': mobile_breakpoint,
+    'sizes': sizes,
+    'breakpoints': breakpoints,
+    'shop_name': shop_name,
+    'is_global_store': is_global_store,
+    'has_global_variant': has_global_variant,
+    'global_variant_url': global_variant_url,
+    'has_mobile_variant': has_mobile_variant,
+    'mobile_variant_url': mobile_variant_url,
+    'fallback_url': fallback_url
+  }
 -%}
 
 <picture>
@@ -171,7 +244,7 @@ This Liquid snippet creates a responsive image component with the following feat
     width="{{ desktop_image.width }}"
     height="{{ desktop_image.height }}"
     class="object-cover opacity-0 m-0 transition-opacity duration-300 ease-in-out {% if link %}cursor-pointer{% endif %} {% if class %}{{ class }}{% endif %}"
-    onload="this.classList.add('opacity-100');"
+    onload="console.log('Image {{ unique_id }} loaded successfully'); this.classList.add('opacity-100');"
     onclick="{% if link %}window.location.href='{{ link }}'{% endif %}"
     onerror="window.logImageError('load_errors', {
       imageId: '{{ desktop_image.id }}',
@@ -186,9 +259,15 @@ This Liquid snippet creates a responsive image component with the following feat
   >
 </picture>
 
-
 <script>
   {{ error_log }}
+
+  // Output debug logs to the console
+  console.log('Debug Logs for Image {{ unique_id }}:\n{{ debug_logs | escape }}');
+
+  // Prepare debug data object
+  var debugData = {{ debug_data | json }};
+  console.log('Debug Data for Image {{ unique_id }}:', debugData);
 
   if (!window.logImageError) {
     window.hasDisplayedImageErrors = false;
@@ -230,6 +309,7 @@ This Liquid snippet creates a responsive image component with the following feat
 
       if (!existingError) {
         window.imageErrors[type].push(data);
+        console.error('Image Error:', type, data);
         window.debouncedDisplayErrors();
       }
     };
