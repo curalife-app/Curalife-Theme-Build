@@ -1,5 +1,5 @@
 {% if shop.name contains 'Global' %}
-  {% assign imageLink = image_global %}
+  {% assign imageLink = image_global | default: image %}
   {% assign imageMobileLink = image_mobile_global | default: image_mobile %}
   {% assign linkUrl = link_url_global | default: link_url %}
 {% else %}
@@ -15,10 +15,7 @@
   <div class="item-content flex flex-col items-center justify-{% if item_layout_mobile == 'row' %}start{% else %}center{% endif %} text-center gap-4 m-auto">
     {% unless is_image_background %}
       <div class="img-wrapper flex items-center">
-				<script>console.log("imageLink! {{ imageLink }}")</script>
-				<script>console.log("imageMobileLink! {{ imageMobileLink }}")</script>
         {% if imageLink != blank or imageMobileLink != blank %}
-					<script>console.log("ITEM IMAGE RENDER!")</script>
 					{% render 'image',
 						image: imageLink,
 						mobile_image: imageMobileLink,
