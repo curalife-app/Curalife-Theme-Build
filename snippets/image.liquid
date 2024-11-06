@@ -54,13 +54,13 @@ if load_global and is_global_store
   assign has_global_variant = true
 endif
 
-unless desktop_image.src == blank or desktop_image.src contains 'files/'
-echo '<script>console.warn("Image URL contains query params, consider removing them for better caching performance:", "' | append: desktop_image.src | append: '")</script>'
-assign desktop_variant_url = desktop_image.src
-else
+if desktop_image.src != blank or desktop_image.src contains 'files/'
 echo '<script>console.info("Image URL does not contain query params, using default URL:", "' | append: desktop_image.src | append: '")</script>'
 assign desktop_variant_url = filename | file_url
-endunless
+else
+echo '<script>console.warn("Image URL contains query params, consider removing them for better caching performance:", "' | append: desktop_image.src | append: '")</script>'
+assign desktop_variant_url = desktop_image.src
+endif
 
 #######################################
 # Handle Mobile Variant
