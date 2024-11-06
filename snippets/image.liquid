@@ -59,13 +59,9 @@ if desktop_image.src contains 'files/'
 endif
 
 if desktop_image.src == blank or provided_images_in_files == false
-	echo '<script>console.info("Image URL does not contain query params, using default URL:", "' | append: desktop_image.src | append: '")</script>'
 	assign desktop_variant_url = filename | file_url
 else
-	echo '<script>console.warn("Image URL contains query params, consider removing them for better caching performance:", "' | append: desktop_image.src | append: '")</script>'
 	assign desktop_variant_url = desktop_image | image_url | split: '?' | first
-	echo '<script>console.info("Using URL without query params:", "' | append: desktop_image | image_url | append: '")</script>'
-	echo '<script>console.info("Using URL without query params:", "' | append: desktop_variant_url | append: '")</script>'
 endif
 
 #######################################
