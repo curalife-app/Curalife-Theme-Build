@@ -172,42 +172,6 @@ This Liquid snippet creates a responsive image component with the following feat
 
   assign debug_logs = debug_logs | append: 'Generated unique ID: ' | append: unique_id | append: '\n'
   assign debug_logs = debug_logs | append: 'Fallback URL: ' | append: fallback_url | append: '\n'
-
-  #######################################
-  # Prepare debug data for JavaScript
-  #######################################
-  assign debug_data = {
-    'unique_id': unique_id,
-    'desktop_image': {
-      'id': desktop_image.id,
-      'src': desktop_image.src,
-      'width': desktop_image.width,
-      'height': desktop_image.height,
-      'alt': desktop_image.alt
-    },
-    'mobile_image': {
-      'id': mobile_image.id,
-      'src': mobile_image.src,
-      'width': mobile_image.width,
-      'height': mobile_image.height,
-      'alt': mobile_image.alt
-    },
-    'lazy_load': lazy_load,
-    'is_priority': is_priority,
-    'load_mobile': load_mobile,
-    'load_global': load_global,
-    'alt': alt,
-    'mobile_breakpoint': mobile_breakpoint,
-    'sizes': sizes,
-    'breakpoints': breakpoints,
-    'shop_name': shop_name,
-    'is_global_store': is_global_store,
-    'has_global_variant': has_global_variant,
-    'global_variant_url': global_variant_url,
-    'has_mobile_variant': has_mobile_variant,
-    'mobile_variant_url': mobile_variant_url,
-    'fallback_url': fallback_url
-  }
 -%}
 
 <picture>
@@ -261,12 +225,43 @@ This Liquid snippet creates a responsive image component with the following feat
 
 <script>
   {{ error_log }}
-
+  
   // Output debug logs to the console
   console.log('Debug Logs for Image {{ unique_id }}:\n{{ debug_logs | escape }}');
 
   // Prepare debug data object
-  var debugData = {{ debug_data | json }};
+  var debugData = {
+    unique_id: {{ unique_id | json }},
+    desktop_image: {
+      id: {{ desktop_image.id | json }},
+      src: {{ desktop_image.src | json }},
+      width: {{ desktop_image.width | json }},
+      height: {{ desktop_image.height | json }},
+      alt: {{ desktop_image.alt | json }}
+    },
+    mobile_image: {
+      id: {{ mobile_image.id | json }},
+      src: {{ mobile_image.src | json }},
+      width: {{ mobile_image.width | json }},
+      height: {{ mobile_image.height | json }},
+      alt: {{ mobile_image.alt | json }}
+    },
+    lazy_load: {{ lazy_load | json }},
+    is_priority: {{ is_priority | json }},
+    load_mobile: {{ load_mobile | json }},
+    load_global: {{ load_global | json }},
+    alt: {{ alt | json }},
+    mobile_breakpoint: {{ mobile_breakpoint | json }},
+    sizes: {{ sizes | json }},
+    breakpoints: {{ breakpoints | json }},
+    shop_name: {{ shop_name | json }},
+    is_global_store: {{ is_global_store | json }},
+    has_global_variant: {{ has_global_variant | json }},
+    global_variant_url: {{ global_variant_url | json }},
+    has_mobile_variant: {{ has_mobile_variant | json }},
+    mobile_variant_url: {{ mobile_variant_url | json }},
+    fallback_url: {{ fallback_url | json }}
+  };
   console.log('Debug Data for Image {{ unique_id }}:', debugData);
 
   if (!window.logImageError) {
@@ -317,5 +312,5 @@ This Liquid snippet creates a responsive image component with the following feat
 
   if (window.imageErrors && !window.hasDisplayedImageErrors) {
     window.debouncedDisplayErrors();
-  }
+  } 
 </script>
