@@ -62,10 +62,18 @@ This Liquid snippet creates a responsive image component with the following feat
   endif
 
   #######################################
-  # Initialize mobile variant flags
-  #######################################
-  assign has_mobile_variant = false
-  assign mobile_variant_url = nil
+	# Initialize mobile variant flags
+	#######################################
+	assign has_mobile_variant = false
+	assign mobile_variant_url = nil
+
+	#######################################
+	# Check for mobile variant if provided
+	#######################################
+	if mobile_image != blank and mobile_image != desktop_image
+		assign has_mobile_variant = true
+		assign mobile_variant_url = mobile_image.src
+	endif
 
   #######################################
   # Check for mobile variant if enabled
