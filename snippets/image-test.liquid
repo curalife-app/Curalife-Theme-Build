@@ -146,7 +146,7 @@ assign fallback_url = desktop_image | image_url: width: 1100
   window.imageDebugData = window.imageDebugData || [];
   window.imageDebugData.push({
     unique_id: {{ unique_id | json }},
-		file_name: {{ filename | json }},
+    file_name: {{ filename | json }},
     image_name: {{ image_name | json }},
     desktop_variant_url: {{ desktop_variant_url | json }},
     has_mobile_variant: {{ has_mobile_variant | json }},
@@ -156,6 +156,7 @@ assign fallback_url = desktop_image | image_url: width: 1100
     is_global_store: {{ is_global_store | json }},
     shop_name: {{ shop.name | json }},
     desktop_image: {
+      id: {{ desktop_image.id | json }},
       src: {{ desktop_image.src | json }},
       alt: {{ desktop_image.alt | json }}
     },
@@ -205,10 +206,16 @@ assign fallback_url = desktop_image | image_url: width: 1100
             const errors = window.imageErrors;
             const hasErrors = Object.values(errors).some(arr => arr.length > 0);
             if (hasErrors) {
-              console.warn('🚨 Image Component Errors Summary:', {
-                totalErrors: Object.values(errors).reduce((sum, arr) => sum + arr.length, 0),
-                errors: errors
+              console.group('🚨 Image Component Errors Summary with Debug Data');
+              Object.keys(errors).forEach(errorType => {
+                errors[errorType].forEach(errorData => {
+                  console.error('Error Type:', errorType, {
+                    errorData: errorData,
+                    debugData: errorData.debugData
+                  });
+                });
               });
+              console.groupEnd();
               window.hasDisplayedImageErrors = true;
             }
           }
@@ -222,12 +229,26 @@ assign fallback_url = desktop_image | image_url: width: 1100
         window.imageErrors[type] = [];
       }
       data.timestamp = new Date().toISOString();
+
+      // Find the associated image debug data
+      const debugData = window.imageDebugData.find(
+        debug => debug.unique_id === data.elementId || (debug.desktop_image && debug.desktop_image.id === data.imageId)
+      );
+
       const existingError = window.imageErrors[type].find(
         error => error.imageId === data.imageId && error.type === data.type
       );
       if (!existingError) {
+        // Add the debugData to data
+        data.debugData = debugData;
+
         window.imageErrors[type].push(data);
-        console.error('Image Error:', type, data);
+
+        console.error('🚨 Image Error with Debug Data:', {
+          errorType: type,
+          errorData: data,
+          debugData: debugData
+        });
         window.debouncedDisplayErrors();
       }
     };
