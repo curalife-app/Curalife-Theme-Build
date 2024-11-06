@@ -110,10 +110,10 @@ This Liquid snippet creates a responsive image component with the following feat
       # Check for global retina variant
       assign global_retina_src = image_name | append: '-x2.' | append: image_ext
       assign global_retina_check = global_retina_src | file_url
-      unless global_retina_check == blank or global_retina_check contains '404' or global_retina_check contains 'null'
+      if global_retina_check contains '/files/'
         assign has_global_retina = true
         assign global_retina_url = global_retina_check
-      endunless
+      endif
     else
       assign has_global_variant = false
       assign base_image_name = image_name
@@ -233,12 +233,12 @@ This Liquid snippet creates a responsive image component with the following feat
     assign mobile_retina_src = mobile_image_name | append: '-x2.' | append: mobile_image_ext
     assign mobile_retina_check = mobile_retina_src | file_url
 
-    unless mobile_retina_check == blank or mobile_retina_check contains '404' or mobile_retina_check contains 'null'
+    if mobile_retina_check contains '/files/'
       assign mobile_retina_image = mobile_retina_src
-    endunless
+    endif
 
     # Log missing mobile retina
-    unless mobile_retina_image and settings.disable_retina_debug
+    unless mobile_retina_image
       assign mobile_debug_data = '{ type: "Missing Retina Image", filename: "' | append: mobile_filename | append: '", expectedRetina: "' | append: mobile_retina_src | append: '", retinaCheck: "' | append: mobile_retina_check | append: '", variant: "mobile", timestamp: "' | append: 'now' | date: '%Y-%m-%d %H:%M:%S' | append: '" }'
       assign error_log = error_log | append: 'window.imageErrors.missing_retina.push(' | append: mobile_debug_data | append: ');'
     endunless
@@ -331,7 +331,7 @@ This Liquid snippet creates a responsive image component with the following feat
     srcset="
       {%- capture mobile_srcset -%}
         {{ mobile_variant_url }}
-        {%- if has_mobile_retina and mobile_retina_check contains 'http' and mobile_retina_check != blank and mobile_retina_check contains '//curalife.com/cdn/shop/files/' -%}
+        {%- if mobile_retina_url -%}
           1x,{{ mobile_retina_url }} 2x
         {%- endif -%}
       {%- endcapture -%}{{ mobile_srcset | strip }}"
@@ -383,12 +383,12 @@ This Liquid snippet creates a responsive image component with the following feat
       originalSrc: this.src
     }); this.onerror=null; this.src='{{ fallback_url }}'"
     data-original-url="{{ fallback_url }}"
-    {%- if has_global_variant and has_global_retina and global_retina_check contains '//curalife.com/cdn/shop/files/' -%}
+    {%- if has_global_variant and global_retina_url -%}
       data-desktop-retina-url="{{ global_retina_url }}"
-    {%- elsif retina_check and retina_check contains 'http' and retina_check != blank and retina_check contains '//curalife.com/cdn/shop/files/' -%}
+    {%- elsif retina_image -%}
       data-desktop-retina-url="{{ retina_check }}"
     {%- endif -%}
-    {%- if has_mobile_retina and mobile_retina_check contains '//curalife.com/cdn/shop/files/' -%}
+    {%- if mobile_retina_url -%}
       data-mobile-retina-url="{{ mobile_retina_url }}"
     {%- endif -%}
     {%- if link -%}
