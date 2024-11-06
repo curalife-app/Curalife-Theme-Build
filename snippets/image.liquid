@@ -29,8 +29,9 @@ assign breakpoints = '375,640,768,1080,1200,1920,2560' | split: ','
 #######################################
 # Check if store is global
 #######################################
-assign shop_name = shop.name | downcase
-assign is_global_store = shop_name contains 'global'
+if shop.name contains 'Global'
+	assign is_global_store = true
+endif
 
 #######################################
 # Process desktop image path
@@ -152,7 +153,7 @@ assign fallback_url = desktop_image | image_url: width: 1100
     fallback_url: {{ fallback_url | json }},
     has_global_variant: {{ has_global_variant | json }},
     is_global_store: {{ is_global_store | json }},
-    shop_name: {{ shop_name | json }},
+    shop_name: {{ shop.name | json }},
     desktop_image: {
       id: {{ desktop_image.id | json }},
       src: {{ desktop_image.src | json }},
