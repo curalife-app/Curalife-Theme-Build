@@ -144,12 +144,10 @@ This Liquid snippet creates a responsive image component with the following feat
         # Check for mobile retina variant with correct -mbl-x2 pattern
         assign mobile_retina_src = base_image_name | append: '-global-mbl-x2.' | append: image_ext
         assign mobile_retina_check = mobile_retina_src | file_url
-        unless mobile_retina_check == blank or mobile_retina_check contains '404' or mobile_retina_check contains 'null'
+        if mobile_retina_check contains '/files/'
           assign has_mobile_retina = true
           assign mobile_retina_url = mobile_retina_check
-        else
-          assign has_mobile_retina = false
-        endunless
+        endif
       else
         # Fallback to regular mobile variant
         assign mobile_src = base_image_name | append: '-mbl.' | append: image_ext
