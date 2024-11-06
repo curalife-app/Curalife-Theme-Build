@@ -79,6 +79,7 @@ This Liquid snippet creates a responsive image component with the following feat
   assign has_mobile_retina = false
   assign mobile_variant_url = nil
   assign mobile_retina_url = nil
+  assign mobile_retina_check = nil
 
   # Check for mobile variant if enabled and not explicitly provided
   if load_mobile and mobile_image == blank
@@ -162,15 +163,18 @@ This Liquid snippet creates a responsive image component with the following feat
 
   assign unique_id = 'img-' | append: desktop_image.id | append: '-' | append: mobile_image.id | append: '-' | now | date: '%N'
   assign base_desktop_url = desktop_image | image_url: width: 1100, format: 'webp'
-  assign base_mobile_url = mobile_image | image_url: width: 750, format: 'webp'
   assign fallback_url = desktop_image | image_url: width: 1100
 
   if retina_image
     assign desktop_retina_url = retina_image | image_url: width: 2200
   endif
 
-  if mobile_retina_image
-    assign mobile_retina_url = mobile_retina_image | image_url: width: 1500
+  # Only process mobile-related URLs if we have a mobile variant
+  if has_mobile_variant
+    assign base_mobile_url = mobile_image | image_url: width: 750, format: 'webp'
+    if has_mobile_retina and mobile_retina_url != blank
+      assign mobile_retina_url = mobile_retina_url | image_url: width: 1500
+    endif
   endif
 -%}
 
@@ -234,7 +238,7 @@ This Liquid snippet creates a responsive image component with the following feat
     srcset="
       {%- capture mobile_srcset -%}
         {{ mobile_variant_url }}
-        {%- if has_mobile_variant and has_mobile_retina and mobile_retina_check contains 'http' and mobile_retina_check != blank and mobile_retina_check contains '//curalife.com/cdn/shop/files/' and mobile_retina_url != blank -%}
+        {%- if has_mobile_variant == true and has_mobile_retina == true and mobile_retina_check contains 'http' and mobile_retina_check != blank and mobile_retina_check contains '//curalife.com/cdn/shop/files/' and mobile_retina_url != blank -%}
           1x,{{ mobile_retina_url }} 2x
         {%- endif -%}
       {%- endcapture -%}{{ mobile_srcset | strip }}"
@@ -290,7 +294,7 @@ This Liquid snippet creates a responsive image component with the following feat
     {%- elsif retina_check and retina_check contains 'http' and retina_check != blank and retina_check contains '//curalife.com/cdn/shop/files/' -%}
       data-desktop-retina-url="{{ retina_check }}"
     {%- endif -%}
-    {%- if has_mobile_variant and has_mobile_retina and mobile_retina_check contains '//curalife.com/cdn/shop/files/' and mobile_retina_url != blank -%}
+    {%- if has_mobile_variant == true and has_mobile_retina == true and mobile_variant_url != blank and mobile_retina_url != blank and mobile_retina_check contains '//curalife.com/cdn/shop/files/' -%}
       data-mobile-retina-url="{{ mobile_retina_url }}"
     {%- endif -%}
     {%- if link -%}
