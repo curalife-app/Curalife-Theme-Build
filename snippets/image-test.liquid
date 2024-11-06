@@ -81,7 +81,7 @@ This Liquid snippet creates a responsive image component with the following feat
       assign mobile_src = base_image_name | append: '-global-mbl.' | append: image_ext
       assign mobile_check = mobile_src | file_url
 
-      unless mobile_check == blank or mobile_check contains '404' or mobile_check contains 'null'
+      if mobile_check contains '?v='
         assign has_mobile_variant = true
         assign mobile_variant_url = mobile_check
       else
@@ -93,7 +93,7 @@ This Liquid snippet creates a responsive image component with the following feat
           assign has_mobile_variant = true
           assign mobile_variant_url = mobile_check
         endunless
-      endunless
+      endif
     else
       # No global variant, check regular mobile variant
       assign mobile_src = base_image_name | append: '-mbl.' | append: image_ext
