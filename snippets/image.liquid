@@ -8,156 +8,166 @@ proper retina detection, and better fallback behavior.
 {%- liquid
   # Initialize variables with defaults and validation
   assign desktop_image = image
+  assign show_image = true
+  assign error_message = ''
+
+  # Validate required parameters
   if desktop_image == blank
+    assign show_image = false
     assign error_message = 'Error: Desktop image is required'
-    echo error_message
-    return
   endif
 
-  # Initialize optional parameters with proper defaults
-  assign mobile_image = mobile_image | default: desktop_image
-  assign lazy_load = lazy | default: true
-  assign is_priority = priority | default: false
-  assign load_mobile = load_mobile | default: false
-  assign load_global = load_global | default: false
-  assign mobile_breakpoint = mobile_breakpoint | default: 768
-  assign sizes = sizes | default: '(min-width: 1200px) 1200px, (min-width: 768px) 768px, 100vw'
-  assign alt_text = alt | default: desktop_image.alt | escape
-  assign unique_id = 'img-' | append: desktop_image.id | append: '-' | append: mobile_image.id | append: '-' | now | date: '%N'
+  # Only continue if we have valid input
+  if show_image
+    # Initialize optional parameters with proper defaults
+    assign mobile_image = mobile_image | default: desktop_image
+    assign lazy_load = lazy | default: true
+    assign is_priority = priority | default: false
+    assign load_mobile = load_mobile | default: false
+    assign load_global = load_global | default: false
+    assign mobile_breakpoint = mobile_breakpoint | default: 768
+    assign sizes = sizes | default: '(min-width: 1200px) 1200px, (min-width: 768px) 768px, 100vw'
+    assign alt_text = alt | default: desktop_image.alt | escape
+    assign unique_id = 'img-' | append: desktop_image.id | append: '-' | append: mobile_image.id | append: '-' | now | date: '%N'
 
-  # Process image paths and variants
-  assign desktop_path = desktop_image.src | split: '/'
-  assign desktop_filename = desktop_path | last
-  assign desktop_name = desktop_filename | split: '.' | first
-  assign desktop_ext = desktop_filename | split: '.' | last
+    # Process image paths and variants
+    assign desktop_path = desktop_image.src | split: '/'
+    assign desktop_filename = desktop_path | last
+    assign desktop_name = desktop_filename | split: '.' | first
+    assign desktop_ext = desktop_filename | split: '.' | last
 
-  # Initialize error logging
-  assign error_log = 'window.imageErrors = window.imageErrors || {
-    missing_alt: [],
-    missing_retina: [],
-    missing_mobile: [],
-    missing_global: [],
-    load_errors: []
-  };'
+    # Initialize error logging
+    assign error_log = 'window.imageErrors = window.imageErrors || {
+      missing_alt: [],
+      missing_retina: [],
+      missing_mobile: [],
+      missing_global: [],
+      load_errors: []
+    };'
 
-  # Check for global variant
-  assign is_global_store = shop.name | downcase | contains: 'global'
-  assign has_global_variant = false
-  if load_global and is_global_store
-    assign global_path = desktop_name | append: '-global.' | append: desktop_ext | file_url
-    if global_path contains '/files/'
-      assign has_global_variant = true
-      assign global_url = global_path
+    # Check for global variant
+    assign is_global_store = shop.name | downcase | contains: 'global'
+    assign has_global_variant = false
+    if load_global and is_global_store
+      assign global_path = desktop_name | append: '-global.' | append: desktop_ext | file_url
+      if global_path contains '/files/'
+        assign has_global_variant = true
+        assign global_url = global_path
 
-      # Check for global retina
-      assign global_retina_path = desktop_name | append: '-global-x2.' | append: desktop_ext | file_url
-      if global_retina_path contains '/files/'
-        assign has_global_retina = true
-        assign global_retina_url = global_retina_path
+        # Check for global retina
+        assign global_retina_path = desktop_name | append: '-global-x2.' | append: desktop_ext | file_url
+        if global_retina_path contains '/files/'
+          assign has_global_retina = true
+          assign global_retina_url = global_retina_path
+        endif
       endif
     endif
-  endif
 
-  # Check for retina variants
-  assign desktop_retina_path = desktop_name | append: '-x2.' | append: desktop_ext | file_url
-  if desktop_retina_path contains '/files/'
-    assign has_desktop_retina = true
-    assign desktop_retina_url = desktop_retina_path
-  endif
-
-  # Process mobile variants if enabled
-  if load_mobile
-    assign mobile_name = desktop_name
-    if has_global_variant
-      assign mobile_name = mobile_name | append: '-global'
+    # Check for retina variants
+    assign desktop_retina_path = desktop_name | append: '-x2.' | append: desktop_ext | file_url
+    if desktop_retina_path contains '/files/'
+      assign has_desktop_retina = true
+      assign desktop_retina_url = desktop_retina_path
     endif
 
-    assign mobile_path = mobile_name | append: '-mbl.' | append: desktop_ext | file_url
-    if mobile_path contains '/files/'
-      assign has_mobile_variant = true
-      assign mobile_url = mobile_path
+    # Process mobile variants if enabled
+    if load_mobile
+      assign mobile_name = desktop_name
+      if has_global_variant
+        assign mobile_name = mobile_name | append: '-global'
+      endif
 
-      # Check for mobile retina
-      assign mobile_retina_path = mobile_name | append: '-mbl-x2.' | append: desktop_ext | file_url
-      if mobile_retina_path contains '/files/'
-        assign has_mobile_retina = true
-        assign mobile_retina_url = mobile_retina_path
+      assign mobile_path = mobile_name | append: '-mbl.' | append: desktop_ext | file_url
+      if mobile_path contains '/files/'
+        assign has_mobile_variant = true
+        assign mobile_url = mobile_path
+
+        # Check for mobile retina
+        assign mobile_retina_path = mobile_name | append: '-mbl-x2.' | append: desktop_ext | file_url
+        if mobile_retina_path contains '/files/'
+          assign has_mobile_retina = true
+          assign mobile_retina_url = mobile_retina_path
+        endif
       endif
     endif
-  endif
 
-  # Set fallback URLs
-  assign fallback_desktop_url = desktop_image | image_url: width: 1200, format: 'webp'
-  assign fallback_mobile_url = mobile_image | image_url: width: 750, format: 'webp'
+    # Set fallback URLs
+    assign fallback_desktop_url = desktop_image | image_url: width: 1200, format: 'webp'
+    assign fallback_mobile_url = mobile_image | image_url: width: 750, format: 'webp'
+  endif
 -%}
 
-{%- # Error logging script -%}
-<script>
-  {{ error_log }}
+{% if show_image == false %}
+  <div class="text-red-500">{{ error_message }}</div>
+{% else %}
+  {%- # Error logging script -%}
+  <script>
+    {{ error_log }}
 
-  window.logImageError = window.logImageError || function(type, data) {
-    if (!window.imageErrors[type]) {
-      window.imageErrors[type] = [];
-    }
+    window.logImageError = window.logImageError || function(type, data) {
+      if (!window.imageErrors[type]) {
+        window.imageErrors[type] = [];
+      }
 
-    data.timestamp = new Date().toISOString();
-    const existingError = window.imageErrors[type].find(
-      error => error.imageId === data.imageId && error.type === data.type
-    );
+      data.timestamp = new Date().toISOString();
+      const existingError = window.imageErrors[type].find(
+        error => error.imageId === data.imageId && error.type === data.type
+      );
 
-    if (!existingError) {
-      window.imageErrors[type].push(data);
-      console.warn(`Image Error (${type}):`, data);
-    }
-  };
-</script>
+      if (!existingError) {
+        window.imageErrors[type].push(data);
+        console.warn(`Image Error (${type}):`, data);
+      }
+    };
+  </script>
 
-<picture class="block w-full">
-  {%- # Mobile source -%}
-  {%- if has_mobile_variant -%}
+  <picture class="block w-full">
+    {%- # Mobile source -%}
+    {%- if has_mobile_variant -%}
+      <source
+        media="(max-width: {{ mobile_breakpoint }}px)"
+        srcset="{{ mobile_url }} 1x{% if has_mobile_retina %}, {{ mobile_retina_url }} 2x{% endif %}"
+        sizes="{{ sizes }}"
+        type="image/webp"
+      >
+    {%- endif -%}
+
+    {%- # Desktop source -%}
     <source
-      media="(max-width: {{ mobile_breakpoint }}px)"
-      srcset="{{ mobile_url }} 1x{% if has_mobile_retina %}, {{ mobile_retina_url }} 2x{% endif %}"
+      media="(min-width: {{ mobile_breakpoint | plus: 1 }}px)"
+      srcset="{% if has_global_variant %}{{ global_url }}{% else %}{{ fallback_desktop_url }}{% endif %} 1x{% if has_global_retina or has_desktop_retina %}, {% if has_global_retina %}{{ global_retina_url }}{% else %}{{ desktop_retina_url }}{% endif %} 2x{% endif %}"
       sizes="{{ sizes }}"
       type="image/webp"
     >
-  {%- endif -%}
 
-  {%- # Desktop source -%}
-  <source
-    media="(min-width: {{ mobile_breakpoint | plus: 1 }}px)"
-    srcset="{% if has_global_variant %}{{ global_url }}{% else %}{{ fallback_desktop_url }}{% endif %} 1x{% if has_global_retina or has_desktop_retina %}, {% if has_global_retina %}{{ global_retina_url }}{% else %}{{ desktop_retina_url }}{% endif %} 2x{% endif %}"
-    sizes="{{ sizes }}"
-    type="image/webp"
-  >
-
-  {%- # Fallback img element -%}
-  <img
-    id="{{ unique_id }}"
-    src="{% if has_global_variant %}{{ global_url }}{% else %}{{ fallback_desktop_url }}{% endif %}"
-    {% if lazy_load and is_priority != true -%}
-      loading="lazy"
-      decoding="async"
-    {%- else -%}
-      loading="eager"
-      decoding="sync"
-      fetchpriority="high"
-    {%- endif %}
-    alt="{{ alt_text }}"
-    width="{{ desktop_image.width }}"
-    height="{{ desktop_image.height }}"
-    class="w-full h-full object-cover opacity-0 transition-opacity duration-300 ease-in-out {% if link %}cursor-pointer{% endif %} {{ class }}"
-    onload="this.classList.add('opacity-100');"
-    {% if link %}onclick="window.location.href='{{ link }}'"{% endif %}
-    onerror="window.logImageError('load_errors', {
-      imageId: '{{ desktop_image.id }}',
-      elementId: '{{ unique_id }}',
-      fallbackUrl: '{{ fallback_desktop_url }}',
-      originalSrc: this.src
-    }); this.onerror=null; this.src='{{ fallback_desktop_url }}'"
-    data-original-url="{{ fallback_desktop_url }}"
-    {% if has_global_variant and has_global_retina %}data-desktop-retina-url="{{ global_retina_url }}"{% endif %}
-    {% if has_mobile_retina %}data-mobile-retina-url="{{ mobile_retina_url }}"{% endif %}
-    {% if link %}data-href="{{ link }}"{% endif %}
-  >
-</picture>
+    {%- # Fallback img element -%}
+    <img
+      id="{{ unique_id }}"
+      src="{% if has_global_variant %}{{ global_url }}{% else %}{{ fallback_desktop_url }}{% endif %}"
+      {% if lazy_load and is_priority != true -%}
+        loading="lazy"
+        decoding="async"
+      {%- else -%}
+        loading="eager"
+        decoding="sync"
+        fetchpriority="high"
+      {%- endif %}
+      alt="{{ alt_text }}"
+      width="{{ desktop_image.width }}"
+      height="{{ desktop_image.height }}"
+      class="w-full h-full object-cover opacity-0 transition-opacity duration-300 ease-in-out {% if link %}cursor-pointer{% endif %} {{ class }}"
+      onload="this.classList.add('opacity-100');"
+      {% if link %}onclick="window.location.href='{{ link }}'"{% endif %}
+      onerror="window.logImageError('load_errors', {
+        imageId: '{{ desktop_image.id }}',
+        elementId: '{{ unique_id }}',
+        fallbackUrl: '{{ fallback_desktop_url }}',
+        originalSrc: this.src
+      }); this.onerror=null; this.src='{{ fallback_desktop_url }}'"
+      data-original-url="{{ fallback_desktop_url }}"
+      {% if has_global_variant and has_global_retina %}data-desktop-retina-url="{{ global_retina_url }}"{% endif %}
+      {% if has_mobile_retina %}data-mobile-retina-url="{{ mobile_retina_url }}"{% endif %}
+      {% if link %}data-href="{{ link }}"{% endif %}
+    >
+  </picture>
+{% endif %}
