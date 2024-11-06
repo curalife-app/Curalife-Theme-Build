@@ -11,7 +11,6 @@ This Liquid snippet creates a responsive image component with the following feat
 - Link wrapper functionality
 {%- endcomment -%}
 
-
 {%- liquid
   #######################################
   # Initialize variables with defaults
@@ -189,8 +188,14 @@ This Liquid snippet creates a responsive image component with the following feat
 <script>
   {{ error_log }}
 
-  // Output debug logs to the console
-  console.log('Debug Logs for Image {{ unique_id }}:\n{{ debug_logs | escape }}');
+  // Group console logs for better organization
+  console.group('Image Debug Logs - {{ unique_id }}');
+
+  // Output debug logs as individual messages
+  var debugLogs = '{{ debug_logs | strip | escape }}'.split('\\n').filter(Boolean);
+  debugLogs.forEach(function(log) {
+    console.log(log);
+  });
 
   // Prepare debug data object
   var debugData = {
@@ -225,7 +230,10 @@ This Liquid snippet creates a responsive image component with the following feat
     mobile_variant_url: {{ mobile_variant_url | json }},
     fallback_url: {{ fallback_url | json }}
   };
-  console.log('Debug Data for Image {{ unique_id }}:', debugData);
+
+  console.log('Debug Data:', debugData);
+
+  console.groupEnd();
 
   if (!window.logImageError) {
     window.hasDisplayedImageErrors = false;
