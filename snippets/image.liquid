@@ -104,7 +104,7 @@ assign fallback_url = desktop_image | image_url: width: 1100
 
   <source
     media="(min-width: {{ mobile_breakpoint | plus: 1 }}px)"
-    srcset="{{ fallback_url }}"
+    srcset="{{ desktop_variant_url }}"
     sizes="{{ sizes }}"
   >
 
@@ -125,16 +125,7 @@ assign fallback_url = desktop_image | image_url: width: 1100
     class="object-cover opacity-0 m-0 transition-opacity duration-300 ease-in-out {% if link %}cursor-pointer{% endif %} {% if class %}{{ class }}{% endif %}"
     onload="this.classList.add('opacity-100');"
     onclick="{% if link %}window.location.href='{{ link }}'{% endif %}"
-    onerror="window.logImageError('load_errors', {
-      imageId: '{{ desktop_image.id }}',
-      elementId: '{{ unique_id }}',
-      fallbackUrl: '{{ fallback_url }}',
-      originalSrc: this.src
-    }); this.onerror=null; this.src='{{ fallback_url }}'"
     data-original-url="{{ fallback_url }}"
-    {%- if link -%}
-      data-href="{{ link }}"
-    {%- endif -%}
   >
 </picture>
 
