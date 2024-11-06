@@ -55,6 +55,7 @@ This Liquid snippet creates a responsive image component with the following feat
   assign base_image_name = image_name
 
   assign debug_logs = debug_logs | append: 'Processing desktop image path...\n'
+  assign debug_logs = debug_logs | append: 'Full path: ' | append: full_path | append: '\n'
   assign debug_logs = debug_logs | append: 'Image name: ' | append: image_name | append: '\n'
   assign debug_logs = debug_logs | append: 'Image extension: ' | append: image_ext | append: '\n'
 
@@ -66,12 +67,13 @@ This Liquid snippet creates a responsive image component with the following feat
   if load_global and is_global_store
     assign image_name = image_name | append: '-global'
     assign has_global_variant = true
-    assign desktop_variant_filename = image_name | append: '.' | append: image_ext
-    assign debug_logs = debug_logs | append: 'Global variant will be used.\n'
-  else
-    assign desktop_variant_filename = image_name | append: '.' | append: image_ext
+    assign debug_logs = debug_logs | append: 'Global variant will be used. New image name: ' | append: image_name | append: '\n'
   endif
+  assign desktop_variant_filename = image_name | append: '.' | append: image_ext
   assign desktop_variant_url = desktop_variant_filename | file_url
+
+  assign debug_logs = debug_logs | append: 'Desktop variant filename: ' | append: desktop_variant_filename | append: '\n'
+  assign debug_logs = debug_logs | append: 'Desktop variant URL: ' | append: desktop_variant_url | append: '\n'
 
   #######################################
   # Handle Mobile Variant
@@ -85,7 +87,7 @@ This Liquid snippet creates a responsive image component with the following feat
     assign mobile_variant_url = mobile_image_provided.src
     assign debug_logs = debug_logs | append: 'Mobile image provided directly.\n'
   elsif load_mobile
-    # Construct mobile variant URL based on naming convention
+    # Construct mobile variant filename based on naming convention
     if has_global_variant
       assign mobile_variant_filename = image_name | append: '-mbl.' | append: image_ext
     else
@@ -96,14 +98,18 @@ This Liquid snippet creates a responsive image component with the following feat
     assign mobile_variant_full_filename = 'files/' | append: mobile_variant_filename
     assign mobile_variant_url = mobile_variant_full_filename | file_url
 
-    # Check if the mobile variant URL exists
-    if mobile_variant_url contains '?v='
+    assign debug_logs = debug_logs | append: 'Constructed mobile variant filename: ' | append: mobile_variant_filename | append: '\n'
+    assign debug_logs = debug_logs | append: 'Constructed mobile variant full filename: ' | append: mobile_variant_full_filename | append: '\n'
+    assign debug_logs = debug_logs | append: 'Constructed mobile variant URL: ' | append: mobile_variant_url | append: '\n'
+
+    # Check if the mobile variant URL is valid
+    if mobile_variant_url contains mobile_variant_filename
       assign has_mobile_variant = true
-      assign debug_logs = debug_logs | append: 'Mobile variant URL exists: ' | append: mobile_variant_url | append: '\n'
+      assign debug_logs = debug_logs | append: 'Mobile variant URL seems valid.\n'
     else
       assign has_mobile_variant = false
       assign mobile_variant_url = ''
-      assign debug_logs = debug_logs | append: 'Mobile variant URL does not exist.\n'
+      assign debug_logs = debug_logs | append: 'Mobile variant URL does not seem valid.\n'
     endif
   else
     assign debug_logs = debug_logs | append: 'Mobile variant not enabled.\n'
@@ -137,10 +143,6 @@ This Liquid snippet creates a responsive image component with the following feat
 
   assign debug_logs = debug_logs | append: 'Generated unique ID: ' | append: unique_id | append: '\n'
   assign debug_logs = debug_logs | append: 'Fallback URL: ' | append: fallback_url | append: '\n'
-  assign debug_logs = debug_logs | append: 'Desktop variant URL: ' | append: desktop_variant_url | append: '\n'
-  if has_mobile_variant
-    assign debug_logs = debug_logs | append: 'Mobile variant URL: ' | append: mobile_variant_url | append: '\n'
-  endif
 -%}
 
 <picture>
