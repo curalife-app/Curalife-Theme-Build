@@ -53,7 +53,7 @@ This Liquid snippet creates a responsive image component with the following feat
     assign global_src = image_name | append: '-global.' | append: image_ext
     assign global_check = global_src | file_url
 
-    if global_check contains '/files/'
+    if global_check contains '/files/' and global_check != blank and global_check does not contain '404' and global_check does not contain 'null'
       assign has_global_variant = true
       assign global_variant_url = global_check
       assign image_name = image_name | append: '-global'
@@ -61,7 +61,7 @@ This Liquid snippet creates a responsive image component with the following feat
       # Check for global retina variant
       assign global_retina_src = image_name | append: '-x2.' | append: image_ext
       assign global_retina_check = global_retina_src | file_url
-      if global_retina_check contains '/files/'
+      if global_retina_check contains '/files/' and global_retina_check != blank and global_retina_check != global_variant_url and global_retina_check does not contain '404' and global_retina_check does not contain 'null'
         assign has_global_retina = true
         assign global_retina_url = global_retina_check
       endif
@@ -73,7 +73,7 @@ This Liquid snippet creates a responsive image component with the following feat
   #######################################
   assign retina_src = base_image_name | append: '-x2.' | append: image_ext
   assign retina_check = retina_src | file_url
-  if retina_check contains '/files/'
+  if retina_check contains '/files/' and retina_check != blank and retina_check != desktop_image.src and retina_check does not contain '404' and retina_check does not contain 'null'
     assign retina_image = retina_check
   endif
 
@@ -94,14 +94,18 @@ This Liquid snippet creates a responsive image component with the following feat
       assign mobile_src = base_image_name | append: '-global-mbl.' | append: image_ext
       assign mobile_check = mobile_src | file_url
 
-      if mobile_check contains '/files/'
+      if mobile_check contains '/files/' and mobile_check != blank and mobile_check != global_variant_url and mobile_check does not contain '404' and mobile_check does not contain 'null'
         assign has_mobile_variant = true
         assign mobile_variant_url = mobile_check
 
         # Check for global mobile retina variant
         assign mobile_retina_src = base_image_name | append: '-global-mbl-x2.' | append: image_ext
         assign mobile_retina_check = mobile_retina_src | file_url
-        if mobile_retina_check contains '/files/'
+        if mobile_retina_check != blank
+          and mobile_retina_check contains '/files/'
+          and mobile_retina_check != mobile_variant_url
+          and mobile_retina_check does not contain '404'
+          and mobile_retina_check does not contain 'null'
           assign has_mobile_retina = true
           assign mobile_retina_url = mobile_retina_check
         endif
@@ -110,14 +114,18 @@ This Liquid snippet creates a responsive image component with the following feat
         assign mobile_src = base_image_name | append: '-mbl.' | append: image_ext
         assign mobile_check = mobile_src | file_url
 
-        if mobile_check contains '/files/'
+        if mobile_check contains '/files/' and mobile_check != blank and mobile_check != desktop_image.src and mobile_check does not contain '404' and mobile_check does not contain 'null'
           assign has_mobile_variant = true
           assign mobile_variant_url = mobile_check
 
           # Check for mobile retina variant
           assign mobile_retina_src = base_image_name | append: '-mbl-x2.' | append: image_ext
           assign mobile_retina_check = mobile_retina_src | file_url
-          if mobile_retina_check contains '/files/'
+          if mobile_retina_check != blank
+            and mobile_retina_check contains '/files/'
+            and mobile_retina_check != mobile_variant_url
+            and mobile_retina_check does not contain '404'
+            and mobile_retina_check does not contain 'null'
             assign has_mobile_retina = true
             assign mobile_retina_url = mobile_retina_check
           endif
@@ -128,14 +136,18 @@ This Liquid snippet creates a responsive image component with the following feat
       assign mobile_src = base_image_name | append: '-mbl.' | append: image_ext
       assign mobile_check = mobile_src | file_url
 
-      if mobile_check contains '/files/'
+      if mobile_check contains '/files/' and mobile_check != blank and mobile_check != desktop_image.src and mobile_check does not contain '404' and mobile_check does not contain 'null'
         assign has_mobile_variant = true
         assign mobile_variant_url = mobile_check
 
         # Check for mobile retina variant
         assign mobile_retina_src = base_image_name | append: '-mbl-x2.' | append: image_ext
         assign mobile_retina_check = mobile_retina_src | file_url
-        if mobile_retina_check contains '/files/'
+        if mobile_retina_check != blank
+          and mobile_retina_check contains '/files/'
+          and mobile_retina_check != mobile_variant_url
+          and mobile_retina_check does not contain '404'
+          and mobile_retina_check does not contain 'null'
           assign has_mobile_retina = true
           assign mobile_retina_url = mobile_retina_check
         endif
