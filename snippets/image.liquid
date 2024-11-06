@@ -55,8 +55,10 @@ if load_global and is_global_store
 endif
 
 if desktop_image.src contains '?v='
+	echo '<script>console.warn("Image URL contains query params, consider removing them for better caching performance:", "' | append: desktop_image.src | append: '")</script>'
 	assign desktop_variant_url = desktop_image.src
 else
+  echo '<script>console.info("Image URL does not contain query params, using default URL:", "' | append: desktop_image.src | append: '")</script>'
 	assign desktop_variant_url = filename | file_url
 endif
 
