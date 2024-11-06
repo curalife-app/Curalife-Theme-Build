@@ -36,15 +36,6 @@ proper retina detection, and better fallback behavior.
     assign desktop_name = desktop_filename | split: '.' | first
     assign desktop_ext = desktop_filename | split: '.' | last
 
-    # Initialize error logging
-    assign error_log = 'window.imageErrors = window.imageErrors || {
-      missing_alt: [],
-      missing_retina: [],
-      missing_mobile: [],
-      missing_global: [],
-      load_errors: []
-    };'
-
     # Check for global variant
     assign is_global_store = shop.name | downcase | contains: 'global'
     assign has_global_variant = false
@@ -100,9 +91,13 @@ proper retina detection, and better fallback behavior.
 {% if show_image == false %}
   <div class="text-red-500">{{ error_message }}</div>
 {% else %}
-  {%- # Error logging script -%}
   <script>
-    {{ error_log }}
+    window.imageErrors = window.imageErrors || {};
+    window.imageErrors.missing_alt = window.imageErrors.missing_alt || [];
+    window.imageErrors.missing_retina = window.imageErrors.missing_retina || [];
+    window.imageErrors.missing_mobile = window.imageErrors.missing_mobile || [];
+    window.imageErrors.missing_global = window.imageErrors.missing_global || [];
+    window.imageErrors.load_errors = window.imageErrors.load_errors || [];
 
     window.logImageError = window.logImageError || function(type, data) {
       if (!window.imageErrors[type]) {
