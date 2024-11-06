@@ -81,98 +81,59 @@ This Liquid snippet creates a responsive image component with the following feat
   assign mobile_retina_url = nil
   assign mobile_retina_check = nil
 
-  # Helper function to validate URL
-  assign url_valid = false
-
   # Check for mobile variant if enabled and not explicitly provided
   if load_mobile and mobile_image == blank
     # Check for mobile variant of global image if global variant exists
     if has_global_variant
       assign mobile_src = base_image_name | append: '-global-mbl.' | append: image_ext
       assign mobile_check = mobile_src | file_url
-      assign url_valid = false
 
-      # Validate mobile URL
-      if mobile_check contains '//curalife.com/cdn/shop/files/'
-        assign response_check = mobile_check | file_url
-        unless response_check contains '404' or response_check == blank or response_check contains 'null'
-          assign url_valid = true
-          assign has_mobile_variant = true
-          assign mobile_variant_url = mobile_check
-        endunless
-      endif
+      unless mobile_check == blank or mobile_check contains '404' or mobile_check contains 'null'
+        assign has_mobile_variant = true
+        assign mobile_variant_url = mobile_check
 
-      if url_valid
-        # Only check for mobile retina if mobile variant is valid
+        # Only check for mobile retina if we have a mobile variant
         assign mobile_retina_src = base_image_name | append: '-global-mbl-x2.' | append: image_ext
         assign mobile_retina_check = mobile_retina_src | file_url
-
-        if mobile_retina_check contains '//curalife.com/cdn/shop/files/'
-          assign retina_response_check = mobile_retina_check | file_url
-          unless retina_response_check contains '404' or retina_response_check == blank or retina_response_check contains 'null'
-            assign has_mobile_retina = true
-            assign mobile_retina_url = mobile_retina_check
-          endunless
-        endif
+        unless mobile_retina_check == blank or mobile_retina_check contains '404' or mobile_retina_check contains 'null'
+          assign has_mobile_retina = true
+          assign mobile_retina_url = mobile_retina_check
+        endunless
       else
         # Fallback to regular mobile variant
         assign mobile_src = base_image_name | append: '-mbl.' | append: image_ext
         assign mobile_check = mobile_src | file_url
-        assign url_valid = false
 
-        # Validate regular mobile URL
-        if mobile_check contains '//curalife.com/cdn/shop/files/'
-          assign response_check = mobile_check | file_url
-          unless response_check contains '404' or response_check == blank or response_check contains 'null'
-            assign url_valid = true
-            assign has_mobile_variant = true
-            assign mobile_variant_url = mobile_check
-          endunless
-        endif
+        unless mobile_check == blank or mobile_check contains '404' or mobile_check contains 'null'
+          assign has_mobile_variant = true
+          assign mobile_variant_url = mobile_check
 
-        if url_valid
-          # Only check for mobile retina if mobile variant is valid
+          # Only check for mobile retina if we have a mobile variant
           assign mobile_retina_src = base_image_name | append: '-mbl-x2.' | append: image_ext
           assign mobile_retina_check = mobile_retina_src | file_url
-
-          if mobile_retina_check contains '//curalife.com/cdn/shop/files/'
-            assign retina_response_check = mobile_retina_check | file_url
-            unless retina_response_check contains '404' or retina_response_check == blank or retina_response_check contains 'null'
-              assign has_mobile_retina = true
-              assign mobile_retina_url = mobile_retina_check
-            endunless
-          endif
-        endif
-      endif
+          unless mobile_retina_check == blank or mobile_retina_check contains '404' or mobile_retina_check contains 'null'
+            assign has_mobile_retina = true
+            assign mobile_retina_url = mobile_retina_check
+          endunless
+        endunless
+      endunless
     else
       # No global variant, check regular mobile variant
       assign mobile_src = base_image_name | append: '-mbl.' | append: image_ext
       assign mobile_check = mobile_src | file_url
-      assign url_valid = false
 
-      # Validate mobile URL
-      if mobile_check contains '//curalife.com/cdn/shop/files/'
-        assign response_check = mobile_check | file_url
-        unless response_check contains '404' or response_check == blank or response_check contains 'null'
-          assign url_valid = true
-          assign has_mobile_variant = true
-          assign mobile_variant_url = mobile_check
-        endunless
-      endif
+      unless mobile_check == blank or mobile_check contains '404' or mobile_check contains 'null'
+        assign has_mobile_variant = true
+        assign mobile_variant_url = mobile_check
 
-      if url_valid
-        # Only check for mobile retina if mobile variant is valid
+        # Only check for mobile retina if we have a mobile variant
         assign mobile_retina_src = base_image_name | append: '-mbl-x2.' | append: image_ext
         assign mobile_retina_check = mobile_retina_src | file_url
-
-        if mobile_retina_check contains '//curalife.com/cdn/shop/files/'
-          assign retina_response_check = mobile_retina_check | file_url
-          unless retina_response_check contains '404' or retina_response_check == blank or retina_response_check contains 'null'
-            assign has_mobile_retina = true
-            assign mobile_retina_url = mobile_retina_check
-          endunless
-        endif
-      endif
+        unless mobile_retina_check == blank or mobile_retina_check contains '404' or mobile_retina_check contains 'null'
+          assign has_mobile_retina = true
+          assign mobile_retina_url = mobile_retina_check
+        endunless
+      endunless
     endif
   endif
 
@@ -271,23 +232,42 @@ This Liquid snippet creates a responsive image component with the following feat
 </script>
 
 <picture>
-  {% if has_mobile_variant == true and mobile_variant_url != blank %}
+  {% if has_mobile_variant %}
   <source
     media="(max-width: {{ mobile_breakpoint }}px)"
-    srcset="{{ mobile_variant_url }}{% if has_mobile_retina and mobile_retina_url != blank %} 1x,{{ mobile_retina_url }} 2x{% endif %}"
+    srcset="
+      {%- capture mobile_srcset -%}
+        {{ mobile_variant_url }}
+        {%- if has_mobile_variant == true and has_mobile_retina == true and mobile_retina_check contains 'http' and mobile_retina_check != blank and mobile_retina_check contains '//curalife.com/cdn/shop/files/' and mobile_retina_url != blank -%}
+          1x,{{ mobile_retina_url }} 2x
+        {%- endif -%}
+      {%- endcapture -%}{{ mobile_srcset | strip }}"
     sizes="{{ sizes }}"
   >
   {% endif %}
 
   <source
     media="(min-width: {{ mobile_breakpoint | plus: 1 }}px)"
-    srcset="{{ desktop_image | image_url: width: 1200 }}"
+    {% if has_global_variant %}
+      {% if has_global_retina and global_retina_check contains 'http' and global_retina_check != blank and global_retina_check contains '//curalife.com/cdn/shop/files/' and false %}
+      srcset="{{ global_variant_url }} 1x,{{ global_retina_url }} 2x"
+      {% else %}
+      srcset="{{ global_variant_url }}"
+      {% endif %}
+    {% else %}
+      {% if retina_image and false %}
+      srcset="{{ desktop_image | image_url: width: 1200 }} 1x,{{ retina_check }} 2x"
+      {% else %}
+      srcset="{{ desktop_image | image_url: width: 1200 }}"
+      {% endif %}
+    {% endif %}
     sizes="{{ sizes }}"
   >
 
   <img
     id="{{ unique_id }}"
-    src="{{ fallback_url }}"
+    src="{% if has_global_variant %}{{ global_variant_url }}{% else %}{{ fallback_url }}{% endif %}"
+    {% if has_global_variant and has_global_retina and global_retina_check contains 'http' and global_retina_check != blank and global_retina_check contains '//curalife.com/cdn/shop/files/' %}srcset="{{ global_retina_url }} 2x"{% endif %}
     {% if lazy_load and is_priority != true %}
       loading="lazy"
       decoding="async"
@@ -309,8 +289,16 @@ This Liquid snippet creates a responsive image component with the following feat
       originalSrc: this.src
     }); this.onerror=null; this.src='{{ fallback_url }}'"
     data-original-url="{{ fallback_url }}"
-    {% if has_mobile_variant == true and mobile_variant_url != blank %}data-mobile-url="{{ mobile_variant_url }}"{% endif %}
-    {% if has_mobile_variant == true and has_mobile_retina == true and mobile_retina_url != blank %}data-mobile-retina-url="{{ mobile_retina_url }}"{% endif %}
-    {% if link %}data-href="{{ link }}"{% endif %}
+    {%- if has_global_variant and has_global_retina and global_retina_check contains '//curalife.com/cdn/shop/files/' -%}
+      data-desktop-retina-url="{{ global_retina_url }}"
+    {%- elsif retina_check and retina_check contains 'http' and retina_check != blank and retina_check contains '//curalife.com/cdn/shop/files/' -%}
+      data-desktop-retina-url="{{ retina_check }}"
+    {%- endif -%}
+    {%- if has_mobile_variant == true and has_mobile_retina == true and mobile_variant_url != blank and mobile_retina_url != blank and mobile_retina_check contains '//curalife.com/cdn/shop/files/' -%}
+      data-mobile-retina-url="{{ mobile_retina_url }}"
+    {%- endif -%}
+    {%- if link -%}
+      data-href="{{ link }}"
+    {%- endif -%}
   >
 </picture>
