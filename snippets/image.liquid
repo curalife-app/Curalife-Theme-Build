@@ -27,22 +27,10 @@ assign sizes = sizes | default: '(min-width: 1200px) 1200px, (min-width: 768px) 
 assign breakpoints = '375,640,768,1080,1200,1920,2560' | split: ','
 
 #######################################
-# Initialize debug logs
-#######################################
-assign debug_logs = ''
-assign debug_logs = debug_logs | append: 'Initializing variables with defaults...\n'
-
-#######################################
 # Check if store is global
 #######################################
 assign shop_name = shop.name | downcase
-assign is_global_store = false
-if shop_name contains 'global'
-  assign is_global_store = true
-  assign debug_logs = debug_logs | append: 'Store is identified as global.\n'
-else
-  assign debug_logs = debug_logs | append: 'Store is not global.\n'
-endif
+assign is_global_store = shop_name contains 'global'
 
 #######################################
 # Process desktop image path
@@ -54,90 +42,46 @@ assign image_name = filename | split: '.' | first
 assign image_ext = filename | split: '.' | last
 assign base_image_name = image_name
 
-assign debug_logs = debug_logs | append: 'Processing desktop image path...\n'
-assign debug_logs = debug_logs | append: 'Image name: ' | append: image_name | append: '\n'
-assign debug_logs = debug_logs | append: 'Image extension: ' | append: image_ext | append: '\n'
-
 #######################################
 # Construct Global Variant URL if Enabled
 #######################################
 assign has_global_variant = false
-assign desktop_variant_filename = ''
 if load_global and is_global_store
   assign image_name = image_name | append: '-global'
   assign has_global_variant = true
-  assign desktop_variant_filename = image_name | append: '.' | append: image_ext
-  assign debug_logs = debug_logs | append: 'Global variant will be used.\n'
-else
-  assign desktop_variant_filename = image_name | append: '.' | append: image_ext
 endif
-
-# Get desktop variant URL using file_url
+assign desktop_variant_filename = image_name | append: '.' | append: image_ext
 assign desktop_variant_url = desktop_variant_filename | file_url
-
-# Output debug log for desktop_variant_url returned from file_url
-assign debug_logs = debug_logs | append: 'Desktop variant URL returned from file_url: ' | append: desktop_variant_url | append: '\n'
 
 #######################################
 # Handle Mobile Variant
 #######################################
 assign has_mobile_variant = false
-assign mobile_variant_url = ''
-
 if mobile_image_provided != blank
-  # Use the provided mobile_image
   assign has_mobile_variant = true
   assign mobile_variant_url = mobile_image_provided.src
-  assign debug_logs = debug_logs | append: 'Mobile image provided directly.\n'
-  assign debug_logs = debug_logs | append: 'Mobile variant URL: ' | append: mobile_variant_url | append: '\n'
 elsif load_mobile
-  # Construct mobile variant URL based on naming convention
-  if has_global_variant
-    assign mobile_variant_filename = image_name | append: '-mbl.' | append: image_ext
-  else
-    assign mobile_variant_filename = base_image_name | append: '-mbl.' | append: image_ext
-  endif
-
-  # Include 'files/' path to construct the full filename
+  assign mobile_variant_filename = image_name | append: '-mbl.' | append: image_ext
   assign mobile_variant_full_filename = 'files/' | append: mobile_variant_filename
-
-  # Get mobile variant URL using file_url
   assign mobile_variant_url = mobile_variant_full_filename | file_url
-
-  # Output debug log for mobile_variant_url returned from file_url
-  assign debug_logs = debug_logs | append: 'Mobile variant URL returned from file_url: ' | append: mobile_variant_url | append: '\n'
-
-  # Check if the mobile variant URL exists
   if mobile_variant_url contains '?v='
     assign has_mobile_variant = true
-    assign debug_logs = debug_logs | append: 'Mobile variant URL exists: ' | append: mobile_variant_url | append: '\n'
   else
-    assign has_mobile_variant = false
     assign mobile_variant_url = ''
-    assign debug_logs = debug_logs | append: 'Mobile variant URL does not exist.\n'
   endif
-else
-  assign debug_logs = debug_logs | append: 'Mobile variant not enabled.\n'
 endif
 
 #######################################
-# Initialize error log
+# Validation checks and error logging
 #######################################
-assign error_log = 'window.imageErrors = window.imageErrors || { missing_alt: [], missing_mobile: [], missing_global: [], load_errors: []};'
-
-#######################################
-# Validation checks
-#######################################
+assign error_log = 'window.imageErrors = window.imageErrors || { missing_alt: [], missing_image: [], load_errors: []};'
 if image == blank
   assign validation_error = '{ type: "Missing Image", message: "Image is required" }'
-  assign error_log = error_log | append: 'window.imageErrors.missing_alt.push(' | append: validation_error | append: ');'
-  assign debug_logs = debug_logs | append: 'Validation error: Image is required.\n'
+  assign error_log = error_log | append: 'window.imageErrors.missing_image.push(' | append: validation_error | append: ');'
 endif
-
 if alt == blank
   assign validation_error = '{ type: "Missing Alt", message: "Image Alt text is required", src: "' | append: image.src | append: '" }'
   assign error_log = error_log | append: 'window.imageErrors.missing_alt.push(' | append: validation_error | append: ');'
-  assign debug_logs = debug_logs | append: 'Validation error: Image Alt text is required.\n'
 endif
 
 #######################################
@@ -145,15 +89,9 @@ endif
 #######################################
 assign unique_id = 'img-' | append: desktop_image.id | append: '-' | append: now | date: '%N'
 assign fallback_url = desktop_image | image_url: width: 1100
-
-assign debug_logs = debug_logs | append: 'Generated unique ID: ' | append: unique_id | append: '\n'
-assign debug_logs = debug_logs | append: 'Fallback URL: ' | append: fallback_url | append: '\n'
-assign debug_logs = debug_logs | append: 'Desktop variant URL: ' | append: desktop_variant_url | append: '\n'
-if has_mobile_variant
-  assign debug_logs = debug_logs | append: 'Mobile variant URL: ' | append: mobile_variant_url | append: '\n'
-endif
 -%}
 
+<!-- Image Component -->
 <picture>
   {% if has_mobile_variant %}
     <source
@@ -184,7 +122,7 @@ endif
     width="{{ desktop_image.width }}"
     height="{{ desktop_image.height }}"
     class="object-cover opacity-0 m-0 transition-opacity duration-300 ease-in-out {% if link %}cursor-pointer{% endif %} {% if class %}{{ class }}{% endif %}"
-    onload="console.log('Image {{ unique_id }} loaded successfully'); this.classList.add('opacity-100');"
+    onload="this.classList.add('opacity-100');"
     onclick="{% if link %}window.location.href='{{ link }}'{% endif %}"
     onerror="window.logImageError('load_errors', {
       imageId: '{{ desktop_image.id }}',
@@ -199,21 +137,22 @@ endif
   >
 </picture>
 
+<!-- Consolidated Debug Logs Script -->
 <script>
+  window.imageErrors = window.imageErrors || { missing_alt: [], missing_image: [], load_errors: [] };
   {{ error_log }}
 
-  // Group console logs for better organization
-  console.group('Image Debug Logs - {{ image_name }}');
-
-  // Output debug logs as individual messages
-  var debugLogs = '{{ debug_logs | strip | escape }}'.split('\\n').filter(Boolean);
-  debugLogs.forEach(function(log) {
-    console.log(log);
-  });
-
-  // Prepare debug data object
-  var debugData = {
+  window.imageDebugData = window.imageDebugData || [];
+  window.imageDebugData.push({
     unique_id: {{ unique_id | json }},
+    image_name: {{ image_name | json }},
+    desktop_variant_url: {{ desktop_variant_url | json }},
+    has_mobile_variant: {{ has_mobile_variant | json }},
+    mobile_variant_url: {{ mobile_variant_url | json }},
+    fallback_url: {{ fallback_url | json }},
+    has_global_variant: {{ has_global_variant | json }},
+    is_global_store: {{ is_global_store | json }},
+    shop_name: {{ shop_name | json }},
     desktop_image: {
       id: {{ desktop_image.id | json }},
       src: {{ desktop_image.src | json }},
@@ -235,23 +174,30 @@ endif
     alt: {{ alt | json }},
     mobile_breakpoint: {{ mobile_breakpoint | json }},
     sizes: {{ sizes | json }},
-    breakpoints: {{ breakpoints | json }},
-    shop_name: {{ shop_name | json }},
-    is_global_store: {{ is_global_store | json }},
-    has_global_variant: {{ has_global_variant | json }},
-    desktop_variant_url: {{ desktop_variant_url | json }},
-    has_mobile_variant: {{ has_mobile_variant | json }},
-    mobile_variant_url: {{ mobile_variant_url | json }},
-    fallback_url: {{ fallback_url | json }}
-  };
+    breakpoints: {{ breakpoints | json }}
+  });
 
-  console.log('Debug Data:', debugData);
-
-  console.groupEnd();
+  if (!window.debouncedDisplayImageDebugLogs) {
+    window.debouncedDisplayImageDebugLogs = (function() {
+      let timeoutId = null;
+      return function() {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+        timeoutId = setTimeout(function() {
+          console.group('Consolidated Image Debug Logs');
+          window.imageDebugData.forEach(function(debugData) {
+            console.log('Image Debug Data:', debugData);
+          });
+          console.groupEnd();
+        }, 1000);
+      };
+    })();
+  }
+  window.debouncedDisplayImageDebugLogs();
 
   if (!window.logImageError) {
     window.hasDisplayedImageErrors = false;
-
     window.debouncedDisplayErrors = (function() {
       let timeoutId = null;
       return function() {
@@ -262,13 +208,11 @@ endif
           if (!window.hasDisplayedImageErrors) {
             const errors = window.imageErrors;
             const hasErrors = Object.values(errors).some(arr => arr.length > 0);
-
             if (hasErrors) {
               console.warn('🚨 Image Component Errors Summary:', {
                 totalErrors: Object.values(errors).reduce((sum, arr) => sum + arr.length, 0),
-                Errors: errors
+                errors: errors
               });
-
               window.hasDisplayedImageErrors = true;
             }
           }
@@ -281,12 +225,10 @@ endif
       if (!window.imageErrors[type]) {
         window.imageErrors[type] = [];
       }
-
       data.timestamp = new Date().toISOString();
       const existingError = window.imageErrors[type].find(
         error => error.imageId === data.imageId && error.type === data.type
       );
-
       if (!existingError) {
         window.imageErrors[type].push(data);
         console.error('Image Error:', type, data);
