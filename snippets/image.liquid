@@ -59,85 +59,33 @@ This Liquid snippet creates a responsive image component with the following feat
   assign debug_logs = debug_logs | append: 'Image extension: ' | append: image_ext | append: '\n'
 
   #######################################
-  # Check for global variant if enabled
+  # Construct Global Variant URL if Enabled
   #######################################
   assign has_global_variant = false
   if load_global and is_global_store
-    assign global_src = image_name | append: '-global.' | append: image_ext
-    assign global_check = global_src | file_url
-
-    assign debug_logs = debug_logs | append: 'Checking for global variant...\n'
-
-    unless global_check == blank or global_check contains '404' or global_check contains 'null'
-      assign has_global_variant = true
-      assign global_variant_url = global_check
-      assign original_desktop_url = desktop_image.src
-      assign image_name = image_name | append: '-global'
-
-      assign debug_logs = debug_logs | append: 'Global variant found: ' | append: global_variant_url | append: '\n'
-    else
-      assign debug_logs = debug_logs | append: 'Global variant not found.\n'
-    endunless
+    assign image_name = image_name | append: '-global'
+    assign has_global_variant = true
+    assign debug_logs = debug_logs | append: 'Global variant will be used.\n'
   endif
 
   #######################################
-  # Initialize mobile variant flags
+  # Construct Mobile Variant URL if Enabled
   #######################################
   assign has_mobile_variant = false
   assign mobile_variant_url = nil
 
-  #######################################
-  # Check for mobile variant if provided
-  #######################################
-  if mobile_image != blank and mobile_image != desktop_image
+  if load_mobile
     assign has_mobile_variant = true
-    assign mobile_variant_url = mobile_image.src
-
-    assign debug_logs = debug_logs | append: 'Mobile variant provided directly.\n'
-  endif
-
-  #######################################
-  # Check for mobile variant if enabled
-  #######################################
-  if load_mobile and mobile_image == blank
-    assign debug_logs = debug_logs | append: 'Attempting to detect mobile variant automatically...\n'
     if has_global_variant
-      assign mobile_src = base_image_name | append: '-global-mbl.' | append: image_ext
-      assign mobile_check = mobile_src | file_url
-
-      unless mobile_check == blank or mobile_check contains '404' or mobile_check contains 'null'
-        assign has_mobile_variant = true
-        assign mobile_variant_url = mobile_check
-
-        assign debug_logs = debug_logs | append: 'Global mobile variant found: ' | append: mobile_variant_url | append: '\n'
-      else
-        # Fallback to regular mobile variant
-        assign mobile_src = base_image_name | append: '-mbl.' | append: image_ext
-        assign mobile_check = mobile_src | file_url
-
-        unless mobile_check == blank or mobile_check contains '404' or mobile_check contains 'null'
-          assign has_mobile_variant = true
-          assign mobile_variant_url = mobile_check
-
-          assign debug_logs = debug_logs | append: 'Regular mobile variant found: ' | append: mobile_variant_url | append: '\n'
-        else
-          assign debug_logs = debug_logs | append: 'No mobile variant found.\n'
-        endunless
-      endunless
+      assign mobile_variant_filename = image_name | append: '-mbl.' | append: image_ext
     else
-      # No global variant, check regular mobile variant
-      assign mobile_src = base_image_name | append: '-mbl.' | append: image_ext
-      assign mobile_check = mobile_src | file_url
-
-      unless mobile_check == blank or mobile_check contains '404' or mobile_check contains 'null'
-        assign has_mobile_variant = true
-        assign mobile_variant_url = mobile_check
-
-        assign debug_logs = debug_logs | append: 'Regular mobile variant found: ' | append: mobile_variant_url | append: '\n'
-      else
-        assign debug_logs = debug_logs | append: 'No mobile variant found.\n'
-      endunless
+      assign mobile_variant_filename = base_image_name | append: '-mbl.' | append: image_ext
     endif
+    assign mobile_variant_url = mobile_variant_filename | file_url
+
+    assign debug_logs = debug_logs | append: 'Mobile variant URL constructed: ' | append: mobile_variant_url | append: '\n'
+  else
+    assign debug_logs = debug_logs | append: 'Mobile variant not enabled.\n'
   endif
 
   #######################################
@@ -163,51 +111,20 @@ This Liquid snippet creates a responsive image component with the following feat
   #######################################
   # Generate unique IDs and URLs
   #######################################
-  assign unique_id = 'img-' | append: desktop_image.id | append: '-' | append: mobile_image.id | append: '-' | now | date: '%N'
+  assign unique_id = 'img-' | append: desktop_image.id | append: '-' | append: now | date: '%N'
   assign fallback_url = desktop_image | image_url: width: 1100
 
-  if has_mobile_variant
-    assign base_mobile_url = mobile_image | image_url: width: 750, format: 'webp'
+  assign desktop_variant_url = ''
+  if has_global_variant
+    assign desktop_variant_filename = image_name | append: '.' | append: image_ext
+    assign desktop_variant_url = desktop_variant_filename | file_url
+  else
+    assign desktop_variant_url = desktop_image.src
   endif
 
   assign debug_logs = debug_logs | append: 'Generated unique ID: ' | append: unique_id | append: '\n'
   assign debug_logs = debug_logs | append: 'Fallback URL: ' | append: fallback_url | append: '\n'
-
-  #######################################
-  # Prepare debug data for JavaScript
-  #######################################
-  assign debug_data = {
-    'unique_id': unique_id,
-    'desktop_image': {
-      'id': desktop_image.id,
-      'src': desktop_image.src,
-      'width': desktop_image.width,
-      'height': desktop_image.height,
-      'alt': desktop_image.alt
-    },
-    'mobile_image': {
-      'id': mobile_image.id,
-      'src': mobile_image.src,
-      'width': mobile_image.width,
-      'height': mobile_image.height,
-      'alt': mobile_image.alt
-    },
-    'lazy_load': lazy_load,
-    'is_priority': is_priority,
-    'load_mobile': load_mobile,
-    'load_global': load_global,
-    'alt': alt,
-    'mobile_breakpoint': mobile_breakpoint,
-    'sizes': sizes,
-    'breakpoints': breakpoints,
-    'shop_name': shop_name,
-    'is_global_store': is_global_store,
-    'has_global_variant': has_global_variant,
-    'global_variant_url': global_variant_url,
-    'has_mobile_variant': has_mobile_variant,
-    'mobile_variant_url': mobile_variant_url,
-    'fallback_url': fallback_url
-  }
+  assign debug_logs = debug_logs | append: 'Desktop variant URL: ' | append: desktop_variant_url | append: '\n'
 -%}
 
 <picture>
@@ -221,17 +138,13 @@ This Liquid snippet creates a responsive image component with the following feat
 
   <source
     media="(min-width: {{ mobile_breakpoint | plus: 1 }}px)"
-    {% if has_global_variant %}
-      srcset="{{ global_variant_url }}"
-    {% else %}
-      srcset="{{ desktop_image | image_url: width: 1200 }}"
-    {% endif %}
+    srcset="{{ desktop_variant_url }}"
     sizes="{{ sizes }}"
   >
 
   <img
     id="{{ unique_id }}"
-    src="{% if has_global_variant %}{{ global_variant_url }}{% else %}{{ fallback_url }}{% endif %}"
+    src="{{ desktop_variant_url }}"
     {% if lazy_load and is_priority != true %}
       loading="lazy"
       decoding="async"
@@ -244,10 +157,10 @@ This Liquid snippet creates a responsive image component with the following feat
     width="{{ desktop_image.width }}"
     height="{{ desktop_image.height }}"
     class="object-cover opacity-0 m-0 transition-opacity duration-300 ease-in-out {% if link %}cursor-pointer{% endif %} {% if class %}{{ class }}{% endif %}"
-    onload="console.log('Image {{ filename }} loaded successfully'); this.classList.add('opacity-100');"
+    onload="console.log('Image {{ unique_id }} loaded successfully'); this.classList.add('opacity-100');"
     onclick="{% if link %}window.location.href='{{ link }}'{% endif %}"
     onerror="window.logImageError('load_errors', {
-      image: '{{ filename }}',
+      imageId: '{{ desktop_image.id }}',
       elementId: '{{ unique_id }}',
       fallbackUrl: '{{ fallback_url }}',
       originalSrc: this.src
@@ -266,7 +179,38 @@ This Liquid snippet creates a responsive image component with the following feat
   console.log('Debug Logs for Image {{ unique_id }}:\n{{ debug_logs | escape }}');
 
   // Prepare debug data object
-  var debugData = {{ debug_data | json }};
+  var debugData = {
+    unique_id: {{ unique_id | json }},
+    desktop_image: {
+      id: {{ desktop_image.id | json }},
+      src: {{ desktop_image.src | json }},
+      width: {{ desktop_image.width | json }},
+      height: {{ desktop_image.height | json }},
+      alt: {{ desktop_image.alt | json }}
+    },
+    mobile_image: {
+      id: {{ mobile_image.id | json }},
+      src: {{ mobile_image.src | json }},
+      width: {{ mobile_image.width | json }},
+      height: {{ mobile_image.height | json }},
+      alt: {{ mobile_image.alt | json }}
+    },
+    lazy_load: {{ lazy_load | json }},
+    is_priority: {{ is_priority | json }},
+    load_mobile: {{ load_mobile | json }},
+    load_global: {{ load_global | json }},
+    alt: {{ alt | json }},
+    mobile_breakpoint: {{ mobile_breakpoint | json }},
+    sizes: {{ sizes | json }},
+    breakpoints: {{ breakpoints | json }},
+    shop_name: {{ shop_name | json }},
+    is_global_store: {{ is_global_store | json }},
+    has_global_variant: {{ has_global_variant | json }},
+    desktop_variant_url: {{ desktop_variant_url | json }},
+    has_mobile_variant: {{ has_mobile_variant | json }},
+    mobile_variant_url: {{ mobile_variant_url | json }},
+    fallback_url: {{ fallback_url | json }}
+  };
   console.log('Debug Data for Image {{ unique_id }}:', debugData);
 
   if (!window.logImageError) {
