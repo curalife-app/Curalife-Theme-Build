@@ -16,7 +16,7 @@ This Liquid snippet creates a responsive image component with the following feat
   # Initialize variables with defaults
   #######################################
   assign desktop_image = image
-  assign mobile_image = mobile_image
+  assign mobile_image_provided = mobile_image
   assign lazy_load = lazy | default: true
   assign is_priority = priority | default: false
   assign load_mobile = load_mobile | default: false
@@ -62,19 +62,30 @@ This Liquid snippet creates a responsive image component with the following feat
   # Construct Global Variant URL if Enabled
   #######################################
   assign has_global_variant = false
+  assign desktop_variant_filename = ''
   if load_global and is_global_store
     assign image_name = image_name | append: '-global'
     assign has_global_variant = true
+    assign desktop_variant_filename = image_name | append: '.' | append: image_ext
     assign debug_logs = debug_logs | append: 'Global variant will be used.\n'
+  else
+    assign desktop_variant_filename = image_name | append: '.' | append: image_ext
   endif
+  assign desktop_variant_url = desktop_variant_filename | file_url
 
   #######################################
-  # Construct Mobile Variant URL if Enabled
+  # Handle Mobile Variant
   #######################################
   assign has_mobile_variant = false
-  assign mobile_variant_url = nil
+  assign mobile_variant_url = ''
 
-  if load_mobile
+  if mobile_image_provided != blank
+    # Use the provided mobile_image
+    assign has_mobile_variant = true
+    assign mobile_variant_url = mobile_image_provided.src
+    assign debug_logs = debug_logs | append: 'Mobile image provided directly.\n'
+  elsif load_mobile
+    # Construct mobile variant URL based on naming convention
     assign has_mobile_variant = true
     if has_global_variant
       assign mobile_variant_filename = image_name | append: '-mbl.' | append: image_ext
@@ -82,7 +93,6 @@ This Liquid snippet creates a responsive image component with the following feat
       assign mobile_variant_filename = base_image_name | append: '-mbl.' | append: image_ext
     endif
     assign mobile_variant_url = mobile_variant_filename | file_url
-
     assign debug_logs = debug_logs | append: 'Mobile variant URL constructed: ' | append: mobile_variant_url | append: '\n'
   else
     assign debug_logs = debug_logs | append: 'Mobile variant not enabled.\n'
@@ -114,17 +124,12 @@ This Liquid snippet creates a responsive image component with the following feat
   assign unique_id = 'img-' | append: desktop_image.id | append: '-' | append: now | date: '%N'
   assign fallback_url = desktop_image | image_url: width: 1100
 
-  assign desktop_variant_url = ''
-  if has_global_variant
-    assign desktop_variant_filename = image_name | append: '.' | append: image_ext
-    assign desktop_variant_url = desktop_variant_filename | file_url
-  else
-    assign desktop_variant_url = desktop_image.src
-  endif
-
   assign debug_logs = debug_logs | append: 'Generated unique ID: ' | append: unique_id | append: '\n'
   assign debug_logs = debug_logs | append: 'Fallback URL: ' | append: fallback_url | append: '\n'
   assign debug_logs = debug_logs | append: 'Desktop variant URL: ' | append: desktop_variant_url | append: '\n'
+  if has_mobile_variant
+    assign debug_logs = debug_logs | append: 'Mobile variant URL: ' | append: mobile_variant_url | append: '\n'
+  endif
 -%}
 
 <picture>
@@ -188,12 +193,12 @@ This Liquid snippet creates a responsive image component with the following feat
       height: {{ desktop_image.height | json }},
       alt: {{ desktop_image.alt | json }}
     },
-    mobile_image: {
-      id: {{ mobile_image.id | json }},
-      src: {{ mobile_image.src | json }},
-      width: {{ mobile_image.width | json }},
-      height: {{ mobile_image.height | json }},
-      alt: {{ mobile_image.alt | json }}
+    mobile_image_provided: {
+      id: {{ mobile_image_provided.id | json }},
+      src: {{ mobile_image_provided.src | json }},
+      width: {{ mobile_image_provided.width | json }},
+      height: {{ mobile_image_provided.height | json }},
+      alt: {{ mobile_image_provided.alt | json }}
     },
     lazy_load: {{ lazy_load | json }},
     is_priority: {{ is_priority | json }},
