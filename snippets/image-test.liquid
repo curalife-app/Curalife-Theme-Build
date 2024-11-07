@@ -34,6 +34,7 @@ assign breakpoints = '375,640,768,1080,1200,1920,2560' | split: ','
 if force_original
   # Use the original image source directly when force_original is true
   assign desktop_variant = desktop_image
+  assign desktop_variant_url = desktop_image | image_url
   assign has_mobile_variant = false
   assign has_global_variant = false
   assign is_global_store = false
@@ -43,6 +44,8 @@ else
   #######################################
   if shop.name contains 'Global'
     assign is_global_store = true
+  else
+    assign is_global_store = false
   endif
 
   #######################################
@@ -76,12 +79,14 @@ else
   endif
 
   #######################################
-  # Assign Desktop Variant
+  # Assign Desktop Variant and URL
   #######################################
   if is_file_image
     assign desktop_variant = filename
+    assign desktop_variant_url = desktop_variant | file_url
   else
     assign desktop_variant = desktop_image
+    assign desktop_variant_url = desktop_variant | image_url
   endif
 
   #######################################
@@ -91,19 +96,22 @@ else
   if mobile_image_provided != blank
     assign has_mobile_variant = true
     assign mobile_variant = mobile_image_provided
-		if mobile_variant.src contains 'files/'
-			assign is_mobile_file_image = true
-		else
-			assign is_mobile_file_image = false
-		endif
+    assign is_mobile_file_image = mobile_image_provided.src contains 'files/'
+    if is_mobile_file_image
+      assign mobile_variant_url = mobile_variant | file_url
+    else
+      assign mobile_variant_url = mobile_variant | image_url
+    endif
   elsif load_mobile
     assign mobile_variant_filename = image_name | append: '-mbl.' | append: image_ext
     assign mobile_variant = mobile_variant_filename
-    if mobile_variant | file_exists
+    assign mobile_variant_url = mobile_variant | file_url
+    # Check if the mobile variant file exists
+    if mobile_variant_url contains '?v='
       assign has_mobile_variant = true
       assign is_mobile_file_image = true
     else
-      assign mobile_variant = ''
+      assign has_mobile_variant = false
       assign is_mobile_file_image = false
     endif
   endif
@@ -131,8 +139,8 @@ assign fallback_url = desktop_image | image_url: width: 1100
 #######################################
 # Calculate half dimensions for regular displays
 #######################################
-assign desktop_image_width = desktop_image.width
-assign desktop_image_height = desktop_image.height
+assign desktop_image_width = desktop_image.width | default: 800
+assign desktop_image_height = desktop_image.height | default: 600
 assign half_width = desktop_image_width | divided_by: 2
 assign half_height = desktop_image_height | divided_by: 2
 -%}
@@ -208,9 +216,9 @@ assign half_height = desktop_image_height | divided_by: 2
   window.imageDebugData.push({
     image_src: {{ image.src | json }},
     unique_id: {{ unique_id | json }},
-    desktop_variant: {{ desktop_variant | json }},
+    desktop_variant: {{ desktop_variant_url | json }},
     has_mobile_variant: {{ has_mobile_variant | json }},
-    mobile_variant: {{ mobile_variant | json }},
+    mobile_variant: {{ mobile_variant_url | json }},
     fallback_url: {{ fallback_url | json }},
     has_global_variant: {{ has_global_variant | json }},
     is_global_store: {{ is_global_store | json }},
