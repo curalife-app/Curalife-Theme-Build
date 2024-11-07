@@ -120,6 +120,17 @@ if alt == blank
 endif
 
 #######################################
+# Calculate display dimensions
+#######################################
+if is_retina
+  assign display_width = desktop_image.width | divided_by: 2
+  assign display_height = desktop_image.height | divided_by: 2
+else
+  assign display_width = desktop_image.width
+  assign display_height = desktop_image.height
+endif
+
+#######################################
 # Generate unique IDs and URLs
 #######################################
 assign unique_id = 'img-' | append: desktop_image.id | append: '-' | append: now | date: '%N'
@@ -154,8 +165,8 @@ assign fallback_url = desktop_image | image_url: width: 1100
       fetchpriority="high"
     {% endif %}
     alt="{{ alt | escape }}"
-    width="{{ desktop_image.width }}"
-    height="{{ desktop_image.height }}"
+    width="{{ display_width }}"
+    height="{{ display_height }}"
     class="object-cover opacity-0 m-0 transition-opacity duration-300 ease-in-out {% if link %}cursor-pointer{% endif %} {% if class %}{{ class }}{% endif %}"
     onload="this.classList.add('opacity-100');"
     onclick="{% if link %}window.location.href='{{ link }}'{% endif %}"
