@@ -4,6 +4,7 @@
 This Liquid snippet creates a responsive image component with the following features:
 - Responsive images with desktop/mobile variants (can be bypassed with force_original)
 - Optional automatic mobile image detection
+- Retina display support (2x resolution images)
 - Lazy loading with priority options
 - Error logging and fallback handling
 - WebP format support
@@ -21,6 +22,7 @@ assign lazy_load = lazy | default: true
 assign is_priority = priority | default: false
 assign load_mobile = load_mobile | default: false
 assign force_original = force_original | default: false
+assign is_retina = is_retina | default: false
 assign alt = alt | default: image.alt
 assign mobile_breakpoint = mobile_breakpoint | default: 768
 assign sizes = sizes | default: '(min-width: 1200px) 1200px, (min-width: 768px) 768px, 100vw'
@@ -59,17 +61,45 @@ else
   endif
 
   #######################################
+  # Handle Retina Images
+  #######################################
+  if is_retina
+    assign original_width = desktop_image.width
+    assign regular_width = original_width | divided_by: 2
+    assign desktop_1x_url = desktop_image | image_url: width: regular_width
+    assign desktop_2x_url = desktop_variant_url
+  else
+    assign desktop_1x_url = desktop_variant_url
+    assign desktop_2x_url = desktop_variant_url
+  endif
+
+  #######################################
   # Handle Mobile Variant
   #######################################
   assign has_mobile_variant = false
   if mobile_image_provided != blank
     assign has_mobile_variant = true
-    assign mobile_variant_url = mobile_image_provided | image_url
+    if is_retina
+      assign mobile_original_width = mobile_image_provided.width
+      assign mobile_regular_width = mobile_original_width | divided_by: 2
+      assign mobile_1x_url = mobile_image_provided | image_url: width: mobile_regular_width
+      assign mobile_2x_url = mobile_image_provided | image_url
+    else
+      assign mobile_1x_url = mobile_image_provided | image_url
+      assign mobile_2x_url = mobile_image_provided | image_url
+    endif
   elsif load_mobile
     assign mobile_variant_filename = image_name | append: '-mbl.' | append: image_ext
     assign mobile_variant_url = mobile_variant_filename | file_url
     if mobile_variant_url contains '?v='
       assign has_mobile_variant = true
+      if is_retina
+        assign mobile_1x_url = mobile_variant_url | image_url: width: mobile_regular_width
+        assign mobile_2x_url = mobile_variant_url
+      else
+        assign mobile_1x_url = mobile_variant_url
+        assign mobile_2x_url = mobile_variant_url
+      endif
     else
       assign mobile_variant_url = ''
     endif
@@ -101,20 +131,20 @@ assign fallback_url = desktop_image | image_url: width: 1100
   {% if has_mobile_variant %}
     <source
       media="(max-width: {{ mobile_breakpoint }}px)"
-      srcset="{{ mobile_variant_url }}"
+      srcset="{{ mobile_1x_url }} 1x, {{ mobile_2x_url }} 2x"
       sizes="{{ sizes }}"
     >
   {% endif %}
 
   <source
     media="(min-width: {{ mobile_breakpoint | plus: 1 }}px)"
-    srcset="{{ desktop_variant_url }}"
+    srcset="{{ desktop_1x_url }} 1x, {{ desktop_2x_url }} 2x"
     sizes="{{ sizes }}"
   >
 
   <img
     id="{{ unique_id }}"
-    src="{{ desktop_variant_url }}"
+    src="{{ desktop_1x_url }}"
     {% if lazy_load and is_priority != true %}
       loading="lazy"
       decoding="async"
@@ -130,6 +160,7 @@ assign fallback_url = desktop_image | image_url: width: 1100
     onload="this.classList.add('opacity-100');"
     onclick="{% if link %}window.location.href='{{ link }}'{% endif %}"
     data-original-url="{{ fallback_url }}"
+    {% if is_retina %}data-is-retina="true"{% endif %}
   >
 </picture>
 
@@ -148,9 +179,11 @@ assign fallback_url = desktop_image | image_url: width: 1100
     fallback_url: {{ fallback_url | json }},
     shop_name: {{ shop.name | json }},
     force_original: {{ force_original | json }},
+    is_retina: {{ is_retina | json }},
     desktop_image: {
       src: {{ desktop_image.src | json }},
-      alt: {{ desktop_image.alt | json }}
+      alt: {{ desktop_image.alt | json }},
+      width: {{ desktop_image.width | json }}
     },
     mobile_image_provided: {
       src: {{ mobile_image_provided.src | json }},
