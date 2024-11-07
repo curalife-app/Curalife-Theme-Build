@@ -2,7 +2,7 @@
 # Responsive Image Component Documentation
 
 This Liquid snippet creates a responsive image component with the following features:
-- Responsive images with desktop/mobile variants
+- Responsive images with desktop/mobile variants (can be bypassed with force_original)
 - Optional automatic mobile image detection
 - Lazy loading with priority options
 - Error logging and fallback handling
@@ -21,6 +21,7 @@ assign lazy_load = lazy | default: true
 assign is_priority = priority | default: false
 assign load_mobile = load_mobile | default: false
 assign load_global = load_global | default: false
+assign force_original = force_original | default: false
 assign alt = alt | default: image.alt
 assign mobile_breakpoint = mobile_breakpoint | default: 768
 assign sizes = sizes | default: '(min-width: 1200px) 1200px, (min-width: 768px) 768px, 100vw'
@@ -29,8 +30,8 @@ assign breakpoints = '375,640,768,1080,1200,1920,2560' | split: ','
 #######################################
 # Check if store is global
 #######################################
-if shop.name contains 'Global'
-	assign is_global_store = true
+if shop.name contains 'Global' and force_original != true
+  assign is_global_store = true
 endif
 
 #######################################
@@ -49,35 +50,37 @@ assign base_image_name = image_name
 #######################################
 assign has_global_variant = false
 
-if load_global and is_global_store
+if load_global and is_global_store and force_original != true
   assign filename = image_name | append: '-glb' | append: '.' | append: image_ext
   assign has_global_variant = true
 endif
 
 if desktop_image.src contains 'files/'
-	assign provided_images_in_files = true
+  assign provided_images_in_files = true
 endif
 
 if desktop_image.src != blank and provided_images_in_files == false
-	assign desktop_variant_url = desktop_image | image_url | split: '?' | first
+  assign desktop_variant_url = desktop_image | image_url | split: '?' | first
 else
-	assign desktop_variant_url = filename | file_url
+  assign desktop_variant_url = filename | file_url
 endif
 
 #######################################
 # Handle Mobile Variant
 #######################################
 assign has_mobile_variant = false
-if mobile_image_provided != blank
-  assign has_mobile_variant = true
-  assign mobile_variant_url = mobile_image_provided | image_url
-elsif load_mobile
-  assign mobile_variant_filename = image_name | append: '-mbl.' | append: image_ext
-  assign mobile_variant_url = mobile_variant_filename | file_url
-  if mobile_variant_url contains '?v='
+if force_original != true
+  if mobile_image_provided != blank
     assign has_mobile_variant = true
-  else
-    assign mobile_variant_url = ''
+    assign mobile_variant_url = mobile_image_provided | image_url
+  elsif load_mobile
+    assign mobile_variant_filename = image_name | append: '-mbl.' | append: image_ext
+    assign mobile_variant_url = mobile_variant_filename | file_url
+    if mobile_variant_url contains '?v='
+      assign has_mobile_variant = true
+    else
+      assign mobile_variant_url = ''
+    endif
   endif
 endif
 
@@ -145,13 +148,13 @@ assign fallback_url = desktop_image | image_url: width: 1100
 
   window.imageDebugData = window.imageDebugData || [];
   window.imageDebugData.push({
-		image_src: {{ image.src | json }},
+    image_src: {{ image.src | json }},
     unique_id: {{ unique_id | json }},
-		full_path: {{ full_path | json }},
-		path_parts: {{ path_parts | json }},
-		file_name: {{ filename | json }},
+    full_path: {{ full_path | json }},
+    path_parts: {{ path_parts | json }},
+    file_name: {{ filename | json }},
     image_name: {{ image_name | json }},
-		desktop_image_src: {{ desktop_image.src | json }},
+    desktop_image_src: {{ desktop_image.src | json }},
     desktop_variant_url: {{ desktop_variant_url | json }},
     has_mobile_variant: {{ has_mobile_variant | json }},
     mobile_variant_url: {{ mobile_variant_url | json }},
@@ -159,6 +162,7 @@ assign fallback_url = desktop_image | image_url: width: 1100
     has_global_variant: {{ has_global_variant | json }},
     is_global_store: {{ is_global_store | json }},
     shop_name: {{ shop.name | json }},
+    force_original: {{ force_original | json }},
     desktop_image: {
       src: {{ desktop_image.src | json }},
       alt: {{ desktop_image.alt | json }}
