@@ -96,7 +96,11 @@ else
   if mobile_image_provided != blank
     assign has_mobile_variant = true
     assign mobile_variant = mobile_image_provided
-    assign is_mobile_file_image = mobile_image_provided.src contains 'files/'
+		if mobile_image_provided.src contains 'files/'
+			assign is_mobile_file_image = true
+		else
+			assign is_mobile_file_image = false
+		endif
     if is_mobile_file_image
       assign mobile_variant_url = mobile_variant | file_url
     else
