@@ -2,7 +2,6 @@
 # Responsive Image Component Documentation
 
 This Liquid snippet creates a responsive image component with the following features:
-- Retina display compatibility by serving high-resolution images
 - Responsive images with desktop/mobile variants (can be bypassed with force_original)
 - Optional automatic mobile image detection
 - Lazy loading with priority options
@@ -21,7 +20,6 @@ assign mobile_image_provided = mobile_image
 assign lazy_load = lazy | default: true
 assign is_priority = priority | default: false
 assign load_mobile = load_mobile | default: false
-assign load_global = load_global | default: false
 assign force_original = force_original | default: false
 assign alt = alt | default: image.alt
 assign mobile_breakpoint = mobile_breakpoint | default: 768
@@ -33,21 +31,9 @@ assign breakpoints = '375,640,768,1080,1200,1920,2560' | split: ','
 #######################################
 if force_original
   # Use the original image source directly when force_original is true
-  assign desktop_variant = desktop_image
   assign desktop_variant_url = desktop_image | image_url
   assign has_mobile_variant = false
-  assign has_global_variant = false
-  assign is_global_store = false
 else
-  #######################################
-  # Check if store is global
-  #######################################
-  if shop.name contains 'Global'
-    assign is_global_store = true
-  else
-    assign is_global_store = false
-  endif
-
   #######################################
   # Process desktop image path
   #######################################
@@ -60,33 +46,16 @@ else
   assign base_image_name = image_name
 
   #######################################
-  # Construct Global Variant Filename if Enabled
-  #######################################
-  assign has_global_variant = false
-
-  if load_global and is_global_store
-    assign filename = image_name | append: '-glb' | append: '.' | append: image_ext
-    assign has_global_variant = true
-  endif
-
-  #######################################
-  # Determine if image is from 'files/'
+  # Construct Desktop Variant URL
   #######################################
   if desktop_image.src contains 'files/'
-    assign is_file_image = true
-  else
-    assign is_file_image = false
+    assign provided_images_in_files = true
   endif
 
-  #######################################
-  # Assign Desktop Variant and URL
-  #######################################
-  if is_file_image
-    assign desktop_variant = filename
-    assign desktop_variant_url = desktop_variant | file_url
+  if desktop_image.src != blank and provided_images_in_files == false
+    assign desktop_variant_url = desktop_image | image_url | split: '?' | first
   else
-    assign desktop_variant = desktop_image
-    assign desktop_variant_url = desktop_variant | image_url
+    assign desktop_variant_url = filename | file_url
   endif
 
   #######################################
@@ -95,28 +64,14 @@ else
   assign has_mobile_variant = false
   if mobile_image_provided != blank
     assign has_mobile_variant = true
-    assign mobile_variant = mobile_image_provided
-		if mobile_image_provided.src contains 'files/'
-			assign is_mobile_file_image = true
-		else
-			assign is_mobile_file_image = false
-		endif
-    if is_mobile_file_image
-      assign mobile_variant_url = mobile_variant | file_url
-    else
-      assign mobile_variant_url = mobile_variant | image_url
-    endif
+    assign mobile_variant_url = mobile_image_provided | image_url
   elsif load_mobile
     assign mobile_variant_filename = image_name | append: '-mbl.' | append: image_ext
-    assign mobile_variant = mobile_variant_filename
-    assign mobile_variant_url = mobile_variant | file_url
-    # Check if the mobile variant file exists
+    assign mobile_variant_url = mobile_variant_filename | file_url
     if mobile_variant_url contains '?v='
       assign has_mobile_variant = true
-      assign is_mobile_file_image = true
     else
-      assign has_mobile_variant = false
-      assign is_mobile_file_image = false
+      assign mobile_variant_url = ''
     endif
   endif
 endif
@@ -139,60 +94,27 @@ endif
 #######################################
 assign unique_id = 'img-' | append: desktop_image.id | append: '-' | append: now | date: '%N'
 assign fallback_url = desktop_image | image_url: width: 1100
-
-#######################################
-# Calculate half dimensions for regular displays
-#######################################
-assign desktop_image_width = desktop_image.width | default: 800
-assign desktop_image_height = desktop_image.height | default: 600
-assign half_width = desktop_image_width | divided_by: 2
-assign half_height = desktop_image_height | divided_by: 2
 -%}
 
 <!-- Image Component -->
 <picture>
   {% if has_mobile_variant %}
-    {% if is_mobile_file_image %}
-      {% assign mobile_resized_url_1x = mobile_variant | img_url: width: half_width %}
-      {% assign mobile_resized_url_2x = mobile_variant | img_url: width: desktop_image_width %}
-    {% else %}
-      {% assign mobile_resized_url_1x = mobile_variant | image_url: width: half_width %}
-      {% assign mobile_resized_url_2x = mobile_variant | image_url: width: desktop_image_width %}
-    {% endif %}
     <source
       media="(max-width: {{ mobile_breakpoint }}px)"
-      srcset="
-        {{ mobile_resized_url_1x }} 1x,
-        {{ mobile_resized_url_2x }} 2x
-      "
+      srcset="{{ mobile_variant_url }}"
       sizes="{{ sizes }}"
     >
   {% endif %}
 
-  {% if is_file_image %}
-    {% assign desktop_resized_url_1x = desktop_variant | img_url: width: half_width %}
-    {% assign desktop_resized_url_2x = desktop_variant | img_url: width: desktop_image_width %}
-  {% else %}
-    {% assign desktop_resized_url_1x = desktop_variant | image_url: width: half_width %}
-    {% assign desktop_resized_url_2x = desktop_variant | image_url: width: desktop_image_width %}
-  {% endif %}
-
   <source
     media="(min-width: {{ mobile_breakpoint | plus: 1 }}px)"
-    srcset="
-      {{ desktop_resized_url_1x }} 1x,
-      {{ desktop_resized_url_2x }} 2x
-    "
+    srcset="{{ desktop_variant_url }}"
     sizes="{{ sizes }}"
   >
 
   <img
     id="{{ unique_id }}"
-    src="{{ desktop_resized_url_1x }}"
-    srcset="
-      {{ desktop_resized_url_1x }} 1x,
-      {{ desktop_resized_url_2x }} 2x
-    "
+    src="{{ desktop_variant_url }}"
     {% if lazy_load and is_priority != true %}
       loading="lazy"
       decoding="async"
@@ -202,8 +124,8 @@ assign half_height = desktop_image_height | divided_by: 2
       fetchpriority="high"
     {% endif %}
     alt="{{ alt | escape }}"
-    width="{{ half_width }}"
-    height="{{ half_height }}"
+    width="{{ desktop_image.width }}"
+    height="{{ desktop_image.height }}"
     class="object-cover opacity-0 m-0 transition-opacity duration-300 ease-in-out {% if link %}cursor-pointer{% endif %} {% if class %}{{ class }}{% endif %}"
     onload="this.classList.add('opacity-100');"
     onclick="{% if link %}window.location.href='{{ link }}'{% endif %}"
@@ -220,12 +142,10 @@ assign half_height = desktop_image_height | divided_by: 2
   window.imageDebugData.push({
     image_src: {{ image.src | json }},
     unique_id: {{ unique_id | json }},
-    desktop_variant: {{ desktop_variant_url | json }},
+    desktop_variant_url: {{ desktop_variant_url | json }},
     has_mobile_variant: {{ has_mobile_variant | json }},
-    mobile_variant: {{ mobile_variant_url | json }},
+    mobile_variant_url: {{ mobile_variant_url | json }},
     fallback_url: {{ fallback_url | json }},
-    has_global_variant: {{ has_global_variant | json }},
-    is_global_store: {{ is_global_store | json }},
     shop_name: {{ shop.name | json }},
     force_original: {{ force_original | json }},
     desktop_image: {
@@ -239,12 +159,9 @@ assign half_height = desktop_image_height | divided_by: 2
     lazy_load: {{ lazy_load | json }},
     is_priority: {{ is_priority | json }},
     load_mobile: {{ load_mobile | json }},
-    load_global: {{ load_global | json }},
     alt: {{ alt | json }},
     mobile_breakpoint: {{ mobile_breakpoint | json }},
-    sizes: {{ sizes | json }},
-    half_width: {{ half_width | json }},
-    half_height: {{ half_height | json }}
+    sizes: {{ sizes | json }}
   });
 
   if (!window.debouncedDisplayImageDebugLogs) {
