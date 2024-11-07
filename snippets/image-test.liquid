@@ -33,7 +33,7 @@ assign breakpoints = '375,640,768,1080,1200,1920,2560' | split: ','
 #######################################
 if force_original
   # Use the original image source directly when force_original is true
-  assign desktop_variant_url = desktop_image | image_url
+  assign desktop_variant = desktop_image
   assign has_mobile_variant = false
   assign has_global_variant = false
   assign is_global_store = false
@@ -57,7 +57,7 @@ else
   assign base_image_name = image_name
 
   #######################################
-  # Construct Global Variant URL if Enabled
+  # Construct Global Variant Filename if Enabled
   #######################################
   assign has_global_variant = false
 
@@ -66,14 +66,22 @@ else
     assign has_global_variant = true
   endif
 
+  #######################################
+  # Determine if image is from 'files/'
+  #######################################
   if desktop_image.src contains 'files/'
-    assign provided_images_in_files = true
+    assign is_file_image = true
+  else
+    assign is_file_image = false
   endif
 
-  if desktop_image.src != blank and provided_images_in_files == false
-    assign desktop_variant_url = desktop_image | image_url | split: '?' | first
+  #######################################
+  # Assign Desktop Variant
+  #######################################
+  if is_file_image
+    assign desktop_variant = filename
   else
-    assign desktop_variant_url = filename | file_url
+    assign desktop_variant = desktop_image
   endif
 
   #######################################
@@ -82,14 +90,17 @@ else
   assign has_mobile_variant = false
   if mobile_image_provided != blank
     assign has_mobile_variant = true
-    assign mobile_variant_url = mobile_image_provided | image_url
+    assign mobile_variant = mobile_image_provided
+    assign is_mobile_file_image = mobile_image_provided.src contains 'files/'
   elsif load_mobile
     assign mobile_variant_filename = image_name | append: '-mbl.' | append: image_ext
-    assign mobile_variant_url = mobile_variant_filename | file_url
-    if mobile_variant_url contains '?v='
+    assign mobile_variant = mobile_variant_filename
+    if mobile_variant | file_exists
       assign has_mobile_variant = true
+      assign is_mobile_file_image = true
     else
-      assign mobile_variant_url = ''
+      assign mobile_variant = ''
+      assign is_mobile_file_image = false
     endif
   endif
 endif
@@ -125,31 +136,46 @@ assign half_height = desktop_image_height | divided_by: 2
 <!-- Image Component -->
 <picture>
   {% if has_mobile_variant %}
+    {% if is_mobile_file_image %}
+      {% assign mobile_resized_url_1x = mobile_variant | img_url: width: half_width %}
+      {% assign mobile_resized_url_2x = mobile_variant | img_url: width: desktop_image_width %}
+    {% else %}
+      {% assign mobile_resized_url_1x = mobile_variant | image_url: width: half_width %}
+      {% assign mobile_resized_url_2x = mobile_variant | image_url: width: desktop_image_width %}
+    {% endif %}
     <source
       media="(max-width: {{ mobile_breakpoint }}px)"
       srcset="
-        {{ mobile_variant_url | image_url: width: half_width }} 1x,
-        {{ mobile_variant_url | image_url: width: desktop_image_width }} 2x
+        {{ mobile_resized_url_1x }} 1x,
+        {{ mobile_resized_url_2x }} 2x
       "
       sizes="{{ sizes }}"
     >
   {% endif %}
 
+  {% if is_file_image %}
+    {% assign desktop_resized_url_1x = desktop_variant | img_url: width: half_width %}
+    {% assign desktop_resized_url_2x = desktop_variant | img_url: width: desktop_image_width %}
+  {% else %}
+    {% assign desktop_resized_url_1x = desktop_variant | image_url: width: half_width %}
+    {% assign desktop_resized_url_2x = desktop_variant | image_url: width: desktop_image_width %}
+  {% endif %}
+
   <source
     media="(min-width: {{ mobile_breakpoint | plus: 1 }}px)"
     srcset="
-      {{ desktop_variant_url | image_url: width: half_width }} 1x,
-      {{ desktop_variant_url | image_url: width: desktop_image_width }} 2x
+      {{ desktop_resized_url_1x }} 1x,
+      {{ desktop_resized_url_2x }} 2x
     "
     sizes="{{ sizes }}"
   >
 
   <img
     id="{{ unique_id }}"
-    src="{{ desktop_variant_url | image_url: width: half_width }}"
+    src="{{ desktop_resized_url_1x }}"
     srcset="
-      {{ desktop_variant_url | image_url: width: half_width }} 1x,
-      {{ desktop_variant_url | image_url: width: desktop_image_width }} 2x
+      {{ desktop_resized_url_1x }} 1x,
+      {{ desktop_resized_url_2x }} 2x
     "
     {% if lazy_load and is_priority != true %}
       loading="lazy"
@@ -178,9 +204,9 @@ assign half_height = desktop_image_height | divided_by: 2
   window.imageDebugData.push({
     image_src: {{ image.src | json }},
     unique_id: {{ unique_id | json }},
-    desktop_variant_url: {{ desktop_variant_url | json }},
+    desktop_variant: {{ desktop_variant | json }},
     has_mobile_variant: {{ has_mobile_variant | json }},
-    mobile_variant_url: {{ mobile_variant_url | json }},
+    mobile_variant: {{ mobile_variant | json }},
     fallback_url: {{ fallback_url | json }},
     has_global_variant: {{ has_global_variant | json }},
     is_global_store: {{ is_global_store | json }},
