@@ -12,27 +12,34 @@
       {% render 'product-cta-section-actions-variant-2024-new', SID: SID, prod: product, var: var, buyBoxColor: buyBoxColor, index: forloop.index %}
     {% endfor %}
 
-		<!-- Add the new gift selector here, before submit-wrap -->
 		<div class="gift-selector-wrap">
 			<div class="gift-selector-title mb-4 text-lg font-medium">
 				Choose your free gift:
 			</div>
-			<div class="gift-options grid grid-cols-2 gap-4">
+			<div class="gift-options grid grid-cols-2 gap-8">
 				{% for block in blocks %}
 					{% case block.type %}
-            {% when 'gift' %}
+						{% when 'gift' %}
 							{% assign giftProd = block.settings.gift_product %}
 							{% assign giftVariant = giftProd.selected_or_first_available_variant %}
-							<div class="gift-option flex items-center gap-3 cursor-pointer</div>" data-gift-id="curalin">
-								<div class=" p-4 border rounded-lg">
-									<div class="radio-indicator flex items-center justify-center w-6 h-6 border-2 rounded-full">
+							<div class="gift-option-container flex flex-col items-center">
+								<!-- Border container for image and radio only -->
+								<div class="gift-option-border p-4 border rounded-lg cursor-pointer relative mb-3 w-full" data-gift-id="{{ giftVariant.id }}">
+									<div class="radio-indicator flex items-center justify-center w-6 h-6 border-2 rounded-full absolute top-2 right-2">
 										<div class="check-mark hidden w-4 h-4 bg-[var(--primary-color)] rounded-full"></div>
 									</div>
-									<img src="{{ giftProd.featured_image | image_url }}" alt="{{ giftProd.title }}" class="object-contain w-24 h-24 mb-2">
+									<div class="gift-image-container flex justify-center">
+										<img
+											src="{{ giftProd.featured_image | image_url }}"
+											alt="{{ giftProd.title }}"
+											class="object-contain w-24 h-24"
+										>
+									</div>
 								</div>
-								<div class="gift-content flex flex-col flex-1">
-									<div class="gift-name font-medium">{{ giftProd.title }}</div>
-									<div class="gift-price flex items-center gap-2">
+								<!-- Text content outside the border -->
+								<div class="gift-content text-center">
+									<div class="gift-name font-medium mb-1">{{ giftProd.title }}</div>
+									<div class="gift-price flex items-center justify-center gap-2">
 										<span class="original-price text-gray-400 line-through">{{ giftVariant.price | money_with_currency }}</span>
 										<span class="sale-price font-bold">{{ giftVariant.compare_at_price | money_with_currency }}</span>
 									</div>
@@ -40,38 +47,6 @@
 							</div>
 					{% endcase %}
 				{% endfor %}
-
-				{% comment %} <div class="gift-option p-4 border rounded-lg cursor-pointer" data-gift-id="curalin">
-					<div class="flex items-center gap-3">
-						<div class="radio-indicator flex items-center justify-center w-6 h-6 border-2 rounded-full">
-							<div class="check-mark hidden w-4 h-4 bg-[var(--primary-color)] rounded-full"></div>
-						</div>
-						<div class="gift-content flex flex-col flex-1">
-							<img src="{{ 'curalin.png' | asset_url }}" alt="Curalin" class="object-contain w-24 h-24 mb-2">
-							<div class="gift-name font-medium">Curalin</div>
-							<div class="gift-price flex items-center gap-2">
-								<span class="original-price text-gray-400 line-through">${{ 53.90 }}</span>
-								<span class="sale-price font-bold">$0.00</span>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<div class="gift-option p-4 border rounded-lg cursor-pointer" data-gift-id="curaslim">
-					<div class="flex items-center gap-3">
-						<div class="radio-indicator flex items-center justify-center w-6 h-6 border-2 rounded-full">
-							<div class="check-mark hidden w-4 h-4 bg-[var(--primary-color)] rounded-full"></div>
-						</div>
-						<div class="gift-content flex flex-col flex-1">
-							<img src="{{ 'curaslim.png' | asset_url }}" alt="Curaslim" class="object-contain w-24 h-24 mb-2">
-							<div class="gift-name font-medium">Curaslim</div>
-							<div class="gift-price flex items-center gap-2">
-								<span class="original-price text-gray-400 line-through">${{ 51.90 }}</span>
-								<span class="sale-price font-bold">$0.00</span>
-							</div>
-						</div>
-					</div>
-				</div> {% endcomment %}
 			</div>
 		</div>
 
@@ -105,39 +80,38 @@
     `;
     document.head.appendChild(styleSheet);
 
-			// Add this to your existing DOMContentLoaded event listener
-			const giftOptions = productActions.querySelectorAll('.gift-option');
-			let selectedGift = 'curalin'; // Default selected gift
+		const giftOptions = productActions.querySelectorAll('.gift-option-container');
+let selectedGift = 'curalin'; // Default selected gift
 
-			giftOptions.forEach(option => {
-				option.addEventListener('click', () => {
-					// Remove selected state from all options
-					giftOptions.forEach(opt => {
-						opt.classList.remove('selected');
-						opt.querySelector('.check-mark').classList.add('hidden');
-						opt.style.borderColor = '#e5e7eb'; // Reset border color
-					});
+giftOptions.forEach(option => {
+  option.addEventListener('click', () => {
+    // Remove selected state from all options
+    giftOptions.forEach(opt => {
+      opt.classList.remove('selected');
+      opt.querySelector('.check-mark').classList.add('hidden');
+      opt.querySelector('.gift-option-border').style.borderColor = '#e5e7eb';
+    });
 
-					// Add selected state to clicked option
-					option.classList.add('selected');
-					option.querySelector('.check-mark').classList.remove('hidden');
-					option.style.borderColor = 'var(--primary-color)';
+    // Add selected state to clicked option
+    option.classList.add('selected');
+    option.querySelector('.check-mark').classList.remove('hidden');
+    option.querySelector('.gift-option-border').style.borderColor = 'var(--primary-color)';
 
-					selectedGift = option.dataset.giftId;
+    selectedGift = option.querySelector('.gift-option-border').dataset.giftId;
 
-					// Update hidden input for the gift selection
-					const giftInput = document.querySelector('input[name="gift_selection"]');
-					if (giftInput) {
-						giftInput.value = selectedGift;
-					}
-				});
-			});
+    // Update hidden input for the gift selection
+    const giftInput = document.querySelector('input[name="gift_selection"]');
+    if (giftInput) {
+      giftInput.value = selectedGift;
+    }
+  });
+});
 
-			// Mark the default selected gift
-			const defaultGift = document.querySelector(`.gift-option[data-gift-id="${selectedGift}"]`);
-			if (defaultGift) {
-				defaultGift.click();
-			}
+// Mark the default selected gift
+const defaultGift = document.querySelector(`.gift-option-container .gift-option-border[data-gift-id="${selectedGift}"]`)?.closest('.gift-option-container');
+if (defaultGift) {
+  defaultGift.click();
+}
 
     initializePurchaseOptions();
     setupMutationObserver();
@@ -869,16 +843,18 @@
   margin: 1rem 0;
 }
 
-.gift-option {
+.gift-option-border {
   transition: all 0.3s ease;
   border: 2px solid #e5e7eb;
+  background: #fff;
+  min-height: 120px; /* Adjust based on your image size */
 }
 
-.gift-option:hover:not(.selected) {
+.gift-option-border:hover {
   border-color: var(--primary-color-light);
 }
 
-.gift-option.selected {
+.gift-option-container.selected .gift-option-border {
   border-color: var(--primary-color);
   background-color: rgba(var(--primary-color-rgb), 0.05);
 }
@@ -886,9 +862,6 @@
 .radio-indicator {
   border-color: var(--primary-color);
   transition: all 0.2s ease;
-	position: absolute;
-	top: 10px;
-	right: 10px;
 }
 
 .check-mark {
