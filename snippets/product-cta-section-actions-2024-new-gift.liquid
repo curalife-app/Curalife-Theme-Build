@@ -894,6 +894,41 @@ if (giftOptionContainers.length > 0) {
   {% endif %}
 }
 
+// Add this helper function to verify form values
+function verifyFormValues() {
+  const selectedBox = productActions.querySelector('.purchase-option-box.selected');
+  const submitSellingPlanElement = productActions.querySelector('.submit-selling-plan-id');
+  const submitVariantElement = productActions.querySelector('.submit-variant-id');
+
+  if (selectedBox && submitSellingPlanElement && submitVariantElement) {
+    const isSubscription = isSubscriptionSelected();
+    const expectedSellingPlanId = isSubscription ? selectedBox.dataset.subscriptionSellingPlanId : '';
+    const expectedVariantId = isSubscription ? selectedBox.dataset.originalVariant : selectedBox.dataset.variant;
+
+    console.log('Form values verification:', {
+      actualSellingPlanId: submitSellingPlanElement.value,
+      expectedSellingPlanId: expectedSellingPlanId,
+      actualVariantId: submitVariantElement.value,
+      expectedVariantId: expectedVariantId,
+      isSubscription: isSubscription
+    });
+  }
+}
+
+const purchaseTypeButtons = productActions.querySelectorAll('.purchase-type button');
+  purchaseTypeButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      setTimeout(verifyFormValues, 500); // Verify after subscription toggle animation
+    });
+  });
+
+  const purchaseOptionBoxes = productActions.querySelectorAll('.purchase-option-box');
+  purchaseOptionBoxes.forEach(box => {
+    box.addEventListener('click', () => {
+      setTimeout(verifyFormValues, 500); // Verify after box selection
+    });
+  });
+
     function updateYotpoPointsWidget(parentBox) {
       const price = isSubscriptionSelected()
         ? parentBox.dataset.subscriptionItemPrice
@@ -1094,39 +1129,31 @@ function redirectToCheckout(variant_id, dc, giftId) {
 			const cartCleared = await clearCart();
 			if (!cartCleared) return;
 
-			// Add main product
-			const mainProduct = {
-				"id": variant_id,
-				"quantity": qty,
-				"selling_plan": selling_plan
-			};
-
-			// Add gift product
-			const giftProduct = {
-				"id": giftId,
-				"quantity": 1
-			};
+			const items = [
+					{
+							"id": variant_id,
+							"quantity": qty,
+							"selling_plan": selling_plan
+					},
+					{
+							"id": giftId,
+							"quantity": 1
+					}
+			];
 
 			try {
-				// Add main product to cart
-				await fetch('/cart/add.js', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify(mainProduct)
-				});
+					// Add both items to the cart in a single request
+					await fetch('/cart/add.js', {
+							method: 'POST',
+							headers: { 'Content-Type': 'application/json' },
+							body: JSON.stringify({ items: items })
+					});
 
-				// Add gift to cart
-				await fetch('/cart/add.js', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify(giftProduct)
-				});
-
-				window.location.href = '/checkout';
+					window.location.href = '/checkout';
 			} catch (error) {
-				console.log('Failed to add items to cart:', error);
+					console.log('Failed to add items to cart:', error);
 			}
-		}
+	}
   });
 </script>
 
