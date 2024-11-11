@@ -14,17 +14,40 @@
 
 		<!-- Add the new gift selector here, before submit-wrap -->
 		<div class="gift-selector-wrap">
-			<div class="gift-selector-title text-lg font-medium mb-4">
-				Get your free gift:
+			<div class="gift-selector-title mb-4 text-lg font-medium">
+				Choose your free gift:
 			</div>
 			<div class="gift-options grid grid-cols-2 gap-4">
-				<div class="gift-option border rounded-lg p-4 cursor-pointer" data-gift-id="curalin">
+				{% for block in blocks %}
+					{% case block.type %}
+            {% when 'gift' %}
+							{% assign giftProd = block.settings.gift_product %}
+							{% assign giftVariant = giftProd.selected_or_first_available_variant %}
+							<div class="gift-option p-4 border rounded-lg cursor-pointer" data-gift-id="curalin">
+								<div class="flex items-center gap-3">
+									<div class="radio-indicator flex items-center justify-center w-6 h-6 border-2 rounded-full">
+										<div class="check-mark hidden w-4 h-4 bg-[var(--primary-color)] rounded-full"></div>
+									</div>
+									<div class="gift-content flex flex-col flex-1">
+										<img src="{{ giftProd.featured_image | image_url }}" alt="{{ giftProd.title }}" class="object-contain w-24 h-24 mb-2">
+										<div class="gift-name font-medium">{{ giftProd.title }}</div>
+										<div class="gift-price flex items-center gap-2">
+											<span class="original-price text-gray-400 line-through">{{ giftVariant.price | money_with_currency }}</span>
+											<span class="sale-price font-bold">{{ giftVariant.compare_at_price | money_with_currency }}</span>
+										</div>
+									</div>
+								</div>
+							</div>
+					{% endcase %}
+				{% endfor %}
+
+				{% comment %} <div class="gift-option p-4 border rounded-lg cursor-pointer" data-gift-id="curalin">
 					<div class="flex items-center gap-3">
-						<div class="radio-indicator w-6 h-6 border-2 rounded-full flex items-center justify-center">
+						<div class="radio-indicator flex items-center justify-center w-6 h-6 border-2 rounded-full">
 							<div class="check-mark hidden w-4 h-4 bg-[var(--primary-color)] rounded-full"></div>
 						</div>
 						<div class="gift-content flex flex-col flex-1">
-							<img src="{{ 'curalin.png' | asset_url }}" alt="Curalin" class="w-24 h-24 object-contain mb-2">
+							<img src="{{ 'curalin.png' | asset_url }}" alt="Curalin" class="object-contain w-24 h-24 mb-2">
 							<div class="gift-name font-medium">Curalin</div>
 							<div class="gift-price flex items-center gap-2">
 								<span class="original-price text-gray-400 line-through">${{ 53.90 }}</span>
@@ -34,13 +57,13 @@
 					</div>
 				</div>
 
-				<div class="gift-option border rounded-lg p-4 cursor-pointer" data-gift-id="curaslim">
+				<div class="gift-option p-4 border rounded-lg cursor-pointer" data-gift-id="curaslim">
 					<div class="flex items-center gap-3">
-						<div class="radio-indicator w-6 h-6 border-2 rounded-full flex items-center justify-center">
+						<div class="radio-indicator flex items-center justify-center w-6 h-6 border-2 rounded-full">
 							<div class="check-mark hidden w-4 h-4 bg-[var(--primary-color)] rounded-full"></div>
 						</div>
 						<div class="gift-content flex flex-col flex-1">
-							<img src="{{ 'curaslim.png' | asset_url }}" alt="Curaslim" class="w-24 h-24 object-contain mb-2">
+							<img src="{{ 'curaslim.png' | asset_url }}" alt="Curaslim" class="object-contain w-24 h-24 mb-2">
 							<div class="gift-name font-medium">Curaslim</div>
 							<div class="gift-price flex items-center gap-2">
 								<span class="original-price text-gray-400 line-through">${{ 51.90 }}</span>
@@ -48,7 +71,7 @@
 							</div>
 						</div>
 					</div>
-				</div>
+				</div> {% endcomment %}
 			</div>
 		</div>
 
