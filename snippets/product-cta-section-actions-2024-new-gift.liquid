@@ -193,6 +193,102 @@
 								<div class="notice">Please <a class="underline" href="https://help{% if isGlobal %}-global{% endif %}.curalife.com/">Contact Us</a>, we'd love to help!</div>
 							</div>
 						</product-form>
+
+						<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('product-form-{{ SID }}');
+    const submitButton = document.getElementById('ProductSubmitButton-{{SID}}');
+
+    form.addEventListener('submit', async function(event) {
+        event.preventDefault(); // Prevent the default form submission
+
+        // Display the loading spinner
+        toggleButtonLoading(submitButton, true);
+
+        // Get selected variant and selling plan IDs
+        const variantIdInput = form.querySelector('.submit-variant-id');
+        const sellingPlanIdInput = form.querySelector('.submit-selling-plan-id');
+        const variantId = variantIdInput ? variantIdInput.value : '{{ variant | default: product.selected_or_first_available_variant.id }}';
+        const sellingPlanId = sellingPlanIdInput ? sellingPlanIdInput.value : '';
+
+        // Get selected gift ID
+        const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
+        const giftOptionBorder = selectedGiftContainer ? selectedGiftContainer.querySelector('.gift-option-border') : null;
+        const giftId = giftOptionBorder ? giftOptionBorder.dataset.giftId : null;
+
+        if (!giftId) {
+            console.error('Gift ID not found.');
+            toggleButtonLoading(submitButton, false);
+            return;
+        }
+
+        // Prepare items to add to cart
+        const items = [
+            {
+                "id": variantId,
+                "quantity": 1
+            },
+            {
+                "id": giftId,
+                "quantity": 1
+            }
+        ];
+
+        // Include selling plan if it's a subscription
+        if (sellingPlanId) {
+            items[0].selling_plan = sellingPlanId;
+        }
+
+        try {
+            // Clear the cart before adding new items
+            await clearCart();
+
+            // Add both items to the cart
+            await fetch('/cart/add.js', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ items: items })
+            });
+
+            // Redirect to checkout
+            window.location.href = '/checkout';
+        } catch (error) {
+            console.error('Failed to add items to cart:', error);
+            toggleButtonLoading(submitButton, false);
+        }
+    });
+
+    function toggleButtonLoading(buttonElement, isLoading) {
+        const loader = buttonElement.querySelector('.loading-overlay__spinner');
+        const buttonText = buttonElement.querySelector('.submit-title');
+
+        if (!loader) {
+            console.error("Loader element not found");
+            return;
+        }
+
+        loader.style.display = isLoading ? 'block' : 'none';
+        buttonText.style.display = isLoading ? 'none' : 'block';
+    }
+
+    async function clearCart() {
+        try {
+            const response = await fetch('/cart/clear.js', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            if (!response.ok) throw new Error('Failed to clear cart');
+            console.log('Cart cleared');
+            return true;
+        } catch (error) {
+            console.log('Failed to clear cart:', error);
+            return false;
+        }
+    }
+});
+</script>
 					</div>
 				{% endif %}
 
