@@ -16,7 +16,7 @@
 			<div class="gift-selector-title mb-4 text-lg font-medium">
 				Choose your free gift:
 			</div>
-			<div class="gift-options grid grid-cols-2 gap-8">
+			<div class="gift-options flex-nowrap flex justify-start gap-4">
 				{% for block in blocks %}
 					{% case block.type %}
 						{% when 'gift' %}
@@ -24,8 +24,8 @@
 							{% assign giftVariant = giftProd.selected_or_first_available_variant %}
 							<div class="gift-option-container flex flex-col items-center">
 								<!-- Border container for image and radio only -->
-								<div class="gift-option-border p-4 border rounded-lg cursor-pointer relative mb-3 w-full" data-gift-id="{{ giftVariant.id }}">
-									<div class="radio-indicator flex items-center justify-center w-6 h-6 border-2 rounded-full absolute top-2 right-2">
+								<div class="gift-option-border relative w-full p-4 mb-3 border rounded-lg cursor-pointer" data-gift-id="{{ giftVariant.id }}">
+									<div class="radio-indicator top-2 right-2 absolute flex items-center justify-center w-6 h-6 border-2 rounded-full">
 										<div class="check-mark hidden w-4 h-4 bg-[var(--primary-color)] rounded-full"></div>
 									</div>
 									<div class="gift-image-container flex justify-center">
@@ -38,7 +38,7 @@
 								</div>
 								<!-- Text content outside the border -->
 								<div class="gift-content text-center">
-									<div class="gift-name font-medium mb-1">{{ giftProd.title }}</div>
+									<div class="gift-name mb-1 font-medium">{{ giftProd.title }}</div>
 									<div class="gift-price flex items-center justify-center gap-2">
 										<span class="original-price text-gray-400 line-through">{{ giftVariant.price | money_with_currency }}</span>
 										<span class="sale-price font-bold">{{ giftVariant.compare_at_price | money_with_currency }}</span>
