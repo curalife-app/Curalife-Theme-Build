@@ -20,6 +20,13 @@
 						{% when 'gift' %}
 							{% assign giftProd = block.settings.gift_product %}
 							{% assign giftVariant = giftProd.selected_or_first_available_variant %}
+							{% if block.settings.variant_id != blank %}
+								{% for var in giftProd.variants %}
+									{% if var.id == block.settings.variant_id %}
+										{% assign giftVariant = var %}
+									{% endif %}
+								{% endfor %}
+							{% endif %}
 							<div class="gift-option-container flex flex-col items-center">
 								<!-- Border container for image and radio only -->
 								<div class="gift-option-border relative w-full p-2 mb-3 border rounded-lg cursor-pointer" data-gift-id="{{ giftVariant.id }}">
