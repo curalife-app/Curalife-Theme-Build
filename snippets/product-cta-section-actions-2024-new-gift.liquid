@@ -894,41 +894,6 @@ if (giftOptionContainers.length > 0) {
   {% endif %}
 }
 
-// Add this helper function to verify form values
-function verifyFormValues() {
-  const selectedBox = productActions.querySelector('.purchase-option-box.selected');
-  const submitSellingPlanElement = productActions.querySelector('.submit-selling-plan-id');
-  const submitVariantElement = productActions.querySelector('.submit-variant-id');
-
-  if (selectedBox && submitSellingPlanElement && submitVariantElement) {
-    const isSubscription = isSubscriptionSelected();
-    const expectedSellingPlanId = isSubscription ? selectedBox.dataset.subscriptionSellingPlanId : '';
-    const expectedVariantId = isSubscription ? selectedBox.dataset.originalVariant : selectedBox.dataset.variant;
-
-    console.log('Form values verification:', {
-      actualSellingPlanId: submitSellingPlanElement.value,
-      expectedSellingPlanId: expectedSellingPlanId,
-      actualVariantId: submitVariantElement.value,
-      expectedVariantId: expectedVariantId,
-      isSubscription: isSubscription
-    });
-  }
-}
-
-const purchaseTypeButtons = productActions.querySelectorAll('.purchase-type button');
-  purchaseTypeButtons.forEach(button => {
-    button.addEventListener('click', () => {
-      setTimeout(verifyFormValues, 500); // Verify after subscription toggle animation
-    });
-  });
-
-  const purchaseOptionBoxes = productActions.querySelectorAll('.purchase-option-box');
-  purchaseOptionBoxes.forEach(box => {
-    box.addEventListener('click', () => {
-      setTimeout(verifyFormValues, 500); // Verify after box selection
-    });
-  });
-
     function updateYotpoPointsWidget(parentBox) {
       const price = isSubscriptionSelected()
         ? parentBox.dataset.subscriptionItemPrice
