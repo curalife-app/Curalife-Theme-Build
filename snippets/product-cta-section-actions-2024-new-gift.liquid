@@ -24,7 +24,7 @@
 								<!-- Border container for image and radio only -->
 								<div class="gift-option-border relative w-full p-2 mb-3 border rounded-lg cursor-pointer" data-gift-id="{{ giftVariant.id }}">
 									<div class="radio-indicator top-2 right-2 absolute flex items-center justify-center w-6 h-6 border-2 rounded-full">
-										<div class="check-mark hidden w-4 h-4 bg-[var(--primary-color)] rounded-full"></div>
+											<div class="check-mark hidden w-4 h-4 bg-[var(--primary-color)] rounded-full"></div>
 									</div>
 									<div class="gift-image-container flex justify-center">
 										<img
@@ -344,6 +344,40 @@
 
     initializePurchaseOptions();
     setupMutationObserver();
+
+		// Gift selection logic
+const giftOptionContainers = document.querySelectorAll('.gift-option-container');
+
+giftOptionContainers.forEach(container => {
+    container.addEventListener('click', function(event) {
+        // Remove 'selected' class from all gift options
+        giftOptionContainers.forEach(gift => gift.classList.remove('selected'));
+
+        // Add 'selected' class to the clicked gift
+        container.classList.add('selected');
+
+        // Update radio indicator
+        updateRadioIndicator(container);
+    });
+});
+
+function updateRadioIndicator(selectedContainer) {
+    giftOptionContainers.forEach(container => {
+        const checkMark = container.querySelector('.check-mark');
+        if (container === selectedContainer) {
+            checkMark.classList.remove('hidden');
+        } else {
+            checkMark.classList.add('hidden');
+        }
+    });
+}
+
+// Initialize the first gift as selected by default
+if (giftOptionContainers.length > 0) {
+    const firstGift = giftOptionContainers[0];
+    firstGift.classList.add('selected');
+    updateRadioIndicator(firstGift);
+}
 
     function isSubscriptionSelected() {
       const selectedButton = productActions.querySelector('.purchase-type button.selected');
@@ -972,29 +1006,41 @@
     });
 
     function buyButtonHandler(subscription_selling_plan_id, buttonElement) {
-			const selectedBox = productActions.querySelector('.purchase-option-box.selected');
-			const selectedGiftElement = productActions.querySelector('.gift-option.selected');
-			if (!selectedBox || !selectedGiftElement) return;
-
-			const giftId = selectedGiftElement.dataset.giftId;
-			toggleButtonLoading(buttonElement, true);
-
-			if (isSubscriptionSelected()) {
-				const variant_id = selectedBox.dataset.originalVariant;
-				buySubscription(variant_id, 1, subscription_selling_plan_id, giftId);
-			} else {
-				const variant_id = selectedBox.dataset.variant;
-				const purchaseOptionBox = buttonElement.closest('.purchase-option-box');
-				const dc = purchaseOptionBox ? purchaseOptionBox.dataset.dc : null;
-				redirectToCheckout(variant_id, dc, giftId);
-			}
-		}
-
-    function redirectToCheckout(variant_id, dc) {
-      let checkoutLink = `https://${location.hostname}/cart/${variant_id}:1`;
-      if (dc) checkoutLink += "?discount=" + atob(dc);
-      window.location.href = checkoutLink;
+    const selectedBox = productActions.querySelector('.purchase-option-box.selected');
+    const selectedGiftContainer = productActions.querySelector('.gift-option-container.selected');
+    if (!selectedBox || !selectedGiftContainer) {
+        console.error('Please select both a product and a gift.');
+        return;
     }
+
+    const giftOptionBorder = selectedGiftContainer.querySelector('.gift-option-border');
+    const giftId = giftOptionBorder ? giftOptionBorder.dataset.giftId : null;
+    if (!giftId) {
+        console.error('Gift ID not found.');
+        return;
+    }
+
+    toggleButtonLoading(buttonElement, true);
+
+    if (isSubscriptionSelected()) {
+        const variant_id = selectedBox.dataset.originalVariant;
+        buySubscription(variant_id, 1, subscription_selling_plan_id, giftId);
+    } else {
+        const variant_id = selectedBox.dataset.variant;
+        const purchaseOptionBox = buttonElement.closest('.purchase-option-box');
+        const dc = purchaseOptionBox ? purchaseOptionBox.dataset.dc : null;
+        redirectToCheckout(variant_id, dc, giftId);
+    }
+}
+
+function redirectToCheckout(variant_id, dc, giftId) {
+    let checkoutLink = `https://${location.hostname}/cart/${variant_id}:1`;
+    if (giftId) {
+        checkoutLink += `,${giftId}:1`;
+    }
+    if (dc) checkoutLink += "?discount=" + atob(dc);
+    window.location.href = checkoutLink;
+}
 
     function toggleButtonLoading(buttonElement, isLoading) {
       const loader = buttonElement.querySelector('.loading-overlay__spinner');
@@ -1085,16 +1131,20 @@
 }
 
 .gift-option-container.selected .gift-option-border {
-  border-color: var(--primary-color);
-  background-color: rgba(var(--primary-color-rgb), 0.05);
+    border-color: var(--primary-color);
+    background-color: rgba(var(--primary-color-rgb), 0.05);
+}
+
+.check-mark {
+    transition: all 0.2s ease;
+}
+
+.check-mark.hidden {
+    display: none;
 }
 
 .radio-indicator {
   border-color: var(--primary-color);
-  transition: all 0.2s ease;
-}
-
-.check-mark {
   transition: all 0.2s ease;
 }
 
