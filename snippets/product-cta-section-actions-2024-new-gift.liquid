@@ -105,6 +105,40 @@
     `;
     document.head.appendChild(styleSheet);
 
+			// Add this to your existing DOMContentLoaded event listener
+			const giftOptions = productActions.querySelectorAll('.gift-option');
+			let selectedGift = 'curalin'; // Default selected gift
+
+			giftOptions.forEach(option => {
+				option.addEventListener('click', () => {
+					// Remove selected state from all options
+					giftOptions.forEach(opt => {
+						opt.classList.remove('selected');
+						opt.querySelector('.check-mark').classList.add('hidden');
+						opt.style.borderColor = '#e5e7eb'; // Reset border color
+					});
+
+					// Add selected state to clicked option
+					option.classList.add('selected');
+					option.querySelector('.check-mark').classList.remove('hidden');
+					option.style.borderColor = 'var(--primary-color)';
+
+					selectedGift = option.dataset.giftId;
+
+					// Update hidden input for the gift selection
+					const giftInput = document.querySelector('input[name="gift_selection"]');
+					if (giftInput) {
+						giftInput.value = selectedGift;
+					}
+				});
+			});
+
+			// Mark the default selected gift
+			const defaultGift = document.querySelector(`.gift-option[data-gift-id="${selectedGift}"]`);
+			if (defaultGift) {
+				defaultGift.click();
+			}
+
     initializePurchaseOptions();
     setupMutationObserver();
 
@@ -828,42 +862,6 @@
 			}
 		}
   });
-</script>
-
-<script>
-	// Add this to your existing DOMContentLoaded event listener
-const giftOptions = productActions.querySelectorAll('.gift-option');
-let selectedGift = 'curalin'; // Default selected gift
-
-giftOptions.forEach(option => {
-  option.addEventListener('click', () => {
-    // Remove selected state from all options
-    giftOptions.forEach(opt => {
-      opt.classList.remove('selected');
-      opt.querySelector('.check-mark').classList.add('hidden');
-      opt.style.borderColor = '#e5e7eb'; // Reset border color
-    });
-
-    // Add selected state to clicked option
-    option.classList.add('selected');
-    option.querySelector('.check-mark').classList.remove('hidden');
-    option.style.borderColor = 'var(--primary-color)';
-
-    selectedGift = option.dataset.giftId;
-
-    // Update hidden input for the gift selection
-    const giftInput = document.querySelector('input[name="gift_selection"]');
-    if (giftInput) {
-      giftInput.value = selectedGift;
-    }
-  });
-});
-
-// Mark the default selected gift
-const defaultGift = document.querySelector(`.gift-option[data-gift-id="${selectedGift}"]`);
-if (defaultGift) {
-  defaultGift.click();
-}
 </script>
 
 <style>
