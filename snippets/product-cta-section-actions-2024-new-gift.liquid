@@ -830,52 +830,69 @@ if (giftOptionContainers.length > 0) {
     }
 
     function togglePurchaseBox(element) {
-      if (element.classList.contains('selected')) return;
+  if (element.classList.contains('selected')) return;
 
-      // Update previous selected box
-      const previousSelected = productActions.querySelector('.purchase-option-box.selected');
-      if (previousSelected) {
-        previousSelected.classList.remove('selected');
-        previousSelected.style.maxHeight = '68px';
-        const toggleIcon = previousSelected.querySelector('.toggle-icon');
-        if (toggleIcon) toggleIcon.style.display = 'none';
+  // Update previous selected box
+  const previousSelected = productActions.querySelector('.purchase-option-box.selected');
+  if (previousSelected) {
+    previousSelected.classList.remove('selected');
+    previousSelected.style.maxHeight = '68px';
+    const toggleIcon = previousSelected.querySelector('.toggle-icon');
+    if (toggleIcon) toggleIcon.style.display = 'none';
+  }
+
+  // Update new selected box
+  element.classList.add('selected');
+  element.style.maxHeight = `${element.scrollHeight}px`;
+
+  const toggleIcon = element.querySelector('.toggle-icon');
+  if (toggleIcon) toggleIcon.style.display = 'block';
+
+  // Update form values based on subscription state
+  const isSubscription = isSubscriptionSelected();
+
+  // Get the appropriate selling plan ID and variant ID
+  const sellingPlanId = isSubscription ? element.dataset.subscriptionSellingPlanId : '';
+  const variantId = isSubscription ? element.dataset.originalVariant : element.dataset.variant;
+
+  // Find and update the form elements
+  const submitSellingPlanElement = productActions.querySelector('.submit-selling-plan-id');
+  const submitVariantElement = productActions.querySelector('.submit-variant-id');
+
+  // Update selling plan ID
+  if (submitSellingPlanElement) {
+    console.log('Updating selling plan ID to:', sellingPlanId); // Debug log
+    submitSellingPlanElement.value = sellingPlanId;
+  } else {
+    console.warn('submit-selling-plan-id element not found');
+  }
+
+  // Update variant ID
+  if (submitVariantElement) {
+    console.log('Updating variant ID to:', variantId); // Debug log
+    submitVariantElement.value = variantId;
+  } else {
+    console.warn('submit-variant-id element not found');
+  }
+
+  // Update radio button
+  const radioInput = element.querySelector("input[type='radio']");
+  if (radioInput) radioInput.checked = true;
+
+  // Update other UI elements
+  updateYotpoPointsWidget(element);
+
+  {% if variantsAmount > 1 %}
+    {% if isSlideOnLoad %}
+      updateVariantImage(element);
+    {% else %}
+      if (window.hasInitialImageUpdateHappened) {
+        updateVariantImage(element);
       }
-
-      // Update new selected box
-      element.classList.add('selected');
-      element.style.maxHeight = `${element.scrollHeight}px`;
-
-      const toggleIcon = element.querySelector('.toggle-icon');
-      if (toggleIcon) toggleIcon.style.display = 'block';
-
-      // Update form values
-      const isSubscription = isSubscriptionSelected();
-      const subscriptionPlanID = isSubscription ? element.dataset.subscriptionSellingPlanId : '';
-      const variantID = isSubscription ? element.dataset.originalVariant : element.dataset.variant;
-
-      const submitSellingPlanElement = productActions.querySelector('.submit-selling-plan-id');
-      const submitVariantElement = productActions.querySelector('.submit-variant-id');
-
-      if (submitSellingPlanElement) submitSellingPlanElement.value = subscriptionPlanID;
-      if (submitVariantElement) submitVariantElement.value = variantID;
-
-      // Update radio button
-      const radioInput = element.querySelector("input[type='radio']");
-      if (radioInput) radioInput.checked = true;
-
-      updateYotpoPointsWidget(element);
-
-      {% if variantsAmount > 1 %}
-        {% if isSlideOnLoad %}
-          updateVariantImage(element);
-        {% else %}
-          if (window.hasInitialImageUpdateHappened) {
-            updateVariantImage(element);
-          }
-          window.hasInitialImageUpdateHappened = true;
-        {% endif %}
-      {% endif %}
-    }
+      window.hasInitialImageUpdateHappened = true;
+    {% endif %}
+  {% endif %}
+}
 
     function updateYotpoPointsWidget(parentBox) {
       const price = isSubscriptionSelected()
