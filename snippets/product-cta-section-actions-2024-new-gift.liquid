@@ -21,7 +21,7 @@
 							{% assign giftProd = block.settings.gift_product %}
 							{% assign giftVariant = giftProd.selected_or_first_available_variant %}
 							{% assign giftProdSubscription = block.settings.gift_product_subscription %}
-							{% assign giftVariantSubscription = block.settings.gift_variant_subscription %}
+							{% assign giftVariantSubscription = giftProdSubscription.selected_or_first_available_variant %}
 
 							{% if block.settings.variant_id != blank %}
 								{% for var in giftProd.variants %}
@@ -30,9 +30,17 @@
 									{% endif %}
 								{% endfor %}
 							{% endif %}
+
+							{% if giftProdSubscription != blank %}
+								{% for varSub in giftProdSubscription.variants %}
+									{% if varSub.id == block.settings.variant_id_subscription %}
+										{% assign giftVariant = varSub %}
+									{% endif %}
+								{% endfor %}
+							{% endif %}
 							<div class="gift-option-container flex flex-col items-center">
 								<!-- Border container for image and radio only -->
-								<div class="gift-option-border relative w-full p-2 mb-3 border rounded-lg cursor-pointer" data-gift-id="{{ giftVariant.id }}">
+								<div class="gift-option-border relative w-full p-2 mb-3 border rounded-lg cursor-pointer" data-gift-id="{{ giftVariant.id }}" data-gift-id-subscription="{{ giftVariantSubscription }}"></div>
 									<div class="radio-indicator top-2 right-2 absolute flex items-center justify-center w-6 h-6 rounded-full">
 										<div class="check-mark hidden w-4 h-4 font-bold text-white rounded-full">✓</div>
 									</div>
@@ -1226,32 +1234,41 @@ purchaseOptionBoxes.forEach(box => {
     });
 
     function buyButtonHandler(subscription_selling_plan_id, buttonElement) {
-    const selectedBox = productActions.querySelector('.purchase-option-box.selected');
-    const selectedGiftContainer = productActions.querySelector('.gift-option-container.selected');
-    if (!selectedBox || !selectedGiftContainer) {
-        console.error('Please select both a product and a gift.');
-        return;
-    }
+				const selectedBox = productActions.querySelector('.purchase-option-box.selected');
+				const selectedGiftContainer = productActions.querySelector('.gift-option-container.selected');
+				if (!selectedBox || !selectedGiftContainer) {
+						console.error('Please select both a product and a gift.');
+						return;
+				}
 
-    const giftOptionBorder = selectedGiftContainer.querySelector('.gift-option-border');
-    const giftId = giftOptionBorder ? giftOptionBorder.dataset.giftId : null;
-    if (!giftId) {
-        console.error('Gift ID not found.');
-        return;
-    }
+				const giftOptionBorder = selectedGiftContainer.querySelector('.gift-option-border');
+				const isSubscription = isSubscriptionSelected();
+				const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
 
-    toggleButtonLoading(buttonElement, true);
+				if (!giftId) {
+						console.error('Gift ID not found.');
+						return;
+				}
 
-    if (isSubscriptionSelected()) {
-        const variant_id = selectedBox.dataset.originalVariant;
-        buySubscription(variant_id, 1, subscription_selling_plan_id, giftId);
-    } else {
-        const variant_id = selectedBox.dataset.variant;
-        const purchaseOptionBox = buttonElement.closest('.purchase-option-box');
-        const dc = purchaseOptionBox ? purchaseOptionBox.dataset.dc : null;
-        redirectToCheckout(variant_id, dc, giftId);
-    }
-}
+				console.log('Selected gift details:', {
+						isSubscription: isSubscription,
+						regularGiftId: giftOptionBorder?.dataset.giftId,
+						subscriptionGiftId: giftOptionBorder?.dataset.giftIdSubscription,
+						selectedGiftId: giftId
+				});
+
+				toggleButtonLoading(buttonElement, true);
+
+				if (isSubscriptionSelected()) {
+						const variant_id = selectedBox.dataset.originalVariant;
+						buySubscription(variant_id, 1, subscription_selling_plan_id, giftId);
+				} else {
+						const variant_id = selectedBox.dataset.variant;
+						const purchaseOptionBox = buttonElement.closest('.purchase-option-box');
+						const dc = purchaseOptionBox ? purchaseOptionBox.dataset.dc : null;
+						redirectToCheckout(variant_id, dc, giftId);
+				}
+		}
 
 function redirectToCheckout(variant_id, dc, giftId) {
     let checkoutLink = `https://${location.hostname}/cart/${variant_id}:1`;
