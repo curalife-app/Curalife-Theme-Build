@@ -72,7 +72,7 @@
 
         <div>
           <product-form id="product-form-{{ SID }}" class="product-form" data-hide-errors="false" data-section-id="{{ section.id }}">
-            {%- form 'product', product, id: 'product-form-{{ SID }}', class: 'form', novalidate: 'novalidate', data-type: 'add-to-cart-form' -%}
+            {% comment %} {%- form 'product', product, id: 'product-form-{{ SID }}', class: 'form', novalidate: 'novalidate', data-type: 'add-to-cart-form' -%} {% endcomment %}
               <input class="submit-variant-id" type="hidden" name="id" value="{{ variant | default: product.selected_or_first_available_variant.id }}" class="product-variant-id">
               <input class="submit-selling-plan-id" type="hidden" name="selling_plan" value="{{ selling_plan_id }}">
 
@@ -530,93 +530,93 @@
   const form = document.getElementById('product-form-{{ SID }}');
   const submitButton = document.getElementById('ProductSubmitButton-{{SID}}');
 
-  // form.addEventListener('submit', async function(event) {
-	// 	console.log('Form submitted, handling submission...');
-	// 	event.preventDefault();
+  form.addEventListener('submit', async function(event) {
+		console.log('Form submitted, handling submission...');
+		event.preventDefault();
 
-	// 	// Display the loading spinner
-	// 	toggleButtonLoading(submitButton, true);
+		// Display the loading spinner
+		toggleButtonLoading(submitButton, true);
 
-	// 	try {
-	// 		const variantIdInput = form.querySelector('.submit-variant-id');
-	// 		const sellingPlanIdInput = form.querySelector('.submit-selling-plan-id');
-	// 		const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
-	// 		const giftOptionBorder = selectedGiftContainer ? selectedGiftContainer.querySelector('.gift-option-border') : null;
+		try {
+			const variantIdInput = form.querySelector('.submit-variant-id');
+			const sellingPlanIdInput = form.querySelector('.submit-selling-plan-id');
+			const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
+			const giftOptionBorder = selectedGiftContainer ? selectedGiftContainer.querySelector('.gift-option-border') : null;
 
-	// 		const isSubscription = !!sellingPlanIdInput?.value;
-	// 		const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
+			const isSubscription = !!sellingPlanIdInput?.value;
+			const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
 
-	// 		const variantId = variantIdInput ? variantIdInput.value : null;
-	// 		const sellingPlanId = sellingPlanIdInput ? sellingPlanIdInput.value : '';
+			const variantId = variantIdInput ? variantIdInput.value : null;
+			const sellingPlanId = sellingPlanIdInput ? sellingPlanIdInput.value : '';
 
-	// 		// Debug logging starts here
-	// 		console.log('Debug Information:');
-	// 		console.log('-------------------');
-	// 		console.log('Variant ID:', variantId);
-	// 		console.log('Selling Plan ID:', sellingPlanId);
-	// 		console.log('Is Subscription:', isSubscription);
-	// 		console.log('Gift Option Border:', giftOptionBorder);
-	// 		console.log('Gift Option Border Dataset:', giftOptionBorder ? giftOptionBorder.dataset : 'N/A');
-	// 		console.log('Gift ID:', giftId);
+			// Debug logging starts here
+			console.log('Debug Information:');
+			console.log('-------------------');
+			console.log('Variant ID:', variantId);
+			console.log('Selling Plan ID:', sellingPlanId);
+			console.log('Is Subscription:', isSubscription);
+			console.log('Gift Option Border:', giftOptionBorder);
+			console.log('Gift Option Border Dataset:', giftOptionBorder ? giftOptionBorder.dataset : 'N/A');
+			console.log('Gift ID:', giftId);
 
-	// 		if (!variantId || !giftId) {
-	// 			const errorMessage = `Missing required data: ${!variantId ? 'variant ID' : ''} ${!giftId ? 'gift ID' : ''}`;
-	// 			console.error(errorMessage);
-	// 			showError(errorMessage);
-	// 			return;
-	// 		}
+			if (!variantId || !giftId) {
+				const errorMessage = `Missing required data: ${!variantId ? 'variant ID' : ''} ${!giftId ? 'gift ID' : ''}`;
+				console.error(errorMessage);
+				showError(errorMessage);
+				return;
+			}
 
-	// 		const items = [
-	// 			{
-	// 				id: variantId,
-	// 				quantity: 1
-	// 			},
-	// 			{
-	// 				id: giftId,
-	// 				quantity: 1
-	// 			}
-	// 		];
+			const items = [
+				{
+					id: variantId,
+					quantity: 1
+				},
+				{
+					id: giftId,
+					quantity: 1
+				}
+			];
 
-	// 		if (sellingPlanId) {
-	// 			items[0].selling_plan = sellingPlanId;
-	// 		}
+			if (sellingPlanId) {
+				items[0].selling_plan = sellingPlanId;
+			}
 
-	// 		console.log('Items to be added to cart:', items);
+			console.log('Items to be added to cart:', items);
 
-	// 		const response = await fetch('/cart/add.js', {
-	// 			method: 'POST',
-	// 			headers: {
-	// 				'Content-Type': 'application/json',
-	// 				'Accept': 'application/json'
-	// 			},
-	// 			body: JSON.stringify({ items })
-	// 		});
+			const response = await fetch('/cart/add.js', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Accept': 'application/json'
+				},
+				body: JSON.stringify({ items })
+			});
 
-	// 		const responseData = await response.json();
+			const responseData = await response.json();
 
-	// 		console.log('Response Status:', response.status);
-	// 		console.log('Response Data:', responseData);
+			console.log('Response Status:', response.status);
+			console.log('Response Data:', responseData);
 
-	// 		if (!response.ok) {
-	// 			const errorMessage = responseData?.description ||
-	// 														responseData?.message ||
-	// 														`Error ${response.status}: ${response.statusText}`;
-	// 			console.error('Error adding to cart:', errorMessage);
-	// 			showError(errorMessage);
-	// 		} else {
-	// 			hideError();
-	// 			// Redirect based on buyType
-	// 			{% if buyType == "buy_once" %}
-	// 				window.location.href = '/checkout';
-	// 			{% endif %}
-	// 		}
-	// 	} catch (error) {
-	// 		console.error('Caught error:', error);
-	// 		showError(error.message || 'An unexpected error occurred');
-	// 	} finally {
-	// 		toggleButtonLoading(submitButton, false);
-	// 	}
-	// });
+			if (!response.ok) {
+				const errorMessage = responseData?.description ||
+															responseData?.message ||
+															`Error ${response.status}: ${response.statusText}`;
+				console.error('Error adding to cart:', errorMessage);
+				showError(errorMessage);
+			} else {
+				hideError();
+				// Redirect based on buyType
+				{% if buyType == "buy_once" %}
+					window.location.href = '/checkout';
+				{% endif %}
+			}
+		} catch (error) {
+			console.error('Caught error:', error);
+			showError(error.message || 'An unexpected error occurred');
+		} finally {
+			toggleButtonLoading(submitButton, false);
+		}
+	});
 
 
   function toggleButtonLoading(buttonElement, isLoading) {
