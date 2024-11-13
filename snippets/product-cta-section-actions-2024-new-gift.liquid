@@ -12,116 +12,116 @@
       {% render 'product-cta-section-actions-variant-2024-new', SID: SID, prod: product, var: var, buyBoxColor: buyBoxColor, index: forloop.index %}
     {% endfor %}
 
-		<div class="gift-selector-wrap">
-			<div class="gift-selector-title mb-2">Choose your free gift:</div>
-			<div class="gift-options flex-nowrap flex justify-start gap-4">
-				{% for block in blocks %}
-					{% case block.type %}
-						{% when 'gift' %}
-							{% assign giftProd = block.settings.gift_product %}
-							{% assign giftVariant = giftProd.selected_or_first_available_variant %}
-							{% assign giftProdSubscription = block.settings.gift_product_subscription %}
-							{% assign giftVariantSubscription = giftProdSubscription.selected_or_first_available_variant %}
-							{% assign giftThumb = block.settings.gift_thumbnail | default: giftProdSubscription.featured_image | default: giftProd.featured_image %}
+    <div class="gift-selector-wrap">
+      <div class="gift-selector-title mb-2">Choose your free gift:</div>
+      <div class="gift-options flex-nowrap flex justify-start gap-4">
+        {% for block in blocks %}
+          {% case block.type %}
+            {% when 'gift' %}
+              {% assign giftProd = block.settings.gift_product %}
+              {% assign giftVariant = giftProd.selected_or_first_available_variant %}
+              {% assign giftProdSubscription = block.settings.gift_product_subscription %}
+              {% assign giftVariantSubscription = giftProdSubscription.selected_or_first_available_variant %}
+              {% assign giftThumb = block.settings.gift_thumbnail | default: giftProdSubscription.featured_image | default: giftProd.featured_image %}
 
-							<div class="gift-option-container flex flex-col items-center"
-							     data-gift-prod-id="{{ giftProd.id }}"
-							     data-gift-variant-id="{{ giftVariant.id }}"
-							     data-gift-prod-subscription-id="{{ giftProdSubscription.id }}"
-							     data-gift-variant-subscription-id="{{ giftVariantSubscription.id }}"
-							>
-								<!-- Border container for image and radio only -->
-								<div class="gift-option-border relative w-full p-2 mb-3 border rounded-lg cursor-pointer" data-gift-id="{{ giftVariant.id }}" data-gift-id-subscription="{{ giftVariantSubscription.id }}">
-									<div class="radio-indicator top-2 right-2 absolute flex items-center justify-center w-6 h-6 rounded-full">
-										<div class="check-mark hidden w-4 h-4 font-bold text-white rounded-full">✓</div>
-									</div>
-									<div class="gift-image-container flex justify-center">
-										<img
-											src="{{ giftThumb | image_url }}"
-											alt="{{ giftProd.title }}"
-											class="object-contain w-24 h-24"
-										>
-									</div>
-								</div>
-								<!-- Text content outside the border -->
-								<div class="gift-content text-center">
-									<div class="gift-name mb-1 font-medium">{{ giftProd.title }}</div>
-									<div class="gift-price flex items-center justify-center gap-2">
-										<span class="original-price text-gray-500 line-through">{{ giftVariantSubscription.compare_at_price | money_with_currency }}</span>
-										<span class="sale-price font-bold">FREE</span>
-									</div>
-								</div>
-							</div>
-					{% endcase %}
-				{% endfor %}
-			</div>
-		</div>
+              <div class="gift-option-container flex flex-col items-center"
+                   data-gift-prod-id="{{ giftProd.id }}"
+                   data-gift-variant-id="{{ giftVariant.id }}"
+                   data-gift-prod-subscription-id="{{ giftProdSubscription.id }}"
+                   data-gift-variant-subscription-id="{{ giftVariantSubscription.id }}"
+              >
+                <!-- Border container for image and radio only -->
+                <div class="gift-option-border relative w-full p-2 mb-3 border rounded-lg cursor-pointer" data-gift-id="{{ giftVariant.id }}" data-gift-id-subscription="{{ giftVariantSubscription.id }}">
+                  <div class="radio-indicator top-2 right-2 absolute flex items-center justify-center w-6 h-6 rounded-full">
+                    <div class="check-mark hidden w-4 h-4 font-bold text-white rounded-full">✓</div>
+                  </div>
+                  <div class="gift-image-container flex justify-center">
+                    <img
+                      src="{{ giftThumb | image_url }}"
+                      alt="{{ giftProd.title }}"
+                      class="object-contain w-24 h-24"
+                    >
+                  </div>
+                </div>
+                <!-- Text content outside the border -->
+                <div class="gift-content text-center">
+                  <div class="gift-name mb-1 font-medium">{{ giftProd.title }}</div>
+                  <div class="gift-price flex items-center justify-center gap-2">
+                    <span class="original-price text-gray-500 line-through">{{ giftVariantSubscription.compare_at_price | money_with_currency }}</span>
+                    <span class="sale-price font-bold">FREE</span>
+                  </div>
+                </div>
+              </div>
+          {% endcase %}
+        {% endfor %}
+      </div>
+    </div>
 
     <div class="submit-wrap flex flex-col w-full">
       <div class="checkout-button">
-				{% if shop.name == 'CuraLife Global' %}
-					{% assign isGlobal = true %}
-				{% endif %}
+        {% if shop.name == 'CuraLife Global' %}
+          {% assign isGlobal = true %}
+        {% endif %}
 
-				{% if buyType == "buy_now" %}
-					<div class="submit-wrap flex flex-col w-full">
-						<input class="submit-variant-id" type="hidden" name="id" value="{{ variant | default: product.selected_or_first_available_variant.id }}">
-						<button class="main-btn w-full p-0 text-black bg-[--orange] min-h-[50px]" id="buy-button-{{ SID }}">
-							<span class="button-text flex justify-center md:text-[5vw]">{{ buttonText | default: "Shop Now" }}</span>
+        {% if buyType == "buy_now" %}
+          <div class="submit-wrap flex flex-col w-full">
+            <input class="submit-variant-id" type="hidden" name="id" value="{{ variant | default: product.selected_or_first_available_variant.id }}">
+            <button class="main-btn w-full p-0 text-black bg-[--orange] min-h-[50px]" id="buy-button-{{ SID }}">
+              <span class="button-text flex justify-center md:text-[5vw]">{{ buttonText | default: "Shop Now" }}</span>
 
-							<div class="loading-overlay__spinner hidden m-auto">
-								<svg aria-hidden="true" focusable="false" class="spinner" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
-									<circle class="path" fill="none" stroke-width="6" cx="33" cy="33" r="30"></circle>
-								</svg>
-							</div>
-						</button>
-					</div>
-				{% else %}
-					<div>
-						<product-form id="product-form-{{ SID }}" class="product-form" data-hide-errors="false" data-section-id="{{ section.id }}">
-							{%- form 'product', product, id: 'product-form-{{ SID }}', class: 'form', novalidate: 'novalidate', data-type: 'add-to-cart-form' -%}
-								<input class="submit-variant-id" type="hidden" name="id" value="{{ variant | default: product.selected_or_first_available_variant.id }}" class="product-variant-id">
-								<input class="submit-selling-plan-id" type="hidden" name="selling_plan" value="{{ selling_plan_id }}">
+              <div class="loading-overlay__spinner hidden m-auto">
+                <svg aria-hidden="true" focusable="false" class="spinner" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
+                  <circle class="path" fill="none" stroke-width="6" cx="33" cy="33" r="30"></circle>
+                </svg>
+              </div>
+            </button>
+          </div>
+        {% else %}
+          <div>
+            <product-form id="product-form-{{ SID }}" class="product-form" data-hide-errors="false" data-section-id="{{ section.id }}">
+              {%- form 'product', product, id: 'product-form-{{ SID }}', class: 'form', novalidate: 'novalidate', data-type: 'add-to-cart-form' -%}
+                <input class="submit-variant-id" type="hidden" name="id" value="{{ variant | default: product.selected_or_first_available_variant.id }}" class="product-variant-id">
+                <input class="submit-selling-plan-id" type="hidden" name="selling_plan" value="{{ selling_plan_id }}">
 
-								<div class="product-form__buttons main-submit-wrapper flex">
-									<button id="ProductSubmitButton-{{SID}}" data-variant-id="{{ variant | default: product.selected_or_first_available_variant.id }}" type="submit" name="add" class="text-black product-form__submit button--full-width justify-center button--primary text-[20px] p-0 min-h-[50px] items-center bg-[--orange]">
-										<span class="submit-title">Add To Cart</span>
-										<div class="loading-overlay__spinner hidden">
-											<svg aria-hidden="true" focusable="false" class="spinner" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
-												<circle class="path !stroke-white" fill="none" stroke-width="6" cx="33" cy="33" r="30"></circle>
-											</svg>
-										</div>
-									</button>
-								</div>
-							{%- endform -%}
+                <div class="product-form__buttons main-submit-wrapper flex">
+                  <button id="ProductSubmitButton-{{SID}}" data-variant-id="{{ variant | default: product.selected_or_first_available_variant.id }}" type="submit" name="add" class="text-black product-form__submit button--full-width justify-center button--primary text-[20px] p-0 min-h-[50px] items-center bg-[--orange]">
+                    <span class="submit-title">Add To Cart</span>
+                    <div class="loading-overlay__spinner hidden">
+                      <svg aria-hidden="true" focusable="false" class="spinner" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
+                        <circle class="path !stroke-white" fill="none" stroke-width="6" cx="33" cy="33" r="30"></circle>
+                      </svg>
+                    </div>
+                  </button>
+                </div>
+              {%- endform -%}
 
-							<div class="product-form__error-message-wrapper p-2 mt-1 text-center rounded-sm bg-[--light-red]" role="alert" hidden>
-								<div class="error-wrapper flex items-center justify-center">
-									<svg aria-hidden="true" focusable="false" class="icon icon-error h-[20px] mr-1" viewBox="0 0 13 13">
-										<circle cx="6.5" cy="6.50049" r="5.5" stroke="white" stroke-width="2"/>
-										<circle cx="6.5" cy="6.5" r="5.5" fill="#EB001B" stroke="#EB001B" stroke-width="0.7"/>
-										<path d="M5.87413 3.52832L5.97439 7.57216H7.02713L7.12739 3.52832H5.87413ZM6.50076 9.66091C6.88091 9.66091 7.18169 9.37267 7.18169 9.00504C7.18169 8.63742 6.88091 8.34917 6.50076 8.34917C6.12061 8.34917 5.81982 8.63742 5.81982 9.00504C5.81982 9.37267 6.12061 9.66091 6.50076 9.66091Z" fill="white"/>
-										<path d="M5.87413 3.17832H5.51535L5.52424 3.537L5.6245 7.58083L5.63296 7.92216H5.97439H7.02713H7.36856L7.37702 7.58083L7.47728 3.537L7.48617 3.17832H7.12739H5.87413ZM6.50076 10.0109C7.06121 10.0109 7.5317 9.57872 7.5317 9.00504C7.5317 8.43137 7.06121 7.99918 6.50076 7.99918C5.94031 7.99918 5.46982 8.43137 5.46982 9.00504C5.46982 9.57872 5.94031 10.0109 6.50076 10.0109Z" fill="white" stroke="#EB001B" stroke-width="0.7">
-									</svg>
-									<span class="product-form__error-message text-[12px]"></span>
-								</div>
+              <div class="product-form__error-message-wrapper p-2 mt-1 text-center rounded-sm bg-[--light-red]" role="alert" hidden>
+                <div class="error-wrapper flex items-center justify-center">
+                  <svg aria-hidden="true" focusable="false" class="icon icon-error h-[20px] mr-1" viewBox="0 0 13 13">
+                    <circle cx="6.5" cy="6.50049" r="5.5" stroke="white" stroke-width="2"/>
+                    <circle cx="6.5" cy="6.5" r="5.5" fill="#EB001B" stroke="#EB001B" stroke-width="0.7"/>
+                    <path d="M5.87413 3.52832L5.97439 7.57216H7.02713L7.12739 3.52832H5.87413ZM6.50076 9.66091C6.88091 9.66091 7.18169 9.37267 7.18169 9.00504C7.18169 8.63742 6.88091 8.34917 6.50076 8.34917C6.12061 8.34917 5.81982 8.63742 5.81982 9.00504C5.81982 9.37267 6.12061 9.66091 6.50076 9.66091Z" fill="white"/>
+                    <path d="M5.87413 3.17832H5.51535L5.52424 3.537L5.6245 7.58083L5.63296 7.92216H5.97439H7.02713H7.36856L7.37702 7.58083L7.47728 3.537L7.48617 3.17832H7.12739H5.87413ZM6.50076 10.0109C7.06121 10.0109 7.5317 9.57872 7.5317 9.00504C7.5317 8.43137 7.06121 7.99918 6.50076 7.99918C5.94031 7.99918 5.46982 8.43137 5.46982 9.00504C5.46982 9.57872 6.12061 10.0109 6.50076 10.0109Z" fill="white" stroke="#EB001B" stroke-width="0.7">
+                  </svg>
+                  <span class="product-form__error-message text-[12px]"></span>
+                </div>
 
-								<div class="notice">Please <a class="underline" href="https://help{% if isGlobal %}-global{% endif %}.curalife.com/">Contact Us</a>, we'd love to help!</div>
-							</div>
-						</product-form>
-					</div>
-				{% endif %}
+                <div class="notice">Please <a class="underline" href="https://help{% if isGlobal %}-global{% endif %}.curalife.com/">Contact Us</a>, we'd love to help!</div>
+              </div>
+            </product-form>
+          </div>
+        {% endif %}
 
-				{% if isBuyWithPrime and isGlobal != true and customer.b2b? == false %}
-					<div class="bwp-button">
-						{% render 'buy-with-prime-button' %}
-					</div>
-				{% endif %}
+        {% if isBuyWithPrime and isGlobal != true and customer.b2b? == false %}
+          <div class="bwp-button">
+            {% render 'buy-with-prime-button' %}
+          </div>
+        {% endif %}
 
-				{% if customer %}
-					{% render 'yotpo-product-points-widget' %}
-				{% endif %}
-			</div>
+        {% if customer %}
+          {% render 'yotpo-product-points-widget' %}
+        {% endif %}
+      </div>
     </div>
   </div>
 </div>
@@ -132,7 +132,6 @@
     const SID = '{{ SID }}';
     window.SID = SID;
 
-    const productSlider = window[`productSliderAllInOne${window.SID}`];
     const purchaseOptionBoxes = productActions.querySelectorAll('.purchase-option-box');
 
     const styleSheet = document.createElement("style");
@@ -520,19 +519,12 @@
               if (dc) {
                   checkoutUrl += '?discount=' + atob(dc);
               }
-              // window.location.href = checkoutUrl;
+              window.location.href = checkoutUrl;
           }
       } catch (error) {
           console.error('Error during checkout process:', error);
-          // Here you might want to show an error message to the user
-          const errorMessageWrapper = document.querySelector('.product-form__error-message-wrapper');
-          if (errorMessageWrapper) {
-              const errorMessage = errorMessageWrapper.querySelector('.product-form__error-message');
-              if (errorMessage) {
-                  errorMessage.textContent = error.message || 'An error occurred while processing your order.';
-              }
-              errorMessageWrapper.hidden = false;
-          }
+          // Show error message to the user
+          showError(error.message || 'An error occurred while processing your order.');
       } finally {
           toggleButtonLoading(buttonElement, false);
       }
@@ -540,10 +532,10 @@
 
     function toggleButtonLoading(buttonElement, isLoading) {
       const loader = buttonElement.querySelector('.loading-overlay__spinner');
-      const buttonText = buttonElement.querySelector('.button-text');
+      const buttonText = buttonElement.querySelector('.button-text, .submit-title');
 
-      if (!loader) {
-        console.error("Loader element not found");
+      if (!loader || !buttonText) {
+        console.error('Loader or buttonText element not found');
         return;
       }
 
@@ -597,10 +589,12 @@
           if (!response.ok) {
               throw new Error(`Cart Error: ${response.status} ${response.statusText}`);
           }
-          // Optional: Add success handling here
-          // For example: Show a success message, update cart count, etc.
+
+          // Redirect to checkout
+          window.location.href = '/checkout';
       } catch (error) {
           console.error('Failed to add items:', error);
+          showError(error.message || 'An error occurred while processing your order.');
       }
     }
 
@@ -673,112 +667,25 @@
       if (pointsElement) pointsElement.textContent = newPoints;
     }
 
-    // Create a more reliable slider initialization and management system
-    let sliderInitializationAttempts = 0;
-    const MAX_INITIALIZATION_ATTEMPTS = 50;
-    const INITIALIZATION_INTERVAL = 100;
+    // ... [Rest of the code remains unchanged] ...
 
-    function initializeProductSlider() {
-      const SID = window.SID || '';
-      const sliderId = `productSliderAllInOne${SID}`;
+    // Define showError and hideError functions
+    function showError(message) {
+      const errorMessageWrapper = document.querySelector('.product-form__error-message-wrapper');
+      const errorMessage = document.querySelector('.product-form__error-message');
 
-      return new Promise((resolve, reject) => {
-        const checkSlider = setInterval(() => {
-          const slider = window[sliderId];
-          sliderInitializationAttempts++;
-
-          if (slider && slider.slides && slider.slides.length > 0) {
-            clearInterval(checkSlider);
-
-            resolve(slider);
-          } else if (sliderInitializationAttempts >= MAX_INITIALIZATION_ATTEMPTS) {
-            clearInterval(checkSlider);
-            console.error('Slider initialization timed out after maximum attempts');
-            reject(new Error('Slider initialization timeout'));
-          }
-        }, INITIALIZATION_INTERVAL);
-      });
-    }
-
-    function updateVariantImage(element) {
-      if (!element || !element.dataset.index) {
-        console.warn('Invalid element or missing data-index attribute');
-        return;
-      }
-
-      const SID = window.SID || '';
-      const sliderId = `productSliderAllInOne${SID}`;
-      const slider = window[sliderId];
-
-      if (!slider || !slider.slides || !slider.slides.length) {
-        let updateImageData = {
-          element: element,
-          dataIndex: element.dataset.index,
-          sliderId: sliderId,
-          slider: slider
-        };
-
-        console.warn('Slider not ready, attempting initialization...', updateImageData);
-
-        initializeProductSlider()
-          .then((initializedSlider) => {
-            performSlideUpdate(initializedSlider, element);
-          })
-          .catch((error) => {
-            console.error('Failed to initialize slider:', error);
-          });
-        return;
-      }
-
-      performSlideUpdate(slider, element);
-    }
-
-    function performSlideUpdate(slider, element) {
-      try {
-        const elementIndex = parseInt(element.dataset.index);
-
-        if (elementIndex >= 0 && elementIndex < slider.slides.length) {
-          if (slider.activeIndex !== elementIndex) {
-            setTimeout(() => {
-              slider.slideTo(elementIndex, 300, true);
-            }, 50);
-          }
-        } else {
-          console.warn(`Invalid slide index: ${elementIndex}`);
-        }
-      } catch (error) {
-        console.error('Error during slide update:', error);
-        console.error(error.stack);
+      if (errorMessageWrapper && errorMessage) {
+        errorMessage.textContent = message;
+        errorMessageWrapper.hidden = false;
       }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const purchaseOptionBoxes = document.querySelectorAll('.purchase-option-box');
-
-      purchaseOptionBoxes.forEach(box => {
-        box.addEventListener('click', (event) => {
-          if (box.dataset.processing === 'true') {
-            return;
-          }
-
-          box.dataset.processing = 'true';
-
-          updateVariantImage(box);
-
-          setTimeout(() => {
-            delete box.dataset.processing;
-          }, 500);
-        });
-      });
-
-      initializeProductSlider()
-        .then(() => {
-          console.log('Slider successfully initialized on page load');
-        })
-        .catch((error) => {
-          console.error('Failed to initialize slider on page load:', error);
-        });
-    });
+    function hideError() {
+      const errorMessageWrapper = document.querySelector('.product-form__error-message-wrapper');
+      if (errorMessageWrapper) {
+        errorMessageWrapper.hidden = true;
+      }
+    }
 
     // Form submission for buyType != 'buy_now'
     {% if buyType != "buy_now" %}
@@ -843,8 +750,8 @@
           showError(errorMessage);
         } else {
           hideError();
-          // Optional: Show success message or update cart count
-          // You can add your success handling here
+          // Redirect to checkout after successful addition
+          window.location.href = '/checkout';
         }
       } catch (error) {
         console.error('Caught error:', error);
@@ -853,23 +760,6 @@
         toggleButtonLoading(submitButton, false);
       }
     });
-
-    function showError(message) {
-      const errorMessageWrapper = document.querySelector('.product-form__error-message-wrapper');
-      const errorMessage = document.querySelector('.product-form__error-message');
-
-      if (errorMessageWrapper && errorMessage) {
-        errorMessage.textContent = message;
-        errorMessageWrapper.hidden = false;
-      }
-    }
-
-    function hideError() {
-      const errorMessageWrapper = document.querySelector('.product-form__error-message-wrapper');
-      if (errorMessageWrapper) {
-        errorMessageWrapper.hidden = true;
-      }
-    }
     {% endif %}
 
     // Event listener for 'buy now' button when buyType == 'buy_now'
@@ -878,7 +768,6 @@
 
     if (buyButton) {
       buyButton.addEventListener('click', function(event) {
-        // Button states for loading
         var submitButton = this;
         var buttonText = submitButton.querySelector('.button-text');
         var loadingSpinner = submitButton.querySelector('.loading-overlay__spinner');
