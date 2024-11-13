@@ -1349,54 +1349,55 @@ function redirectToCheckout(variant_id, dc, giftId) {
 
     // Modify your existing cart functions to handle the gift
 		async function buySubscription(variant_id, qty, selling_plan, giftId) {
-    console.log("=== Cart Debug: buySubscription triggered ===");
-    console.log("Cart Debug - Input parameters:", {
-        variant_id,
-        qty,
-        selling_plan,
-        giftId
-    });
+				console.log("=== Cart Debug: buySubscription triggered ===");
+				console.log("Cart Debug - Input parameters:", {
+						variant_id,
+						qty,
+						selling_plan,
+						giftId
+				});
 
-    const cartCleared = await clearCart();
-    console.log("Cart Debug - Cart cleared:", cartCleared);
-    if (!cartCleared) return;
+				const cartCleared = await clearCart();
+				console.log("Cart Debug - Cart cleared:", cartCleared);
+				if (!cartCleared) return;
 
-    const items = [
-        {
-            "id": variant_id,
-            "quantity": qty,
-            "selling_plan": selling_plan
-        },
-        {
-            "id": giftId,
-            "quantity": 1
-        }
-    ];
+				const items = [
+						{
+								"id": variant_id,
+								"quantity": qty,
+								"selling_plan": selling_plan
+						},
+						{
+								"id": giftId,
+								"quantity": 1
+						}
+				];
 
-    console.log("Cart Debug - Sending items to cart:", JSON.stringify(items, null, 2));
+				console.log("Cart Debug - Sending items to cart:", JSON.stringify(items, null, 2));
 
-    try {
-        const response = await fetch('/cart/add.js', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ items: items })
-        });
+				try {
+						const response = await fetch('/cart/add.js', {
+								method: 'POST',
+								headers: { 'Content-Type': 'application/json' },
+								body: JSON.stringify({ items: items })
+						});
 
-        // Fixed: Using response.json() directly instead of responseText
-        const responseData = await response.json();
-        console.log("Cart Debug - Cart response:", responseData);
+						// Fixed: Using response.json() directly instead of responseText
+						const responseData = await response.json();
+						console.log("Cart Debug - Cart response:", responseData);
 
-        if (!response.ok) {
-            throw new Error(`Cart Error: ${response.status} ${response.statusText}`);
-        }
+						if (!response.ok) {
+								throw new Error(`Cart Error: ${response.status} ${response.statusText}`);
+						}
 
-        window.location.href = '/checkout';
-    } catch (error) {
-        console.error('Cart Debug - Failed to add items:', error);
-    }
-}
+						window.location.href = '/checkout';
+				} catch (error) {
+						console.error('Cart Debug - Failed to add items:', error);
+				}
+		}
   });
 </script>
+
 
 <style>
 	.gift-selector-wrap {
