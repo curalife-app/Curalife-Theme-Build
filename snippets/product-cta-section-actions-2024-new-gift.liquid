@@ -212,138 +212,137 @@
 						</product-form>
 
 						<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('product-form-{{ SID }}');
-    const submitButton = document.getElementById('ProductSubmitButton-{{SID}}');
+							document.addEventListener('DOMContentLoaded', function() {
+									const form = document.getElementById('product-form-{{ SID }}');
+									const submitButton = document.getElementById('ProductSubmitButton-{{SID}}');
 
-    form.addEventListener('submit', async function(event) {
-        event.preventDefault();
+									form.addEventListener('submit', async function(event) {
+											event.preventDefault();
 
-        // Display the loading spinner
-        toggleButtonLoading(submitButton, true);
+											// Display the loading spinner
+											toggleButtonLoading(submitButton, true);
 
-        try {
-            const variantIdInput = form.querySelector('.submit-variant-id');
-            const sellingPlanIdInput = form.querySelector('.submit-selling-plan-id');
-            const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
-            const giftOptionBorder = selectedGiftContainer ? selectedGiftContainer.querySelector('.gift-option-border') : null;
+											try {
+													const variantIdInput = form.querySelector('.submit-variant-id');
+													const sellingPlanIdInput = form.querySelector('.submit-selling-plan-id');
+													const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
+													const giftOptionBorder = selectedGiftContainer ? selectedGiftContainer.querySelector('.gift-option-border') : null;
 
-            const isSubscription = !!sellingPlanIdInput?.value;
-            const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
+													const isSubscription = !!sellingPlanIdInput?.value;
+													const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
 
-            console.log('Form Data:', {
-                variantIdInput: variantIdInput ? variantIdInput.value : 'not found',
-                sellingPlanIdInput: sellingPlanIdInput ? sellingPlanIdInput.value : 'not found',
-                selectedGiftContainer: selectedGiftContainer ? 'found' : 'not found',
-                giftOptionBorder: giftOptionBorder ? 'found' : 'not found',
-                isSubscription: isSubscription,
-                giftId: giftId
-            });
+													console.log('Form Data:', {
+															variantIdInput: variantIdInput ? variantIdInput.value : 'not found',
+															sellingPlanIdInput: sellingPlanIdInput ? sellingPlanIdInput.value : 'not found',
+															selectedGiftContainer: selectedGiftContainer ? 'found' : 'not found',
+															giftOptionBorder: giftOptionBorder ? 'found' : 'not found',
+															isSubscription: isSubscription,
+															giftId: giftId
+													});
 
-            const variantId = variantIdInput ? variantIdInput.value : null;
-            const sellingPlanId = sellingPlanIdInput ? sellingPlanIdInput.value : '';
+													const variantId = variantIdInput ? variantIdInput.value : null;
+													const sellingPlanId = sellingPlanIdInput ? sellingPlanIdInput.value : '';
 
-            if (!variantId || !giftId) {
-                const errorMessage = `Missing required data: ${!variantId ? 'variant ID' : ''} ${!giftId ? 'gift ID' : ''}`;
-                console.error(errorMessage);
-                showError(errorMessage);
-                return;
-            }
+													if (!variantId || !giftId) {
+															const errorMessage = `Missing required data: ${!variantId ? 'variant ID' : ''} ${!giftId ? 'gift ID' : ''}`;
+															console.error(errorMessage);
+															showError(errorMessage);
+															return;
+													}
 
-            const items = [
-                {
-                    id: variantId,
-                    quantity: 1
-                },
-                {
-                    id: giftId,
-                    quantity: 1
-                }
-            ];
+													const items = [
+															{
+																	id: variantId,
+																	quantity: 1
+															},
+															{
+																	id: giftId,
+																	quantity: 1
+															}
+													];
 
-            if (sellingPlanId) {
-                items[0].selling_plan = sellingPlanId;
-            }
+													if (sellingPlanId) {
+															items[0].selling_plan = sellingPlanId;
+													}
 
-            console.log('Sending to cart:', { items });
+													console.log('Sending to cart:', { items });
 
-            const response = await fetch('/cart/add.js', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ items })
-            });
+													const response = await fetch('/cart/add.js', {
+															method: 'POST',
+															headers: {
+																	'Content-Type': 'application/json',
+																	'Accept': 'application/json'
+															},
+															body: JSON.stringify({ items })
+													});
 
-            const responseData = await response.json();
+													const responseData = await response.json();
 
-            console.log('Response details:', {
-                status: response.status,
-                statusText: response.statusText,
-                data: responseData
-            });
+													console.log('Response details:', {
+															status: response.status,
+															statusText: response.statusText,
+															data: responseData
+													});
 
-            if (!response.ok) {
-                const errorMessage = responseData?.description ||
-                                   responseData?.message ||
-                                   `Error ${response.status}: ${response.statusText}`;
-                showError(errorMessage);
-            } else {
-                console.log('Successfully added to cart:', responseData);
-                hideError();
-                // Optional: Show success message or update cart count
-                // You can add your success handling here
-            }
-        } catch (error) {
-            console.error('Caught error:', error);
-            showError(error.message || 'An unexpected error occurred');
-        } finally {
-            toggleButtonLoading(submitButton, false);
-        }
-    });
-});
+													if (!response.ok) {
+															const errorMessage = responseData?.description ||
+																								responseData?.message ||
+																								`Error ${response.status}: ${response.statusText}`;
+															showError(errorMessage);
+													} else {
+															console.log('Successfully added to cart:', responseData);
+															hideError();
+															// Optional: Show success message or update cart count
+															// You can add your success handling here
+													}
+											} catch (error) {
+													console.error('Caught error:', error);
+													showError(error.message || 'An unexpected error occurred');
+											} finally {
+													toggleButtonLoading(submitButton, false);
+											}
+									});
+							});
 
-function showError(message) {
-    const errorMessageWrapper = document.querySelector('.product-form__error-message-wrapper');
-    const errorMessage = document.querySelector('.product-form__error-message');
+							function showError(message) {
+									const errorMessageWrapper = document.querySelector('.product-form__error-message-wrapper');
+									const errorMessage = document.querySelector('.product-form__error-message');
 
-    console.error('Error:', message);
+									console.error('Error:', message);
 
-    if (errorMessageWrapper && errorMessage) {
-        errorMessage.textContent = message;
-        errorMessageWrapper.hidden = false;
-    }
-}
+									if (errorMessageWrapper && errorMessage) {
+											errorMessage.textContent = message;
+											errorMessageWrapper.hidden = false;
+									}
+							}
 
-function hideError() {
-    const errorMessageWrapper = document.querySelector('.product-form__error-message-wrapper');
-    if (errorMessageWrapper) {
-        errorMessageWrapper.hidden = true;
-    }
-}
+							function hideError() {
+									const errorMessageWrapper = document.querySelector('.product-form__error-message-wrapper');
+									if (errorMessageWrapper) {
+											errorMessageWrapper.hidden = true;
+									}
+							}
 
-function toggleButtonLoading(buttonElement, isLoading) {
-    if (!buttonElement) {
-        console.warn('Button element not found');
-        return;
-    }
+							function toggleButtonLoading(buttonElement, isLoading) {
+									if (!buttonElement) {
+											console.warn('Button element not found');
+											return;
+									}
 
-    const loader = buttonElement.querySelector('.loading-overlay__spinner');
-    const buttonText = buttonElement.querySelector('.button-text, .submit-title');
+									const loader = buttonElement.querySelector('.loading-overlay__spinner');
+									const buttonText = buttonElement.querySelector('.button-text, .submit-title');
 
-    if (!loader || !buttonText) {
-        console.warn('Button elements not found:', {
-            loader: loader ? 'found' : 'not found',
-            buttonText: buttonText ? 'found' : 'not found'
-        });
-        return;
-    }
+									if (!loader || !buttonText) {
+											console.warn('Button elements not found:', {
+													loader: loader ? 'found' : 'not found',
+													buttonText: buttonText ? 'found' : 'not found'
+											});
+											return;
+									}
 
-    loader.style.display = isLoading ? 'block' : 'none';
-    buttonText.style.display = isLoading ? 'none' : 'block';
-}
-});
+									loader.style.display = isLoading ? 'block' : 'none';
+									buttonText.style.display = isLoading ? 'none' : 'block';
+								}
 </script>
 					</div>
 				{% endif %}
