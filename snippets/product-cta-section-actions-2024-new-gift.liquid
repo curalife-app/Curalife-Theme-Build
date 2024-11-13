@@ -230,18 +230,26 @@ document.addEventListener('DOMContentLoaded', function() {
         const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
         const giftOptionBorder = selectedGiftContainer ? selectedGiftContainer.querySelector('.gift-option-border') : null;
 
+        // Determine if this is a subscription purchase
+        const isSubscription = !!sellingPlanIdInput?.value;
+
+        // Get the appropriate gift ID based on purchase type
+        const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
+
         // Log all the data we're working with
         console.log('Form Data:', {
             variantIdInput: variantIdInput ? variantIdInput.value : 'not found',
             sellingPlanIdInput: sellingPlanIdInput ? sellingPlanIdInput.value : 'not found',
             selectedGiftContainer: selectedGiftContainer ? 'found' : 'not found',
             giftOptionBorder: giftOptionBorder ? 'found' : 'not found',
-            giftId: giftOptionBorder ? giftOptionBorder.dataset.giftId : 'not found'
+            isSubscription: isSubscription,
+            giftId: giftId,
+            regularGiftId: giftOptionBorder?.dataset.giftId,
+            subscriptionGiftId: giftOptionBorder?.dataset.giftIdSubscription
         });
 
         const variantId = variantIdInput ? variantIdInput.value : null;
         const sellingPlanId = sellingPlanIdInput ? sellingPlanIdInput.value : '';
-        const giftId = giftOptionBorder ? giftOptionBorder.dataset.giftId : null;
 
         // Validate required data
         if (!variantId || !giftId) {
