@@ -613,7 +613,6 @@
   // Function to update the variant image
   function updateVariantImage(element) {
         if (!element || !element.dataset.index) {
-            console.warn('Invalid element or missing data-index attribute');
             return;
         }
 
@@ -628,8 +627,6 @@
                 sliderId: sliderId,
                 slider: slider
             };
-
-            console.warn('Slider not ready, attempting initialization...', updateImageData);
 
             initializeProductSlider()
                 .then((initializedSlider) => {
@@ -648,20 +645,12 @@
       try {
         const elementIndex = parseInt(element.dataset.index);
 
-        console.log('Performing slide update:', {
-          elementIndex: elementIndex,
-          totalSlides: slider.slides.length,
-          currentSlide: slider.activeIndex
-        });
-
         if (elementIndex >= 0 && elementIndex < slider.slides.length) {
           if (slider.activeIndex !== elementIndex) {
             setTimeout(() => {
               slider.slideTo(elementIndex, 300, true);
             }, 50);
           }
-        } else {
-          console.warn(`Invalid slide index: ${elementIndex}`);
         }
       } catch (error) {
         console.error('Error during slide update:', error);
