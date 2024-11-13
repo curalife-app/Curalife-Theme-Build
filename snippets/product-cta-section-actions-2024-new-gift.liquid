@@ -612,10 +612,62 @@
 
   // Function to update the variant image
   function updateVariantImage(element) {
-    const variantId = element.dataset.variant || element.dataset.originalVariant;
-    // Implement the logic to update the variant image based on the variantId
-    // This function depends on your existing implementation
-  }
+        if (!element || !element.dataset.index) {
+            console.warn('Invalid element or missing data-index attribute');
+            return;
+        }
+
+        const SID = window.SID || '';
+        const sliderId = `productSliderAllInOne${SID}`;
+        const slider = window[sliderId];
+
+        if (!slider || !slider.slides || !slider.slides.length) {
+            let updateImageData = {
+                element: element,
+                dataIndex: element.dataset.index,
+                sliderId: sliderId,
+                slider: slider
+            };
+
+            console.warn('Slider not ready, attempting initialization...', updateImageData);
+
+            initializeProductSlider()
+                .then((initializedSlider) => {
+                    performSlideUpdate(initializedSlider, element);
+                })
+                .catch((error) => {
+                    console.error('Failed to initialize slider:', error);
+                });
+            return;
+        }
+
+        performSlideUpdate(slider, element);
+    }
+
+    function performSlideUpdate(slider, element) {
+      try {
+        const elementIndex = parseInt(element.dataset.index);
+
+        console.log('Performing slide update:', {
+          elementIndex: elementIndex,
+          totalSlides: slider.slides.length,
+          currentSlide: slider.activeIndex
+        });
+
+        if (elementIndex >= 0 && elementIndex < slider.slides.length) {
+          if (slider.activeIndex !== elementIndex) {
+            setTimeout(() => {
+              slider.slideTo(elementIndex, 300, true);
+            }, 50);
+          }
+        } else {
+          console.warn(`Invalid slide index: ${elementIndex}`);
+        }
+      } catch (error) {
+        console.error('Error during slide update:', error);
+        console.error(error.stack);
+      }
+    }
 
   // Additional JavaScript functions and event listeners can be added here
 });
