@@ -219,40 +219,15 @@ document.addEventListener('DOMContentLoaded', function() {
     form.addEventListener('submit', async function(event) {
     event.preventDefault();
 
-    console.log('=== Form Submission Started ===');
-
     // Display the loading spinner
     toggleButtonLoading(submitButton, true);
 
     try {
-        // Get all relevant elements
+        // Get form data and log it
         const variantIdInput = form.querySelector('.submit-variant-id');
         const sellingPlanIdInput = form.querySelector('.submit-selling-plan-id');
         const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
-
-        // Log initial element state
-        console.log('Initial Elements Check:', {
-            variantIdInputExists: !!variantIdInput,
-            sellingPlanIdInputExists: !!sellingPlanIdInput,
-            selectedGiftContainerExists: !!selectedGiftContainer
-        });
-
-        if (!selectedGiftContainer) {
-            console.error('No gift selected - gift container not found');
-            showError('Please select a gift before proceeding');
-            toggleButtonLoading(submitButton, false);
-            return;
-        }
-
-        const giftOptionBorder = selectedGiftContainer.querySelector('.gift-option-border');
-
-        console.log('Gift Border Element:', {
-            exists: !!giftOptionBorder,
-            dataAttributes: giftOptionBorder ? {
-                giftId: giftOptionBorder.dataset.giftId,
-                giftIdSubscription: giftOptionBorder.dataset.giftIdSubscription
-            } : null
-        });
+        const giftOptionBorder = selectedGiftContainer ? selectedGiftContainer.querySelector('.gift-option-border') : null;
 
         // Determine if this is a subscription purchase
         const isSubscription = !!sellingPlanIdInput?.value;
@@ -260,10 +235,14 @@ document.addEventListener('DOMContentLoaded', function() {
         // Get the appropriate gift ID based on purchase type
         const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
 
-        console.log('Gift Selection Logic:', {
+        // Log all the data we're working with
+        console.log('Form Data:', {
+            variantIdInput: variantIdInput ? variantIdInput.value : 'not found',
+            sellingPlanIdInput: sellingPlanIdInput ? sellingPlanIdInput.value : 'not found',
+            selectedGiftContainer: selectedGiftContainer ? 'found' : 'not found',
+            giftOptionBorder: giftOptionBorder ? 'found' : 'not found',
             isSubscription: isSubscription,
-            sellingPlanValue: sellingPlanIdInput?.value,
-            selectedGiftId: giftId,
+            giftId: giftId,
             regularGiftId: giftOptionBorder?.dataset.giftId,
             subscriptionGiftId: giftOptionBorder?.dataset.giftIdSubscription
         });
@@ -274,8 +253,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Validate required data
         if (!variantId || !giftId) {
             const errorMessage = `Missing required data: ${!variantId ? 'variant ID' : ''} ${!giftId ? 'gift ID' : ''}`;
-            console.error('Validation Failed:', errorMessage);
-            console.log('Current Values:', { variantId, giftId });
+            console.error(errorMessage);
             showError(errorMessage);
             toggleButtonLoading(submitButton, false);
             return;
@@ -299,13 +277,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Log the final payload
-        console.log('Final Cart Payload:', {
+        console.log('Sending to cart:', {
             url: '/cart/add.js',
             method: 'POST',
-            items: items,
-            itemsCount: items.length,
-            mainProduct: items[0],
-            giftProduct: items[1]
+            body: { items }
         });
 
         // Make the request
@@ -318,53 +293,42 @@ document.addEventListener('DOMContentLoaded', function() {
             body: JSON.stringify({ items })
         });
 
-        // Log response status immediately
-        console.log('Initial Response:', {
-            status: response.status,
-            statusText: response.statusText,
-            ok: response.ok
-        });
-
-        // Get the response as text first
-        const responseText = await response.text();
-        console.log('Raw Response Text:', responseText);
-
         // Try to parse as JSON
         let responseData;
         try {
             responseData = JSON.parse(responseText);
-            console.log('Parsed Response Data:', responseData);
         } catch (e) {
-            console.error('JSON Parse Error:', e);
-            console.log('Failed to parse text:', responseText);
+            console.log('Failed to parse response as JSON:', e);
         }
+
+        // Log full response details
+        console.log('Response details:', {
+            status: response.status,
+            statusText: response.statusText,
+            headers: Object.fromEntries(response.headers.entries()),
+            data: responseData
+        });
 
         if (!response.ok) {
             const errorMessage = responseData?.description ||
                                responseData?.message ||
                                `Error ${response.status}: ${response.statusText}`;
             showError(errorMessage);
-            console.error('Cart Error Response:', {
+            console.error('Cart error:', {
                 status: response.status,
                 statusText: response.statusText,
-                error: errorMessage,
                 data: responseData
             });
         } else {
-            console.log('Cart Addition Successful:', responseData);
+            console.log('Successfully added to cart:', responseData);
             hideError();
-            // You might want to redirect here or show success message
         }
-
     } catch (error) {
-        console.error('Submission Error:', error);
-        console.error('Error Stack:', error.stack);
+        console.error('Caught error:', error);
         showError(error.message || 'An unexpected error occurred');
     } finally {
-        console.log('=== Form Submission Completed ===');
         toggleButtonLoading(submitButton, false);
     }
-});
 });
 
 function showError(message) {
