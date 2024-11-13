@@ -24,29 +24,12 @@
 							{% assign giftVariantSubscription = giftProdSubscription.selected_or_first_available_variant %}
 							{% assign giftThumb = block.settings.gift_thumbnail | default: giftProdSubscription.featured_image | default: giftProd.featured_image %}
 
-							<script>console.log("giftProd - {{ giftProd.id }}")</script>
-							<script>console.log("giftVariant - {{ giftVariant.id }}")</script>
-							<script>console.log("giftProdSubscription - {{ giftProdSubscription.id }}")</script>
-							<script>console.log("giftVariantSubscription - {{ giftVariantSubscription.id }}")</script>
-							<script>console.log("giftComparedAtPrice - {{ giftVariantSubscription.compare_at_price }}")</script>
-
-
-							{% comment %} {% if block.settings.variant_id != blank %}
-								{% for var in giftProd.variants %}
-									{% if var.id == block.settings.variant_id %}
-										{% assign giftVariant = var %}
-									{% endif %}
-								{% endfor %}
-							{% endif %}
-
-							{% if giftProdSubscription != blank and giftVariantSubscription%}
-								{% for varSub in giftProdSubscription.variants %}
-									{% if varSub.id == block.settings.variant_id_subscription %}
-										{% assign giftVariantSubscription = varSub %}
-									{% endif %}
-								{% endfor %}
-							{% endif %} {% endcomment %}
-							<div class="gift-option-container flex flex-col items-center">
+							<div class="gift-option-container flex flex-col items-center"
+							     data-gift-prod-id="{{ giftProd.id }}"
+							     data-gift-variant-id="{{ giftVariant.id }}"
+							     data-gift-prod-subscription-id="{{ giftProdSubscription.id }}"
+							     data-gift-variant-subscription-id="{{ giftVariantSubscription.id }}"
+							>
 								<!-- Border container for image and radio only -->
 								<div class="gift-option-border relative w-full p-2 mb-3 border rounded-lg cursor-pointer" data-gift-id="{{ giftVariant.id }}" data-gift-id-subscription="{{ giftVariantSubscription.id }}">
 									<div class="radio-indicator top-2 right-2 absolute flex items-center justify-center w-6 h-6 rounded-full">
@@ -93,88 +76,7 @@
 							</div>
 						</button>
 					</div>
-
-					<script>
-					document.addEventListener('DOMContentLoaded', function() {
-						var buyButton = document.getElementById('buy-button-{{ SID }}');
-
-						if (buyButton) {
-							buyButton.addEventListener('click', function(event) {
-								// Button states for loading
-								var submitButton = this;
-								var buttonText = submitButton.querySelector('.button-text');
-								var loadingSpinner = submitButton.querySelector('.loading-overlay__spinner');
-
-								// Display loading spinner
-								if (buttonText && loadingSpinner) {
-									buttonText.style.display = 'none';
-									loadingSpinner.classList.remove('hidden');
-								}
-
-								// Get the variant ID and selling plan ID from the hidden inputs
-								var variantIdInput = document.querySelector('.submit-variant-id');
-								var sellingPlanIdInput = document.querySelector('.submit-selling-plan-id');
-
-								if (variantIdInput) {
-									console.log('Variant ID input found.');
-								} else {
-									console.error('Variant ID input not found.');
-								}
-
-								var variantId = variantIdInput ? variantIdInput.value : '{{ variant | default: product.selected_or_first_available_variant.id }}';
-								var sellingPlanId = sellingPlanIdInput ? sellingPlanIdInput.value : '';
-								console.log('Variant ID:', variantId);
-								console.log('Selling Plan ID:', sellingPlanId);
-
-								var quantity = 1;
-
-								var data = {
-									"id": variantId,
-									"quantity": quantity
-								};
-
-								if (sellingPlanId) {
-									data["selling_plan"] = sellingPlanId;
-								}
-
-								// Adding product to the cart
-								console.log('Sending request to add product to the cart:', data);
-
-								fetch('/cart/add.js', {
-									method: 'POST',
-									headers: {
-										'Content-Type': 'application/json',
-									},
-									body: JSON.stringify(data),
-								})
-								.then(function(response) {
-									console.log('Received response from add to cart:', response);
-									return response.json();
-								})
-								.then(function(data) {
-									console.log('Product successfully added to cart:', data);
-									console.log('Redirecting to checkout.');
-									window.location.href = '/checkout';
-								})
-								.catch(function(error) {
-									console.error('Error adding product to cart:', error);
-									if (buttonText && loadingSpinner) {
-										console.log('An error occurred. Resetting button to normal state.');
-										buttonText.style.display = '';
-										loadingSpinner.classList.add('hidden');
-									}
-								});
-							});
-						} else {
-							console.error('Buy button not found. Cannot attach event listener.');
-						}
-					});
-				</script>
-
 				{% else %}
-					{% comment %} <script src="{{ 'product-info.js' | asset_url }}" defer="defer"></script> {% endcomment %}
-					{% comment %} <script src="{{ 'product-form.js' | asset_url }}" defer="defer"></script> {% endcomment %}
-
 					<div>
 						<product-form id="product-form-{{ SID }}" class="product-form" data-hide-errors="false" data-section-id="{{ section.id }}">
 							{%- form 'product', product, id: 'product-form-{{ SID }}', class: 'form', novalidate: 'novalidate', data-type: 'add-to-cart-form' -%}
@@ -207,140 +109,6 @@
 								<div class="notice">Please <a class="underline" href="https://help{% if isGlobal %}-global{% endif %}.curalife.com/">Contact Us</a>, we'd love to help!</div>
 							</div>
 						</product-form>
-
-						<script>
-							document.addEventListener('DOMContentLoaded', function() {
-									const form = document.getElementById('product-form-{{ SID }}');
-									const submitButton = document.getElementById('ProductSubmitButton-{{SID}}');
-
-									form.addEventListener('submit', async function(event) {
-											event.preventDefault();
-
-											// Display the loading spinner
-											toggleButtonLoading(submitButton, true);
-
-											try {
-													const variantIdInput = form.querySelector('.submit-variant-id');
-													const sellingPlanIdInput = form.querySelector('.submit-selling-plan-id');
-													const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
-													const giftOptionBorder = selectedGiftContainer ? selectedGiftContainer.querySelector('.gift-option-border') : null;
-
-													const isSubscription = !!sellingPlanIdInput?.value;
-													const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
-
-													console.log('Form Data:', {
-															variantIdInput: variantIdInput ? variantIdInput.value : 'not found',
-															sellingPlanIdInput: sellingPlanIdInput ? sellingPlanIdInput.value : 'not found',
-															selectedGiftContainer: selectedGiftContainer ? 'found' : 'not found',
-															giftOptionBorder: giftOptionBorder ? 'found' : 'not found',
-															isSubscription: isSubscription,
-															giftId: giftId
-													});
-
-													const variantId = variantIdInput ? variantIdInput.value : null;
-													const sellingPlanId = sellingPlanIdInput ? sellingPlanIdInput.value : '';
-
-													if (!variantId || !giftId) {
-															const errorMessage = `Missing required data: ${!variantId ? 'variant ID' : ''} ${!giftId ? 'gift ID' : ''}`;
-															console.error(errorMessage);
-															showError(errorMessage);
-															return;
-													}
-
-													const items = [
-															{
-																	id: variantId,
-																	quantity: 1
-															},
-															{
-																	id: giftId,
-																	quantity: 1
-															}
-													];
-
-													if (sellingPlanId) {
-															items[0].selling_plan = sellingPlanId;
-													}
-
-													console.log('Sending to cart:', { items });
-
-													const response = await fetch('/cart/add.js', {
-															method: 'POST',
-															headers: {
-																	'Content-Type': 'application/json',
-																	'Accept': 'application/json'
-															},
-															body: JSON.stringify({ items })
-													});
-
-													const responseData = await response.json();
-
-													console.log('Response details:', {
-															status: response.status,
-															statusText: response.statusText,
-															data: responseData
-													});
-
-													if (!response.ok) {
-															const errorMessage = responseData?.description ||
-																								responseData?.message ||
-																								`Error ${response.status}: ${response.statusText}`;
-															showError(errorMessage);
-													} else {
-															console.log('Successfully added to cart:', responseData);
-															hideError();
-															// Optional: Show success message or update cart count
-															// You can add your success handling here
-													}
-											} catch (error) {
-													console.error('Caught error:', error);
-													showError(error.message || 'An unexpected error occurred');
-											} finally {
-													toggleButtonLoading(submitButton, false);
-											}
-									});
-							});
-
-							function showError(message) {
-									const errorMessageWrapper = document.querySelector('.product-form__error-message-wrapper');
-									const errorMessage = document.querySelector('.product-form__error-message');
-
-									console.error('Error:', message);
-
-									if (errorMessageWrapper && errorMessage) {
-											errorMessage.textContent = message;
-											errorMessageWrapper.hidden = false;
-									}
-							}
-
-							function hideError() {
-									const errorMessageWrapper = document.querySelector('.product-form__error-message-wrapper');
-									if (errorMessageWrapper) {
-											errorMessageWrapper.hidden = true;
-									}
-							}
-
-							function toggleButtonLoading(buttonElement, isLoading) {
-									if (!buttonElement) {
-											console.warn('Button element not found');
-											return;
-									}
-
-									const loader = buttonElement.querySelector('.loading-overlay__spinner');
-									const buttonText = buttonElement.querySelector('.button-text, .submit-title');
-
-									if (!loader || !buttonText) {
-											console.warn('Button elements not found:', {
-													loader: loader ? 'found' : 'not found',
-													buttonText: buttonText ? 'found' : 'not found'
-											});
-											return;
-									}
-
-									loader.style.display = isLoading ? 'block' : 'none';
-									buttonText.style.display = isLoading ? 'none' : 'block';
-								}
-</script>
 					</div>
 				{% endif %}
 
@@ -378,39 +146,39 @@
     initializePurchaseOptions();
     setupMutationObserver();
 
-		// Gift selection logic
-const giftOptionContainers = document.querySelectorAll('.gift-option-container');
+    // Gift selection logic
+    const giftOptionContainers = document.querySelectorAll('.gift-option-container');
 
-giftOptionContainers.forEach(container => {
-    container.addEventListener('click', function(event) {
-        // Remove 'selected' class from all gift options
-        giftOptionContainers.forEach(gift => gift.classList.remove('selected'));
-
-        // Add 'selected' class to the clicked gift
-        container.classList.add('selected');
-
-        // Update radio indicator
-        updateRadioIndicator(container);
-    });
-});
-
-function updateRadioIndicator(selectedContainer) {
     giftOptionContainers.forEach(container => {
-        const checkMark = container.querySelector('.check-mark');
-        if (container === selectedContainer) {
-            checkMark.classList.remove('hidden');
-        } else {
-            checkMark.classList.add('hidden');
-        }
-    });
-}
+        container.addEventListener('click', function(event) {
+            // Remove 'selected' class from all gift options
+            giftOptionContainers.forEach(gift => gift.classList.remove('selected'));
 
-// Initialize the first gift as selected by default
-if (giftOptionContainers.length > 0) {
-    const firstGift = giftOptionContainers[0];
-    firstGift.classList.add('selected');
-    updateRadioIndicator(firstGift);
-}
+            // Add 'selected' class to the clicked gift
+            container.classList.add('selected');
+
+            // Update radio indicator
+            updateRadioIndicator(container);
+        });
+    });
+
+    function updateRadioIndicator(selectedContainer) {
+        giftOptionContainers.forEach(container => {
+            const checkMark = container.querySelector('.check-mark');
+            if (container === selectedContainer) {
+                checkMark.classList.remove('hidden');
+            } else {
+                checkMark.classList.add('hidden');
+            }
+        });
+    }
+
+    // Initialize the first gift as selected by default
+    if (giftOptionContainers.length > 0) {
+        const firstGift = giftOptionContainers[0];
+        firstGift.classList.add('selected');
+        updateRadioIndicator(firstGift);
+    }
 
     function isSubscriptionSelected() {
       const selectedButton = productActions.querySelector('.purchase-type button.selected');
@@ -529,452 +297,371 @@ if (giftOptionContainers.length > 0) {
     });
 
     function handlePurchaseTypeClick(event, button) {
-  event.stopPropagation();
+      event.stopPropagation();
 
-  // Toggle button states
-  productActions.querySelectorAll('.purchase-type button').forEach(btn => btn.classList.remove('selected'));
-  button.classList.add('selected');
+      // Toggle button states
+      productActions.querySelectorAll('.purchase-type button').forEach(btn => btn.classList.remove('selected'));
+      button.classList.add('selected');
 
-  const isSubscription = button.classList.contains('subscription');
-  const submitSellingPlanElement = productActions.querySelector('.submit-selling-plan-id');
-
-  // Set selling plan to blank if "Buy Once" is selected
-  if (!isSubscription && submitSellingPlanElement) {
-    submitSellingPlanElement.value = ''; // Clear the selling plan ID for "Buy Once"
-  }
-
-  // Update all variant boxes
-  purchaseOptionBoxes.forEach(box => {
-    const subscriptionContent = box.querySelectorAll('.subscription-content');
-    const buyOnceContent = box.querySelectorAll('.buy-once-content');
-
-    // First fade out current content
-    const currentContent = isSubscription ? buyOnceContent : subscriptionContent;
-    const newContent = isSubscription ? subscriptionContent : buyOnceContent;
-
-    // Fade out current content
-    currentContent.forEach(el => {
-      el.style.opacity = '0';
-    });
-
-    // Wait for fade out to complete before showing new content
-    setTimeout(() => {
-      // Hide old content
-      currentContent.forEach(el => {
-        el.style.display = 'none';
-      });
-
-      // Show new content but keep it invisible
-      newContent.forEach(el => {
-        el.style.display = 'block';
-        el.style.opacity = '0';
-      });
-
-      // Trigger fade in
-      requestAnimationFrame(() => {
-        newContent.forEach(el => {
-          el.style.opacity = '1';
-        });
-      });
-    }, 300);
-
-    // Handle selling plan ID and inert state for subscription
-    if (isSubscription) {
-      const sellingPlanId = box.dataset.subscriptionSellingPlanId;
-      if (!sellingPlanId || sellingPlanId === '0') {
-        box.setAttribute('inert', '');
-      } else {
-        box.removeAttribute('inert');
-      }
-      // Only update selling plan if it's a subscription selection
-      if (submitSellingPlanElement) {
-        submitSellingPlanElement.value = sellingPlanId || ''; // Update for subscription
-      }
-    } else {
-      box.removeAttribute('inert');
-    }
-
-    // Handle per month display
-    {% unless product.metafields.custom.is_price_per_month %}
-      const perMonthElement = box.querySelector('.per-month');
-      if (perMonthElement) {
-        perMonthElement.style.display = isSubscription ? 'block' : 'none';
-      }
-    {% endunless %}
-
-    // Update compared at price display with the same fade timing
-    const comparedAtPrice = box.querySelector('.compared-at-price');
-    if (comparedAtPrice) {
-      const itemPrice = parseFloat(box.dataset.itemPrice);
-      const subscriptionItemPrice = parseFloat(box.dataset.subscriptionItemPrice);
-      const originalItemCap = parseFloat(box.dataset.originalItemCap);
-      const currentPrice = isSubscription ? subscriptionItemPrice : itemPrice;
-
-      comparedAtPrice.style.opacity = '0';
-
-      setTimeout(() => {
-        if (originalItemCap > currentPrice) {
-          comparedAtPrice.style.display = 'block';
-          requestAnimationFrame(() => {
-            comparedAtPrice.style.opacity = '1';
-          });
-        } else {
-          comparedAtPrice.style.display = 'none';
-        }
-      }, 300);
-    }
-  });
-
-  // Check if currently selected box becomes inert
-  const selectedBox = productActions.querySelector('.purchase-option-box.selected');
-  if (selectedBox && selectedBox.hasAttribute('inert')) {
-    // Find the first non-inert box
-    const firstAvailableBox = Array.from(purchaseOptionBoxes).find(box => !box.hasAttribute('inert'));
-    if (firstAvailableBox) {
-      // Deselect current box
-      selectedBox.classList.remove('selected');
-      selectedBox.style.maxHeight = '68px';
-      const selectedToggleIcon = selectedBox.querySelector('.toggle-icon');
-      if (selectedToggleIcon) selectedToggleIcon.style.display = 'none';
-
-      // Select new box
-      firstAvailableBox.classList.add('selected');
-      adjustMaxHeight(firstAvailableBox);
-      const newToggleIcon = firstAvailableBox.querySelector('.toggle-icon');
-      if (newToggleIcon) newToggleIcon.style.display = 'block';
-
-      // Update form values
+      const isSubscription = button.classList.contains('subscription');
       const submitSellingPlanElement = productActions.querySelector('.submit-selling-plan-id');
-      const submitVariantElement = productActions.querySelector('.submit-variant-id');
 
-      if (submitSellingPlanElement) {
-        submitSellingPlanElement.value = isSubscription ? firstAvailableBox.dataset.subscriptionSellingPlanId : '';
-      }
-      if (submitVariantElement) {
-        submitVariantElement.value = isSubscription ? firstAvailableBox.dataset.originalVariant : firstAvailableBox.dataset.variant;
+      // Set selling plan to blank if "Buy Once" is selected
+      if (!isSubscription && submitSellingPlanElement) {
+        submitSellingPlanElement.value = ''; // Clear the selling plan ID for "Buy Once"
       }
 
-      // Update radio button
-      const radioInput = firstAvailableBox.querySelector("input[type='radio']");
-      if (radioInput) radioInput.checked = true;
-
-      // Update other UI elements
-      updateYotpoPointsWidget(firstAvailableBox);
-      {% if variantsAmount > 1 %}
-        {% if isSlideOnLoad %}
-          updateVariantImage(firstAvailableBox);
-        {% endif %}
-      {% endif %}
-    }
-  }
-}
-
-
-    function togglePurchaseTypeAllVariants() {
-      if (!purchaseOptionBoxes.length) return;
+      // Update all variant boxes
       purchaseOptionBoxes.forEach(box => {
-        if (box) togglePurchaseType(box);
-      });
-    }
+        const subscriptionContent = box.querySelectorAll('.subscription-content');
+        const buyOnceContent = box.querySelectorAll('.buy-once-content');
 
-    function togglePurchaseType(parentBox) {
-      const isSubscription = isSubscriptionSelected();
+        // First fade out current content
+        const currentContent = isSubscription ? buyOnceContent : subscriptionContent;
+        const newContent = isSubscription ? subscriptionContent : buyOnceContent;
 
-      // Handle subscription-specific elements
-      {% unless product.metafields.custom.is_price_per_month %}
-        const perMonthElement = parentBox.querySelector('.per-month');
-        if (perMonthElement) {
-          perMonthElement.style.display = isSubscription ? 'block' : 'none';
-        }
-      {% endunless %}
+        // Fade out current content
+        currentContent.forEach(el => {
+          el.style.opacity = '0';
+        });
 
-      // Handle BWP button
-      const bwpButton = productActions.querySelector('.bwp-button');
-      if (bwpButton) {
-        bwpButton.style.display = isSubscription ? 'none' : 'block';
-      }
+        // Wait for fade out to complete before showing new content
+        setTimeout(() => {
+          // Hide old content
+          currentContent.forEach(el => {
+            el.style.display = 'none';
+          });
 
-      // Handle selling plan ID
-      if (isSubscription) {
-        const selectedBox = productActions.querySelector('.purchase-option-box.selected');
-        const sellingPlanId = selectedBox?.dataset.subscriptionSellingPlanId;
+          // Show new content but keep it invisible
+          newContent.forEach(el => {
+            el.style.display = 'block';
+            el.style.opacity = '0';
+          });
 
-        if (sellingPlanId > 0) {
-          const submitSellingPlanElement = productActions.querySelector('.submit-selling-plan-id');
-          if (submitSellingPlanElement) {
-            submitSellingPlanElement.value = sellingPlanId;
-          }
-        } else {
-          parentBox.setAttribute('inert', '');
-          parentBox.classList.remove('selected');
-          parentBox.removeAttribute('style');
-          const firstValidBox = Array.from(purchaseOptionBoxes).find(box => !box.hasAttribute('inert'));
-          if (firstValidBox) firstValidBox.click();
-        }
+          // Trigger fade in
+          requestAnimationFrame(() => {
+            newContent.forEach(el => {
+              el.style.opacity = '1';
+            });
+          });
+        }, 300);
 
-        // Handle inert state for boxes
-        purchaseOptionBoxes.forEach(box => {
-          const boxSellingPlanId = box.dataset.subscriptionSellingPlanId;
-          if (!boxSellingPlanId || boxSellingPlanId === '0') {
+        // Handle selling plan ID and inert state for subscription
+        if (isSubscription) {
+          const sellingPlanId = box.dataset.subscriptionSellingPlanId;
+          if (!sellingPlanId || sellingPlanId === '0') {
             box.setAttribute('inert', '');
           } else {
             box.removeAttribute('inert');
           }
-        });
-      } else {
-        const submitSellingPlanElement = productActions.querySelector('.submit-selling-plan-id');
-        if (submitSellingPlanElement) submitSellingPlanElement.value = '';
-        parentBox.removeAttribute('inert');
-        purchaseOptionBoxes.forEach(box => box.removeAttribute('inert'));
-      }
-
-      // Handle price display
-      const subscriptionContent = parentBox.querySelector('.subscription-content');
-      const buyOnceContent = parentBox.querySelector('.buy-once-content');
-      const buyOnceSubtitle = parentBox.querySelector('.subtitle.buy-once');
-      const subscriptionSubtitle = parentBox.querySelector('.subtitle.subscription');
-
-      // Fade out current content
-      const currentContent = isSubscription ? buyOnceContent : subscriptionContent;
-      const newContent = isSubscription ? subscriptionContent : buyOnceContent;
-      const currentSubtitle = isSubscription ? buyOnceSubtitle : subscriptionSubtitle;
-      const newSubtitle = isSubscription ? subscriptionSubtitle : buyOnceSubtitle;
-
-      if (currentContent) {
-        currentContent.style.opacity = '0';
-        setTimeout(() => {
-          currentContent.style.display = 'none';
-          if (newContent) {
-            newContent.style.display = 'block';
-            requestAnimationFrame(() => {
-              newContent.style.opacity = '1';
-            });
+          // Only update selling plan if it's a subscription selection
+          if (submitSellingPlanElement) {
+            submitSellingPlanElement.value = sellingPlanId || ''; // Update for subscription
           }
-        }, 300);
-      }
+        } else {
+          box.removeAttribute('inert');
+        }
 
-      if (currentSubtitle) {
-        currentSubtitle.style.opacity = '0';
-        setTimeout(() => {
-          currentSubtitle.style.display = 'none';
-          if (newSubtitle) {
-            newSubtitle.style.display = 'block';
-            requestAnimationFrame(() => {
-              newSubtitle.style.opacity = '1';
-            });
+        // Handle per month display
+        {% unless product.metafields.custom.is_price_per_month %}
+          const perMonthElement = box.querySelector('.per-month');
+          if (perMonthElement) {
+            perMonthElement.style.display = isSubscription ? 'block' : 'none';
           }
-        }, 300);
-      }
+        {% endunless %}
 
-      updateYotpoPointsWidget(parentBox);
-      updateComparedAtPriceDisplay(parentBox);
+        // Update compared at price display with the same fade timing
+        const comparedAtPrice = box.querySelector('.compared-at-price');
+        if (comparedAtPrice) {
+          const itemPrice = parseFloat(box.dataset.itemPrice);
+          const subscriptionItemPrice = parseFloat(box.dataset.subscriptionItemPrice);
+          const originalItemCap = parseFloat(box.dataset.originalItemCap);
+          const currentPrice = isSubscription ? subscriptionItemPrice : itemPrice;
+
+          comparedAtPrice.style.opacity = '0';
+
+          setTimeout(() => {
+            if (originalItemCap > currentPrice) {
+              comparedAtPrice.style.display = 'block';
+              requestAnimationFrame(() => {
+                comparedAtPrice.style.opacity = '1';
+              });
+            } else {
+              comparedAtPrice.style.display = 'none';
+            }
+          }, 300);
+        }
+      });
+
+      // Check if currently selected box becomes inert
+      const selectedBox = productActions.querySelector('.purchase-option-box.selected');
+      if (selectedBox && selectedBox.hasAttribute('inert')) {
+        // Find the first non-inert box
+        const firstAvailableBox = Array.from(purchaseOptionBoxes).find(box => !box.hasAttribute('inert'));
+        if (firstAvailableBox) {
+          // Deselect current box
+          selectedBox.classList.remove('selected');
+          selectedBox.style.maxHeight = '68px';
+          const selectedToggleIcon = selectedBox.querySelector('.toggle-icon');
+          if (selectedToggleIcon) selectedToggleIcon.style.display = 'none';
+
+          // Select new box
+          firstAvailableBox.classList.add('selected');
+          adjustMaxHeight(firstAvailableBox);
+          const newToggleIcon = firstAvailableBox.querySelector('.toggle-icon');
+          if (newToggleIcon) newToggleIcon.style.display = 'block';
+
+          // Update form values
+          const submitSellingPlanElement = productActions.querySelector('.submit-selling-plan-id');
+          const submitVariantElement = productActions.querySelector('.submit-variant-id');
+
+          if (submitSellingPlanElement) {
+            submitSellingPlanElement.value = isSubscription ? firstAvailableBox.dataset.subscriptionSellingPlanId : '';
+          }
+          if (submitVariantElement) {
+            submitVariantElement.value = isSubscription ? firstAvailableBox.dataset.originalVariant : firstAvailableBox.dataset.variant;
+          }
+
+          // Update radio button
+          const radioInput = firstAvailableBox.querySelector("input[type='radio']");
+          if (radioInput) radioInput.checked = true;
+
+          // Update other UI elements
+          updateYotpoPointsWidget(firstAvailableBox);
+          {% if variantsAmount > 1 %}
+            {% if isSlideOnLoad %}
+              updateVariantImage(firstAvailableBox);
+            {% endif %}
+          {% endif %}
+        }
+      }
     }
-
-    function fadeElements(fadeOutEl, fadeInEl) {
-      if (fadeOutEl) {
-        fadeOutEl.style.transition = 'opacity 0.2s ease-out';
-        fadeOutEl.style.opacity = '0';
-        setTimeout(() => {
-          fadeOutEl.style.display = 'none';
-        }, 200);
-      }
-      if (fadeInEl) {
-        fadeInEl.style.display = 'block';
-        fadeInEl.style.opacity = '0';
-        setTimeout(() => {
-          fadeInEl.style.transition = 'opacity 0.2s ease-in';
-          fadeInEl.style.opacity = '1';
-        }, 10);
-      }
-    }
-
-    function handleMainButtonClick(event, button) {
-    console.log("=== Cart Debug: handleMainButtonClick triggered ===");
-    event.stopPropagation();
-
-    // Debug selected gift
-    const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
-    const giftOptionBorder = selectedGiftContainer?.querySelector('.gift-option-border');
-
-    console.log("Cart Debug - Selected Gift:", {
-        giftContainer: selectedGiftContainer ? 'found' : 'not found',
-        giftBorder: giftOptionBorder ? 'found' : 'not found',
-        giftIdRegular: giftOptionBorder?.dataset.giftId,
-        giftIdSubscription: giftOptionBorder?.dataset.giftIdSubscription
-    });
-
-    console.log("Cart Debug - Selected buy type:", isSubscriptionSelected() ? "Subscription" : "Buy Once");
-
-    {% if buyType == 'buy_now' %}
-        const selectedBox = productActions.querySelector('.purchase-option-box.selected');
-        const subscriptionPlanID = selectedBox ? selectedBox.dataset.subscriptionSellingPlanId : null;
-
-        console.log("Cart Debug - Selected box data:", {
-            variantId: selectedBox ? selectedBox.dataset.variant : null,
-            subscriptionPlanID: subscriptionPlanID
-        });
-
-        buyButtonHandler(subscriptionPlanID, button);
-    {% else %}
-        const form = button.closest('form');
-        console.log("Cart Debug - Form found:", form ? 'yes' : 'no');
-        if (form) form.submit();
-    {% endif %}
-}
 
     function adjustMaxHeight(element) {
       const openHeight = element.scrollHeight;
       element.style.maxHeight = `${openHeight}px`;
     }
 
-    function updateComparedAtPriceDisplay(box) {
-      const comparedAtPrice = box.querySelector('.compared-at-price');
-      if (!comparedAtPrice) return;
+    function handleMainButtonClick(event, button) {
+      event.stopPropagation();
 
-      const itemPrice = parseFloat(box.dataset.itemPrice);
-      const subscriptionItemPrice = parseFloat(box.dataset.subscriptionItemPrice);
-      const originalItemCap = parseFloat(box.dataset.originalItemCap);
-      const currentPrice = isSubscriptionSelected() ? subscriptionItemPrice : itemPrice;
+      {% if buyType == 'buy_now' %}
+        const selectedBox = productActions.querySelector('.purchase-option-box.selected');
+        const subscriptionPlanID = selectedBox ? selectedBox.dataset.subscriptionSellingPlanId : null;
+        buyButtonHandler(subscriptionPlanID, button);
+      {% else %}
+        const form = button.closest('form');
+        if (form) form.submit();
+      {% endif %}
+    }
 
-      if (originalItemCap > currentPrice) {
-        comparedAtPrice.style.display = 'block';
-        setTimeout(() => comparedAtPrice.style.opacity = '1', 50);
-      } else {
-        comparedAtPrice.style.opacity = '0';
-        setTimeout(() => comparedAtPrice.style.display = 'none', 300);
+    async function buyButtonHandler(subscription_selling_plan_id, buttonElement) {
+      const selectedBox = productActions.querySelector('.purchase-option-box.selected');
+      const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
+
+      if (!selectedBox || !selectedGiftContainer) {
+          console.error('Missing selection:', {
+              hasProduct: !!selectedBox,
+              hasGift: !!selectedGiftContainer
+          });
+          return;
+      }
+
+      const giftOptionBorder = selectedGiftContainer.querySelector('.gift-option-border');
+      const isSubscription = isSubscriptionSelected();
+      const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
+
+      if (!giftId) {
+          console.error('Gift ID not found');
+          return;
+      }
+
+      toggleButtonLoading(buttonElement, true);
+
+      try {
+          // Clear the cart first
+          await clearCart();
+
+          if (isSubscriptionSelected()) {
+              const variant_id = selectedBox.dataset.originalVariant;
+              await buySubscription(variant_id, 1, subscription_selling_plan_id, giftId);
+          } else {
+              const variant_id = selectedBox.dataset.variant;
+              const purchaseOptionBox = buttonElement.closest('.purchase-option-box');
+              const dc = purchaseOptionBox ? purchaseOptionBox.dataset.dc : null;
+
+              // Add main product and gift to cart
+              const items = [
+                  {
+                      id: variant_id,
+                      quantity: 1
+                  },
+                  {
+                      id: giftId,
+                      quantity: 1
+                  }
+              ];
+
+              const response = await fetch('/cart/add.js', {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ items })
+              });
+
+              if (!response.ok) {
+                  const errorData = await response.json();
+                  throw new Error(errorData.description || 'Failed to add items to cart');
+              }
+
+              // Redirect to checkout with discount if applicable
+              let checkoutUrl = '/checkout';
+              if (dc) {
+                  checkoutUrl += '?discount=' + atob(dc);
+              }
+              // window.location.href = checkoutUrl;
+          }
+      } catch (error) {
+          console.error('Error during checkout process:', error);
+          // Here you might want to show an error message to the user
+          const errorMessageWrapper = document.querySelector('.product-form__error-message-wrapper');
+          if (errorMessageWrapper) {
+              const errorMessage = errorMessageWrapper.querySelector('.product-form__error-message');
+              if (errorMessage) {
+                  errorMessage.textContent = error.message || 'An error occurred while processing your order.';
+              }
+              errorMessageWrapper.hidden = false;
+          }
+      } finally {
+          toggleButtonLoading(buttonElement, false);
       }
     }
 
-    function togglePriceDisplay(parentBox) {
-      if (!parentBox) return;
+    function toggleButtonLoading(buttonElement, isLoading) {
+      const loader = buttonElement.querySelector('.loading-overlay__spinner');
+      const buttonText = buttonElement.querySelector('.button-text');
 
-      const subscriptionContent = parentBox.querySelector('.subscription-content');
-      const buyOnceContent = parentBox.querySelector('.buy-once-content');
+      if (!loader) {
+        console.error("Loader element not found");
+        return;
+      }
 
-      if (!subscriptionContent || !buyOnceContent) return;
+      loader.style.display = isLoading ? 'block' : 'none';
+      buttonText.style.display = isLoading ? 'none' : 'block';
+    }
 
-      const isSubscription = isSubscriptionSelected();
-      const contentToHide = isSubscription ? buyOnceContent : subscriptionContent;
-      const contentToShow = isSubscription ? subscriptionContent : buyOnceContent;
-
-      // Ensure elements exist before manipulating
-      if (contentToHide && contentToShow) {
-        contentToHide.style.opacity = '1';
-        contentToHide.style.display = 'block';
-        contentToShow.style.opacity = '0';
-        contentToShow.style.display = 'block';
-
-        requestAnimationFrame(() => {
-          contentToHide.style.opacity = '0';
-          contentToShow.style.opacity = '1';
-
-          setTimeout(() => {
-            contentToHide.style.display = 'none';
-            contentToShow.style.display = 'block';
-          }, 200);
+    async function clearCart() {
+      try {
+        const response = await fetch('/cart/clear.js', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
         });
+        if (!response.ok) throw new Error('Failed to clear cart');
+        console.log('Cart cleared');
+        return true;
+      } catch (error) {
+        console.log('Failed to clear cart:', error);
+        return false;
+      }
+    }
+
+    // Modify your existing cart functions to handle the gift
+    async function buySubscription(variant_id, qty, selling_plan, giftId) {
+      const cartCleared = await clearCart();
+      if (!cartCleared) return;
+
+      const items = [
+          {
+              "id": variant_id,
+              "quantity": qty,
+              "selling_plan": selling_plan
+          },
+          {
+              "id": giftId,
+              "quantity": 1
+          }
+      ];
+
+      try {
+          const response = await fetch('/cart/add.js', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ items: items })
+          });
+
+          const responseData = await response.json();
+
+          if (!response.ok) {
+              throw new Error(`Cart Error: ${response.status} ${response.statusText}`);
+          }
+          // Optional: Add success handling here
+          // For example: Show a success message, update cart count, etc.
+      } catch (error) {
+          console.error('Failed to add items:', error);
       }
     }
 
     function togglePurchaseBox(element) {
-  if (element.classList.contains('selected')) return;
+      if (element.classList.contains('selected')) return;
 
-  // Update previous selected box
-  const previousSelected = productActions.querySelector('.purchase-option-box.selected');
-  if (previousSelected) {
-    previousSelected.classList.remove('selected');
-    previousSelected.style.maxHeight = '68px';
-    const toggleIcon = previousSelected.querySelector('.toggle-icon');
-    if (toggleIcon) toggleIcon.style.display = 'none';
-  }
-
-  // Update new selected box
-  element.classList.add('selected');
-  element.style.maxHeight = `${element.scrollHeight}px`;
-
-  const toggleIcon = element.querySelector('.toggle-icon');
-  if (toggleIcon) toggleIcon.style.display = 'block';
-
-  // Update form values based on subscription state
-  const isSubscription = isSubscriptionSelected();
-
-  // Get the appropriate selling plan ID and variant ID
-  const sellingPlanId = isSubscription ? element.dataset.subscriptionSellingPlanId : '';
-  const variantId = isSubscription ? element.dataset.originalVariant : element.dataset.variant;
-
-  // Find and update the form elements
-  const submitSellingPlanElement = productActions.querySelector('.submit-selling-plan-id');
-  const submitVariantElement = productActions.querySelector('.submit-variant-id');
-
-  // Update selling plan ID
-  if (submitSellingPlanElement) {
-    console.log('Updating selling plan ID to:', sellingPlanId); // Debug log
-    submitSellingPlanElement.value = sellingPlanId;
-  } else {
-    console.warn('submit-selling-plan-id element not found');
-  }
-
-  // Update variant ID
-  if (submitVariantElement) {
-    console.log('Updating variant ID to:', variantId); // Debug log
-    submitVariantElement.value = variantId;
-  } else {
-    console.warn('submit-variant-id element not found');
-  }
-
-  // Update radio button
-  const radioInput = element.querySelector("input[type='radio']");
-  if (radioInput) radioInput.checked = true;
-
-  // Update other UI elements
-  updateYotpoPointsWidget(element);
-
-  {% if variantsAmount > 1 %}
-    {% if isSlideOnLoad %}
-      updateVariantImage(element);
-    {% else %}
-      if (window.hasInitialImageUpdateHappened) {
-        updateVariantImage(element);
+      // Update previous selected box
+      const previousSelected = productActions.querySelector('.purchase-option-box.selected');
+      if (previousSelected) {
+        previousSelected.classList.remove('selected');
+        previousSelected.style.maxHeight = '68px';
+        const toggleIcon = previousSelected.querySelector('.toggle-icon');
+        if (toggleIcon) toggleIcon.style.display = 'none';
       }
-      window.hasInitialImageUpdateHappened = true;
-    {% endif %}
-  {% endif %}
-}
 
-// Add this helper function to verify form values
-function verifyFormValues() {
-  const selectedBox = productActions.querySelector('.purchase-option-box.selected');
-  const submitSellingPlanElement = productActions.querySelector('.submit-selling-plan-id');
-  const submitVariantElement = productActions.querySelector('.submit-variant-id');
+      // Update new selected box
+      element.classList.add('selected');
+      element.style.maxHeight = `${element.scrollHeight}px`;
 
-  if (selectedBox && submitSellingPlanElement && submitVariantElement) {
-    const isSubscription = isSubscriptionSelected();
-    const expectedSellingPlanId = isSubscription ? selectedBox.dataset.subscriptionSellingPlanId : '';
-    const expectedVariantId = isSubscription ? selectedBox.dataset.originalVariant : selectedBox.dataset.variant;
+      const toggleIcon = element.querySelector('.toggle-icon');
+      if (toggleIcon) toggleIcon.style.display = 'block';
 
-    console.log('Form values verification:', {
-      actualSellingPlanId: submitSellingPlanElement.value,
-      expectedSellingPlanId: expectedSellingPlanId,
-      actualVariantId: submitVariantElement.value,
-      expectedVariantId: expectedVariantId,
-      isSubscription: isSubscription
-    });
-  }
-}
+      // Update form values based on subscription state
+      const isSubscription = isSubscriptionSelected();
 
-const purchaseTypeButtons = productActions.querySelectorAll('.purchase-type button');
-purchaseTypeButtons.forEach(button => {
-  button.addEventListener('click', () => {
-    setTimeout(verifyFormValues, 500); // Verify after subscription toggle animation
-  });
-});
+      // Get the appropriate selling plan ID and variant ID
+      const sellingPlanId = isSubscription ? element.dataset.subscriptionSellingPlanId : '';
+      const variantId = isSubscription ? element.dataset.originalVariant : element.dataset.variant;
 
-// Use the existing 'purchaseOptionBoxes' variable without redeclaring
-purchaseOptionBoxes.forEach(box => {
-  box.addEventListener('click', () => {
-    setTimeout(verifyFormValues, 500); // Verify after box selection
-  });
-});
+      // Find and update the form elements
+      const submitSellingPlanElement = productActions.querySelector('.submit-selling-plan-id');
+      const submitVariantElement = productActions.querySelector('.submit-variant-id');
+
+      // Update selling plan ID
+      if (submitSellingPlanElement) {
+        submitSellingPlanElement.value = sellingPlanId;
+      }
+
+      // Update variant ID
+      if (submitVariantElement) {
+        submitVariantElement.value = variantId;
+      }
+
+      // Update radio button
+      const radioInput = element.querySelector("input[type='radio']");
+      if (radioInput) radioInput.checked = true;
+
+      // Update other UI elements
+      updateYotpoPointsWidget(element);
+
+      {% if variantsAmount > 1 %}
+        {% if isSlideOnLoad %}
+          updateVariantImage(element);
+        {% else %}
+          if (window.hasInitialImageUpdateHappened) {
+            updateVariantImage(element);
+          }
+          window.hasInitialImageUpdateHappened = true;
+        {% endif %}
+      {% endif %}
+    }
 
     function updateYotpoPointsWidget(parentBox) {
       const price = isSubscriptionSelected()
@@ -1014,47 +701,41 @@ purchaseOptionBoxes.forEach(box => {
     }
 
     function updateVariantImage(element) {
-        if (!element || !element.dataset.index) {
-            console.warn('Invalid element or missing data-index attribute');
-            return;
-        }
+      if (!element || !element.dataset.index) {
+        console.warn('Invalid element or missing data-index attribute');
+        return;
+      }
 
-        const SID = window.SID || '';
-        const sliderId = `productSliderAllInOne${SID}`;
-        const slider = window[sliderId];
+      const SID = window.SID || '';
+      const sliderId = `productSliderAllInOne${SID}`;
+      const slider = window[sliderId];
 
-        if (!slider || !slider.slides || !slider.slides.length) {
-            let updateImageData = {
-                element: element,
-                dataIndex: element.dataset.index,
-                sliderId: sliderId,
-                slider: slider
-            };
+      if (!slider || !slider.slides || !slider.slides.length) {
+        let updateImageData = {
+          element: element,
+          dataIndex: element.dataset.index,
+          sliderId: sliderId,
+          slider: slider
+        };
 
-            console.warn('Slider not ready, attempting initialization...', updateImageData);
+        console.warn('Slider not ready, attempting initialization...', updateImageData);
 
-            initializeProductSlider()
-                .then((initializedSlider) => {
-                    performSlideUpdate(initializedSlider, element);
-                })
-                .catch((error) => {
-                    console.error('Failed to initialize slider:', error);
-                });
-            return;
-        }
+        initializeProductSlider()
+          .then((initializedSlider) => {
+            performSlideUpdate(initializedSlider, element);
+          })
+          .catch((error) => {
+            console.error('Failed to initialize slider:', error);
+          });
+        return;
+      }
 
-        performSlideUpdate(slider, element);
+      performSlideUpdate(slider, element);
     }
 
     function performSlideUpdate(slider, element) {
       try {
         const elementIndex = parseInt(element.dataset.index);
-
-        console.log('Performing slide update:', {
-          elementIndex: elementIndex,
-          totalSlides: slider.slides.length,
-          currentSlide: slider.activeIndex
-        });
 
         if (elementIndex >= 0 && elementIndex < slider.slides.length) {
           if (slider.activeIndex !== elementIndex) {
@@ -1082,11 +763,6 @@ purchaseOptionBoxes.forEach(box => {
 
           box.dataset.processing = 'true';
 
-          console.log('Variant clicked:', {
-            index: box.dataset.index,
-            variant: box.dataset.variant
-          });
-
           updateVariantImage(box);
 
           setTimeout(() => {
@@ -1104,258 +780,216 @@ purchaseOptionBoxes.forEach(box => {
         });
     });
 
-    async function buyButtonHandler(subscription_selling_plan_id, buttonElement) {
-				console.log("=== Cart Debug: buyButtonHandler triggered ===");
+    // Form submission for buyType != 'buy_now'
+    {% if buyType != "buy_now" %}
+    const form = document.getElementById('product-form-{{ SID }}');
+    const submitButton = document.getElementById('ProductSubmitButton-{{SID}}');
 
-				const selectedBox = productActions.querySelector('.purchase-option-box.selected');
-				const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
+    form.addEventListener('submit', async function(event) {
+      event.preventDefault();
 
-				console.log("Cart Debug - Selected elements:", {
-						productBox: selectedBox ? 'found' : 'not found',
-						giftContainer: selectedGiftContainer ? 'found' : 'not found'
-				});
+      // Display the loading spinner
+      toggleButtonLoading(submitButton, true);
 
-				if (!selectedBox || !selectedGiftContainer) {
-						console.error('Cart Debug - Missing selection:', {
-								hasProduct: !!selectedBox,
-								hasGift: !!selectedGiftContainer
-						});
-						return;
-				}
-
-				const giftOptionBorder = selectedGiftContainer.querySelector('.gift-option-border');
-				const isSubscription = isSubscriptionSelected();
-				const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
-
-				console.log("Cart Debug - Gift selection:", {
-						isSubscription: isSubscription,
-						regularGiftId: giftOptionBorder?.dataset.giftId,
-						subscriptionGiftId: giftOptionBorder?.dataset.giftIdSubscription,
-						selectedGiftId: giftId
-				});
-
-				if (!giftId) {
-						console.error('Cart Debug - Gift ID not found');
-						return;
-				}
-
-				toggleButtonLoading(buttonElement, true);
-
-				try {
-						// Clear the cart first
-						await clearCart();
-
-						if (isSubscriptionSelected()) {
-								const variant_id = selectedBox.dataset.originalVariant;
-								console.log("Cart Debug - Initiating subscription purchase:", {
-										variant_id,
-										selling_plan: subscription_selling_plan_id,
-										giftId
-								});
-								await buySubscription(variant_id, 1, subscription_selling_plan_id, giftId);
-						} else {
-								const variant_id = selectedBox.dataset.variant;
-								const purchaseOptionBox = buttonElement.closest('.purchase-option-box');
-								const dc = purchaseOptionBox ? purchaseOptionBox.dataset.dc : null;
-
-								console.log("Cart Debug - Initiating one-time purchase:", {
-										variant_id,
-										dc,
-										giftId
-								});
-
-								// Add main product and gift to cart
-								const items = [
-										{
-												id: variant_id,
-												quantity: 1
-										},
-										{
-												id: giftId,
-												quantity: 1
-										}
-								];
-
-								const response = await fetch('/cart/add.js', {
-										method: 'POST',
-										headers: {
-												'Content-Type': 'application/json',
-										},
-										body: JSON.stringify({ items })
-								});
-
-								if (!response.ok) {
-										const errorData = await response.json();
-										throw new Error(errorData.description || 'Failed to add items to cart');
-								}
-
-								// Redirect to checkout with discount if applicable
-								let checkoutUrl = '/checkout';
-								if (dc) {
-										checkoutUrl += '?discount=' + atob(dc);
-								}
-								// window.location.href = checkoutUrl;
-						}
-				} catch (error) {
-						console.error('Cart Debug - Error during checkout process:', error);
-						// Here you might want to show an error message to the user
-						const errorMessageWrapper = document.querySelector('.product-form__error-message-wrapper');
-						if (errorMessageWrapper) {
-								const errorMessage = errorMessageWrapper.querySelector('.product-form__error-message');
-								if (errorMessage) {
-										errorMessage.textContent = error.message || 'An error occurred while processing your order.';
-								}
-								errorMessageWrapper.hidden = false;
-						}
-				} finally {
-						toggleButtonLoading(buttonElement, false);
-				}
-		}
-
-		function redirectToCheckout(variant_id, dc, giftId) {
-				let checkoutLink = `https://${location.hostname}/cart/${variant_id}:1`;
-				if (giftId) {
-						checkoutLink += `,${giftId}:1`;
-				}
-				if (dc) checkoutLink += "?discount=" + atob(dc);
-				window.location.href = checkoutLink;
-		}
-
-    function toggleButtonLoading(buttonElement, isLoading) {
-      const loader = buttonElement.querySelector('.loading-overlay__spinner');
-      const buttonText = buttonElement.querySelector('.button-text');
-
-      if (!loader) {
-        console.error("Loader element not found");
-        return;
-      }
-
-      loader.style.display = isLoading ? 'block' : 'none';
-      buttonText.style.display = isLoading ? 'none' : 'block';
-    }
-
-    async function clearCart() {
       try {
-        const response = await fetch('/cart/clear.js', {
+        const variantIdInput = form.querySelector('.submit-variant-id');
+        const sellingPlanIdInput = form.querySelector('.submit-selling-plan-id');
+        const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
+        const giftOptionBorder = selectedGiftContainer ? selectedGiftContainer.querySelector('.gift-option-border') : null;
+
+        const isSubscription = !!sellingPlanIdInput?.value;
+        const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
+
+        const variantId = variantIdInput ? variantIdInput.value : null;
+        const sellingPlanId = sellingPlanIdInput ? sellingPlanIdInput.value : '';
+
+        if (!variantId || !giftId) {
+          const errorMessage = `Missing required data: ${!variantId ? 'variant ID' : ''} ${!giftId ? 'gift ID' : ''}`;
+          console.error(errorMessage);
+          showError(errorMessage);
+          return;
+        }
+
+        const items = [
+          {
+            id: variantId,
+            quantity: 1
+          },
+          {
+            id: giftId,
+            quantity: 1
+          }
+        ];
+
+        if (sellingPlanId) {
+          items[0].selling_plan = sellingPlanId;
+        }
+
+        const response = await fetch('/cart/add.js', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-        if (!response.ok) throw new Error('Failed to clear cart');
-        console.log('Cart cleared');
-        return true;
-      } catch (error) {
-        console.log('Failed to clear cart:', error);
-        return false;
-      }
-    }
-
-    // Modify your existing cart functions to handle the gift
-		async function buySubscription(variant_id, qty, selling_plan, giftId) {
-    console.log("=== Cart Debug: buySubscription triggered ===");
-    console.log("Cart Debug - Input parameters:", {
-        variant_id,
-        qty,
-        selling_plan,
-        giftId
-    });
-
-    const cartCleared = await clearCart();
-    console.log("Cart Debug - Cart cleared:", cartCleared);
-    if (!cartCleared) return;
-
-    const items = [
-        {
-            "id": variant_id,
-            "quantity": qty,
-            "selling_plan": selling_plan
-        },
-        {
-            "id": giftId,
-            "quantity": 1
-        }
-    ];
-
-    console.log("Cart Debug - Sending items to cart:", JSON.stringify(items, null, 2));
-
-    try {
-        const response = await fetch('/cart/add.js', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ items: items })
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ items })
         });
 
         const responseData = await response.json();
-        console.log("Cart Debug - Cart response:", responseData);
 
         if (!response.ok) {
-            throw new Error(`Cart Error: ${response.status} ${response.statusText}`);
+          const errorMessage = responseData?.description ||
+                                responseData?.message ||
+                                `Error ${response.status}: ${response.statusText}`;
+          showError(errorMessage);
+        } else {
+          hideError();
+          // Optional: Show success message or update cart count
+          // You can add your success handling here
         }
-        // Optional: Add success handling here
-        // For example: Show a success message, update cart count, etc.
-    } catch (error) {
-        console.error('Cart Debug - Failed to add items:', error);
+      } catch (error) {
+        console.error('Caught error:', error);
+        showError(error.message || 'An unexpected error occurred');
+      } finally {
+        toggleButtonLoading(submitButton, false);
+      }
+    });
+
+    function showError(message) {
+      const errorMessageWrapper = document.querySelector('.product-form__error-message-wrapper');
+      const errorMessage = document.querySelector('.product-form__error-message');
+
+      if (errorMessageWrapper && errorMessage) {
+        errorMessage.textContent = message;
+        errorMessageWrapper.hidden = false;
+      }
     }
-}
+
+    function hideError() {
+      const errorMessageWrapper = document.querySelector('.product-form__error-message-wrapper');
+      if (errorMessageWrapper) {
+        errorMessageWrapper.hidden = true;
+      }
+    }
+    {% endif %}
+
+    // Event listener for 'buy now' button when buyType == 'buy_now'
+    {% if buyType == "buy_now" %}
+    var buyButton = document.getElementById('buy-button-{{ SID }}');
+
+    if (buyButton) {
+      buyButton.addEventListener('click', function(event) {
+        // Button states for loading
+        var submitButton = this;
+        var buttonText = submitButton.querySelector('.button-text');
+        var loadingSpinner = submitButton.querySelector('.loading-overlay__spinner');
+
+        // Display loading spinner
+        if (buttonText && loadingSpinner) {
+          buttonText.style.display = 'none';
+          loadingSpinner.classList.remove('hidden');
+        }
+
+        // Get the variant ID and selling plan ID from the hidden inputs
+        var variantIdInput = document.querySelector('.submit-variant-id');
+        var sellingPlanIdInput = document.querySelector('.submit-selling-plan-id');
+
+        var variantId = variantIdInput ? variantIdInput.value : '{{ variant | default: product.selected_or_first_available_variant.id }}';
+        var sellingPlanId = sellingPlanIdInput ? sellingPlanIdInput.value : '';
+
+        var quantity = 1;
+
+        var data = {
+          "id": variantId,
+          "quantity": quantity
+        };
+
+        if (sellingPlanId) {
+          data["selling_plan"] = sellingPlanId;
+        }
+
+        // Adding product to the cart
+        fetch('/cart/add.js', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        })
+        .then(function(response) {
+          return response.json();
+        })
+        .then(function(data) {
+          window.location.href = '/checkout';
+        })
+        .catch(function(error) {
+          if (buttonText && loadingSpinner) {
+            buttonText.style.display = '';
+            loadingSpinner.classList.add('hidden');
+          }
+        });
+      });
+    } else {
+      console.error('Buy button not found. Cannot attach event listener.');
+    }
+    {% endif %}
   });
 </script>
 
 
 <style>
 	.gift-selector-wrap {
-  margin: 1rem 0;
-}
+    margin: 1rem 0;
+  }
 
-.gift-option-border {
-  transition: all 0.3s ease;
-  border: 2px solid #e5e7eb;
-  background: #fff;
-  width: 120px;
-	height: 120px;
-}
+  .gift-option-border {
+    transition: all 0.3s ease;
+    border: 2px solid #e5e7eb;
+    background: #fff;
+    width: 120px;
+	  height: 120px;
+  }
 
-.gift-option-border:hover {
-  border-color: var(--primary-color-lighter);
-}
+  .gift-option-border:hover {
+    border-color: var(--primary-color-lighter);
+  }
 
-.gift-option-container.selected .gift-option-border {
-    border-color: var(--primary-color);
-    background-color: rgba(var(--primary-color-rgb), 0.05);
-}
+  .gift-option-container.selected .gift-option-border {
+      border-color: var(--primary-color);
+      background-color: rgba(var(--primary-color-rgb), 0.05);
+  }
 
-.check-mark {
+  .check-mark {
+      transition: all 0.2s ease;
+		  margin-top: -4px;
+	    margin-left: 3px;
+  }
+
+  .check-mark.hidden {
+      display: none;
+  }
+
+  .radio-indicator {
     transition: all 0.2s ease;
-		margin-top: -4px;
-  	margin-left: 3px;
-}
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
 
-.check-mark.hidden {
-    display: none;
-}
+  .gift-option-container.selected .radio-indicator {
+	  background-color: var(--primary-color);
+  }
 
-.radio-indicator {
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-}
-
-.gift-option-container.selected .radio-indicator {
-	background-color: var(--primary-color);
-}
-
-.sale-price {
-  color: var(--primary-color-dark);
-}
+  .sale-price {
+    color: var(--primary-color-dark);
+  }
 </style>
 
 <style>
   :root {
     --primary-color: {{ buyBoxColor }};
     --primary-color-dark: color-mix(in srgb, var(--primary-color), black 20%);
-		--primary-color-light: color-mix(in srgb, var(--primary-color), white 60%);
+	  --primary-color-light: color-mix(in srgb, var(--primary-color), white 60%);
     --primary-color-lighter: color-mix(in srgb, var(--primary-color), white 80%);
   }
 
