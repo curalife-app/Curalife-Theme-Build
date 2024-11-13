@@ -24,7 +24,7 @@
 							{% assign giftVariantSubscription = giftProdSubscription.selected_or_first_available_variant %}
 							{% assign giftThumb = block.settings.gift_thumbnail | default: giftProdSubscription.featured_image | default: giftProd.featured_image %}
 
-							{% if block.settings.variant_id != blank %}
+							{% comment %} {% if block.settings.variant_id != blank %}
 								{% for var in giftProd.variants %}
 									{% if var.id == block.settings.variant_id %}
 										{% assign giftVariant = var %}
@@ -32,13 +32,13 @@
 								{% endfor %}
 							{% endif %}
 
-							{% if giftProdSubscription != blank %}
+							{% if giftProdSubscription != blank and giftVariantSubscription%}
 								{% for varSub in giftProdSubscription.variants %}
 									{% if varSub.id == block.settings.variant_id_subscription %}
 										{% assign giftVariantSubscription = varSub %}
 									{% endif %}
 								{% endfor %}
-							{% endif %}
+							{% endif %} {% endcomment %}
 							<div class="gift-option-container flex flex-col items-center">
 								<!-- Border container for image and radio only -->
 								<div class="gift-option-border relative w-full p-2 mb-3 border rounded-lg cursor-pointer" data-gift-id="{{ giftVariant.id }}" data-gift-id-subscription="{{ giftVariantSubscription.id }}">
