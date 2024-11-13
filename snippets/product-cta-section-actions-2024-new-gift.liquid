@@ -1229,72 +1229,122 @@ purchaseOptionBoxes.forEach(box => {
         });
     });
 
-    function buyButtonHandler(subscription_selling_plan_id, buttonElement) {
-    console.log("=== Cart Debug: buyButtonHandler triggered ===");
+    async function buyButtonHandler(subscription_selling_plan_id, buttonElement) {
+				console.log("=== Cart Debug: buyButtonHandler triggered ===");
 
-    const selectedBox = productActions.querySelector('.purchase-option-box.selected');
-    const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
+				const selectedBox = productActions.querySelector('.purchase-option-box.selected');
+				const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
 
-    console.log("Cart Debug - Selected elements:", {
-        productBox: selectedBox ? 'found' : 'not found',
-        giftContainer: selectedGiftContainer ? 'found' : 'not found'
-    });
+				console.log("Cart Debug - Selected elements:", {
+						productBox: selectedBox ? 'found' : 'not found',
+						giftContainer: selectedGiftContainer ? 'found' : 'not found'
+				});
 
-    if (!selectedBox || !selectedGiftContainer) {
-        console.error('Cart Debug - Missing selection:', {
-            hasProduct: !!selectedBox,
-            hasGift: !!selectedGiftContainer
-        });
-        return;
-    }
+				if (!selectedBox || !selectedGiftContainer) {
+						console.error('Cart Debug - Missing selection:', {
+								hasProduct: !!selectedBox,
+								hasGift: !!selectedGiftContainer
+						});
+						return;
+				}
 
-    const giftOptionBorder = selectedGiftContainer.querySelector('.gift-option-border');
-    const isSubscription = isSubscriptionSelected();
-    const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
+				const giftOptionBorder = selectedGiftContainer.querySelector('.gift-option-border');
+				const isSubscription = isSubscriptionSelected();
+				const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
 
-    console.log("Cart Debug - Gift selection:", {
-        isSubscription: isSubscription,
-        regularGiftId: giftOptionBorder?.dataset.giftId,
-        subscriptionGiftId: giftOptionBorder?.dataset.giftIdSubscription,
-        selectedGiftId: giftId
-    });
+				console.log("Cart Debug - Gift selection:", {
+						isSubscription: isSubscription,
+						regularGiftId: giftOptionBorder?.dataset.giftId,
+						subscriptionGiftId: giftOptionBorder?.dataset.giftIdSubscription,
+						selectedGiftId: giftId
+				});
 
-    if (!giftId) {
-        console.error('Cart Debug - Gift ID not found');
-        return;
-    }
+				if (!giftId) {
+						console.error('Cart Debug - Gift ID not found');
+						return;
+				}
 
-    toggleButtonLoading(buttonElement, true);
+				toggleButtonLoading(buttonElement, true);
 
-    if (isSubscriptionSelected()) {
-        const variant_id = selectedBox.dataset.originalVariant;
-        console.log("Cart Debug - Initiating subscription purchase:", {
-            variant_id,
-            selling_plan: subscription_selling_plan_id,
-            giftId
-        });
-        buySubscription(variant_id, 1, subscription_selling_plan_id, giftId);
-    } else {
-        const variant_id = selectedBox.dataset.variant;
-        const purchaseOptionBox = buttonElement.closest('.purchase-option-box');
-        const dc = purchaseOptionBox ? purchaseOptionBox.dataset.dc : null;
-        console.log("Cart Debug - Initiating one-time purchase:", {
-            variant_id,
-            dc,
-            giftId
-        });
-        redirectToCheckout(variant_id, dc, giftId);
-    }
-}
+				try {
+						// Clear the cart first
+						await clearCart();
 
-function redirectToCheckout(variant_id, dc, giftId) {
-    let checkoutLink = `https://${location.hostname}/cart/${variant_id}:1`;
-    if (giftId) {
-        checkoutLink += `,${giftId}:1`;
-    }
-    if (dc) checkoutLink += "?discount=" + atob(dc);
-    window.location.href = checkoutLink;
-}
+						if (isSubscriptionSelected()) {
+								const variant_id = selectedBox.dataset.originalVariant;
+								console.log("Cart Debug - Initiating subscription purchase:", {
+										variant_id,
+										selling_plan: subscription_selling_plan_id,
+										giftId
+								});
+								await buySubscription(variant_id, 1, subscription_selling_plan_id, giftId);
+						} else {
+								const variant_id = selectedBox.dataset.variant;
+								const purchaseOptionBox = buttonElement.closest('.purchase-option-box');
+								const dc = purchaseOptionBox ? purchaseOptionBox.dataset.dc : null;
+
+								console.log("Cart Debug - Initiating one-time purchase:", {
+										variant_id,
+										dc,
+										giftId
+								});
+
+								// Add main product and gift to cart
+								const items = [
+										{
+												id: variant_id,
+												quantity: 1
+										},
+										{
+												id: giftId,
+												quantity: 1
+										}
+								];
+
+								const response = await fetch('/cart/add.js', {
+										method: 'POST',
+										headers: {
+												'Content-Type': 'application/json',
+										},
+										body: JSON.stringify({ items })
+								});
+
+								if (!response.ok) {
+										const errorData = await response.json();
+										throw new Error(errorData.description || 'Failed to add items to cart');
+								}
+
+								// Redirect to checkout with discount if applicable
+								let checkoutUrl = '/checkout';
+								if (dc) {
+										checkoutUrl += '?discount=' + atob(dc);
+								}
+								window.location.href = checkoutUrl;
+						}
+				} catch (error) {
+						console.error('Cart Debug - Error during checkout process:', error);
+						// Here you might want to show an error message to the user
+						const errorMessageWrapper = document.querySelector('.product-form__error-message-wrapper');
+						if (errorMessageWrapper) {
+								const errorMessage = errorMessageWrapper.querySelector('.product-form__error-message');
+								if (errorMessage) {
+										errorMessage.textContent = error.message || 'An error occurred while processing your order.';
+								}
+								errorMessageWrapper.hidden = false;
+						}
+				} finally {
+						toggleButtonLoading(buttonElement, false);
+				}
+		}
+
+		function redirectToCheckout(variant_id, dc, giftId) {
+				let checkoutLink = `https://${location.hostname}/cart/${variant_id}:1`;
+				if (giftId) {
+						checkoutLink += `,${giftId}:1`;
+				}
+				if (dc) checkoutLink += "?discount=" + atob(dc);
+				window.location.href = checkoutLink;
+		}
 
     function toggleButtonLoading(buttonElement, isLoading) {
       const loader = buttonElement.querySelector('.loading-overlay__spinner');
