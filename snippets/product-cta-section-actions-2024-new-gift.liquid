@@ -223,43 +223,33 @@ document.addEventListener('DOMContentLoaded', function() {
         toggleButtonLoading(submitButton, true);
 
         try {
-            // Get form data and log it
             const variantIdInput = form.querySelector('.submit-variant-id');
             const sellingPlanIdInput = form.querySelector('.submit-selling-plan-id');
             const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
             const giftOptionBorder = selectedGiftContainer ? selectedGiftContainer.querySelector('.gift-option-border') : null;
 
-            // Determine if this is a subscription purchase
             const isSubscription = !!sellingPlanIdInput?.value;
-
-            // Get the appropriate gift ID based on purchase type
             const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
 
-            // Log all the data we're working with
             console.log('Form Data:', {
                 variantIdInput: variantIdInput ? variantIdInput.value : 'not found',
                 sellingPlanIdInput: sellingPlanIdInput ? sellingPlanIdInput.value : 'not found',
                 selectedGiftContainer: selectedGiftContainer ? 'found' : 'not found',
                 giftOptionBorder: giftOptionBorder ? 'found' : 'not found',
                 isSubscription: isSubscription,
-                giftId: giftId,
-                regularGiftId: giftOptionBorder?.dataset.giftId,
-                subscriptionGiftId: giftOptionBorder?.dataset.giftIdSubscription
+                giftId: giftId
             });
 
             const variantId = variantIdInput ? variantIdInput.value : null;
             const sellingPlanId = sellingPlanIdInput ? sellingPlanIdInput.value : '';
 
-            // Validate required data
             if (!variantId || !giftId) {
                 const errorMessage = `Missing required data: ${!variantId ? 'variant ID' : ''} ${!giftId ? 'gift ID' : ''}`;
                 console.error(errorMessage);
                 showError(errorMessage);
-                toggleButtonLoading(submitButton, false);
                 return;
             }
 
-            // Prepare items array
             const items = [
                 {
                     id: variantId,
@@ -271,19 +261,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             ];
 
-            // Add selling plan if present
             if (sellingPlanId) {
                 items[0].selling_plan = sellingPlanId;
             }
 
-            // Log the final payload
-            console.log('Sending to cart:', {
-                url: '/cart/add.js',
-                method: 'POST',
-                body: { items }
-            });
+            console.log('Sending to cart:', { items });
 
-            // Make the request
             const response = await fetch('/cart/add.js', {
                 method: 'POST',
                 headers: {
@@ -295,11 +278,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const responseData = await response.json();
 
-            // Log full response details
             console.log('Response details:', {
                 status: response.status,
                 statusText: response.statusText,
-                headers: Object.fromEntries(response.headers.entries()),
                 data: responseData
             });
 
@@ -308,14 +289,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                    responseData?.message ||
                                    `Error ${response.status}: ${response.statusText}`;
                 showError(errorMessage);
-                console.error('Cart error:', {
-                    status: response.status,
-                    statusText: response.statusText,
-                    data: responseData
-                });
             } else {
                 console.log('Successfully added to cart:', responseData);
                 hideError();
+                // Optional: Show success message or update cart count
+                // You can add your success handling here
             }
         } catch (error) {
             console.error('Caught error:', error);
