@@ -1382,8 +1382,13 @@ function redirectToCheckout(variant_id, dc, giftId) {
             body: JSON.stringify({ items: items })
         });
 
+        // Fixed: Using response.json() directly instead of responseText
         const responseData = await response.json();
         console.log("Cart Debug - Cart response:", responseData);
+
+        if (!response.ok) {
+            throw new Error(`Cart Error: ${response.status} ${response.statusText}`);
+        }
 
         window.location.href = '/checkout';
     } catch (error) {
