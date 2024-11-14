@@ -1,39 +1,57 @@
+<!-- Shopify Liquid Code for the Cart Component -->
+
 {%- unless settings.cart_type == 'drawer' -%}
   <script src="{{ 'cart.js' | asset_url }}" defer="defer"></script>
 {%- endunless -%}
 
 <style>
+  /* Reset and Base Styles */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    color: #333;
+  }
+
   /* Container Styles */
   .cart-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 2rem;
-    font-family: Arial, sans-serif;
+    padding: 2rem 1rem;
   }
 
-  /* Title and Continue Shopping Link */
-  .title-wrapper {
+  /* Header Styles */
+  .cart-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 2rem;
   }
 
-  .title-wrapper h1 {
+  .cart-header h1 {
     font-size: 2rem;
-    margin: 0;
+    font-weight: 600;
   }
 
   .continue-shopping-link {
     font-size: 1rem;
     color: #007BFF;
     text-decoration: none;
+    transition: color 0.2s;
   }
 
-  /* Cart Empty State */
+  .continue-shopping-link:hover {
+    color: #0056b3;
+  }
+
+  /* Empty Cart Styles */
   .cart-empty {
     text-align: center;
-    margin-top: 4rem;
+    padding: 4rem 1rem;
   }
 
   .cart-empty h2 {
@@ -42,54 +60,72 @@
   }
 
   .cart-empty .button {
+    display: inline-block;
     padding: 0.75rem 1.5rem;
     background-color: #007BFF;
     color: #FFFFFF;
     text-decoration: none;
     border-radius: 4px;
+    transition: background-color 0.2s;
+  }
+
+  .cart-empty .button:hover {
+    background-color: #0056b3;
   }
 
   /* Table Styles */
-  .cart-items {
+  .cart-table {
     width: 100%;
     border-collapse: collapse;
+    margin-bottom: 2rem;
   }
 
-  .cart-items th,
-  .cart-items td {
+  .cart-table thead {
+    background-color: #f8f9fa;
+  }
+
+  .cart-table th,
+  .cart-table td {
     padding: 1rem;
-    border-bottom: 1px solid #E0E0E0;
     text-align: left;
+    border-bottom: 1px solid #dee2e6;
   }
 
-  .cart-items th {
-    background-color: #F8F8F8;
-    font-weight: normal;
+  .cart-table th {
+    font-weight: 500;
+    color: #495057;
   }
 
   /* Product Details */
   .product-image img {
-    max-width: 100px;
+    width: 80px;
+    height: auto;
     border-radius: 4px;
   }
 
   .product-details {
-    vertical-align: top;
+    font-size: 0.95rem;
   }
 
   .product-title {
-    font-size: 1.1rem;
-    color: #000000;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #212529;
     text-decoration: none;
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+
+  .product-title:hover {
+    color: #007BFF;
   }
 
   .product-options,
   .product-properties {
     list-style: none;
     padding: 0;
-    margin: 0.5rem 0 0;
-    font-size: 0.9rem;
-    color: #555555;
+    margin: 0;
+    color: #6c757d;
   }
 
   .product-options li,
@@ -98,19 +134,19 @@
   }
 
   /* Price Styles */
-  .product-price .original-price {
+  .product-price {
+    font-size: 1rem;
+  }
+
+  .original-price {
     text-decoration: line-through;
-    color: #999999;
+    color: #6c757d;
     margin-right: 0.5rem;
   }
 
-  .product-price .final-price {
-    color: #D32F2F;
-    font-weight: bold;
-  }
-
-  .product-price .price {
-    font-weight: bold;
+  .final-price {
+    color: #28a745;
+    font-weight: 600;
   }
 
   /* Quantity Styles */
@@ -122,55 +158,72 @@
   .product-quantity input {
     width: 60px;
     padding: 0.5rem;
-    margin-right: 1rem;
-    border: 1px solid #CCCCCC;
+    border: 1px solid #ced4da;
     border-radius: 4px;
+    margin-right: 0.5rem;
     text-align: center;
+    font-size: 1rem;
   }
 
   .remove-item {
-    color: #D32F2F;
+    color: #dc3545;
     text-decoration: none;
-    font-size: 1.5rem;
+    font-size: 1.25rem;
+    transition: color 0.2s;
+  }
+
+  .remove-item:hover {
+    color: #bd2130;
   }
 
   /* Total Price */
   .product-total {
-    font-weight: bold;
+    font-size: 1rem;
+    font-weight: 600;
   }
 
   /* Cart Totals */
-  .cart-totals {
-    text-align: right;
-    margin-top: 2rem;
+  .cart-summary {
+    max-width: 400px;
+    margin-left: auto;
+    font-size: 1rem;
   }
 
-  .cart-totals p {
-    font-size: 1.2rem;
-    margin: 0.5rem 0;
+  .cart-summary p {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
   }
 
-  .cart-totals .subtotal {
-    font-weight: bold;
+  .cart-summary .subtotal {
+    font-weight: 600;
   }
 
-  .cart-totals .savings {
-    color: #D32F2F;
+  .cart-summary .savings {
+    color: #28a745;
   }
 
   .checkout-button {
-    display: inline-block;
-    padding: 0.75rem 1.5rem;
-    background-color: #28A745;
+    display: block;
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #007BFF;
     color: #FFFFFF;
+    text-align: center;
     text-decoration: none;
     border-radius: 4px;
+    font-size: 1rem;
     margin-top: 1rem;
+    transition: background-color 0.2s;
+  }
+
+  .checkout-button:hover {
+    background-color: #0056b3;
   }
 
   /* Responsive Design */
   @media (max-width: 768px) {
-    .title-wrapper {
+    .cart-header {
       flex-direction: column;
       align-items: flex-start;
     }
@@ -179,37 +232,44 @@
       margin-top: 1rem;
     }
 
-    .cart-items th,
-    .cart-items td {
-      display: block;
-      width: 100%;
+    .cart-table thead {
+      display: none;
     }
 
-    .cart-items tr {
-      margin-bottom: 1rem;
+    .cart-table tr {
       display: block;
+      margin-bottom: 1rem;
+    }
+
+    .cart-table td {
+      display: block;
+      padding: 0.5rem;
+      text-align: right;
+    }
+
+    .cart-table td::before {
+      content: attr(data-label);
+      float: left;
+      font-weight: 500;
+      color: #6c757d;
     }
 
     .product-quantity {
-      flex-direction: column;
-      align-items: flex-start;
+      flex-direction: row;
+      justify-content: flex-end;
     }
 
-    .product-quantity input {
-      margin-bottom: 0.5rem;
-    }
-
-    .cart-totals {
-      text-align: left;
+    .cart-summary {
+      margin-left: 0;
     }
   }
 </style>
 
 <div class="cart-container">
   <cart-items class="container{% if cart == empty %} is-empty{% else %} section-{{ section.id }}-padding{% endif %}">
-    <div class="title-wrapper">
+    <div class="cart-header">
       <h1>{{ 'sections.cart.title' | t }}</h1>
-      <a href="{{ routes.all_products_collection_url }}" class="continue-shopping-link">{{ 'general.continue_shopping' | t }} &gt;</a>
+      <a href="{{ routes.all_products_collection_url }}" class="continue-shopping-link">{{ 'general.continue_shopping' | t }}</a>
     </div>
 
     {% if cart == empty %}
@@ -223,8 +283,7 @@
       </div>
     {% else %}
       <form action="{{ routes.cart_url }}" method="post" id="cart">
-        <table class="cart-items">
-          <caption class="visually-hidden">{{ 'sections.cart.title' | t }}</caption>
+        <table class="cart-table">
           <thead>
             <tr>
               <th colspan="2">{{ 'sections.cart.headings.product' | t }}</th>
@@ -236,14 +295,14 @@
           <tbody>
             {% for item in cart.items %}
               <tr>
-                <td class="product-image">
+                <td class="product-image" data-label="{{ 'sections.cart.headings.product' | t }}">
                   {% if item.image %}
                     <a href="{{ item.url }}">
-                      <img src="{{ item.image | image_url: width: 150 }}" alt="{{ item.image.alt | escape }}">
+                      <img src="{{ item.image | image_url: width: 80 }}" alt="{{ item.image.alt | escape }}">
                     </a>
                   {% endif %}
                 </td>
-                <td class="product-details">
+                <td class="product-details" data-label="{{ 'sections.cart.headings.product' | t }}">
                   <a href="{{ item.url }}" class="product-title">{{ item.product.title | escape }}</a>
                   {% if item.options_with_values.size > 0 %}
                     <ul class="product-options">
@@ -263,7 +322,7 @@
                     </ul>
                   {% endif %}
                 </td>
-                <td class="product-price">
+                <td class="product-price" data-label="{{ 'sections.cart.headings.price' | t }}">
                   {% if item.original_price != item.final_price %}
                     <span class="original-price">{{ item.original_price | money }}</span>
                     <span class="final-price">{{ item.final_price | money }}</span>
@@ -271,7 +330,7 @@
                     <span class="price">{{ item.final_price | money }}</span>
                   {% endif %}
                 </td>
-                <td class="product-quantity">
+                <td class="product-quantity" data-label="{{ 'sections.cart.headings.quantity' | t }}">
                   <input
                     type="number"
                     name="updates[]"
@@ -285,22 +344,23 @@
                   >
                   <a href="{{ item.url_to_remove }}" class="remove-item" aria-label="{{ 'sections.cart.remove_title' | t: title: item.title }}">&times;</a>
                 </td>
-                <td class="product-total">
+                <td class="product-total" data-label="{{ 'sections.cart.headings.total' | t }}">
                   {{ item.final_line_price | money }}
                 </td>
               </tr>
             {% endfor %}
           </tbody>
         </table>
-        <div class="cart-totals">
+
+        <div class="cart-summary">
           <p class="subtotal">
-            {{ 'cart.general.subtotal' | t }}:
+            <span>{{ 'cart.general.subtotal' | t }}</span>
             <span>{{ cart.total_price | money }}</span>
           </p>
           {% if cart.total_discount > 0 %}
             <p class="savings">
-              {{ 'cart.general.savings' | t }}:
-              <span>{{ cart.total_discount | money }}</span>
+              <span>{{ 'cart.general.savings' | t }}</span>
+              <span>-{{ cart.total_discount | money }}</span>
             </p>
           {% endif %}
           <a href="{{ routes.checkout_url }}" class="checkout-button">{{ 'cart.general.checkout' | t }}</a>
