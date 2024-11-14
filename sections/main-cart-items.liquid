@@ -203,30 +203,30 @@
 <div class="cart-container">
   <cart-items class="container{% if cart == empty %} is-empty{% else %} section-{{ section.id }}-padding{% endif %}">
     <div class="cart-header">
-      <h1>{{ 'sections.cart.title' | t }}</h1>
-      <a href="{{ routes.all_products_collection_url }}" class="continue-shopping-link">{{ 'general.continue_shopping' | t }}</a>
+      <h1>Shopping Cart</h1>
+      <a href="{{ routes.all_products_collection_url }}" class="continue-shopping-link">Continue Shopping</a>
     </div>
 
     {% if cart == empty %}
       <div class="cart-empty">
-        <h2>{{ 'sections.cart.empty' | t }}</h2>
-        <a href="{{ routes.all_products_collection_url }}" class="button">{{ 'general.continue_shopping' | t }}</a>
+        <h2>Your cart is currently empty.</h2>
+        <a href="{{ routes.all_products_collection_url }}" class="button">Continue Shopping</a>
       </div>
     {% else %}
       <form action="{{ routes.cart_url }}" method="post" id="cart">
         <table class="cart-table">
           <thead>
             <tr>
-              <th colspan="2">{{ 'sections.cart.headings.product' | t }}</th>
-              <th>{{ 'sections.cart.headings.price' | t }}</th>
-              <th>{{ 'sections.cart.headings.quantity' | t }}</th>
-              <th>{{ 'sections.cart.headings.total' | t }}</th>
+              <th colspan="2">Product</th>
+              <th>Price</th>
+              <th>Quantity</th>
+              <th>Total</th>
             </tr>
           </thead>
           <tbody>
             {% for item in cart.items %}
               <tr>
-                <td class="product-image" data-label="{{ 'sections.cart.headings.product' | t }}">
+                <td class="product-image" data-label="Product">
                   {% if item.image %}
                     <a href="{{ item.url }}">
                       <img src="{{ item.image | image_url: width: 80 }}" alt="{{ item.image.alt | escape }}">
@@ -243,7 +243,7 @@
                     </ul>
                   {% endif %}
                 </td>
-                <td class="product-price" data-label="{{ 'sections.cart.headings.price' | t }}">
+                <td class="product-price" data-label="Price">
                   {% if item.original_price != item.final_price %}
                     <span class="original-price">{{ item.original_price | money }}</span>
                     <span class="final-price">{{ item.final_price | money }}</span>
@@ -251,11 +251,11 @@
                     {{ item.final_price | money }}
                   {% endif %}
                 </td>
-                <td class="product-quantity" data-label="{{ 'sections.cart.headings.quantity' | t }}">
-                  <input type="number" name="updates[]" value="{{ item.quantity }}" min="1" aria-label="{{ 'products.product.quantity.input_label' | t: product: item.product.title | escape }}">
-                  <a href="{{ item.url_to_remove }}" class="remove-item" aria-label="{{ 'sections.cart.remove_title' | t: title: item.title }}">&times;</a>
+                <td class="product-quantity" data-label="Quantity">
+                  <input type="number" name="updates[]" value="{{ item.quantity }}" min="1" aria-label="Quantity for {{ item.product.title | escape }}">
+                  <a href="{{ item.url_to_remove }}" class="remove-item" aria-label="Remove {{ item.title }}">&times;</a>
                 </td>
-                <td class="product-total" data-label="{{ 'sections.cart.headings.total' | t }}">
+                <td class="product-total" data-label="Total">
                   {{ item.final_line_price | money }}
                 </td>
               </tr>
@@ -265,21 +265,22 @@
 
         <div class="cart-summary">
           <p class="subtotal">
-            <span>{{ 'cart.general.subtotal' | t }}</span>
+            <span>Subtotal</span>
             <span>{{ cart.total_price | money }}</span>
           </p>
           {% if cart.total_discount > 0 %}
             <p class="savings">
-              <span>{{ 'cart.general.savings' | t }}</span>
+              <span>Savings</span>
               <span>-{{ cart.total_discount | money }}</span>
             </p>
           {% endif %}
-          <a href="{{ routes.checkout_url }}" class="checkout-button">{{ 'cart.general.checkout' | t }}</a>
+          <a href="{{ routes.checkout_url }}" class="checkout-button">Checkout</a>
         </div>
       </form>
     {% endif %}
   </cart-items>
 </div>
+
 
 {% schema %}
 {
