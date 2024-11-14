@@ -630,8 +630,11 @@ function hideLoadingSpinner() {
                 </div>
               {% endif %}
 
+							{% if item.title contains 'Free' %}
+								{% assign itemTitleFree = true %}
+							{% endif %}
               <!-- Quantity Selector: Only show if no selling plan and title doesn't contain 'Free' -->
-              {% if item.selling_plan_allocation == nil and item.title contains 'Free' == false %}
+              {% if item.selling_plan_allocation != nil itemTitleFree == False %}
                 <div class="quantity-input quantity-selector">
                   <button type="button" class="quantity-btn" data-action="decrease-quantity">−</button>
                   <input type="number"
@@ -642,7 +645,7 @@ function hideLoadingSpinner() {
                          data-item-key="{{ item.key }}">
                   <button type="button" class="quantity-btn" data-action="increase-quantity">+</button>
                 </div>
-              {% endif %}
+							{% endif %}
 
               <a href="/cart/change?line={{ forloop.index }}&quantity=0" class="remove-item">Remove</a>
             </div>
