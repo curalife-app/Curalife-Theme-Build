@@ -203,16 +203,12 @@
       <h2>Your cart is empty</h2>
       <a href="{{ routes.all_products_collection_url }}" class="checkout-button">Start Shopping</a>
     </div>
-              <div class="quantity-input">
-                              <button type="button" class="quantity-btn" data-action="decrease" onclick="updateQuantity(this, -1)">−</button>
-                              <input type="number"
-                                     name="updates[]"
-                                     value="{{ item.quantity }}"
-                                     min="0"
-                                     aria-label="Quantity for {{ item.title | escape }}"
-                                     onchange="this.form.submit()">
-                              <button type="button" class="quantity-btn" data-action="increase" onclick="updateQuantity(this, 1)">+</button>
-                            </div>
+  {% else %}
+    <div class="cart-content">
+      <div class="cart-items">
+        {% for item in cart.items %}
+          <div class="cart-item" id="CartItem-{{ item.key }}">
+            <img src="{{ item.image | img_url: 'medium' }}" alt="{{ item.title }}" class="item-image">
 
             <div class="item-details">
               <h3>{{ item.product.title }}</h3>
@@ -223,14 +219,15 @@
                   {% endfor %}
                 </div>
               {% endif %}
-              <div class="quantity-input">
-                <button type="button" class="quantity-btn" data-action="decrease">−</button>
+              <div class="quantity-input quantity-selector">
+                <button type="button" class="quantity-btn" data-action="decrease-quantity">−</button>
                 <input type="number"
                        name="updates[]"
                        value="{{ item.quantity }}"
                        min="0"
-                       aria-label="Quantity for {{ item.title | escape }}">
-                <button type="button" class="quantity-btn" data-action="increase">+</button>
+                       aria-label="Quantity for {{ item.title | escape }}"
+                       data-item-key="{{ item.key }}">
+                <button type="button" class="quantity-btn" data-action="increase-quantity">+</button>
               </div>
               <a href="/cart/change?line={{ forloop.index }}&quantity=0" class="remove-item">Remove</a>
             </div>
@@ -245,7 +242,7 @@
       <div class="cart-summary">
         <div class="summary-row">
           <span>Subtotal</span>
-          <span>{{ cart.total_price | money }}</span>
+          <span data-cart-subtotal>{{ cart.total_price | money }}</span>
         </div>
         {% if cart.total_discount > 0 %}
           <div class="summary-row">
@@ -255,7 +252,7 @@
         {% endif %}
         <div class="summary-row summary-total">
           <span>Total</span>
-          <span>{{ cart.total_price | money }}</span>
+          <span data-cart-total>{{ cart.total_price | money }}</span>
         </div>
         <button type="submit" name="update" class="checkout-button" style="margin-bottom: 1rem; background: #374151;">
           Update Cart
@@ -264,7 +261,7 @@
           Proceed to Checkout
         </button>
       </div>
-    </form>
+    </div>
   {% endif %}
 </div>
 
