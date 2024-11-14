@@ -15,10 +15,13 @@
 {% if section.settings.display_on_url_param %}
 	{% assign hideSection = true %}
 	{% assign urlParams = request.query_string | split: '&' %}
+	<script>console.log("URL Params: {{ urlParams }}")</script>
 	{% for param in urlParams %}
 		{% assign paramParts = param | split: '=' %}
 		{% assign firstPart = paramParts | first %}
 		{% assign lastPart = paramParts | last %}
+		<script>console.log("First Part: {{ firstPart }}")</script>
+		<script>console.log("Last Part: {{ lastPart }}")</script>
 		{% if firstPart == 'cta' and lastPart == 'true' %}
 			{% assign hideSection = false %}
 		{% endif %}
