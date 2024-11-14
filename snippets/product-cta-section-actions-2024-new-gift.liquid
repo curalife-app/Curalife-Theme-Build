@@ -583,7 +583,14 @@ submitButton.addEventListener('click', async function(event) {
     }
 
 		{% if buyType == "buy_now" %}
-    	cleanCart();
+    	// clean cart
+			const cleanCartResponse = await fetch('/cart/clear.js', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Accept': 'application/json'
+				}
+			});
 		{% endif %}
 
     const response = await fetch('/cart/add.js', {
