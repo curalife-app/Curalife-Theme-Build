@@ -13,19 +13,7 @@
 {% endif %}
 
 {% if section.settings.display_on_url_param %}
-	{% assign hideSection = true %}
-	{% assign urlParams = request.query_string | split: '&' %}
-	<script>console.log("URL Params: {{ urlParams }}")</script>
-	{% for param in urlParams %}
-		{% assign paramParts = param | split: '=' %}
-		{% assign firstPart = paramParts | first %}
-		{% assign lastPart = paramParts | last %}
-		<script>console.log("First Part: {{ firstPart }}")</script>
-		<script>console.log("Last Part: {{ lastPart }}")</script>
-		{% if firstPart == 'cta' and lastPart == 'true' %}
-			{% assign hideSection = false %}
-		{% endif %}
-	{% endfor %}
+  {% assign hideSection = false %}
 {% endif %}
 
 {% unless hideSection %}
@@ -34,18 +22,18 @@
   {% assign shortSectionIDParts = shortSectionID | split: '-' %}
   {% assign SID = shortSectionIDParts[-1] %}
 
-  {% assign buyBoxColor = prodReference.metafields.custom.primary_color | default: section.settings.buy_box_color | default: page.metafields.primary_color | default: "var(--primary-color)" %}
+  {% if shop.name contains 'Global' and section.settings.product_global %}
+    {% assign prodReference = section.settings.product_global | default: section.settings.product | default: product %}
+  {% else %}
+    {% assign prodReference = section.settings.product | default: product | default: all_products["curalin-pack"] %}
+  {% endif %}
 
-	{% if shop.name contains 'Global' and section.settings.product_global %}
-		{% assign prodReference = section.settings.product_global | default: section.settings.product | default: product %}
-	{% else %}
-		{% assign prodReference = section.settings.product | default: product | default: all_products["curalin-pack"] %}
-	{% endif %}
+  {% assign buyBoxColor = prodReference.metafields.custom.primary_color | default: section.settings.buy_box_color | default: page.metafields.primary_color | default: "var(--primary-color)" %}
 
   <div id="cta-section-anchor"></div>
   {% if section.settings.anchor_id != blank %}<div id="{{ section.settings.anchor_id }}"></div>{% endif %}
 
-	<section id="cta-section-{{ SID }}" class="cta-section overflow-visible pb-0 {{ section.settings.additional_classes }}{% if section.settings.is_popup %} cta-popup{% endif %}" {% if section.settings.is_popup %}aria-hidden="true"{% endif %} {% if section.settings.is_popup %}style="opacity: 0; visibility: hidden; pointer-events: none;"{% endif %}>
+  <section id="cta-section-{{ SID }}" class="cta-section overflow-visible pb-0 {{ section.settings.additional_classes }}{% if section.settings.is_popup %} cta-popup{% endif %}" {% if section.settings.is_popup %}aria-hidden="true"{% endif %} {% if section.settings.is_popup %}style="opacity: 0; visibility: hidden; pointer-events: none;"{% endif %}>
     {% if section.settings.is_popup %}
       <div class="cta-popup-content" role="dialog" aria-modal="true" aria-labelledby="popup-title">
         <a class="close-popup top-close" aria-label="Close Popup">&times;</a>
@@ -57,7 +45,7 @@
       buyBoxColor: buyBoxColor,
       ctaColor: "var(--orange)",
       mainTitle: section.settings.main_title,
-			subtitle: section.settings.subtitle,
+      subtitle: section.settings.subtitle,
       title: section.settings.variants_title,
       ctaText: section.settings.cta_text,
       thumbnailImage: section.settings.thumbnail_image,
@@ -74,7 +62,7 @@
       isHideInfo: section.settings.is_hide_info,
       isBuyWithPrime: section.settings.is_buy_with_prime,
       isVariantBoxToggle: section.settings.is_variant_toggle,
-			isOneTimePurchaseLink: section.settings.is_one_time_purchase_link,
+      isOneTimePurchaseLink: section.settings.is_one_time_purchase_link,
       buyType: section.settings.buy_type,
       prod: prodReference,
       blocks: section.blocks,
@@ -86,6 +74,23 @@
       </div>
     {% endif %}
   </section>
+
+  <!-- JavaScript to handle URL parameter and hide the section -->
+  <script>
+    (function() {
+      var displayOnUrlParam = {{ section.settings.display_on_url_param | json }};
+      if (displayOnUrlParam) {
+        var urlParams = new URLSearchParams(window.location.search);
+        var ctaParam = urlParams.get('cta');
+        if (ctaParam !== 'true') {
+          var section = document.getElementById('cta-section-{{ SID }}');
+          if (section) {
+            section.style.display = 'none';
+          }
+        }
+      }
+    })();
+  </script>
 
   <script>
     window.addEventListener('load', function() {
