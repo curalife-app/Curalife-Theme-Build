@@ -18,7 +18,9 @@
 	{% assign urlParams = request.query_string | split: '&' %}
 	{% for param in urlParams %}
 		{% assign paramParts = param | split: '=' %}
-		{% if paramParts[0] == 'cta' and paramParts[1] == 'true' %}
+		{% assign firstPart = paramParts | first %}
+		{% assign lastPart = paramParts | last %}
+		{% if firstPart == 'cta' and lastPart == 'true' %}
 			{% assign hideSection = false %}
 		{% endif %}
 	{% endfor %}
