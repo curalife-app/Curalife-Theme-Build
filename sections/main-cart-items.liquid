@@ -69,25 +69,29 @@ function formatMoney(cents, format) {
   return formatString.replace(placeholderRegex, value);
 }
 
-  function updateQuantity(button, change) {
-    const input = button.parentNode.querySelector('input');
-    const itemKey = input.getAttribute('data-item-key');
-    const currentValue = parseInt(input.value);
-    const newValue = currentValue + change;
-    if (newValue >= 0) {
-      fetch('/cart/change.js', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          id: itemKey,
-          quantity: newValue
-        })
-      })
-      .then(response => response.json())
-      .then(cart => {
+function updateQuantity(button, change) {
+  const input = button.parentNode.querySelector('input');
+  const itemKey = input.getAttribute('data-item-key');
+  const currentValue = parseInt(input.value);
+  const newValue = currentValue + change;
+
+  if (newValue >= 0) {
+    // Show the loading spinner
+    showLoadingSpinner();
+
+    fetch('/cart/change.js', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        id: itemKey,
+        quantity: newValue,
+      }),
+    })
+      .then((response) => response.json())
+      .then((cart) => {
         if (newValue === 0) {
           const cartItemElement = button.closest('.cart-item');
           if (cartItemElement) {
@@ -99,11 +103,15 @@ function formatMoney(cents, format) {
         }
         updateCartTotals(cart);
       })
-      .catch(error => {
+      .catch((error) => {
         console.error('Error:', error);
+      })
+      .finally(() => {
+        // Hide the loading spinner
+        hideLoadingSpinner();
       });
-    }
   }
+}
 
   function updateCartTotals(cart) {
     const cartSubtotal = document.querySelector('[data-cart-subtotal]');
@@ -140,29 +148,37 @@ function formatMoney(cents, format) {
   }
 
   function removeItemFromCart(itemKey, link) {
-    fetch('/cart/change.js', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({
-        id: itemKey,
-        quantity: 0
-      })
-    })
-    .then(response => response.json())
-    .then(cart => {
+  // Show the loading spinner
+  showLoadingSpinner();
+
+  fetch('/cart/change.js', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({
+      id: itemKey,
+      quantity: 0,
+    }),
+  })
+    .then((response) => response.json())
+    .then((cart) => {
       const cartItemElement = link.closest('.cart-item');
       if (cartItemElement) {
         cartItemElement.remove();
       }
       updateCartTotals(cart);
     })
-    .catch(error => {
+    .catch((error) => {
       console.error('Error:', error);
+    })
+    .finally(() => {
+      // Hide the loading spinner
+      hideLoadingSpinner();
     });
-  }
+}
+
 
   document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.quantity-btn').forEach(function(button) {
@@ -181,6 +197,20 @@ function formatMoney(cents, format) {
       });
     });
   });
+
+	function showLoadingSpinner() {
+  const spinner = document.getElementById('loadingSpinner');
+  if (spinner) {
+    spinner.style.display = 'flex';
+  }
+}
+
+function hideLoadingSpinner() {
+  const spinner = document.getElementById('loadingSpinner');
+  if (spinner) {
+    spinner.style.display = 'none';
+  }
+}
 </script>
 
 <style>
@@ -354,6 +384,36 @@ function formatMoney(cents, format) {
 		box-shadow: 0 1px 3px var(--color-shadow);
 	}
 
+	/* Loading Spinner Styles */
+.loading-spinner {
+  position: fixed; /* Overlay the entire page */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999; /* Ensure it's above other elements */
+}
+
+.loading-spinner .spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Spin Animation */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 	@media (max-width: 768px) {
 		.cart { margin: 2rem auto; }
 		.cart-content { grid-template-columns: 1fr; }
@@ -363,6 +423,11 @@ function formatMoney(cents, format) {
 </style>
 
 <div class="cart">
+	<!-- Loading Spinner -->
+<div class="loading-spinner" id="loadingSpinner" style="display: none;">
+  <div class="spinner"></div>
+</div>
+
   <div class="cart-header">
     <h1>Shopping Cart ({{ cart.item_count }})</h1>
     <a href="{{ routes.all_products_collection_url }}" class="continue-shopping">Continue Shopping</a>
