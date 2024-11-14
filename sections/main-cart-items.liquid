@@ -1,8 +1,5 @@
-<!-- Modern Clean Cart Design -->
-<script src="{{ 'cart.js' | asset_url }}" defer="defer"></script>
 <script>
-  // Define a function to format money according to your shop's settings
-  var moneyFormat = '{{ shop.money_format | json }}'; // e.g., "${{amount}}"
+  var moneyFormat = {{ shop.money_format | json }};
 
   function formatMoney(cents) {
     var value = (cents / 100).toFixed(2);
@@ -15,7 +12,6 @@
     const currentValue = parseInt(input.value);
     const newValue = currentValue + change;
     if (newValue >= 0) {
-      // Send AJAX request to update cart
       fetch('/cart/change.js', {
         method: 'POST',
         headers: {
@@ -30,18 +26,14 @@
       .then(response => response.json())
       .then(cart => {
         if (newValue === 0) {
-          // Remove the item from the DOM if quantity is zero
           const cartItemElement = button.closest('.cart-item');
           if (cartItemElement) {
             cartItemElement.remove();
           }
         } else {
-          // Update the input value
           input.value = newValue;
-          // Update item price
           updateItemPrice(button, cart);
         }
-        // Update cart totals and item count
         updateCartTotals(cart);
       })
       .catch(error => {
@@ -51,7 +43,6 @@
   }
 
   function updateCartTotals(cart) {
-    // Update the cart subtotal and total prices on the page
     const cartSubtotal = document.querySelector('[data-cart-subtotal]');
     const cartTotal = document.querySelector('[data-cart-total]');
     const cartItemCount = document.querySelector('[data-cart-item-count]');
@@ -63,7 +54,6 @@
       cartItemCount.textContent = cart.item_count;
     }
 
-    // If the cart is empty, display the empty cart message
     if (cart.item_count === 0) {
       const cartContent = document.querySelector('.cart-content');
       const cartEmptyMessage = document.querySelector('.cart-empty');
@@ -75,17 +65,40 @@
   }
 
   function updateItemPrice(button, cart) {
-    // Find the cart item associated with this button
     const input = button.parentNode.querySelector('input');
     const itemKey = input.getAttribute('data-item-key');
     const cartItem = cart.items.find(item => item.key === itemKey);
     if (cartItem) {
-      // Update the item price on the page
       const itemPriceElement = button.closest('.cart-item').querySelector('.item-price');
       if (itemPriceElement) {
         itemPriceElement.textContent = formatMoney(cartItem.final_line_price);
       }
     }
+  }
+
+  function removeItemFromCart(itemKey, link) {
+    fetch('/cart/change.js', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        id: itemKey,
+        quantity: 0
+      })
+    })
+    .then(response => response.json())
+    .then(cart => {
+      const cartItemElement = link.closest('.cart-item');
+      if (cartItemElement) {
+        cartItemElement.remove();
+      }
+      updateCartTotals(cart);
+    })
+    .catch(error => {
+      console.error('Error:', error);
+    });
   }
 
   document.addEventListener('DOMContentLoaded', function() {
@@ -94,6 +107,14 @@
         const action = button.getAttribute('data-action');
         const change = action === 'increase-quantity' ? 1 : -1;
         updateQuantity(button, change);
+      });
+    });
+
+    document.querySelectorAll('.remove-item').forEach(function(link) {
+      link.addEventListener('click', function(event) {
+        event.preventDefault();
+        const itemKey = link.getAttribute('data-item-key');
+        removeItemFromCart(itemKey, link);
       });
     });
   });
