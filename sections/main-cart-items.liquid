@@ -230,10 +230,10 @@
 }
 {% endstyle %}
 
-<div class="container mx-auto px-4 py-8">
+<div class="container px-4 py-8 mx-auto">
   <div class="lg:grid lg:grid-cols-3 lg:gap-8">
     <div class="lg:col-span-2">
-      <h1 class="text-2xl font-bold mb-6">Shopping Cart ({{ cart.item_count }})</h1>
+      <h1 class="mb-6 text-2xl font-bold">Shopping Cart ({{ cart.item_count }})</h1>
 
       {% if cart.item_count > 0 %}
         <div class="cart-items">
@@ -245,7 +245,7 @@
                     <img
                       src="{{ item.image | image_url: width: 200 }}"
                       alt="{{ item.image.alt | escape }}"
-                      class="w-full h-full object-cover"
+                      class="object-cover w-full h-full"
                       loading="lazy"
                     >
                   </a>
@@ -254,7 +254,7 @@
 
               <div class="cart-details">
                 <div class="flex justify-between">
-                  <a href="{{ item.url }}" class="text-lg font-medium hover:text-primary">
+                  <a href="{{ item.url }}" class="hover:text-primary text-lg font-medium">
                     {{ item.product.title | escape }}
                   </a>
                   <span class="font-medium">{{ item.final_price | money }}</span>
@@ -271,20 +271,20 @@
 
                 <div class="cart-controls">
                   <div class="quantity-selector">
-                    <button class="px-3 py-1 hover:bg-gray-100"
+                    <button class="hover:bg-gray-100 px-3 py-1"
                             data-action="decrease-quantity"
                             aria-label="Decrease quantity">−</button>
                     <input type="number"
                            name="updates[]"
                            value="{{ item.quantity }}"
                            min="0"
-                           class="w-12 text-center border-x"
+                           class="border-x w-12 text-center"
                            data-item-key="{{ item.key }}">
-                    <button class="px-3 py-1 hover:bg-gray-100"
+                    <button class="hover:bg-gray-100 px-3 py-1"
                             data-action="increase-quantity"
                             aria-label="Increase quantity">+</button>
                   </div>
-                  <button class="text-red-600 hover:text-red-800"
+                  <button class="hover:text-red-800 text-red-600"
                           data-action="remove-item"
                           data-item-key="{{ item.key }}">
                     Remove
@@ -295,9 +295,9 @@
           {% endfor %}
         </div>
       {% else %}
-        <div class="text-center py-12">
+        <div class="py-12 text-center">
           <p class="text-lg text-gray-600">Your cart is empty</p>
-          <a href="/collections/all" class="inline-block mt-4 px-6 py-2 bg-primary text-white rounded-md hover:bg-primary-dark">
+          <a href="/collections/all" class="bg-primary hover:bg-primary-dark inline-block px-6 py-2 mt-4 text-white rounded-md">
             Continue Shopping
           </a>
         </div>
@@ -306,7 +306,7 @@
 
     <div class="lg:col-span-1">
       <div class="cart-summary">
-        <h2 class="text-xl font-bold mb-4">Order Summary</h2>
+        <h2 class="mb-4 text-xl font-bold">Order Summary</h2>
         <div class="space-y-2">
           <div class="flex justify-between">
             <span>Subtotal</span>
@@ -318,13 +318,13 @@
               <span>-{{ cart.total_discounts | money }}</span>
             </div>
           {% endif %}
-          <div class="flex justify-between font-bold pt-4 border-t">
+          <div class="flex justify-between pt-4 font-bold border-t">
             <span>Total</span>
             <span>{{ cart.total_price | money }}</span>
           </div>
         </div>
 
-        <button class="w-full mt-6 px-6 py-3 bg-primary text-white rounded-md hover:bg-primary-dark"
+        <button class="bg-primary hover:bg-primary-dark w-full px-6 py-3 mt-6 text-white rounded-md"
                 {% if cart.item_count == 0 %}disabled{% endif %}
                 onclick="window.location.href='/checkout'">
           Proceed to Checkout
@@ -336,7 +336,7 @@
 
 {% schema %}
 {
-  "name": "Cart Page",
+  "name": "Cart Items",
   "settings": [
     {
       "type": "color",
