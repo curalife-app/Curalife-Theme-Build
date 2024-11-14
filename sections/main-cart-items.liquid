@@ -1,265 +1,202 @@
-<!-- Shopify Liquid Code for the Cart Component -->
-
+<!-- Shopify Liquid Code for Modern Cart Component -->
 <script src="{{ 'cart.js' | asset_url }}" defer="defer"></script>
 
 <style>
-  /* Reset and Base Styles */
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-
-  body {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
-    color: #333;
-  }
-
-  /* Container Styles */
   .cart-container {
     max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem 1rem;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 
-  /* Header Styles */
   .cart-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f3f4f6;
   }
 
   .cart-header h1 {
-    font-size: 2rem;
+    font-size: 1.75rem;
     font-weight: 600;
+    color: #1a1a1a;
   }
 
   .continue-shopping-link {
-    font-size: 1rem;
-    color: #007BFF;
+    color: #4f46e5;
     text-decoration: none;
-    transition: color 0.2s;
+    font-weight: 500;
+    transition: all 0.2s;
   }
 
   .continue-shopping-link:hover {
-    color: #0056b3;
+    color: #4338ca;
   }
 
-  /* Empty Cart Styles */
+  .cart-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 1rem;
+  }
+
+  .cart-table th {
+    font-weight: 500;
+    color: #6b7280;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    letter-spacing: 0.05em;
+    padding: 0.75rem;
+    text-align: left;
+  }
+
+  .cart-table td {
+    padding: 1rem 0.75rem;
+    background: #fff;
+    vertical-align: middle;
+  }
+
+  .cart-table tr {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+  }
+
+  .cart-table tr:hover {
+    transform: translateY(-2px);
+  }
+
+  .product-image img {
+    width: 70px;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 8px;
+  }
+
+  .product-title {
+    color: #1a1a1a;
+    text-decoration: none;
+    font-weight: 500;
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  .product-options {
+    color: #6b7280;
+    font-size: 0.875rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .product-quantity {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .product-quantity input {
+    width: 60px;
+    padding: 0.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    text-align: center;
+  }
+
+  .remove-item {
+    color: #ef4444;
+    text-decoration: none;
+    font-size: 1.25rem;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+  }
+
+  .remove-item:hover {
+    opacity: 1;
+  }
+
+  .cart-summary {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: #f9fafb;
+    border-radius: 12px;
+    max-width: 400px;
+    margin-left: auto;
+  }
+
+  .cart-summary p {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    color: #4b5563;
+  }
+
+  .cart-summary .subtotal {
+    font-weight: 600;
+    color: #1a1a1a;
+    font-size: 1.125rem;
+  }
+
+  .cart-summary .savings {
+    color: #059669;
+  }
+
+  .checkout-button {
+    width: 100%;
+    padding: 0.875rem;
+    background: #4f46e5;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    text-align: center;
+    text-decoration: none;
+    transition: all 0.2s;
+    display: block;
+    margin-top: 1rem;
+  }
+
+  .checkout-button:hover {
+    background: #4338ca;
+    transform: translateY(-1px);
+  }
+
   .cart-empty {
     text-align: center;
-    padding: 4rem 1rem;
+    padding: 3rem 1rem;
   }
 
   .cart-empty h2 {
-    font-size: 1.5rem;
+    color: #1a1a1a;
     margin-bottom: 1rem;
   }
 
   .cart-empty .button {
     display: inline-block;
     padding: 0.75rem 1.5rem;
-    background-color: #007BFF;
-    color: #FFFFFF;
+    background: #4f46e5;
+    color: white;
     text-decoration: none;
-    border-radius: 4px;
-    transition: background-color 0.2s;
+    border-radius: 8px;
+    transition: all 0.2s;
   }
 
   .cart-empty .button:hover {
-    background-color: #0056b3;
+    background: #4338ca;
+    transform: translateY(-1px);
   }
 
-  /* Table Styles */
-  .cart-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 2rem;
-  }
-
-  .cart-table thead {
-    background-color: #f8f9fa;
-  }
-
-  .cart-table th,
-  .cart-table td {
-    padding: 1rem;
-    text-align: left;
-    border-bottom: 1px solid #dee2e6;
-  }
-
-  .cart-table th {
-    font-weight: 500;
-    color: #495057;
-  }
-
-  /* Product Details */
-  .product-image img {
-    width: 80px;
-    height: auto;
-    border-radius: 4px;
-  }
-
-  .product-details {
-    font-size: 0.95rem;
-  }
-
-  .product-title {
-    font-size: 1rem;
-    font-weight: 500;
-    color: #212529;
-    text-decoration: none;
-    margin-bottom: 0.5rem;
-    display: block;
-  }
-
-  .product-title:hover {
-    color: #007BFF;
-  }
-
-  .product-options,
-  .product-properties {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    color: #6c757d;
-  }
-
-  .product-options li,
-  .product-properties li {
-    margin-bottom: 0.25rem;
-  }
-
-  /* Price Styles */
-  .product-price {
-    font-size: 1rem;
-  }
-
-  .original-price {
-    text-decoration: line-through;
-    color: #6c757d;
-    margin-right: 0.5rem;
-  }
-
-  .final-price {
-    color: #28a745;
-    font-weight: 600;
-  }
-
-  /* Quantity Styles */
-  .product-quantity {
-    display: flex;
-    align-items: center;
-  }
-
-  .product-quantity input {
-    width: 60px;
-    padding: 0.5rem;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    margin-right: 0.5rem;
-    text-align: center;
-    font-size: 1rem;
-  }
-
-  .remove-item {
-    color: #dc3545;
-    text-decoration: none;
-    font-size: 1.25rem;
-    transition: color 0.2s;
-  }
-
-  .remove-item:hover {
-    color: #bd2130;
-  }
-
-  /* Total Price */
-  .product-total {
-    font-size: 1rem;
-    font-weight: 600;
-  }
-
-  /* Cart Totals */
-  .cart-summary {
-    max-width: 400px;
-    margin-left: auto;
-    font-size: 1rem;
-  }
-
-  .cart-summary p {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 0.5rem;
-  }
-
-  .cart-summary .subtotal {
-    font-weight: 600;
-  }
-
-  .cart-summary .savings {
-    color: #28a745;
-  }
-
-  .checkout-button {
-    display: block;
-    width: 100%;
-    padding: 0.75rem;
-    background-color: #007BFF;
-    color: #FFFFFF;
-    text-align: center;
-    text-decoration: none;
-    border-radius: 4px;
-    font-size: 1rem;
-    margin-top: 1rem;
-    transition: background-color 0.2s;
-  }
-
-  .checkout-button:hover {
-    background-color: #0056b3;
-  }
-
-  /* Responsive Design */
   @media (max-width: 768px) {
-    .cart-header {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-
-    .continue-shopping-link {
-      margin-top: 1rem;
-    }
-
-    .cart-table thead {
-      display: none;
-    }
-
-    .cart-table tr {
-      display: block;
-      margin-bottom: 1rem;
-    }
-
-    .cart-table td {
-      display: block;
-      padding: 0.5rem;
-      text-align: right;
-    }
-
+    .cart-table thead { display: none; }
+    .cart-table td { display: grid; padding: 0.5rem; text-align: right; }
     .cart-table td::before {
       content: attr(data-label);
-      float: left;
       font-weight: 500;
-      color: #6c757d;
+      color: #6b7280;
+      float: left;
     }
-
-    .product-quantity {
-      flex-direction: row;
-      justify-content: flex-end;
-    }
-
-    .cart-summary {
-      margin-left: 0;
-    }
+    .product-quantity { justify-content: flex-end; }
+    .cart-summary { margin: 1.5rem 0 0; }
   }
 </style>
 
@@ -274,10 +211,6 @@
       <div class="cart-empty">
         <h2>{{ 'sections.cart.empty' | t }}</h2>
         <a href="{{ routes.all_products_collection_url }}" class="button">{{ 'general.continue_shopping' | t }}</a>
-        {% if shop.customer_accounts_enabled and customer == null %}
-          <h2>{{ 'sections.cart.login.title' | t }}</h2>
-          <p>{{ 'sections.cart.login.paragraph_html' | t: link: routes.account_login_url }}</p>
-        {% endif %}
       </div>
     {% else %}
       <form action="{{ routes.cart_url }}" method="post" id="cart">
@@ -300,22 +233,12 @@
                     </a>
                   {% endif %}
                 </td>
-                <td class="product-details" data-label="{{ 'sections.cart.headings.product' | t }}">
+                <td class="product-details">
                   <a href="{{ item.url }}" class="product-title">{{ item.product.title | escape }}</a>
                   {% if item.options_with_values.size > 0 %}
                     <ul class="product-options">
                       {% for option in item.options_with_values %}
                         <li>{{ option.name }}: {{ option.value }}</li>
-                      {% endfor %}
-                    </ul>
-                  {% endif %}
-                  {% if item.properties.size > 0 %}
-                    <ul class="product-properties">
-                      {% for property in item.properties %}
-                        {% assign first_char = property.first | slice: 0 %}
-                        {% unless first_char == '_' or property.last == blank %}
-                          <li>{{ property.first }}: {{ property.last }}</li>
-                        {% endunless %}
                       {% endfor %}
                     </ul>
                   {% endif %}
@@ -325,21 +248,11 @@
                     <span class="original-price">{{ item.original_price | money }}</span>
                     <span class="final-price">{{ item.final_price | money }}</span>
                   {% else %}
-                    <span class="price">{{ item.final_price | money }}</span>
+                    {{ item.final_price | money }}
                   {% endif %}
                 </td>
                 <td class="product-quantity" data-label="{{ 'sections.cart.headings.quantity' | t }}">
-                  <input
-                    type="number"
-                    name="updates[]"
-                    value="{{ item.quantity }}"
-                    min="{{ item.variant.quantity_rule.min }}"
-                    {% if item.variant.quantity_rule.max != null %}
-                      max="{{ item.variant.quantity_rule.max }}"
-                    {% endif %}
-                    step="{{ item.variant.quantity_rule.increment }}"
-                    aria-label="{{ 'products.product.quantity.input_label' | t: product: item.product.title | escape }}"
-                  >
+                  <input type="number" name="updates[]" value="{{ item.quantity }}" min="1" aria-label="{{ 'products.product.quantity.input_label' | t: product: item.product.title | escape }}">
                   <a href="{{ item.url_to_remove }}" class="remove-item" aria-label="{{ 'sections.cart.remove_title' | t: title: item.title }}">&times;</a>
                 </td>
                 <td class="product-total" data-label="{{ 'sections.cart.headings.total' | t }}">
