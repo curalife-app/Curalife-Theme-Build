@@ -76,21 +76,35 @@
   </section>
 
   <!-- JavaScript to handle URL parameter and hide the section -->
-  <script>
-    (function() {
-      var displayOnUrlParam = {{ section.settings.display_on_url_param | json }};
-      if (displayOnUrlParam) {
-        var urlParams = new URLSearchParams(window.location.search);
-        var ctaParam = urlParams.get('cta');
-        if (ctaParam !== 'true') {
-          var section = document.getElementById('cta-section-{{ SID }}');
-          if (section) {
-            section.remove();
-          }
-        }
-      }
-    })();
-  </script>
+	<script>
+		(function() {
+			// Existing display_on_url_param code
+			var displayOnUrlParam = {{ section.settings.display_on_url_param | json }};
+			if (displayOnUrlParam) {
+				var urlParams = new URLSearchParams(window.location.search);
+				var ctaParam = urlParams.get('cta');
+				if (ctaParam !== 'true') {
+					var section = document.getElementById('cta-section-{{ SID }}');
+					if (section) {
+						section.remove();
+					}
+				}
+			}
+
+			// New hide_on_url_param code
+			var hideOnUrlParam = {{ section.settings.hide_on_url_param | json }};
+			if (hideOnUrlParam) {
+				var urlParams = new URLSearchParams(window.location.search);
+				var ctaParam = urlParams.get('cta');
+				if (ctaParam === 'true') {
+					var section = document.getElementById('cta-section-{{ SID }}');
+					if (section) {
+						section.remove();
+					}
+				}
+			}
+		})();
+	</script>
 
   <script>
     window.addEventListener('load', function() {
