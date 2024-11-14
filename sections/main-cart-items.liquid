@@ -1,10 +1,73 @@
 <script>
   var moneyFormat = {{ shop.money_format | json }};
 
-  function formatMoney(cents) {
-    var value = (cents / 100).toFixed(2);
-    return moneyFormat.replace('{{amount}}', value);
+function formatMoney(cents, format) {
+  if (typeof cents === 'string') {
+    cents = cents.replace('.', '');
   }
+  var value = '';
+  var formatString = format || moneyFormat;
+
+  // Match the placeholder with optional whitespace
+  var placeholderRegex = /\{\{\s*(\w+)\s*\}\}/;
+
+  function formatWithDelimiters(number, precision, thousands, decimal) {
+    thousands = thousands || ',';
+    decimal = decimal || '.';
+
+    if (isNaN(number) || number == null) {
+      return 0;
+    }
+
+    number = (number / 100.0).toFixed(precision);
+
+    var parts = number.split('.');
+    var dollarsAmount = parts[0].replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1' + thousands);
+    var centsAmount = parts[1] ? decimal + parts[1] : '';
+
+    return dollarsAmount + centsAmount;
+  }
+
+  var match = formatString.match(placeholderRegex);
+  if (!match) {
+    // No placeholder found, return formatString as is
+    return formatString;
+  }
+
+  switch (match[1]) {
+    case 'amount':
+      value = formatWithDelimiters(cents, 2);
+      break;
+    case 'amount_no_decimals':
+      value = formatWithDelimiters(cents, 0);
+      break;
+    case 'amount_with_comma_separator':
+      value = formatWithDelimiters(cents, 2, '.', ',');
+      break;
+    case 'amount_no_decimals_with_comma_separator':
+      value = formatWithDelimiters(cents, 0, '.', ',');
+      break;
+    case 'amount_with_space_separator':
+      value = formatWithDelimiters(cents, 2, ' ');
+      break;
+    case 'amount_with_period_and_space_separator':
+      value = formatWithDelimiters(cents, 2, ' ', '.');
+      break;
+    case 'amount_no_decimals_with_space_separator':
+      value = formatWithDelimiters(cents, 0, ' ');
+      break;
+    case 'amount_with_apostrophe_separator':
+      value = formatWithDelimiters(cents, 2, "'");
+      break;
+    case 'amount_no_decimals_with_apostrophe_separator':
+      value = formatWithDelimiters(cents, 0, "'");
+      break;
+    default:
+      value = formatWithDelimiters(cents, 2);
+  }
+
+  return formatString.replace(placeholderRegex, value);
+}
 
   function updateQuantity(button, change) {
     const input = button.parentNode.querySelector('input');
