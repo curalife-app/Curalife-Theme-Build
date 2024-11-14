@@ -1,5 +1,16 @@
 <!-- Modern Clean Cart Design -->
 <script src="{{ 'cart.js' | asset_url }}" defer="defer"></script>
+<script>
+  function updateQuantity(button, change) {
+    const input = button.parentNode.querySelector('input');
+    const currentValue = parseInt(input.value);
+    const newValue = currentValue + change;
+    if (newValue >= 0) {
+      input.value = newValue;
+      input.form.submit();
+    }
+  }
+</script>
 
 <style>
   .cart {
@@ -81,12 +92,20 @@
     align-items: center;
     border: 1px solid #e5e7eb;
     border-radius: 0.5rem;
-    margin-top: 0.5rem;
+  .quantity-input input {
+    width: 2.5rem;
+    text-align: center;
+    border: none;
+    padding: 0.5rem 0;
+    -webkit-appearance: none;
+    -moz-appearance: textfield;
   }
 
-  .quantity-btn {
-    padding: 0.5rem 0.75rem;
-    background: none;
+  .quantity-input input::-webkit-outer-spin-button,
+  .quantity-input input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
     border: none;
     color: #4f46e5;
     cursor: pointer;
@@ -176,15 +195,16 @@
       <h2>Your cart is empty</h2>
       <a href="{{ routes.all_products_collection_url }}" class="checkout-button">Start Shopping</a>
     </div>
-  {% else %}
-    <form action="/cart" method="post" class="cart-content">
-      <div class="cart-items">
-        {% for item in cart.items %}
-          <div class="cart-item">
-            <img class="item-image"
-                 src="{{ item.image | img_url: '200x200', crop: 'center' }}"
-                 alt="{{ item.title | escape }}"
-                 loading="lazy">
+              <div class="quantity-input">
+                              <button type="button" class="quantity-btn" data-action="decrease" onclick="updateQuantity(this, -1)">−</button>
+                              <input type="number"
+                                     name="updates[]"
+                                     value="{{ item.quantity }}"
+                                     min="0"
+                                     aria-label="Quantity for {{ item.title | escape }}"
+                                     onchange="this.form.submit()">
+                              <button type="button" class="quantity-btn" data-action="increase" onclick="updateQuantity(this, 1)">+</button>
+                            </div>
 
             <div class="item-details">
               <h3>{{ item.product.title }}</h3>
