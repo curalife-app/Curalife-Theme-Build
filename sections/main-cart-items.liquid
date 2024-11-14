@@ -1,68 +1,79 @@
-<!-- Improved Shopify Cart with Modern Features -->
+<!-- Modern Clean Cart Design -->
 <script src="{{ 'cart.js' | asset_url }}" defer="defer"></script>
 
 <style>
-  .cart-container {
-    max-width: 1400px;
-    margin: 2rem auto;
+  .cart {
+    max-width: 1200px;
+    margin: 4rem auto;
+    padding: 0 1.5rem;
     font-family: system-ui, -apple-system, sans-serif;
-    background: #fff;
-    border-radius: 1rem;
-    opacity: 1;
-    transition: opacity 0.3s ease;
-  }
-
-  .cart-container.loading {
-    opacity: 0.6;
-    pointer-events: none;
   }
 
   .cart-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 2rem;
+  }
+
+  .cart-header h1 {
+    font-size: 1.875rem;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  .continue-shopping {
+    color: #4f46e5;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .cart-content {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 2rem;
+  }
+
+  .cart-items {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+
+  .cart-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 1.5rem;
     padding: 1.5rem;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid #f3f4f6;
   }
 
-  .cart-progress {
-    margin: 1rem 1.5rem;
-    padding: 1rem;
-    background: #f3f4f6;
-    border-radius: 0.5rem;
-    text-align: center;
+  .cart-item:last-child {
+    border-bottom: none;
   }
 
-  .progress-bar {
-    height: 0.5rem;
-    background: #e5e7eb;
-    border-radius: 0.25rem;
-    margin: 0.5rem 0;
-    overflow: hidden;
-  }
-
-  .progress-bar-fill {
-    height: 100%;
-    background: #3b82f6;
-    transition: width 0.3s ease;
-  }
-
-  .cart-table {
-    width: 100%;
-    border-spacing: 0;
-    padding: 1.5rem;
-  }
-
-  .cart-table td {
-    padding: 1rem;
-    border-bottom: 1px solid #e5e7eb;
-  }
-
-  .product-image img {
-    width: 80px;
-    height: 80px;
+  .item-image {
+    width: 100px;
+    height: 100px;
+    border-radius: 0.75rem;
     object-fit: cover;
-    border-radius: 0.5rem;
+  }
+
+  .item-details h3 {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #111827;
+    margin-bottom: 0.5rem;
+  }
+
+  .item-options {
+    font-size: 0.875rem;
+    color: #6b7280;
+  }
+
+  .item-price {
+    color: #111827;
+    font-weight: 500;
   }
 
   .quantity-input {
@@ -70,168 +81,165 @@
     align-items: center;
     border: 1px solid #e5e7eb;
     border-radius: 0.5rem;
-    overflow: hidden;
+    margin-top: 0.5rem;
   }
 
   .quantity-btn {
-    padding: 0.5rem;
+    padding: 0.5rem 0.75rem;
     background: none;
     border: none;
-    color: #6b7280;
+    color: #4f46e5;
     cursor: pointer;
   }
 
-  .quantity-btn:hover {
-    background: #f3f4f6;
-  }
-
   .quantity-input input {
-    width: 3rem;
+    width: 2.5rem;
     text-align: center;
     border: none;
-    border-left: 1px solid #e5e7eb;
-    border-right: 1px solid #e5e7eb;
-    padding: 0.5rem;
+    padding: 0.5rem 0;
+  }
+
+  .remove-item {
+    color: #ef4444;
+    font-size: 0.875rem;
+    text-decoration: none;
+    margin-top: 0.5rem;
+    display: inline-block;
   }
 
   .cart-summary {
+    background: white;
+    border-radius: 1rem;
     padding: 1.5rem;
-    background: #f9fafb;
-    border-radius: 0 0 1rem 1rem;
+    position: sticky;
+    top: 2rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    color: #6b7280;
+  }
+
+  .summary-total {
+    font-weight: 600;
+    color: #111827;
+    font-size: 1.125rem;
+    border-top: 1px solid #e5e7eb;
+    margin-top: 0.5rem;
+    padding-top: 1rem;
   }
 
   .checkout-button {
     width: 100%;
     padding: 1rem;
-    background: #3b82f6;
+    background: #4f46e5;
     color: white;
     border: none;
     border-radius: 0.5rem;
-    font-weight: 600;
-    transition: background-color 0.2s;
+    font-weight: 500;
+    margin-top: 1.5rem;
+    cursor: pointer;
+    transition: background-color 0.15s;
   }
 
   .checkout-button:hover {
-    background: #2563eb;
+    background: #4338ca;
   }
 
   .cart-empty {
     text-align: center;
     padding: 4rem 2rem;
-  }
-
-  .notification {
-    position: fixed;
-    bottom: 1rem;
-    right: 1rem;
-    padding: 1rem;
-    background: #fff;
-    border-radius: 0.5rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    transform: translateY(100%);
-    animation: slideIn 0.3s forwards;
-  }
-
-  @keyframes slideIn {
-    to { transform: translateY(0); }
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   }
 
   @media (max-width: 768px) {
-    .cart-table thead { display: none; }
-    .cart-table td {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      padding: 0.75rem;
-      gap: 0.5rem;
-    }
-    .product-image { grid-column: 1/-1; }
+    .cart { margin: 2rem auto; }
+    .cart-content { grid-template-columns: 1fr; }
+    .cart-summary { position: static; }
+    .item-image { width: 80px; height: 80px; }
   }
 </style>
 
-<div class="cart-container">
-  <cart-items>
-    <div class="cart-header">
-      <h1>Cart ({{ cart.item_count }})</h1>
-      <a href="{{ routes.all_products_collection_url }}">Continue Shopping</a>
+<div class="cart">
+  <div class="cart-header">
+    <h1>Shopping Cart ({{ cart.item_count }})</h1>
+    <a href="{{ routes.all_products_collection_url }}" class="continue-shopping">Continue Shopping</a>
+  </div>
+
+  {% if cart == empty %}
+    <div class="cart-empty">
+      <h2>Your cart is empty</h2>
+      <a href="{{ routes.all_products_collection_url }}" class="checkout-button">Start Shopping</a>
     </div>
+  {% else %}
+    <div class="cart-content">
+      <div class="cart-items">
+        {% for item in cart.items %}
+          <div class="cart-item">
+            <img class="item-image"
+                 src="{{ item.image | img_url: '200x200', crop: 'center' }}"
+                 alt="{{ item.title | escape }}"
+                 loading="lazy">
 
-    {% if cart.total_price > 0 %}
-      <div class="cart-progress">
-        {% assign free_shipping_threshold = 7500 %}
-        {% assign progress = cart.total_price | times: 100 | divided_by: free_shipping_threshold %}
-        <p>
-          {% if progress >= 100 %}
-            You've got free shipping! 🎉
-          {% else %}
-            Add {{ free_shipping_threshold | minus: cart.total_price | money }} for free shipping
-          {% endif %}
-        </p>
-        <div class="progress-bar">
-          <div class="progress-bar-fill" style="width: {{ progress }}%"></div>
-        </div>
+            <div class="item-details">
+              <h3>{{ item.product.title }}</h3>
+              {% if item.product.options_with_values.size > 0 %}
+                <div class="item-options">
+                  {% for option in item.product.options_with_values %}
+                    {{ option.name }}: {{ option.value }}{% unless forloop.last %}, {% endunless %}
+                  {% endfor %}
+                </div>
+              {% endif %}
+              <div class="quantity-input">
+                <button type="button" class="quantity-btn" data-action="decrease">−</button>
+                <input type="number"
+                       name="updates[]"
+                       value="{{ item.quantity }}"
+                       min="0"
+                       aria-label="Quantity for {{ item.title | escape }}">
+                <button type="button" class="quantity-btn" data-action="increase">+</button>
+              </div>
+              <a href="/cart/change?line={{ forloop.index }}&quantity=0" class="remove-item">Remove</a>
+            </div>
+
+            <div class="item-price">
+              {{ item.final_line_price | money }}
+            </div>
+          </div>
+        {% endfor %}
       </div>
-    {% endif %}
 
-    {% if cart == empty %}
-      <div class="cart-empty">
-        <h2>Your cart is empty</h2>
-        <a href="{{ routes.all_products_collection_url }}" class="checkout-button">Start Shopping</a>
-      </div>
-    {% else %}
-      <form action="{{ routes.cart_url }}" method="post" id="cart">
-        <table class="cart-table">
-          <tbody>
-            {% for item in cart.items %}
-              <tr>
-                <td class="product-image">
-                  <img src="{{ item.image | img_url: '160x160', crop: 'center' }}"
-                       alt="{{ item.title | escape }}"
-                       loading="lazy">
-                </td>
-                <td>
-                  <a href="{{ item.url }}">{{ item.title }}</a>
-                  {% if item.selling_plan_allocation %}
-                    <p>{{ item.selling_plan_allocation.selling_plan.name }}</p>
-                  {% endif %}
-                </td>
-                <td>
-                  <div class="quantity-input">
-                    <button type="button" class="quantity-btn" data-action="decrease">-</button>
-                    <input type="number" name="updates[]" value="{{ item.quantity }}" min="0"
-                           aria-label="Quantity for {{ item.title | escape }}">
-                    <button type="button" class="quantity-btn" data-action="increase">+</button>
-                  </div>
-                </td>
-                <td>{{ item.final_line_price | money }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-
-        <div class="cart-summary">
-          <p><span>Subtotal</span> <span>{{ cart.total_price | money }}</span></p>
-          {% if cart.total_discount > 0 %}
-            <p><span>Savings</span> <span>-{{ cart.total_discount | money }}</span></p>
-          {% endif %}
-          <button type="submit" name="checkout" class="checkout-button">
-            Checkout • {{ cart.total_price | money }}
-          </button>
+      <div class="cart-summary">
+        <div class="summary-row">
+          <span>Subtotal</span>
+          <span>{{ cart.total_price | money }}</span>
         </div>
-      </form>
-    {% endif %}
-  </cart-items>
+        {% if cart.total_discount > 0 %}
+          <div class="summary-row">
+            <span>Discount</span>
+            <span>-{{ cart.total_discount | money }}</span>
+          </div>
+        {% endif %}
+        <div class="summary-row summary-total">
+          <span>Total</span>
+          <span>{{ cart.total_price | money }}</span>
+        </div>
+        <button type="submit" name="checkout" class="checkout-button">
+          Proceed to Checkout
+        </button>
+      </div>
+    </div>
+  {% endif %}
 </div>
 
 {% schema %}
 {
-  "name": "Cart Items",
-  "settings": [
-    {
-      "type": "number",
-      "id": "free_shipping_threshold",
-      "label": "Free Shipping Threshold",
-      "default": 7500
-    }
-  ]
+  "name": "Cart",
+  "settings": []
 }
 {% endschema %}
