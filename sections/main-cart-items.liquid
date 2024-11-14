@@ -593,14 +593,14 @@ function hideLoadingSpinner() {
 }
 </style>
 
-<div class="cart py-[50px]">
-	<!-- Loading Spinner -->
-<div class="loading-spinner" id="loadingSpinner" style="display: none;">
-  <div class="spinner"></div>
-</div>
+<div class="cart">
+  <!-- Loading Spinner -->
+  <div class="loading-spinner" id="loadingSpinner" style="display: none;">
+    <div class="spinner"></div>
+  </div>
 
   <div class="cart-header">
-    <h1>Shopping Cart</h1>
+    <h1>Shopping Cart ({{ cart.item_count }})</h1>
     <a href="{{ routes.all_products_collection_url }}" class="continue-shopping">Continue Shopping</a>
   </div>
 
@@ -617,31 +617,36 @@ function hideLoadingSpinner() {
             <img src="{{ item.image | img_url: 'medium' }}" alt="{{ item.title }}" class="item-image">
 
             <div class="item-details">
-							<h3>{{ item.product.title }}</h3>
-							{% if item.options_with_values.size > 0 %}
-								<div class="item-options">
-									{% for option in item.options_with_values %}
-										{{ option.name }}: {{ option.value }}{% unless forloop.last %}, {% endunless %}
-									{% endfor %}
-								</div>
-							{% endif %}
-							{% if item.selling_plan_allocation %}
-								<div class="selling-plan-name">
-									{{ item.selling_plan_allocation.selling_plan.name }}
-								</div>
-							{% endif %}
-							<div class="quantity-input quantity-selector">
-								<button type="button" class="quantity-btn" data-action="decrease-quantity">−</button>
-								<input type="number"
-											name="updates[]"
-											value="{{ item.quantity }}"
-											min="0"
-											aria-label="Quantity for {{ item.title | escape }}"
-											data-item-key="{{ item.key }}">
-								<button type="button" class="quantity-btn" data-action="increase-quantity">+</button>
-							</div>
-							<a href="/cart/change?line={{ forloop.index }}&quantity=0" class="remove-item">Remove</a>
-						</div>
+              <h3>{{ item.product.title }}</h3>
+              {% if item.options_with_values.size > 0 %}
+                <div class="item-options">
+                  {% for option in item.options_with_values %}
+                    {{ option.name }}: {{ option.value }}{% unless forloop.last %}, {% endunless %}
+                  {% endfor %}
+                </div>
+              {% endif %}
+              {% if item.selling_plan_allocation %}
+                <div class="selling-plan-name">
+                  {{ item.selling_plan_allocation.selling_plan.name }}
+                </div>
+              {% endif %}
+
+              <!-- Quantity Selector: Only show if no selling plan and title doesn't contain 'Free' -->
+              {% if item.selling_plan_allocation == nil and item.title contains 'Free' == false %}
+                <div class="quantity-input quantity-selector">
+                  <button type="button" class="quantity-btn" data-action="decrease-quantity">−</button>
+                  <input type="number"
+                         name="updates[]"
+                         value="{{ item.quantity }}"
+                         min="0"
+                         aria-label="Quantity for {{ item.title | escape }}"
+                         data-item-key="{{ item.key }}">
+                  <button type="button" class="quantity-btn" data-action="increase-quantity">+</button>
+                </div>
+              {% endif %}
+
+              <a href="/cart/change?line={{ forloop.index }}&quantity=0" class="remove-item">Remove</a>
+            </div>
 
             <div class="item-price">
               {{ item.final_line_price | money }}
@@ -651,28 +656,29 @@ function hideLoadingSpinner() {
       </div>
 
       <div class="cart-summary">
-				<div class="summary-row">
-					<span>Subtotal</span>
-					<span data-cart-subtotal>{{ cart.total_price | money }}</span>
-				</div>
-				{% if cart.total_discount > 0 %}
-					<div class="summary-row">
-						<span>Discount</span>
-						<span>-{{ cart.total_discount | money }}</span>
-					</div>
-				{% endif %}
-				<div class="summary-row summary-total">
-					<span>Total</span>
-					<span data-cart-total>{{ cart.total_price | money }}</span>
-				</div>
+        <div class="summary-row">
+          <span>Subtotal</span>
+          <span data-cart-subtotal>{{ cart.total_price | money }}</span>
+        </div>
+        {% if cart.total_discount > 0 %}
+          <div class="summary-row">
+            <span>Discount</span>
+            <span>-{{ cart.total_discount | money }}</span>
+          </div>
+        {% endif %}
+        <div class="summary-row summary-total">
+          <span>Total</span>
+          <span data-cart-total>{{ cart.total_price | money }}</span>
+        </div>
 
-				<a href="/checkout" class="checkout-button">
-					Proceed to Checkout
-				</a>
-			</div>
+        <a href="/checkout" class="checkout-button">
+          Proceed to Checkout
+        </a>
+      </div>
     </div>
   {% endif %}
 </div>
+
 
 {% schema %}
 {
