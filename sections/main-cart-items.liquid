@@ -1,58 +1,53 @@
+<!-- Shopify Liquid Code for Modern Cart Component -->
 <script src="{{ 'cart.js' | asset_url }}" defer="defer"></script>
-
 
 <style>
 	.cart-container {
 		max-width: 1400px;
-		margin: 4rem auto;
+		margin: 3rem auto;
 		padding: 0 2rem;
-		font-family: 'Inter', system-ui, -apple-system, sans-serif;
-		background: linear-gradient(to bottom, #ffffff, #f8fafc);
-		border-radius: 24px;
-		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+		font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+		background: #ffffff;
+		border-radius: 16px;
+		box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
 	}
 
 	.cart-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		margin-bottom: 3rem;
-		padding: 2.5rem;
-		background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-		border-radius: 24px 24px 0 0;
-		border-bottom: 2px solid rgba(226, 232, 240, 0.8);
+		margin-bottom: 2.5rem;
+		padding: 2rem;
+		background: #f8fafc;
+		border-radius: 16px 16px 0 0;
 	}
 
 	.cart-header h1 {
-		font-size: 2.25rem;
-		font-weight: 800;
-		background: linear-gradient(135deg, #1e293b, #334155);
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-		letter-spacing: -0.03em;
+		font-size: 2rem;
+		font-weight: 700;
+		color: #0f172a;
+		letter-spacing: -0.02em;
 	}
 
 	.continue-shopping-link {
 		color: #3b82f6;
 		text-decoration: none;
 		font-weight: 600;
-		padding: 1rem 2rem;
-		background: linear-gradient(to bottom, #eff6ff, #dbeafe);
-		border-radius: 12px;
-		transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-		border: 1px solid rgba(59, 130, 246, 0.1);
+		padding: 0.75rem 1.5rem;
+		background: #eff6ff;
+		border-radius: 8px;
+		transition: all 0.3s ease;
 	}
 
 	.continue-shopping-link:hover {
-		background: linear-gradient(to bottom, #dbeafe, #bfdbfe);
-		transform: translateY(-2px) scale(1.02);
-		box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+		background: #dbeafe;
+		transform: translateY(-2px);
 	}
 
 	.cart-table {
 		width: 100%;
 		border-collapse: separate;
-		border-spacing: 0 1.5rem;
+		border-spacing: 0 1.25rem;
 		padding: 0 2rem;
 	}
 
@@ -62,45 +57,42 @@
 		text-transform: uppercase;
 		font-size: 0.875rem;
 		letter-spacing: 0.1em;
-		padding: 1.25rem;
+		padding: 1rem;
 		text-align: left;
 	}
 
 	.cart-table td {
-		padding: 2rem 1.5rem;
-		background: white;
-		border-radius: 16px;
+		padding: 1.5rem 1rem;
+		background: #f8fafc;
+		border-radius: 12px;
 		vertical-align: middle;
-		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+	}
+
+	.cart-table tr {
 		transition: all 0.3s ease;
 	}
 
-	.cart-table tr:hover td {
-		transform: translateY(-4px);
-		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+	.cart-table tr:hover {
+		transform: translateY(-3px);
+		box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
 	}
 
 	.product-image img {
-		width: 120px;
-		height: 120px;
+		width: 100px;
+		height: 100px;
 		object-fit: cover;
-		border-radius: 16px;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-		transition: transform 0.3s ease;
-	}
-
-	.product-image img:hover {
-		transform: scale(1.05);
+		border-radius: 12px;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 	}
 
 	.product-title {
-		color: #1e293b;
+		color: #0f172a;
 		text-decoration: none;
-		font-weight: 700;
-		font-size: 1.2rem;
+		font-weight: 600;
+		font-size: 1.1rem;
 		display: block;
-		margin-bottom: 1rem;
-		transition: color 0.3s ease;
+		margin-bottom: 0.75rem;
+		transition: color 0.2s ease;
 	}
 
 	.product-title:hover {
@@ -109,7 +101,7 @@
 
 	.product-options {
 		color: #64748b;
-		font-size: 0.95rem;
+		font-size: 0.9rem;
 		margin: 0;
 		padding: 0;
 		list-style: none;
@@ -118,152 +110,235 @@
 	.product-quantity {
 		display: flex;
 		align-items: center;
-		gap: 1.25rem;
+		gap: 1rem;
 	}
 
 	.product-quantity input {
-		width: 90px;
-		padding: 0.875rem;
+		width: 80px;
+		padding: 0.75rem;
 		border: 2px solid #e2e8f0;
-		border-radius: 12px;
+		border-radius: 8px;
 		text-align: center;
 		font-weight: 600;
-		transition: all 0.3s ease;
-		background: #f8fafc;
+		transition: border-color 0.2s ease;
 	}
 
 	.product-quantity input:focus {
 		border-color: #3b82f6;
 		outline: none;
-		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 	}
 
 	.remove-item {
 		color: #ef4444;
 		text-decoration: none;
-		font-size: 1.75rem;
+		font-size: 1.5rem;
 		opacity: 0.8;
-		transition: all 0.3s ease;
-		padding: 0.75rem;
+		transition: all 0.2s ease;
+		padding: 0.5rem;
 		border-radius: 50%;
-		background: #fee2e2;
 	}
 
 	.remove-item:hover {
 		opacity: 1;
-		background: #fecaca;
-		transform: rotate(90deg);
+		background: #fee2e2;
 	}
 
 	.cart-summary {
-		margin: 4rem 2rem;
-		padding: 2.5rem;
-		background: white;
-		border-radius: 24px;
-		max-width: 500px;
+		margin: 3rem 2rem;
+		padding: 2rem;
+		background: #f8fafc;
+		border-radius: 16px;
+		max-width: 450px;
 		margin-left: auto;
-		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
 	}
 
 	.cart-summary p {
 		display: flex;
 		justify-content: space-between;
-		margin-bottom: 1.25rem;
+		margin-bottom: 1rem;
 		color: #64748b;
-		font-size: 1.15rem;
+		font-size: 1.1rem;
 	}
 
 	.cart-summary .subtotal {
-		font-weight: 800;
-		color: #1e293b;
-		font-size: 1.5rem;
+		font-weight: 700;
+		color: #0f172a;
+		font-size: 1.25rem;
 		border-top: 2px solid #e2e8f0;
-		padding-top: 1.5rem;
-		margin-top: 1.5rem;
+		padding-top: 1rem;
+		margin-top: 1rem;
 	}
 
 	.cart-summary .savings {
 		color: #10b981;
-		font-weight: 700;
-		background: #ecfdf5;
-		padding: 1rem;
-		border-radius: 12px;
+		font-weight: 600;
 	}
 
 	.checkout-button {
 		width: 100%;
-		padding: 1.25rem;
-		background: linear-gradient(135deg, #3b82f6, #2563eb);
+		padding: 1rem;
+		background: #3b82f6;
 		color: white;
 		border: none;
-		border-radius: 16px;
-		font-weight: 700;
-		font-size: 1.2rem;
+		border-radius: 12px;
+		font-weight: 600;
+		font-size: 1.1rem;
 		text-align: center;
 		text-decoration: none;
-		transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+		transition: all 0.3s ease;
 		display: block;
-		margin-top: 2rem;
-		box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3);
+		margin-top: 1.5rem;
+		box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 	}
 
 	.checkout-button:hover {
-		background: linear-gradient(135deg, #2563eb, #1d4ed8);
-		transform: translateY(-3px) scale(1.02);
-		box-shadow: 0 12px 32px rgba(59, 130, 246, 0.4);
+		background: #2563eb;
+		transform: translateY(-2px);
+		box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
 	}
 
 	.cart-empty {
 		text-align: center;
-		padding: 5rem 2rem;
-		background: linear-gradient(to bottom, #ffffff, #f8fafc);
-		border-radius: 24px;
-		margin: 3rem 0;
+		padding: 4rem 2rem;
+		background: #f8fafc;
+		border-radius: 16px;
+		margin: 2rem 0;
 	}
 
 	.cart-empty h2 {
-		color: #1e293b;
-		margin-bottom: 2rem;
-		font-size: 2rem;
-		font-weight: 800;
+		color: #0f172a;
+		margin-bottom: 1.5rem;
+		font-size: 1.75rem;
+		font-weight: 700;
+	}
+
+	.cart-empty .button {
+		display: inline-block;
+		padding: 1rem 2rem;
+		background: #3b82f6;
+		color: white;
+		text-decoration: none;
+		border-radius: 12px;
+		font-weight: 600;
+		transition: all 0.3s ease;
+		box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+	}
+
+	.cart-empty .button:hover {
+		background: #2563eb;
+		transform: translateY(-2px);
+		box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
 	}
 
 	@media (max-width: 768px) {
-		.cart-container {
-			padding: 0 1rem;
-			margin: 2rem auto;
-			border-radius: 16px;
-		}
-
-		.cart-header {
-			padding: 1.5rem;
-			flex-direction: column;
-			gap: 1rem;
-			text-align: center;
-		}
-
+		.cart-container { padding: 0 1rem; margin: 2rem auto; }
+		.cart-header { padding: 1.5rem; }
+		.cart-table thead { display: none; }
 		.cart-table td {
-			padding: 1rem;
 			display: grid;
+			padding: 0.75rem;
 			text-align: right;
+			background: transparent;
 		}
-
 		.cart-table tr {
 			display: block;
-			margin-bottom: 2rem;
-			background: white;
-			border-radius: 16px;
-			padding: 1.5rem;
+			background: #f8fafc;
+			margin-bottom: 1.5rem;
+			border-radius: 12px;
+			padding: 1rem;
 		}
-
-		.cart-summary {
-			margin: 2rem 0;
-			padding: 1.5rem;
+		.cart-table td::before {
+			content: attr(data-label);
+			font-weight: 600;
+			color: #64748b;
+			float: left;
 		}
+		.product-quantity { justify-content: flex-end; }
+		.cart-summary { margin: 2rem 0; padding: 1.5rem; }
 	}
 </style>
 
-[Rest of the Liquid template code remains the same...]
+<div class="cart-container">
+  <cart-items class="container{% if cart == empty %} is-empty{% else %} section-{{ section.id }}-padding{% endif %}">
+    <div class="cart-header">
+      <h1>Shopping Cart</h1>
+      <a href="{{ routes.all_products_collection_url }}" class="continue-shopping-link">Continue Shopping</a>
+    </div>
+
+    {% if cart == empty %}
+      <div class="cart-empty">
+        <h2>Your cart is currently empty.</h2>
+        <a href="{{ routes.all_products_collection_url }}" class="button">Continue Shopping</a>
+      </div>
+    {% else %}
+      <form action="{{ routes.cart_url }}" method="post" id="cart">
+        <table class="cart-table">
+          <thead>
+            <tr>
+              <th colspan="2">Product</th>
+              <th>Price</th>
+              <th>Quantity</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in cart.items %}
+              <tr>
+                <td class="product-image" data-label="Product">
+                  {% if item.image %}
+                    <a href="{{ item.url }}">
+                      <img src="{{ item.image | image_url: width: 80 }}" alt="{{ item.image.alt | escape }}">
+                    </a>
+                  {% endif %}
+                </td>
+                <td class="product-details">
+                  <a href="{{ item.url }}" class="product-title">{{ item.product.title | escape }}</a>
+                  {% if item.options_with_values.size > 0 %}
+                    <ul class="product-options">
+                      {% for option in item.options_with_values %}
+                        <li>{{ option.name }}: {{ option.value }}</li>
+                      {% endfor %}
+                    </ul>
+                  {% endif %}
+                </td>
+                <td class="product-price" data-label="Price">
+                  {% if item.original_price != item.final_price %}
+                    <span class="original-price">{{ item.original_price | money }}</span>
+                    <span class="final-price">{{ item.final_price | money }}</span>
+                  {% else %}
+                    {{ item.final_price | money }}
+                  {% endif %}
+                </td>
+                <td class="product-quantity" data-label="Quantity">
+                  <input type="number" name="updates[]" value="{{ item.quantity }}" min="1" aria-label="Quantity for {{ item.product.title | escape }}">
+                  <a href="{{ item.url_to_remove }}" class="remove-item" aria-label="Remove {{ item.title }}">&times;</a>
+                </td>
+                <td class="product-total" data-label="Total">
+                  {{ item.final_line_price | money }}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <div class="cart-summary">
+          <p class="subtotal">
+            <span>Subtotal</span>
+            <span>{{ cart.total_price | money }}</span>
+          </p>
+          {% if cart.total_discount > 0 %}
+            <p class="savings">
+              <span>Savings</span>
+              <span>-{{ cart.total_discount | money }}</span>
+            </p>
+          {% endif %}
+          <a href="{{ routes.checkout_url }}" class="checkout-button">Checkout</a>
+        </div>
+      </form>
+    {% endif %}
+  </cart-items>
+</div>
 
 {% schema %}
 {
