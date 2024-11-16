@@ -114,31 +114,58 @@
 </div>
 
 <script>
-function formatMoney(cents) {
-  // Ensure cents is a valid number
-  cents = typeof cents === 'string' ? parseInt(cents, 10) : cents;
-  cents = isNaN(cents) ? 0 : cents;
+// Cart Management System
+var moneyFormat = window.shop?.moneyFormat || '${{amount}}';
 
-  function formatWithDelimiters(number, precision = 2) {
-    if (isNaN(number) || number == null) {
-      return '0,00';
+function formatMoney(cents, inputFormat) {
+  try {
+    // Ensure cents is an integer
+    cents = parseInt(cents, 10) || 0;
+    let format = inputFormat || moneyFormat;
+
+    function formatWithDelimiters(number, precision, thousands, decimal) {
+      thousands = thousands || ',';
+      decimal = decimal || '.';
+
+      if (isNaN(number) || number === null) {
+        return '0';
+      }
+
+      number = (number / Math.pow(10, precision)).toFixed(precision);
+      var parts = number.split('.');
+      var dollarsAmount = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, thousands);
+      var centsAmount = parts[1] ? decimal + parts[1] : '';
+
+      return dollarsAmount + centsAmount;
     }
 
-    number = (number / 100.0).toFixed(precision);
-    const parts = number.split(',');
-    const dollarsAmount = parts[0].replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1.');
-    const centsAmount = parts[1] ? ('.' + parts[1]) : ',00';
+    // Find format match
+    var placeholderRegex = /\{\{\s*(\w+)\s*\}\}/;
+    var match = format.match(placeholderRegex);
 
-    return dollarsAmount + centsAmount;
-  }
+    // If no match, use default format
+    if (!match) {
+      format = '${{amount}}';
+      match = format.match(placeholderRegex);
+    }
 
-  try {
-    // Always format with comma separator
-    return '€' + formatWithDelimiters(cents);
+    var value;
+    switch (match[1]) {
+      case 'amount_no_decimals':
+        value = formatWithDelimiters(cents, 0);
+        break;
+      case 'amount_with_comma_separator':
+        value = formatWithDelimiters(cents, 2, '.', ',');
+        break;
+      case 'amount':
+      default:
+        value = formatWithDelimiters(cents, 2);
+    }
+
+    return format.replace(placeholderRegex, value);
   } catch (error) {
-    console.error('Money formatting error:', error);
-    // Fallback to basic format if anything goes wrong
-    return '€0,00';
+    console.error('Error formatting money:', error);
+    return '$0.00';
   }
 }
 
