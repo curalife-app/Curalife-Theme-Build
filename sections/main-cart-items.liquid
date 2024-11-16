@@ -110,7 +110,8 @@ function updateCartTotals(cart) {
     const regularPrice = item.price * item.quantity;
     totalOriginalPrice += regularPrice;
 
-    if (item.variant.compare_at_price && item.variant.compare_at_price > item.price) {
+    // Check if item.variant exists before accessing compare_at_price
+    if (item.variant && item.variant.compare_at_price && item.variant.compare_at_price > item.price) {
       const compareAtPrice = item.variant.compare_at_price * item.quantity;
       totalSavings += compareAtPrice - regularPrice;
     }
@@ -149,14 +150,15 @@ function updateCartTotals(cart) {
   }
 }
 
+
 function updateItemPrice(priceContainer, cartItem) {
   if (!priceContainer || !cartItem) return;
 
   const linePrice = cartItem.price * cartItem.quantity;
   let priceHtml = formatMoney(linePrice);
 
-  // Check for compare at price
-  if (cartItem.variant.compare_at_price && cartItem.variant.compare_at_price > cartItem.price) {
+  // Check if cartItem.variant exists before accessing compare_at_price
+  if (cartItem.variant && cartItem.variant.compare_at_price && cartItem.variant.compare_at_price > cartItem.price) {
     const compareAtPrice = cartItem.variant.compare_at_price * cartItem.quantity;
     priceHtml += `<div class="compare-at-price">${formatMoney(compareAtPrice)}</div>`;
   }
@@ -164,6 +166,7 @@ function updateItemPrice(priceContainer, cartItem) {
   // Update the content
   priceContainer.innerHTML = priceHtml;
 }
+
 
 function removeItemFromCart(itemKey, link) {
   const priceContainer = link.closest('.cart-item').querySelector('.item-price');
