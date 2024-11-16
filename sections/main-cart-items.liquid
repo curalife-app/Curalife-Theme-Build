@@ -109,20 +109,20 @@ function updateCartTotals(cart) {
   let totalSavings = 0;
 
   cart.items.forEach(item => {
-    const regularPrice = item.price * item.quantity;
-    totalOriginalPrice += regularPrice;
+    const originalLinePrice = item.original_line_price;
+    const finalLinePrice = item.final_line_price;
 
-    // Check if item.variant exists before accessing compare_at_price
-    if (item.variant && item.variant.compare_at_price && item.variant.compare_at_price > item.price) {
-      const compareAtPrice = item.variant.compare_at_price * item.quantity;
-      totalSavings += compareAtPrice - regularPrice;
+    totalOriginalPrice += originalLinePrice;
+
+    if (originalLinePrice > finalLinePrice) {
+      totalSavings += originalLinePrice - finalLinePrice;
     }
   });
 
   // Update subtotal
   const cartSubtotal = document.querySelector('[data-cart-subtotal]');
   if (cartSubtotal) {
-    cartSubtotal.textContent = formatMoney(totalOriginalPrice + totalSavings);
+    cartSubtotal.textContent = formatMoney(totalOriginalPrice);
   }
 
   // Update discount row
@@ -152,23 +152,21 @@ function updateCartTotals(cart) {
   }
 }
 
-
 function updateItemPrice(priceContainer, cartItem) {
   if (!priceContainer || !cartItem) return;
 
-  const linePrice = cartItem.price * cartItem.quantity;
-  let priceHtml = formatMoney(linePrice);
+  const finalLinePrice = cartItem.final_line_price; // Price after discounts
+  const originalLinePrice = cartItem.original_line_price; // Price before discounts
+  let priceHtml = formatMoney(finalLinePrice);
 
-  // Check if cartItem.variant exists before accessing compare_at_price
-  if (cartItem.variant && cartItem.variant.compare_at_price && cartItem.variant.compare_at_price > cartItem.price) {
-    const compareAtPrice = cartItem.variant.compare_at_price * cartItem.quantity;
-    priceHtml += `<div class="compare-at-price">${formatMoney(compareAtPrice)}</div>`;
+  // Check if there is a discount on the item
+  if (originalLinePrice > finalLinePrice) {
+    priceHtml += `<div class="compare-at-price">${formatMoney(originalLinePrice)}</div>`;
   }
 
   // Update the content
   priceContainer.innerHTML = priceHtml;
 }
-
 
 function removeItemFromCart(itemKey, link) {
   const priceContainer = link.closest('.cart-item').querySelector('.item-price');
@@ -676,18 +674,16 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
 
             <div class="item-price text-[--primary]">
-              {% assign lineItemCAP = item.variant.compare_at_price | times: item.quantity %}
-              {% assign lineItemPrice = item.price | times: item.quantity %}
-              {% assign lineItemSaving = lineItemCAP | minus: lineItemPrice %}
-              {% assign totalOriginalPrice = totalOriginalPrice | plus: lineItemPrice %}
-              {% if item.variant.compare_at_price and item.variant.compare_at_price > item.price %}
-                {% assign totalSavings = totalSavings | plus: lineItemSaving %}
-              {% endif %}
+              {% assign originalLinePrice = item.original_line_price %}
+              {% assign finalLinePrice = item.final_line_price %}
+              {% assign lineItemSaving = originalLinePrice | minus: finalLinePrice %}
+              {% assign totalOriginalPrice = totalOriginalPrice | plus: originalLinePrice %}
+              {% assign totalSavings = totalSavings | plus: lineItemSaving %}
 
-              {{ lineItemPrice | money }}
+              {{ finalLinePrice | money }}
 
-              {% if item.variant.compare_at_price and item.variant.compare_at_price > item.price %}
-                <div class="compare-at-price">{{ lineItemCAP | money }}</div>
+              {% if originalLinePrice > finalLinePrice %}
+                <div class="compare-at-price">{{ originalLinePrice | money }}</div>
               {% endif %}
             </div>
           </div>
@@ -697,15 +693,15 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="cart-summary">
         <div class="summary-row">
           <span>Subtotal</span>
-          <span data-cart-subtotal>{{ totalOriginalPrice | plus: totalSavings | money }}</span>
+          <span data-cart-subtotal>{{ totalOriginalPrice | money }}</span>
         </div>
 
         {% if totalSavings > 0 %}
-					<div class="summary-row" data-discount-row>
-						<span>Discounts</span>
-						<span data-discount-amount>-{{ totalSavings | money }}</span>
-					</div>
-				{% endif %}
+          <div class="summary-row" data-discount-row>
+            <span>Discounts</span>
+            <span data-discount-amount>-{{ totalSavings | money }}</span>
+          </div>
+        {% endif %}
 
         <div class="summary-row summary-total">
           <span>Total</span>
