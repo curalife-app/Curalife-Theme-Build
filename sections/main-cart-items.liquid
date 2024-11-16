@@ -2,7 +2,12 @@
 {% assign totalSavings = 0 %}
 
 <script>
-  const variantCompareAtPrices = {};
+  const variantCompareAtPrices = {
+    {% for item in cart.items %}
+      "{{ item.variant.id }}": {{ item.variant.compare_at_price | default: item.price }}{% unless forloop.last %},{% endunless %}
+    {% endfor %}
+  };
+  console.log('variantCompareAtPrices:', variantCompareAtPrices);
 </script>
 
 <div class="cart">
@@ -80,10 +85,6 @@
 								<div class="compare-at-price">{{ lineItemCAP | money }}</div>
 							{% endif %}
 						</div>
-
-						<script>
-							variantCompareAtPrices[{{ item.variant.id }}] = {{ item.variant.compare_at_price | default: 0 }};
-						</script>
           </div>
         {% endfor %}
       </div>
@@ -223,12 +224,17 @@ function updateQuantity(button, change) {
 }
 
 function updateCartTotals(cart) {
+  console.log('updateCartTotals called with cart:', cart);
+  console.log('variantCompareAtPrices:', variantCompareAtPrices);
+
   let totalOriginalPrice = 0;
   let totalSavings = 0;
 
   cart.items.forEach(item => {
+    console.log('Processing item:', item);
     try {
-      const variantCap = variantCompareAtPrices[item.variant_id] || item.price;
+      const variantId = item.variant_id.toString();
+      const variantCap = parseInt(variantCompareAtPrices[variantId], 10) || item.price;
       const originalUnitPrice = variantCap;
       const originalLinePrice = originalUnitPrice * item.quantity;
       const finalLinePrice = item.final_line_price;
@@ -275,25 +281,25 @@ function updateCartTotals(cart) {
     cartItemCount.textContent = cart.item_count;
   }
 
-	console.log("totalOriginalPrice: ", totalOriginalPrice);
-	console.log("totalSavings: ", totalSavings);
-	console.log("cart.total_price: ", cart.total_price);
+  console.log("totalOriginalPrice: ", totalOriginalPrice);
+  console.log("totalSavings: ", totalSavings);
+  console.log("cart.total_price: ", cart.total_price);
 }
-
 
 function updateItemPrice(priceContainer, cartItem) {
   if (!priceContainer || !cartItem) return;
 
-  const variantCap = variantCompareAtPrices[cartItem.variant_id] || cartItem.price;
+  const variantId = cartItem.variant_id.toString();
+  const variantCap = parseInt(variantCompareAtPrices[variantId], 10) || cartItem.price;
   const originalUnitPrice = variantCap;
   const originalLinePrice = originalUnitPrice * cartItem.quantity;
   const finalLinePrice = cartItem.final_line_price;
 
-	console.log("item: ", cartItem);
-	console.log("variantCap: ", variantCap);
-	console.log("originalUnitPrice: ", originalUnitPrice);
-	console.log("originalLinePrice: ", originalLinePrice);
-	console.log("finalLinePrice: ", finalLinePrice);
+  console.log("item: ", cartItem);
+  console.log("variantCap: ", variantCap);
+  console.log("originalUnitPrice: ", originalUnitPrice);
+  console.log("originalLinePrice: ", originalLinePrice);
+  console.log("finalLinePrice: ", finalLinePrice);
 
   let priceHtml = formatMoney(finalLinePrice);
 
