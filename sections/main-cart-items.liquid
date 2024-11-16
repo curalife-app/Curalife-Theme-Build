@@ -294,6 +294,15 @@ function hideLoadingSpinner() {
   margin-bottom: 0.25rem;
 }
 
+.compare-at-price {
+  color: var(--primary);
+  opacity: 0.5;
+  font-size: 16px;
+  font-weight: 100;
+  text-align: end;
+  text-decoration: line-through;
+}
+
 .item-options,
 .selling-plan-name {
   font-size: 1rem;
@@ -597,14 +606,15 @@ function hideLoadingSpinner() {
               <a href="/cart/change?line={{ forloop.index }}&quantity=0" class="remove-item">Remove</a>
 						</div>
 
-						<div class="item-price">
+						<div class="item-price text-[--primary]">
               {% assign lineItemCAP = item.variant.compare_at_price | times: item.quantity %}
               {% assign lineItemPrice = item.final_line_price %}
-							{% if lineItemCAP > lineItemPrice %}
-								<div class="compare-at-price">{{ lineItemCAP | money }}</div>
-							{% endif %}
 
 							{{ lineItemPrice | money }}
+
+							{% if lineItemCAP > lineItemPrice %}
+								<div class="compare-at-price ">{{ lineItemCAP | money }}</div>
+							{% endif %}
 						</div>
           </div>
         {% endfor %}
