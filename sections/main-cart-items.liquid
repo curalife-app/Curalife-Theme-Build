@@ -7,8 +7,6 @@ function formatMoney(cents, format) {
   }
   var value = '';
   var formatString = format || moneyFormat;
-
-  // Match the placeholder with optional whitespace
   var placeholderRegex = /\{\{\s*(\w+)\s*\}\}/;
 
   function formatWithDelimiters(number, precision, thousands, decimal) {
@@ -75,8 +73,8 @@ function updateQuantity(button, change) {
   const newValue = currentValue + change;
 
   if (newValue >= 0) {
-    // Show the loading spinner
-    showLoadingSpinner();
+    const priceContainer = button.closest('.cart-item').querySelector('.item-price');
+    showItemLoadingSpinner(priceContainer);
 
     fetch('/cart/change.js', {
       method: 'POST',
@@ -106,49 +104,90 @@ function updateQuantity(button, change) {
         console.error('Error:', error);
       })
       .finally(() => {
-        // Hide the loading spinner
-        hideLoadingSpinner();
+        hideItemLoadingSpinner(priceContainer);
       });
   }
 }
 
-  function updateCartTotals(cart) {
-    const cartSubtotal = document.querySelector('[data-cart-subtotal]');
-    const cartTotal = document.querySelector('[data-cart-total]');
-    const cartItemCount = document.querySelector('[data-cart-item-count]');
-    if (cartSubtotal && cartTotal) {
-      cartSubtotal.textContent = formatMoney(cart.total_price);
-      cartTotal.textContent = formatMoney(cart.total_price);
-    }
-    if (cartItemCount) {
-      cartItemCount.textContent = cart.item_count;
-    }
+function updateCartTotals(cart) {
+  const cartSubtotal = document.querySelector('[data-cart-subtotal]');
+  const cartTotal = document.querySelector('[data-cart-total]');
+  const cartItemCount = document.querySelector('[data-cart-item-count]');
 
-    if (cart.item_count === 0) {
-      const cartContent = document.querySelector('.cart-content');
-      const cartEmptyMessage = document.querySelector('.cart-empty');
-      if (cartContent && cartEmptyMessage) {
-        cartContent.style.display = 'none';
-        cartEmptyMessage.style.display = 'block';
+  // Calculate new totals
+  let totalOriginalPrice = 0;
+  let totalSavings = 0;
+
+  cart.items.forEach(item => {
+    const lineItemCAP = item.variant.compare_at_price * item.quantity;
+    const lineItemPrice = item.final_line_price;
+    totalOriginalPrice += lineItemCAP || lineItemPrice; // Use actual price if no CAP
+    if (lineItemCAP) {
+      totalSavings += lineItemCAP - lineItemPrice;
+    }
+  });
+
+  if (cartSubtotal) {
+    cartSubtotal.textContent = formatMoney(totalOriginalPrice);
+  }
+
+  if (cartTotal) {
+    cartTotal.textContent = formatMoney(cart.total_price);
+  }
+
+  // Update discounts display
+  const discountElement = document.querySelector('.summary-row:not(.summary-total) span:last-child');
+  if (discountElement && totalSavings > 0) {
+    discountElement.textContent = '-' + formatMoney(totalSavings);
+  }
+
+  if (cartItemCount) {
+    cartItemCount.textContent = cart.item_count;
+  }
+
+  if (cart.item_count === 0) {
+    const cartContent = document.querySelector('.cart-content');
+    const cartEmptyMessage = document.querySelector('.cart-empty');
+    if (cartContent && cartEmptyMessage) {
+      cartContent.style.display = 'none';
+      cartEmptyMessage.style.display = 'block';
+    }
+  }
+}
+
+function updateItemPrice(button, cart) {
+  const input = button.parentNode.querySelector('input');
+  const itemKey = input.getAttribute('data-item-key');
+  const cartItem = cart.items.find(item => item.key === itemKey);
+
+  if (cartItem) {
+    const cartItemElement = button.closest('.cart-item');
+    const itemPriceElement = cartItemElement.querySelector('.item-price');
+    const compareAtPriceElement = cartItemElement.querySelector('.compare-at-price');
+
+    if (itemPriceElement) {
+      itemPriceElement.textContent = formatMoney(cartItem.final_line_price);
+
+      // Update compare at price if it exists
+      if (cartItem.variant.compare_at_price) {
+        const compareAtLinePrice = cartItem.variant.compare_at_price * cartItem.quantity;
+        if (compareAtPriceElement) {
+          compareAtPriceElement.textContent = formatMoney(compareAtLinePrice);
+        } else {
+          // Create compare at price element if it doesn't exist
+          const compareAtDiv = document.createElement('div');
+          compareAtDiv.className = 'compare-at-price';
+          compareAtDiv.textContent = formatMoney(compareAtLinePrice);
+          itemPriceElement.appendChild(compareAtDiv);
+        }
       }
     }
   }
+}
 
-  function updateItemPrice(button, cart) {
-    const input = button.parentNode.querySelector('input');
-    const itemKey = input.getAttribute('data-item-key');
-    const cartItem = cart.items.find(item => item.key === itemKey);
-    if (cartItem) {
-      const itemPriceElement = button.closest('.cart-item').querySelector('.item-price');
-      if (itemPriceElement) {
-        itemPriceElement.textContent = formatMoney(cartItem.final_line_price);
-      }
-    }
-  }
-
-  function removeItemFromCart(itemKey, link) {
-  // Show the loading spinner
-  showLoadingSpinner();
+function removeItemFromCart(itemKey, link) {
+  const priceContainer = link.closest('.cart-item').querySelector('.item-price');
+  showItemLoadingSpinner(priceContainer);
 
   fetch('/cart/change.js', {
     method: 'POST',
@@ -173,43 +212,47 @@ function updateQuantity(button, change) {
       console.error('Error:', error);
     })
     .finally(() => {
-      // Hide the loading spinner
-      hideLoadingSpinner();
+      hideItemLoadingSpinner(priceContainer);
     });
 }
 
+function showItemLoadingSpinner(container) {
+  // Save the current content
+  container.dataset.originalContent = container.innerHTML;
 
-  document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.quantity-btn').forEach(function(button) {
-      button.addEventListener('click', function() {
-        const action = button.getAttribute('data-action');
-        const change = action === 'increase-quantity' ? 1 : -1;
-        updateQuantity(button, change);
-      });
-    });
+  // Create and insert spinner
+  const spinner = document.createElement('div');
+  spinner.className = 'item-spinner';
+  spinner.innerHTML = '<div class="spinner"></div>';
+  container.innerHTML = '';
+  container.appendChild(spinner);
+}
 
-    document.querySelectorAll('.remove-item').forEach(function(link) {
-      link.addEventListener('click', function(event) {
-        event.preventDefault();
-        const itemKey = link.getAttribute('data-item-key');
-        removeItemFromCart(itemKey, link);
-      });
+function hideItemLoadingSpinner(container) {
+  // Restore the original content
+  if (container.dataset.originalContent) {
+    container.innerHTML = container.dataset.originalContent;
+    delete container.dataset.originalContent;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.quantity-btn').forEach(function(button) {
+    button.addEventListener('click', function() {
+      const action = button.getAttribute('data-action');
+      const change = action === 'increase-quantity' ? 1 : -1;
+      updateQuantity(button, change);
     });
   });
 
-	function showLoadingSpinner() {
-  const spinner = document.getElementById('loadingSpinner');
-  if (spinner) {
-    spinner.style.display = 'flex';
-  }
-}
-
-function hideLoadingSpinner() {
-  const spinner = document.getElementById('loadingSpinner');
-  if (spinner) {
-    spinner.style.display = 'none';
-  }
-}
+  document.querySelectorAll('.remove-item').forEach(function(link) {
+    link.addEventListener('click', function(event) {
+      event.preventDefault();
+      const itemKey = link.getAttribute('data-item-key');
+      removeItemFromCart(itemKey, link);
+    });
+  });
+});
 </script>
 
 <style>
@@ -440,13 +483,18 @@ function hideLoadingSpinner() {
   z-index: 9999;
 }
 
-.loading-spinner .spinner {
-  width: 60px;
-  height: 60px;
-  border: 6px solid var(--color-border);
+.item-spinner .spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--color-border);
   border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
+}
+
+/* Remove the full-page loading spinner styles since we're not using it anymore */
+.loading-spinner {
+  display: none !important;
 }
 
 @keyframes spin {
