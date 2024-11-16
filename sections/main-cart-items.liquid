@@ -61,6 +61,7 @@ function updateQuantity(button, change) {
   if (newValue >= 0) {
     const priceContainer = button.closest('.cart-item').querySelector('.item-price');
     showItemLoadingSpinner(priceContainer);
+    showSummaryLoadingSpinners(); // Show loaders on summary prices
 
     fetch('/cart/change.js', {
       method: 'POST',
@@ -98,6 +99,7 @@ function updateQuantity(button, change) {
       })
       .finally(() => {
         hideItemLoadingSpinner(priceContainer);
+        hideSummaryLoadingSpinners(); // Hide loaders on summary prices
       });
   }
 }
@@ -171,6 +173,7 @@ function updateItemPrice(priceContainer, cartItem) {
 function removeItemFromCart(itemKey, link) {
   const priceContainer = link.closest('.cart-item').querySelector('.item-price');
   showItemLoadingSpinner(priceContainer);
+  showSummaryLoadingSpinners(); // Show loaders on summary prices
 
   fetch('/cart/change.js', {
     method: 'POST',
@@ -200,6 +203,7 @@ function removeItemFromCart(itemKey, link) {
     })
     .finally(() => {
       hideItemLoadingSpinner(priceContainer);
+      hideSummaryLoadingSpinners(); // Hide loaders on summary prices
     });
 }
 
@@ -226,6 +230,24 @@ function hideItemLoadingSpinner(container) {
     container.innerHTML = container.dataset.originalContent;
   }
   delete container.dataset.originalContent;
+}
+
+function showSummaryLoadingSpinners() {
+  const summaryPriceElements = document.querySelectorAll('[data-cart-subtotal], [data-cart-total], [data-discount-amount]');
+  summaryPriceElements.forEach(element => {
+    element.dataset.originalContent = element.textContent;
+    element.innerHTML = '<div class="spinner summary-spinner"></div>';
+  });
+}
+
+function hideSummaryLoadingSpinners() {
+  const summaryPriceElements = document.querySelectorAll('[data-cart-subtotal], [data-cart-total], [data-discount-amount]');
+  summaryPriceElements.forEach(element => {
+    if (element.dataset.originalContent) {
+      element.textContent = element.dataset.originalContent;
+      delete element.dataset.originalContent;
+    }
+  });
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -475,18 +497,27 @@ document.addEventListener('DOMContentLoaded', function() {
   z-index: 9999;
 }
 
-.item-spinner .spinner {
+.spinner {
   width: 24px;
   height: 24px;
   border: 3px solid var(--color-border);
   border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
+  margin: 0 auto;
 }
 
 /* Remove the full-page loading spinner styles since we're not using it anymore */
 .loading-spinner {
   display: none !important;
+}
+
+.summary-spinner {
+  display: inline-block;
+  vertical-align: middle;
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
 }
 
 @keyframes spin {
@@ -670,11 +701,11 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
 
         {% if totalSavings > 0 %}
-          <div class="summary-row" data-discount-row>
-            <span>Discounts</span>
-            <span>-{{ totalSavings | money }}</span>
-          </div>
-        {% endif %}
+					<div class="summary-row" data-discount-row>
+						<span>Discounts</span>
+						<span data-discount-amount>-{{ totalSavings | money }}</span>
+					</div>
+				{% endif %}
 
         <div class="summary-row summary-total">
           <span>Total</span>
