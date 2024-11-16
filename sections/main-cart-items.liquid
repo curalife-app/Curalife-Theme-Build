@@ -548,6 +548,8 @@ function hideLoadingSpinner() {
 }
 </style>
 
+{% assign totalSavings == 0 %}
+
 <div class="cart">
   <div class="loading-spinner" id="loadingSpinner" style="display: none;">
     <div class="spinner"></div>
@@ -608,6 +610,8 @@ function hideLoadingSpinner() {
 						<div class="item-price text-[--primary]">
               {% assign lineItemCAP = item.variant.compare_at_price | times: item.quantity %}
               {% assign lineItemPrice = item.final_line_price %}
+							{% assign lineItemSaving = lineItemCAP | minus: lineItemPrice %}
+							{% assign totalSavings = totalSavings | plus: lineItemSaving %}
 
 							{{ lineItemPrice | money }}
 
@@ -619,7 +623,7 @@ function hideLoadingSpinner() {
         {% endfor %}
       </div>
 
-      <div class="cart-summary">
+			<div class="cart-summary"></div>
         <div class="summary-row">
           <span>Subtotal</span>
           <span data-cart-subtotal>{{ cart.total_price | money }}</span>
@@ -627,7 +631,7 @@ function hideLoadingSpinner() {
         {% if cart.total_discount > 0 %}
           <div class="summary-row">
             <span>Discount</span>
-            <span>-{{ cart.total_discount | money }}</span>
+            <span>-{{ totalSavings | money }}</span>
           </div>
         {% endif %}
         <div class="summary-row summary-total">
@@ -649,4 +653,4 @@ function hideLoadingSpinner() {
   "name": "Cart",
   "settings": []
 }
-{% endschema %}
+{% endschema %}      </div>        </a>          Proceed to Checkout        <a href="/checkout" class="checkout-button"></a>
