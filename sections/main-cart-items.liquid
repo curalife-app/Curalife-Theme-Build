@@ -82,7 +82,7 @@
 						</div>
 
 						<script>
-							variantCompareAtPrices["{{ item.key }}"] = {{ item.variant.compare_at_price | default: 0 }};
+							variantCompareAtPrices[{{ item.variant.id }}] = {{ item.variant.compare_at_price | default: 0 }};
 						</script>
           </div>
         {% endfor %}
@@ -223,83 +223,77 @@ function updateQuantity(button, change) {
 }
 
 function updateCartTotals(cart) {
-    let totalOriginalPrice = 0;
-    let totalSavings = 0;
+  let totalOriginalPrice = 0;
+  let totalSavings = 0;
 
-    cart.items.forEach(item => {
-      try {
-        const variantCap = variantCompareAtPrices[item.key] || item.price;
-        const originalUnitPrice = variantCap;
-        const originalLinePrice = originalUnitPrice * item.quantity;
-        const finalLinePrice = item.final_line_price;
+  cart.items.forEach(item => {
+    try {
+      const variantCap = variantCompareAtPrices[item.variant_id] || item.price;
+      const originalUnitPrice = variantCap;
+      const originalLinePrice = originalUnitPrice * item.quantity;
+      const finalLinePrice = item.final_line_price;
 
-				console.log('item:', item);
-				console.log('variantCap:', variantCap);
-				console.log('originalUnitPrice:', originalUnitPrice);
-				console.log('originalLinePrice:', originalLinePrice);
-				console.log('finalLinePrice:', finalLinePrice);
+      totalOriginalPrice += originalLinePrice;
 
-        totalOriginalPrice += originalLinePrice;
-
-        if (originalLinePrice > finalLinePrice) {
-          totalSavings += originalLinePrice - finalLinePrice;
-        }
-      } catch (error) {
-        console.error('Error processing cart item:', error);
+      if (originalLinePrice > finalLinePrice) {
+        totalSavings += originalLinePrice - finalLinePrice;
       }
-    });
-
-    // Update subtotal
-    const cartSubtotal = document.querySelector('[data-cart-subtotal]');
-    if (cartSubtotal) {
-      cartSubtotal.textContent = formatMoney(totalOriginalPrice);
+    } catch (error) {
+      console.error('Error processing cart item:', error);
     }
+  });
 
-    // Update discount row
-    const discountRow = document.querySelector('.summary-row[data-discount-row]');
-    if (discountRow) {
-      if (totalSavings > 0) {
-        const discountAmount = discountRow.querySelector('span:last-child');
-        if (discountAmount) {
-          discountAmount.textContent = '-' + formatMoney(totalSavings);
-        }
-        discountRow.style.display = 'flex';
-      } else {
-        discountRow.style.display = 'none';
+  // Update subtotal
+  const cartSubtotal = document.querySelector('[data-cart-subtotal]');
+  if (cartSubtotal) {
+    cartSubtotal.textContent = formatMoney(totalOriginalPrice);
+  }
+
+  // Update discount row
+  const discountRow = document.querySelector('.summary-row[data-discount-row]');
+  if (discountRow) {
+    if (totalSavings > 0) {
+      const discountAmount = discountRow.querySelector('span:last-child');
+      if (discountAmount) {
+        discountAmount.textContent = '-' + formatMoney(totalSavings);
       }
-    }
-
-    // Update final total
-    const cartTotal = document.querySelector('[data-cart-total]');
-    if (cartTotal) {
-      cartTotal.textContent = formatMoney(cart.total_price);
-    }
-
-    // Update item count
-    const cartItemCount = document.querySelector('[data-cart-item-count]');
-    if (cartItemCount) {
-      cartItemCount.textContent = cart.item_count;
+      discountRow.style.display = 'flex';
+    } else {
+      discountRow.style.display = 'none';
     }
   }
 
-  function updateItemPrice(priceContainer, cartItem) {
-    if (!priceContainer || !cartItem) return;
-
-    const variantCap = variantCompareAtPrices[cartItem.key] || cartItem.price;
-    const originalUnitPrice = variantCap;
-    const originalLinePrice = originalUnitPrice * cartItem.quantity;
-    const finalLinePrice = cartItem.final_line_price;
-
-    let priceHtml = formatMoney(finalLinePrice);
-
-    // Check if there is a discount on the item
-    if (originalLinePrice > finalLinePrice) {
-      priceHtml += `<div class="compare-at-price">${formatMoney(originalLinePrice)}</div>`;
-    }
-
-    // Update the content
-    priceContainer.innerHTML = priceHtml;
+  // Update final total
+  const cartTotal = document.querySelector('[data-cart-total]');
+  if (cartTotal) {
+    cartTotal.textContent = formatMoney(cart.total_price);
   }
+
+  // Update item count
+  const cartItemCount = document.querySelector('[data-cart-item-count]');
+  if (cartItemCount) {
+    cartItemCount.textContent = cart.item_count;
+  }
+}
+
+function updateItemPrice(priceContainer, cartItem) {
+  if (!priceContainer || !cartItem) return;
+
+  const variantCap = variantCompareAtPrices[cartItem.variant_id] || cartItem.price;
+  const originalUnitPrice = variantCap;
+  const originalLinePrice = originalUnitPrice * cartItem.quantity;
+  const finalLinePrice = cartItem.final_line_price;
+
+  let priceHtml = formatMoney(finalLinePrice);
+
+  // Check if there is a discount on the item
+  if (originalUnitPrice > cartItem.price) {
+    priceHtml += `<div class="compare-at-price">${formatMoney(originalLinePrice)}</div>`;
+  }
+
+  // Update the content
+  priceContainer.innerHTML = priceHtml;
+}
 
 function removeItemFromCart(itemKey, link) {
   const cartItemElement = link.closest('.cart-item');
