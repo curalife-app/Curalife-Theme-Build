@@ -121,25 +121,23 @@ function updateCartTotals(cart) {
   let totalSavings = 0;
 
   cart.items.forEach(item => {
-    const compareAtPrice = item.variant.compare_at_price ? item.variant.compare_at_price * item.quantity : null;
-    const finalPrice = item.final_line_price;
+    const regularPrice = item.price * item.quantity;
+    totalOriginalPrice += regularPrice;
 
-    if (compareAtPrice) {
-      totalOriginalPrice += compareAtPrice;
-      totalSavings += compareAtPrice - finalPrice;
-    } else {
-      totalOriginalPrice += finalPrice;
+    if (item.variant.compare_at_price && item.variant.compare_at_price > item.price) {
+      const compareAtPrice = item.variant.compare_at_price * item.quantity;
+      totalSavings += compareAtPrice - regularPrice;
     }
   });
 
   // Update subtotal
   const cartSubtotal = document.querySelector('[data-cart-subtotal]');
   if (cartSubtotal) {
-    cartSubtotal.textContent = formatMoney(totalOriginalPrice);
+    cartSubtotal.textContent = formatMoney(totalOriginalPrice + totalSavings);
   }
 
   // Update discount row
-  const discountRow = document.querySelector('.summary-row:not(.summary-total):not(:first-child)');
+  const discountRow = document.querySelector('.summary-row[data-discount-row]');
   if (discountRow) {
     if (totalSavings > 0) {
       const discountAmount = discountRow.querySelector('span:last-child');
@@ -158,31 +156,28 @@ function updateCartTotals(cart) {
     cartTotal.textContent = formatMoney(cart.total_price);
   }
 
-  // Update item count
+  // Update item count (if applicable)
   const cartItemCount = document.querySelector('[data-cart-item-count]');
   if (cartItemCount) {
     cartItemCount.textContent = cart.item_count;
   }
 }
 
-
 function updateItemPrice(priceContainer, cartItem) {
   if (!priceContainer || !cartItem) return;
 
-  let priceHtml = formatMoney(cartItem.final_line_price);
+  const linePrice = cartItem.price * cartItem.quantity;
+  let priceHtml = formatMoney(linePrice);
 
   // Check for compare at price
-  if (cartItem.variant.compare_at_price) {
+  if (cartItem.variant.compare_at_price && cartItem.variant.compare_at_price > cartItem.price) {
     const compareAtPrice = cartItem.variant.compare_at_price * cartItem.quantity;
-    if (compareAtPrice > cartItem.final_line_price) {
-      priceHtml += `<div class="compare-at-price">${formatMoney(compareAtPrice)}</div>`;
-    }
+    priceHtml += `<div class="compare-at-price">${formatMoney(compareAtPrice)}</div>`;
   }
 
   // Update the content
   priceContainer.innerHTML = priceHtml;
 }
-
 
 function removeItemFromCart(itemKey, link) {
   const priceContainer = link.closest('.cart-item').querySelector('.item-price');
@@ -639,51 +634,51 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
               {% endif %}
 
-							{% if item.title contains 'Free' %}
-								{% assign itemTitleFree = true %}
-							{% endif %}
+              {% assign itemTitleFree = item.title contains 'Free' %}
               <!-- Quantity Selector: Only show if no selling plan and title doesn't contain 'Free' -->
-              {% if item.selling_plan_allocation == nil and itemTitleFree == False %}
+              {% if item.selling_plan_allocation == nil and itemTitleFree == false %}
                 <div class="quantity-input quantity-selector">
                   <button type="button" class="quantity-btn" data-action="decrease-quantity">−</button>
                   <input type="number"
-												name="updates[]"
-												value="{{ item.quantity }}"
-												min="0"
-												aria-label="Quantity for {{ item.title | escape }}"
-												data-item-key="{{ item.key }}">
+                    name="updates[]"
+                    value="{{ item.quantity }}"
+                    min="0"
+                    aria-label="Quantity for {{ item.title | escape }}"
+                    data-item-key="{{ item.key }}">
                   <button type="button" class="quantity-btn" data-action="increase-quantity">+</button>
                 </div>
-							{% endif %}
+              {% endif %}
 
-              <a href="/cart/change?line={{ forloop.index }}&quantity=0" class="remove-item">Remove</a>
-						</div>
+              <a href="/cart/change?line={{ forloop.index }}&quantity=0" class="remove-item" data-item-key="{{ item.key }}">Remove</a>
+            </div>
 
-						<div class="item-price text-[--primary]">
+            <div class="item-price text-[--primary]">
               {% assign lineItemCAP = item.variant.compare_at_price | times: item.quantity %}
-              {% assign lineItemPrice = item.final_line_price %}
-							{% assign lineItemSaving = lineItemCAP | minus: lineItemPrice %}
-							{% assign totalOriginalPrice = totalOriginalPrice | plus: lineItemCAP %}
-							{% assign totalSavings = totalSavings | plus: lineItemSaving %}
+              {% assign lineItemPrice = item.price | times: item.quantity %}
+              {% assign lineItemSaving = lineItemCAP | minus: lineItemPrice %}
+              {% assign totalOriginalPrice = totalOriginalPrice | plus: lineItemPrice %}
+              {% if item.variant.compare_at_price and item.variant.compare_at_price > item.price %}
+                {% assign totalSavings = totalSavings | plus: lineItemSaving %}
+              {% endif %}
 
-							{{ lineItemPrice | money }}
+              {{ lineItemPrice | money }}
 
-							{% if lineItemCAP > lineItemPrice %}
-								<div class="compare-at-price ">{{ lineItemCAP | money }}</div>
-							{% endif %}
-						</div>
+              {% if item.variant.compare_at_price and item.variant.compare_at_price > item.price %}
+                <div class="compare-at-price">{{ lineItemCAP | money }}</div>
+              {% endif %}
+            </div>
           </div>
         {% endfor %}
       </div>
 
-			<div class="cart-summary">
+      <div class="cart-summary">
         <div class="summary-row">
           <span>Subtotal</span>
-          <span data-cart-subtotal>{{ totalOriginalPrice | money }}</span>
+          <span data-cart-subtotal>{{ totalOriginalPrice | plus: totalSavings | money }}</span>
         </div>
 
         {% if totalSavings > 0 %}
-          <div class="summary-row">
+          <div class="summary-row" data-discount-row>
             <span>Discounts</span>
             <span>-{{ totalSavings | money }}</span>
           </div>
@@ -699,7 +694,6 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
   {% endif %}
 </div>
-
 
 {% schema %}
 {
