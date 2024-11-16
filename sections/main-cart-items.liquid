@@ -116,19 +116,20 @@ function updateQuantity(button, change) {
   }
 }
 
+
 function updateCartTotals(cart) {
   let totalOriginalPrice = 0;
   let totalSavings = 0;
 
   cart.items.forEach(item => {
-    const lineItemCAP = item.variant.compare_at_price ? item.variant.compare_at_price * item.quantity : null;
-    const lineItemPrice = item.final_line_price;
+    const compareAtPrice = item.variant.compare_at_price ? item.variant.compare_at_price * item.quantity : null;
+    const finalPrice = item.final_line_price;
 
-    if (lineItemCAP) {
-      totalOriginalPrice += lineItemCAP;
-      totalSavings += lineItemCAP - lineItemPrice;
+    if (compareAtPrice) {
+      totalOriginalPrice += compareAtPrice;
+      totalSavings += compareAtPrice - finalPrice;
     } else {
-      totalOriginalPrice += lineItemPrice;
+      totalOriginalPrice += finalPrice;
     }
   });
 
@@ -165,10 +166,10 @@ function updateCartTotals(cart) {
   }
 }
 
+
 function updateItemPrice(priceContainer, cartItem) {
   if (!priceContainer || !cartItem) return;
 
-  // Keep the original structure but update the content
   let priceHtml = formatMoney(cartItem.final_line_price);
 
   // Check for compare at price
@@ -181,8 +182,8 @@ function updateItemPrice(priceContainer, cartItem) {
 
   // Update the content
   priceContainer.innerHTML = priceHtml;
-  priceContainer.classList.add('text-[--primary]'); // Ensure the class is maintained
 }
+
 
 function removeItemFromCart(itemKey, link) {
   const priceContainer = link.closest('.cart-item').querySelector('.item-price');
