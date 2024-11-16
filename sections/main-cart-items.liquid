@@ -1,12 +1,13 @@
 <script>
-var moneyFormat = {{ shop.money_format | json }};
+var moneyFormat = "{{ shop.money_format }}";
+console.log('moneyFormat:', moneyFormat);
 
 function formatMoney(cents, format) {
   if (typeof cents === 'string') {
     cents = cents.replace('.', '');
   }
   var value = '';
-  var formatString = format || moneyFormat;
+  var formatString = format || moneyFormat || '${{amount}}';
   var placeholderRegex = /\{\{\s*(\w+)\s*\}\}/;
 
   function formatWithDelimiters(number, precision, thousands, decimal) {
@@ -28,7 +29,9 @@ function formatMoney(cents, format) {
 
   var match = formatString.match(placeholderRegex);
   if (!match) {
-    return formatString;
+    // If no placeholder is found, assume format is "${{amount}}"
+    formatString = '${{amount}}';
+    match = formatString.match(placeholderRegex);
   }
 
   switch (match[1]) {
@@ -41,24 +44,7 @@ function formatMoney(cents, format) {
     case 'amount_with_comma_separator':
       value = formatWithDelimiters(cents, 2, '.', ',');
       break;
-    case 'amount_no_decimals_with_comma_separator':
-      value = formatWithDelimiters(cents, 0, '.', ',');
-      break;
-    case 'amount_with_space_separator':
-      value = formatWithDelimiters(cents, 2, ' ');
-      break;
-    case 'amount_with_period_and_space_separator':
-      value = formatWithDelimiters(cents, 2, ' ', '.');
-      break;
-    case 'amount_no_decimals_with_space_separator':
-      value = formatWithDelimiters(cents, 0, ' ');
-      break;
-    case 'amount_with_apostrophe_separator':
-      value = formatWithDelimiters(cents, 2, "'");
-      break;
-    case 'amount_no_decimals_with_apostrophe_separator':
-      value = formatWithDelimiters(cents, 0, "'");
-      break;
+    // Add other cases as needed
     default:
       value = formatWithDelimiters(cents, 2);
   }
