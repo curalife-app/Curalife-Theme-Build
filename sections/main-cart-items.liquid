@@ -114,135 +114,239 @@
 </div>
 
 <script>
-// Cart Management System
-var moneyFormat = window.shop?.moneyFormat || '${{amount}}';
 
-function formatMoney(cents, inputFormat) {
-  try {
-    // Ensure cents is an integer
-    cents = parseInt(cents, 10) || 0;
-    let format = inputFormat || moneyFormat;
+var moneyFormat = "{{ shop.money_format }}";
 
-    function formatWithDelimiters(number, precision, thousands, decimal) {
-      thousands = thousands || ',';
-      decimal = decimal || '.';
+function formatMoney(cents, format) {
+  // Ensure cents is an integer
+  cents = parseInt(cents, 10);
+  if (isNaN(cents)) {
+    cents = 0;
+  }
 
-      if (isNaN(number) || number === null) {
-        return '0';
-      }
+  var formatString = format || moneyFormat || '${{amount}}';
+  var placeholderRegex = /\{\{\s*(\w+)\s*\}\}/;
 
-      number = (number / Math.pow(10, precision)).toFixed(precision);
-      var parts = number.split('.');
-      var dollarsAmount = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, thousands);
-      var centsAmount = parts[1] ? decimal + parts[1] : '';
+  function formatWithDelimiters(number, precision, thousands, decimal) {
+    thousands = thousands || ',';
+    decimal = decimal || '.';
 
-      return dollarsAmount + centsAmount;
+    if (isNaN(number) || number === null) {
+      return '0';
     }
 
-    // Validate and sanitize format
-    if (!format || typeof format !== 'string') {
-      format = '${{amount}}';
-    }
+    // Assume number is already in dollars if precision is set to 2
+    number = (number / Math.pow(10, precision)).toFixed(precision);
 
-    // Find format match with more robust regex
-    var placeholderRegex = /\{\{\s*(\w+)\s*\}\}/;
-    var match = format.match(placeholderRegex);
+    var parts = number.split('.');
+    var dollarsAmount = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, thousands);
+    var centsAmount = parts[1] ? decimal + parts[1] : '';
 
-    // If no match, return formatted amount with default format
-    if (!match || !match[1]) {
-      return '$' + formatWithDelimiters(cents, 2);
-    }
+    return dollarsAmount + centsAmount;
+  }
 
-    var value;
-    switch (match[1]) {
-      case 'amount_no_decimals':
-        value = formatWithDelimiters(cents, 0);
-        break;
-      case 'amount_with_comma_separator':
-        value = formatWithDelimiters(cents, 2, '.', ',');
-        break;
-      case 'amount':
-      default:
-        value = formatWithDelimiters(cents, 2);
-    }
+  var match = formatString.match(placeholderRegex);
+  if (!match) {
+    formatString = '${{amount}}';
+    match = formatString.match(placeholderRegex);
+  }
 
-    return format.replace(placeholderRegex, value);
-  } catch (error) {
-    console.error('Error formatting money:', error);
-    // Return a fallback formatted value instead of generic $0.00
-    return '$' + ((parseInt(cents, 10) || 0) / 100).toFixed(2);
+  var value;
+  switch (match[1]) {
+    case 'amount':
+      value = formatWithDelimiters(cents, 2);
+      break;
+    case 'amount_no_decimals':
+      value = formatWithDelimiters(cents, 0);
+      break;
+    case 'amount_with_comma_separator':
+      value = formatWithDelimiters(cents, 2, '.', ',');
+      break;
+    default:
+      value = formatWithDelimiters(cents, 2);
+  }
+
+  return formatString.replace(placeholderRegex, value);
+}
+
+function updateQuantity(button, change) {
+  const input = button.parentNode.querySelector('input');
+  const itemKey = input.getAttribute('data-item-key');
+  const currentValue = parseInt(input.value);
+  const newValue = currentValue + change;
+
+  if (newValue >= 0) {
+    const cartItemElement = button.closest('.cart-item');
+    const priceContainer = cartItemElement.querySelector('.item-price');
+    showItemLoadingSpinner(priceContainer);
+    showSummaryLoadingSpinners();
+
+    fetch('/cart/change.js', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        id: itemKey,
+        quantity: newValue,
+      }),
+    })
+      .then(response => response.json())
+      .then(cart => {
+        if (newValue === 0) {
+          if (cartItemElement) {
+            cartItemElement.remove();
+          }
+        } else {
+          input.value = newValue;
+          const cartItem = cart.items.find(item => item.key === itemKey);
+          if (cartItem) {
+            updateItemPrice(priceContainer, cartItem);
+          }
+        }
+        updateCartTotals(cart);
+
+        if (cart.item_count === 0) {
+          showEmptyCartMessage();
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      })
+      .finally(() => {
+        hideItemLoadingSpinner(priceContainer);
+        hideSummaryLoadingSpinners();
+      });
   }
 }
 
 function updateCartTotals(cart) {
-  try {
-    if (!cart || !Array.isArray(cart.items)) {
-      console.error('Invalid cart object:', cart);
-      return;
-    }
+  console.log('updateCartTotals called with cart:', cart);
+  console.log('variantCompareAtPrices:', variantCompareAtPrices);
 
-    let totalOriginalPrice = 0;
-    let totalSavings = 0;
+  let totalOriginalPrice = 0;
+  let totalSavings = 0;
 
-    cart.items.forEach(item => {
-      try {
-        if (!item || typeof item !== 'object') return;
+  cart.items.forEach(item => {
+    console.log('Processing item:', item);
+    try {
+      const variantId = item.variant_id.toString();
+      const variantCap = parseInt(variantCompareAtPrices[variantId], 10) || item.price;
+      const originalUnitPrice = variantCap;
+      const originalLinePrice = originalUnitPrice * item.quantity;
+      const finalLinePrice = item.final_line_price;
 
-        const variantId = item.variant_id?.toString();
-        const itemPrice = item.price || 0;
-        const itemQuantity = item.quantity || 0;
-        const variantCap = parseInt(window.variantCompareAtPrices?.[variantId], 10) || itemPrice;
-        const originalLinePrice = variantCap * itemQuantity;
-        const finalLinePrice = item.final_line_price || 0;
+      totalOriginalPrice += originalLinePrice;
 
-        totalOriginalPrice += originalLinePrice;
-        if (originalLinePrice > finalLinePrice) {
-          totalSavings += originalLinePrice - finalLinePrice;
-        }
-      } catch (error) {
-        console.error('Error processing cart item:', error, item);
+      if (originalLinePrice > finalLinePrice) {
+        totalSavings += originalLinePrice - finalLinePrice;
       }
-    });
-
-    // Update subtotal with error handling
-    const subtotalElement = document.querySelector('[data-cart-subtotal]');
-    if (subtotalElement) {
-      subtotalElement.textContent = formatMoney(totalOriginalPrice);
+    } catch (error) {
+      console.error('Error processing cart item:', error);
     }
+  });
 
-    // Update discount row with error handling
-    const discountRow = document.querySelector('.summary-row[data-discount-row]');
-    if (discountRow) {
-      if (totalSavings > 0) {
-        const discountAmount = discountRow.querySelector('span:last-child');
-        if (discountAmount) {
-          discountAmount.textContent = '-' + formatMoney(totalSavings);
-        }
-        discountRow.style.display = 'flex';
-      } else {
-        discountRow.style.display = 'none';
+  // Update subtotal
+  const cartSubtotal = document.querySelector('[data-cart-subtotal]');
+  if (cartSubtotal) {
+    cartSubtotal.textContent = formatMoney(totalOriginalPrice);
+  }
+
+  // Update discount row
+  const discountRow = document.querySelector('.summary-row[data-discount-row]');
+  if (discountRow) {
+    if (totalSavings > 0) {
+      const discountAmount = discountRow.querySelector('span:last-child');
+      if (discountAmount) {
+        discountAmount.textContent = '-' + formatMoney(totalSavings);
       }
+      discountRow.style.display = 'flex';
+    } else {
+      discountRow.style.display = 'none';
     }
+  }
 
-    // Update final total with error handling
-    const totalElement = document.querySelector('[data-cart-total]');
-    if (totalElement && typeof cart.total_price !== 'undefined') {
-      totalElement.textContent = formatMoney(cart.total_price);
-    }
+  // Update final total
+  const cartTotal = document.querySelector('[data-cart-total]');
+  if (cartTotal) {
+    cartTotal.textContent = formatMoney(cart.total_price);
+  }
 
-    // Update item count with error handling
-    const itemCountElement = document.querySelector('[data-cart-item-count]');
-    if (itemCountElement && typeof cart.item_count !== 'undefined') {
-      itemCountElement.textContent = cart.item_count;
-    }
-  } catch (error) {
-    console.error('Error updating cart totals:', error);
+  // Update item count
+  const cartItemCount = document.querySelector('[data-cart-item-count]');
+  if (cartItemCount) {
+    cartItemCount.textContent = cart.item_count;
   }
 }
 
-function showLoadingSpinner(container) {
-  if (!container) return;
+function updateItemPrice(priceContainer, cartItem) {
+  if (!priceContainer || !cartItem) return;
 
+  const variantId = cartItem.variant_id.toString();
+  const variantCap = parseInt(variantCompareAtPrices[variantId], 10) || cartItem.price;
+  const originalUnitPrice = variantCap;
+  const originalLinePrice = originalUnitPrice * cartItem.quantity;
+  const finalLinePrice = cartItem.final_line_price;
+
+  let priceHtml = formatMoney(finalLinePrice);
+
+  // Check if there is a discount on the item
+  if (originalUnitPrice > cartItem.price) {
+    priceHtml += `<div class="compare-at-price">${formatMoney(originalLinePrice)}</div>`;
+  }
+
+  // Update the content
+  priceContainer.innerHTML = priceHtml;
+}
+
+function removeItemFromCart(itemKey, link) {
+  const cartItemElement = link.closest('.cart-item');
+  const priceContainer = cartItemElement.querySelector('.item-price');
+  showItemLoadingSpinner(priceContainer);
+  showSummaryLoadingSpinners();
+
+  fetch('/cart/change.js', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({
+      id: itemKey,
+      quantity: 0,
+    }),
+  })
+    .then(response => response.json())
+    .then(cart => {
+      if (cartItemElement) {
+        cartItemElement.remove();
+      }
+      updateCartTotals(cart);
+
+      if (cart.item_count === 0) {
+        showEmptyCartMessage();
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+    })
+    .finally(() => {
+      hideItemLoadingSpinner(priceContainer);
+      hideSummaryLoadingSpinners();
+    });
+}
+
+function showEmptyCartMessage() {
+  const cartContent = document.querySelector('.cart-content');
+  const cartEmptyMessage = document.querySelector('.cart-empty');
+  if (cartContent && cartEmptyMessage) {
+    cartContent.style.display = 'none';
+    cartEmptyMessage.style.display = 'block';
+  }
+}
+
+function showItemLoadingSpinner(container) {
   container.dataset.originalContent = container.innerHTML;
   const spinner = document.createElement('div');
   spinner.className = 'item-spinner';
@@ -251,182 +355,46 @@ function showLoadingSpinner(container) {
   container.appendChild(spinner);
 }
 
-function hideLoadingSpinner(container) {
-  if (!container || !container.dataset.originalContent) return;
-
-  container.innerHTML = container.dataset.originalContent;
-  delete container.dataset.originalContent;
+function hideItemLoadingSpinner(container) {
+  if (container.dataset.originalContent && container.querySelector('.item-spinner')) {
+    container.innerHTML = container.dataset.originalContent;
+    delete container.dataset.originalContent;
+  }
 }
 
 function showSummaryLoadingSpinners() {
-  const elements = document.querySelectorAll('[data-cart-subtotal], [data-cart-total], [data-discount-amount]');
-  elements.forEach(element => {
-    element.innerHTML = '<div class="spinner summary-spinner"></div>';
-  });
+	const summaryPriceElements = document.querySelectorAll('[data-cart-subtotal], [data-cart-total], [data-discount-amount]');
+	summaryPriceElements.forEach(element => {
+		element.innerHTML = '<div class="spinner summary-spinner"></div>';
+	});
 }
 
 function hideSummaryLoadingSpinners() {
-  const elements = document.querySelectorAll('[data-cart-subtotal], [data-cart-total], [data-discount-amount]');
-  elements.forEach(element => {
-    if (element.querySelector('.spinner')) {
-      element.innerHTML = '';
-    }
-  });
+	const summaryPriceElements = document.querySelectorAll('[data-cart-subtotal], [data-cart-total], [data-discount-amount]');
+	summaryPriceElements.forEach(element => {
+		if (element.querySelector('.spinner')) {
+			element.innerHTML = '';
+		}
+	});
 }
 
-function updateItemPrice(priceContainer, cartItem) {
-  if (!priceContainer || !cartItem) return;
-
-  try {
-    const variantId = cartItem.variant_id.toString();
-    const variantCap = parseInt(window.variantCompareAtPrices?.[variantId], 10) || cartItem.price;
-    const originalLinePrice = variantCap * cartItem.quantity;
-    const finalLinePrice = cartItem.final_line_price;
-
-    let priceHtml = formatMoney(finalLinePrice);
-    if (variantCap > cartItem.price) {
-      priceHtml += `<div class="compare-at-price">${formatMoney(originalLinePrice)}</div>`;
-    }
-
-    priceContainer.innerHTML = priceHtml;
-  } catch (error) {
-    console.error('Error updating item price:', error);
-  }
-}
-
-function showEmptyCartMessage() {
-  const cartContent = document.querySelector('.cart-content');
-  const cartEmptyMessage = document.querySelector('.cart-empty');
-
-  if (cartContent && cartEmptyMessage) {
-    cartContent.style.display = 'none';
-    cartEmptyMessage.style.display = 'block';
-  }
-}
-
-async function updateQuantity(button, change) {
-  const input = button.parentNode.querySelector('input');
-  if (!input) return;
-
-  const itemKey = input.getAttribute('data-item-key');
-  const currentValue = parseInt(input.value, 10);
-  const newValue = currentValue + change;
-
-  if (newValue < 0) return;
-
-  const cartItemElement = button.closest('.cart-item');
-  const priceContainer = cartItemElement?.querySelector('.item-price');
-
-  try {
-    showLoadingSpinner(priceContainer);
-    showSummaryLoadingSpinners();
-
-    const response = await fetch('/cart/change.js', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({
-        id: itemKey,
-        quantity: newValue
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const cart = await response.json();
-
-    if (newValue === 0) {
-      cartItemElement?.remove();
-    } else {
-      input.value = newValue;
-      const cartItem = cart.items.find(item => item.key === itemKey);
-      if (cartItem) {
-        updateItemPrice(priceContainer, cartItem);
-      }
-    }
-
-    updateCartTotals(cart);
-
-    if (cart.item_count === 0) {
-      showEmptyCartMessage();
-    }
-  } catch (error) {
-    console.error('Error updating quantity:', error);
-  } finally {
-    hideLoadingSpinner(priceContainer);
-    hideSummaryLoadingSpinners();
-  }
-}
-
-async function removeItemFromCart(itemKey, link) {
-  const cartItemElement = link.closest('.cart-item');
-  const priceContainer = cartItemElement?.querySelector('.item-price');
-
-  try {
-    showLoadingSpinner(priceContainer);
-    showSummaryLoadingSpinners();
-
-    const response = await fetch('/cart/change.js', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({
-        id: itemKey,
-        quantity: 0
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const cart = await response.json();
-    cartItemElement?.remove();
-    updateCartTotals(cart);
-
-    if (cart.item_count === 0) {
-      showEmptyCartMessage();
-    }
-  } catch (error) {
-    console.error('Error removing item:', error);
-  } finally {
-    hideLoadingSpinner(priceContainer);
-    hideSummaryLoadingSpinners();
-  }
-}
-
-// Initialize event listeners when DOM is ready
-function initializeCart() {
-  // Quantity adjustment buttons
-  document.querySelectorAll('.quantity-btn').forEach(button => {
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.quantity-btn').forEach(function(button) {
     button.addEventListener('click', function() {
-      const change = this.getAttribute('data-action') === 'increase-quantity' ? 1 : -1;
-      updateQuantity(this, change);
+      const action = button.getAttribute('data-action');
+      const change = action === 'increase-quantity' ? 1 : -1;
+      updateQuantity(button, change);
     });
   });
 
-  // Remove item buttons
-  document.querySelectorAll('.remove-item').forEach(link => {
+  document.querySelectorAll('.remove-item').forEach(function(link) {
     link.addEventListener('click', function(event) {
       event.preventDefault();
-      const itemKey = this.getAttribute('data-item-key');
-      removeItemFromCart(itemKey, this);
+      const itemKey = link.getAttribute('data-item-key');
+      removeItemFromCart(itemKey, link);
     });
   });
-}
-
-// Initialize cart when DOM is ready or immediately if already loaded
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initializeCart);
-} else {
-  initializeCart();
-}
+});
 </script>
 
 <style>
