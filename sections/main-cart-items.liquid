@@ -117,15 +117,12 @@
 var moneyFormat = "{{ shop.money_format }}";
 
 function formatMoney(cents, format) {
-  if (typeof cents === 'string') {
-    cents = cents.replace('.', '');
-  }
-  cents = parseInt(cents);
+  // Ensure cents is an integer
+  cents = parseInt(cents, 10);
   if (isNaN(cents)) {
     cents = 0;
   }
 
-  var value = '';
   var formatString = format || moneyFormat || '${{amount}}';
   var placeholderRegex = /\{\{\s*(\w+)\s*\}\}/;
 
@@ -133,14 +130,15 @@ function formatMoney(cents, format) {
     thousands = thousands || ',';
     decimal = decimal || '.';
 
-    if (isNaN(number) || number == null) {
-      return 0;
+    if (isNaN(number) || number === null) {
+      return '0';
     }
 
-    number = (number / 100.0).toFixed(precision);
+    // Assume number is already in dollars if precision is set to 2
+    number = (number / Math.pow(10, precision)).toFixed(precision);
 
     var parts = number.split('.');
-    var dollarsAmount = parts[0].replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1' + thousands);
+    var dollarsAmount = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, thousands);
     var centsAmount = parts[1] ? decimal + parts[1] : '';
 
     return dollarsAmount + centsAmount;
@@ -148,11 +146,11 @@ function formatMoney(cents, format) {
 
   var match = formatString.match(placeholderRegex);
   if (!match) {
-    // If no placeholder is found, assume format is "${{amount}}"
     formatString = '${{amount}}';
     match = formatString.match(placeholderRegex);
   }
 
+  var value;
   switch (match[1]) {
     case 'amount':
       value = formatWithDelimiters(cents, 2);
@@ -163,7 +161,6 @@ function formatMoney(cents, format) {
     case 'amount_with_comma_separator':
       value = formatWithDelimiters(cents, 2, '.', ',');
       break;
-    // Add other cases as needed
     default:
       value = formatWithDelimiters(cents, 2);
   }
