@@ -103,7 +103,6 @@ function updateQuantity(button, change) {
         }
         updateCartTotals(cart);
 
-        // If cart is empty after update, show empty cart message
         if (cart.item_count === 0) {
           showEmptyCartMessage();
         }
@@ -118,7 +117,6 @@ function updateQuantity(button, change) {
 }
 
 function updateCartTotals(cart) {
-  // Calculate totals
   let totalOriginalPrice = 0;
   let totalSavings = 0;
 
@@ -134,18 +132,20 @@ function updateCartTotals(cart) {
     }
   });
 
-  // Update subtotal (original price)
+  // Update subtotal
   const cartSubtotal = document.querySelector('[data-cart-subtotal]');
   if (cartSubtotal) {
     cartSubtotal.textContent = formatMoney(totalOriginalPrice);
   }
 
-  // Update total savings if they exist
-  const discountRow = document.querySelector('.summary-row:not(.summary-total)');
+  // Update discount row
+  const discountRow = document.querySelector('.summary-row:not(.summary-total):not(:first-child)');
   if (discountRow) {
-    const discountAmount = discountRow.querySelector('span:last-child');
     if (totalSavings > 0) {
-      discountAmount.textContent = '-' + formatMoney(totalSavings);
+      const discountAmount = discountRow.querySelector('span:last-child');
+      if (discountAmount) {
+        discountAmount.textContent = '-' + formatMoney(totalSavings);
+      }
       discountRow.style.display = 'flex';
     } else {
       discountRow.style.display = 'none';
@@ -158,7 +158,7 @@ function updateCartTotals(cart) {
     cartTotal.textContent = formatMoney(cart.total_price);
   }
 
-  // Update item count if it exists
+  // Update item count
   const cartItemCount = document.querySelector('[data-cart-item-count]');
   if (cartItemCount) {
     cartItemCount.textContent = cart.item_count;
@@ -168,24 +168,20 @@ function updateCartTotals(cart) {
 function updateItemPrice(priceContainer, cartItem) {
   if (!priceContainer || !cartItem) return;
 
-  // Clear the price container
-  priceContainer.innerHTML = '';
+  // Keep the original structure but update the content
+  let priceHtml = formatMoney(cartItem.final_line_price);
 
-  // Add the current price
-  const currentPrice = document.createElement('div');
-  currentPrice.textContent = formatMoney(cartItem.final_line_price);
-  priceContainer.appendChild(currentPrice);
-
-  // Add compare at price if it exists
+  // Check for compare at price
   if (cartItem.variant.compare_at_price) {
     const compareAtPrice = cartItem.variant.compare_at_price * cartItem.quantity;
     if (compareAtPrice > cartItem.final_line_price) {
-      const compareAtDiv = document.createElement('div');
-      compareAtDiv.className = 'compare-at-price';
-      compareAtDiv.textContent = formatMoney(compareAtPrice);
-      priceContainer.appendChild(compareAtDiv);
+      priceHtml += `<div class="compare-at-price">${formatMoney(compareAtPrice)}</div>`;
     }
   }
+
+  // Update the content
+  priceContainer.innerHTML = priceHtml;
+  priceContainer.classList.add('text-[--primary]'); // Ensure the class is maintained
 }
 
 function removeItemFromCart(itemKey, link) {
@@ -211,7 +207,6 @@ function removeItemFromCart(itemKey, link) {
       }
       updateCartTotals(cart);
 
-      // If cart is empty after removal, show empty cart message
       if (cart.item_count === 0) {
         showEmptyCartMessage();
       }
@@ -234,10 +229,7 @@ function showEmptyCartMessage() {
 }
 
 function showItemLoadingSpinner(container) {
-  // Save the current content
   container.dataset.originalContent = container.innerHTML;
-
-  // Create and insert spinner
   const spinner = document.createElement('div');
   spinner.className = 'item-spinner';
   spinner.innerHTML = '<div class="spinner"></div>';
@@ -246,7 +238,6 @@ function showItemLoadingSpinner(container) {
 }
 
 function hideItemLoadingSpinner(container) {
-  // Restore the original content if no new content was set
   if (container.dataset.originalContent && container.querySelector('.item-spinner')) {
     container.innerHTML = container.dataset.originalContent;
   }
