@@ -598,11 +598,13 @@ function hideLoadingSpinner() {
 						</div>
 
 						<div class="item-price">
-							{% if item.variant.compare_at_price > item.final_line_price %}
-								<div class="compare-at-price">{{ item.variant.compare_at_price | money }}</div>
+              {% assign lineItemCAP = item.variant.compare_at_price | times: item.quantity %}
+              {% assign lineItemPrice = item.final_line_price %}
+							{% if lineItemCAP > lineItemPrice %}
+								<div class="compare-at-price">{{ lineItemCAP | money }}</div>
 							{% endif %}
 
-							{{ item.final_line_price | money }}
+							{{ lineItemPrice | money }}
 						</div>
           </div>
         {% endfor %}
