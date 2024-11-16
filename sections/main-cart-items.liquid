@@ -115,54 +115,41 @@
 
 <script>
 // Cart Management System
-class CartManager {
-  constructor(config = {}) {
-    this.moneyFormat = config.moneyFormat || '${amount}';
-    this.selectors = {
-      cartSubtotal: '[data-cart-subtotal]',
-      cartTotal: '[data-cart-total]',
-      cartItemCount: '[data-cart-item-count]',
-      discountRow: '.summary-row[data-discount-row]',
-      cartContent: '.cart-content',
-      cartEmpty: '.cart-empty',
-      quantityButtons: '.quantity-btn',
-      removeItemButtons: '.remove-item'
-    };
+var moneyFormat = window.shop?.moneyFormat || '${{amount}}';
 
-    // Bind event handlers to maintain correct 'this' context
-    this.handleQuantityButtonClick = this.handleQuantityButtonClick.bind(this);
-    this.handleRemoveItemClick = this.handleRemoveItemClick.bind(this);
-
-    // Initialize when DOM is ready
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => this.initialize());
-    } else {
-      this.initialize();
-    }
-  }
-
-  // Money formatting utilities
-  formatMoney(cents, format = this.moneyFormat) {
+function formatMoney(cents, inputFormat) {
+  try {
+    // Ensure cents is an integer
     cents = parseInt(cents, 10) || 0;
-    const placeholderRegex = /\{\{\s*(\w+)\s*\}\}/;
+    let format = inputFormat || moneyFormat;
 
-    const formatWithDelimiters = (number, precision = 2, thousands = ',', decimal = '.') => {
-      if (isNaN(number) || number === null) return '0';
+    function formatWithDelimiters(number, precision, thousands, decimal) {
+      thousands = thousands || ',';
+      decimal = decimal || '.';
+
+      if (isNaN(number) || number === null) {
+        return '0';
+      }
 
       number = (number / Math.pow(10, precision)).toFixed(precision);
-      const [dollars, cents] = number.split('.');
-      const formattedDollars = dollars.replace(/\B(?=(\d{3})+(?!\d))/g, thousands);
+      var parts = number.split('.');
+      var dollarsAmount = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, thousands);
+      var centsAmount = parts[1] ? decimal + parts[1] : '';
 
-      return formattedDollars + (cents ? decimal + cents : '');
-    };
+      return dollarsAmount + centsAmount;
+    }
 
-    const match = format.match(placeholderRegex);
+    // Find format match
+    var placeholderRegex = /\{\{\s*(\w+)\s*\}\}/;
+    var match = format.match(placeholderRegex);
+
+    // If no match, use default format
     if (!match) {
-      format = '${amount}';
+      format = '${{amount}}';
       match = format.match(placeholderRegex);
     }
 
-    let value;
+    var value;
     switch (match[1]) {
       case 'amount_no_decimals':
         value = formatWithDelimiters(cents, 0);
@@ -176,64 +163,69 @@ class CartManager {
     }
 
     return format.replace(placeholderRegex, value);
+  } catch (error) {
+    console.error('Error formatting money:', error);
+    return '$0.00';
   }
+}
 
-  // Cart update methods
-  async updateQuantity(button, change) {
-    const input = button.parentNode.querySelector('input');
-    const itemKey = input.getAttribute('data-item-key');
-    const currentValue = parseInt(input.value);
-    const newValue = currentValue + change;
+function showLoadingSpinner(container) {
+  if (!container) return;
 
-    if (newValue < 0) return;
+  container.dataset.originalContent = container.innerHTML;
+  const spinner = document.createElement('div');
+  spinner.className = 'item-spinner';
+  spinner.innerHTML = '<div class="spinner"></div>';
+  container.innerHTML = '';
+  container.appendChild(spinner);
+}
 
-    const cartItemElement = button.closest('.cart-item');
-    const priceContainer = cartItemElement?.querySelector('.item-price');
+function hideLoadingSpinner(container) {
+  if (!container || !container.dataset.originalContent) return;
 
-    try {
-      this.showLoadingState(priceContainer);
-      const cart = await this.updateCartItem(itemKey, newValue);
+  container.innerHTML = container.dataset.originalContent;
+  delete container.dataset.originalContent;
+}
 
-      if (newValue === 0) {
-        cartItemElement?.remove();
-      } else {
-        input.value = newValue;
-        const cartItem = cart.items.find(item => item.key === itemKey);
-        if (cartItem) {
-          this.updateItemPrice(priceContainer, cartItem);
-        }
-      }
+function showSummaryLoadingSpinners() {
+  const elements = document.querySelectorAll('[data-cart-subtotal], [data-cart-total], [data-discount-amount]');
+  elements.forEach(element => {
+    element.innerHTML = '<div class="spinner summary-spinner"></div>';
+  });
+}
 
-      this.updateCartTotals(cart);
-
-      if (cart.item_count === 0) {
-        this.showEmptyCartMessage();
-      }
-    } catch (error) {
-      console.error('Error updating quantity:', error);
-    } finally {
-      this.hideLoadingState(priceContainer);
+function hideSummaryLoadingSpinners() {
+  const elements = document.querySelectorAll('[data-cart-subtotal], [data-cart-total], [data-discount-amount]');
+  elements.forEach(element => {
+    if (element.querySelector('.spinner')) {
+      element.innerHTML = '';
     }
-  }
+  });
+}
 
-  async updateCartItem(itemKey, quantity) {
-    const response = await fetch('/cart/change.js', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({ id: itemKey, quantity })
-    });
+function updateItemPrice(priceContainer, cartItem) {
+  if (!priceContainer || !cartItem) return;
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+  try {
+    const variantId = cartItem.variant_id.toString();
+    const variantCap = parseInt(window.variantCompareAtPrices?.[variantId], 10) || cartItem.price;
+    const originalLinePrice = variantCap * cartItem.quantity;
+    const finalLinePrice = cartItem.final_line_price;
+
+    let priceHtml = formatMoney(finalLinePrice);
+    if (variantCap > cartItem.price) {
+      priceHtml += `<div class="compare-at-price">${formatMoney(originalLinePrice)}</div>`;
     }
 
-    return response.json();
+    priceContainer.innerHTML = priceHtml;
+  } catch (error) {
+    console.error('Error updating item price:', error);
   }
+}
 
-  updateCartTotals(cart) {
+function updateCartTotals(cart) {
+  try {
+    console.log('Updating cart totals:', cart);
     let totalOriginalPrice = 0;
     let totalSavings = 0;
 
@@ -253,28 +245,19 @@ class CartManager {
       }
     });
 
-    this.updatePriceDisplays({
-      subtotal: totalOriginalPrice,
-      savings: totalSavings,
-      total: cart.total_price,
-      itemCount: cart.item_count
-    });
-  }
-
-  updatePriceDisplays({ subtotal, savings, total, itemCount }) {
     // Update subtotal
-    const subtotalElement = document.querySelector(this.selectors.cartSubtotal);
+    const subtotalElement = document.querySelector('[data-cart-subtotal]');
     if (subtotalElement) {
-      subtotalElement.textContent = this.formatMoney(subtotal);
+      subtotalElement.textContent = formatMoney(totalOriginalPrice);
     }
 
     // Update discount row
-    const discountRow = document.querySelector(this.selectors.discountRow);
+    const discountRow = document.querySelector('.summary-row[data-discount-row]');
     if (discountRow) {
-      if (savings > 0) {
+      if (totalSavings > 0) {
         const discountAmount = discountRow.querySelector('span:last-child');
         if (discountAmount) {
-          discountAmount.textContent = '-' + this.formatMoney(savings);
+          discountAmount.textContent = '-' + formatMoney(totalSavings);
         }
         discountRow.style.display = 'flex';
       } else {
@@ -282,124 +265,155 @@ class CartManager {
       }
     }
 
-    // Update final total and item count
-    const totalElement = document.querySelector(this.selectors.cartTotal);
+    // Update final total
+    const totalElement = document.querySelector('[data-cart-total]');
     if (totalElement) {
-      totalElement.textContent = this.formatMoney(total);
+      totalElement.textContent = formatMoney(cart.total_price);
     }
 
-    const itemCountElement = document.querySelector(this.selectors.cartItemCount);
+    // Update item count
+    const itemCountElement = document.querySelector('[data-cart-item-count]');
     if (itemCountElement) {
-      itemCountElement.textContent = itemCount;
+      itemCountElement.textContent = cart.item_count;
     }
-  }
-
-  updateItemPrice(priceContainer, cartItem) {
-    if (!priceContainer || !cartItem) return;
-
-    const variantId = cartItem.variant_id.toString();
-    const variantCap = parseInt(window.variantCompareAtPrices?.[variantId], 10) || cartItem.price;
-    const originalLinePrice = variantCap * cartItem.quantity;
-    const finalLinePrice = cartItem.final_line_price;
-
-    let priceHtml = this.formatMoney(finalLinePrice);
-    if (variantCap > cartItem.price) {
-      priceHtml += `<div class="compare-at-price">${this.formatMoney(originalLinePrice)}</div>`;
-    }
-
-    priceContainer.innerHTML = priceHtml;
-  }
-
-  // UI state management
-  showLoadingState(container) {
-    if (container) {
-      container.dataset.originalContent = container.innerHTML;
-      container.innerHTML = '<div class="item-spinner"><div class="spinner"></div></div>';
-    }
-
-    const summaryElements = document.querySelectorAll(
-      `${this.selectors.cartSubtotal}, ${this.selectors.cartTotal}, [data-discount-amount]`
-    );
-    summaryElements.forEach(element => {
-      element.innerHTML = '<div class="spinner summary-spinner"></div>';
-    });
-  }
-
-  hideLoadingState(container) {
-    if (container?.dataset.originalContent) {
-      container.innerHTML = container.dataset.originalContent;
-      delete container.dataset.originalContent;
-    }
-
-    const summaryElements = document.querySelectorAll(
-      `${this.selectors.cartSubtotal}, ${this.selectors.cartTotal}, [data-discount-amount]`
-    );
-    summaryElements.forEach(element => {
-      if (element.querySelector('.spinner')) {
-        element.innerHTML = '';
-      }
-    });
-  }
-
-  showEmptyCartMessage() {
-    const cartContent = document.querySelector(this.selectors.cartContent);
-    const cartEmptyMessage = document.querySelector(this.selectors.cartEmpty);
-
-    if (cartContent && cartEmptyMessage) {
-      cartContent.style.display = 'none';
-      cartEmptyMessage.style.display = 'block';
-    }
-  }
-
-  // Event handlers
-  handleQuantityButtonClick(event) {
-    const button = event.currentTarget;
-    const change = button.getAttribute('data-action') === 'increase-quantity' ? 1 : -1;
-    this.updateQuantity(button, change);
-  }
-
-  handleRemoveItemClick(event) {
-    event.preventDefault();
-    const link = event.currentTarget;
-    const itemKey = link.getAttribute('data-item-key');
-    const cartItemElement = link.closest('.cart-item');
-    const priceContainer = cartItemElement?.querySelector('.item-price');
-
-    this.showLoadingState(priceContainer);
-
-    this.updateCartItem(itemKey, 0)
-      .then(cart => {
-        cartItemElement?.remove();
-        this.updateCartTotals(cart);
-
-        if (cart.item_count === 0) {
-          this.showEmptyCartMessage();
-        }
-      })
-      .catch(error => {
-        console.error('Error removing item:', error);
-      })
-      .finally(() => {
-        this.hideLoadingState(priceContainer);
-      });
-  }
-
-  // Initialization
-  initialize() {
-    // Attach quantity button handlers
-    document.querySelectorAll(this.selectors.quantityButtons)
-      .forEach(button => button.addEventListener('click', this.handleQuantityButtonClick));
-
-    // Attach remove item handlers
-    document.querySelectorAll(this.selectors.removeItemButtons)
-      .forEach(link => link.addEventListener('click', this.handleRemoveItemClick));
+  } catch (error) {
+    console.error('Error updating cart totals:', error);
   }
 }
 
-// Initialize the cart manager
-const cartManager = new CartManager({
-  moneyFormat: window.shop?.moneyFormat || '${amount}'
-});
+function showEmptyCartMessage() {
+  const cartContent = document.querySelector('.cart-content');
+  const cartEmptyMessage = document.querySelector('.cart-empty');
+
+  if (cartContent && cartEmptyMessage) {
+    cartContent.style.display = 'none';
+    cartEmptyMessage.style.display = 'block';
+  }
+}
+
+async function updateQuantity(button, change) {
+  const input = button.parentNode.querySelector('input');
+  if (!input) return;
+
+  const itemKey = input.getAttribute('data-item-key');
+  const currentValue = parseInt(input.value, 10);
+  const newValue = currentValue + change;
+
+  if (newValue < 0) return;
+
+  const cartItemElement = button.closest('.cart-item');
+  const priceContainer = cartItemElement?.querySelector('.item-price');
+
+  try {
+    showLoadingSpinner(priceContainer);
+    showSummaryLoadingSpinners();
+
+    const response = await fetch('/cart/change.js', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        id: itemKey,
+        quantity: newValue
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const cart = await response.json();
+
+    if (newValue === 0) {
+      cartItemElement?.remove();
+    } else {
+      input.value = newValue;
+      const cartItem = cart.items.find(item => item.key === itemKey);
+      if (cartItem) {
+        updateItemPrice(priceContainer, cartItem);
+      }
+    }
+
+    updateCartTotals(cart);
+
+    if (cart.item_count === 0) {
+      showEmptyCartMessage();
+    }
+  } catch (error) {
+    console.error('Error updating quantity:', error);
+  } finally {
+    hideLoadingSpinner(priceContainer);
+    hideSummaryLoadingSpinners();
+  }
+}
+
+async function removeItemFromCart(itemKey, link) {
+  const cartItemElement = link.closest('.cart-item');
+  const priceContainer = cartItemElement?.querySelector('.item-price');
+
+  try {
+    showLoadingSpinner(priceContainer);
+    showSummaryLoadingSpinners();
+
+    const response = await fetch('/cart/change.js', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        id: itemKey,
+        quantity: 0
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const cart = await response.json();
+    cartItemElement?.remove();
+    updateCartTotals(cart);
+
+    if (cart.item_count === 0) {
+      showEmptyCartMessage();
+    }
+  } catch (error) {
+    console.error('Error removing item:', error);
+  } finally {
+    hideLoadingSpinner(priceContainer);
+    hideSummaryLoadingSpinners();
+  }
+}
+
+// Initialize event listeners when DOM is ready
+function initializeCart() {
+  // Quantity adjustment buttons
+  document.querySelectorAll('.quantity-btn').forEach(button => {
+    button.addEventListener('click', function() {
+      const change = this.getAttribute('data-action') === 'increase-quantity' ? 1 : -1;
+      updateQuantity(this, change);
+    });
+  });
+
+  // Remove item buttons
+  document.querySelectorAll('.remove-item').forEach(link => {
+    link.addEventListener('click', function(event) {
+      event.preventDefault();
+      const itemKey = this.getAttribute('data-item-key');
+      removeItemFromCart(itemKey, this);
+    });
+  });
+}
+
+// Initialize cart when DOM is ready or immediately if already loaded
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeCart);
+} else {
+  initializeCart();
+}
 </script>
 
 <style>
