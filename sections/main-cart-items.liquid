@@ -1,5 +1,6 @@
 <script>
 var moneyFormat = "{{ shop.money_format }}";
+console.log('moneyFormat:', moneyFormat);
 
 function formatMoney(cents, format) {
   if (typeof cents === 'string') {
@@ -673,16 +674,18 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
 
             <div class="item-price text-[--primary]">
-              {% assign originalLinePrice = item.original_line_price %}
-              {% assign finalLinePrice = item.final_line_price %}
-              {% assign lineItemSaving = originalLinePrice | minus: finalLinePrice %}
-              {% assign totalOriginalPrice = totalOriginalPrice | plus: originalLinePrice %}
-              {% assign totalSavings = totalSavings | plus: lineItemSaving %}
+              {% assign lineItemCAP = item.variant.compare_at_price | times: item.quantity %}
+              {% assign lineItemPrice = item.price | times: item.quantity %}
+              {% assign lineItemSaving = lineItemCAP | minus: lineItemPrice %}
+              {% assign totalOriginalPrice = totalOriginalPrice | plus: lineItemPrice %}
+              {% if item.variant.compare_at_price and item.variant.compare_at_price > item.price %}
+                {% assign totalSavings = totalSavings | plus: lineItemSaving %}
+              {% endif %}
 
-              {{ finalLinePrice | money }}
+              {{ lineItemPrice | money }}
 
-              {% if originalLinePrice > finalLinePrice %}
-                <div class="compare-at-price">{{ originalLinePrice | money }}</div>
+              {% if item.variant.compare_at_price and item.variant.compare_at_price > item.price %}
+                <div class="compare-at-price">{{ lineItemCAP | money }}</div>
               {% endif %}
             </div>
           </div>
@@ -692,15 +695,15 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="cart-summary">
         <div class="summary-row">
           <span>Subtotal</span>
-          <span data-cart-subtotal>{{ totalOriginalPrice | money }}</span>
+          <span data-cart-subtotal>{{ totalOriginalPrice | plus: totalSavings | money }}</span>
         </div>
 
         {% if totalSavings > 0 %}
-          <div class="summary-row" data-discount-row>
-            <span>Discounts</span>
-            <span data-discount-amount>-{{ totalSavings | money }}</span>
-          </div>
-        {% endif %}
+					<div class="summary-row" data-discount-row>
+						<span>Discounts</span>
+						<span data-discount-amount>-{{ totalSavings | money }}</span>
+					</div>
+				{% endif %}
 
         <div class="summary-row summary-total">
           <span>Total</span>
