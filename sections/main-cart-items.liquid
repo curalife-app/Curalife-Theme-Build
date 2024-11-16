@@ -1,6 +1,5 @@
 <script>
 var moneyFormat = "{{ shop.money_format }}";
-console.log('moneyFormat:', moneyFormat);
 
 function formatMoney(cents, format) {
   if (typeof cents === 'string') {
@@ -109,8 +108,11 @@ function updateCartTotals(cart) {
   let totalSavings = 0;
 
   cart.items.forEach(item => {
-		console.log('item:', item);
-    const originalLinePrice = item.original_line_price;
+		// originalLinePrice will be calculated by getting the price from the value of data-line-cap attribute
+		const itemPriceContainer = document.querySelector(`#CartItem-${item.key} .item-price`);
+		const originalLinePrice = parseInt(itemPriceContainer.getAttribute('data-line-cap'));
+
+    // const originalLinePrice = item.original_line_price;
     const finalLinePrice = item.final_line_price;
 
     totalOriginalPrice += originalLinePrice;
@@ -674,15 +676,14 @@ document.addEventListener('DOMContentLoaded', function() {
               <a href="/cart/change?line={{ forloop.index }}&quantity=0" class="remove-item" data-item-key="{{ item.key }}">Remove</a>
             </div>
 
-            <div class="item-price text-[--primary]">
-              {% assign lineItemCAP = item.variant.compare_at_price | times: item.quantity %}
-              {% assign lineItemPrice = item.price | times: item.quantity %}
-              {% assign lineItemSaving = lineItemCAP | minus: lineItemPrice %}
-              {% assign totalOriginalPrice = totalOriginalPrice | plus: lineItemPrice %}
-              {% if item.variant.compare_at_price and item.variant.compare_at_price > item.price %}
-                {% assign totalSavings = totalSavings | plus: lineItemSaving %}
-              {% endif %}
-
+						{% assign lineItemCAP = item.variant.compare_at_price | times: item.quantity %}
+						{% assign lineItemPrice = item.price | times: item.quantity %}
+						{% assign lineItemSaving = lineItemCAP | minus: lineItemPrice %}
+						{% assign totalOriginalPrice = totalOriginalPrice | plus: lineItemPrice %}
+						{% if item.variant.compare_at_price and item.variant.compare_at_price > item.price %}
+							{% assign totalSavings = totalSavings | plus: lineItemSaving %}
+						{% endif %}
+            <div class="item-price text-[--primary]" data-line-cap="{{ lineItemCAP }}">
               {{ lineItemPrice | money }}
 
               {% if item.variant.compare_at_price and item.variant.compare_at_price > item.price %}
