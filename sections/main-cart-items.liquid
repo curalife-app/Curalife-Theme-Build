@@ -548,6 +548,7 @@ function hideLoadingSpinner() {
 }
 </style>
 
+{% assign totalOriginalPrice == 0 %}
 {% assign totalSavings == 0 %}
 
 <div class="cart">
@@ -611,6 +612,7 @@ function hideLoadingSpinner() {
               {% assign lineItemCAP = item.variant.compare_at_price | times: item.quantity %}
               {% assign lineItemPrice = item.final_line_price %}
 							{% assign lineItemSaving = lineItemCAP | minus: lineItemPrice %}
+							{% assign totalOriginalPrice = totalOriginalPrice | plus: lineItemCAP %}
 							{% assign totalSavings = totalSavings | plus: lineItemSaving %}
 
 							{{ lineItemPrice | money }}
@@ -626,7 +628,7 @@ function hideLoadingSpinner() {
 			<div class="cart-summary"></div>
         <div class="summary-row">
           <span>Subtotal</span>
-          <span data-cart-subtotal>{{ cart.total_price | money }}</span>
+          <span data-cart-subtotal>{{ totalOriginalPrice | money }}</span>
         </div>
         {% if cart.total_discount > 0 %}
           <div class="summary-row">
