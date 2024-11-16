@@ -159,13 +159,9 @@ function updateItemPrice(priceContainer, cartItem) {
   if (!priceContainer || !cartItem) return;
 
   const finalLinePrice = cartItem.final_line_price; // Price after discounts
-  const originalLinePrice =
-    cartItem.variant && cartItem.variant.compare_at_price
-      ? cartItem.variant.compare_at_price * cartItem.quantity
-      : cartItem.final_line_price;
+	// get ccmpare_at_price from data-line-cap attribute
 
-  // Update data-line-cap attribute
-  priceContainer.setAttribute('data-line-cap', originalLinePrice);
+  const originalLinePrice = parseInt(priceContainer.getAttribute('data-line-cap')) * cartItem.quantity;
 
   let priceHtml = formatMoney(finalLinePrice);
 
