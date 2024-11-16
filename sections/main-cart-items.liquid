@@ -56,16 +56,15 @@
 							<!-- Quantity Selector: Only show if no selling plan and title doesn't contain 'Free' -->
               {% if item.selling_plan_allocation == nil and isFreeItem != true %}
                 <div class="quantity-input quantity-selector">
-									<button type="button" class="quantity-btn" data-action="decrease-quantity">−</button>
-									<input type="number"
-										name="updates[]"
-										value="{{ item.quantity }}"
-										min="0"
-										aria-label="Quantity for {{ item.title | escape }}"
-										data-item-key="{{ item.key }}">
-									<button type="button" class="quantity-btn" data-action="increase-quantity">+</button>
-									<div class="input-spinner"></div>
-								</div>
+                  <button type="button" class="quantity-btn" data-action="decrease-quantity">−</button>
+                  <input type="number"
+                    name="updates[]"
+                    value="{{ item.quantity }}"
+                    min="0"
+                    aria-label="Quantity for {{ item.title | escape }}"
+                    data-item-key="{{ item.key }}">
+                  <button type="button" class="quantity-btn" data-action="increase-quantity">+</button>
+                </div>
               {% endif %}
 
               <a href="/cart/change?line={{ forloop.index }}&quantity=0" class="remove-item" data-item-key="{{ item.key }}">
@@ -152,8 +151,7 @@ function formatMoney(cents) {
 }
 
 function updateQuantity(button, change) {
-  const quantityContainer = button.closest('.quantity-input');
-  const input = quantityContainer.querySelector('input');
+  const input = button.parentNode.querySelector('input');
   const itemKey = input.getAttribute('data-item-key');
   const currentValue = parseInt(input.value);
   const newValue = currentValue + change;
@@ -161,7 +159,6 @@ function updateQuantity(button, change) {
   if (newValue >= 0) {
     const cartItemElement = button.closest('.cart-item');
     const priceContainer = cartItemElement.querySelector('.item-price');
-    showQuantityLoadingSpinner(quantityContainer);
     showItemLoadingSpinner(priceContainer);
     showSummaryLoadingSpinners();
 
@@ -199,7 +196,6 @@ function updateQuantity(button, change) {
         console.error('Error:', error);
       })
       .finally(() => {
-        hideQuantityLoadingSpinner(quantityContainer);
         hideItemLoadingSpinner(priceContainer);
         hideSummaryLoadingSpinners();
       });
@@ -361,29 +357,6 @@ function hideSummaryLoadingSpinners() {
 	});
 }
 
-function showQuantityLoadingSpinner(container) {
-  // Add loading class to container
-  container.classList.add('loading');
-
-  // Create spinner if it doesn't exist
-  if (!container.querySelector('.input-spinner')) {
-    const spinner = document.createElement('div');
-    spinner.className = 'input-spinner';
-    container.appendChild(spinner);
-  }
-}
-
-function hideQuantityLoadingSpinner(container) {
-  // Remove loading class
-  container.classList.remove('loading');
-
-  // Remove spinner element if it exists
-  const spinner = container.querySelector('.input-spinner');
-  if (spinner) {
-    spinner.remove();
-  }
-}
-
 document.addEventListener('DOMContentLoaded', function() {
   document.querySelectorAll('.quantity-btn').forEach(function(button) {
     button.addEventListener('click', function() {
@@ -515,40 +488,28 @@ document.addEventListener('DOMContentLoaded', function() {
   color: var(--color-text-secondary);
 }
 
-/* Add these styles for the quantity input loader */
+.quantity-input {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
 .quantity-input {
   border: 1px solid var(--color-border);
   border-radius: 0.5rem;
   overflow: hidden;
-  position: relative;
-  min-width: 120px; /* Ensure consistent width during loading */
-  min-height: 40px; /* Ensure consistent height during loading */
 }
 
-.quantity-input.loading {
-  background: rgba(255, 255, 255, 0.9);
+.quantity-input input {
+  width: 3rem;
+  text-align: center;
+  border: none;
+  padding: 0.5rem 0;
+  font-size: 1rem;
 }
 
-.quantity-input.loading > * {
-  visibility: hidden; /* Hide contents while loading but maintain space */
-}
-
-.quantity-input .input-spinner {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--color-border);
-  border-top-color: var(--color-primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  display: none;
-}
-
-.quantity-input.loading .input-spinner {
-  display: block;
+.quantity-input input:focus {
+  outline: none;
 }
 
 .quantity-btn {
