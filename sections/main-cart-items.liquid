@@ -139,14 +139,18 @@ function formatMoney(cents, inputFormat) {
       return dollarsAmount + centsAmount;
     }
 
-    // Find format match
+    // Validate and sanitize format
+    if (!format || typeof format !== 'string') {
+      format = '${{amount}}';
+    }
+
+    // Find format match with more robust regex
     var placeholderRegex = /\{\{\s*(\w+)\s*\}\}/;
     var match = format.match(placeholderRegex);
 
-    // If no match, use default format
-    if (!match) {
-      format = '${{amount}}';
-      match = format.match(placeholderRegex);
+    // If no match, return formatted amount with default format
+    if (!match || !match[1]) {
+      return '$' + formatWithDelimiters(cents, 2);
     }
 
     var value;
@@ -165,7 +169,74 @@ function formatMoney(cents, inputFormat) {
     return format.replace(placeholderRegex, value);
   } catch (error) {
     console.error('Error formatting money:', error);
-    return '$0.00';
+    // Return a fallback formatted value instead of generic $0.00
+    return '$' + ((parseInt(cents, 10) || 0) / 100).toFixed(2);
+  }
+}
+
+function updateCartTotals(cart) {
+  try {
+    if (!cart || !Array.isArray(cart.items)) {
+      console.error('Invalid cart object:', cart);
+      return;
+    }
+
+    let totalOriginalPrice = 0;
+    let totalSavings = 0;
+
+    cart.items.forEach(item => {
+      try {
+        if (!item || typeof item !== 'object') return;
+
+        const variantId = item.variant_id?.toString();
+        const itemPrice = item.price || 0;
+        const itemQuantity = item.quantity || 0;
+        const variantCap = parseInt(window.variantCompareAtPrices?.[variantId], 10) || itemPrice;
+        const originalLinePrice = variantCap * itemQuantity;
+        const finalLinePrice = item.final_line_price || 0;
+
+        totalOriginalPrice += originalLinePrice;
+        if (originalLinePrice > finalLinePrice) {
+          totalSavings += originalLinePrice - finalLinePrice;
+        }
+      } catch (error) {
+        console.error('Error processing cart item:', error, item);
+      }
+    });
+
+    // Update subtotal with error handling
+    const subtotalElement = document.querySelector('[data-cart-subtotal]');
+    if (subtotalElement) {
+      subtotalElement.textContent = formatMoney(totalOriginalPrice);
+    }
+
+    // Update discount row with error handling
+    const discountRow = document.querySelector('.summary-row[data-discount-row]');
+    if (discountRow) {
+      if (totalSavings > 0) {
+        const discountAmount = discountRow.querySelector('span:last-child');
+        if (discountAmount) {
+          discountAmount.textContent = '-' + formatMoney(totalSavings);
+        }
+        discountRow.style.display = 'flex';
+      } else {
+        discountRow.style.display = 'none';
+      }
+    }
+
+    // Update final total with error handling
+    const totalElement = document.querySelector('[data-cart-total]');
+    if (totalElement && typeof cart.total_price !== 'undefined') {
+      totalElement.textContent = formatMoney(cart.total_price);
+    }
+
+    // Update item count with error handling
+    const itemCountElement = document.querySelector('[data-cart-item-count]');
+    if (itemCountElement && typeof cart.item_count !== 'undefined') {
+      itemCountElement.textContent = cart.item_count;
+    }
+  } catch (error) {
+    console.error('Error updating cart totals:', error);
   }
 }
 
@@ -220,64 +291,6 @@ function updateItemPrice(priceContainer, cartItem) {
     priceContainer.innerHTML = priceHtml;
   } catch (error) {
     console.error('Error updating item price:', error);
-  }
-}
-
-function updateCartTotals(cart) {
-  try {
-    console.log('Updating cart totals:', cart);
-    let totalOriginalPrice = 0;
-    let totalSavings = 0;
-
-    cart.items.forEach(item => {
-      try {
-        const variantId = item.variant_id.toString();
-        const variantCap = parseInt(window.variantCompareAtPrices?.[variantId], 10) || item.price;
-        const originalLinePrice = variantCap * item.quantity;
-        const finalLinePrice = item.final_line_price;
-
-        totalOriginalPrice += originalLinePrice;
-        if (originalLinePrice > finalLinePrice) {
-          totalSavings += originalLinePrice - finalLinePrice;
-        }
-      } catch (error) {
-        console.error('Error processing cart item:', error);
-      }
-    });
-
-    // Update subtotal
-    const subtotalElement = document.querySelector('[data-cart-subtotal]');
-    if (subtotalElement) {
-      subtotalElement.textContent = formatMoney(totalOriginalPrice);
-    }
-
-    // Update discount row
-    const discountRow = document.querySelector('.summary-row[data-discount-row]');
-    if (discountRow) {
-      if (totalSavings > 0) {
-        const discountAmount = discountRow.querySelector('span:last-child');
-        if (discountAmount) {
-          discountAmount.textContent = '-' + formatMoney(totalSavings);
-        }
-        discountRow.style.display = 'flex';
-      } else {
-        discountRow.style.display = 'none';
-      }
-    }
-
-    // Update final total
-    const totalElement = document.querySelector('[data-cart-total]');
-    if (totalElement) {
-      totalElement.textContent = formatMoney(cart.total_price);
-    }
-
-    // Update item count
-    const itemCountElement = document.querySelector('[data-cart-item-count]');
-    if (itemCountElement) {
-      itemCountElement.textContent = cart.item_count;
-    }
-  } catch (error) {
-    console.error('Error updating cart totals:', error);
   }
 }
 
