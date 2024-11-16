@@ -115,11 +115,11 @@
 
 <script>
 function formatMoney(cents) {
-  // Ensure cents is an integer
-  cents = parseInt(cents, 10);
-  if (isNaN(cents)) {
-    cents = 0;
-  }
+	// Ensure cents is an integer
+	cents = parseInt(cents, 10);
+	if (isNaN(cents)) {
+		cents = 0;
+	}
 
   function formatWithDelimiters(number, precision) {
     if (isNaN(number) || number === null) {
@@ -135,39 +135,9 @@ function formatMoney(cents) {
     return dollarsAmount + centsAmount;
   }
 
-  // Always format with comma separator
-  var value = formatWithDelimiters(cents, 2);
-  return '{{ shop.currency.symbol }}' + value;
-}
-
-function showItemLoadingSpinner(container) {
-  const spinner = document.createElement('div');
-  spinner.className = 'item-spinner';
-  spinner.innerHTML = '<div class="spinner"></div>';
-  container.innerHTML = '';
-  container.appendChild(spinner);
-}
-
-function hideItemLoadingSpinner(container) {
-  if (container.querySelector('.item-spinner')) {
-    container.innerHTML = '';
-  }
-}
-
-function showSummaryLoadingSpinners() {
-  const summaryPriceElements = document.querySelectorAll('[data-cart-subtotal], [data-cart-total], [data-discount-amount]');
-  summaryPriceElements.forEach(element => {
-    element.innerHTML = '<div class="spinner summary-spinner"></div>';
-  });
-}
-
-function hideSummaryLoadingSpinners() {
-  const summaryPriceElements = document.querySelectorAll('[data-cart-subtotal], [data-cart-total], [data-discount-amount]');
-  summaryPriceElements.forEach(element => {
-    if (element.querySelector('.spinner')) {
-      element.innerHTML = '';
-    }
-  });
+	// Always format with comma separator
+	var value = formatWithDelimiters(cents, 2);
+	return '{{ shop.currency.symbol }}' + value;
 }
 
 function updateQuantity(button, change) {
@@ -223,10 +193,14 @@ function updateQuantity(button, change) {
 }
 
 function updateCartTotals(cart) {
+  console.log('updateCartTotals called with cart:', cart);
+  console.log('variantCompareAtPrices:', variantCompareAtPrices);
+
   let totalOriginalPrice = 0;
   let totalSavings = 0;
 
   cart.items.forEach(item => {
+    console.log('Processing item:', item);
     try {
       const variantId = item.variant_id.toString();
       const variantCap = parseInt(variantCompareAtPrices[variantId], 10) || item.price;
@@ -288,10 +262,12 @@ function updateItemPrice(priceContainer, cartItem) {
 
   let priceHtml = formatMoney(finalLinePrice);
 
+  // Check if there is a discount on the item
   if (originalUnitPrice > cartItem.price) {
     priceHtml += `<div class="compare-at-price">${formatMoney(originalLinePrice)}</div>`;
   }
 
+  // Update the content
   priceContainer.innerHTML = priceHtml;
 }
 
@@ -341,9 +317,37 @@ function showEmptyCartMessage() {
   }
 }
 
-// Initialize event listeners when DOM is loaded
+function showItemLoadingSpinner(container) {
+	const spinner = document.createElement('div');
+	spinner.className = 'item-spinner';
+	spinner.innerHTML = '<div class="spinner"></div>';
+	container.innerHTML = '';
+	container.appendChild(spinner);
+}
+
+function hideItemLoadingSpinner(container) {
+	if (container.querySelector('.item-spinner')) {
+		container.innerHTML = ''; // Clear spinner first
+	}
+}
+
+function showSummaryLoadingSpinners() {
+	const summaryPriceElements = document.querySelectorAll('[data-cart-subtotal], [data-cart-total], [data-discount-amount]');
+	summaryPriceElements.forEach(element => {
+		element.innerHTML = '<div class="spinner summary-spinner"></div>';
+	});
+}
+
+function hideSummaryLoadingSpinners() {
+	const summaryPriceElements = document.querySelectorAll('[data-cart-subtotal], [data-cart-total], [data-discount-amount]');
+	summaryPriceElements.forEach(element => {
+		if (element.querySelector('.spinner')) {
+			element.innerHTML = '';
+		}
+	});
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-  // Setup quantity buttons
   document.querySelectorAll('.quantity-btn').forEach(function(button) {
     button.addEventListener('click', function() {
       const action = button.getAttribute('data-action');
@@ -352,7 +356,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // Setup remove item buttons
   document.querySelectorAll('.remove-item').forEach(function(link) {
     link.addEventListener('click', function(event) {
       event.preventDefault();
