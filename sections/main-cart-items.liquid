@@ -114,7 +114,7 @@
 </div>
 
 <script>
-	// Cart Management System
+// Cart Management System
 class CartManager {
   constructor(config = {}) {
     this.moneyFormat = config.moneyFormat || '${amount}';
@@ -128,7 +128,17 @@ class CartManager {
       quantityButtons: '.quantity-btn',
       removeItemButtons: '.remove-item'
     };
-    this.initialize();
+
+    // Bind event handlers to maintain correct 'this' context
+    this.handleQuantityButtonClick = this.handleQuantityButtonClick.bind(this);
+    this.handleRemoveItemClick = this.handleRemoveItemClick.bind(this);
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => this.initialize());
+    } else {
+      this.initialize();
+    }
   }
 
   // Money formatting utilities
@@ -253,7 +263,10 @@ class CartManager {
 
   updatePriceDisplays({ subtotal, savings, total, itemCount }) {
     // Update subtotal
-    document.querySelector(this.selectors.cartSubtotal)?.textContent = this.formatMoney(subtotal);
+    const subtotalElement = document.querySelector(this.selectors.cartSubtotal);
+    if (subtotalElement) {
+      subtotalElement.textContent = this.formatMoney(subtotal);
+    }
 
     // Update discount row
     const discountRow = document.querySelector(this.selectors.discountRow);
@@ -270,8 +283,15 @@ class CartManager {
     }
 
     // Update final total and item count
-    document.querySelector(this.selectors.cartTotal)?.textContent = this.formatMoney(total);
-    document.querySelector(this.selectors.cartItemCount)?.textContent = itemCount;
+    const totalElement = document.querySelector(this.selectors.cartTotal);
+    if (totalElement) {
+      totalElement.textContent = this.formatMoney(total);
+    }
+
+    const itemCountElement = document.querySelector(this.selectors.cartItemCount);
+    if (itemCountElement) {
+      itemCountElement.textContent = itemCount;
+    }
   }
 
   updateItemPrice(priceContainer, cartItem) {
@@ -332,47 +352,47 @@ class CartManager {
   }
 
   // Event handlers
-  handleQuantityButtonClick = (event) => {
+  handleQuantityButtonClick(event) {
     const button = event.currentTarget;
     const change = button.getAttribute('data-action') === 'increase-quantity' ? 1 : -1;
     this.updateQuantity(button, change);
   }
 
-  handleRemoveItemClick = async (event) => {
+  handleRemoveItemClick(event) {
     event.preventDefault();
     const link = event.currentTarget;
     const itemKey = link.getAttribute('data-item-key');
     const cartItemElement = link.closest('.cart-item');
     const priceContainer = cartItemElement?.querySelector('.item-price');
 
-    try {
-      this.showLoadingState(priceContainer);
-      const cart = await this.updateCartItem(itemKey, 0);
+    this.showLoadingState(priceContainer);
 
-      cartItemElement?.remove();
-      this.updateCartTotals(cart);
+    this.updateCartItem(itemKey, 0)
+      .then(cart => {
+        cartItemElement?.remove();
+        this.updateCartTotals(cart);
 
-      if (cart.item_count === 0) {
-        this.showEmptyCartMessage();
-      }
-    } catch (error) {
-      console.error('Error removing item:', error);
-    } finally {
-      this.hideLoadingState(priceContainer);
-    }
+        if (cart.item_count === 0) {
+          this.showEmptyCartMessage();
+        }
+      })
+      .catch(error => {
+        console.error('Error removing item:', error);
+      })
+      .finally(() => {
+        this.hideLoadingState(priceContainer);
+      });
   }
 
   // Initialization
   initialize() {
-    document.addEventListener('DOMContentLoaded', () => {
-      // Attach quantity button handlers
-      document.querySelectorAll(this.selectors.quantityButtons)
-        .forEach(button => button.addEventListener('click', this.handleQuantityButtonClick));
+    // Attach quantity button handlers
+    document.querySelectorAll(this.selectors.quantityButtons)
+      .forEach(button => button.addEventListener('click', this.handleQuantityButtonClick));
 
-      // Attach remove item handlers
-      document.querySelectorAll(this.selectors.removeItemButtons)
-        .forEach(link => link.addEventListener('click', this.handleRemoveItemClick));
-    });
+    // Attach remove item handlers
+    document.querySelectorAll(this.selectors.removeItemButtons)
+      .forEach(link => link.addEventListener('click', this.handleRemoveItemClick));
   }
 }
 
@@ -380,9 +400,6 @@ class CartManager {
 const cartManager = new CartManager({
   moneyFormat: window.shop?.moneyFormat || '${amount}'
 });
-
-// Export for potential module usage
-export default CartManager;
 </script>
 
 <style>
