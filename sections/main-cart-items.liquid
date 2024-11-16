@@ -346,18 +346,19 @@ function hideItemLoadingSpinner(container) {
 function showSummaryLoadingSpinners() {
   const summaryPriceElements = document.querySelectorAll('[data-cart-subtotal], [data-cart-total], [data-discount-amount]');
   summaryPriceElements.forEach(element => {
-    element.dataset.originalContent = element.textContent;
-    element.innerHTML = '<div class="spinner summary-spinner"></div>';
+    const width = element.offsetWidth;
+    const height = element.offsetHeight;
+
+    element.classList.add('loading');
+    element.innerHTML = `<div class="spinner summary-spinner" style="width:${width}px; height:${height}px;"></div>`;
   });
 }
 
 function hideSummaryLoadingSpinners() {
   const summaryPriceElements = document.querySelectorAll('[data-cart-subtotal], [data-cart-total], [data-discount-amount]');
   summaryPriceElements.forEach(element => {
-    if (element.dataset.originalContent) {
-      element.textContent = element.dataset.originalContent;
-      delete element.dataset.originalContent;
-    }
+    element.classList.remove('loading');
+    element.innerHTML = '';
   });
 }
 
@@ -628,7 +629,16 @@ document.addEventListener('DOMContentLoaded', function() {
   vertical-align: middle;
   width: 16px;
   height: 16px;
-  border-width: 2px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.loading {
+  min-width: 50px; /* Adjust as needed */
+  min-height: 20px; /* Adjust as needed */
+  text-align: center;
 }
 
 @keyframes spin {
