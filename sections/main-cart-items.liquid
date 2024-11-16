@@ -114,9 +114,6 @@
 </div>
 
 <script>
-// Set default money format - enforcing comma separator
-var moneyFormat = '€{{amount_with_comma_separator}}';
-
 function formatMoney(cents) {
   // Ensure cents is a valid number
   cents = typeof cents === 'string' ? parseInt(cents, 10) : cents;
@@ -128,9 +125,9 @@ function formatMoney(cents) {
     }
 
     number = (number / 100.0).toFixed(precision);
-    const parts = number.split('.');
+    const parts = number.split(',');
     const dollarsAmount = parts[0].replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1.');
-    const centsAmount = parts[1] ? (',' + parts[1]) : ',00';
+    const centsAmount = parts[1] ? ('.' + parts[1]) : ',00';
 
     return dollarsAmount + centsAmount;
   }
@@ -143,30 +140,6 @@ function formatMoney(cents) {
     // Fallback to basic format if anything goes wrong
     return '€0,00';
   }
-}
-
-// Test function to verify formatting
-function testMoneyFormatting() {
-  const testCases = [
-    1999,      // €19,99
-    199999,    // €1.999,99
-    100,       // €1,00
-    0,         // €0,00
-    '1999',    // €19,99 (string input)
-    null,      // €0,00
-    undefined, // €0,00
-    'invalid'  // €0,00
-  ];
-
-  console.log('Money formatting test results:');
-  testCases.forEach(test => {
-    try {
-      const result = formatMoney(test);
-      console.log(`Input: ${test} => ${result}`);
-    } catch (error) {
-      console.error(`Test failed for ${test}:`, error);
-    }
-  });
 }
 
 function showLoadingSpinner(container) {
