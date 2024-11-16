@@ -106,6 +106,7 @@
 
 <script>
 var moneyFormat = "{{ shop.money_format }}";
+var variantCompareAtPrices = {};
 
 function formatMoney(cents, format) {
   if (typeof cents === 'string') {
@@ -215,83 +216,77 @@ function updateQuantity(button, change) {
 }
 
 function updateCartTotals(cart) {
-  let totalOriginalPrice = 0;
-  let totalSavings = 0;
+    let totalOriginalPrice = 0;
+    let totalSavings = 0;
 
-  cart.items.forEach(item => {
-    try {
-      const itemPriceContainer = document.querySelector(`#CartItem-${CSS.escape(item.key)} .item-price`);
-      if (!itemPriceContainer) return;
+    cart.items.forEach(item => {
+      try {
+        const variantCap = variantCompareAtPrices[item.key] || item.price;
+        const originalUnitPrice = variantCap;
+        const originalLinePrice = originalUnitPrice * item.quantity;
+        const finalLinePrice = item.final_line_price;
 
-      const variantCap = parseInt(itemPriceContainer.getAttribute('data-variant-cap')) || item.price;
-      const unitPrice = parseInt(itemPriceContainer.getAttribute('data-unit-price')) || item.price;
+        totalOriginalPrice += originalLinePrice;
 
-      const originalUnitPrice = variantCap;
-      const originalLinePrice = originalUnitPrice * item.quantity;
-      const finalLinePrice = item.final_line_price;
-
-      totalOriginalPrice += originalLinePrice;
-
-      if (originalLinePrice > finalLinePrice) {
-        totalSavings += originalLinePrice - finalLinePrice;
+        if (originalLinePrice > finalLinePrice) {
+          totalSavings += originalLinePrice - finalLinePrice;
+        }
+      } catch (error) {
+        console.error('Error processing cart item:', error);
       }
-    } catch (error) {
-      console.error('Error processing cart item:', error);
+    });
+
+    // Update subtotal
+    const cartSubtotal = document.querySelector('[data-cart-subtotal]');
+    if (cartSubtotal) {
+      cartSubtotal.textContent = formatMoney(totalOriginalPrice);
     }
-  });
 
-  // Update subtotal
-  const cartSubtotal = document.querySelector('[data-cart-subtotal]');
-  if (cartSubtotal) {
-    cartSubtotal.textContent = formatMoney(totalOriginalPrice);
-  }
-
-  // Update discount row
-  const discountRow = document.querySelector('.summary-row[data-discount-row]');
-  if (discountRow) {
-    if (totalSavings > 0) {
-      const discountAmount = discountRow.querySelector('span:last-child');
-      if (discountAmount) {
-        discountAmount.textContent = '-' + formatMoney(totalSavings);
+    // Update discount row
+    const discountRow = document.querySelector('.summary-row[data-discount-row]');
+    if (discountRow) {
+      if (totalSavings > 0) {
+        const discountAmount = discountRow.querySelector('span:last-child');
+        if (discountAmount) {
+          discountAmount.textContent = '-' + formatMoney(totalSavings);
+        }
+        discountRow.style.display = 'flex';
+      } else {
+        discountRow.style.display = 'none';
       }
-      discountRow.style.display = 'flex';
-    } else {
-      discountRow.style.display = 'none';
+    }
+
+    // Update final total
+    const cartTotal = document.querySelector('[data-cart-total]');
+    if (cartTotal) {
+      cartTotal.textContent = formatMoney(cart.total_price);
+    }
+
+    // Update item count
+    const cartItemCount = document.querySelector('[data-cart-item-count]');
+    if (cartItemCount) {
+      cartItemCount.textContent = cart.item_count;
     }
   }
 
-  // Update final total
-  const cartTotal = document.querySelector('[data-cart-total]');
-  if (cartTotal) {
-    cartTotal.textContent = formatMoney(cart.total_price);
+  function updateItemPrice(priceContainer, cartItem) {
+    if (!priceContainer || !cartItem) return;
+
+    const variantCap = variantCompareAtPrices[cartItem.key] || cartItem.price;
+    const originalUnitPrice = variantCap;
+    const originalLinePrice = originalUnitPrice * cartItem.quantity;
+    const finalLinePrice = cartItem.final_line_price;
+
+    let priceHtml = formatMoney(finalLinePrice);
+
+    // Check if there is a discount on the item
+    if (originalLinePrice > finalLinePrice) {
+      priceHtml += `<div class="compare-at-price">${formatMoney(originalLinePrice)}</div>`;
+    }
+
+    // Update the content
+    priceContainer.innerHTML = priceHtml;
   }
-
-  // Update item count
-  const cartItemCount = document.querySelector('[data-cart-item-count]');
-  if (cartItemCount) {
-    cartItemCount.textContent = cart.item_count;
-  }
-}
-
-function updateItemPrice(priceContainer, cartItem) {
-  if (!priceContainer || !cartItem) return;
-
-  const variantCap = parseInt(priceContainer.getAttribute('data-variant-cap')) || cartItem.price;
-  const unitPrice = parseInt(priceContainer.getAttribute('data-unit-price')) || cartItem.price;
-
-  const finalLinePrice = cartItem.final_line_price;
-  const originalLinePrice = variantCap * cartItem.quantity;
-
-  let priceHtml = formatMoney(finalLinePrice);
-
-  // Check if there is a discount on the item
-  if (originalLinePrice > finalLinePrice) {
-    priceHtml += `<div class="compare-at-price">${formatMoney(originalLinePrice)}</div>`;
-  }
-
-  // Update the content
-  priceContainer.innerHTML = priceHtml;
-}
 
 function removeItemFromCart(itemKey, link) {
   const cartItemElement = link.closest('.cart-item');
