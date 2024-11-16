@@ -66,13 +66,16 @@
 						{% if item.variant.compare_at_price and item.variant.compare_at_price > item.price %}
 							{% assign totalSavings = totalSavings | plus: lineItemSaving %}
 						{% endif %}
-            <div class="item-price text-[--primary]" data-line-cap="{{ lineItemCAP }}">
-              {{ lineItemPrice | money }}
+            <div class="item-price text-[--primary]"
+								data-line-cap="{{ lineItemCAP }}"
+								data-variant-cap="{{ item.variant.compare_at_price }}"
+								data-unit-price="{{ item.price }}">
+							{{ lineItemPrice | money }}
 
-              {% if item.variant.compare_at_price and item.variant.compare_at_price > item.price %}
-                <div class="compare-at-price">{{ lineItemCAP | money }}</div>
-              {% endif %}
-            </div>
+							{% if item.variant.compare_at_price and item.variant.compare_at_price > item.price %}
+								<div class="compare-at-price">{{ lineItemCAP | money }}</div>
+							{% endif %}
+						</div>
           </div>
         {% endfor %}
       </div>
@@ -169,7 +172,7 @@ function updateQuantity(button, change) {
     const cartItemElement = button.closest('.cart-item');
     const priceContainer = cartItemElement.querySelector('.item-price');
     showItemLoadingSpinner(priceContainer);
-    showSummaryLoadingSpinners(); // Show loaders on summary prices
+    showSummaryLoadingSpinners();
 
     fetch('/cart/change.js', {
       method: 'POST',
@@ -206,7 +209,7 @@ function updateQuantity(button, change) {
       })
       .finally(() => {
         hideItemLoadingSpinner(priceContainer);
-        hideSummaryLoadingSpinners(); // Hide loaders on summary prices
+        hideSummaryLoadingSpinners();
       });
   }
 }
@@ -220,8 +223,11 @@ function updateCartTotals(cart) {
       const itemPriceContainer = document.querySelector(`#CartItem-${CSS.escape(item.key)} .item-price`);
       if (!itemPriceContainer) return;
 
-      const lineCap = itemPriceContainer.getAttribute('data-line-cap');
-      const originalLinePrice = lineCap ? parseInt(lineCap) : item.final_line_price;
+      const variantCap = parseInt(itemPriceContainer.getAttribute('data-variant-cap')) || item.price;
+      const unitPrice = parseInt(itemPriceContainer.getAttribute('data-unit-price')) || item.price;
+
+      const originalUnitPrice = variantCap;
+      const originalLinePrice = originalUnitPrice * item.quantity;
       const finalLinePrice = item.final_line_price;
 
       totalOriginalPrice += originalLinePrice;
@@ -260,7 +266,7 @@ function updateCartTotals(cart) {
     cartTotal.textContent = formatMoney(cart.total_price);
   }
 
-  // Update item count (if applicable)
+  // Update item count
   const cartItemCount = document.querySelector('[data-cart-item-count]');
   if (cartItemCount) {
     cartItemCount.textContent = cart.item_count;
@@ -270,8 +276,11 @@ function updateCartTotals(cart) {
 function updateItemPrice(priceContainer, cartItem) {
   if (!priceContainer || !cartItem) return;
 
-  const finalLinePrice = cartItem.final_line_price; // Price after discounts
-  const originalLinePrice = parseInt(priceContainer.getAttribute('data-line-cap')) || finalLinePrice;
+  const variantCap = parseInt(priceContainer.getAttribute('data-variant-cap')) || cartItem.price;
+  const unitPrice = parseInt(priceContainer.getAttribute('data-unit-price')) || cartItem.price;
+
+  const finalLinePrice = cartItem.final_line_price;
+  const originalLinePrice = variantCap * cartItem.quantity;
 
   let priceHtml = formatMoney(finalLinePrice);
 
@@ -288,7 +297,7 @@ function removeItemFromCart(itemKey, link) {
   const cartItemElement = link.closest('.cart-item');
   const priceContainer = cartItemElement.querySelector('.item-price');
   showItemLoadingSpinner(priceContainer);
-  showSummaryLoadingSpinners(); // Show loaders on summary prices
+  showSummaryLoadingSpinners();
 
   fetch('/cart/change.js', {
     method: 'POST',
@@ -317,7 +326,7 @@ function removeItemFromCart(itemKey, link) {
     })
     .finally(() => {
       hideItemLoadingSpinner(priceContainer);
-      hideSummaryLoadingSpinners(); // Hide loaders on summary prices
+      hideSummaryLoadingSpinners();
     });
 }
 
