@@ -124,19 +124,19 @@ function formatMoney(cents) {
 		cents = 0;
 	}
 
-	function formatWithDelimiters(number, precision) {
-		if (isNaN(number) || number === null) {
-			return '0';
-		}
+  function formatWithDelimiters(number, precision) {
+    if (isNaN(number) || number === null) {
+      return '0';
+    }
 
-		// Use . as thousands separator and , as decimal separator
-		number = (number / Math.pow(10, precision)).toFixed(precision);
-		var parts = number.split('.');
-		var dollarsAmount = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-		var centsAmount = parts[1] ? ',' + parts[1] : '';
+    // Use comma as thousands separator and dot as decimal separator
+    number = (number / Math.pow(10, precision)).toFixed(precision);
+    var parts = number.split('.');
+    var dollarsAmount = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    var centsAmount = parts[1] ? '.' + parts[1] : '';
 
-		return dollarsAmount + centsAmount;
-	}
+    return dollarsAmount + centsAmount;
+  }
 
 	// Always format with comma separator
 	var value = formatWithDelimiters(cents, 2);
