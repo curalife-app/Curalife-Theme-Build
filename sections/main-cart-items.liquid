@@ -1,6 +1,10 @@
 {% assign totalOriginalPrice = 0 %}
 {% assign totalSavings = 0 %}
 
+<script>
+  var variantCompareAtPrices = {};
+</script>
+
 <div class="cart">
   <div class="loading-spinner" id="loadingSpinner" style="display: none;">
     <div class="spinner"></div>
@@ -76,6 +80,10 @@
 								<div class="compare-at-price">{{ lineItemCAP | money }}</div>
 							{% endif %}
 						</div>
+
+						<script>
+							variantCompareAtPrices["{{ item.key }}"] = {{ item.variant.compare_at_price | default: 0 }};
+						</script>
           </div>
         {% endfor %}
       </div>
@@ -106,7 +114,6 @@
 
 <script>
 var moneyFormat = "{{ shop.money_format }}";
-var variantCompareAtPrices = {};
 
 function formatMoney(cents, format) {
   if (typeof cents === 'string') {
