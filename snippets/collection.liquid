@@ -29,7 +29,7 @@
     {% assign product = all_products[handle] %}
     {% if product %}
       <script>console.log("Found product: {{ product.title }} with {{ product.variants.size }} variants")</script>
-      {% assign products = products | push: product %}
+      {% assign products = products | concat: product %}
     {% else %}
       <script>console.log("No product found for handle: {{ handle }}")</script>
     {% endif %}
@@ -126,18 +126,6 @@
     {% endif %}
   </div>
 </div>
-
-{% if is_align_center %}
-  <style>
-    #{{ collection_handle | default: 'custom' }}-collection-section {
-      text-align: center;
-    }
-
-    #{{ collection_handle | default: 'custom' }}-collection-section .description {
-      margin: 30px auto;
-    }
-  </style>
-{% endif %}
 
 <style>
   .product-card .image-wrapper img {
