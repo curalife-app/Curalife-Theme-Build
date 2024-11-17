@@ -616,29 +616,43 @@
         const SID = window.SID || '';
         const sliderId = `productSliderAllInOne${SID}`;
         let slider = window[sliderId];
-        const elementIndex = parseInt(element.dataset.index);
+        const elementIndex = parseInt(element.dataset.index) - 1; // Adjust index to be zero-based
 
         if (!slider || !slider.slides || !slider.slides.length) {
+            // Create a queue for pending updates
+            window.pendingSlideUpdates = window.pendingSlideUpdates || [];
+            window.pendingSlideUpdates.push(elementIndex);
+
             return new Promise((resolve) => {
                 const checkSlider = setInterval(() => {
                     slider = window[sliderId];
                     if (slider && slider.slides && slider.slides.length > 0) {
                         clearInterval(checkSlider);
-                        performSlideUpdate(slider, elementIndex);
+                        while (window.pendingSlideUpdates.length > 0) {
+                            const index = window.pendingSlideUpdates.pop();
+                            performSlideUpdate(slider, index);
+                        }
                         resolve();
                     }
                 }, 100);
 
-                // Clear interval after 5 seconds to prevent infinite checking
                 setTimeout(() => {
                     clearInterval(checkSlider);
+                    window.pendingSlideUpdates = [];
                     console.warn('Slider initialization timed out');
                     resolve();
                 }, 5000);
             });
         }
 
-        performSlideUpdate(slider, elementIndex);
+        // Ensure slider is fully initialized before updating
+        if (slider.initialized) {
+            performSlideUpdate(slider, elementIndex);
+        } else {
+            slider.on('init', () => {
+                performSlideUpdate(slider, elementIndex);
+            });
+        }
     }
 
     function performSlideUpdate(slider, elementIndex) {
@@ -648,23 +662,18 @@
                 return;
             }
 
-            // Ensure the slider is ready and has the correct number of slides
-            if (elementIndex >= 0 && elementIndex < slider.slides.length) {
-                // Force slider update and wait for it to be ready
-                slider.update();
+            // Add a small delay to ensure the slider is ready
+            setTimeout(() => {
+                if (elementIndex >= 0 && elementIndex < slider.slides.length) {
+                    slider.update();
 
-                // Use requestAnimationFrame to ensure DOM is ready
-                requestAnimationFrame(() => {
-                    slider.slideTo(elementIndex, 300);
-
-                    // Update slider again after transition
-                    setTimeout(() => {
-                        slider.update();
-                    }, 350);
-                });
-            } else {
-                console.warn(`Invalid slide index: ${elementIndex}. Total slides: ${slider.slides.length}`);
-            }
+                    requestAnimationFrame(() => {
+                        slider.slideTo(elementIndex, 300, true);
+                    });
+                } else {
+                    console.warn(`Invalid slide index: ${elementIndex}. Total slides: ${slider.slides.length}`);
+                }
+            }, 50);
         } catch (error) {
             console.error('Error during slide update:', error);
         }
