@@ -57,13 +57,14 @@
   <div class="product-grid flex flex-wrap gap-4 justify-start {% if isHiddenCollections %}hidden{% endif %}">
     {% if banner_image and template.name != 'collection'%}
       <div class="image-wrapper {% if collection_handle == 'glucose-support' %}max-w-1/4 md:max-w-1/2{% else %}max-w-[49%]{% endif %}">
-        {% if banner_link %}
-          <a class="product-link" href="{{ banner_link }}">
-            {% render 'image', img: banner_image, img_mobile: banner_image_mobile, classes: "m-0 h-full md:h-[82vw] md:w-[44vw] block max-h-[420px] object-cover" %}
-          </a>
-        {% else %}
-          {% render 'image', img: banner_image, img_mobile: banner_image_mobile, classes: "m-0 h-full md:h-[82vw] md:w-[44vw] block max-h-[420px] object-cover" %}
-        {% endif %}
+				{% render 'image',
+					image: banner_image,
+					mobile_image: banner_image_mobile,
+					preload: true,
+					link: banner_link,
+					alt: banner_image.alt,
+					class: block.settings.additional_classes
+				%}
       </div>
     {% endif %}
 
