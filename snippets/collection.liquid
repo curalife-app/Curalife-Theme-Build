@@ -41,10 +41,7 @@
   {% endif %}
 {% endif %}
 
-<div id="{% if collection_handle %}{{ collection_handle }}{% else %}custom{% endif %}-collection-section"
-     class="collection-section xl:w-full {% if collection_total_items_amount < 3 and template.name == 'list-collections' %}w-[48%]{% else %}w-full{% endif %}"
-     data-product-collections="{% if collection_handle %}{{ collection_handle }}{% else %}custom{% endif %}">
-
+<div id="{{ collection_handle | default: 'custom' }}-collection-section" class="collection-section xl:w-full {% if collection_total_items_amount < 3 and template.name == 'list-collections' %}w-[48%]{% else %}w-full{% endif %}" data-product-collections="{{ collection_handle | default: 'custom' }}" >
   {% unless isNoTitle %}
     <div class="title-wrapper border-b-[1px] border-black">
       <h2 class="relative mb-0 text-[40px] font-thin top-1 w-fit bg-white pr-3">{{ section_title }}</h2>
@@ -56,7 +53,7 @@
   {% endif %}
 
   <div class="product-grid flex flex-wrap gap-4 justify-start {% if isHiddenCollections %}hidden{% endif %}">
-    {% if banner_image and template.name != 'collection' %}
+    {% if banner_image and template.name != 'collection'%}
       <div class="image-wrapper {% if collection_handle == 'glucose-support' %}max-w-1/4 md:max-w-1/2{% else %}max-w-[49%]{% endif %}">
         {% if banner_link %}
           <a class="product-link" href="{{ banner_link }}">
@@ -90,6 +87,109 @@
     {% endif %}
   </div>
 </div>
+
+<style>
+  .product-card .image-wrapper img {
+    border-radius: 25px;
+  }
+
+  .product-card {
+    position: relative;
+    max-width: 270px;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-direction: column;
+    gap: 1rem;
+    border: 1px solid var(--light-blue);
+    border-radius: 10px;
+  }
+
+  .product-card::before {
+    background-size: contain;
+    position: absolute;
+    top: 30px;
+    right: 10px;
+    width: 68px;
+    height: 68px;
+  }
+
+  .product-card .product-image {
+    height: 250px;
+    border-radius: 10px;
+    object-fit: contain;
+  }
+
+  .product-card .promotion-title {
+    font-size: 18px;
+    margin: unset;
+    color: var(--blue);
+  }
+
+  .product-card .product-titles p {
+    margin: unset;
+  }
+
+  .product-card .subtitle {
+    font-size: 14px;
+  }
+
+  .product-card button {
+    padding: 6px;
+    border-radius: 3px;
+    font-weight: bold;
+    border-radius: 10px;
+    min-height: 45px;
+  }
+
+  @media screen and (max-width: 768px) {
+    .product-card {
+      margin-bottom: 3vw;
+      width: 49%;
+      padding: 1vw;
+      margin-top: unset;
+      max-width: unset;
+      border-radius: 5vw !important;
+    }
+
+    .product-card .product-image {
+      height: 45vw;
+    }
+
+    .product-card button {
+      font-size: 4vw;
+    }
+
+    .product-grid {
+      gap: 1vw;
+    }
+
+    .product-card .product-titles {
+      min-height: 3.5em;
+      margin: unset;
+    }
+
+    .product-card .product-titles h3 {
+      font-size: 5vw;
+      line-height: 1em;
+    }
+
+    .product-card .subtitle {
+      font-size: 4vw;
+    }
+
+    .product-card .info .price strike {
+      font-size: 4vw;
+    }
+
+    .product-card .info .price .rounded.current-price {
+      font-size: 41px;
+      padding-left: 1vw;
+      padding-right: 1vw;
+    }
+  }
+</style>
 
 {% if isAddToCart %}
   <style>
@@ -162,6 +262,7 @@
       font-weight: bold;
     }
 
+    /* Quantity Selector Transition */
     .product-card .submit-wrap .qty {
       transition: width 0.3s ease;
       width: -webkit-fill-available;
@@ -202,11 +303,11 @@
 
 {% if is_align_center %}
   <style>
-    #{% if collection_handle %}{{ collection_handle }}{% else %}custom{% endif %}-collection-section {
+    #{{ collection_handle | default: 'custom' }}-collection-section {
       text-align: center;
     }
 
-    #{% if collection_handle %}{{ collection_handle }}{% else %}custom{% endif %}-collection-section .description {
+    #{{ collection_handle | default: 'custom' }}-collection-section .description {
       margin: 30px auto;
     }
   </style>
