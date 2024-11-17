@@ -2,6 +2,7 @@
 # Responsive Image Component Documentation
 
 This Liquid snippet creates a responsive image component with the following features:
+- Handles both Liquid image objects and direct image URLs
 - Responsive images with desktop/mobile variants (can be bypassed with force_original)
 - Optional automatic mobile image detection
 - Retina display support (2x resolution images)
@@ -17,6 +18,7 @@ This Liquid snippet creates a responsive image component with the following feat
 # Initialize variables with defaults
 #######################################
 assign desktop_image = image
+assign is_url_input = false
 assign mobile_image_provided = mobile_image
 assign lazy_load = lazy | default: true
 assign is_priority = priority | default: false
@@ -30,10 +32,25 @@ assign breakpoints = '375,640,768,1080,1200,1920,2560' | split: ','
 assign is_log = is_log | default: false
 
 #######################################
+# Detect input type and process accordingly
+#######################################
+if image.src == blank and image != blank
+  # Direct URL provided
+  assign is_url_input = true
+  assign image_url = image
+  assign desktop_image = hash
+  assign desktop_image['src'] = image_url
+  assign desktop_image['width'] = width | default: 1920
+  assign desktop_image['height'] = height | default: 1080
+  assign desktop_image['alt'] = alt
+  assign desktop_image['id'] = image_url | split: '/' | last | split: '.' | first
+endif
+
+#######################################
 # Process image source
 #######################################
 if force_original
-  assign desktop_variant_url = desktop_image | image_url
+  assign desktop_variant_url = is_url_input ? desktop_image.src : desktop_image | image_url
   assign has_mobile_variant = false
 else
   #######################################
@@ -47,34 +64,40 @@ else
   assign image_ext = filename | split: '.' | last
   assign base_image_name = image_name
 
-	if base_image_name contains '-x2'
-		assign is_retina = true
-	endif
+  if base_image_name contains '-x2'
+    assign is_retina = true
+  endif
 
   #######################################
   # Construct Desktop Variant URL
   #######################################
-  if desktop_image.src contains 'files/'
-    assign provided_images_in_files = true
-  endif
-
-  if desktop_image.src != blank and provided_images_in_files == false
-    assign desktop_variant_url = desktop_image | image_url | split: '?' | first
-  else
-    assign desktop_variant_url = filename | file_url
-  endif
-
-  #######################################
-  # Handle Retina Images
-  #######################################
-  if is_retina
-    assign original_width = desktop_image.width
-    assign regular_width = original_width | divided_by: 2
-    assign desktop_1x_url = desktop_image | image_url: width: regular_width
-    assign desktop_2x_url = desktop_variant_url
-  else
+  if is_url_input
+    assign desktop_variant_url = desktop_image.src
     assign desktop_1x_url = desktop_variant_url
     assign desktop_2x_url = desktop_variant_url
+  else
+    if desktop_image.src contains 'files/'
+      assign provided_images_in_files = true
+    endif
+
+    if desktop_image.src != blank and provided_images_in_files == false
+      assign desktop_variant_url = desktop_image | image_url | split: '?' | first
+    else
+      assign desktop_variant_url = filename | file_url
+    endif
+
+    #######################################
+    # Handle Retina Images
+    #######################################
+    if is_retina
+      assign original_width = desktop_image.width
+      assign regular_width = original_width | divided_by: 2
+      assign desktop_1x_url = desktop_image | image_url: width: regular_width
+      assign desktop_2x_url = desktop_variant_url
+    else
+      assign desktop_1x_url = desktop_variant_url
+      assign desktop_2x_url = desktop_variant_url
+    endif
   endif
 
   #######################################
@@ -83,16 +106,21 @@ else
   assign has_mobile_variant = false
   if mobile_image_provided != blank
     assign has_mobile_variant = true
-    if is_retina
-      assign mobile_original_width = mobile_image_provided.width
-      assign mobile_regular_width = mobile_original_width | divided_by: 2
-      assign mobile_1x_url = mobile_image_provided | image_url: width: mobile_regular_width
-      assign mobile_2x_url = mobile_image_provided | image_url
+    if is_url_input
+      assign mobile_1x_url = mobile_image_provided
+      assign mobile_2x_url = mobile_image_provided
     else
-      assign mobile_1x_url = mobile_image_provided | image_url
-      assign mobile_2x_url = mobile_image_provided | image_url
+      if is_retina
+        assign mobile_original_width = mobile_image_provided.width
+        assign mobile_regular_width = mobile_original_width | divided_by: 2
+        assign mobile_1x_url = mobile_image_provided | image_url: width: mobile_regular_width
+        assign mobile_2x_url = mobile_image_provided | image_url
+      else
+        assign mobile_1x_url = mobile_image_provided | image_url
+        assign mobile_2x_url = mobile_image_provided | image_url
+      endif
     endif
-  elsif load_mobile
+  elsif load_mobile and is_url_input == false
     assign mobile_variant_filename = image_name | append: '-mbl.' | append: image_ext
     assign mobile_variant_url = mobile_variant_filename | file_url
     if mobile_variant_url contains '?v='
@@ -115,12 +143,12 @@ endif
 #######################################
 if is_log
   assign error_log = 'window.imageErrors = window.imageErrors || { missing_alt: [], missing_image: [], load_errors: []};'
-  if image == blank
+  if desktop_image.src == blank
     assign validation_error = '{ type: "Missing Image", message: "Image is required" }'
     assign error_log = error_log | append: 'window.imageErrors.missing_image.push(' | append: validation_error | append: ');'
   endif
   if alt == blank
-    assign validation_error = '{ type: "Missing Alt", message: "Image Alt text is required", src: "' | append: image.src | append: '" }'
+    assign validation_error = '{ type: "Missing Alt", message: "Image Alt text is required", src: "' | append: desktop_image.src | append: '" }'
     assign error_log = error_log | append: 'window.imageErrors.missing_alt.push(' | append: validation_error | append: ');'
   endif
 endif
@@ -128,7 +156,7 @@ endif
 #######################################
 # Calculate display dimensions
 #######################################
-if is_retina
+if is_retina and is_url_input == false
   assign display_width = desktop_image.width | divided_by: 2
   assign display_height = desktop_image.height | divided_by: 2
 else
@@ -140,7 +168,7 @@ endif
 # Generate unique IDs and URLs
 #######################################
 assign unique_id = 'img-' | append: desktop_image.id | append: '-' | append: now | date: '%N'
-assign fallback_url = desktop_image | image_url: width: 1100
+assign fallback_url = is_url_input ? desktop_image.src : desktop_image | image_url: width: 1100
 -%}
 
 <!-- Image Component -->
@@ -178,6 +206,7 @@ assign fallback_url = desktop_image | image_url: width: 1100
     onclick="{% if link %}window.location.href='{{ link }}'{% endif %}"
     data-original-url="{{ fallback_url }}"
     {% if is_retina %}data-is-retina="true"{% endif %}
+    {% if is_url_input %}data-is-url-input="true"{% endif %}
   >
 </picture>
 
@@ -189,7 +218,8 @@ assign fallback_url = desktop_image | image_url: width: 1100
 
   window.imageDebugData = window.imageDebugData || [];
   window.imageDebugData.push({
-    image_src: {{ image.src | json }},
+    image_src: {{ desktop_image.src | json }},
+    is_url_input: {{ is_url_input | json }},
     unique_id: {{ unique_id | json }},
     desktop_variant_url: {{ desktop_variant_url | json }},
     has_mobile_variant: {{ has_mobile_variant | json }},
