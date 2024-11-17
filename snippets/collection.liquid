@@ -75,12 +75,18 @@
 
       {% if use_collection %}
         {% for product in products %}
+					{% if product.metafields.custom.reference_product.value %}
+						{% assign prod = product.metafields.custom.reference_product.value %}
+					{% else %}
+						{% assign prod = product %}
+					{% endif %}
+
           {% if is_variant_split and product.variants.size > 0 %}
             {% for variant in product.variants %}
               <div class="{% if is_slider_on_mobile %}swiper-slide{% endif %}">
                 {% render 'variant-card',
                   variant: variant,
-                  product: product,
+                  product: prod,
                   productCollections: product_collections,
                   isNoPrices: isNoPrices,
                   isAddToCart: isAddToCart,
@@ -91,7 +97,7 @@
           {% else %}
             <div class="{% if is_slider_on_mobile %}swiper-slide{% endif %}">
               {% render 'product-card',
-                product: product,
+                product: prod,
                 isNoPrices: isNoPrices,
                 isAddToCart: isAddToCart,
                 isAddToCartQuantity: isAddToCartQuantity
