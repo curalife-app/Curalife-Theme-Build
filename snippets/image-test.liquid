@@ -173,7 +173,11 @@ endif
 # Generate unique IDs and URLs
 #######################################
 assign unique_id = 'img-' | append: desktop_image.id | append: '-' | append: now | date: '%N'
-assign fallback_url = is_url_input ? desktop_image.src : desktop_image | image_url: width: 1100
+if is_url_input
+  assign fallback_url = desktop_image.src
+else
+  assign fallback_url = desktop_image | image_url: width: 1100
+endif
 -%}
 
 <!-- Image Component -->
