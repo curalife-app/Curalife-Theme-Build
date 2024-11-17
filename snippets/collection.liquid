@@ -19,21 +19,16 @@
   {% assign banner_link = currentCollection.metafields.custom.collection_banner_lnk %}
   {% assign is_align_center = currentCollection.metafields.custom.is_align_center %}
   {% assign products = currentCollection.products %}
+  {% assign use_collection = true %}
   {% assign additional_variants = currentCollection.metafields.custom.additional_variants.value %}
   <script>console.log("Collection products count: {{ products.size }}")</script>
 {% elsif product_handles %}
   <script>console.log("Using product handles mode")</script>
-  {% assign product_array = product_handles %}
-  {% assign products = collections.all.products | where: "handle", product_handles[0] %}
-  {% for handle in product_handles offset:1 %}
-    {% assign next_product = collections.all.products | where: "handle", handle %}
-    {% if next_product != blank %}
-      {% assign products = products | concat: next_product %}
-    {% endif %}
-  {% endfor %}
-  {% assign collection_total_items_amount = products.size %}
+  {% assign handles_array = product_handles %}
+  {% assign use_collection = false %}
+  {% assign collection_total_items_amount = handles_array.size %}
   {% assign additional_variants = blank %}
-  <script>console.log("Total products added: {{ products.size }}")</script>
+  <script>console.log("Total handles: {{ handles_array.size }}")</script>
 {% endif %}
 
 {% if customer.b2b? or true %}
@@ -71,31 +66,65 @@
       </div>
     {% endif %}
 
-    {% for product in products %}
-      <script>console.log("Processing product for display: {{ product.title }}")</script>
-      {% if is_variant_split and product.variants.size > 0 %}
-        <script>console.log("Splitting variants for product: {{ product.title }}")</script>
-        {% for variant in product.variants %}
-          <script>console.log("Rendering variant: {{ variant.title }} ({{ variant.id }})")</script>
-          {% render 'variant-card',
-            variant: variant,
+    {% if use_collection %}
+      {% for product in products %}
+        <script>console.log("Processing collection product: {{ product.title }}")</script>
+        {% if is_variant_split and product.variants.size > 0 %}
+          <script>console.log("Splitting variants for product: {{ product.title }}")</script>
+          {% for variant in product.variants %}
+            <script>console.log("Rendering variant: {{ variant.title }} ({{ variant.id }})")</script>
+            {% render 'variant-card',
+              variant: variant,
+              product: product,
+              productCollections: product_collections,
+              isNoPrices: isNoPrices,
+              isAddToCart: isAddToCart,
+              isAddToCartQuantity: isAddToCartQuantity
+            %}
+          {% endfor %}
+        {% else %}
+          <script>console.log("Rendering product card: {{ product.title }}")</script>
+          {% render 'product-card',
             product: product,
-            productCollections: product_collections,
             isNoPrices: isNoPrices,
             isAddToCart: isAddToCart,
             isAddToCartQuantity: isAddToCartQuantity
           %}
-        {% endfor %}
-      {% else %}
-        <script>console.log("Rendering product card: {{ product.title }}")</script>
-        {% render 'product-card',
-          product: product,
-          isNoPrices: isNoPrices,
-          isAddToCart: isAddToCart,
-          isAddToCartQuantity: isAddToCartQuantity
-        %}
-      {% endif %}
-    {% endfor %}
+        {% endif %}
+      {% endfor %}
+    {% else %}
+      {% for handle in handles_array %}
+        <script>console.log("Processing handle: {{ handle }}")</script>
+        {% assign product = all_products[handle] %}
+        {% if product != blank %}
+          <script>console.log("Found product: {{ product.title }} with {{ product.variants.size }} variants")</script>
+          {% if is_variant_split and product.variants.size > 0 %}
+            <script>console.log("Splitting variants for product: {{ product.title }}")</script>
+            {% for variant in product.variants %}
+              <script>console.log("Rendering variant: {{ variant.title }} ({{ variant.id }})")</script>
+              {% render 'variant-card',
+                variant: variant,
+                product: product,
+                productCollections: product_collections,
+                isNoPrices: isNoPrices,
+                isAddToCart: isAddToCart,
+                isAddToCartQuantity: isAddToCartQuantity
+              %}
+            {% endfor %}
+          {% else %}
+            <script>console.log("Rendering product card: {{ product.title }}")</script>
+            {% render 'product-card',
+              product: product,
+              isNoPrices: isNoPrices,
+              isAddToCart: isAddToCart,
+              isAddToCartQuantity: isAddToCartQuantity
+            %}
+          {% endif %}
+        {% else %}
+          <script>console.log("No product found for handle: {{ handle }}")</script>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
 
     {% if additional_variants %}
       <script>console.log("Processing additional variants")</script>
