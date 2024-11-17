@@ -39,12 +39,6 @@
       {% endunless %}
 
 			<div class="collections">
-				<div class="collection">
-					{% if collection.products.size > 0 %}
-						{% render 'collection', collection_handle: collection.handle, isDescription: false, isNoTitle: true, isNoPrices: false, isCentered: customer.b2b?, isNoBundles: false, isLastCollectionRender: isLastCollectionRender %}
-					{% endif %}
-				</div>
-
 				{% if request.path contains 'black-friday' %}
 					<div class="collection flex flex-col gap-8 mb-12">
 						<img src="{{ 'bfcm-banner-1.png' | file_url }}" alt="Black Friday Banner">
@@ -63,6 +57,10 @@
 						{% assign duoCollection = 'curalin-curaslim-black-friday' | split: ',' %}
 						{% render 'collection', product_handles: duoCollection, is_variant_split: true, isNoTitle: true %}
 					</div>
+				</div>
+			{% else %}
+				<div class="collection">
+					{% render 'collection', collection_handle: collection.handle, isDescription: false, isNoTitle: true, isNoPrices: false, isCentered: customer.b2b?, isNoBundles: false, isLastCollectionRender: isLastCollectionRender %}
 				</div>
 			{% endif %}
     </div>
