@@ -2,6 +2,8 @@
   This section can be used with either:
   - collection_handle: Handle of the collection to display
   - product_handles: Array of product handles to display
+  Optional parameters:
+  - is_variant_split: If true, renders separate cards for each variant
 {% endcomment %}
 
 {% if collection_handle %}
@@ -66,22 +68,45 @@
     {% endif %}
 
     {% for product in products %}
-      {% render 'product-card', product: product, isNoPrices: isNoPrices, isAddToCart: isAddToCart, isAddToCartQuantity: isAddToCartQuantity %}
+      {% if is_variant_split %}
+        {% for variant in product.variants %}
+          {% render 'variant-card',
+            variant: variant,
+            product: product,
+            productCollections: product_collections,
+            isNoPrices: isNoPrices,
+            isAddToCart: isAddToCart,
+            isAddToCartQuantity: isAddToCartQuantity
+          %}
+        {% endfor %}
+      {% else %}
+        {% render 'product-card',
+          product: product,
+          isNoPrices: isNoPrices,
+          isAddToCart: isAddToCart,
+          isAddToCartQuantity: isAddToCartQuantity
+        %}
+      {% endif %}
     {% endfor %}
 
     {% if additional_variants %}
       {% for additionalVar in additional_variants %}
-        {% for vari in additionalVar.product.variants %}
-          {% if vari.id == additionalVar.id %}
-            {% assign variantIndex = forloop.index %}
-            {% break %}
-          {% endif %}
-        {% endfor %}
-
         {% if additionalVar.product.variants.size == 1 %}
-          {% render 'product-card', product: additionalVar.product, isNoPrices: isNoPrices, isAddToCart: isAddToCart, isAddToCartQuantity: isAddToCartQuantity %}
+          {% render 'product-card',
+            product: additionalVar.product,
+            isNoPrices: isNoPrices,
+            isAddToCart: isAddToCart,
+            isAddToCartQuantity: isAddToCartQuantity
+          %}
         {% else %}
-          {% render 'variant-card', variant: additionalVar, variantIndex: variantIndex, productCollections: product_collections, isNoPrices: isNoPrices, isAddToCart: isAddToCart, isAddToCartQuantity: isAddToCartQuantity %}
+          {% render 'variant-card',
+            variant: additionalVar,
+            product: additionalVar.product,
+            productCollections: product_collections,
+            isNoPrices: isNoPrices,
+            isAddToCart: isAddToCart,
+            isAddToCartQuantity: isAddToCartQuantity
+          %}
         {% endif %}
       {% endfor %}
     {% endif %}
