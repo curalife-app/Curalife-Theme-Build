@@ -50,8 +50,13 @@ endif
 # Process image source
 #######################################
 if force_original
-  assign desktop_variant_url = is_url_input ? desktop_image.src : desktop_image | image_url
-  assign has_mobile_variant = false
+	if is_url_input
+  	assign desktop_variant_url = desktop_image.src
+	else
+  	assign desktop_variant_url = desktop_image | image_url
+	endif
+
+	assign has_mobile_variant = false
 else
   #######################################
   # Process desktop image path
