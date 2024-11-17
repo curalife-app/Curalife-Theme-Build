@@ -124,179 +124,257 @@
 </div>
 
 <script>
-// Cart State Management
-const CartState = {
-  isUpdating: false,
-  lastUpdate: null
-};
-
-// Constants
-const DEBOUNCE_DELAY = 500; // ms
-const ANIMATION_DURATION = 300; // ms
-
-// Utility Functions
-const debounce = (func, wait) => {
-  let timeout;
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(timeout);
-      func(...args);
-    };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-  };
-};
-
 function formatMoney(cents) {
-  try {
-    cents = Math.round(parseFloat(cents) || 0);
-    const formatWithDelimiters = (number, precision) => {
-      number = (number / 100).toFixed(precision);
-      const parts = number.split('.');
-      const dollars = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-      const cents = parts[1] ? '.' + parts[1] : '';
-      return dollars + cents;
-    };
-    return '{{ cart.currency.symbol }}' + formatWithDelimiters(cents, 2);
-  } catch (error) {
-    console.error('Error formatting money:', error);
-    return '{{ cart.currency.symbol }}0.00';
+	// Ensure cents is an integer
+	cents = parseInt(cents, 10);
+	if (isNaN(cents)) {
+		cents = 0;
+	}
+
+  function formatWithDelimiters(number, precision) {
+    if (isNaN(number) || number === null) {
+      return '0';
+    }
+
+    // Use comma as thousands separator and dot as decimal separator
+    number = (number / Math.pow(10, precision)).toFixed(precision);
+    var parts = number.split('.');
+    var dollarsAmount = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    var centsAmount = parts[1] ? '.' + parts[1] : '';
+
+    return dollarsAmount + centsAmount;
+  }
+
+	// Always format with comma separator
+	var value = formatWithDelimiters(cents, 2);
+	return '{{ cart.currency.symbol }}' + value;
+}
+
+function updateQuantity(button, change) {
+  const input = button.parentNode.querySelector('input');
+  const itemKey = input.getAttribute('data-item-key');
+  const currentValue = parseInt(input.value);
+  const newValue = currentValue + change;
+
+  if (newValue >= 0) {
+    const cartItemElement = button.closest('.cart-item');
+    const priceContainer = cartItemElement.querySelector('.item-price');
+    showItemLoadingSpinner(priceContainer);
+    showSummaryLoadingSpinners();
+
+    fetch('/cart/change.js', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        id: itemKey,
+        quantity: newValue,
+      }),
+    })
+      .then(response => response.json())
+      .then(cart => {
+        if (newValue === 0) {
+          if (cartItemElement) {
+            cartItemElement.remove();
+          }
+        } else {
+          input.value = newValue;
+          const cartItem = cart.items.find(item => item.key === itemKey);
+          if (cartItem) {
+            updateItemPrice(priceContainer, cartItem);
+          }
+        }
+        updateCartTotals(cart);
+
+        if (cart.item_count === 0) {
+          showEmptyCartMessage();
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      })
+      .finally(() => {
+        hideItemLoadingSpinner(priceContainer);
+        hideSummaryLoadingSpinners();
+      });
   }
 }
 
-// Cart API Functions
-const CartAPI = {
-  async updateQuantity(itemKey, quantity) {
+function updateCartTotals(cart) {
+  console.log('updateCartTotals called with cart:', cart);
+  console.log('variantCompareAtPrices:', variantCompareAtPrices);
+
+  let totalOriginalPrice = 0;
+  let totalSavings = 0;
+
+  cart.items.forEach(item => {
+    console.log('Processing item:', item);
     try {
-      const response = await fetch('/cart/change.js', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({ id: itemKey, quantity })
-      });
-      
-      if (!response.ok) throw new Error('Network response was not ok');
-      return await response.json();
-    } catch (error) {
-      console.error('Cart update failed:', error);
-      throw error;
-    }
-  }
-};
+      const variantId = item.variant_id.toString();
+      const variantCap = parseInt(variantCompareAtPrices[variantId], 10) || item.price;
+      const originalUnitPrice = variantCap;
+      const originalLinePrice = originalUnitPrice * item.quantity;
+      const finalLinePrice = item.final_line_price;
 
-// UI Update Functions
-const UI = {
-  showLoadingState() {
-    document.querySelectorAll('.cart-item').forEach(item => 
-      item.classList.add('updating'));
-  },
+      totalOriginalPrice += originalLinePrice;
 
-  hideLoadingState() {
-    document.querySelectorAll('.cart-item').forEach(item => 
-      item.classList.remove('updating'));
-  },
-
-  updateCartTotals(cart) {
-    try {
-      let totalOriginalPrice = 0;
-      let totalSavings = 0;
-
-      cart.items.forEach(item => {
-        const variantId = item.variant_id.toString();
-        const variantCap = parseFloat(variantCompareAtPrices[variantId]) || item.price;
-        const originalLinePrice = variantCap * item.quantity;
-        const finalLinePrice = item.final_line_price;
-
-        totalOriginalPrice += originalLinePrice;
-        if (originalLinePrice > finalLinePrice) {
-          totalSavings += originalLinePrice - finalLinePrice;
-        }
-      });
-
-      // Update DOM elements
-      const elements = {
-        subtotal: document.querySelector('[data-cart-subtotal]'),
-        discount: document.querySelector('[data-discount-row]'),
-        discountAmount: document.querySelector('[data-discount-amount]'),
-        total: document.querySelector('[data-cart-total]'),
-        itemCount: document.querySelector('[data-cart-item-count]')
-      };
-
-      if (elements.subtotal) elements.subtotal.textContent = formatMoney(totalOriginalPrice);
-      if (elements.discount) {
-        elements.discount.style.display = totalSavings > 0 ? 'flex' : 'none';
-        if (elements.discountAmount) elements.discountAmount.textContent = `-${formatMoney(totalSavings)}`;
-      }
-      if (elements.total) elements.total.textContent = formatMoney(cart.total_price);
-      if (elements.itemCount) elements.itemCount.textContent = cart.item_count;
-    } catch (error) {
-      console.error('Error updating cart totals:', error);
-    }
-  }
-};
-
-// Event Handlers
-const CartHandlers = {
-  async handleQuantityChange(button, change) {
-    if (CartState.isUpdating) return;
-    
-    const input = button.parentNode.querySelector('input');
-    const itemKey = input.getAttribute('data-item-key');
-    const newValue = parseInt(input.value) + change;
-    
-    if (newValue < 0) return;
-
-    try {
-      CartState.isUpdating = true;
-      UI.showLoadingState();
-      
-      const cart = await CartAPI.updateQuantity(itemKey, newValue);
-      
-      if (newValue === 0) {
-        const cartItem = button.closest('.cart-item');
-        if (cartItem) cartItem.remove();
-      } else {
-        input.value = newValue;
-      }
-      
-      UI.updateCartTotals(cart);
-      
-      if (cart.item_count === 0) {
-        document.querySelector('.cart-content').style.display = 'none';
-        document.querySelector('.cart-empty').style.display = 'block';
+      if (originalLinePrice > finalLinePrice) {
+        totalSavings += originalLinePrice - finalLinePrice;
       }
     } catch (error) {
-      alert('Failed to update cart. Please try again.');
-    } finally {
-      CartState.isUpdating = false;
-      UI.hideLoadingState();
+      console.error('Error processing cart item:', error);
     }
-  }
-};
-
-// Event Listeners
-document.addEventListener('DOMContentLoaded', () => {
-  // Quantity buttons
-  document.querySelectorAll('.quantity-btn').forEach(button => {
-    button.addEventListener('click', debounce(function() {
-      const change = this.getAttribute('data-action') === 'increase-quantity' ? 1 : -1;
-      CartHandlers.handleQuantityChange(this, change);
-    }, DEBOUNCE_DELAY));
   });
 
-  // Remove buttons
-  document.querySelectorAll('.remove-item').forEach(link => {
-    link.addEventListener('click', async (e) => {
-      e.preventDefault();
+  // Update subtotal
+  const cartSubtotal = document.querySelector('[data-cart-subtotal]');
+  if (cartSubtotal) {
+    cartSubtotal.textContent = formatMoney(totalOriginalPrice);
+  }
+
+  // Update discount row
+  const discountRow = document.querySelector('.summary-row[data-discount-row]');
+  if (discountRow) {
+    if (totalSavings > 0) {
+      const discountAmount = discountRow.querySelector('span:last-child');
+      if (discountAmount) {
+        discountAmount.textContent = '-' + formatMoney(totalSavings);
+      }
+      discountRow.style.display = 'flex';
+    } else {
+      discountRow.style.display = 'none';
+    }
+  }
+
+  // Update final total
+  const cartTotal = document.querySelector('[data-cart-total]');
+  if (cartTotal) {
+    cartTotal.textContent = formatMoney(cart.total_price);
+  }
+
+  // Update item count
+  const cartItemCount = document.querySelector('[data-cart-item-count]');
+  if (cartItemCount) {
+    cartItemCount.textContent = cart.item_count;
+  }
+}
+
+function updateItemPrice(priceContainer, cartItem) {
+  if (!priceContainer || !cartItem) return;
+
+  const variantId = cartItem.variant_id.toString();
+  const variantCap = parseInt(variantCompareAtPrices[variantId], 10) || cartItem.price;
+  const originalUnitPrice = variantCap;
+  const originalLinePrice = originalUnitPrice * cartItem.quantity;
+  const finalLinePrice = cartItem.final_line_price;
+
+  let priceHtml = formatMoney(finalLinePrice);
+
+  // Check if there is a discount on the item
+  if (originalUnitPrice > cartItem.price) {
+    priceHtml += `<div class="compare-at-price">${formatMoney(originalLinePrice)}</div>`;
+  }
+
+  // Update the content
+  priceContainer.innerHTML = priceHtml;
+}
+
+function removeItemFromCart(itemKey, link) {
+  const cartItemElement = link.closest('.cart-item');
+  const priceContainer = cartItemElement.querySelector('.item-price');
+  showItemLoadingSpinner(priceContainer);
+  showSummaryLoadingSpinners();
+
+  fetch('/cart/change.js', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({
+      id: itemKey,
+      quantity: 0,
+    }),
+  })
+    .then(response => response.json())
+    .then(cart => {
+      if (cartItemElement) {
+        cartItemElement.remove();
+      }
+      updateCartTotals(cart);
+
+      if (cart.item_count === 0) {
+        showEmptyCartMessage();
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+    })
+    .finally(() => {
+      hideItemLoadingSpinner(priceContainer);
+      hideSummaryLoadingSpinners();
+    });
+}
+
+function showEmptyCartMessage() {
+  const cartContent = document.querySelector('.cart-content');
+  const cartEmptyMessage = document.querySelector('.cart-empty');
+  if (cartContent && cartEmptyMessage) {
+    cartContent.style.display = 'none';
+    cartEmptyMessage.style.display = 'block';
+  }
+}
+
+function showItemLoadingSpinner(container) {
+	const spinner = document.createElement('div');
+	spinner.className = 'item-spinner';
+	spinner.innerHTML = '<div class="spinner"></div>';
+	container.innerHTML = '';
+	container.appendChild(spinner);
+}
+
+function hideItemLoadingSpinner(container) {
+	if (container.querySelector('.item-spinner')) {
+		container.innerHTML = ''; // Clear spinner first
+	}
+}
+
+function showSummaryLoadingSpinners() {
+	const summaryPriceElements = document.querySelectorAll('[data-cart-subtotal], [data-cart-total], [data-discount-amount]');
+	summaryPriceElements.forEach(element => {
+		element.innerHTML = '<div class="spinner summary-spinner"></div>';
+	});
+}
+
+function hideSummaryLoadingSpinners() {
+	const summaryPriceElements = document.querySelectorAll('[data-cart-subtotal], [data-cart-total], [data-discount-amount]');
+	summaryPriceElements.forEach(element => {
+		if (element.querySelector('.spinner')) {
+			element.innerHTML = '';
+		}
+	});
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.quantity-btn').forEach(function(button) {
+    button.addEventListener('click', function() {
+      const action = button.getAttribute('data-action');
+      const change = action === 'increase-quantity' ? 1 : -1;
+      updateQuantity(button, change);
+    });
+  });
+
+  document.querySelectorAll('.remove-item').forEach(function(link) {
+    link.addEventListener('click', function(event) {
+      event.preventDefault();
       const itemKey = link.getAttribute('data-item-key');
-      CartHandlers.handleQuantityChange(link, -999); // Remove item
+      removeItemFromCart(itemKey, link);
     });
   });
 });
 </script>
-
 
 <style>
 	:root {
