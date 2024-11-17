@@ -1,7 +1,37 @@
-{% assign currentCollection = collections[collection_handle] %}
-{% assign collection_additional_variant_amount = currentCollection.metafields.custom.additional_variants.value.count %}
-{% assign collection_products_amount = currentCollection.products.size %}
-{% assign collection_total_items_amount = collection_additional_variant_amount | plus: collection_products_amount %}
+{% comment %}
+  This section can be used with either:
+  - collection_handle: Handle of the collection to display
+  - product_handles: Array of product handles to display
+{% endcomment %}
+
+{% if collection_handle %}
+  {% assign currentCollection = collections[collection_handle] %}
+  {% assign collection_additional_variant_amount = currentCollection.metafields.custom.additional_variants.value.count %}
+  {% assign collection_products_amount = currentCollection.products.size %}
+  {% assign collection_total_items_amount = collection_additional_variant_amount | plus: collection_products_amount %}
+  {% assign section_title = currentCollection.metafields.custom.alternative_title | default: currentCollection.title %}
+  {% assign section_description = currentCollection.description %}
+  {% assign banner_image = currentCollection.metafields.custom.collection_banner_img %}
+  {% assign banner_image_mobile = currentCollection.metafields.custom.collection_banner_img_mobile %}
+  {% assign banner_link = currentCollection.metafields.custom.collection_banner_lnk %}
+  {% assign is_align_center = currentCollection.metafields.custom.is_align_center %}
+  {% assign products = currentCollection.products %}
+  {% assign additional_variants = currentCollection.metafields.custom.additional_variants.value %}
+{% elsif product_handles %}
+  {% assign products = "" %}
+  {% for handle in product_handles %}
+    {% assign product = all_products[handle] %}
+    {% if product %}
+      {% if products == "" %}
+        {% assign products = product %}
+      {% else %}
+        {% assign products = products | concat: product %}
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+  {% assign collection_total_items_amount = products.size %}
+  {% assign additional_variants = blank %}
+{% endif %}
 
 {% if customer.b2b? or true %}
   {% assign isAddToCart = true %}
@@ -11,153 +41,55 @@
   {% endif %}
 {% endif %}
 
-<div id="{{ collection_handle }}-collection-section" class="collection-section xl:w-full {% if collection_total_items_amount < 3 and template.name == 'list-collections' %}w-[48%]{% else %}w-full{% endif %}" data-product-collections="{{ collection_handle }}" >
+<div id="{% if collection_handle %}{{ collection_handle }}{% else %}custom{% endif %}-collection-section"
+     class="collection-section xl:w-full {% if collection_total_items_amount < 3 and template.name == 'list-collections' %}w-[48%]{% else %}w-full{% endif %}"
+     data-product-collections="{% if collection_handle %}{{ collection_handle }}{% else %}custom{% endif %}">
+
   {% unless isNoTitle %}
     <div class="title-wrapper border-b-[1px] border-black">
-      <h2 class="relative mb-0 text-[40px] font-thin top-1 w-fit bg-white pr-3">{{ currentCollection.metafields.custom.alternative_title | default: currentCollection.title }}</h2>
+      <h2 class="relative mb-0 text-[40px] font-thin top-1 w-fit bg-white pr-3">{{ section_title }}</h2>
     </div>
   {% endunless %}
 
-  {% if isDescription %}
-    <p class="description {% if currentCollection.metafields.custom.is_align_center or isCentered %}text-center m-auto{% endif %}">{{ currentCollection.description }}</p>
+  {% if isDescription and section_description != blank %}
+    <p class="description {% if is_align_center or isCentered %}text-center m-auto{% endif %}">{{ section_description }}</p>
   {% endif %}
 
   <div class="product-grid flex flex-wrap gap-4 justify-start {% if isHiddenCollections %}hidden{% endif %}">
-    {% if currentCollection.metafields.custom.collection_banner_img and template.name != 'collection'%}
+    {% if banner_image and template.name != 'collection' %}
       <div class="image-wrapper {% if collection_handle == 'glucose-support' %}max-w-1/4 md:max-w-1/2{% else %}max-w-[49%]{% endif %}">
-        {% if currentCollection.metafields.custom.collection_banner_lnk %}
-          <a class="product-link" href="{{ currentCollection.metafields.custom.collection_banner_lnk }}">
-            {% render 'responsive-image', img: currentCollection.metafields.custom.collection_banner_img, img_mobile: currentCollection.metafields.custom.collection_banner_img_mobile, classes: "m-0 h-full md:h-[82vw] md:w-[44vw] block max-h-[420px] object-cover" %}
+        {% if banner_link %}
+          <a class="product-link" href="{{ banner_link }}">
+            {% render 'responsive-image', img: banner_image, img_mobile: banner_image_mobile, classes: "m-0 h-full md:h-[82vw] md:w-[44vw] block max-h-[420px] object-cover" %}
           </a>
         {% else %}
-          {% render 'responsive-image', img: currentCollection.metafields.custom.collection_banner_img, img_mobile: currentCollection.metafields.custom.collection_banner_img_mobile, classes: "m-0 h-full md:h-[82vw] md:w-[44vw] block max-h-[420px] object-cover" %}
+          {% render 'responsive-image', img: banner_image, img_mobile: banner_image_mobile, classes: "m-0 h-full md:h-[82vw] md:w-[44vw] block max-h-[420px] object-cover" %}
         {% endif %}
       </div>
     {% endif %}
 
-    {% for product in currentCollection.products %}
+    {% for product in products %}
       {% render 'product-card', product: product, isNoPrices: isNoPrices, isAddToCart: isAddToCart, isAddToCartQuantity: isAddToCartQuantity %}
     {% endfor %}
 
-    {% for additionalVar in currentCollection.metafields.custom.additional_variants.value %}
-      {% for vari in additionalVar.product.variants %}
-        {% if vari.id == additionalVar.id %}
-          {% assign variantIndex = forloop.index %}
-          {% break %}
+    {% if additional_variants %}
+      {% for additionalVar in additional_variants %}
+        {% for vari in additionalVar.product.variants %}
+          {% if vari.id == additionalVar.id %}
+            {% assign variantIndex = forloop.index %}
+            {% break %}
+          {% endif %}
+        {% endfor %}
+
+        {% if additionalVar.product.variants.size == 1 %}
+          {% render 'product-card', product: additionalVar.product, isNoPrices: isNoPrices, isAddToCart: isAddToCart, isAddToCartQuantity: isAddToCartQuantity %}
+        {% else %}
+          {% render 'variant-card', variant: additionalVar, variantIndex: variantIndex, productCollections: product_collections, isNoPrices: isNoPrices, isAddToCart: isAddToCart, isAddToCartQuantity: isAddToCartQuantity %}
         {% endif %}
       {% endfor %}
-
-      {% if additionalVar.product.variants.size == 1 %}
-        {% render 'product-card', product: additionalVar.product, isNoPrices: isNoPrices, isAddToCart: isAddToCart, isAddToCartQuantity: isAddToCartQuantity %}
-      {% else %}
-        {% render 'variant-card', variant: additionalVar, variantIndex: variantIndex, productCollections: product_collections, isNoPrices: isNoPrices, isAddToCart: isAddToCart, isAddToCartQuantity: isAddToCartQuantity %}
-      {% endif %}
-    {% endfor %}
+    {% endif %}
   </div>
 </div>
-
-<style>
-  .product-card .image-wrapper img {
-    border-radius: 25px;
-  }
-
-  .product-card {
-    position: relative;
-    max-width: 270px;
-    padding: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-direction: column;
-    gap: 1rem;
-    border: 1px solid var(--light-blue);
-    border-radius: 10px;
-  }
-
-  .product-card::before {
-    background-size: contain;
-    position: absolute;
-    top: 30px;
-    right: 10px;
-    width: 68px;
-    height: 68px;
-  }
-
-  .product-card .product-image {
-    height: 250px;
-    border-radius: 10px;
-    object-fit: contain;
-  }
-
-  .product-card .promotion-title {
-    font-size: 18px;
-    margin: unset;
-    color: var(--blue);
-  }
-
-  .product-card .product-titles p {
-    margin: unset;
-  }
-
-  .product-card .subtitle {
-    font-size: 14px;
-  }
-
-  .product-card button {
-    padding: 6px;
-    border-radius: 3px;
-    font-weight: bold;
-    border-radius: 10px;
-    min-height: 45px;
-  }
-
-  @media screen and (max-width: 768px) {
-    .product-card {
-      margin-bottom: 3vw;
-      width: 49%;
-      padding: 1vw;
-      margin-top: unset;
-      max-width: unset;
-      border-radius: 5vw !important;
-    }
-
-    .product-card .product-image {
-      height: 45vw;
-    }
-
-    .product-card button {
-      font-size: 4vw;
-    }
-
-    .product-grid {
-      gap: 1vw;
-    }
-
-    .product-card .product-titles {
-      min-height: 3.5em;
-      margin: unset;
-    }
-
-    .product-card .product-titles h3 {
-      font-size: 5vw;
-      line-height: 1em;
-    }
-
-    .product-card .subtitle {
-      font-size: 4vw;
-    }
-
-    .product-card .info .price strike {
-      font-size: 4vw;
-    }
-
-    .product-card .info .price .rounded.current-price {
-      font-size: 41px;
-      padding-left: 1vw;
-      padding-right: 1vw;
-    }
-  }
-</style>
 
 {% if isAddToCart %}
   <style>
@@ -230,7 +162,6 @@
       font-weight: bold;
     }
 
-    /* Quantity Selector Transition */
     .product-card .submit-wrap .qty {
       transition: width 0.3s ease;
       width: -webkit-fill-available;
@@ -269,13 +200,13 @@
   </script>
 {% endif %}
 
-{% if currentCollection.metafields.custom.is_align_center %}
+{% if is_align_center %}
   <style>
-    #{{ collection_handle }}-collection-section {
+    #{% if collection_handle %}{{ collection_handle }}{% else %}custom{% endif %}-collection-section {
       text-align: center;
     }
 
-    #{{ collection_handle }}-collection-section .description {
+    #{% if collection_handle %}{{ collection_handle }}{% else %}custom{% endif %}-collection-section .description {
       margin: 30px auto;
     }
   </style>
