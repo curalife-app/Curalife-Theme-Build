@@ -616,7 +616,8 @@
         const SID = window.SID || '';
         const sliderId = `productSliderAllInOne${SID}`;
         let slider = window[sliderId];
-        const elementIndex = parseInt(element.dataset.index); // Adjust index to be zero-based
+        // Add 1 to account for the thumbnail image at the start
+        const elementIndex = parseInt(element.dataset.index) + 1;
 
         if (!slider || !slider.slides || !slider.slides.length) {
             // Create a queue for pending updates
@@ -654,7 +655,6 @@
             });
         }
     }
-
     function performSlideUpdate(slider, elementIndex) {
         try {
             if (!slider || typeof elementIndex !== 'number') {
@@ -664,7 +664,8 @@
 
             // Add a small delay to ensure the slider is ready
             setTimeout(() => {
-                if (elementIndex >= 0 && elementIndex < slider.slides.length) {
+                // Check if the adjusted index is within bounds
+                if (elementIndex > 0 && elementIndex < slider.slides.length) {
                     slider.update();
 
                     requestAnimationFrame(() => {
@@ -677,6 +678,7 @@
         } catch (error) {
             console.error('Error during slide update:', error);
         }
+    }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
