@@ -56,7 +56,11 @@ endif
 # Process image source
 #######################################
 if force_original
-  assign desktop_variant_url = is_url_input ? desktop_image.src : desktop_image | image_url
+	if is_url_input
+		assign desktop_variant_url = desktop_image.src
+	else
+		assign desktop_variant_url = desktop_image | image_url
+	endif
   assign desktop_1x_url = desktop_variant_url
   assign desktop_2x_url = desktop_variant_url
   assign has_mobile_variant = false
