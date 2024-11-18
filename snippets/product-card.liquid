@@ -14,8 +14,10 @@
 	{% assign prodURL = product.url %}
 {% endif %}
 
-{% assign lastVariant = product.variant | last %}
-{% assign bestPrice = lastVariant.metafields.subscription.price %}
+{% unless request.path contains 'collections/black-friday' %}
+	{% assign lastVariant = product.variant | last %}
+	{% assign bestPrice = lastVariant.metafields.subscription.price %}
+{% endif %}
 
 <div id="{{ product.handle }}" class="product-card" id="product-card-section">
   {% if isDigitalProduct %}
