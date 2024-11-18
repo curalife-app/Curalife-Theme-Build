@@ -31,11 +31,12 @@
 <script>console.log("isGotSubscription: {{ isGotSubscription }}")</script>
 
 {% if isBFCM != true and isMultipleVariants and isGotSubscription %}
+	{% assign bottleQuantity = lastVariant.metafields.subscription.bottle_quantity %}
 	{% assign lastVariant = product.variants | last %}
 	{% if isGotSubscription %}
-		{% assign bestPrice = lastVariant.metafields.subscription.price | metafield_text %}
+		{% assign bestPrice = lastVariant.metafields.subscription.price | metafield_text | divided_by: bottleQuantity %}
 	{% else %}
-		{% assign bestPrice = lastVariant.price | money %}
+		{% assign bestPrice = lastVariant.price | divided_by: bottleQuantity | money %}
 	{% endif %}
 {% endif %}
 
