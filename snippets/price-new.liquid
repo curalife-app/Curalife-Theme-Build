@@ -29,29 +29,19 @@
 	{% assign isMultipleVariants = true %}
 {% endif %}
 
-
-<script>console.log("isRegularCollection: {{ isRegularCollection }}")</script>
-<script>console.log("isMultipleVariants: {{ isMultipleVariants }}")</script>
-<script>console.log("isGotSubscription: {{ isGotSubscription }}")</script>
-
 {% if isRegularCollection and isMultipleVariants and isGotSubscription %}
 	{% assign lastVariant = prod.variants | last %}
 
-	<script>console.log(" metafield_text: {{ lastVariant.metafields.subscription.price.amount.value }}")</script>
-	<script>console.log(" metafield_text: {{ lastVariant.metafields.subscription.price.value }}")</script>
-	<script>console.log(" metafield_text: {{ lastVariant.metafields.subscription.price.amount |  metafield_text }}")</script>
-
-
 	{% if isGotSubscription %}
-		{% assign bestPrice = lastVariant.metafields.subscription.price | metafield_text | plus: 1 | minus: 1 | divided_by: bottleQuantity %}
+		{% assign bestPrice = lastVariant.metafields.subscription.price.value %}
 	{% else %}
-		{% assign bestPrice = lastVariant.price | divided_by: bottleQuantity | money %}
+		{% assign bestPrice = lastVariant.price %}
 	{% endif %}
 {% endif %}
 
 <div class="price-wrapper min-h-12">
 	{% if bestPrice %}
-		<div class="up-to font-bold">From {{ bestPrice }}</div>
+		<div class="up-to font-bold">From {{ bestPrice | divided_by: quantity | money }}</div>
 	{% else %}
 		<div class="prices flex items-center justify-center gap-1">
 			{% if prod.compare_at_price > prod.price %}<strike class="no-letters text-gray-400 text-[0.8em] mbl:block">{{ prod.compare_at_price | money }}</strike>{% endif %}
