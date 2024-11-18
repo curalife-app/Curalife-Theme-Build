@@ -17,32 +17,6 @@
   {% assign item_price = prod.metafields.custom.original_item_variant.value.price | divided_by: quantity %}
 {% endif %}
 
-{% if request.path contains 'collections/black-friday' %}
-	{% assign isBFCM = true %}
-{% endif %}
-
-{% if prod.tags contains 'subscription' %}
-	{% assign isGotSubscription = true %}
-{% endif %}
-
-{% if prod.variants.size > 1 %}
-	{% assign isMultipleVariants = true %}
-{% endif %}
-
-<script>console.log("isBFCM: {{ isBFCM }}")</script>
-<script>console.log("isMultipleVariants: {{ isMultipleVariants }}")</script>
-<script>console.log("isGotSubscription: {{ isGotSubscription }}")</script>
-
-{% if isBFCM != true and isMultipleVariants and isGotSubscription %}
-	{% assign lastVariant = prod.variants | last %}
-
-	{% if isGotSubscription %}
-		{% assign bestPrice = lastVariant.metafields.subscription.price | metafield_text | divided_by: bottleQuantity %}
-	{% else %}
-		{% assign bestPrice = lastVariant.price | divided_by: bottleQuantity | money %}
-	{% endif %}
-{% endif %}
-
 <div class="price-wrapper min-h-12">
 	{% if bestPrice %}
 		<div class="up-to font-bold">From {{ bestPrice }}</div>
