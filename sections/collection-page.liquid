@@ -101,26 +101,26 @@
 						{% if shop.name contains 'Global' %}
 							<img class="mobile" src="{{ imgURLGlobalMobile | file_url }}" alt="Black Friday Banner">
 							<img class="desktop" src="{{ imgURLGlobal | file_url }}" alt="Black Friday Banner">
+
+							<div class="product-grid">
+								{% assign bundleProduct = all_products['curalin-curaslim-black-friday'] %}
+								{% render 'variant-card',
+										variant: bundleProduct.variants.first,
+										product: all_products['curalin-curaslim-black-friday'],
+										productCollections: product_collections,
+										variantIndex: forloop.index,
+										isNoPrices: isNoPrices,
+										isAddToCart: isAddToCart,
+										isAddToCartQuantity: isAddToCartQuantity
+									%}
+							</div>
 						{% else %}
 							<img class="mobile" src="{{ imgURLMobile | file_url }}" alt="Black Friday Banner">
 							<img class="desktop" src="{{ imgURL | file_url }}" alt="Black Friday Banner">
+
+							{% assign bfcmCollection = 'curalin-curaslim-black-friday' | split: ',' %}
+							{% render 'collection', product_handles: bfcmCollection, is_variant_split: true, isNoTitle: true, is_slider_on_mobile: true %}
 						{% endif %}
-
-						<div class="product-grid">
-							{% assign bundleProduct = all_products['curalin-curaslim-black-friday'] %}
-							{% render 'variant-card',
-									variant: bundleProduct.variants.first,
-									product: all_products['curalin-curaslim-black-friday'],
-									productCollections: product_collections,
-									variantIndex: forloop.index,
-									isNoPrices: isNoPrices,
-									isAddToCart: isAddToCart,
-									isAddToCartQuantity: isAddToCartQuantity
-								%}
-						</div>
-
-						{% assign bfcmCollection = 'curalin-curaslim-black-friday' | split: ',' %}
-						{% render 'collection', product_handles: bfcmCollection, is_variant_split: true, isNoTitle: true, is_slider_on_mobile: true %}
 					</div>
 				</div>
 			{% else %}
