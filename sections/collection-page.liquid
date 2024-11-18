@@ -106,34 +106,82 @@
 							<img class="mobile" src="{{ imgURLMobile | file_url }}" alt="Black Friday Banner">
 							<img class="desktop" src="{{ imgURL | file_url }}" alt="Black Friday Banner">
 
-							<div class="product-grid flex justify-between w-full">
-								{% assign bundleProduct = all_products['curalin-curaslim-black-friday'] %}
-								{% assign vari = bundleProduct.variants.first %}
+							<div class="product-grid mobile-slider">
+								<div class="swiper">
+									<div class="swiper-wrapper flex flex-wrap justify-between gap-4">
+										{% assign bundleProduct = all_products['curalin-curaslim-black-friday'] %}
+										{% assign vari = bundleProduct.variants.first %}
 
-								{% render 'variant-card',
-										variant: vari
-										product: bundleProduct,
-										subtitle: "+ Restful Sleep for FREE",
-										thumbnail_image: "https://cdn.shopify.com/s/files/1/0452/2459/1511/files/duo_sleep.png",
-										variantIndex: 1
-									%}
+										<div class="swiper-slide">
+											{% render 'variant-card',
+												variant: vari,
+												product: bundleProduct,
+												subtitle: "+ Restful Sleep for FREE",
+												thumbnail_image: "https://cdn.shopify.com/s/files/1/0452/2459/1511/files/duo_sleep.png",
+												variantIndex: 1
+											%}
+										</div>
 
-									{% render 'variant-card',
-										variant: vari
-										product: bundleProduct,
-										subtitle: "+ Joint Care for FREE",
-										thumbnail_image: "https://cdn.shopify.com/s/files/1/0452/2459/1511/files/duo_joint.png",
-										variantIndex: 2
-									%}
+										<div class="swiper-slide">
+											{% render 'variant-card',
+												variant: vari,
+												product: bundleProduct,
+												subtitle: "+ Joint Care for FREE",
+												thumbnail_image: "https://cdn.shopify.com/s/files/1/0452/2459/1511/files/duo_joint.png",
+												variantIndex: 2
+											%}
+										</div>
 
-									{% render 'variant-card',
-										variant: vari
-										product: bundleProduct,
-										subtitle: "+ Magnesium for FREE",
-										thumbnail_image: "https://cdn.shopify.com/s/files/1/0452/2459/1511/files/duo_magnesium.png?v=1731946873",
-										variantIndex: 3
-									%}
+										<div class="swiper-slide">
+											{% render 'variant-card',
+												variant: vari,
+												product: bundleProduct,
+												subtitle: "+ Magnesium for FREE",
+												thumbnail_image: "https://cdn.shopify.com/s/files/1/0452/2459/1511/files/duo_magnesium.png?v=1731946873",
+												variantIndex: 3
+											%}
+										</div>
+									</div>
+									<div class="swiper-button-next"></div>
+									<div class="swiper-button-prev"></div>
+								</div>
 							</div>
+
+							<script>
+								document.addEventListener('DOMContentLoaded', function() {
+									loadSwiper(() => {
+										const mediaQuery = window.matchMedia('(max-width: 767px)');
+										let swiper = null;
+
+										function initializeSlider() {
+											if (mediaQuery.matches) {
+												if (!swiper) {
+													swiper = initializeSwiper('.mobile-slider .swiper', {
+														slidesPerView: 1,
+														spaceBetween: 10,
+														grabCursor: true,
+														navigation: {
+															nextEl: '.mobile-slider .swiper-button-next',
+															prevEl: '.mobile-slider .swiper-button-prev',
+														},
+														breakpoints: {
+															768: {
+																slidesPerView: 3,
+															}
+														},
+													});
+												}
+											} else if (swiper) {
+												swiper.destroy();
+												swiper = null;
+											}
+										}
+
+										initializeSlider();
+										mediaQuery.addListener(initializeSlider);
+									});
+								});
+							</script>
 						{% endif %}
 					</div>
 				</div>
