@@ -3,6 +3,7 @@
   {% assign quantity = prod.metafields.my_fields.pack_bottles_quantity | default: 1 %}
   {% assign original_item_cap = original_item.compare_at_price %}
   {% assign subscription_price = prod.metafields.subscription.price.value %}
+	{% assign subscription_item_price = subscription_price | divided_by: quantity %}
 {% elsif prod.metafields.custom.original_item_variant.value %}
   {% assign original_item_cap = prod.metafields.custom.original_item_variant.value.compare_at_price %}
   {% assign quantity = prod.metafields.my_fields.pack_items_quantity %}
@@ -60,16 +61,12 @@
 						{% if item_price == 0 %}
 								<span class="text-[--bronze] font-normal">Order Free</span>
 						{% else %}
-								{{ item_price | money }}
+								{{ subscription_item_price | default: item_price | money }}
 						{% endif %}
 					{% endif %}
 				</span>
 				Per Bottle
 			</span>
-		{% endif %}
-
-		{% if isSubscription %}
-			<div class="subtitle text-[--bronze]">Subscription Price!</div>
 		{% endif %}
 	{% endif %}
 </div>
