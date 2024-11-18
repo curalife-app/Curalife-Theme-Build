@@ -51,9 +51,18 @@
 		</div>
 
 		{% if quantity > 1 %}
-			<span class="per-bottle block text-[14px] mt-1">
-				<span class="new-price">{% if isSubscription %}{{ subscription_price.value | divided_by: quantity | money }}{% else %}{% if item_price == 0 %}
-					<span class="text-[--bronze] font-normal">Order Free</span>{% else %}{{ item_price | money }}{% endif %}{% endif %}</span>
+				<span class="per-bottle block text-[14px] mt-1"></span>
+					<span class="new-price">
+							{% if isSubscription %}
+								{{ subscription_price.value | divided_by: quantity | money }}
+							{% else %}
+								{% if item_price == 0 %}
+										<span class="text-[--bronze] font-normal">Order Free</span>
+								{% else %}
+										{{ item_price | money }}
+								{% endif %}
+							{% endif %}
+					</span>
 					Per Bottle
 				</span>
 		{% endif %}
