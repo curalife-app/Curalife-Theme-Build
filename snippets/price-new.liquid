@@ -38,7 +38,7 @@
 	{% assign lastVariant = prod.variants | last %}
 
 	{% if isGotSubscription %}
-		{% assign bestPrice = lastVariant.metafields.subscription.price | metafield_text | divided_by: bottleQuantity %}
+		{% assign bestPrice = lastVariant.metafields.subscription.price | metafield_text | plus: 1 | minus: 1 | divided_by: bottleQuantity %}
 	{% else %}
 		{% assign bestPrice = lastVariant.price | divided_by: bottleQuantity | money %}
 	{% endif %}
