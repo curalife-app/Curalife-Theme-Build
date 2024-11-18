@@ -8,7 +8,8 @@
 
 {% assign variantTitle = variantTitle | replace: " (Black Friday)", "" %}
 
-{% assign actualTitle = title | default: variantTitle | default: variant.metafields.custom.alternative_title | default: variant.title %}
+{% assign actualTitle = variantTitle | default: variant.metafields.custom.alternative_title | default: variant.title %}
+{% assign subtitle = variant.metafields.custom.subtitle %}
 
 {% if variant.metafields.subscription.price and request.path contains '/collections/subscribe-save' %}
   {% assign isSubscription = true %}
@@ -29,16 +30,20 @@
 {% endif %}
 
 {% assign variantURL = variantURL | append: '?default-variant=' | append: variantIndex %}
-
-{% assign displayImage = thumbnail_image | default: variant.image.src %}
+{% assign displayImage = variant.metafields.custom.thumbnail_image | default: variant.image %}
 
 <div id="variant-{{ variant.id }}" class="product-card" data-product-collections="{{ productCollections }}">
-  <a class="product-link" href="{{ variantURL }}"><img class="product-image" src="{{ displayImage | image_url }}" width="512" height="475" alt="{{ variant.image.alt }}" loading="lazy"></a>
+  <a class="product-link" href="{{ variantURL }}"><img class="product-image" src="{{ displayImage.src | image_url }}" width="512" height="475" alt="{{ displayImage.alt }}" loading="lazy"></a>
 
   <div class="info h-max text-center">
     <div class="main">
       <div class="product-titles min-h-[35px] mb-2">
-        <a class="product-link" href="{{ variantURL }}"><h3 class="text-[22px] text-[--primary] m-0">{{ actualTitle }}</h3></a>
+        <a class="product-link" href="{{ variantURL }}">
+          <h3 class="text-[22px] text-[--primary] m-0">{{ actualTitle }}</h3>
+          {% if subtitle %}
+            <p class="text-[16px] text-gray-600 mt-1 mb-0">{{ subtitle }}</p>
+          {% endif %}
+        </a>
       </div>
 
       {% unless isNoPrices %}
