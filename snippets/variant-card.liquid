@@ -3,7 +3,7 @@
 {% if variant.title contains '1 Month Supply' %}
   {% assign variantTitle = variant.product.title | append: " " | append: variant.title | replace: "1 Month Supply", "" %}
 {% else %}
-	{% assign variantTitle = variant.product.title | append: " " | append: variant.title | replace: "Month Supply", "Pack" %}
+  {% assign variantTitle = variant.product.title | append: " " | append: variant.title | replace: "Month Supply", "Pack" %}
 {% endif %}
 
 {% assign variantTitle = variantTitle | replace: " (Black Friday)", "" %}
@@ -24,16 +24,21 @@
 {% assign save_price = original_item_cap | minus: item_price | times: quantity | money_with_currency | replace: ".00", "" %}
 
 {% if product.url contains '-black-friday' %}
-	{% assign variantURL = variant.product.url | split: '-black-friday' | first %}
+  {% assign variantURL = variant.product.url | split: '-black-friday' | first %}
 {% else %}
-	{% assign variantURL = variant.product.url %}
+  {% assign variantURL = variant.product.url %}
 {% endif %}
 
 {% assign variantURL = variantURL | append: '?default-variant=' | append: variantIndex %}
 {% assign displayImage = thumbnail_image | default: variant.metafields.custom.thumbnail_image | default: variant.image %}
 
+{% assign imageSrc = displayImage %}
+{% if displayImage.src %}
+  {% assign imageSrc = displayImage.src | image_url %}
+{% endif %}
+
 <div id="variant-{{ variant.id }}" class="product-card" data-product-collections="{{ productCollections }}">
-  <a class="product-link" href="{{ variantURL }}"><img class="product-image" src="{{ displayImage.src | image_url }}" width="512" height="475" alt="{{ displayImage.alt }}" loading="lazy"></a>
+  <a class="product-link" href="{{ variantURL }}"><img class="product-image" src="{{ imageSrc }}" width="512" height="475" alt="{{ displayImage.alt | default: actualTitle }}" loading="lazy"></a>
 
   <div class="info h-max text-center">
     <div class="main">
@@ -90,12 +95,18 @@
   </div>
 </div>
 
-{% if variant.product.metafields.custom.badge_image and isNoPrices != true %}
+{% assign badgeImage = variant.product.metafields.custom.badge_image %}
+{% assign badgeImageSrc = badgeImage %}
+{% if badgeImage.src %}
+  {% assign badgeImageSrc = badgeImage.src | image_url %}
+{% endif %}
+
+{% if badgeImage and isNoPrices != true %}
   {% unless variant.product.metafields.custom.is_badge_collection %}
     <style>
       .product-card#variant-{{ variant.id }}::before {
         content: "";
-        background-image: url("{{ variant.product.metafields.custom.badge_image | image_url }}");
+        background-image: url("{{ badgeImageSrc }}");
         background-repeat: no-repeat;
       }
     </style>
