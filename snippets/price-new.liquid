@@ -47,7 +47,7 @@
 	{% else %}
 		<div class="prices flex items-center justify-center gap-1">
 			{% if prod.compare_at_price > prod.price %}<strike class="no-letters text-gray-400 text-[0.8em] mbl:block">{{ prod.compare_at_price | money }}</strike>{% endif %}
-			<span class="total-price font-bold">{{ prod.price | money }}</span>
+			<span class="total-price font-bold">{{ subscription_price | default: prod.price | money }}</span>
 			{% if request.path contains 'collections/black-friday' %}<span class="save-price px-2 py-1 text-[14px] font-bold rounded-full" style="background:#EACB86">Save {{ original_item_cap | minus: item_price | times: quantity | money | replace: ".00", "" }}</span>{% endif %}
 		</div>
 
