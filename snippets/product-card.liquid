@@ -14,14 +14,18 @@
 	{% assign prodURL = product.url %}
 {% endif %}
 
-{% unless request.path contains 'collections/black-friday' and product.variants.size > 1 and product.tag contains 'subscription' %}
+{% if request.path contains 'collections/black-friday' %}
+	{% assign isBFCM = true %}
+{% endif %}
+
+{% if isBFCM == false and product.variants.size > 1 and product.tag contains 'subscription' %}
 	{% assign lastVariant = product.variants | last %}
 	{% if product.tag contains 'subscription' %}
 		{% assign bestPrice = lastVariant.metafields.subscription.price | metafield_text %}
 	{% else %}
 		{% assign bestPrice = lastVariant.price | money %}
 	{% endif %}
-{% endunless %}
+{% endif %}
 
 <div id="{{ product.handle }}" class="product-card" id="product-card-section">
   {% if isDigitalProduct %}
