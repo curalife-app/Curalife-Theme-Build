@@ -1,11 +1,3 @@
-{% if variant.title contains '1 Month Supply' %}
-  {% assign variantTitle = "Curalin" %}
-{% elsif variant.title contains '3 Months Supply' %}
-  {% assign variantTitle = "Curalin 3 Pack" %}
-{% elsif variant.title contains '6 Months Supply' %}
-  {% assign variantTitle = "Curalin 6 Pack" %}
-{% endif %}
-
 {% if variant.metafields.subscription.price and request.path contains '/collections/subscribe-save' %}
   {% assign isSubscription = true %}
 {% endif %}
@@ -26,7 +18,7 @@
   <div class="info h-max text-center">
     <div class="main">
       <div class="product-titles min-h-[35px] mb-2">
-        <a class="product-link" href="{{ variantURL }}"><h3 class="text-[22px] text-[--primary] m-0">{{ variantTitle | default: variant.metafields.custom.alternative_title | default: variant.title }}</h3></a>
+        <a class="product-link" href="{{ variantURL }}"><h3 class="text-[22px] text-[--primary] m-0">{{ variant.metafields.custom.alternative_title | default: variant.title }}</h3></a>
       </div>
 
       {% unless isNoPrices %}

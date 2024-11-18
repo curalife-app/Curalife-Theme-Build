@@ -615,22 +615,16 @@
 
         const SID = window.SID || '';
         const sliderId = `productSliderAllInOne${SID}`;
-				const thumbsSliderId = `productThumbsSlider${SID}`;
         let slider = window[sliderId];
-				let thumbsSlider = window[thumbsSliderId];
         const elementIndex = parseInt(element.dataset.index);
 
         if (!slider || !slider.slides || !slider.slides.length) {
-            window.pendingSlideUpdates = window.pendingSlideUpdates || [];
-            window.pendingSlideUpdates.push(elementIndex);
-
             return new Promise((resolve) => {
                 const checkSlider = setInterval(() => {
                     slider = window[sliderId];
                     if (slider && slider.slides && slider.slides.length > 0) {
                         clearInterval(checkSlider);
                         performSlideUpdate(slider, elementIndex);
-												performSlideUpdate(thumbsSlider, elementIndex + 1);
                         resolve();
                     }
                 }, 100);
@@ -654,12 +648,16 @@
                 return;
             }
 
+            // Ensure the slider is ready and has the correct number of slides
             if (elementIndex >= 0 && elementIndex < slider.slides.length) {
+                // Force slider update and wait for it to be ready
                 slider.update();
 
+                // Use requestAnimationFrame to ensure DOM is ready
                 requestAnimationFrame(() => {
                     slider.slideTo(elementIndex, 300);
 
+                    // Update slider again after transition
                     setTimeout(() => {
                         slider.update();
                     }, 350);
