@@ -18,8 +18,15 @@
 	{% assign isBFCM = true %}
 {% endif %}
 
+{% if product.tags contains 'subscription' %}
+	{% assign isGotSubscription = true %}
+{% endif %}
 
-{% if isBFCM == false and product.variants.size > 1 and product.tags contains 'subscription' %}
+{% if product.variants.size > 1 %}
+	{% assign isMultipleVariants = true %}
+{% endif %}
+
+{% if isBFCM == false and isMultipleVariants and isGotSubscription %}
 	{% assign lastVariant = product.variants | last %}
 	{% if product.tags contains 'subscription' %}
 		{% assign bestPrice = lastVariant.metafields.subscription.price | metafield_text %}
