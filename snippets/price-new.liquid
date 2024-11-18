@@ -17,8 +17,6 @@
   {% assign item_price = prod.metafields.custom.original_item_variant.value.price | divided_by: quantity %}
 {% endif %}
 
-<script>console.log("Quanityty: {{ quantity }}")</script>
-
 {% unless request.path contains 'collections/black-friday' %}
 	{% assign isRegularCollection = true %}
 {% endunless %}
@@ -33,6 +31,7 @@
 
 {% if isRegularCollection and isMultipleVariants and isGotSubscription %}
 	{% assign lastVariant = prod.variants | last %}
+	{% assign lastVariantQuantity = lastVariant.metafields.my_fields.pack_bottles_quantity | default: 1 %}
 
 	{% if isGotSubscription %}
 		{% assign bestPrice = lastVariant.metafields.subscription.price.value %}
@@ -43,7 +42,7 @@
 
 <div class="price-wrapper min-h-12">
 	{% if bestPrice %}
-		<div class="up-to font-bold">From {{ bestPrice | divided_by: quantity | money }}</div>
+		<div class="best-item-price font-bold">From {{ bestPrice | divided_by: lastVariantQuantity | money }}</div>
 	{% else %}
 		<div class="prices flex items-center justify-center gap-1">
 			{% if prod.compare_at_price > prod.price %}<strike class="no-letters text-gray-400 text-[0.8em] mbl:block">{{ prod.compare_at_price | money }}</strike>{% endif %}
