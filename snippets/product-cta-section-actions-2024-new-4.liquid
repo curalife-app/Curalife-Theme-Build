@@ -3,14 +3,18 @@
 <div class="product-actions {% if isVariantBoxToggle %}with-animation{% endif %}" data-default-variant-index="{{ defaultSelectionIndex }}">
   <div class="purchase-options flex flex-col gap-2">
     {% for block in blocks %}
-      {% assign referenced_variant = blank %}
-      {% assign blockVarID = block.settings.variant_id | plus: 0 %}
-      {% for vari in referenced_variant_product.variants %}
-        {% assign currVarID = vari.id | plus: 0 %}
-        {% if currVarID == blockVarID %}
-          {% assign referenced_variant = vari %}
-        {% endif %}
-      {% endfor %}
+			{% case block.type %}
+        {% when 'variant' %}
+					<script>console.log("block calculation")</script>
+					{% assign referenced_variant = blank %}
+					{% assign blockVarID = block.settings.variant_id | plus: 0 %}
+					{% for vari in referenced_variant_product.variants %}
+						{% assign currVarID = vari.id | plus: 0 %}
+						{% if currVarID == blockVarID %}
+							{% assign referenced_variant = vari %}
+						{% endif %}
+					{% endfor %}
+			{% endcase %}
 
 			<script>console.log("referenced_variant_product: {{ referenced_variant_product.title }}")</script>
 			<script>console.log("block variant: {{ block.settings.variant_id }}")</script>
