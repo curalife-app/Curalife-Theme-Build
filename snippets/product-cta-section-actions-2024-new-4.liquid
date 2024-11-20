@@ -5,22 +5,15 @@
     {% for block in blocks %}
 			{% case block.type %}
         {% when 'variant' %}
-					<script>console.log("block calculation")</script>
 					{% assign referenced_variant = blank %}
 					{% assign blockVarID = block.settings.variant_id | plus: 0 %}
 					{% for vari in referenced_variant_product.variants %}
-						<script>console.log("ref product variant: {{ vari.id }}")</script>
 						{% assign currVarID = vari.id | plus: 0 %}
 						{% if currVarID == blockVarID %}
 							{% assign referenced_variant = vari %}
 						{% endif %}
 					{% endfor %}
-
-					<script>console.log("referenced_variant_product: {{ referenced_variant_product.title }}")</script>
-					<script>console.log("block variant: {{ block.settings.variant_id }}")</script>
-					<script>console.log("variant: {{ referenced_variant.title }}")</script>
 			{% endcase %}
-
 
       {% if block.type == 'variant' %}
           {% render 'product-cta-section-actions-variant-2024-new-4',
