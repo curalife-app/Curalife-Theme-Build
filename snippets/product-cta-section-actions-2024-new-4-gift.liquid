@@ -190,109 +190,109 @@
   }
 
 	async function validateCartItems(newItems) {
-		try {
-			// Get current cart
-			const cartResponse = await fetch('/cart.js');
-			if (!cartResponse.ok) {
-				throw new Error('Failed to fetch cart');
-			}
-			const currentCart = await cartResponse.json();
+  try {
+    // Get current cart
+    const cartResponse = await fetch('/cart.js');
+    if (!cartResponse.ok) {
+      throw new Error('Failed to fetch cart');
+    }
+    const currentCart = await cartResponse.json();
 
-			// Validation Rules
-			const validationResults = {
-				isValid: true,
-				errors: []
-			};
+    // Validation Rules
+    const validationResults = {
+      isValid: true,
+      errors: []
+    };
 
-			// Rule 1: Check for duplicate subscription items
-			const subscriptionItems = currentCart.items.filter(item => item.selling_plan_allocation);
-			const newSubscriptionItems = newItems.filter(item => item.selling_plan);
+    // Rule 1: Check for duplicate subscription items
+    const subscriptionItems = currentCart.items.filter(item => item.selling_plan_allocation);
+    const newSubscriptionItems = newItems.filter(item => item.selling_plan);
 
-			if (newSubscriptionItems.length > 0 && subscriptionItems.length > 0) {
-				// Get product handles for subscription items
-				const currentProductHandles = new Set();
-				for (const item of subscriptionItems) {
-					const productResponse = await fetch(`/products/${item.handle}.js`);
-					if (productResponse.ok) {
-						const product = await productResponse.json();
-						currentProductHandles.add(product.handle);
-					}
-				}
+    if (newSubscriptionItems.length > 0 && subscriptionItems.length > 0) {
+      // Get product handles for subscription items
+      const currentProductHandles = new Set();
+      for (const item of subscriptionItems) {
+        const productResponse = await fetch(`/products/${item.handle}.js`);
+        if (productResponse.ok) {
+          const product = await productResponse.json();
+          currentProductHandles.add(product.handle);
+        }
+      }
 
-				// Check new items against existing subscriptions
-				for (const newItem of newSubscriptionItems) {
-					const productResponse = await fetch(`/variants/${newItem.id}.js`);
-					if (productResponse.ok) {
-						const variant = await productResponse.json();
-						const productResponse = await fetch(`/products/${variant.product.handle}.js`);
-						if (productResponse.ok) {
-							const product = await productResponse.json();
-							if (currentProductHandles.has(product.handle)) {
-								validationResults.isValid = false;
-								validationResults.errors.push({
-									code: 'DUPLICATE_SUBSCRIPTION',
-									message: 'You already have a subscription for this product in your cart. Please review your cart before adding another subscription.',
-									type: 'error'
-								});
-								break;
-							}
-						}
-					}
-				}
-			}
+      // Check new items against existing subscriptions
+      for (const newItem of newSubscriptionItems) {
+        const productResponse = await fetch(`/variants/${newItem.id}.js`);
+        if (productResponse.ok) {
+          const variant = await productResponse.json();
+          const productResponse = await fetch(`/products/${variant.product.handle}.js`);
+          if (productResponse.ok) {
+            const product = await productResponse.json();
+            if (currentProductHandles.has(product.handle)) {
+              validationResults.isValid = false;
+              validationResults.errors.push({
+                code: 'DUPLICATE_SUBSCRIPTION',
+                message: 'You already have a subscription for this product in your cart. Please review your cart before adding another subscription.',
+                type: 'error'
+              });
+              break;
+            }
+          }
+        }
+      }
+    }
 
-			// Add more validation rules here...
+    // Add more validation rules here...
 
-			return validationResults;
-		} catch (error) {
-			console.error('Validation error:', error);
-			return {
-				isValid: false,
-				errors: [{
-					code: 'VALIDATION_ERROR',
-					message: 'An error occurred while validating your cart. Please try again.',
-					type: 'error'
-				}]
-			};
-		}
-	}
+    return validationResults;
+  } catch (error) {
+    console.error('Validation error:', error);
+    return {
+      isValid: false,
+      errors: [{
+        code: 'VALIDATION_ERROR',
+        message: 'An error occurred while validating your cart. Please try again.',
+        type: 'error'
+      }]
+    };
+  }
+}
 
-	function showNotification(message, type = 'error') {
-		// Create notification element
-		const notification = document.createElement('div');
-		notification.className = `cart-notification ${type} fixed top-4 right-4 p-4 rounded-lg shadow-lg max-w-md z-50 transition-opacity duration-300`;
+function showNotification(message, type = 'error') {
+  // Create notification element
+  const notification = document.createElement('div');
+  notification.className = `cart-notification ${type} fixed top-4 right-4 p-4 rounded-lg shadow-lg max-w-md z-50 transition-opacity duration-300`;
 
-		// Style based on type
-		if (type === 'error') {
-			notification.classList.add('bg-red-100', 'border', 'border-red-400', 'text-red-700');
-		} else if (type === 'success') {
-			notification.classList.add('bg-green-100', 'border', 'border-green-400', 'text-green-700');
-		}
+  // Style based on type
+  if (type === 'error') {
+    notification.classList.add('bg-red-100', 'border', 'border-red-400', 'text-red-700');
+  } else if (type === 'success') {
+    notification.classList.add('bg-green-100', 'border', 'border-green-400', 'text-green-700');
+  }
 
-		// Add content
-		notification.innerHTML = `
-			<div class="flex items-center">
-				<div class="mr-3">
-					${type === 'error' ? '⚠️' : '✅'}
-				</div>
-				<div class="text-sm font-medium">
-					${message}
-				</div>
-				<button class="hover:text-gray-500 ml-auto text-gray-400" onclick="this.parentElement.parentElement.remove()">
-					✕
-				</button>
-			</div>
-		`;
+  // Add content
+  notification.innerHTML = `
+    <div class="flex items-center">
+      <div class="mr-3">
+        ${type === 'error' ? '⚠️' : '✅'}
+      </div>
+      <div class="text-sm font-medium">
+        ${message}
+      </div>
+      <button class="hover:text-gray-500 ml-auto text-gray-400" onclick="this.parentElement.parentElement.remove()">
+        ✕
+      </button>
+    </div>
+  `;
 
-		// Add to document
-		document.body.appendChild(notification);
+  // Add to document
+  document.body.appendChild(notification);
 
-		// Remove after 5 seconds
-		setTimeout(() => {
-			notification.classList.add('opacity-0');
-			setTimeout(() => notification.remove(), 300);
-		}, 5000);
-	}
+  // Remove after 5 seconds
+  setTimeout(() => {
+    notification.classList.add('opacity-0');
+    setTimeout(() => notification.remove(), 300);
+  }, 5000);
+}
 
   // Event listeners for purchase options
   productActions.addEventListener('click', (event) => {
