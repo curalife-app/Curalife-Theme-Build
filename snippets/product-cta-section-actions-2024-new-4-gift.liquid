@@ -149,70 +149,36 @@
   }
 
   function togglePurchaseBox(element) {
-  if (!element) return;
+    if (!element) return;
 
-  // Reset all boxes
-  purchaseOptionBoxes.forEach(box => {
-    box.classList.remove('selected');
-    const radio = box.querySelector('input[type="radio"]');
-    if (radio) {
-      radio.checked = false;
+    purchaseOptionBoxes.forEach(box => {
+      box.classList.remove('selected');
+      const radio = box.querySelector('input[type="radio"]');
+      if (radio) {
+        radio.checked = false;
+      }
+    });
+
+    const isSubscription = element.getAttribute('data-purchase-type') === 'subscribe';
+    const subscriptionPlanID = isSubscription ? element.getAttribute('data-subscription-selling-plan-id') : '';
+    const variantID = element.getAttribute('data-variant');
+    const buyType = element.getAttribute('data-buy-type');
+
+    if (submitSellingPlanIdInput) {
+      submitSellingPlanIdInput.value = subscriptionPlanID;
     }
-  });
+    if (submitVariantIdInput) {
+      submitVariantIdInput.value = variantID;
+    }
 
-  // Get values from the clicked box
-  const isSubscription = element.getAttribute('data-purchase-type') === 'subscribe';
-  const variantId = element.getAttribute('data-variant');
-  const subscriptionPlanId = isSubscription ? element.getAttribute('data-subscription-selling-plan-id') : '';
+    element.classList.add('selected');
+    const radioInput = element.querySelector('input[type="radio"]');
+    if (radioInput) {
+      radioInput.checked = true;
+    }
 
-  // Store the values as data attributes on the selected box
-  element.setAttribute('data-selected-variant-id', variantId);
-  element.setAttribute('data-selected-selling-plan-id', subscriptionPlanId);
-
-  // Update hidden inputs if they exist
-  const variantInput = document.querySelector('input[name="id"]');
-  const sellingPlanInput = document.querySelector('input[name="selling_plan"]');
-
-  if (variantInput) {
-    variantInput.value = variantId;
-  } else {
-    // Create variant input if it doesn't exist
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'id';
-    input.value = variantId;
-    element.appendChild(input);
+    state.selectedBox = element;
   }
-
-  if (sellingPlanInput) {
-    sellingPlanInput.value = subscriptionPlanId;
-  } else if (isSubscription) {
-    // Create selling plan input if it doesn't exist and it's a subscription
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'selling_plan';
-    input.value = subscriptionPlanId;
-    element.appendChild(input);
-  }
-
-  // Mark as selected
-  element.classList.add('selected');
-  const radioInput = element.querySelector('input[type="radio"]');
-  if (radioInput) {
-    radioInput.checked = true;
-  }
-
-  state.selectedBox = element;
-
-  // Debug log the updated state
-  console.log('Purchase box toggled:', {
-    selectedBox: element,
-    variantId,
-    subscriptionPlanId,
-    isSubscription,
-    attributes: Array.from(element.attributes).map(attr => `${attr.name}=${attr.value}`)
-  });
-}
 
   function initializePurchaseOptions() {
     const defaultVariantIndex = parseInt(productActions.getAttribute('data-default-variant-index')) || 0;
@@ -356,136 +322,83 @@
   });
 
   // Submit button handler
-submitButton.addEventListener('click', async function(event) {
-  event.preventDefault();
+	submitButton.addEventListener('click', async function(event) {
+		event.preventDefault();
 
-  // Get selected purchase option box
-  const selectedBox = productActions.querySelector('.purchase-option-box.selected');
+		const selectedBox = productActions.querySelector('.purchase-option-box.selected');
+		const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
+		const giftOptionBorder = selectedGiftContainer?.querySelector('.gift-option-border');
 
-  // Get selected gift
-  const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
-  const giftOptionBorder = selectedGiftContainer?.querySelector('.gift-option-border');
+		const isSubscription = selectedBox?.getAttribute('data-purchase-type') === 'subscribe';
+		const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
 
-  // Debug what we found initially
-  console.log('Selected elements:', {
-    selectedBox,
-    selectedBoxAttributes: selectedBox ? Array.from(selectedBox.attributes).map(attr => `${attr.name}=${attr.value}`) : null,
-    giftOptionBorder
-  });
+		if (!selectedBox || !giftId) {
+			console.error('Missing required selection');
+			return;
+		}
 
-  // Check selections
-  if (!selectedBox) {
-    showNotification('Please select a purchase option', 'error');
-    return;
-  }
+		const items = [
+			{
+				id: submitVariantIdInput.value,
+				quantity: 1,
+				selling_plan: submitSellingPlanIdInput.value || undefined
+			},
+			{
+				id: giftId,
+				quantity: 1
+			}
+		];
 
-  if (!selectedGiftContainer || !giftOptionBorder) {
-    showNotification('Please select a free gift', 'error');
-    return;
-  }
+		try {
+			// Validate cart before proceeding
+			const validationResults = await validateCartItems(items);
+			if (!validationResults.isValid) {
+				validationResults.errors.forEach(error => {
+					showNotification(error.message, error.type);
+				});
+				return;
+			}
 
-  // Get values from the selected box
-  const isSubscription = selectedBox.getAttribute('data-purchase-type') === 'subscribe';
-  const variantId = selectedBox.getAttribute('data-selected-variant-id');
-  const sellingPlanId = isSubscription ? selectedBox.getAttribute('data-selected-selling-plan-id') : null;
+			{% if buyType == "buy_now" %}
+				const cartDrawer = document.getElementById('upCart');
+				if (cartDrawer) {
+					cartDrawer.remove();
+				}
 
-  // Get gift ID based on subscription status
-  const giftId = isSubscription ?
-    giftOptionBorder.getAttribute('data-gift-id-subscription') :
-    giftOptionBorder.getAttribute('data-gift-id');
+				await fetch('/cart/clear.js', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'Accept': 'application/json'
+					}
+				});
+			{% endif %}
 
-  // Debug log all found values
-  console.log('Found values:', {
-    isSubscription,
-    variantId,
-    sellingPlanId,
-    giftId
-  });
+			const response = await fetch('/cart/add.js', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Accept': 'application/json'
+				},
+				body: JSON.stringify({ items })
+			});
 
-  // Validation
-  if (!variantId) {
-    console.error('Missing variant ID', {
-      selectedBox,
-      boxAttributes: Array.from(selectedBox.attributes).map(attr => `${attr.name}=${attr.value}`)
-    });
-    showNotification('Unable to determine product variant', 'error');
-    return;
-  }
+			if (!response.ok) {
+				throw new Error('Failed to add items to cart');
+			}
 
-  if (!giftId) {
-    console.error('Missing gift ID', {
-      giftOptionBorder,
-      giftAttributes: Array.from(giftOptionBorder.attributes).map(attr => `${attr.name}=${attr.value}`)
-    });
-    showNotification('Unable to determine gift variant', 'error');
-    return;
-  }
+			// Show success notification
+			showNotification('Items successfully added to cart', 'success');
 
-  const items = [
-    {
-      id: variantId,
-      quantity: 1,
-      ...(sellingPlanId && { selling_plan: sellingPlanId })
-    },
-    {
-      id: giftId,
-      quantity: 1
-    }
-  ];
+			{% if buyType == "buy_now" %}
+				window.location.href = '/checkout';
+			{% endif %}
 
-  console.log('Items to be added:', items);
-
-  try {
-    // Validate cart before proceeding
-    const validationResults = await validateCartItems(items);
-    if (!validationResults.isValid) {
-      validationResults.errors.forEach(error => {
-        showNotification(error.message, error.type);
-      });
-      return;
-    }
-
-    {% if buyType == "buy_now" %}
-      const cartDrawer = document.getElementById('upCart');
-      if (cartDrawer) {
-        cartDrawer.remove();
-      }
-
-      await fetch('/cart/clear.js', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
-    {% endif %}
-
-    const response = await fetch('/cart/add.js', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({ items })
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.description || 'Failed to add items to cart');
-    }
-
-    // Show success notification
-    showNotification('Items successfully added to cart', 'success');
-
-    {% if buyType == "buy_now" %}
-      window.location.href = '/checkout';
-    {% endif %}
-
-  } catch (error) {
-    console.error('Error:', error);
-    showNotification(error.message || 'An error occurred while adding items to cart. Please try again.', 'error');
-  }
-});
+		} catch (error) {
+			console.error('Error:', error);
+			showNotification('An error occurred while adding items to cart. Please try again.');
+		}
+	});
 
   // One-time purchase button handler
   const oneTimePurchaseButton = productActions.querySelector('.one-time-add-to-cart');
