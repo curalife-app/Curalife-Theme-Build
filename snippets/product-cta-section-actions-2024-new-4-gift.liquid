@@ -149,36 +149,70 @@
   }
 
   function togglePurchaseBox(element) {
-    if (!element) return;
+  if (!element) return;
 
-    purchaseOptionBoxes.forEach(box => {
-      box.classList.remove('selected');
-      const radio = box.querySelector('input[type="radio"]');
-      if (radio) {
-        radio.checked = false;
-      }
-    });
-
-    const isSubscription = element.getAttribute('data-purchase-type') === 'subscribe';
-    const subscriptionPlanID = isSubscription ? element.getAttribute('data-subscription-selling-plan-id') : '';
-    const variantID = element.getAttribute('data-variant');
-    const buyType = element.getAttribute('data-buy-type');
-
-    if (submitSellingPlanIdInput) {
-      submitSellingPlanIdInput.value = subscriptionPlanID;
+  // Reset all boxes
+  purchaseOptionBoxes.forEach(box => {
+    box.classList.remove('selected');
+    const radio = box.querySelector('input[type="radio"]');
+    if (radio) {
+      radio.checked = false;
     }
-    if (submitVariantIdInput) {
-      submitVariantIdInput.value = variantID;
-    }
+  });
 
-    element.classList.add('selected');
-    const radioInput = element.querySelector('input[type="radio"]');
-    if (radioInput) {
-      radioInput.checked = true;
-    }
+  // Get values from the clicked box
+  const isSubscription = element.getAttribute('data-purchase-type') === 'subscribe';
+  const variantId = element.getAttribute('data-variant');
+  const subscriptionPlanId = isSubscription ? element.getAttribute('data-subscription-selling-plan-id') : '';
 
-    state.selectedBox = element;
+  // Store the values as data attributes on the selected box
+  element.setAttribute('data-selected-variant-id', variantId);
+  element.setAttribute('data-selected-selling-plan-id', subscriptionPlanId);
+
+  // Update hidden inputs if they exist
+  const variantInput = document.querySelector('input[name="id"]');
+  const sellingPlanInput = document.querySelector('input[name="selling_plan"]');
+
+  if (variantInput) {
+    variantInput.value = variantId;
+  } else {
+    // Create variant input if it doesn't exist
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'id';
+    input.value = variantId;
+    element.appendChild(input);
   }
+
+  if (sellingPlanInput) {
+    sellingPlanInput.value = subscriptionPlanId;
+  } else if (isSubscription) {
+    // Create selling plan input if it doesn't exist and it's a subscription
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'selling_plan';
+    input.value = subscriptionPlanId;
+    element.appendChild(input);
+  }
+
+  // Mark as selected
+  element.classList.add('selected');
+  const radioInput = element.querySelector('input[type="radio"]');
+  if (radioInput) {
+    radioInput.checked = true;
+  }
+
+  state.selectedBox = element;
+
+  // Debug log the updated state
+  console.log('Purchase box toggled:', {
+    selectedBox: element,
+    variantId,
+    subscriptionPlanId,
+    isSubscription,
+    attributes: Array.from(element.attributes).map(attr => `${attr.name}=${attr.value}`)
+  });
+}
 
   function initializePurchaseOptions() {
     const defaultVariantIndex = parseInt(productActions.getAttribute('data-default-variant-index')) || 0;
@@ -325,7 +359,7 @@
 submitButton.addEventListener('click', async function(event) {
   event.preventDefault();
 
-  // Get the main product actions container
+  // Get selected purchase option box
   const selectedBox = productActions.querySelector('.purchase-option-box.selected');
 
   // Get selected gift
@@ -335,7 +369,7 @@ submitButton.addEventListener('click', async function(event) {
   // Debug what we found initially
   console.log('Selected elements:', {
     selectedBox,
-    selectedGiftContainer,
+    selectedBoxAttributes: selectedBox ? Array.from(selectedBox.attributes).map(attr => `${attr.name}=${attr.value}`) : null,
     giftOptionBorder
   });
 
@@ -350,31 +384,10 @@ submitButton.addEventListener('click', async function(event) {
     return;
   }
 
-  // Get form inputs - they should be rendered by the buy-buttons-new-4 template
-  const formSelector = `#${productActions.id} form[id^="product-form"], form[id^="product-form-${SID}"]`;
-  const productForm = document.querySelector(formSelector);
-
-  console.log('Form found:', productForm);
-
-  // Get values from the selected box and form
-  const isSubscription = selectedBox.classList.contains('subscribe');
-
-  // Try to get the variant ID - it should be on the box data attributes or in a nearby form input
-  let variantId = selectedBox.getAttribute('data-variant-id');
-  if (!variantId && productForm) {
-    const variantInput = productForm.querySelector('input[name="id"]');
-    variantId = variantInput?.value;
-  }
-
-  // Try to get the selling plan ID if it's a subscription
-  let sellingPlanId = null;
-  if (isSubscription) {
-    sellingPlanId = selectedBox.getAttribute('data-selling-plan-id');
-    if (!sellingPlanId && productForm) {
-      const sellingPlanInput = productForm.querySelector('input[name="selling_plan"], select[name="selling_plan"]');
-      sellingPlanId = sellingPlanInput?.value;
-    }
-  }
+  // Get values from the selected box
+  const isSubscription = selectedBox.getAttribute('data-purchase-type') === 'subscribe';
+  const variantId = selectedBox.getAttribute('data-selected-variant-id');
+  const sellingPlanId = isSubscription ? selectedBox.getAttribute('data-selected-selling-plan-id') : null;
 
   // Get gift ID based on subscription status
   const giftId = isSubscription ?
@@ -386,20 +399,24 @@ submitButton.addEventListener('click', async function(event) {
     isSubscription,
     variantId,
     sellingPlanId,
-    giftId,
-    selectedBoxAttributes: Array.from(selectedBox.attributes).map(attr => `${attr.name}=${attr.value}`),
-    formHTML: productForm?.innerHTML
+    giftId
   });
 
   // Validation
   if (!variantId) {
-    console.error('Missing variant ID. Selected box:', selectedBox);
+    console.error('Missing variant ID', {
+      selectedBox,
+      boxAttributes: Array.from(selectedBox.attributes).map(attr => `${attr.name}=${attr.value}`)
+    });
     showNotification('Unable to determine product variant', 'error');
     return;
   }
 
   if (!giftId) {
-    console.error('Missing gift ID. Gift border:', giftOptionBorder);
+    console.error('Missing gift ID', {
+      giftOptionBorder,
+      giftAttributes: Array.from(giftOptionBorder.attributes).map(attr => `${attr.name}=${attr.value}`)
+    });
     showNotification('Unable to determine gift variant', 'error');
     return;
   }
