@@ -322,83 +322,117 @@
   });
 
   // Submit button handler
-	submitButton.addEventListener('click', async function(event) {
-		event.preventDefault();
+submitButton.addEventListener('click', async function(event) {
+  event.preventDefault();
 
-		const selectedBox = productActions.querySelector('.purchase-option-box.selected');
-		const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
-		const giftOptionBorder = selectedGiftContainer?.querySelector('.gift-option-border');
+  // Get selected purchase option box
+  const selectedBox = productActions.querySelector('.purchase-option-box.selected');
+  console.log('Selected box:', selectedBox); // Debug log
 
-		const isSubscription = selectedBox?.getAttribute('data-purchase-type') === 'subscribe';
-		const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
+  // Get selected gift
+  const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
+  console.log('Selected gift container:', selectedGiftContainer); // Debug log
 
-		if (!selectedBox || !giftId) {
-			console.error('Missing required selection');
-			return;
-		}
+  const giftOptionBorder = selectedGiftContainer?.querySelector('.gift-option-border');
+  console.log('Gift option border:', giftOptionBorder); // Debug log
 
-		const items = [
-			{
-				id: submitVariantIdInput.value,
-				quantity: 1,
-				selling_plan: submitSellingPlanIdInput.value || undefined
-			},
-			{
-				id: giftId,
-				quantity: 1
-			}
-		];
+  // Check selections and get IDs
+  if (!selectedBox) {
+    showNotification('Please select a purchase option', 'error');
+    return;
+  }
 
-		try {
-			// Validate cart before proceeding
-			const validationResults = await validateCartItems(items);
-			if (!validationResults.isValid) {
-				validationResults.errors.forEach(error => {
-					showNotification(error.message, error.type);
-				});
-				return;
-			}
+  if (!selectedGiftContainer || !giftOptionBorder) {
+    showNotification('Please select a free gift', 'error');
+    return;
+  }
 
-			{% if buyType == "buy_now" %}
-				const cartDrawer = document.getElementById('upCart');
-				if (cartDrawer) {
-					cartDrawer.remove();
-				}
+  // Get subscription status and variant ID
+  const isSubscription = selectedBox.getAttribute('data-purchase-type') === 'subscribe';
+  const variantId = submitVariantIdInput.value;
+  const sellingPlanId = submitSellingPlanIdInput.value;
+  const giftId = isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId;
 
-				await fetch('/cart/clear.js', {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						'Accept': 'application/json'
-					}
-				});
-			{% endif %}
+  console.log('Submission details:', { // Debug log
+    isSubscription,
+    variantId,
+    sellingPlanId,
+    giftId
+  });
 
-			const response = await fetch('/cart/add.js', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'Accept': 'application/json'
-				},
-				body: JSON.stringify({ items })
-			});
+  if (!variantId) {
+    showNotification('Unable to determine product variant', 'error');
+    return;
+  }
 
-			if (!response.ok) {
-				throw new Error('Failed to add items to cart');
-			}
+  if (!giftId) {
+    showNotification('Unable to determine gift variant', 'error');
+    return;
+  }
 
-			// Show success notification
-			showNotification('Items successfully added to cart', 'success');
+  const items = [
+    {
+      id: variantId,
+      quantity: 1,
+      selling_plan: sellingPlanId || undefined
+    },
+    {
+      id: giftId,
+      quantity: 1
+    }
+  ];
 
-			{% if buyType == "buy_now" %}
-				window.location.href = '/checkout';
-			{% endif %}
+  try {
+    // Validate cart before proceeding
+    const validationResults = await validateCartItems(items);
+    if (!validationResults.isValid) {
+      validationResults.errors.forEach(error => {
+        showNotification(error.message, error.type);
+      });
+      return;
+    }
 
-		} catch (error) {
-			console.error('Error:', error);
-			showNotification('An error occurred while adding items to cart. Please try again.');
-		}
-	});
+    {% if buyType == "buy_now" %}
+      const cartDrawer = document.getElementById('upCart');
+      if (cartDrawer) {
+        cartDrawer.remove();
+      }
+
+      await fetch('/cart/clear.js', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+    {% endif %}
+
+    const response = await fetch('/cart/add.js', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ items })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.description || 'Failed to add items to cart');
+    }
+
+    // Show success notification
+    showNotification('Items successfully added to cart', 'success');
+
+    {% if buyType == "buy_now" %}
+      window.location.href = '/checkout';
+    {% endif %}
+
+  } catch (error) {
+    console.error('Error:', error);
+    showNotification(error.message || 'An error occurred while adding items to cart. Please try again.', 'error');
+  }
+});
 
   // One-time purchase button handler
   const oneTimePurchaseButton = productActions.querySelector('.one-time-add-to-cart');
