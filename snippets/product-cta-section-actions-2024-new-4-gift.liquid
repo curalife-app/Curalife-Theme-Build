@@ -325,13 +325,19 @@
 submitButton.addEventListener('click', async function(event) {
   event.preventDefault();
 
-  // Get selected purchase option box (has ID like 'purchase-option-box-bV7t4X-3')
+  // Get the main product actions container
   const selectedBox = productActions.querySelector('.purchase-option-box.selected');
-  console.log('Selected box:', selectedBox);
 
   // Get selected gift
   const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
   const giftOptionBorder = selectedGiftContainer?.querySelector('.gift-option-border');
+
+  // Debug what we found initially
+  console.log('Selected elements:', {
+    selectedBox,
+    selectedGiftContainer,
+    giftOptionBorder
+  });
 
   // Check selections
   if (!selectedBox) {
@@ -344,52 +350,44 @@ submitButton.addEventListener('click', async function(event) {
     return;
   }
 
-  // Get the form inputs that hold the current selection
-  const productForm = document.querySelector(`form[id^="product-form"]`);
-  const variantSelect = productForm?.querySelector('select[name="id"]');
-  const variantInput = productForm?.querySelector('input[name="id"]');
-  const sellingPlanGroup = productForm?.querySelector('select[name="selling_plan"]');
+  // Get form inputs - they should be rendered by the buy-buttons-new-4 template
+  const formSelector = `#${productActions.id} form[id^="product-form"], form[id^="product-form-${SID}"]`;
+  const productForm = document.querySelector(formSelector);
 
-  // Get values using multiple methods
+  console.log('Form found:', productForm);
+
+  // Get values from the selected box and form
   const isSubscription = selectedBox.classList.contains('subscribe');
 
-  // Try to get variant ID from different possible sources
-  const variantId = (
-    selectedBox.dataset.variantId ||
-    variantSelect?.value ||
-    variantInput?.value ||
-    document.querySelector('input[name="variant-id"]')?.value
-  );
+  // Try to get the variant ID - it should be on the box data attributes or in a nearby form input
+  let variantId = selectedBox.getAttribute('data-variant-id');
+  if (!variantId && productForm) {
+    const variantInput = productForm.querySelector('input[name="id"]');
+    variantId = variantInput?.value;
+  }
 
-  // Try to get selling plan ID
-  const sellingPlanId = isSubscription ? (
-    selectedBox.dataset.sellingPlanId ||
-    sellingPlanGroup?.value ||
-    document.querySelector('input[name="selling_plan"]')?.value
-  ) : null;
+  // Try to get the selling plan ID if it's a subscription
+  let sellingPlanId = null;
+  if (isSubscription) {
+    sellingPlanId = selectedBox.getAttribute('data-selling-plan-id');
+    if (!sellingPlanId && productForm) {
+      const sellingPlanInput = productForm.querySelector('input[name="selling_plan"], select[name="selling_plan"]');
+      sellingPlanId = sellingPlanInput?.value;
+    }
+  }
 
   // Get gift ID based on subscription status
   const giftId = isSubscription ?
     giftOptionBorder.getAttribute('data-gift-id-subscription') :
     giftOptionBorder.getAttribute('data-gift-id');
 
-  // Debug log all our found values
+  // Debug log all found values
   console.log('Found values:', {
     isSubscription,
     variantId,
     sellingPlanId,
     giftId,
-    selectedBoxId: selectedBox.id,
-    formElements: {
-      variantSelect: variantSelect?.value,
-      variantInput: variantInput?.value,
-      sellingPlanGroup: sellingPlanGroup?.value
-    }
-  });
-
-  // Additional debugging for form elements
-  console.log('Form elements:', {
-    productForm: productForm,
+    selectedBoxAttributes: Array.from(selectedBox.attributes).map(attr => `${attr.name}=${attr.value}`),
     formHTML: productForm?.innerHTML
   });
 
