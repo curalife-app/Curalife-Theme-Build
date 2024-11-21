@@ -336,7 +336,7 @@ submitButton.addEventListener('click', async function(event) {
   const giftOptionBorder = selectedGiftContainer?.querySelector('.gift-option-border');
   console.log('Gift option border:', giftOptionBorder); // Debug log
 
-  // Check selections and get IDs
+  // Check selections
   if (!selectedBox) {
     showNotification('Please select a purchase option', 'error');
     return;
@@ -347,10 +347,10 @@ submitButton.addEventListener('click', async function(event) {
     return;
   }
 
-  // Get subscription status and variant ID
+  // Get values from the selected box's data attributes
   const isSubscription = selectedBox.getAttribute('data-purchase-type') === 'subscribe';
-  const variantId = submitVariantIdInput.value;
-  const sellingPlanId = submitSellingPlanIdInput.value;
+  const variantId = selectedBox.getAttribute('data-variant');
+  const sellingPlanId = isSubscription ? selectedBox.getAttribute('data-subscription-selling-plan-id') : null;
   const giftId = isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId;
 
   console.log('Submission details:', { // Debug log
