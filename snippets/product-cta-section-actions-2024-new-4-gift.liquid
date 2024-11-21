@@ -325,16 +325,34 @@
 submitButton.addEventListener('click', async function(event) {
   event.preventDefault();
 
+  // First let's debug what we're finding
+  console.log('All purchase boxes:', productActions.querySelectorAll('.purchase-option-box'));
+  console.log('All gift containers:', document.querySelectorAll('.gift-option-container'));
+
   // Get selected purchase option box
   const selectedBox = productActions.querySelector('.purchase-option-box.selected');
-  console.log('Selected box:', selectedBox); // Debug log
+  console.log('Selected box full element:', selectedBox); // Debug full element
+
+  if (selectedBox) {
+    console.log('Selected box data attributes:', {
+      variant: selectedBox.getAttribute('data-variant'),
+      purchaseType: selectedBox.getAttribute('data-purchase-type'),
+      subscriptionPlan: selectedBox.getAttribute('data-subscription-selling-plan-id'),
+      allAttributes: Array.from(selectedBox.attributes).map(attr => `${attr.name}: ${attr.value}`)
+    });
+  }
 
   // Get selected gift
   const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
-  console.log('Selected gift container:', selectedGiftContainer); // Debug log
-
   const giftOptionBorder = selectedGiftContainer?.querySelector('.gift-option-border');
-  console.log('Gift option border:', giftOptionBorder); // Debug log
+
+  if (giftOptionBorder) {
+    console.log('Gift border data attributes:', {
+      giftId: giftOptionBorder.dataset.giftId,
+      giftIdSubscription: giftOptionBorder.dataset.giftIdSubscription,
+      allAttributes: Array.from(giftOptionBorder.attributes).map(attr => `${attr.name}: ${attr.value}`)
+    });
+  }
 
   // Check selections
   if (!selectedBox) {
@@ -347,25 +365,43 @@ submitButton.addEventListener('click', async function(event) {
     return;
   }
 
-  // Get values from the selected box's data attributes
-  const isSubscription = selectedBox.getAttribute('data-purchase-type') === 'subscribe';
-  const variantId = selectedBox.getAttribute('data-variant');
-  const sellingPlanId = isSubscription ? selectedBox.getAttribute('data-subscription-selling-plan-id') : null;
-  const giftId = isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId;
+  // Try getting values from input fields if they exist
+  const variantInput = document.querySelector('.submit-variant-id');
+  const sellingPlanInput = document.querySelector('.submit-selling-plan-id');
 
-  console.log('Submission details:', { // Debug log
+  // Get values with multiple fallbacks
+  const isSubscription = selectedBox.getAttribute('data-purchase-type') === 'subscribe';
+  const variantId = variantInput?.value ||
+                    selectedBox.getAttribute('data-variant') ||
+                    selectedBox.getAttribute('data-variant-id');
+  const sellingPlanId = isSubscription ? (
+    sellingPlanInput?.value ||
+    selectedBox.getAttribute('data-subscription-selling-plan-id') ||
+    selectedBox.getAttribute('data-selling-plan-id')
+  ) : null;
+  const giftId = isSubscription ?
+    giftOptionBorder.dataset.giftIdSubscription || giftOptionBorder.getAttribute('data-gift-id-subscription') :
+    giftOptionBorder.dataset.giftId || giftOptionBorder.getAttribute('data-gift-id');
+
+  // Log what we found
+  console.log('Final values:', {
     isSubscription,
     variantId,
     sellingPlanId,
-    giftId
+    giftId,
+    selectedBoxElement: selectedBox,
+    giftBorderElement: giftOptionBorder
   });
 
+  // Validation
   if (!variantId) {
+    console.error('Missing variant ID');
     showNotification('Unable to determine product variant', 'error');
     return;
   }
 
   if (!giftId) {
+    console.error('Missing gift ID');
     showNotification('Unable to determine gift variant', 'error');
     return;
   }
@@ -381,6 +417,8 @@ submitButton.addEventListener('click', async function(event) {
       quantity: 1
     }
   ];
+
+  console.log('Items to be added:', items);
 
   try {
     // Validate cart before proceeding
