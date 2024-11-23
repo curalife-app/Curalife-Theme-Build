@@ -208,58 +208,54 @@
     const newSubscriptionItems = newItems.filter(item => item.selling_plan);
 
     if (newSubscriptionItems.length > 0 && subscriptionItems.length > 0) {
-      // Get product data for current subscription items
-      const currentSubscriptionProducts = await Promise.all(
-        subscriptionItems.map(async (item) => {
-          try {
-            // Get product data directly using the product_id from cart item
-            const productResponse = await fetch(`/products/${item.product_id}.js`);
-            if (!productResponse.ok) {
-              throw new Error(`Failed to fetch product data for ${item.product_id}`);
-            }
-            const productData = await productResponse.json();
+      // Create a map of current subscription products
+      const currentSubscriptionMap = new Map();
 
-            return {
-              id: productData.id,
-              handle: productData.handle,
-              title: productData.title
-            };
-          } catch (error) {
-            console.error(`Error fetching product data: ${error}`);
-            return null;
-          }
-        })
-      );
-
-      // Filter out any failed requests
-      const currentProductIds = new Set(
-        currentSubscriptionProducts
-          .filter(product => product !== null)
-          .map(product => product.id)
-      );
-
-      // Check new subscription items against existing ones
-      for (const newItem of newSubscriptionItems) {
+      // Process current cart subscription items
+      for (const item of subscriptionItems) {
         try {
-          // Get product ID from variant first
-          const variantResponse = await fetch(`/variants/${newItem.id}.js`);
+          // Get the variant data first
+          const variantResponse = await fetch(`/variants/${item.variant_id}.js`);
           if (!variantResponse.ok) {
-            throw new Error(`Failed to fetch variant data for ${newItem.id}`);
+            console.warn(`Could not fetch variant data for ${item.variant_id}`);
+            continue;
           }
           const variantData = await variantResponse.json();
 
-          // Get the product data using the product_id from variant
-          const productResponse = await fetch(`/products/${variantData.product_id}.js`);
-          if (!productResponse.ok) {
-            throw new Error(`Failed to fetch product data for ${variantData.product_id}`);
-          }
-          const productData = await productResponse.json();
+          // Store in our map using the product URL as key
+          // We use the product URL because it's more reliable than the ID
+          currentSubscriptionMap.set(variantData.url, {
+            variantId: item.variant_id,
+            productTitle: item.product_title
+          });
+        } catch (error) {
+          console.warn(`Error processing cart item: ${error}`);
+          continue;
+        }
+      }
 
-          if (currentProductIds.has(productData.id)) {
+      // Check new subscription items
+      for (const newItem of newSubscriptionItems) {
+        if (!newItem.id) {
+          console.warn('New item missing variant ID');
+          continue;
+        }
+
+        try {
+          // Get the variant data
+          const variantResponse = await fetch(`/variants/${newItem.id}.js`);
+          if (!variantResponse.ok) {
+            throw new Error(`Could not fetch variant data for ${newItem.id}`);
+          }
+          const variantData = await variantResponse.json();
+
+          // Check if this product is already in the cart
+          if (currentSubscriptionMap.has(variantData.url)) {
+            const existingItem = currentSubscriptionMap.get(variantData.url);
             validationResults.isValid = false;
             validationResults.errors.push({
               code: 'DUPLICATE_SUBSCRIPTION',
-              message: `You already have a subscription for ${productData.title} in your cart. Please review your cart before adding another subscription.`,
+              message: `You already have a subscription for ${existingItem.productTitle} in your cart. Please review your cart before adding another subscription.`,
               type: 'error'
             });
             break;
