@@ -212,21 +212,15 @@
       const currentSubscriptionProducts = await Promise.all(
         subscriptionItems.map(async (item) => {
           try {
-            // First get the variant data
-            const variantResponse = await fetch(`/variants/${item.variant_id}.js`);
-            if (!variantResponse.ok) {
-              throw new Error(`Failed to fetch variant data for ${item.variant_id}`);
-            }
-            const variantData = await variantResponse.json();
-
-            // Then get the product data using the handle from variant data
-            const productResponse = await fetch(`/products/${variantData.product.handle}.js`);
+            // Get product data directly using the product_id from cart item
+            const productResponse = await fetch(`/products/${item.product_id}.js`);
             if (!productResponse.ok) {
-              throw new Error(`Failed to fetch product data for ${variantData.product.handle}`);
+              throw new Error(`Failed to fetch product data for ${item.product_id}`);
             }
             const productData = await productResponse.json();
 
             return {
+              id: productData.id,
               handle: productData.handle,
               title: productData.title
             };
@@ -238,30 +232,30 @@
       );
 
       // Filter out any failed requests
-      const currentProductHandles = new Set(
+      const currentProductIds = new Set(
         currentSubscriptionProducts
           .filter(product => product !== null)
-          .map(product => product.handle)
+          .map(product => product.id)
       );
 
       // Check new subscription items against existing ones
       for (const newItem of newSubscriptionItems) {
         try {
-          // Get variant data first
+          // Get product ID from variant first
           const variantResponse = await fetch(`/variants/${newItem.id}.js`);
           if (!variantResponse.ok) {
             throw new Error(`Failed to fetch variant data for ${newItem.id}`);
           }
           const variantData = await variantResponse.json();
 
-          // Then get product data
-          const productResponse = await fetch(`/products/${variantData.product.handle}.js`);
+          // Get the product data using the product_id from variant
+          const productResponse = await fetch(`/products/${variantData.product_id}.js`);
           if (!productResponse.ok) {
-            throw new Error(`Failed to fetch product data for ${variantData.product.handle}`);
+            throw new Error(`Failed to fetch product data for ${variantData.product_id}`);
           }
           const productData = await productResponse.json();
 
-          if (currentProductHandles.has(productData.handle)) {
+          if (currentProductIds.has(productData.id)) {
             validationResults.isValid = false;
             validationResults.errors.push({
               code: 'DUPLICATE_SUBSCRIPTION',
@@ -282,8 +276,6 @@
         }
       }
     }
-
-    // Add more validation rules here if needed...
 
     return validationResults;
   } catch (error) {
