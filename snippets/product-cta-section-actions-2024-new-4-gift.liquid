@@ -197,33 +197,64 @@
     }
     const currentCart = await cartResponse.json();
 
-    // Validation Results
+    // Initialize validation results
     const validationResults = {
       isValid: true,
       errors: []
     };
 
-    // Rule 1: Check for duplicate subscription items
-    const subscriptionItems = currentCart.items.filter(item => item.selling_plan_allocation);
+    // Helper function to fetch variant data
+    async function getVariantData(variantId) {
+      const response = await fetch(`/variants/${variantId}.js`);
+      if (!response.ok) {
+        throw new Error(`Could not fetch variant data for ${variantId}`);
+      }
+      return await response.json();
+    }
+
+    // Rule 1: Check free item limits
+    const currentFreeItems = currentCart.items.filter(item =>
+      item.price === 0 || item.title.toLowerCase().includes('free')
+    );
+
+    // For each new item, check if it would exceed free item limits
+    for (const newItem of newItems) {
+      try {
+        const variantData = await getVariantData(newItem.id);
+
+        // Check if this is a free item (either by price or title)
+        const isNewItemFree = variantData.price === 0 ||
+                             variantData.title.toLowerCase().includes('free');
+
+        if (isNewItemFree && currentFreeItems.length > 0) {
+          validationResults.isValid = false;
+          validationResults.errors.push({
+            code: 'FREE_ITEM_LIMIT',
+            message: 'You can only have one free gift item in your cart.',
+            type: 'error'
+          });
+          return validationResults;
+        }
+      } catch (error) {
+        console.warn(`Error checking free item: ${error}`);
+        continue;
+      }
+    }
+
+    // Rule 2: Check for duplicate subscription items
+    const currentSubscriptionItems = currentCart.items.filter(item =>
+      item.selling_plan_allocation
+    );
     const newSubscriptionItems = newItems.filter(item => item.selling_plan);
 
-    if (newSubscriptionItems.length > 0 && subscriptionItems.length > 0) {
+    if (newSubscriptionItems.length > 0 && currentSubscriptionItems.length > 0) {
       // Create a map of current subscription products
       const currentSubscriptionMap = new Map();
 
       // Process current cart subscription items
-      for (const item of subscriptionItems) {
+      for (const item of currentSubscriptionItems) {
         try {
-          // Get the variant data first
-          const variantResponse = await fetch(`/variants/${item.variant_id}.js`);
-          if (!variantResponse.ok) {
-            console.warn(`Could not fetch variant data for ${item.variant_id}`);
-            continue;
-          }
-          const variantData = await variantResponse.json();
-
-          // Store in our map using the product URL as key
-          // We use the product URL because it's more reliable than the ID
+          const variantData = await getVariantData(item.variant_id);
           currentSubscriptionMap.set(variantData.url, {
             variantId: item.variant_id,
             productTitle: item.product_title
@@ -234,22 +265,11 @@
         }
       }
 
-      // Check new subscription items
+      // Check new subscription items against current ones
       for (const newItem of newSubscriptionItems) {
-        if (!newItem.id) {
-          console.warn('New item missing variant ID');
-          continue;
-        }
-
         try {
-          // Get the variant data
-          const variantResponse = await fetch(`/variants/${newItem.id}.js`);
-          if (!variantResponse.ok) {
-            throw new Error(`Could not fetch variant data for ${newItem.id}`);
-          }
-          const variantData = await variantResponse.json();
+          const variantData = await getVariantData(newItem.id);
 
-          // Check if this product is already in the cart
           if (currentSubscriptionMap.has(variantData.url)) {
             const existingItem = currentSubscriptionMap.get(variantData.url);
             validationResults.isValid = false;
@@ -261,11 +281,11 @@
             break;
           }
         } catch (error) {
-          console.error(`Error validating new item: ${error}`);
+          console.error(`Error validating subscription item: ${error}`);
           validationResults.isValid = false;
           validationResults.errors.push({
             code: 'VALIDATION_ERROR',
-            message: 'Unable to validate cart items. Please try again.',
+            message: 'Unable to validate subscription items. Please try again.',
             type: 'error'
           });
           break;
@@ -274,8 +294,9 @@
     }
 
     return validationResults;
+
   } catch (error) {
-    console.error('Validation error:', error);
+    console.error('Cart validation error:', error);
     return {
       isValid: false,
       errors: [{
