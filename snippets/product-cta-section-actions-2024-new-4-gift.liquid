@@ -197,7 +197,7 @@
     }
     const currentCart = await cartResponse.json();
 
-    // Validation Rules
+    // Validation Results
     const validationResults = {
       isValid: true,
       errors: []
@@ -208,39 +208,82 @@
     const newSubscriptionItems = newItems.filter(item => item.selling_plan);
 
     if (newSubscriptionItems.length > 0 && subscriptionItems.length > 0) {
-      // Get product handles for subscription items
-      const currentProductHandles = new Set();
-      for (const item of subscriptionItems) {
-        const productResponse = await fetch(`/products/${item.handle}.js`);
-        if (productResponse.ok) {
-          const product = await productResponse.json();
-          currentProductHandles.add(product.handle);
-        }
-      }
-
-      // Check new items against existing subscriptions
-      for (const newItem of newSubscriptionItems) {
-        const productResponse = await fetch(`/variants/${newItem.id}.js`);
-        if (productResponse.ok) {
-          const variant = await productResponse.json();
-          const productResponse = await fetch(`/products/${variant.product.handle}.js`);
-          if (productResponse.ok) {
-            const product = await productResponse.json();
-            if (currentProductHandles.has(product.handle)) {
-              validationResults.isValid = false;
-              validationResults.errors.push({
-                code: 'DUPLICATE_SUBSCRIPTION',
-                message: 'You already have a subscription for this product in your cart. Please review your cart before adding another subscription.',
-                type: 'error'
-              });
-              break;
+      // Get product data for current subscription items
+      const currentSubscriptionProducts = await Promise.all(
+        subscriptionItems.map(async (item) => {
+          try {
+            // First get the variant data
+            const variantResponse = await fetch(`/variants/${item.variant_id}.js`);
+            if (!variantResponse.ok) {
+              throw new Error(`Failed to fetch variant data for ${item.variant_id}`);
             }
+            const variantData = await variantResponse.json();
+
+            // Then get the product data using the handle from variant data
+            const productResponse = await fetch(`/products/${variantData.product.handle}.js`);
+            if (!productResponse.ok) {
+              throw new Error(`Failed to fetch product data for ${variantData.product.handle}`);
+            }
+            const productData = await productResponse.json();
+
+            return {
+              handle: productData.handle,
+              title: productData.title
+            };
+          } catch (error) {
+            console.error(`Error fetching product data: ${error}`);
+            return null;
           }
+        })
+      );
+
+      // Filter out any failed requests
+      const currentProductHandles = new Set(
+        currentSubscriptionProducts
+          .filter(product => product !== null)
+          .map(product => product.handle)
+      );
+
+      // Check new subscription items against existing ones
+      for (const newItem of newSubscriptionItems) {
+        try {
+          // Get variant data first
+          const variantResponse = await fetch(`/variants/${newItem.id}.js`);
+          if (!variantResponse.ok) {
+            throw new Error(`Failed to fetch variant data for ${newItem.id}`);
+          }
+          const variantData = await variantResponse.json();
+
+          // Then get product data
+          const productResponse = await fetch(`/products/${variantData.product.handle}.js`);
+          if (!productResponse.ok) {
+            throw new Error(`Failed to fetch product data for ${variantData.product.handle}`);
+          }
+          const productData = await productResponse.json();
+
+          if (currentProductHandles.has(productData.handle)) {
+            validationResults.isValid = false;
+            validationResults.errors.push({
+              code: 'DUPLICATE_SUBSCRIPTION',
+              message: `You already have a subscription for ${productData.title} in your cart. Please review your cart before adding another subscription.`,
+              type: 'error'
+            });
+            break;
+          }
+        } catch (error) {
+          console.error(`Error validating new item: ${error}`);
+          validationResults.isValid = false;
+          validationResults.errors.push({
+            code: 'VALIDATION_ERROR',
+            message: 'Unable to validate cart items. Please try again.',
+            type: 'error'
+          });
+          break;
         }
       }
     }
 
-    // Add more validation rules here...
+    // Add more validation rules here if needed...
 
     return validationResults;
   } catch (error) {
