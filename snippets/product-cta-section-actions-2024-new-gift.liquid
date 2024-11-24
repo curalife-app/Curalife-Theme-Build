@@ -632,32 +632,21 @@ async function validateCartItem(item, currentCart) {
 
       console.log('Current subscription items:', currentSubscriptionItems);
 
-      // Get matching cart item to get its handle
-      const matchingCartItem = currentCart.items.find(cartItem =>
+      // First try to find the item in the cart
+      let variantInCart = currentCart.items.find(cartItem =>
         cartItem.variant_id === parseInt(item.id)
       );
 
-      if (!matchingCartItem) {
-        // If no matching cart item, try to get product handle from variant data
-        const productId = variantData.product_id;
-        console.log('No matching cart item, fetching product data:', productId);
-
-        const productResponse = await fetch(`/products/${productId}.js`);
-        if (!productResponse.ok) {
-          throw new Error(`Could not fetch product data for ${productId}`);
-        }
-        const productData = await productResponse.json();
-
-        const productHandle = productData.handle;
-        console.log('Product handle from API:', productHandle);
-
-        // Check for existing subscription with same handle
+      if (variantInCart) {
+        console.log('Found variant in cart:', variantInCart);
+        // Check for existing subscription with same product handle
         const sameProductSubscription = currentSubscriptionItems.find(cartItem =>
-          cartItem.handle === productHandle
+          cartItem.handle === variantInCart.handle &&
+          cartItem.key !== variantInCart.key // Don't match with itself
         );
 
         if (sameProductSubscription) {
-          console.log('Found existing subscription:', sameProductSubscription);
+          console.log('Found existing subscription with same handle:', sameProductSubscription);
           return {
             isValid: false,
             requiresReplacement: true,
@@ -667,34 +656,32 @@ async function validateCartItem(item, currentCart) {
               quantity: 1,
               selling_plan: item.selling_plan
             },
-            productHandle: productHandle,
-            message: `Updating subscription for this product`
+            message: `Updating subscription for ${variantInCart.product_title}`
           };
         }
       } else {
-        console.log('Found matching cart item:', matchingCartItem);
-        // Use the handle from the matching cart item
-        const productHandle = matchingCartItem.handle;
-        console.log('Product handle from cart:', productHandle);
+        // If item is not in cart, check existing subscriptions by variant
+        console.log('Checking subscriptions for same product...');
 
-        // Check for existing subscription with same handle
-        const sameProductSubscription = currentSubscriptionItems.find(cartItem =>
-          cartItem.handle === productHandle
-        );
+        // Try to find an existing subscription for the same product
+        const existingSubscription = currentSubscriptionItems.find(cartItem => {
+          const variantProduct = cartItem.product_id === variantData.product_id;
+          console.log('Comparing product IDs:', cartItem.product_id, variantData.product_id);
+          return variantProduct;
+        });
 
-        if (sameProductSubscription) {
-          console.log('Found existing subscription:', sameProductSubscription);
+        if (existingSubscription) {
+          console.log('Found existing subscription for same product:', existingSubscription);
           return {
             isValid: false,
             requiresReplacement: true,
-            itemToReplace: sameProductSubscription,
+            itemToReplace: existingSubscription,
             newItem: {
               id: item.id,
               quantity: 1,
               selling_plan: item.selling_plan
             },
-            productHandle: productHandle,
-            message: `Updating subscription for this product`
+            message: `Updating your subscription`
           };
         }
       }
@@ -707,7 +694,6 @@ async function validateCartItem(item, currentCart) {
   } catch (error) {
     console.error('Validation error:', error);
     console.error('Error stack:', error.stack);
-    console.error('Full error:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
     return {
       isValid: false,
       error: {
