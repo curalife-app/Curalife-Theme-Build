@@ -536,28 +536,28 @@
   const submitButton = document.getElementById('ProductSubmitButton-{{SID}}');
 
 	async function getProductData(productId) {
-  try {
-    const response = await fetch(`/products/${productId}.js`);
-    if (!response.ok) {
-      console.error(`Failed to fetch product ${productId}: ${response.status}`);
-      return null;
-    }
-    const text = await response.text();
-    if (!text) {
-      console.error(`Empty response for product ${productId}`);
-      return null;
-    }
-    try {
-      return JSON.parse(text);
-    } catch (parseError) {
-      console.error(`Failed to parse product data for ${productId}:`, parseError);
-      return null;
-    }
-  } catch (error) {
-    console.error(`Network error fetching product ${productId}:`, error);
-    return null;
-  }
-}
+		try {
+			const response = await fetch(`/products/${productId}.js`);
+			if (!response.ok) {
+				console.error(`Failed to fetch product ${productId}: ${response.status}`);
+				return null;
+			}
+			const text = await response.text();
+			if (!text) {
+				console.error(`Empty response for product ${productId}`);
+				return null;
+			}
+			try {
+				return JSON.parse(text);
+			} catch (parseError) {
+				console.error(`Failed to parse product data for ${productId}:`, parseError);
+				return null;
+			}
+		} catch (error) {
+			console.error(`Network error fetching product ${productId}:`, error);
+			return null;
+		}
+	}
 
 async function countUniqueProductsWithTag(cart) {
 	try {
