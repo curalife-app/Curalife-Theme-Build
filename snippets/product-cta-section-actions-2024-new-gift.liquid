@@ -131,754 +131,412 @@
 </div>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const productActions = document.querySelector('#cta-section-{{ SID }} .product-actions');
-    const SID = '{{ SID }}';
-    window.SID = SID;
+  document.addEventListener('DOMContentLoaded', () => {
+  // Pass cart data and product IDs into JavaScript variables using Liquid
+  var cartData = {{ cart | json }};
+  var currentProductId = {{ product.id }};
+  // Assuming giftProd is defined in your Liquid code
+  var giftProductId = {{ giftProd.id | default: 'null' }};
 
-    const purchaseOptionBoxes = productActions.querySelectorAll('.purchase-option-box');
+  const productActions = document.querySelector('#cta-section-{{ SID }} .product-actions');
+  const SID = '{{ SID }}';
+  window.SID = SID;
 
-    const styleSheet = document.createElement("style");
-    styleSheet.textContent = `
-      .subscription-content, .buy-once-content {
-        transition: opacity 0.3s ease-in-out;
-      }
-    `;
-    document.head.appendChild(styleSheet);
+  // Gift selection logic
+  const giftOptionContainers = document.querySelectorAll('.gift-option-container');
 
-    initializePurchaseOptions();
-    setupMutationObserver();
+  giftOptionContainers.forEach(container => {
+    container.addEventListener('click', function(event) {
+      // Remove 'selected' class from all gift options
+      giftOptionContainers.forEach(gift => gift.classList.remove('selected'));
 
-    // Gift selection logic
-    const giftOptionContainers = document.querySelectorAll('.gift-option-container');
+      // Add 'selected' class to the clicked gift
+      container.classList.add('selected');
 
+      // Update radio indicator
+      updateRadioIndicator(container);
+    });
+  });
+
+  function updateRadioIndicator(selectedContainer) {
     giftOptionContainers.forEach(container => {
-      container.addEventListener('click', function(event) {
-        // Remove 'selected' class from all gift options
-        giftOptionContainers.forEach(gift => gift.classList.remove('selected'));
-
-        // Add 'selected' class to the clicked gift
-        container.classList.add('selected');
-
-        // Update radio indicator
-        updateRadioIndicator(container);
-      });
+      const checkMark = container.querySelector('.check-mark');
+      if (container === selectedContainer) {
+        checkMark.classList.remove('hidden');
+      } else {
+        checkMark.classList.add('hidden');
+      }
     });
+  }
 
-    function updateRadioIndicator(selectedContainer) {
-      giftOptionContainers.forEach(container => {
-        const checkMark = container.querySelector('.check-mark');
-        if (container === selectedContainer) {
-          checkMark.classList.remove('hidden');
-        } else {
-          checkMark.classList.add('hidden');
-        }
-      });
+  // Initialize the first gift as selected by default
+  if (giftOptionContainers.length > 0) {
+    const firstGift = giftOptionContainers[0];
+    firstGift.classList.add('selected');
+    updateRadioIndicator(firstGift);
+  }
+
+  function isSubscriptionSelected() {
+    const productActions = document.querySelector('.product-actions');
+    const selectedButton = productActions?.querySelector('.purchase-type button.selected');
+    return selectedButton?.classList.contains('subscription') ?? true;
+  }
+
+  // Define showError and hideError functions
+  function showError(message) {
+    const errorMessageWrapper = document.querySelector('.product-form__error-message-wrapper');
+    const errorMessage = document.querySelector('.product-form__error-message');
+
+    if (errorMessageWrapper && errorMessage) {
+      errorMessage.textContent = message;
+      errorMessageWrapper.hidden = false;
+    }
+  }
+
+  function hideError() {
+    const errorMessageWrapper = document.querySelector('.product-form__error-message-wrapper');
+    if (errorMessageWrapper) {
+      errorMessageWrapper.hidden = true;
+    }
+  }
+
+  // Form submission handler replaced with button click handler
+  const submitButton = document.getElementById('ProductSubmitButton-{{SID}}');
+
+  submitButton.addEventListener('click', async function(event) {
+    console.log('Button clicked, handling submission...');
+    event.preventDefault();
+
+    if (!productActions) {
+      console.error('Product actions container not found');
+      return;
     }
 
-    // Initialize the first gift as selected by default
-    if (giftOptionContainers.length > 0) {
-      const firstGift = giftOptionContainers[0];
-      firstGift.classList.add('selected');
-      updateRadioIndicator(firstGift);
-    }
+    // Display the loading spinner
+    toggleButtonLoading(submitButton, true);
 
-    function isSubscriptionSelected() {
-			const productActions = document.querySelector('.product-actions');
-			const selectedButton = productActions?.querySelector('.purchase-type button.selected');
-			return selectedButton?.classList.contains('subscription') ?? true;
-		}
+    try {
+      const variantIdInput = productActions.querySelector('.submit-variant-id');
+      const sellingPlanIdInput = productActions.querySelector('.submit-selling-plan-id');
+      const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
+      const giftOptionBorder = selectedGiftContainer ? selectedGiftContainer.querySelector('.gift-option-border') : null;
 
-    function initializePurchaseOptions() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const defaultVariant = urlParams.get('default-variant') ?
-        parseInt(urlParams.get('default-variant')) :
-        {{ defaultSelectionIndex | default: 1 }};
-
-      const initialVariantIndex = defaultVariant ? defaultVariant - 1 : 0;
-
-      // Handle initial inert state for subscription boxes
-      purchaseOptionBoxes.forEach(box => {
-        const subscriptionSellingPlanId = box.dataset.subscriptionSellingPlanId;
-        if (!subscriptionSellingPlanId || subscriptionSellingPlanId === '0') {
-          box.setAttribute('inert', '');
-        }
-
-        const subscriptionContent = box.querySelectorAll('.subscription-content');
-        const buyOnceContent = box.querySelectorAll('.buy-once-content');
-
-        box.classList.remove('selected');
-        box.style.maxHeight = '68px';
-
-        subscriptionContent.forEach(el => {
-          el.style.display = 'block';
-          el.style.opacity = '1';
-        });
-
-        buyOnceContent.forEach(el => {
-          el.style.display = 'none';
-          el.style.opacity = '0';
-        });
-
-        const radio = box.querySelector("input[type='radio']");
-        if (radio) radio.checked = false;
-      });
-
-      // Find the first valid box for initial selection
-      let defaultBox = purchaseOptionBoxes[initialVariantIndex];
-      if (defaultBox && defaultBox.hasAttribute('inert')) {
-        defaultBox = Array.from(purchaseOptionBoxes).find(box => !box.hasAttribute('inert'));
+      // Add error checking for required elements
+      if (!variantIdInput) {
+        throw new Error('Variant ID input not found');
       }
 
-      if (defaultBox) {
-        defaultBox.classList.add('selected');
-        adjustMaxHeight(defaultBox);
+      const isSubscription = !!sellingPlanIdInput?.value;
+      const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
+      const variantId = variantIdInput.value;
+      const sellingPlanId = sellingPlanIdInput ? sellingPlanIdInput.value : '';
 
-        const radio = defaultBox.querySelector("input[type='radio']");
-        if (radio) radio.checked = true;
-
-        const submitSellingPlanElement = productActions.querySelector('.submit-selling-plan-id');
-        const submitVariantElement = productActions.querySelector('.submit-variant-id');
-
-        if (submitSellingPlanElement) {
-          submitSellingPlanElement.value = defaultBox.dataset.subscriptionSellingPlanId || '';
-        }
-        if (submitVariantElement) {
-          submitVariantElement.value = defaultBox.dataset.originalVariant || defaultBox.dataset.variant;
-        }
-
-        const toggleIcon = defaultBox.querySelector('.toggle-icon');
-        if (toggleIcon) toggleIcon.style.display = 'block';
-      }
-
-      const subscriptionButton = productActions.querySelector('.purchase-type .subscription');
-      const buyOnceButton = productActions.querySelector('.purchase-type .buy-once');
-
-      if (subscriptionButton && buyOnceButton) {
-        subscriptionButton.classList.add('selected');
-        buyOnceButton.classList.remove('selected');
-      }
-
-      if (defaultBox) {
-        updateYotpoPointsWidget(defaultBox);
-      }
-
-      {% if variantsAmount > 1 %}
-        {% if isSlideOnLoad %}
-          if (defaultBox) {
-            updateVariantImage(defaultBox);
-          }
-        {% endif %}
-      {% endif %}
-    }
-
-    function setupMutationObserver() {
-      const observer = new MutationObserver(mutations => {
-        mutations.forEach(mutation => {
-          if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-            const targetBox = mutation.target.closest('.purchase-option-box');
-            if (targetBox?.classList.contains('selected')) {
-              adjustMaxHeight(targetBox);
-            }
-          }
-        });
-      });
-
-      purchaseOptionBoxes.forEach(element => {
-        observer.observe(element, { attributes: true, attributeFilter: ['class'] });
-      });
-    }
-
-    productActions.addEventListener('click', (event) => {
-      const purchaseBox = event.target.closest('.purchase-option-box');
-      if (purchaseBox) togglePurchaseBox(purchaseBox);
-
-      const purchaseTypeButton = event.target.closest('.purchase-type button');
-      if (purchaseTypeButton) handlePurchaseTypeClick(event, purchaseTypeButton);
-
-      const checkoutButton = event.target.closest('.checkout-button subscription, .add-to-cart-button buy-once, .submit-wrap button.main-btn');
-      if (checkoutButton) handleMainButtonClick(event, checkoutButton);
-    });
-
-    function handlePurchaseTypeClick(event, button) {
-      event.stopPropagation();
-
-      // Toggle button states
-      productActions.querySelectorAll('.purchase-type button').forEach(btn => btn.classList.remove('selected'));
-      button.classList.add('selected');
-
-      const isSubscription = button.classList.contains('subscription');
-      const submitSellingPlanElement = productActions.querySelector('.submit-selling-plan-id');
-
-      // Set selling plan to blank if "Buy Once" is selected
-      if (!isSubscription && submitSellingPlanElement) {
-        submitSellingPlanElement.value = ''; // Clear the selling plan ID for "Buy Once"
-      }
-
-      // Update all variant boxes
-      purchaseOptionBoxes.forEach(box => {
-        const subscriptionContent = box.querySelectorAll('.subscription-content');
-        const buyOnceContent = box.querySelectorAll('.buy-once-content');
-
-        // First fade out current content
-        const currentContent = isSubscription ? buyOnceContent : subscriptionContent;
-        const newContent = isSubscription ? subscriptionContent : buyOnceContent;
-
-        // Fade out current content
-        currentContent.forEach(el => {
-          el.style.opacity = '0';
-        });
-
-        // Wait for fade out to complete before showing new content
-        setTimeout(() => {
-          // Hide old content
-          currentContent.forEach(el => {
-            el.style.display = 'none';
-          });
-
-          // Show new content but keep it invisible
-          newContent.forEach(el => {
-            el.style.display = 'block';
-            el.style.opacity = '0';
-          });
-
-          // Trigger fade in
-          requestAnimationFrame(() => {
-            newContent.forEach(el => {
-              el.style.opacity = '1';
-            });
-          });
-        }, 300);
-
-        // Handle selling plan ID and inert state for subscription
-        if (isSubscription) {
-          const sellingPlanId = box.dataset.subscriptionSellingPlanId;
-          if (!sellingPlanId || sellingPlanId === '0') {
-            box.setAttribute('inert', '');
-          } else {
-            box.removeAttribute('inert');
-          }
-          // Only update selling plan if it's a subscription selection
-          if (submitSellingPlanElement) {
-            submitSellingPlanElement.value = sellingPlanId || ''; // Update for subscription
-          }
-        } else {
-          box.removeAttribute('inert');
-        }
-
-        // Handle per month display
-        {% unless product.metafields.custom.is_price_per_month %}
-          const perMonthElement = box.querySelector('.per-month');
-          if (perMonthElement) {
-            perMonthElement.style.display = isSubscription ? 'block' : 'none';
-          }
-        {% endunless %}
-
-        // Update compared at price display with the same fade timing
-        const comparedAtPrice = box.querySelector('.compared-at-price');
-        if (comparedAtPrice) {
-          const itemPrice = parseFloat(box.dataset.itemPrice);
-          const subscriptionItemPrice = parseFloat(box.dataset.subscriptionItemPrice);
-          const originalItemCap = parseFloat(box.dataset.originalItemCap);
-          const currentPrice = isSubscription ? subscriptionItemPrice : itemPrice;
-
-          comparedAtPrice.style.opacity = '0';
-
-          setTimeout(() => {
-            if (originalItemCap > currentPrice) {
-              comparedAtPrice.style.display = 'block';
-              requestAnimationFrame(() => {
-                comparedAtPrice.style.opacity = '1';
-              });
-            } else {
-              comparedAtPrice.style.display = 'none';
-            }
-          }, 300);
-        }
-      });
-
-      // Check if currently selected box becomes inert
-      const selectedBox = productActions.querySelector('.purchase-option-box.selected');
-      if (selectedBox && selectedBox.hasAttribute('inert')) {
-        // Find the first non-inert box
-        const firstAvailableBox = Array.from(purchaseOptionBoxes).find(box => !box.hasAttribute('inert'));
-        if (firstAvailableBox) {
-          // Deselect current box
-          selectedBox.classList.remove('selected');
-          selectedBox.style.maxHeight = '68px';
-          const selectedToggleIcon = selectedBox.querySelector('.toggle-icon');
-          if (selectedToggleIcon) selectedToggleIcon.style.display = 'none';
-
-          // Select new box
-          firstAvailableBox.classList.add('selected');
-          adjustMaxHeight(firstAvailableBox);
-          const newToggleIcon = firstAvailableBox.querySelector('.toggle-icon');
-          if (newToggleIcon) newToggleIcon.style.display = 'block';
-
-          // Update form values
-          const submitSellingPlanElement = productActions.querySelector('.submit-selling-plan-id');
-          const submitVariantElement = productActions.querySelector('.submit-variant-id');
-
-          if (submitSellingPlanElement) {
-            submitSellingPlanElement.value = isSubscription ? firstAvailableBox.dataset.subscriptionSellingPlanId : '';
-          }
-          if (submitVariantElement) {
-            submitVariantElement.value = isSubscription ? firstAvailableBox.dataset.originalVariant : firstAvailableBox.dataset.variant;
-          }
-
-          // Update radio button
-          const radioInput = firstAvailableBox.querySelector("input[type='radio']");
-          if (radioInput) radioInput.checked = true;
-
-          // Update other UI elements
-          updateYotpoPointsWidget(firstAvailableBox);
-          {% if variantsAmount > 1 %}
-            {% if isSlideOnLoad %}
-              updateVariantImage(firstAvailableBox);
-            {% endif %}
-          {% endif %}
-        }
-      }
-    }
-
-    function adjustMaxHeight(element) {
-      const openHeight = element.scrollHeight;
-      element.style.maxHeight = `${openHeight}px`;
-    }
-
-    function togglePurchaseBox(element) {
-      if (element.classList.contains('selected')) return;
-
-      // Update previous selected box
-      const previousSelected = productActions.querySelector('.purchase-option-box.selected');
-      if (previousSelected) {
-        previousSelected.classList.remove('selected');
-        previousSelected.style.maxHeight = '68px';
-        const toggleIcon = previousSelected.querySelector('.toggle-icon');
-        if (toggleIcon) toggleIcon.style.display = 'none';
-      }
-
-      // Update new selected box
-      element.classList.add('selected');
-      element.style.maxHeight = `${element.scrollHeight}px`;
-
-      const toggleIcon = element.querySelector('.toggle-icon');
-      if (toggleIcon) toggleIcon.style.display = 'block';
-
-      // Update form values based on subscription state
-      const isSubscription = isSubscriptionSelected();
-
-      // Get the appropriate selling plan ID and variant ID
-      const sellingPlanId = isSubscription ? element.dataset.subscriptionSellingPlanId : '';
-      const variantId = isSubscription ? element.dataset.originalVariant : element.dataset.variant;
-
-      // Find and update the form elements
-      const submitSellingPlanElement = productActions.querySelector('.submit-selling-plan-id');
-      const submitVariantElement = productActions.querySelector('.submit-variant-id');
-
-      // Update selling plan ID
-      if (submitSellingPlanElement) {
-        submitSellingPlanElement.value = sellingPlanId;
-      }
-
-      // Update variant ID
-      if (submitVariantElement) {
-        submitVariantElement.value = variantId;
-      }
-
-      // Update radio button
-      const radioInput = element.querySelector("input[type='radio']");
-      if (radioInput) radioInput.checked = true;
-
-      // Update other UI elements
-      updateYotpoPointsWidget(element);
-
-      {% if variantsAmount > 1 %}
-        {% if isSlideOnLoad %}
-          updateVariantImage(element);
-        {% else %}
-          if (window.hasInitialImageUpdateHappened) {
-            updateVariantImage(element);
-          }
-          window.hasInitialImageUpdateHappened = true;
-        {% endif %}
-      {% endif %}
-    }
-
-    function updateYotpoPointsWidget(parentBox) {
-      const price = isSubscriptionSelected()
-        ? parentBox.dataset.subscriptionItemPrice
-        : parentBox.dataset.itemPrice;
-
-      const newPoints = Math.floor(Number(price) / 100);
-      const pointsElement = productActions.querySelector('.reward-points-widget .current-price');
-      if (pointsElement) pointsElement.textContent = newPoints;
-    }
-
-    // Define showError and hideError functions
-    function showError(message) {
-      const errorMessageWrapper = document.querySelector('.product-form__error-message-wrapper');
-      const errorMessage = document.querySelector('.product-form__error-message');
-
-      if (errorMessageWrapper && errorMessage) {
-        errorMessage.textContent = message;
-        errorMessageWrapper.hidden = false;
-      }
-    }
-
-    function hideError() {
-      const errorMessageWrapper = document.querySelector('.product-form__error-message-wrapper');
-      if (errorMessageWrapper) {
-        errorMessageWrapper.hidden = true;
-      }
-    }
-
-    // Form submission handler replaced with button click handler
-    const submitButton = document.getElementById('ProductSubmitButton-{{SID}}');
-
-    // Pass cart data and product IDs into JavaScript variables using Liquid
-    var cartData = {{ cart | json }};
-    var currentProductId = {{ product.id }};
-    // Assuming giftProd is defined in your Liquid code
-    var giftProductId = {{ giftProd.id | default: 'null' }};
-
-    submitButton.addEventListener('click', async function(event) {
-      console.log('Button clicked, handling submission...');
-      event.preventDefault();
-
-      if (!productActions) {
-        console.error('Product actions container not found');
+      if (!variantId || !giftId) {
+        const errorMessage = `Missing required data: ${!variantId ? 'variant ID' : ''} ${!giftId ? 'gift ID' : ''}`;
+        console.error(errorMessage);
+        showNotification(errorMessage, 'error');
         return;
       }
 
-      // Display the loading spinner
-      toggleButtonLoading(submitButton, true);
+      const items = [
+        {
+          id: variantId,
+          product_id: currentProductId,
+          quantity: 1,
+          ...(sellingPlanId && { selling_plan: sellingPlanId })
+        },
+        {
+          id: giftId,
+          product_id: giftProductId,
+          quantity: 1
+        }
+      ];
 
-      try {
-        const variantIdInput = productActions.querySelector('.submit-variant-id');
-        const sellingPlanIdInput = productActions.querySelector('.submit-selling-plan-id');
-        const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
-        const giftOptionBorder = selectedGiftContainer ? selectedGiftContainer.querySelector('.gift-option-border') : null;
-
-        // Add error checking for required elements
-        if (!variantIdInput) {
-          throw new Error('Variant ID input not found');
+      {% if buyType == "buy_now" %}
+        // Delete cart drawer if it exists
+        const cartDrawer = document.getElementById('upCart');
+        if (cartDrawer) {
+          cartDrawer.remove();
         }
 
-        const isSubscription = !!sellingPlanIdInput?.value;
-        const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
-        const variantId = variantIdInput.value;
-        const sellingPlanId = sellingPlanIdInput ? sellingPlanIdInput.value : '';
+        // Clean cart
+        try {
+          const clearCartResponse = await fetch('/cart/clear.js', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            }
+          });
 
-        if (!variantId || !giftId) {
-          const errorMessage = `Missing required data: ${!variantId ? 'variant ID' : ''} ${!giftId ? 'gift ID' : ''}`;
-          console.error(errorMessage);
-          showNotification(errorMessage, 'error');
+          if (!clearCartResponse.ok) {
+            throw new Error('Failed to clear cart');
+          }
+        } catch (error) {
+          console.error('Clear cart error:', error);
+          showNotification('Failed to clear cart. Please try again.', 'error');
           return;
         }
+      {% endif %}
 
-        const items = [
-          {
-            id: variantId,
-            product_id: currentProductId, // Include the product ID
-            quantity: 1,
-            ...(sellingPlanId && { selling_plan: sellingPlanId })
-          },
-          {
-            id: giftId,
-            product_id: giftProductId, // Include the gift product ID
-            quantity: 1
-          }
-        ];
+      const result = await addValidItemsToCart(items);
+      console.log('Add to cart result:', result);
 
+      if (result.success) {
         {% if buyType == "buy_now" %}
-          // Delete cart drawer if it exists
-          const cartDrawer = document.getElementById('upCart');
-          if (cartDrawer) {
-            cartDrawer.remove();
-          }
-
-          // Clean cart
-          try {
-            const clearCartResponse = await fetch('/cart/clear.js', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-              }
-            });
-
-            if (!clearCartResponse.ok) {
-              throw new Error('Failed to clear cart');
-            }
-          } catch (error) {
-            console.error('Clear cart error:', error);
-            showNotification('Failed to clear cart. Please try again.', 'error');
-            return;
-          }
+          window.location.href = '/checkout';
         {% endif %}
-
-        const result = await addValidItemsToCart(items);
-        console.log('Add to cart result:', result);
-
-        if (result.success) {
-          {% if buyType == "buy_now" %}
-            window.location.href = '/checkout';
-          {% endif %}
-        } else if (result.error) {
-          showNotification(result.error.message || 'Failed to add items to cart', 'error');
-        }
-      } catch (error) {
-        console.error('Submission error:', error);
-        showNotification(error.message || 'An unexpected error occurred', 'error');
-      } finally {
-        toggleButtonLoading(submitButton, false);
+      } else if (result.error) {
+        showNotification(result.error.message || 'Failed to add items to cart', 'error');
       }
-    });
-
-    async function addValidItemsToCart(items) {
-  try {
-    // Always fetch the latest cart data
-    const cartResponse = await fetch('/cart.js');
-    if (!cartResponse.ok) {
-      throw new Error('Failed to fetch current cart');
+    } catch (error) {
+      console.error('Submission error:', error);
+      showNotification(error.message || 'An unexpected error occurred', 'error');
+    } finally {
+      toggleButtonLoading(submitButton, false);
     }
-    let currentCart = await cartResponse.json();
-    console.log('Current cart state:', currentCart);
+  });
 
-    // First, validate all items
-    const validationResults = await Promise.all(
-      items.map(item => validateCartItem(item, currentCart))
-    );
+  async function validateCartItem(item, currentCart) {
+    try {
+      console.log('Validating item:', item);
+      console.log('Current cart state during validation:', currentCart);
 
-    console.log('Validation results:', validationResults);
-
-    // Get valid and invalid items
-    const validItems = items.filter((_, index) => validationResults[index].isValid);
-    const invalidItems = items.filter((_, index) => !validationResults[index].isValid);
-
-    // Show notifications for invalid items
-    invalidItems.forEach((_, index) => {
-      const result = validationResults[findFailedValidationIndex(validationResults, index)];
-      if (result?.error) {
-        showNotification(result.error.message, result.error.type);
+      const productId = parseInt(item.product_id);
+      if (!productId) {
+        throw new Error(`Product ID is missing for variant ${item.id}`);
       }
-    });
 
-    // If we have valid items, add them to cart
-    if (validItems.length > 0) {
-      const response = await fetch('/cart/add.js', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ items: validItems })
+      // Get all gift option elements to check if this is a gift variant
+      const giftOptions = document.querySelectorAll('.gift-option-border');
+      const isItemFree = Array.from(giftOptions).some(giftOption => {
+        const giftId = isSubscriptionSelected()
+          ? giftOption.dataset.giftIdSubscription
+          : giftOption.dataset.giftId;
+        return giftId === item.id.toString();
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to add items to cart');
+      console.log('Is item free?', isItemFree, 'Item ID:', item.id);
+
+      if (isItemFree) {
+        const currentFreeItems = currentCart.items.filter(cartItem => {
+          // Check if the cart item's variant ID matches any gift variant IDs
+          return Array.from(giftOptions).some(giftOption => {
+            const giftId = isSubscriptionSelected()
+              ? giftOption.dataset.giftIdSubscription
+              : giftOption.dataset.giftId;
+            return cartItem.variant_id.toString() === giftId;
+          });
+        });
+
+        console.log('Current free items in cart:', currentFreeItems);
+
+        const bfcmDealCount = await countUniqueProductsWithTag(currentCart);
+        console.log('Current free items count:', currentFreeItems.length);
+        console.log('BFCM deal count:', bfcmDealCount);
+
+        if (currentFreeItems.length >= bfcmDealCount) {
+          console.log('Free item limit exceeded');
+          return {
+            isValid: false,
+            error: {
+              code: 'FREE_ITEM_LIMIT',
+              message: `You can have up to ${bfcmDealCount} free gift${bfcmDealCount !== 1 ? 's' : ''} (one for each BFCM deal in your cart).`,
+              type: 'error'
+            }
+          };
+        }
       }
 
-      // If some items were invalid but others succeeded
-      if (invalidItems.length > 0) {
-        showNotification('Some items were added to cart, but free gift limit was exceeded', 'info');
-      } else {
-        showNotification('Items added to cart successfully', 'success');
-      }
-
+      return { isValid: true };
+    } catch (error) {
+      console.error('Validation error:', error);
       return {
-        success: true,
-        addedItems: validItems,
-        failedItems: invalidItems
+        isValid: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Unable to validate item. Please try again.',
+          type: 'error'
+        }
       };
     }
-
-    // If no valid items
-    return {
-      success: false,
-      addedItems: [],
-      failedItems: invalidItems,
-      error: {
-        message: 'No items could be added to cart',
-        type: 'error'
-      }
-    };
-  } catch (error) {
-    console.error('Error adding items to cart:', error);
-    showNotification('An error occurred while adding items to cart. Please try again.');
-    return {
-      success: false,
-      addedItems: [],
-      failedItems: items
-    };
   }
-}
 
-// Helper function to find the corresponding failed validation result
-function findFailedValidationIndex(validationResults, invalidItemIndex) {
-  let failedCount = 0;
-  for (let i = 0; i < validationResults.length; i++) {
-    if (!validationResults[i].isValid) {
-      if (failedCount === invalidItemIndex) {
-        return i;
-      }
-      failedCount++;
+  async function countUniqueProductsWithTag(cart) {
+    try {
+      // Use the product title to check for 'Black Friday Week'
+      const uniqueProducts = cart.items.reduce((acc, item) => {
+        if (acc[item.product_id]) {
+          return acc;
+        }
+
+        const hasBlackFridayWeek = item.title && item.title.includes('Black Friday Week');
+        console.log('Checking item:', item.title, 'Has BF Week:', hasBlackFridayWeek);
+
+        acc[item.product_id] = hasBlackFridayWeek;
+        return acc;
+      }, {});
+
+      const blackFridayWeekCount = Object.values(uniqueProducts).filter(Boolean).length;
+      console.log('Unique products:', uniqueProducts);
+      console.log('Black Friday Week Count:', blackFridayWeekCount);
+
+      // Always allow at least one free gift
+      return Math.max(blackFridayWeekCount, 1);
+    } catch (error) {
+      console.error('Error counting Black Friday Week products:', error);
+      return 1; // Default to 1 if there's an error
     }
   }
-  return -1;
-}
 
-async function validateCartItem(item, currentCart) {
-  try {
-    console.log('Validating item:', item);
-    console.log('Current cart state during validation:', currentCart);
+  async function addValidItemsToCart(items) {
+    try {
+      // Always fetch the latest cart data
+      const cartResponse = await fetch('/cart.js');
+      if (!cartResponse.ok) {
+        throw new Error('Failed to fetch current cart');
+      }
+      let currentCart = await cartResponse.json();
+      console.log('Current cart state:', currentCart);
 
-    const productId = parseInt(item.product_id);
-    if (!productId) {
-      throw new Error(`Product ID is missing for variant ${item.id}`);
-    }
+      // First, validate all items
+      const validationResults = await Promise.all(
+        items.map(item => validateCartItem(item, currentCart))
+      );
 
-    // Get all gift option elements to check if this is a gift variant
-    const giftOptions = document.querySelectorAll('.gift-option-border');
-    const isItemFree = Array.from(giftOptions).some(giftOption => {
-      const giftId = isSubscriptionSelected()
-        ? giftOption.dataset.giftIdSubscription
-        : giftOption.dataset.giftId;
-      return giftId === item.id.toString();
-    });
+      console.log('Validation results:', validationResults);
 
-    console.log('Is item free?', isItemFree, 'Item ID:', item.id);
+      // Get valid and invalid items
+      const validItems = items.filter((_, index) => validationResults[index].isValid);
+      const invalidItems = items.filter((_, index) => !validationResults[index].isValid);
 
-    if (isItemFree) {
-      const currentFreeItems = currentCart.items.filter(cartItem => {
-        // Check if the cart item's variant ID matches any gift variant IDs
-        return Array.from(giftOptions).some(giftOption => {
-          const giftId = isSubscriptionSelected()
-            ? giftOption.dataset.giftIdSubscription
-            : giftOption.dataset.giftId;
-          return cartItem.variant_id.toString() === giftId;
-        });
+      // Show notifications for invalid items
+      invalidItems.forEach((_, index) => {
+        const result = validationResults[findFailedValidationIndex(validationResults, index)];
+        if (result?.error) {
+          showNotification(result.error.message, result.error.type);
+        }
       });
 
-      console.log('Current free items in cart:', currentFreeItems);
+      // If we have valid items, add them to cart
+      if (validItems.length > 0) {
+        const response = await fetch('/cart/add.js', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ items: validItems })
+        });
 
-      const bfcmDealCount = await countUniqueProductsWithTag(currentCart);
-      console.log('Current free items count:', currentFreeItems.length);
-      console.log('BFCM deal count:', bfcmDealCount);
+        if (!response.ok) {
+          throw new Error('Failed to add items to cart');
+        }
 
-      if (currentFreeItems.length >= bfcmDealCount) {
-        console.log('Free item limit exceeded');
+        // If some items were invalid but others succeeded
+        if (invalidItems.length > 0) {
+          showNotification('Some items were added to cart, but free gift limit was exceeded', 'info');
+        } else {
+          showNotification('Items added to cart successfully', 'success');
+        }
+
         return {
-          isValid: false,
-          error: {
-            code: 'FREE_ITEM_LIMIT',
-            message: `You can have up to ${bfcmDealCount} free gift${bfcmDealCount !== 1 ? 's' : ''} (one for each BFCM deal in your cart).`,
-            type: 'error'
-          }
+          success: true,
+          addedItems: validItems,
+          failedItems: invalidItems
         };
       }
+
+      // If no valid items
+      return {
+        success: false,
+        addedItems: [],
+        failedItems: invalidItems,
+        error: {
+          message: 'No items could be added to cart',
+          type: 'error'
+        }
+      };
+    } catch (error) {
+      console.error('Error adding items to cart:', error);
+      showNotification('An error occurred while adding items to cart. Please try again.');
+      return {
+        success: false,
+        addedItems: [],
+        failedItems: items
+      };
+    }
+  }
+
+  // Helper function to find the corresponding failed validation result
+  function findFailedValidationIndex(validationResults, invalidItemIndex) {
+    let failedCount = 0;
+    for (let i = 0; i < validationResults.length; i++) {
+      if (!validationResults[i].isValid) {
+        if (failedCount === invalidItemIndex) {
+          return i;
+        }
+        failedCount++;
+      }
+    }
+    return -1;
+  }
+
+  function showNotification(message, type = 'error') {
+    const notification = document.createElement('div');
+    notification.className = `cart-notification ${type} fixed bottom-4 left-1/2 transform -translate-x-1/2 p-4 rounded-lg shadow-lg max-w-md z-50 transition-opacity duration-300 z-[2147483640]`;
+
+    // Style based on type
+    if (type === 'error') {
+      notification.classList.add('bg-red-100', 'border', 'border-red-400', 'text-red-700');
+    } else if (type === 'success') {
+      notification.classList.add('bg-green-100', 'border', 'border-green-400', 'text-green-700');
+    } else if (type === 'info') {
+      notification.classList.add('bg-blue-100', 'border', 'border-blue-400', 'text-blue-700');
     }
 
-    return { isValid: true };
-  } catch (error) {
-    console.error('Validation error:', error);
-    return {
-      isValid: false,
-      error: {
-        code: 'VALIDATION_ERROR',
-        message: 'Unable to validate item. Please try again.',
-        type: 'error'
-      }
-    };
-  }
-}
-
-async function countUniqueProductsWithTag(cart) {
-  try {
-    // Use the product title to check for 'Black Friday Week'
-    const uniqueProducts = cart.items.reduce((acc, item) => {
-      if (acc[item.product_id]) {
-        return acc;
-      }
-
-      const hasBlackFridayWeek = item.title && item.title.includes('Black Friday Week');
-      console.log('Checking item:', item.title, 'Has BF Week:', hasBlackFridayWeek);
-
-      acc[item.product_id] = hasBlackFridayWeek;
-      return acc;
-    }, {});
-
-    const blackFridayWeekCount = Object.values(uniqueProducts).filter(Boolean).length;
-    console.log('Unique products:', uniqueProducts);
-    console.log('Black Friday Week Count:', blackFridayWeekCount);
-
-    // Always allow at least one free gift
-    return Math.max(blackFridayWeekCount, 1);
-  } catch (error) {
-    console.error('Error counting Black Friday Week products:', error);
-    return 1; // Default to 1 if there's an error
-  }
-}
-
-    function showNotification(message, type = 'error') {
-      if (!{{ isCartNotifications | default: false }}) {
-        return;
-      }
-
-      const notification = document.createElement('div');
-      notification.className = `cart-notification ${type} fixed bottom-4 left-1/2 transform -translate-x-1/2 p-4 rounded-lg shadow-lg max-w-md z-50 transition-opacity duration-300 z-[2147483640]`;
-
-      // Style based on type
-      if (type === 'error') {
-        notification.classList.add('bg-red-100', 'border', 'border-red-400', 'text-red-700');
-      } else if (type === 'success') {
-        notification.classList.add('bg-green-100', 'border', 'border-green-400', 'text-green-700');
-      } else if (type === 'info') {
-        notification.classList.add('bg-blue-100', 'border', 'border-blue-400', 'text-blue-700');
-      }
-
-      // Add content
-      notification.innerHTML = `
-        <div class="flex items-center">
-          <div class="mr-3">
-            ${type === 'error' ? '⚠️' : type === 'success' ? '✅' : 'ℹ️'}
-          </div>
-          <div class="text-sm font-medium">
-            ${message}
-          </div>
-          <button class="hover:text-gray-500 ml-auto text-gray-400" onclick="this.parentElement.parentElement.remove()">
-            ✕
-          </button>
+    // Add content
+    notification.innerHTML = `
+      <div class="flex items-center">
+        <div class="mr-3">
+          ${type === 'error' ? '⚠️' : type === 'success' ? '✅' : 'ℹ️'}
         </div>
-      `;
+        <div class="text-sm font-medium">
+          ${message}
+        </div>
+        <button class="hover:text-gray-500 ml-auto text-gray-400" onclick="this.parentElement.parentElement.remove()">
+          ✕
+        </button>
+      </div>
+    `;
 
-      // Add to document
-      document.body.appendChild(notification);
+    // Add to document
+    document.body.appendChild(notification);
 
-      // Remove after 5 seconds
-      setTimeout(() => {
-        notification.classList.add('opacity-0');
-        setTimeout(() => notification.remove(), 300);
-      }, 5000);
+    // Remove after 5 seconds
+    setTimeout(() => {
+      notification.classList.add('opacity-0');
+      setTimeout(() => notification.remove(), 300);
+    }, 5000);
+  }
+
+  function toggleButtonLoading(buttonElement, isLoading) {
+    if (!buttonElement) {
+      console.error('Button element not found in toggleButtonLoading');
+      return;
     }
 
-    function toggleButtonLoading(buttonElement, isLoading) {
-      if (!buttonElement) {
-        console.error('Button element not found in toggleButtonLoading');
-        return;
-      }
+    const loader = buttonElement.querySelector('.loading-overlay__spinner');
+    const buttonText = buttonElement.querySelector('.button-text, .submit-title');
 
-      const loader = buttonElement.querySelector('.loading-overlay__spinner');
-      const buttonText = buttonElement.querySelector('.button-text, .submit-title');
-
-      if (!loader || !buttonText) {
-        console.error('Loader or buttonText element not found');
-        return;
-      }
-
-      loader.style.display = isLoading ? 'block' : 'none';
-      buttonText.style.display = isLoading ? 'none' : 'block';
+    if (!loader || !buttonText) {
+      console.error('Loader or buttonText element not found');
+      return;
     }
+
+    loader.style.display = isLoading ? 'block' : 'none';
+    buttonText.style.display = isLoading ? 'none' : 'block';
+  }
+});
 
     // Function to update the variant image
     function updateVariantImage(element) {
