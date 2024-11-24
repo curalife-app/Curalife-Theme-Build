@@ -535,7 +535,7 @@
   // Form submission handler replaced with button click handler
   const submitButton = document.getElementById('ProductSubmitButton-{{SID}}');
 
-async function validateCartItem(item, currentCart) {
+	async function validateCartItem(item, currentCart) {
   try {
     // Get variant data
     const variantResponse = await fetch(`/variants/${item.id}.js`);
@@ -611,7 +611,7 @@ async function addValidItemsToCart(items) {
     // Get current cart
     const cartResponse = await fetch('/cart.js');
     if (!cartResponse.ok) {
-      throw new Error('Failed to fetch cart');
+      throw new Error(`Failed to fetch cart: ${cartResponse.status}`);
     }
     const currentCart = await cartResponse.json();
 
@@ -635,31 +635,45 @@ async function addValidItemsToCart(items) {
 
     // If we have valid items, add them to cart
     if (validItems.length > 0) {
-      const response = await fetch('/cart/add.js', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({ items: validItems })
-      });
+      try {
+        const response = await fetch('/cart/add.js', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ items: validItems })
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to add items to cart');
+        const responseData = await response.json();
+
+        if (!response.ok) {
+          throw new Error(responseData.description || `Error ${response.status}: Failed to add items to cart`);
+        }
+
+        // Show success notification
+        if (validItems.length === items.length) {
+          showNotification('All items successfully added to cart', 'success');
+        } else {
+          showNotification(`${validItems.length} out of ${items.length} items added to cart`, 'success');
+        }
+
+        return {
+          success: true,
+          addedItems: validItems,
+          failedItems: invalidItems,
+          responseData
+        };
+      } catch (error) {
+        console.error('Cart add error:', error);
+        showNotification(error.message || 'Failed to add items to cart. Please try again.');
+        return {
+          success: false,
+          addedItems: [],
+          failedItems: items,
+          error
+        };
       }
-
-      // Show success notification if any items were added
-      if (validItems.length === items.length) {
-        showNotification('All items successfully added to cart', 'success');
-      } else {
-        showNotification(`${validItems.length} out of ${items.length} items added to cart`, 'success');
-      }
-
-      return {
-        success: true,
-        addedItems: validItems,
-        failedItems: invalidItems
-      };
     }
 
     return {
@@ -668,12 +682,13 @@ async function addValidItemsToCart(items) {
       failedItems: invalidItems
     };
   } catch (error) {
-    console.error('Error:', error);
-    showNotification('An error occurred while adding items to cart. Please try again.');
+    console.error('Cart validation error:', error);
+    showNotification(error.message || 'An error occurred while processing your cart. Please try again.');
     return {
       success: false,
       addedItems: [],
-      failedItems: items
+      failedItems: items,
+      error
     };
   }
 }
@@ -715,7 +730,7 @@ function showNotification(message, type = 'error') {
   }, 5000);
 }
 
-// Replace the existing submit button click handler with this updated version
+// Replace the submit button click handler
 submitButton.addEventListener('click', async function(event) {
   console.log('Button clicked, handling submission...');
   event.preventDefault();
@@ -748,24 +763,21 @@ submitButton.addEventListener('click', async function(event) {
     if (!variantId || !giftId) {
       const errorMessage = `Missing required data: ${!variantId ? 'variant ID' : ''} ${!giftId ? 'gift ID' : ''}`;
       console.error(errorMessage);
-      showError(errorMessage);
+      showNotification(errorMessage, 'error');
       return;
     }
 
     const items = [
       {
         id: variantId,
-        quantity: 1
+        quantity: 1,
+        ...(sellingPlanId && { selling_plan: sellingPlanId })
       },
       {
         id: giftId,
         quantity: 1
       }
     ];
-
-    if (sellingPlanId) {
-      items[0].selling_plan = sellingPlanId;
-    }
 
     {% if buyType == "buy_now" %}
       //delete cart drawer
@@ -775,25 +787,38 @@ submitButton.addEventListener('click', async function(event) {
       }
 
       // clean cart
-      await fetch('/cart/clear.js', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
+      try {
+        const clearCartResponse = await fetch('/cart/clear.js', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        });
+
+        if (!clearCartResponse.ok) {
+          throw new Error('Failed to clear cart');
         }
-      });
+      } catch (error) {
+        console.error('Clear cart error:', error);
+        showNotification('Failed to clear cart. Please try again.', 'error');
+        return;
+      }
     {% endif %}
 
     const result = await addValidItemsToCart(items);
+    console.log('Add to cart result:', result);
 
     if (result.success) {
       {% if buyType == "buy_now" %}
         window.location.href = '/checkout';
       {% endif %}
+    } else if (result.error) {
+      showNotification(result.error.message || 'Failed to add items to cart', 'error');
     }
   } catch (error) {
-    console.error('Caught error:', error);
-    showError(error.message || 'An unexpected error occurred');
+    console.error('Submission error:', error);
+    showNotification(error.message || 'An unexpected error occurred', 'error');
   } finally {
     toggleButtonLoading(submitButton, false);
   }
