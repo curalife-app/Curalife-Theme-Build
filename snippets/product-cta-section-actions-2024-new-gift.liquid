@@ -657,26 +657,15 @@
     const validItems = items.filter((_, index) => validationResults[index].isValid);
     const invalidItems = items.filter((_, index) => !validationResults[index].isValid);
 
-    // If there are any invalid items, stop and show notifications
-    if (invalidItems.length > 0) {
-      invalidItems.forEach((_, index) => {
-        const result = validationResults[index];
-        if (result.error) {
-          showNotification(result.error.message, result.error.type);
-        }
-      });
-      return {
-        success: false,
-        addedItems: [],
-        failedItems: invalidItems,
-        error: {
-          message: 'Some items could not be added to cart',
-          type: 'error'
-        }
-      };
-    }
+    // Show notifications for invalid items
+    invalidItems.forEach((_, index) => {
+      const result = validationResults[findFailedValidationIndex(validationResults, index)];
+      if (result?.error) {
+        showNotification(result.error.message, result.error.type);
+      }
+    });
 
-    // If all validations passed, proceed with adding items
+    // If we have valid items, add them to cart
     if (validItems.length > 0) {
       const response = await fetch('/cart/add.js', {
         method: 'POST',
@@ -690,18 +679,29 @@
         throw new Error('Failed to add items to cart');
       }
 
-      showNotification('Items added to cart successfully', 'success');
+      // If some items were invalid but others succeeded
+      if (invalidItems.length > 0) {
+        showNotification('Some items were added to cart, but free gift limit was exceeded', 'info');
+      } else {
+        showNotification('Items added to cart successfully', 'success');
+      }
+
       return {
         success: true,
         addedItems: validItems,
-        failedItems: []
+        failedItems: invalidItems
       };
     }
 
+    // If no valid items
     return {
       success: false,
       addedItems: [],
-      failedItems: items
+      failedItems: invalidItems,
+      error: {
+        message: 'No items could be added to cart',
+        type: 'error'
+      }
     };
   } catch (error) {
     console.error('Error adding items to cart:', error);
@@ -712,6 +712,20 @@
       failedItems: items
     };
   }
+}
+
+// Helper function to find the corresponding failed validation result
+function findFailedValidationIndex(validationResults, invalidItemIndex) {
+  let failedCount = 0;
+  for (let i = 0; i < validationResults.length; i++) {
+    if (!validationResults[i].isValid) {
+      if (failedCount === invalidItemIndex) {
+        return i;
+      }
+      failedCount++;
+    }
+  }
+  return -1;
 }
 
 async function validateCartItem(item, currentCart) {
