@@ -664,20 +664,17 @@ async function validateCartItem(item, currentCart) {
     const isSubscription = !!item.selling_plan;
 
     if (isSubscription) {
-      // Look for any existing subscription items with the same product ID
-      const existingSubscriptions = currentCart.items.filter(cartItem =>
+      // Look for existing subscription items with the same product ID
+      const existingSubscription = currentCart.items.find(cartItem =>
         cartItem.product_id === productId && cartItem.selling_plan_allocation
       );
 
-      if (existingSubscriptions.length > 0) {
-        // If we found existing subscriptions, prevent adding another one
+      if (existingSubscription) {
+        console.log('Found existing subscription for product:', productId);
         return {
-          isValid: false,
-          error: {
-            code: 'DUPLICATE_SUBSCRIPTION',
-            message: 'A subscription for this product already exists in your cart',
-            type: 'error'
-          }
+          isValid: true,
+          requiresReplacement: true,
+          itemToRemove: existingSubscription
         };
       }
     }
@@ -739,14 +736,45 @@ async function addValidItemsToCart(items) {
     let currentCart = await cartResponse.json();
     console.log('Current cart state:', currentCart);
 
-    // First, validate all items
+    // First, validate all items and check for subscription replacements
     const validationResults = await Promise.all(
       items.map(item => validateCartItem(item, currentCart))
     );
 
     console.log('Validation results:', validationResults);
 
-    // Get valid and invalid items
+    // Handle subscription replacements first
+    const subscriptionReplacements = validationResults
+      .filter(result => result.requiresReplacement)
+      .map(result => result.itemToRemove);
+
+    if (subscriptionReplacements.length > 0) {
+      // Remove existing subscription items that need to be replaced
+      console.log('Removing existing subscriptions:', subscriptionReplacements);
+
+      const updates = {};
+      subscriptionReplacements.forEach(item => {
+        updates[item.key] = 0;  // Set quantity to 0 to remove the item
+      });
+
+      const removeResponse = await fetch('/cart/update.js', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ updates })
+      });
+
+      if (!removeResponse.ok) {
+        throw new Error('Failed to remove existing subscription items');
+      }
+
+      // Refresh cart data after removals
+      const updatedCartResponse = await fetch('/cart.js');
+      currentCart = await updatedCartResponse.json();
+    }
+
+    // Get valid items and invalid items
     const validItems = items.filter((_, index) => validationResults[index].isValid);
     const invalidItems = items.filter((_, index) => !validationResults[index].isValid);
 
@@ -773,8 +801,10 @@ async function addValidItemsToCart(items) {
       }
 
       // Show appropriate notification
-      if (invalidItems.length > 0) {
-        showNotification('Some items were added to cart, others could not be added', 'info');
+      if (subscriptionReplacements.length > 0) {
+        showNotification('Subscription has been updated in your cart', 'success');
+      } else if (invalidItems.length > 0) {
+        showNotification('Some items were added to cart, but free gift limit was exceeded', 'info');
       } else {
         showNotification('Items added to cart successfully', 'success');
       }
@@ -782,7 +812,8 @@ async function addValidItemsToCart(items) {
       return {
         success: true,
         addedItems: validItems,
-        failedItems: invalidItems
+        failedItems: invalidItems,
+        replacedItems: subscriptionReplacements
       };
     }
 
