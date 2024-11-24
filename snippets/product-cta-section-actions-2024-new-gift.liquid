@@ -818,89 +818,103 @@ function showNotification(message, type = 'error') {
 }
 
 submitButton.addEventListener('click', async function(event) {
-  console.log('Button clicked, handling submission...');
-  event.preventDefault();
+    console.log('Button clicked, handling submission...');
+    event.preventDefault();
 
-  // Display the loading spinner
-  toggleButtonLoading(submitButton, true);
-
-  try {
-    const variantIdInput = productActions.querySelector('.submit-variant-id');
-    const sellingPlanIdInput = productActions.querySelector('.submit-selling-plan-id');
-    const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
-    const giftOptionBorder = selectedGiftContainer ? selectedGiftContainer.querySelector('.gift-option-border') : null;
-
-    const isSubscription = !!sellingPlanIdInput?.value;
-    const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
-
-    const variantId = variantIdInput ? variantIdInput.value : null;
-    const sellingPlanId = sellingPlanIdInput ? sellingPlanIdInput.value : '';
-
-    if (!variantId || !giftId) {
-      const errorMessage = `Missing required data: ${!variantId ? 'variant ID' : ''} ${!giftId ? 'gift ID' : ''}`;
-      console.error(errorMessage);
-      showNotification(errorMessage, 'error');
+    if (!productActions) {
+      console.error('Product actions container not found');
       return;
     }
 
-    const items = [
-      {
-        id: variantId,
-        quantity: 1,
-        ...(sellingPlanId && { selling_plan: sellingPlanId })
-      },
-      {
-        id: giftId,
-        quantity: 1
-      }
-    ];
+    // Display the loading spinner
+    toggleButtonLoading(submitButton, true);
 
-    {% if buyType == "buy_now" %}
-      //delete cart drawer
-      const cartDrawer = document.getElementById('upCart');
-      if (cartDrawer) {
-        cartDrawer.remove();
+    try {
+      const variantIdInput = productActions.querySelector('.submit-variant-id');
+      const sellingPlanIdInput = productActions.querySelector('.submit-selling-plan-id');
+      const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
+      const giftOptionBorder = selectedGiftContainer ? selectedGiftContainer.querySelector('.gift-option-border') : null;
+
+      // Add error checking for required elements
+      if (!variantIdInput) {
+        throw new Error('Variant ID input not found');
       }
 
-      // clean cart
-      try {
-        const clearCartResponse = await fetch('/cart/clear.js', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          }
-        });
+      const isSubscription = !!sellingPlanIdInput?.value;
+      const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
+      const variantId = variantIdInput.value;
+      const sellingPlanId = sellingPlanIdInput ? sellingPlanIdInput.value : '';
 
-        if (!clearCartResponse.ok) {
-          throw new Error('Failed to clear cart');
-        }
-      } catch (error) {
-        console.error('Clear cart error:', error);
-        showNotification('Failed to clear cart. Please try again.', 'error');
+      if (!variantId || !giftId) {
+        const errorMessage = `Missing required data: ${!variantId ? 'variant ID' : ''} ${!giftId ? 'gift ID' : ''}`;
+        console.error(errorMessage);
+        showNotification(errorMessage, 'error');
         return;
       }
-    {% endif %}
 
-    const result = await addValidItemsToCart(items);
-    console.log('Add to cart result:', result);
+      const items = [
+        {
+          id: variantId,
+          quantity: 1,
+          ...(sellingPlanId && { selling_plan: sellingPlanId })
+        },
+        {
+          id: giftId,
+          quantity: 1
+        }
+      ];
 
-    if (result.success) {
       {% if buyType == "buy_now" %}
-        window.location.href = '/checkout';
+        // Delete cart drawer if it exists
+        const cartDrawer = document.getElementById('upCart');
+        if (cartDrawer) {
+          cartDrawer.remove();
+        }
+
+        // Clean cart
+        try {
+          const clearCartResponse = await fetch('/cart/clear.js', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            }
+          });
+
+          if (!clearCartResponse.ok) {
+            throw new Error('Failed to clear cart');
+          }
+        } catch (error) {
+          console.error('Clear cart error:', error);
+          showNotification('Failed to clear cart. Please try again.', 'error');
+          return;
+        }
       {% endif %}
-    } else if (result.error) {
-      showNotification(result.error.message || 'Failed to add items to cart', 'error');
+
+      const result = await addValidItemsToCart(items);
+      console.log('Add to cart result:', result);
+
+      if (result.success) {
+        {% if buyType == "buy_now" %}
+          window.location.href = '/checkout';
+        {% endif %}
+      } else if (result.error) {
+        showNotification(result.error.message || 'Failed to add items to cart', 'error');
+      }
+    } catch (error) {
+      console.error('Submission error:', error);
+      showNotification(error.message || 'An unexpected error occurred', 'error');
+    } finally {
+      toggleButtonLoading(submitButton, false);
     }
-  } catch (error) {
-    console.error('Submission error:', error);
-    showNotification(error.message || 'An unexpected error occurred', 'error');
-  } finally {
-    toggleButtonLoading(submitButton, false);
-  }
-});
+  });
 
   function toggleButtonLoading(buttonElement, isLoading) {
+    if (!buttonElement) {
+      console.error('Button element not found in toggleButtonLoading');
+      return;
+    }
+
     const loader = buttonElement.querySelector('.loading-overlay__spinner');
     const buttonText = buttonElement.querySelector('.button-text, .submit-title');
 
