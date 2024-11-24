@@ -646,12 +646,37 @@
     let currentCart = await cartResponse.json();
     console.log('Current cart state:', currentCart);
 
-    // First, validate all items
+    // First, validate all items and check for subscription replacements
     const validationResults = await Promise.all(
       items.map(item => validateCartItem(item, currentCart))
     );
 
     console.log('Validation results:', validationResults);
+
+    // Handle subscription replacements first
+    const subscriptionReplacements = validationResults
+      .filter(result => result.requiresReplacement)
+      .map(result => result.itemToRemove);
+
+    if (subscriptionReplacements.length > 0) {
+      // Remove existing subscription items that need to be replaced
+      const updates = subscriptionReplacements.map(item => ({
+        id: item.key,
+        quantity: 0
+      }));
+
+      await fetch('/cart/update.js', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ updates })
+      });
+
+      // Refresh cart data after removals
+      const updatedCartResponse = await fetch('/cart.js');
+      currentCart = await updatedCartResponse.json();
+    }
 
     // Get valid and invalid items
     const validItems = items.filter((_, index) => validationResults[index].isValid);
@@ -679,8 +704,10 @@
         throw new Error('Failed to add items to cart');
       }
 
-      // If some items were invalid but others succeeded
-      if (invalidItems.length > 0) {
+      // Show appropriate notification
+      if (subscriptionReplacements.length > 0) {
+        showNotification('Subscription item has been updated in your cart', 'success');
+      } else if (invalidItems.length > 0) {
         showNotification('Some items were added to cart, but free gift limit was exceeded', 'info');
       } else {
         showNotification('Items added to cart successfully', 'success');
@@ -689,7 +716,8 @@
       return {
         success: true,
         addedItems: validItems,
-        failedItems: invalidItems
+        failedItems: invalidItems,
+        replacedItems: subscriptionReplacements
       };
     }
 
@@ -710,6 +738,82 @@
       success: false,
       addedItems: [],
       failedItems: items
+    };
+  }
+}
+
+async function validateCartItem(item, currentCart) {
+  try {
+    console.log('Validating item:', item);
+    console.log('Current cart state during validation:', currentCart);
+
+    const productId = parseInt(item.product_id);
+    if (!productId) {
+      throw new Error(`Product ID is missing for variant ${item.id}`);
+    }
+
+    // Check if this is a subscription item
+    const isSubscription = !!item.selling_plan;
+
+    if (isSubscription) {
+      // Look for existing subscription items with the same product ID
+      const existingSubscription = currentCart.items.find(cartItem =>
+        cartItem.product_id === productId && cartItem.selling_plan_allocation
+      );
+
+      if (existingSubscription) {
+        console.log('Found existing subscription for product:', productId);
+        return {
+          isValid: true,
+          requiresReplacement: true,
+          itemToRemove: existingSubscription
+        };
+      }
+    }
+
+    // Continue with regular gift validation
+    const giftOptions = document.querySelectorAll('.gift-option-border');
+    const isItemFree = Array.from(giftOptions).some(giftOption => {
+      const giftId = isSubscriptionSelected()
+        ? giftOption.dataset.giftIdSubscription
+        : giftOption.dataset.giftId;
+      return giftId === item.id.toString();
+    });
+
+    if (isItemFree) {
+      const currentFreeItems = currentCart.items.filter(cartItem => {
+        return Array.from(giftOptions).some(giftOption => {
+          const giftId = isSubscriptionSelected()
+            ? giftOption.dataset.giftIdSubscription
+            : giftOption.dataset.giftId;
+          return cartItem.variant_id.toString() === giftId;
+        });
+      });
+
+      const bfcmDealCount = await countUniqueProductsWithTag(currentCart);
+
+      if (currentFreeItems.length >= bfcmDealCount) {
+        return {
+          isValid: false,
+          error: {
+            code: 'FREE_ITEM_LIMIT',
+            message: `You can have up to ${bfcmDealCount} free gift${bfcmDealCount !== 1 ? 's' : ''} (one for each BFCM deal in your cart).`,
+            type: 'error'
+          }
+        };
+      }
+    }
+
+    return { isValid: true };
+  } catch (error) {
+    console.error('Validation error:', error);
+    return {
+      isValid: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Unable to validate item. Please try again.',
+        type: 'error'
+      }
     };
   }
 }
