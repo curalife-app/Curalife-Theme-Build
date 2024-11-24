@@ -535,27 +535,58 @@
   // Form submission handler replaced with button click handler
   const submitButton = document.getElementById('ProductSubmitButton-{{SID}}');
 
-	async function countUniqueProductsWithTag(cart) {
+	async function getProductData(productId) {
+  try {
+    const response = await fetch(`/products/${productId}.js`);
+    if (!response.ok) {
+      console.error(`Failed to fetch product ${productId}: ${response.status}`);
+      return null;
+    }
+    const text = await response.text();
+    if (!text) {
+      console.error(`Empty response for product ${productId}`);
+      return null;
+    }
+    try {
+      return JSON.parse(text);
+    } catch (parseError) {
+      console.error(`Failed to parse product data for ${productId}:`, parseError);
+      return null;
+    }
+  } catch (error) {
+    console.error(`Network error fetching product ${productId}:`, error);
+    return null;
+  }
+}
+
+async function countUniqueProductsWithTag(cart) {
   try {
     // Get unique product IDs from cart items
     const uniqueProductIds = [...new Set(cart.items.map(item => item.product_id))];
 
-    // Fetch product data for each unique product
-    const productDataPromises = uniqueProductIds.map(productId =>
-      fetch(`/products/${productId}.js`).then(res => res.json())
+    // Fetch product data with proper error handling
+    const products = await Promise.all(
+      uniqueProductIds.map(async (productId) => {
+        const productData = await getProductData(productId);
+        return productData;
+      })
     );
 
-    const products = await Promise.all(productDataPromises);
+    // Filter out null responses and count products with bfcm-deal tag
+    const bfcmDealCount = products
+      .filter(product => product !== null) // Remove failed fetches
+      .filter(product =>
+        product.tags &&
+        (Array.isArray(product.tags) ?
+          product.tags.includes('bfcm-deal') :
+          product.tags.split(',').map(tag => tag.trim()).includes('bfcm-deal'))
+      ).length;
 
-    // Count products with 'bfcm-deal' tag
-    const bfcmDealCount = products.filter(product =>
-      product.tags && product.tags.includes('bfcm-deal')
-    ).length;
-
-    return bfcmDealCount;
+    console.log('BFCM Deal Count:', bfcmDealCount);
+    return Math.max(bfcmDealCount, 1); // Always allow at least one free gift
   } catch (error) {
     console.error('Error counting BFCM products:', error);
-    return 0;
+    return 1; // Default to 1 if there's an error
   }
 }
 
@@ -581,6 +612,7 @@ async function validateCartItem(item, currentCart) {
 
       // Count unique products with bfcm-deal tag
       const bfcmDealCount = await countUniqueProductsWithTag(currentCart);
+      console.log('Current free items:', currentFreeItems.length, 'BFCM deal count:', bfcmDealCount);
 
       // If current free items count is equal or greater than BFCM deal count, block
       if (currentFreeItems.length >= bfcmDealCount) {
