@@ -557,39 +557,32 @@
     console.error(`Network error fetching product ${productId}:`, error);
     return null;
   }
-}
-
 async function countUniqueProductsWithTag(cart) {
-  try {
-    // Instead of fetching product data, use the product data from cart items
-    const uniqueProducts = cart.items.reduce((acc, item) => {
-      // Skip if we've already counted this product
-      if (acc[item.product_id]) {
-        return acc;
-      }
+	try {
+		// Instead of fetching product data, use the product data from cart items
+		const uniqueProducts = cart.items.reduce((acc, item) => {
+			// Skip if we've already counted this product
+			if (acc[item.product_id]) {
+				return acc;
+			}
 
-      // Check if the product has bfcm-deal tag
-      const hasBfcmTag = item.tags &&
-        (Array.isArray(item.tags) ?
-          item.tags.includes('bfcm-deal') :
-          (typeof item.tags === 'string' ?
-            item.tags.split(',').map(tag => tag.trim()).includes('bfcm-deal') :
-            false));
+			// Check if the product title contains 'Black Friday Week'
+			const hasBlackFridayWeek = item.title && item.title.includes('Black Friday Week');
 
-      acc[item.product_id] = hasBfcmTag;
-      return acc;
-    }, {});
+			acc[item.product_id] = hasBlackFridayWeek;
+			return acc;
+		}, {});
 
-    // Count products with bfcm-deal tag
-    const bfcmDealCount = Object.values(uniqueProducts).filter(Boolean).length;
+		// Count products with 'Black Friday Week' in the title
+		const blackFridayWeekCount = Object.values(uniqueProducts).filter(Boolean).length;
 
-    console.log('BFCM Deal Count:', bfcmDealCount);
-    // Always allow at least one free gift
-    return Math.max(bfcmDealCount, 1);
-  } catch (error) {
-    console.error('Error counting BFCM products:', error);
-    return 1; // Default to 1 if there's an error
-  }
+		console.log('Black Friday Week Count:', blackFridayWeekCount);
+		// Always allow at least one free gift
+		return Math.max(blackFridayWeekCount, 1);
+	} catch (error) {
+		console.error('Error counting Black Friday Week products:', error);
+		return 1; // Default to 1 if there's an error
+	}
 }
 
 async function validateCartItem(item, currentCart) {
