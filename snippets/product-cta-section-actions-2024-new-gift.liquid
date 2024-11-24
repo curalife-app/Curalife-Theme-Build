@@ -631,30 +631,12 @@ async function validateCartItem(item, currentCart) {
       );
 
       console.log('Current subscription items:', currentSubscriptionItems);
-
-      // First find the matching cart item to get its product_id
-      const matchingCartItem = currentCart.items.find(cartItem =>
-        cartItem.variant_id === parseInt(item.id)
-      );
-
-      if (!matchingCartItem) {
-        console.error('Could not find matching cart item for variant:', item.id);
-        return {
-          isValid: false,
-          error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Unable to validate item. Please try again.',
-            type: 'error'
-          }
-        };
-      }
-
-      console.log('Current item product ID:', matchingCartItem.product_id);
+      console.log('Adding variant data:', variantData);
 
       // Check if there's already a subscription for this product
       const existingSubscription = currentSubscriptionItems.find(cartItem => {
-        console.log('Comparing with cart item:', cartItem.product_id);
-        return cartItem.product_id === matchingCartItem.product_id;
+        console.log('Comparing product IDs:', cartItem.product_id, variantData.product);
+        return cartItem.product_id === variantData.product;
       });
 
       if (existingSubscription) {
@@ -679,7 +661,7 @@ async function validateCartItem(item, currentCart) {
               quantity: 1,
               selling_plan: item.selling_plan
             },
-            message: `Updating your subscription for ${matchingCartItem.product_title}`
+            message: `Updating your subscription`
           };
         }
       }
