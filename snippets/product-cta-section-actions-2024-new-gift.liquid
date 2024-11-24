@@ -130,6 +130,20 @@
   </div>
 </div>
 
+{% capture cart_products_tags %}
+{
+	{% for item in cart.items %}
+		{% assign product = all_products[item.handle] %}
+		"{{ item.product_id }}": {{ product.tags | json }}
+		{% unless forloop.last %},{% endunless %}
+	{% endfor %}
+}
+{% endcapture %}
+
+<script id="cart-products-tags" type="application/json">
+	{{ cart_products_tags }}
+</script>
+
 <script>
   document.addEventListener('DOMContentLoaded', function() {
   const productActions = document.querySelector('#cta-section-{{ SID }} .product-actions');
@@ -558,20 +572,6 @@
     return null;
   }
 }
-
-{% capture cart_products_tags %}
-{
-  {% for item in cart.items %}
-    {% assign product = all_products[item.handle] %}
-    "{{ item.product_id }}": {{ product.tags | json }}
-    {% unless forloop.last %},{% endunless %}
-  {% endfor %}
-}
-{% endcapture %}
-
-<script id="cart-products-tags" type="application/json">
-  {{ cart_products_tags }}
-</script>
 
 async function countUniqueProductsWithTag(cart) {
   try {
