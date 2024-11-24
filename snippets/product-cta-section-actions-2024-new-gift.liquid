@@ -561,29 +561,31 @@
 
 async function countUniqueProductsWithTag(cart) {
   try {
-    // Get unique product IDs from cart items
-    const uniqueProductIds = [...new Set(cart.items.map(item => item.product_id))];
+    // Instead of fetching product data, use the product data from cart items
+    const uniqueProducts = cart.items.reduce((acc, item) => {
+      // Skip if we've already counted this product
+      if (acc[item.product_id]) {
+        return acc;
+      }
 
-    // Fetch product data with proper error handling
-    const products = await Promise.all(
-      uniqueProductIds.map(async (productId) => {
-        const productData = await getProductData(productId);
-        return productData;
-      })
-    );
+      // Check if the product has bfcm-deal tag
+      const hasBfcmTag = item.tags &&
+        (Array.isArray(item.tags) ?
+          item.tags.includes('bfcm-deal') :
+          (typeof item.tags === 'string' ?
+            item.tags.split(',').map(tag => tag.trim()).includes('bfcm-deal') :
+            false));
 
-    // Filter out null responses and count products with bfcm-deal tag
-    const bfcmDealCount = products
-      .filter(product => product !== null) // Remove failed fetches
-      .filter(product =>
-        product.tags &&
-        (Array.isArray(product.tags) ?
-          product.tags.includes('bfcm-deal') :
-          product.tags.split(',').map(tag => tag.trim()).includes('bfcm-deal'))
-      ).length;
+      acc[item.product_id] = hasBfcmTag;
+      return acc;
+    }, {});
+
+    // Count products with bfcm-deal tag
+    const bfcmDealCount = Object.values(uniqueProducts).filter(Boolean).length;
 
     console.log('BFCM Deal Count:', bfcmDealCount);
-    return Math.max(bfcmDealCount, 1); // Always allow at least one free gift
+    // Always allow at least one free gift
+    return Math.max(bfcmDealCount, 1);
   } catch (error) {
     console.error('Error counting BFCM products:', error);
     return 1; // Default to 1 if there's an error
