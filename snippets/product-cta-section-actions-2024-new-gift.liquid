@@ -631,49 +631,29 @@ async function validateCartItem(item, currentCart) {
       );
 
       console.log('Current subscription items:', currentSubscriptionItems);
+      console.log('Current item product ID:', variantData.product_id);
 
-      // First try to find the item in the cart
-      let variantInCart = currentCart.items.find(cartItem =>
-        cartItem.variant_id === parseInt(item.id)
-      );
+      // Check if there's already a subscription for this product
+      const existingSubscription = currentSubscriptionItems.find(cartItem => {
+        console.log('Comparing with cart item:', cartItem.product_id);
+        return cartItem.product_id === variantData.product_id;
+      });
 
-      if (variantInCart) {
-        console.log('Found variant in cart:', variantInCart);
-        // Check for existing subscription with same product handle
-        const sameProductSubscription = currentSubscriptionItems.find(cartItem =>
-          cartItem.handle === variantInCart.handle &&
-          cartItem.key !== variantInCart.key // Don't match with itself
-        );
+      if (existingSubscription) {
+        console.log('Found existing subscription:', existingSubscription);
 
-        if (sameProductSubscription) {
-          console.log('Found existing subscription with same handle:', sameProductSubscription);
+        if (existingSubscription.variant_id === parseInt(item.id)) {
           return {
             isValid: false,
-            requiresReplacement: true,
-            itemToReplace: sameProductSubscription,
-            newItem: {
-              id: item.id,
-              quantity: 1,
-              selling_plan: item.selling_plan
-            },
-            message: `Updating subscription for ${variantInCart.product_title}`
+            error: {
+              code: 'DUPLICATE_SUBSCRIPTION',
+              message: 'This subscription is already in your cart.',
+              type: 'error'
+            }
           };
-        }
-      } else {
-        // If item is not in cart, check existing subscriptions by variant
-        console.log('Checking subscriptions for same product...');
-
-        // Try to find an existing subscription for the same product
-        const existingSubscription = currentSubscriptionItems.find(cartItem => {
-          const variantProduct = cartItem.product_id === variantData.product_id;
-          console.log('Comparing product IDs:', cartItem.product_id, variantData.product_id);
-          return variantProduct;
-        });
-
-        if (existingSubscription) {
-          console.log('Found existing subscription for same product:', existingSubscription);
+        } else {
           return {
-            isValid: false,
+            isValid: true,
             requiresReplacement: true,
             itemToReplace: existingSubscription,
             newItem: {
@@ -731,7 +711,7 @@ async function addValidItemsToCart(items) {
     for (const replacement of replacements) {
       try {
         // Remove the existing subscription
-        console.log('Removing subscription:', replacement.itemToReplace);
+        console.log('Removing existing subscription:', replacement.itemToReplace);
         const removeResponse = await fetch('/cart/change.js', {
           method: 'POST',
           headers: {
@@ -747,82 +727,56 @@ async function addValidItemsToCart(items) {
           throw new Error('Failed to remove existing subscription');
         }
 
-        // Add the new subscription
-        console.log('Adding new subscription:', replacement.newItem);
-        const addResponse = await fetch('/cart/add.js', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            items: [replacement.newItem]
-          })
-        });
-
-        if (!addResponse.ok) {
-          throw new Error('Failed to add new subscription');
-        }
-
-        // Update currentCart
+        // Update cart after removal
         const updatedCartResponse = await fetch('/cart.js');
         if (updatedCartResponse.ok) {
           currentCart = await updatedCartResponse.json();
-          console.log('Updated cart after replacement:', currentCart);
         }
 
-        showNotification('Subscription updated successfully', 'success');
+        showNotification('Updating your subscription...', 'info');
       } catch (error) {
-        console.error('Error handling subscription replacement:', error);
+        console.error('Error removing subscription:', error);
         showNotification('Failed to update subscription. Please try again.', 'error');
+        return {
+          success: false,
+          addedItems: [],
+          failedItems: items
+        };
       }
     }
 
-    // Now handle remaining items
-    const remainingItems = items.filter(item => {
-      // Include items that are not subscriptions
-      if (!item.selling_plan) return true;
-
-      // Include subscription items that don't require replacement
-      const validationResult = validationResults.find(result =>
-        result.newItem && result.newItem.id === item.id
-      );
-      return !validationResult?.requiresReplacement;
+    // Get valid items (including replacement items)
+    const validItems = items.filter((_, index) => {
+      const result = validationResults[index];
+      return result.isValid || result.requiresReplacement;
     });
 
-    console.log('Remaining items to add:', remainingItems);
+    const invalidItems = items.filter((_, index) => !validationResults[index].isValid);
 
-    if (remainingItems.length > 0) {
-      const finalValidationResults = await Promise.all(
-        remainingItems.map(item => validateCartItem(item, currentCart))
-      );
+    // Show notifications for invalid items
+    invalidItems.forEach((_, index) => {
+      const result = validationResults[index];
+      if (result.error) {
+        showNotification(result.error.message, result.error.type);
+      }
+    });
 
-      const validItems = remainingItems.filter((_, index) => finalValidationResults[index].isValid);
-      const invalidItems = remainingItems.filter((_, index) => !finalValidationResults[index].isValid);
-
-      console.log('Valid items:', validItems);
-      console.log('Invalid items:', invalidItems);
-
-      // Show notifications for invalid items
-      invalidItems.forEach((_, index) => {
-        const result = finalValidationResults[index];
-        if (result.error) {
-          showNotification(result.error.message, result.error.type);
-        }
+    if (validItems.length > 0) {
+      const response = await fetch('/cart/add.js', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ items: validItems })
       });
 
-      if (validItems.length > 0) {
-        const response = await fetch('/cart/add.js', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ items: validItems })
-        });
+      if (!response.ok) {
+        throw new Error('Failed to add items to cart');
+      }
 
-        if (!response.ok) {
-          throw new Error('Failed to add items to cart');
-        }
-
+      if (replacements.length > 0) {
+        showNotification('Subscription updated successfully', 'success');
+      } else {
         showNotification('Items added to cart successfully', 'success');
       }
 
@@ -835,14 +789,12 @@ async function addValidItemsToCart(items) {
     }
 
     return {
-      success: true,
+      success: false,
       addedItems: [],
-      replacedSubscriptions: replacements.length,
-      failedItems: []
+      failedItems: invalidItems
     };
   } catch (error) {
     console.error('Error:', error);
-    console.error('Error stack:', error.stack);
     showNotification('An error occurred while adding items to cart. Please try again.');
     return {
       success: false,
