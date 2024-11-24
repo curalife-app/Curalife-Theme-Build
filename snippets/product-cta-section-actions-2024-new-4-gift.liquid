@@ -189,177 +189,177 @@
   }
 
 	async function validateCartItems(newItems) {
-  try {
-    // Get current cart
-    const cartResponse = await fetch('/cart.js');
-    if (!cartResponse.ok) {
-      throw new Error('Failed to fetch cart');
-    }
-    const currentCart = await cartResponse.json();
+		try {
+			// Get current cart
+			const cartResponse = await fetch('/cart.js');
+			if (!cartResponse.ok) {
+				throw new Error('Failed to fetch cart');
+			}
+			const currentCart = await cartResponse.json();
 
-    // Initialize validation results
-    const validationResults = {
-      isValid: true,
-      errors: [],
-      cartUpdates: [] // New array to track needed cart updates
-    };
+			// Initialize validation results
+			const validationResults = {
+				isValid: true,
+				errors: [],
+				cartUpdates: [] // New array to track needed cart updates
+			};
 
-    // Helper function to fetch variant data
-    async function getVariantData(variantId) {
-      const response = await fetch(`/variants/${variantId}.js`);
-      if (!response.ok) {
-        throw new Error(`Could not fetch variant data for ${variantId}`);
-      }
-      return await response.json();
-    }
+			// Helper function to fetch variant data
+			async function getVariantData(variantId) {
+				const response = await fetch(`/variants/${variantId}.js`);
+				if (!response.ok) {
+					throw new Error(`Could not fetch variant data for ${variantId}`);
+				}
+				return await response.json();
+			}
 
-    // Helper function to update cart item quantity
-    async function updateCartItemQuantity(line, quantity) {
-      try {
-        const response = await fetch('/cart/change.js', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            line,
-            quantity
-          })
-        });
+			// Helper function to update cart item quantity
+			async function updateCartItemQuantity(line, quantity) {
+				try {
+					const response = await fetch('/cart/change.js', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify({
+							line,
+							quantity
+						})
+					});
 
-        if (!response.ok) {
-          throw new Error('Failed to update cart quantity');
-        }
+					if (!response.ok) {
+						throw new Error('Failed to update cart quantity');
+					}
 
-        return await response.json();
-      } catch (error) {
-        console.error('Error updating cart:', error);
-        throw error;
-      }
-    }
+					return await response.json();
+				} catch (error) {
+					console.error('Error updating cart:', error);
+					throw error;
+				}
+			}
 
-    // Rule 1: Check and handle free item limits
-    const currentFreeItems = currentCart.items.filter(item =>
-      item.price === 0 || item.title.toLowerCase().includes('free')
-    );
+			// Rule 1: Check and handle free item limits
+			const currentFreeItems = currentCart.items.filter(item =>
+				item.price === 0 || item.title.toLowerCase().includes('free')
+			);
 
-    // Check if any existing free items have quantity > 1
-    for (const [index, item] of currentFreeItems.entries()) {
-      if (item.quantity > 1) {
-        try {
-          // Update the quantity to 1
-          await updateCartItemQuantity(index + 1, 1);
-          validationResults.errors.push({
-            code: 'FREE_ITEM_QUANTITY_ADJUSTED',
-            message: `Quantity of free item "${item.title}" has been adjusted to 1.`,
-            type: 'warning'
-          });
-        } catch (error) {
-          console.error('Error adjusting free item quantity:', error);
-        }
-      }
-    }
+			// Check if any existing free items have quantity > 1
+			for (const [index, item] of currentFreeItems.entries()) {
+				if (item.quantity > 1) {
+					try {
+						// Update the quantity to 1
+						await updateCartItemQuantity(index + 1, 1);
+						validationResults.errors.push({
+							code: 'FREE_ITEM_QUANTITY_ADJUSTED',
+							message: `Quantity of free item "${item.title}" has been adjusted to 1.`,
+							type: 'warning'
+						});
+					} catch (error) {
+						console.error('Error adjusting free item quantity:', error);
+					}
+				}
+			}
 
-    // For each new item, check if it would exceed free item limits
-    for (const newItem of newItems) {
-      try {
-        const variantData = await getVariantData(newItem.id);
+			// For each new item, check if it would exceed free item limits
+			for (const newItem of newItems) {
+				try {
+					const variantData = await getVariantData(newItem.id);
 
-        // Check if this is a free item (either by price or title)
-        const isNewItemFree = variantData.price === 0 ||
-                             variantData.title.toLowerCase().includes('free');
+					// Check if this is a free item (either by price or title)
+					const isNewItemFree = variantData.price === 0 ||
+															variantData.title.toLowerCase().includes('free');
 
-        if (isNewItemFree) {
-          if (currentFreeItems.length > 0) {
-            validationResults.isValid = false;
-            validationResults.errors.push({
-              code: 'FREE_ITEM_LIMIT',
-              message: 'You can only have one free gift item in your cart.',
-              type: 'error'
-            });
-            return validationResults;
-          } else if (newItem.quantity > 1) {
-            // Adjust the quantity of the new free item to 1
-            newItem.quantity = 1;
-            validationResults.errors.push({
-              code: 'FREE_ITEM_QUANTITY_ADJUSTED',
-              message: 'Free gift quantity has been adjusted to 1.',
-              type: 'warning'
-            });
-          }
-        }
-      } catch (error) {
-        console.warn(`Error checking free item: ${error}`);
-        continue;
-      }
-    }
+					if (isNewItemFree) {
+						if (currentFreeItems.length > 0) {
+							validationResults.isValid = false;
+							validationResults.errors.push({
+								code: 'FREE_ITEM_LIMIT',
+								message: 'You can only have one free gift item in your cart.',
+								type: 'error'
+							});
+							return validationResults;
+						} else if (newItem.quantity > 1) {
+							// Adjust the quantity of the new free item to 1
+							newItem.quantity = 1;
+							validationResults.errors.push({
+								code: 'FREE_ITEM_QUANTITY_ADJUSTED',
+								message: 'Free gift quantity has been adjusted to 1.',
+								type: 'warning'
+							});
+						}
+					}
+				} catch (error) {
+					console.warn(`Error checking free item: ${error}`);
+					continue;
+				}
+			}
 
-    // Rule 2: Check for duplicate subscription items
-    const currentSubscriptionItems = currentCart.items.filter(item =>
-      item.selling_plan_allocation
-    );
-    const newSubscriptionItems = newItems.filter(item => item.selling_plan);
+			// Rule 2: Check for duplicate subscription items
+			const currentSubscriptionItems = currentCart.items.filter(item =>
+				item.selling_plan_allocation
+			);
+			const newSubscriptionItems = newItems.filter(item => item.selling_plan);
 
-    if (newSubscriptionItems.length > 0 && currentSubscriptionItems.length > 0) {
-      // Create a map of current subscription products
-      const currentSubscriptionMap = new Map();
+			if (newSubscriptionItems.length > 0 && currentSubscriptionItems.length > 0) {
+				// Create a map of current subscription products
+				const currentSubscriptionMap = new Map();
 
-      // Process current cart subscription items
-      for (const item of currentSubscriptionItems) {
-        try {
-          const variantData = await getVariantData(item.variant_id);
-          currentSubscriptionMap.set(variantData.url, {
-            variantId: item.variant_id,
-            productTitle: item.product_title
-          });
-        } catch (error) {
-          console.warn(`Error processing cart item: ${error}`);
-          continue;
-        }
-      }
+				// Process current cart subscription items
+				for (const item of currentSubscriptionItems) {
+					try {
+						const variantData = await getVariantData(item.variant_id);
+						currentSubscriptionMap.set(variantData.url, {
+							variantId: item.variant_id,
+							productTitle: item.product_title
+						});
+					} catch (error) {
+						console.warn(`Error processing cart item: ${error}`);
+						continue;
+					}
+				}
 
-      // Check new subscription items against current ones
-      for (const newItem of newSubscriptionItems) {
-        try {
-          const variantData = await getVariantData(newItem.id);
+				// Check new subscription items against current ones
+				for (const newItem of newSubscriptionItems) {
+					try {
+						const variantData = await getVariantData(newItem.id);
 
-          if (currentSubscriptionMap.has(variantData.url)) {
-            const existingItem = currentSubscriptionMap.get(variantData.url);
-            validationResults.isValid = false;
-            validationResults.errors.push({
-              code: 'DUPLICATE_SUBSCRIPTION',
-              message: `You already have a subscription for ${existingItem.productTitle} in your cart. Please review your cart before adding another subscription.`,
-              type: 'error'
-            });
-            break;
-          }
-        } catch (error) {
-          console.error(`Error validating subscription item: ${error}`);
-          validationResults.isValid = false;
-          validationResults.errors.push({
-            code: 'VALIDATION_ERROR',
-            message: 'Unable to validate subscription items. Please try again.',
-            type: 'error'
-          });
-          break;
-        }
-      }
-    }
+						if (currentSubscriptionMap.has(variantData.url)) {
+							const existingItem = currentSubscriptionMap.get(variantData.url);
+							validationResults.isValid = false;
+							validationResults.errors.push({
+								code: 'DUPLICATE_SUBSCRIPTION',
+								message: `You already have a subscription for ${existingItem.productTitle} in your cart. Please review your cart before adding another subscription.`,
+								type: 'error'
+							});
+							break;
+						}
+					} catch (error) {
+						console.error(`Error validating subscription item: ${error}`);
+						validationResults.isValid = false;
+						validationResults.errors.push({
+							code: 'VALIDATION_ERROR',
+							message: 'Unable to validate subscription items. Please try again.',
+							type: 'error'
+						});
+						break;
+					}
+				}
+			}
 
-    return validationResults;
+			return validationResults;
 
-  } catch (error) {
-    console.error('Cart validation error:', error);
-    return {
-      isValid: false,
-      errors: [{
-        code: 'VALIDATION_ERROR',
-        message: 'An error occurred while validating your cart. Please try again.',
-        type: 'error'
-      }]
-    };
-  }
-}
+		} catch (error) {
+			console.error('Cart validation error:', error);
+			return {
+				isValid: false,
+				errors: [{
+					code: 'VALIDATION_ERROR',
+					message: 'An error occurred while validating your cart. Please try again.',
+					type: 'error'
+				}]
+			};
+		}
+	}
 
 function showNotification(message, type = 'error') {
 	// Create notification element
