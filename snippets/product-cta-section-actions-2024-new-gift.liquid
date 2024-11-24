@@ -184,9 +184,10 @@
     }
 
     function isSubscriptionSelected() {
-      const selectedButton = productActions.querySelector('.purchase-type button.selected');
-      return selectedButton?.classList.contains('subscription') ?? true;
-    }
+			const productActions = document.querySelector('.product-actions');
+			const selectedButton = productActions?.querySelector('.purchase-type button.selected');
+			return selectedButton?.classList.contains('subscription') ?? true;
+		}
 
     function initializePurchaseOptions() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -723,14 +724,28 @@ async function validateCartItem(item, currentCart) {
       throw new Error(`Product ID is missing for variant ${item.id}`);
     }
 
-    // Check if this is a free item
-    const isItemFree = item.price === 0 || (item.title && item.title.toLowerCase().includes('free'));
-    console.log('Is item free?', isItemFree);
+    // Get all gift option elements to check if this is a gift variant
+    const giftOptions = document.querySelectorAll('.gift-option-border');
+    const isItemFree = Array.from(giftOptions).some(giftOption => {
+      const giftId = isSubscriptionSelected()
+        ? giftOption.dataset.giftIdSubscription
+        : giftOption.dataset.giftId;
+      return giftId === item.id.toString();
+    });
+
+    console.log('Is item free?', isItemFree, 'Item ID:', item.id);
 
     if (isItemFree) {
-      const currentFreeItems = currentCart.items.filter(cartItem =>
-        cartItem.price === 0 || (cartItem.title && cartItem.title.toLowerCase().includes('free'))
-      );
+      const currentFreeItems = currentCart.items.filter(cartItem => {
+        // Check if the cart item's variant ID matches any gift variant IDs
+        return Array.from(giftOptions).some(giftOption => {
+          const giftId = isSubscriptionSelected()
+            ? giftOption.dataset.giftIdSubscription
+            : giftOption.dataset.giftId;
+          return cartItem.variant_id.toString() === giftId;
+        });
+      });
+
       console.log('Current free items in cart:', currentFreeItems);
 
       const bfcmDealCount = await countUniqueProductsWithTag(currentCart);
