@@ -607,7 +607,7 @@ async function validateCartItem(item, currentCart) {
         cartItem.price === 0 || cartItem.title.toLowerCase().includes('free')
       );
 
-      // Count unique products with bfcm-deal tag
+      // Count unique products with Black Friday Week in title
       const bfcmDealCount = await countUniqueProductsWithTag(currentCart);
       console.log('Current free items:', currentFreeItems.length, 'BFCM deal count:', bfcmDealCount);
 
@@ -624,16 +624,24 @@ async function validateCartItem(item, currentCart) {
       }
     }
 
-    // Check subscription items - only block duplicate products, allow different products
+    // For subscription items, check if we already have one for this product
     if (item.selling_plan) {
       const currentSubscriptionItems = currentCart.items.filter(cartItem =>
         cartItem.selling_plan_allocation
       );
 
-      // Find any subscription of the same product (not just variant)
-      const sameProductSubscription = currentSubscriptionItems.find(cartItem =>
-        cartItem.product_id === variantData.product_id
-      );
+      // Find any subscription of the same product
+      const productResponse = await fetch(`/products/${variantData.product_id}.js`);
+      if (!productResponse.ok) {
+        throw new Error(`Could not fetch product data for ${variantData.product_id}`);
+      }
+      const productData = await productResponse.json();
+
+      // Check for existing subscription of same product
+      const sameProductSubscription = currentSubscriptionItems.find(cartItem => {
+        // Compare by product handle to ensure we catch all variants
+        return cartItem.handle === productData.handle;
+      });
 
       if (sameProductSubscription) {
         return {
@@ -672,23 +680,14 @@ async function addValidItemsToCart(items) {
     }
     const currentCart = await cartResponse.json();
 
-    // Validate each item individually
-    const validationResults = await Promise.all(
-      items.map(item => validateCartItem(item, currentCart))
-    );
+    // First handle any subscription replacements
+    const subscriptionItems = items.filter(item => item.selling_plan);
+    for (const item of subscriptionItems) {
+      const validationResult = await validateCartItem(item, currentCart);
 
-    // Separate valid and invalid items
-    const validItems = items.filter((_, index) => validationResults[index].isValid);
-    const invalidItems = items.filter((_, index) => !validationResults[index].isValid);
-
-    // Handle items that need subscription replacement
-    const itemsRequiringReplacement = validationResults.filter(result => result.requiresReplacement);
-
-    // If we have items that need replacement, handle them first
-    if (itemsRequiringReplacement.length > 0) {
-      try {
-        for (const validation of itemsRequiringReplacement) {
-          // Remove the existing subscription item
+      if (validationResult.requiresReplacement) {
+        try {
+          console.log('Removing existing subscription:', validationResult.itemToReplace);
           await fetch('/cart/change.js', {
             method: 'POST',
             headers: {
@@ -696,25 +695,36 @@ async function addValidItemsToCart(items) {
               'Accept': 'application/json'
             },
             body: JSON.stringify({
-              id: validation.itemToReplace.key,
+              id: validationResult.itemToReplace.key,
               quantity: 0
             })
           });
 
-          if (validation.message) {
-            showNotification(validation.message, 'info');
+          // Re-fetch cart after removal
+          const updatedCartResponse = await fetch('/cart.js');
+          if (updatedCartResponse.ok) {
+            currentCart = await updatedCartResponse.json();
           }
+
+        } catch (error) {
+          console.error('Error updating subscription:', error);
+          showNotification('Failed to update subscription. Please try again.', 'error');
+          return {
+            success: false,
+            addedItems: [],
+            failedItems: items
+          };
         }
-      } catch (error) {
-        console.error('Error updating subscription:', error);
-        showNotification('Failed to update subscription. Please try again.', 'error');
-        return {
-          success: false,
-          addedItems: [],
-          failedItems: items
-        };
       }
     }
+
+    // Now validate all items with updated cart
+    const validationResults = await Promise.all(
+      items.map(item => validateCartItem(item, currentCart))
+    );
+
+    const validItems = items.filter((_, index) => validationResults[index].isValid);
+    const invalidItems = items.filter((_, index) => !validationResults[index].isValid);
 
     // Show notifications for invalid items
     invalidItems.forEach((_, index) => {
@@ -725,7 +735,7 @@ async function addValidItemsToCart(items) {
       }
     });
 
-    // If we have valid items, add them to cart
+    // Add valid items to cart
     if (validItems.length > 0) {
       const response = await fetch('/cart/add.js', {
         method: 'POST',
@@ -741,7 +751,7 @@ async function addValidItemsToCart(items) {
       }
 
       // Show appropriate success notification
-      if (itemsRequiringReplacement.length > 0) {
+      if (subscriptionItems.length > 0) {
         showNotification('Subscription updated successfully', 'success');
       } else if (validItems.length === items.length) {
         showNotification('All items successfully added to cart', 'success');
