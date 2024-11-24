@@ -200,8 +200,7 @@
     // Initialize validation results
     const validationResults = {
       isValid: true,
-      errors: [],
-      cartUpdates: [] // New array to track needed cart updates
+      errors: []
     };
 
     // Helper function to fetch variant data
@@ -213,52 +212,10 @@
       return await response.json();
     }
 
-    // Helper function to update cart item quantity
-    async function updateCartItemQuantity(line, quantity) {
-      try {
-        const response = await fetch('/cart/change.js', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            line,
-            quantity
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to update cart quantity');
-        }
-
-        return await response.json();
-      } catch (error) {
-        console.error('Error updating cart:', error);
-        throw error;
-      }
-    }
-
-    // Rule 1: Check and handle free item limits
+    // Rule 1: Check free item limits
     const currentFreeItems = currentCart.items.filter(item =>
       item.price === 0 || item.title.toLowerCase().includes('free')
     );
-
-    // Check if any existing free items have quantity > 1
-    for (const [index, item] of currentFreeItems.entries()) {
-      if (item.quantity > 1) {
-        try {
-          // Update the quantity to 1
-          await updateCartItemQuantity(index + 1, 1);
-          validationResults.errors.push({
-            code: 'FREE_ITEM_QUANTITY_ADJUSTED',
-            message: `Quantity of free item "${item.title}" has been adjusted to 1.`,
-            type: 'warning'
-          });
-        } catch (error) {
-          console.error('Error adjusting free item quantity:', error);
-        }
-      }
-    }
 
     // For each new item, check if it would exceed free item limits
     for (const newItem of newItems) {
@@ -269,24 +226,14 @@
         const isNewItemFree = variantData.price === 0 ||
                              variantData.title.toLowerCase().includes('free');
 
-        if (isNewItemFree) {
-          if (currentFreeItems.length > 0) {
-            validationResults.isValid = false;
-            validationResults.errors.push({
-              code: 'FREE_ITEM_LIMIT',
-              message: 'You can only have one free gift item in your cart.',
-              type: 'error'
-            });
-            return validationResults;
-          } else if (newItem.quantity > 1) {
-            // Adjust the quantity of the new free item to 1
-            newItem.quantity = 1;
-            validationResults.errors.push({
-              code: 'FREE_ITEM_QUANTITY_ADJUSTED',
-              message: 'Free gift quantity has been adjusted to 1.',
-              type: 'warning'
-            });
-          }
+        if (isNewItemFree && currentFreeItems.length > 0) {
+          validationResults.isValid = false;
+          validationResults.errors.push({
+            code: 'FREE_ITEM_LIMIT',
+            message: 'You can only have one free gift item in your cart.',
+            type: 'error'
+          });
+          return validationResults;
         }
       } catch (error) {
         console.warn(`Error checking free item: ${error}`);
