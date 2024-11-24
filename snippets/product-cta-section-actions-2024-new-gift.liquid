@@ -559,33 +559,44 @@
   }
 }
 
+{% capture cart_products_tags %}
+{
+  {% for item in cart.items %}
+    {% assign product = all_products[item.handle] %}
+    "{{ item.product_id }}": {{ product.tags | json }}
+    {% unless forloop.last %},{% endunless %}
+  {% endfor %}
+}
+{% endcapture %}
+
+<script id="cart-products-tags" type="application/json">
+  {{ cart_products_tags }}
+</script>
+
 async function countUniqueProductsWithTag(cart) {
   try {
-    // Instead of fetching product data, use the product data from cart items
-    const uniqueProducts = cart.items.reduce((acc, item) => {
-      // Skip if we've already counted this product
-      if (acc[item.product_id]) {
-        return acc;
+    // Load the tags data from the embedded JSON
+    const tagsDataElement = document.getElementById('cart-products-tags');
+    const productTags = JSON.parse(tagsDataElement.textContent);
+
+    // Use a Set to track unique product IDs that have the BFCM tag
+    const uniqueProducts = new Set();
+
+    // Check each cart item's product tags
+    for (const item of cart.items) {
+      if (uniqueProducts.has(item.product_id)) {
+        continue;
       }
 
-      // Check if the product has bfcm-deal tag
-      const hasBfcmTag = item.tags &&
-        (Array.isArray(item.tags) ?
-          item.tags.includes('bfcm-deal') :
-          (typeof item.tags === 'string' ?
-            item.tags.split(',').map(tag => tag.trim()).includes('bfcm-deal') :
-            false));
+      const tags = productTags[item.product_id] || [];
+      if (tags.includes('bfcm-deal')) {
+        uniqueProducts.add(item.product_id);
+      }
+    }
 
-      acc[item.product_id] = hasBfcmTag;
-      return acc;
-    }, {});
-
-    // Count products with bfcm-deal tag
-    const bfcmDealCount = Object.values(uniqueProducts).filter(Boolean).length;
-
+    const bfcmDealCount = uniqueProducts.size;
     console.log('BFCM Deal Count:', bfcmDealCount);
-    // Always allow at least one free gift
-    return Math.max(bfcmDealCount, 1);
+    return Math.max(bfcmDealCount, 1); // Always allow at least one free gift
   } catch (error) {
     console.error('Error counting BFCM products:', error);
     return 1; // Default to 1 if there's an error
