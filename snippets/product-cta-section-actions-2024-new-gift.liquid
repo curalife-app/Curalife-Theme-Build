@@ -636,7 +636,21 @@
       }
     });
 
-    async function addValidItemsToCart(items) {
+// Helper function to find the corresponding failed validation result
+function findFailedValidationIndex(validationResults, invalidItemIndex) {
+  let failedCount = 0;
+  for (let i = 0; i < validationResults.length; i++) {
+    if (!validationResults[i].isValid) {
+      if (failedCount === invalidItemIndex) {
+        return i;
+      }
+      failedCount++;
+    }
+  }
+  return -1;
+}
+
+async function addValidItemsToCart(items) {
   try {
     // Always fetch the latest cart data
     const cartResponse = await fetch('/cart.js');
@@ -793,85 +807,6 @@ async function validateCartItem(item, currentCart) {
       const bfcmDealCount = await countUniqueProductsWithTag(currentCart);
 
       if (currentFreeItems.length >= bfcmDealCount) {
-        return {
-          isValid: false,
-          error: {
-            code: 'FREE_ITEM_LIMIT',
-            message: `You can have up to ${bfcmDealCount} free gift${bfcmDealCount !== 1 ? 's' : ''} (one for each BFCM deal in your cart).`,
-            type: 'error'
-          }
-        };
-      }
-    }
-
-    return { isValid: true };
-  } catch (error) {
-    console.error('Validation error:', error);
-    return {
-      isValid: false,
-      error: {
-        code: 'VALIDATION_ERROR',
-        message: 'Unable to validate item. Please try again.',
-        type: 'error'
-      }
-    };
-  }
-}
-
-// Helper function to find the corresponding failed validation result
-function findFailedValidationIndex(validationResults, invalidItemIndex) {
-  let failedCount = 0;
-  for (let i = 0; i < validationResults.length; i++) {
-    if (!validationResults[i].isValid) {
-      if (failedCount === invalidItemIndex) {
-        return i;
-      }
-      failedCount++;
-    }
-  }
-  return -1;
-}
-
-async function validateCartItem(item, currentCart) {
-  try {
-    console.log('Validating item:', item);
-    console.log('Current cart state during validation:', currentCart);
-
-    const productId = parseInt(item.product_id);
-    if (!productId) {
-      throw new Error(`Product ID is missing for variant ${item.id}`);
-    }
-
-    // Get all gift option elements to check if this is a gift variant
-    const giftOptions = document.querySelectorAll('.gift-option-border');
-    const isItemFree = Array.from(giftOptions).some(giftOption => {
-      const giftId = isSubscriptionSelected()
-        ? giftOption.dataset.giftIdSubscription
-        : giftOption.dataset.giftId;
-      return giftId === item.id.toString();
-    });
-
-    console.log('Is item free?', isItemFree, 'Item ID:', item.id);
-
-    if (isItemFree) {
-      const currentFreeItems = currentCart.items.filter(cartItem => {
-        // Check if the cart item's variant ID matches any gift variant IDs
-        return Array.from(giftOptions).some(giftOption => {
-          const giftId = isSubscriptionSelected()
-            ? giftOption.dataset.giftIdSubscription
-            : giftOption.dataset.giftId;
-          return cartItem.variant_id.toString() === giftId;
-        });
-      });
-
-      console.log('Current free items in cart:', currentFreeItems);
-
-      const bfcmDealCount = await countUniqueProductsWithTag(currentCart);
-      console.log('Current free items count:', currentFreeItems.length);
-      console.log('BFCM deal count:', bfcmDealCount);
-
-      if (currentFreeItems.length >= bfcmDealCount) {
-        console.log('Free item limit exceeded');
         return {
           isValid: false,
           error: {
