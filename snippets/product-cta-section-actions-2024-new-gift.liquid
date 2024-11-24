@@ -535,7 +535,31 @@
   // Form submission handler replaced with button click handler
   const submitButton = document.getElementById('ProductSubmitButton-{{SID}}');
 
-	async function validateCartItem(item, currentCart) {
+	async function countUniqueProductsWithTag(cart) {
+  try {
+    // Get unique product IDs from cart items
+    const uniqueProductIds = [...new Set(cart.items.map(item => item.product_id))];
+
+    // Fetch product data for each unique product
+    const productDataPromises = uniqueProductIds.map(productId =>
+      fetch(`/products/${productId}.js`).then(res => res.json())
+    );
+
+    const products = await Promise.all(productDataPromises);
+
+    // Count products with 'bfcm-deal' tag
+    const bfcmDealCount = products.filter(product =>
+      product.tags && product.tags.includes('bfcm-deal')
+    ).length;
+
+    return bfcmDealCount;
+  } catch (error) {
+    console.error('Error counting BFCM products:', error);
+    return 0;
+  }
+}
+
+async function validateCartItem(item, currentCart) {
   try {
     // Get variant data
     const variantResponse = await fetch(`/variants/${item.id}.js`);
@@ -548,18 +572,23 @@
     const isItemFree = variantData.price === 0 ||
                       variantData.title.toLowerCase().includes('free');
 
-    // Check free item limit
+    // Check free item limit based on BFCM deals
     if (isItemFree) {
+      // Get current free items in cart
       const currentFreeItems = currentCart.items.filter(cartItem =>
         cartItem.price === 0 || cartItem.title.toLowerCase().includes('free')
       );
 
-      if (currentFreeItems.length > 0) {
+      // Count unique products with bfcm-deal tag
+      const bfcmDealCount = await countUniqueProductsWithTag(currentCart);
+
+      // If current free items count is equal or greater than BFCM deal count, block
+      if (currentFreeItems.length >= bfcmDealCount) {
         return {
           isValid: false,
           error: {
             code: 'FREE_ITEM_LIMIT',
-            message: 'You can only have one free gift item in your cart.',
+            message: `You can have up to ${bfcmDealCount} free gift${bfcmDealCount !== 1 ? 's' : ''} (one for each BFCM deal in your cart).`,
             type: 'error'
           }
         };
