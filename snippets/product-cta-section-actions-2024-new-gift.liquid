@@ -176,12 +176,6 @@
     updateRadioIndicator(firstGift);
   }
 
-  function isSubscriptionSelected() {
-    const productActions = document.querySelector('.product-actions');
-    const selectedButton = productActions?.querySelector('.purchase-type button.selected');
-    return selectedButton?.classList.contains('subscription') ?? true;
-  }
-
   // Define showError and hideError functions
   function showError(message) {
     const errorMessageWrapper = document.querySelector('.product-form__error-message-wrapper');
@@ -310,7 +304,7 @@
       // Get all gift option elements to check if this is a gift variant
       const giftOptions = document.querySelectorAll('.gift-option-border');
       const isItemFree = Array.from(giftOptions).some(giftOption => {
-        const giftId = isSubscriptionSelected()
+        const giftId = isSubscription
           ? giftOption.dataset.giftIdSubscription
           : giftOption.dataset.giftId;
         return giftId === item.id.toString();
@@ -322,7 +316,7 @@
         const currentFreeItems = currentCart.items.filter(cartItem => {
           // Check if the cart item's variant ID matches any gift variant IDs
           return Array.from(giftOptions).some(giftOption => {
-            const giftId = isSubscriptionSelected()
+            const giftId = isSubscription
               ? giftOption.dataset.giftIdSubscription
               : giftOption.dataset.giftId;
             return cartItem.variant_id.toString() === giftId;
