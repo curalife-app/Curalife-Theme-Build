@@ -636,245 +636,160 @@
     });
 
     async function addValidItemsToCart(items) {
-      try {
-        // Get current cart
-        let currentCart = cartData; // Use the cartData from Liquid
+  try {
+    // Always fetch the latest cart data
+    const cartResponse = await fetch('/cart.js');
+    if (!cartResponse.ok) {
+      throw new Error('Failed to fetch current cart');
+    }
+    let currentCart = await cartResponse.json();
+    console.log('Current cart state:', currentCart);
 
-        // If needed, fetch the latest cart data
-        const cartResponse = await fetch('/cart.js');
-        if (cartResponse.ok) {
-          currentCart = await cartResponse.json();
+    // First, validate all items
+    const validationResults = await Promise.all(
+      items.map(item => validateCartItem(item, currentCart))
+    );
+
+    console.log('Validation results:', validationResults);
+
+    // Get valid and invalid items
+    const validItems = items.filter((_, index) => validationResults[index].isValid);
+    const invalidItems = items.filter((_, index) => !validationResults[index].isValid);
+
+    // If there are any invalid items, stop and show notifications
+    if (invalidItems.length > 0) {
+      invalidItems.forEach((_, index) => {
+        const result = validationResults[index];
+        if (result.error) {
+          showNotification(result.error.message, result.error.type);
         }
-
-        console.log('Initial cart:', currentCart);
-        console.log('Items to add:', items);
-
-        // First, validate all items
-        const validationResults = await Promise.all(
-          items.map(item => validateCartItem(item, currentCart))
-        );
-
-        console.log('Validation results:', validationResults);
-
-        // Handle subscription replacements first
-        const replacements = validationResults.filter(result => result.requiresReplacement);
-        console.log('Replacements needed:', replacements);
-
-        for (const replacement of replacements) {
-          try {
-            // Remove the existing subscription
-            console.log('Removing existing subscription:', replacement.itemToReplace);
-            const removeResponse = await fetch('/cart/change.js', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                id: replacement.itemToReplace.key,
-                quantity: 0
-              })
-            });
-
-            if (!removeResponse.ok) {
-              throw new Error('Failed to remove existing subscription');
-            }
-
-            // Update cart after removal
-            const updatedCartResponse = await fetch('/cart.js');
-            if (updatedCartResponse.ok) {
-              currentCart = await updatedCartResponse.json();
-            }
-
-            showNotification('Updating your subscription...', 'info');
-          } catch (error) {
-            console.error('Error removing subscription:', error);
-            showNotification('Failed to update subscription. Please try again.', 'error');
-            return {
-              success: false,
-              addedItems: [],
-              failedItems: items
-            };
-          }
+      });
+      return {
+        success: false,
+        addedItems: [],
+        failedItems: invalidItems,
+        error: {
+          message: 'Some items could not be added to cart',
+          type: 'error'
         }
-
-        // Get valid items (including replacement items)
-        const validItems = items.filter((_, index) => {
-          const result = validationResults[index];
-          return result.isValid || result.requiresReplacement;
-        });
-
-        const invalidItems = items.filter((_, index) => !validationResults[index].isValid);
-
-        // Show notifications for invalid items
-        invalidItems.forEach((_, index) => {
-          const result = validationResults[index];
-          if (result.error) {
-            showNotification(result.error.message, result.error.type);
-          }
-        });
-
-        if (validItems.length > 0) {
-          const response = await fetch('/cart/add.js', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ items: validItems })
-          });
-
-          if (!response.ok) {
-            throw new Error('Failed to add items to cart');
-          }
-
-          if (replacements.length > 0) {
-            showNotification('Subscription updated successfully', 'success');
-          } else {
-            showNotification('Items added to cart successfully', 'success');
-          }
-
-          return {
-            success: true,
-            addedItems: validItems,
-            replacedSubscriptions: replacements.length,
-            failedItems: invalidItems
-          };
-        }
-
-        return {
-          success: false,
-          addedItems: [],
-          failedItems: invalidItems
-        };
-      } catch (error) {
-        console.error('Error:', error);
-        showNotification('An error occurred while adding items to cart. Please try again.');
-        return {
-          success: false,
-          addedItems: [],
-          failedItems: items
-        };
-      }
+      };
     }
 
-    async function validateCartItem(item, currentCart) {
-      try {
-        console.log('Validating item:', item);
+    // If all validations passed, proceed with adding items
+    if (validItems.length > 0) {
+      const response = await fetch('/cart/add.js', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ items: validItems })
+      });
 
-        // Since you have the product_id in the item, you don't need to fetch variant data
-        const productId = parseInt(item.product_id);
-        if (!productId) {
-          throw new Error(`Product ID is missing for variant ${item.id}`);
-        }
+      if (!response.ok) {
+        throw new Error('Failed to add items to cart');
+      }
 
-        // Check if this is a free item
-        const isItemFree = item.price === 0 || item.title?.toLowerCase().includes('free');
+      showNotification('Items added to cart successfully', 'success');
+      return {
+        success: true,
+        addedItems: validItems,
+        failedItems: []
+      };
+    }
 
-        // Check free item limit based on BFCM deals
-        if (isItemFree) {
-          const currentFreeItems = currentCart.items.filter(cartItem =>
-            cartItem.price === 0 || cartItem.title.toLowerCase().includes('free')
-          );
+    return {
+      success: false,
+      addedItems: [],
+      failedItems: items
+    };
+  } catch (error) {
+    console.error('Error adding items to cart:', error);
+    showNotification('An error occurred while adding items to cart. Please try again.');
+    return {
+      success: false,
+      addedItems: [],
+      failedItems: items
+    };
+  }
+}
 
-          const bfcmDealCount = await countUniqueProductsWithTag(currentCart);
-          console.log('Current free items:', currentFreeItems.length, 'BFCM deal count:', bfcmDealCount);
+async function validateCartItem(item, currentCart) {
+  try {
+    console.log('Validating item:', item);
+    console.log('Current cart state during validation:', currentCart);
 
-          if (currentFreeItems.length >= bfcmDealCount) {
-            return {
-              isValid: false,
-              error: {
-                code: 'FREE_ITEM_LIMIT',
-                message: `You can have up to ${bfcmDealCount} free gift${bfcmDealCount !== 1 ? 's' : ''} (one for each BFCM deal in your cart).`,
-                type: 'error'
-              }
-            };
-          }
-        }
+    const productId = parseInt(item.product_id);
+    if (!productId) {
+      throw new Error(`Product ID is missing for variant ${item.id}`);
+    }
 
-        // For subscription items, check if we already have one for this product
-        if (item.selling_plan) {
-          const currentSubscriptionItems = currentCart.items.filter(cartItem =>
-            cartItem.selling_plan_allocation
-          );
+    // Check if this is a free item
+    const isItemFree = item.price === 0 || (item.title && item.title.toLowerCase().includes('free'));
+    console.log('Is item free?', isItemFree);
 
-          console.log('Current subscription items:', currentSubscriptionItems);
+    if (isItemFree) {
+      const currentFreeItems = currentCart.items.filter(cartItem =>
+        cartItem.price === 0 || (cartItem.title && cartItem.title.toLowerCase().includes('free'))
+      );
+      console.log('Current free items in cart:', currentFreeItems);
 
-          // Check if there's already a subscription for this product
-          const existingSubscription = currentSubscriptionItems.find(cartItem => {
-            console.log('Comparing product IDs:', cartItem.product_id, productId);
-            return cartItem.product_id === productId;
-          });
+      const bfcmDealCount = await countUniqueProductsWithTag(currentCart);
+      console.log('Current free items count:', currentFreeItems.length);
+      console.log('BFCM deal count:', bfcmDealCount);
 
-          if (existingSubscription) {
-            console.log('Found existing subscription:', existingSubscription);
-
-            if (existingSubscription.variant_id === parseInt(item.id)) {
-              return {
-                isValid: false,
-                error: {
-                  code: 'DUPLICATE_SUBSCRIPTION',
-                  message: 'This subscription is already in your cart.',
-                  type: 'error'
-                }
-              };
-            } else {
-              return {
-                isValid: true,
-                requiresReplacement: true,
-                itemToReplace: existingSubscription,
-                newItem: {
-                  id: item.id,
-                  product_id: productId, // Include the product ID
-                  quantity: 1,
-                  selling_plan: item.selling_plan
-                },
-                message: `Updating your subscription`
-              };
-            }
-          }
-        }
-
-        return {
-          isValid: true,
-        };
-      } catch (error) {
-        console.error('Validation error:', error);
-        console.error('Error stack:', error.stack);
+      if (currentFreeItems.length >= bfcmDealCount) {
+        console.log('Free item limit exceeded');
         return {
           isValid: false,
           error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Unable to validate item. Please try again.',
+            code: 'FREE_ITEM_LIMIT',
+            message: `You can have up to ${bfcmDealCount} free gift${bfcmDealCount !== 1 ? 's' : ''} (one for each BFCM deal in your cart).`,
             type: 'error'
           }
         };
       }
     }
 
-    async function countUniqueProductsWithTag(cart) {
-      try {
-        // Use the product title to check for 'Black Friday Week'
-        const uniqueProducts = cart.items.reduce((acc, item) => {
-          if (acc[item.product_id]) {
-            return acc;
-          }
-
-          const hasBlackFridayWeek = item.title && item.title.includes('Black Friday Week');
-
-          acc[item.product_id] = hasBlackFridayWeek;
-          return acc;
-        }, {});
-
-        // Count products with 'Black Friday Week' in the title
-        const blackFridayWeekCount = Object.values(uniqueProducts).filter(Boolean).length;
-
-        console.log('Black Friday Week Count:', blackFridayWeekCount);
-        // Always allow at least one free gift
-        return Math.max(blackFridayWeekCount, 1);
-      } catch (error) {
-        console.error('Error counting Black Friday Week products:', error);
-        return 1; // Default to 1 if there's an error
+    return { isValid: true };
+  } catch (error) {
+    console.error('Validation error:', error);
+    return {
+      isValid: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Unable to validate item. Please try again.',
+        type: 'error'
       }
-    }
+    };
+  }
+}
+
+async function countUniqueProductsWithTag(cart) {
+  try {
+    // Use the product title to check for 'Black Friday Week'
+    const uniqueProducts = cart.items.reduce((acc, item) => {
+      if (acc[item.product_id]) {
+        return acc;
+      }
+
+      const hasBlackFridayWeek = item.title && item.title.includes('Black Friday Week');
+      console.log('Checking item:', item.title, 'Has BF Week:', hasBlackFridayWeek);
+
+      acc[item.product_id] = hasBlackFridayWeek;
+      return acc;
+    }, {});
+
+    const blackFridayWeekCount = Object.values(uniqueProducts).filter(Boolean).length;
+    console.log('Unique products:', uniqueProducts);
+    console.log('Black Friday Week Count:', blackFridayWeekCount);
+
+    // Always allow at least one free gift
+    return Math.max(blackFridayWeekCount, 1);
+  } catch (error) {
+    console.error('Error counting Black Friday Week products:', error);
+    return 1; // Default to 1 if there's an error
+  }
+}
 
     function showNotification(message, type = 'error') {
       if (!{{ isCartNotifications | default: false }}) {
