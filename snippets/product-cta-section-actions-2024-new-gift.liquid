@@ -589,12 +589,15 @@ async function countUniqueProductsWithTag(cart) {
 
 async function validateCartItem(item, currentCart) {
   try {
+    console.log('Validating item:', item);
+
     // Get variant data
     const variantResponse = await fetch(`/variants/${item.id}.js`);
     if (!variantResponse.ok) {
       throw new Error(`Could not fetch variant data for ${item.id}`);
     }
     const variantData = await variantResponse.json();
+    console.log('Variant data:', variantData);
 
     // Check if this is a free item
     const isItemFree = variantData.price === 0 ||
@@ -602,12 +605,10 @@ async function validateCartItem(item, currentCart) {
 
     // Check free item limit based on BFCM deals
     if (isItemFree) {
-      // Get current free items in cart
       const currentFreeItems = currentCart.items.filter(cartItem =>
         cartItem.price === 0 || cartItem.title.toLowerCase().includes('free')
       );
 
-      // Count unique products with Black Friday Week in title
       const bfcmDealCount = await countUniqueProductsWithTag(currentCart);
       console.log('Current free items:', currentFreeItems.length, 'BFCM deal count:', bfcmDealCount);
 
@@ -629,32 +630,29 @@ async function validateCartItem(item, currentCart) {
         cartItem.selling_plan_allocation
       );
 
-      if (!variantData.product_id) {
-        console.error('No product ID found in variant data:', variantData);
-        throw new Error('Invalid variant data: missing product ID');
+      console.log('Current subscription items:', currentSubscriptionItems);
+
+      // Get the product URL from variant data
+      const productUrl = variantData.url; // This is actually the product URL
+      const productHandle = productUrl.split('/products/')[1]?.split('?')[0];
+
+      if (!productHandle) {
+        console.error('Could not extract product handle from variant URL:', productUrl);
+        throw new Error('Invalid variant data: could not determine product handle');
       }
 
-      // Find any subscription of the same product
-      const productResponse = await fetch(`/products/${variantData.product_id}.js`);
-      if (!productResponse.ok) {
-        throw new Error(`Could not fetch product data for ${variantData.product_id}`);
-      }
-      const productData = await productResponse.json();
-
-      // Log debug info
-      console.log('Current cart subscription items:', currentSubscriptionItems);
-      console.log('Product data:', productData);
+      console.log('Product handle:', productHandle);
 
       // Check for existing subscription of same product handle
-      const sameProductSubscription = currentSubscriptionItems.find(cartItem => {
-        console.log('Comparing handles:', cartItem.handle, productData.handle);
-        return cartItem.handle === productData.handle;
-      });
+      const sameProductSubscription = currentSubscriptionItems.find(cartItem =>
+        cartItem.handle === productHandle
+      );
+
+      console.log('Same product subscription found:', sameProductSubscription);
 
       if (sameProductSubscription) {
-        console.log('Found existing subscription:', sameProductSubscription);
         return {
-          isValid: false, // Mark as invalid to prevent adding until we remove the old one
+          isValid: false,
           requiresReplacement: true,
           itemToReplace: sameProductSubscription,
           newItem: {
@@ -662,8 +660,8 @@ async function validateCartItem(item, currentCart) {
             quantity: 1,
             selling_plan: item.selling_plan
           },
-          productData: productData,
-          message: `Updating subscription for ${productData.title}`
+          productHandle: productHandle,
+          message: `Updating subscription for this product`
         };
       }
     }
@@ -674,6 +672,7 @@ async function validateCartItem(item, currentCart) {
     };
   } catch (error) {
     console.error('Validation error:', error);
+    console.error('Error stack:', error.stack);
     return {
       isValid: false,
       error: {
@@ -694,7 +693,6 @@ async function addValidItemsToCart(items) {
     }
     let currentCart = await cartResponse.json();
 
-    // Add debug logging
     console.log('Initial cart:', currentCart);
     console.log('Items to add:', items);
 
@@ -712,7 +710,7 @@ async function addValidItemsToCart(items) {
     for (const replacement of replacements) {
       try {
         // Remove the existing subscription
-        console.log('Removing existing subscription:', replacement.itemToReplace);
+        console.log('Removing subscription:', replacement.itemToReplace);
         const removeResponse = await fetch('/cart/change.js', {
           method: 'POST',
           headers: {
@@ -748,16 +746,17 @@ async function addValidItemsToCart(items) {
         const updatedCartResponse = await fetch('/cart.js');
         if (updatedCartResponse.ok) {
           currentCart = await updatedCartResponse.json();
+          console.log('Updated cart after replacement:', currentCart);
         }
 
-        showNotification(`Updated subscription for ${replacement.productData.title}`, 'success');
+        showNotification('Subscription updated successfully', 'success');
       } catch (error) {
         console.error('Error handling subscription replacement:', error);
         showNotification('Failed to update subscription. Please try again.', 'error');
       }
     }
 
-    // Now handle non-subscription items and items that didn't need replacement
+    // Now handle remaining items
     const remainingItems = items.filter(item => {
       // Include items that are not subscriptions
       if (!item.selling_plan) return true;
@@ -772,7 +771,6 @@ async function addValidItemsToCart(items) {
     console.log('Remaining items to add:', remainingItems);
 
     if (remainingItems.length > 0) {
-      // Validate again with updated cart
       const finalValidationResults = await Promise.all(
         remainingItems.map(item => validateCartItem(item, currentCart))
       );
@@ -782,6 +780,14 @@ async function addValidItemsToCart(items) {
 
       console.log('Valid items:', validItems);
       console.log('Invalid items:', invalidItems);
+
+      // Show notifications for invalid items
+      invalidItems.forEach((_, index) => {
+        const result = finalValidationResults[index];
+        if (result.error) {
+          showNotification(result.error.message, result.error.type);
+        }
+      });
 
       if (validItems.length > 0) {
         const response = await fetch('/cart/add.js', {
@@ -796,11 +802,7 @@ async function addValidItemsToCart(items) {
           throw new Error('Failed to add items to cart');
         }
 
-        if (validItems.length === remainingItems.length) {
-          showNotification('All items successfully added to cart', 'success');
-        } else {
-          showNotification(`${validItems.length} out of ${remainingItems.length} items added to cart`, 'success');
-        }
+        showNotification('Items added to cart successfully', 'success');
       }
 
       return {
@@ -819,6 +821,7 @@ async function addValidItemsToCart(items) {
     };
   } catch (error) {
     console.error('Error:', error);
+    console.error('Error stack:', error.stack);
     showNotification('An error occurred while adding items to cart. Please try again.');
     return {
       success: false,
