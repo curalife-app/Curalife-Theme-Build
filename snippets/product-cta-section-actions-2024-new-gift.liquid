@@ -566,24 +566,23 @@
       }
     }
 
-    // Check subscription duplicates
+    // Check subscription items - we'll handle them differently now
     if (item.selling_plan) {
       const currentSubscriptionItems = currentCart.items.filter(cartItem =>
         cartItem.selling_plan_allocation
       );
 
+      // If we find a subscription item, we'll mark it for replacement
       for (const subItem of currentSubscriptionItems) {
         const subItemVariant = await fetch(`/variants/${subItem.variant_id}.js`)
           .then(res => res.json());
 
         if (subItemVariant.url === variantData.url) {
           return {
-            isValid: false,
-            error: {
-              code: 'DUPLICATE_SUBSCRIPTION',
-              message: `You already have a subscription for ${subItem.product_title} in your cart.`,
-              type: 'error'
-            }
+            isValid: true,
+            variantData,
+            requiresReplacement: true,
+            itemToReplace: subItem
           };
         }
       }
@@ -624,6 +623,40 @@ async function addValidItemsToCart(items) {
     const validItems = items.filter((_, index) => validationResults[index].isValid);
     const invalidItems = items.filter((_, index) => !validationResults[index].isValid);
 
+    // Handle items that need replacement
+    const itemsRequiringReplacement = validationResults.filter(result => result.requiresReplacement);
+
+    // If we have items that need replacement, handle them first
+    if (itemsRequiringReplacement.length > 0) {
+      for (const validation of itemsRequiringReplacement) {
+        try {
+          // Remove the existing subscription item
+          await fetch('/cart/change.js', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+              id: validation.itemToReplace.key,
+              quantity: 0
+            })
+          });
+
+          showNotification('Updating your subscription...', 'info');
+        } catch (error) {
+          console.error('Error removing existing subscription:', error);
+          showNotification('Failed to update subscription. Please try again.', 'error');
+          return {
+            success: false,
+            addedItems: [],
+            failedItems: items,
+            error
+          };
+        }
+      }
+    }
+
     // Show notifications for invalid items
     invalidItems.forEach((_, index) => {
       const invalidIndex = validationResults.findIndex((result, i) => !result.isValid && items[i] === invalidItems[index]);
@@ -652,7 +685,9 @@ async function addValidItemsToCart(items) {
         }
 
         // Show success notification
-        if (validItems.length === items.length) {
+        if (itemsRequiringReplacement.length > 0) {
+          showNotification('Subscription updated successfully', 'success');
+        } else if (validItems.length === items.length) {
           showNotification('All items successfully added to cart', 'success');
         } else {
           showNotification(`${validItems.length} out of ${items.length} items added to cart`, 'success');
@@ -749,16 +784,6 @@ submitButton.addEventListener('click', async function(event) {
 
     const variantId = variantIdInput ? variantIdInput.value : null;
     const sellingPlanId = sellingPlanIdInput ? sellingPlanIdInput.value : '';
-
-    // Debug logging
-    console.log('Debug Information:');
-    console.log('-------------------');
-    console.log('Variant ID:', variantId);
-    console.log('Selling Plan ID:', sellingPlanId);
-    console.log('Is Subscription:', isSubscription);
-    console.log('Gift Option Border:', giftOptionBorder);
-    console.log('Gift Option Border Dataset:', giftOptionBorder ? giftOptionBorder.dataset : 'N/A');
-    console.log('Gift ID:', giftId);
 
     if (!variantId || !giftId) {
       const errorMessage = `Missing required data: ${!variantId ? 'variant ID' : ''} ${!giftId ? 'gift ID' : ''}`;
