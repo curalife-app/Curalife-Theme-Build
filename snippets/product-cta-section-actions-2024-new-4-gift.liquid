@@ -227,42 +227,67 @@
 
 async function addValidItemsToCart(items) {
   try {
+    console.log('Starting addValidItemsToCart with items:', items);
+
     const cartResponse = await fetch('/cart.js');
     if (!cartResponse.ok) throw new Error('Failed to fetch current cart');
     let currentCart = await cartResponse.json();
+    console.log('Current cart state:', currentCart);
 
     // Find subscription items
     const subscriptionItem = items.find(item => item.selling_plan);
+    console.log('Subscription item found:', subscriptionItem);
 
     if (subscriptionItem) {
       // Check if there's an existing subscription in cart with same product ID
-      const existingSubscription = currentCart.items.find(cartItem =>
-        cartItem.product_id === subscriptionItem.product_id &&
-        cartItem.selling_plan_allocation
-      );
+      const existingSubscription = currentCart.items.find(cartItem => {
+        const isSameProduct = cartItem.product_id === subscriptionItem.product_id;
+        const isSubscription = Boolean(cartItem.selling_plan_allocation);
+        console.log('Checking cart item:', {
+          cartItemId: cartItem.id,
+          cartItemProductId: cartItem.product_id,
+          isSubscription,
+          isSameProduct,
+          hasSelllingPlan: Boolean(cartItem.selling_plan_allocation)
+        });
+        return isSameProduct && isSubscription;
+      });
+
+      console.log('Existing subscription found:', existingSubscription);
 
       if (existingSubscription) {
+        console.log('Removing existing subscription with key:', existingSubscription.key);
         // Remove existing subscription first
         const updates = { [existingSubscription.key]: 0 };
-        await fetch('/cart/update.js', {
+        const updateResponse = await fetch('/cart/update.js', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ updates })
         });
+        console.log('Update response:', await updateResponse.json());
 
         // Refresh cart after removal
-        currentCart = await (await fetch('/cart.js')).json();
+        const refreshResponse = await fetch('/cart.js');
+        currentCart = await refreshResponse.json();
+        console.log('Cart after removal:', currentCart);
       }
     }
 
     // Add new items
+    console.log('Adding new items to cart:', items);
     const response = await fetch('/cart/add.js', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ items })
     });
 
-    if (!response.ok) throw new Error('Failed to add items to cart');
+    if (!response.ok) {
+      console.error('Failed to add items:', await response.text());
+      throw new Error('Failed to add items to cart');
+    }
+
+    const addResult = await response.json();
+    console.log('Add items response:', addResult);
 
     if (subscriptionItem) {
       showNotification('Subscription has been updated in your cart', 'success');
@@ -273,7 +298,7 @@ async function addValidItemsToCart(items) {
     return { success: true, addedItems: items, failedItems: [] };
 
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error in addValidItemsToCart:', error);
     showNotification('An error occurred while adding items to cart. Please try again.');
     return { success: false, addedItems: [], failedItems: items };
   }
@@ -433,60 +458,50 @@ function showNotification(message, type = 'error') {
 		});
 
 		// Submit button handler
-		submitButton.addEventListener('click', async function(event) {
-			event.preventDefault();
+		// Update submit button handler to include product_id
+submitButton.addEventListener('click', async function(event) {
+  event.preventDefault();
 
-			const selectedBox = productActions.querySelector('.purchase-option-box.selected');
-			const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
-			const giftOptionBorder = selectedGiftContainer?.querySelector('.gift-option-border');
+  const selectedBox = productActions.querySelector('.purchase-option-box.selected');
+  const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
+  const giftOptionBorder = selectedGiftContainer?.querySelector('.gift-option-border');
 
-			const isSubscription = selectedBox?.getAttribute('data-purchase-type') === 'subscribe';
-			const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
+  const isSubscription = selectedBox?.getAttribute('data-purchase-type') === 'subscribe';
+  const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
 
-			if (!selectedBox || !giftId) {
-				console.error('Missing required selection');
-				return;
-			}
+  if (!selectedBox || !giftId) {
+    console.error('Missing required selection');
+    return;
+  }
 
-			const items = [
-				{
-					id: submitVariantIdInput.value,
-					quantity: 1,
-					selling_plan: submitSellingPlanIdInput.value || undefined
-				},
-				{
-					id: giftId,
-					quantity: 1
-				}
-			];
+  const items = [
+    {
+      id: submitVariantIdInput.value,
+      product_id: currentProductId, // Make sure this is defined at the top of your script
+      quantity: 1,
+      selling_plan: submitSellingPlanIdInput.value || undefined
+    },
+    {
+      id: giftId,
+      product_id: giftProductId, // Make sure this is defined at the top of your script
+      quantity: 1
+    }
+  ];
 
-			try {
-				{% if buyType == "buy_now" %}
-					const cartDrawer = document.getElementById('upCart');
-					if (cartDrawer) {
-						cartDrawer.remove();
-					}
+  console.log('Submitting items:', items);
 
-					await fetch('/cart/clear.js', {
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-							'Accept': 'application/json'
-						}
-					});
-				{% endif %}
+  try {
+    const result = await addValidItemsToCart(items);
+    console.log('Add to cart result:', result);
 
-				const result = await addValidItemsToCart(items);
-
-				{% if buyType == "buy_now" and result.success %}
-					window.location.href = '/checkout';
-				{% endif %}
-
-			} catch (error) {
-				console.error('Error:', error);
-				showNotification('An error occurred while adding items to cart. Please try again.');
-			}
-		});
+    if (result.success && buyType === "buy_now") {
+      window.location.href = '/checkout';
+    }
+  } catch (error) {
+    console.error('Submission error:', error);
+    showNotification('An error occurred while adding items to cart. Please try again.');
+  }
+});
 
 		// One-time purchase button handler
 		const oneTimePurchaseButton = productActions.querySelector('.one-time-add-to-cart');
