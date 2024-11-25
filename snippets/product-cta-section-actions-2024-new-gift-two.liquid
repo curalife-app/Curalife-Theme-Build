@@ -150,20 +150,28 @@
     setupMutationObserver();
 
     // Gift selection logic
+		const MAX_GIFTS = 2;
+  	let selectedGifts = [];
     const giftOptionContainers = document.querySelectorAll('.gift-option-container');
 
     giftOptionContainers.forEach(container => {
-      container.addEventListener('click', function(event) {
-        // Remove 'selected' class from all gift options
-        giftOptionContainers.forEach(gift => gift.classList.remove('selected'));
+			container.addEventListener('click', function(event) {
+				const isSelected = container.classList.contains('selected');
 
-        // Add 'selected' class to the clicked gift
-        container.classList.add('selected');
+				if (isSelected) {
+					// If already selected, deselect it
+					container.classList.remove('selected');
+					selectedGifts = selectedGifts.filter(gift => gift !== container);
+				} else if (selectedGifts.length < MAX_GIFTS) {
+					// If not selected and we haven't reached max gifts, select it
+					container.classList.add('selected');
+					selectedGifts.push(container);
+				}
 
-        // Update radio indicator
-        updateRadioIndicator(container);
-      });
-    });
+				// Update radio indicators for all containers
+				updateRadioIndicators();
+			});
+		});
 
     function updateRadioIndicator(selectedContainer) {
       giftOptionContainers.forEach(container => {
@@ -178,10 +186,11 @@
 
     // Initialize the first gift as selected by default
     if (giftOptionContainers.length > 0) {
-      const firstGift = giftOptionContainers[0];
-      firstGift.classList.add('selected');
-      updateRadioIndicator(firstGift);
-    }
+			const firstGift = giftOptionContainers[0];
+			firstGift.classList.add('selected');
+			selectedGifts.push(firstGift);
+			updateRadioIndicators();
+		}
 
     function isSubscriptionSelected() {
 			const productActions = document.querySelector('.product-actions');
@@ -533,108 +542,103 @@
       }
     }
 
-    // Form submission handler replaced with button click handler
     const submitButton = document.getElementById('ProductSubmitButton-{{SID}}');
+  submitButton.addEventListener('click', async function(event) {
+    event.preventDefault();
 
-    // Pass cart data and product IDs into JavaScript variables using Liquid
-    var cartData = {{ cart | json }};
-    var currentProductId = {{ product.id }};
-    // Assuming giftProd is defined in your Liquid code
-    var giftProductId = {{ giftProd.id | default: 'null' }};
+    if (!productActions) {
+      console.error('Product actions container not found');
+      return;
+    }
 
-    submitButton.addEventListener('click', async function(event) {
-      console.log('Button clicked, handling submission...');
-      event.preventDefault();
+    // Display the loading spinner
+    toggleButtonLoading(submitButton, true);
 
-      if (!productActions) {
-        console.error('Product actions container not found');
+    try {
+      const variantIdInput = productActions.querySelector('.submit-variant-id');
+      const sellingPlanIdInput = productActions.querySelector('.submit-selling-plan-id');
+      const selectedGiftContainers = document.querySelectorAll('.gift-option-container.selected');
+
+      if (!variantIdInput) {
+        throw new Error('Variant ID input not found');
+      }
+
+      const isSubscription = !!sellingPlanIdInput?.value;
+      const variantId = variantIdInput.value;
+      const sellingPlanId = sellingPlanIdInput ? sellingPlanIdInput.value : '';
+
+      // Get all selected gift IDs
+      const giftIds = Array.from(selectedGiftContainers).map(container => {
+        const giftOptionBorder = container.querySelector('.gift-option-border');
+        return isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId;
+      });
+
+      if (!variantId || giftIds.length === 0) {
+        const errorMessage = `Missing required data: ${!variantId ? 'variant ID' : ''} ${giftIds.length === 0 ? 'gift selection' : ''}`;
+        console.error(errorMessage);
+        showNotification(errorMessage, 'error');
         return;
       }
 
-      // Display the loading spinner
-      toggleButtonLoading(submitButton, true);
+      // Create array of items with main product and all selected gifts
+      const items = [
+        {
+          id: variantId,
+          product_id: currentProductId,
+          quantity: 1,
+          ...(sellingPlanId && { selling_plan: sellingPlanId })
+        },
+        ...giftIds.map(giftId => ({
+          id: giftId,
+          product_id: giftProductId,
+          quantity: 1
+        }))
+      ];
 
-      try {
-        const variantIdInput = productActions.querySelector('.submit-variant-id');
-        const sellingPlanIdInput = productActions.querySelector('.submit-selling-plan-id');
-        const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
-        const giftOptionBorder = selectedGiftContainer ? selectedGiftContainer.querySelector('.gift-option-border') : null;
-
-        // Add error checking for required elements
-        if (!variantIdInput) {
-          throw new Error('Variant ID input not found');
+      {% if buyType == "buy_now" %}
+        // Delete cart drawer if it exists
+        const cartDrawer = document.getElementById('upCart');
+        if (cartDrawer) {
+          cartDrawer.remove();
         }
 
-        const isSubscription = !!sellingPlanIdInput?.value;
-        const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
-        const variantId = variantIdInput.value;
-        const sellingPlanId = sellingPlanIdInput ? sellingPlanIdInput.value : '';
+        // Clean cart
+        try {
+          const clearCartResponse = await fetch('/cart/clear.js', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            }
+          });
 
-        if (!variantId || !giftId) {
-          const errorMessage = `Missing required data: ${!variantId ? 'variant ID' : ''} ${!giftId ? 'gift ID' : ''}`;
-          console.error(errorMessage);
-          showNotification(errorMessage, 'error');
+          if (!clearCartResponse.ok) {
+            throw new Error('Failed to clear cart');
+          }
+        } catch (error) {
+          console.error('Clear cart error:', error);
+          showNotification('Failed to clear cart. Please try again.', 'error');
           return;
         }
+      {% endif %}
 
-        const items = [
-          {
-            id: variantId,
-            product_id: currentProductId, // Include the product ID
-            quantity: 1,
-            ...(sellingPlanId && { selling_plan: sellingPlanId })
-          },
-          {
-            id: giftId,
-            product_id: giftProductId, // Include the gift product ID
-            quantity: 1
-          }
-        ];
+      const result = await addValidItemsToCart(items);
+      console.log('Add to cart result:', result);
 
+      if (result.success) {
         {% if buyType == "buy_now" %}
-          // Delete cart drawer if it exists
-          const cartDrawer = document.getElementById('upCart');
-          if (cartDrawer) {
-            cartDrawer.remove();
-          }
-
-          // Clean cart
-          try {
-            const clearCartResponse = await fetch('/cart/clear.js', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-              }
-            });
-
-            if (!clearCartResponse.ok) {
-              throw new Error('Failed to clear cart');
-            }
-          } catch (error) {
-            console.error('Clear cart error:', error);
-            showNotification('Failed to clear cart. Please try again.', 'error');
-            return;
-          }
+          window.location.href = '/checkout';
         {% endif %}
-
-        const result = await addValidItemsToCart(items);
-        console.log('Add to cart result:', result);
-
-        if (result.success) {
-          {% if buyType == "buy_now" %}
-            window.location.href = '/checkout';
-          {% endif %}
-        } else if (result.error) {
-          showNotification(result.error.message || 'Failed to add items to cart', 'error');
-        }
-      } catch (error) {
-        console.error('Submission error:', error);
-        showNotification(error.message || 'An unexpected error occurred', 'error');
-      } finally {
-        toggleButtonLoading(submitButton, false);
+      } else if (result.error) {
+        showNotification(result.error.message || 'Failed to add items to cart', 'error');
       }
-    });
+    } catch (error) {
+      console.error('Submission error:', error);
+      showNotification(error.message || 'An unexpected error occurred', 'error');
+    } finally {
+      toggleButtonLoading(submitButton, false);
+    }
+  });
 
 // Helper function to find the corresponding failed validation result
 function findFailedValidationIndex(validationResults, invalidItemIndex) {
