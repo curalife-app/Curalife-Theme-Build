@@ -231,32 +231,33 @@ async function addValidItemsToCart(items) {
     if (!cartResponse.ok) throw new Error('Failed to fetch current cart');
     let currentCart = await cartResponse.json();
 
+    // Find subscription item
     const subscriptionItem = items.find(item => item.selling_plan);
 
     if (subscriptionItem) {
-      try {
-        const variantResponse = await fetch(`/variants/${subscriptionItem.id}.js`);
-        const variantData = await variantResponse.json();
-        const targetProductId = variantData.product_id;
+      console.log('Current cart items:', currentCart.items.map(item => ({
+        id: item.id,
+        variant_id: item.variant_id,
+        product_id: item.product_id,
+        selling_plan: item.selling_plan_allocation?.selling_plan?.id
+      })));
 
-        console.log('Looking for existing subscription with product ID:', targetProductId);
+      // Find first subscription item in cart to get product ID
+      const cartSubscription = currentCart.items.find(item =>
+        item.variant_id.toString() === subscriptionItem.id.toString()
+      );
 
-        const existingSubscription = currentCart.items.find(cartItem => {
-          const isSameProduct = cartItem.product_id === targetProductId;
-          const isSubscription = Boolean(cartItem.selling_plan_allocation);
+      if (cartSubscription) {
+        console.log('Found matching cart item:', cartSubscription);
+        const targetProductId = cartSubscription.product_id;
 
-          console.log('Checking cart item:', {
-            itemId: cartItem.id,
-            itemProductId: cartItem.product_id,
-            targetProductId,
-            isSubscription,
-            isSameProduct
-          });
-
-          return isSameProduct && isSubscription;
-        });
+        const existingSubscription = currentCart.items.find(item =>
+          item.product_id === targetProductId &&
+          item.selling_plan_allocation?.selling_plan?.id
+        );
 
         if (existingSubscription) {
+          console.log('Removing existing subscription:', existingSubscription);
           const updates = { [existingSubscription.key]: 0 };
           await fetch('/cart/update.js', {
             method: 'POST',
@@ -266,8 +267,6 @@ async function addValidItemsToCart(items) {
 
           currentCart = await (await fetch('/cart.js')).json();
         }
-      } catch (variantError) {
-        console.error('Error fetching variant data:', variantError);
       }
     }
 
@@ -278,15 +277,12 @@ async function addValidItemsToCart(items) {
     });
 
     if (!response.ok) throw new Error('Failed to add items to cart');
-
     const addResult = await response.json();
-    console.log('Add items response:', addResult);
 
-    if (subscriptionItem) {
-      showNotification('Subscription has been updated in your cart', 'success');
-    } else {
-      showNotification('Items added to cart successfully', 'success');
-    }
+    showNotification(
+      subscriptionItem ? 'Subscription has been updated in your cart' : 'Items added to cart successfully',
+      'success'
+    );
 
     return { success: true, addedItems: items, failedItems: [] };
 
