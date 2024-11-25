@@ -126,143 +126,112 @@
 
 {% if customer.email contains 'yotam' %}
 	<script>// Cart Gift Handler Module
-		// Cart Gift Handler Module
 const CartGiftHandler = {
-  giftProductMapping: {
+  debug: true,
+  log(msg, data) {
+    if (this.debug) console.log(`CartGiftHandler: ${msg}`, data || '');
+  },
+
+  giftMap: {
     "curalin-black-friday-week": "free-curaslim",
     "curaslim-black-friday-week": "free-curalin",
     "curaslin-curaslim-black-friday-week": "free-curalin"
   },
 
   init() {
-    console.log('Initializing CartGiftHandler');
-    document.addEventListener('click', this.handleDeleteButtonClick.bind(this));
+    this.log('Initializing');
+    document.addEventListener('click', e => this.handleDelete(e));
   },
 
-  async handleDeleteButtonClick(event) {
-    console.log('Click event detected');
-    const deleteButton = event.target.closest('.styles_TrashButton__deleteButton__8uIHq');
-    if (!deleteButton) {
-      console.log('Not a delete button click');
+  async handleDelete(e) {
+    const btn = e.target.closest('[data-testid="CartItem-remove"]');
+    if (!btn) return;
+
+    this.log('Delete clicked');
+
+    const item = btn.closest('[data-testid="CartItem"]');
+    if (!item) {
+      this.log('No cart item found');
       return;
     }
 
-    console.log('Delete button clicked');
-
-    // Find the parent product row
-    const productRow = deleteButton.closest('.styles_ProductRow__product__AokJ5');
-    if (!productRow) {
-      console.error('Product row not found');
+    const link = item.querySelector('a[href*="/products/"]');
+    if (!link) {
+      this.log('No product link found');
       return;
     }
 
-    // Get product handle from the link
-    const productLink = productRow.querySelector('.upcart-product-title-link');
-    if (!productLink) {
-      console.error('Product link not found');
+    const handle = this.getHandle(link.href);
+    if (!handle) {
+      this.log('No handle found in:', link.href);
       return;
     }
-
-    const productHandle = this.extractProductHandle(productLink.href);
-    if (!productHandle) {
-      console.error('Could not extract product handle from:', productLink.href);
-      return;
-    }
-
-    console.log('Product handle:', productHandle);
 
     try {
-      // Get current cart data
-      const cartResponse = await this.fetchCart();
-      if (!cartResponse.ok) {
-        throw new Error('Failed to fetch cart');
-      }
-      const cart = await cartResponse.json();
-      console.log('Current cart:', cart);
+      const cart = await this.getCart();
+      const toRemove = this.getItemsToRemove(cart, handle);
 
-      // Find the items to remove
-      const itemsToRemove = this.findItemsToRemove(cart, productHandle);
-      console.log('Items to remove:', itemsToRemove);
-
-      if (itemsToRemove.length === 0) {
-        console.log('No items found to remove');
+      if (!toRemove.length) {
+        this.log('No items to remove');
         return;
       }
 
-      // Remove items from cart
-      await this.removeItemsFromCart(itemsToRemove);
-      console.log('Items removed successfully');
+      await this.removeFromCart(toRemove);
+      this.log('Items removed:', toRemove);
 
-      // Refresh the cart UI
-      if (typeof window.refreshCart === 'function') {
+      if (window.refreshCart) {
         window.refreshCart();
-        console.log('Cart UI refreshed');
-      } else {
-        console.warn('refreshCart function not found');
+        this.log('Cart refreshed');
       }
 
-    } catch (error) {
-      console.error('Error handling cart item deletion:', error);
+    } catch (err) {
+      console.error('CartGiftHandler error:', err);
     }
   },
 
-  extractProductHandle(url) {
+  getHandle(url) {
     const match = url.match(/\/products\/([^/?]+)/);
-    console.log('Extracted handle:', match ? match[1] : null);
-    return match ? match[1] : null;
+    return match?.[1];
   },
 
-  async fetchCart() {
-    console.log('Fetching cart data');
-    return fetch('/cart.js');
+  async getCart() {
+    const res = await fetch('/cart.js');
+    if (!res.ok) throw new Error('Failed to fetch cart');
+    return res.json();
   },
 
-  findItemsToRemove(cart, productHandle) {
-    console.log('Finding items to remove for handle:', productHandle);
-    const itemsToRemove = [];
-    const giftHandle = this.giftProductMapping[productHandle];
-    console.log('Associated gift handle:', giftHandle);
+  getItemsToRemove(cart, handle) {
+    const items = [];
+    const giftHandle = this.giftMap[handle];
 
     cart.items.forEach(item => {
-      const itemHandle = this.extractProductHandle(item.url);
-      console.log('Checking item:', itemHandle);
-
-      if (itemHandle === productHandle || itemHandle === giftHandle) {
-        itemsToRemove.push({
+      const itemHandle = this.getHandle(item.url);
+      if (itemHandle === handle || itemHandle === giftHandle) {
+        items.push({
           id: item.key,
           handle: itemHandle
         });
-        console.log('Added item for removal:', itemHandle);
       }
     });
 
-    return itemsToRemove;
+    return items;
   },
 
-  async removeItemsFromCart(items) {
-    console.log('Removing items from cart:', items);
+  async removeFromCart(items) {
     const updates = {};
-    items.forEach(item => {
-      updates[item.id] = 0;
-    });
+    items.forEach(item => updates[item.id] = 0);
 
-    const response = await fetch('/cart/update.js', {
+    const res = await fetch('/cart/update.js', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ updates })
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({updates})
     });
 
-    if (!response.ok) {
-      throw new Error('Failed to update cart');
-    }
-
-    return response.json();
+    if (!res.ok) throw new Error('Failed to update cart');
+    return res.json();
   }
 };
 
-// Initialize the handler
 CartGiftHandler.init();
 	</script>
 {% endif %}
