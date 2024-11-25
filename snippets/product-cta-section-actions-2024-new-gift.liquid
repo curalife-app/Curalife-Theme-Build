@@ -139,33 +139,18 @@
   },
 
   async handleDeleteButtonClick(event) {
-    console.log('Click event detected');
-    // Look for delete button with a more reliable selector
-    const deleteButton = event.target.closest('[data-delete-button]') ||
-                        event.target.closest('.cart-item-remove') ||
-                        event.target.closest('.styles_TrashButton__deleteButton__8uIHq');
+    const deleteButton = event.target.closest('.styles_TrashButton__deleteButton__8uIHq, [class*="TrashButton"]');
+    if (!deleteButton) return;
 
-    if (!deleteButton) {
-      console.log('Not a delete button click');
-      return;
-    }
-
-    console.log('Delete button clicked');
-
-    // Find the parent product row with multiple possible selectors
-    const productRow = deleteButton.closest('[data-cart-item]') ||
-                      deleteButton.closest('.cart-item') ||
-                      deleteButton.closest('.styles_ProductRow__product__AokJ5');
-
+    const productRow = deleteButton.closest('.styles_ProductRow__product__AokJ5, [class*="ProductRow"]');
     if (!productRow) {
       console.error('Product row not found - check if cart item structure changed');
       return;
     }
 
-    // Get product handle from the link with error handling
-    const productLink = productRow.querySelector('a[href*="/products/"]');
+    const productLink = productRow.querySelector('.upcart-product-title-link, .styles_ProductRow__productTitleLink__YSz6V');
     if (!productLink) {
-      console.error('Product link not found - check product link structure');
+      console.error('Product link not found');
       return;
     }
 
@@ -175,32 +160,21 @@
       return;
     }
 
-    console.log('Product handle:', productHandle);
-
     try {
       const cartResponse = await this.fetchCart();
-      if (!cartResponse.ok) {
-        throw new Error('Failed to fetch cart');
-      }
+      if (!cartResponse.ok) throw new Error('Failed to fetch cart');
+
       const cart = await cartResponse.json();
-      console.log('Current cart:', cart);
-
       const itemsToRemove = this.findItemsToRemove(cart, productHandle);
-      console.log('Items to remove:', itemsToRemove);
-
-      if (itemsToRemove.length === 0) {
-        console.log('No items found to remove');
-        return;
-      }
+      if (itemsToRemove.length === 0) return;
 
       await this.removeItemsFromCart(itemsToRemove);
-      console.log('Items removed successfully');
 
-      if (typeof window.refreshCart === 'function') {
+      if (typeof window.upcartRefresh === 'function') {
+        window.upcartRefresh();
+      } else if (typeof window.refreshCart === 'function') {
         window.refreshCart();
-        console.log('Cart UI refreshed');
       } else {
-        console.warn('refreshCart function not found - cart may need manual refresh');
         window.location.reload();
       }
     } catch (error) {
@@ -210,31 +184,24 @@
 
   extractProductHandle(url) {
     const match = url.match(/\/products\/([^/?]+)/);
-    console.log('Extracted handle:', match ? match[1] : null);
     return match ? match[1] : null;
   },
 
   async fetchCart() {
-    console.log('Fetching cart data');
     return fetch('/cart.js');
   },
 
   findItemsToRemove(cart, productHandle) {
-    console.log('Finding items to remove for handle:', productHandle);
     const itemsToRemove = [];
     const giftHandle = this.giftProductMapping[productHandle];
-    console.log('Associated gift handle:', giftHandle);
 
     cart.items.forEach(item => {
       const itemHandle = this.extractProductHandle(item.url);
-      console.log('Checking item:', itemHandle);
-
       if (itemHandle === productHandle || itemHandle === giftHandle) {
         itemsToRemove.push({
           id: item.key,
           handle: itemHandle
         });
-        console.log('Added item for removal:', itemHandle);
       }
     });
 
@@ -242,7 +209,6 @@
   },
 
   async removeItemsFromCart(items) {
-    console.log('Removing items from cart:', items);
     const updates = {};
     items.forEach(item => {
       updates[item.id] = 0;
@@ -256,16 +222,12 @@
       body: JSON.stringify({ updates })
     });
 
-    if (!response.ok) {
-      throw new Error('Failed to update cart');
-    }
-
+    if (!response.ok) throw new Error('Failed to update cart');
     return response.json();
   }
 };
 
-// Initialize the handler
-CartGiftHandler.init();
+CartGiftHandler.init(
 	</script>
 {% endif %}
 
