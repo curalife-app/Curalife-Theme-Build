@@ -23,7 +23,7 @@
     {% endfor %}
 
     <div class="gift-selector-wrap">
-			<div class="gift-selector-title mb-2">Choose your free gift:</div>
+			<div class="gift-selector-title mb-2">Choose your free gifts (Select up to 2):</div>
 
 			<div class="gift-options flex-nowrap flex justify-start gap-4">
 				{% for block in blocks %}
@@ -46,7 +46,9 @@
 								{% assign giftThumb = block.settings.gift_thumbnail | default: giftProdSubscription.featured_image | default: giftProd.featured_image %}
 
 								<div class="gift-option-container flex flex-col items-center">
-									<div class="gift-option-border relative w-full p-2 mb-3 border rounded-lg cursor-pointer" data-gift-id="{{ giftVariant.id }}" data-gift-id-subscription="{{ giftVariantSubscription.id }}">
+									<div class="gift-option-border relative w-full p-2 mb-3 border rounded-lg cursor-pointer"
+											data-gift-id="{{ giftVariant.id }}"
+											data-gift-id-subscription="{{ giftVariantSubscription.id }}">
 										<div class="radio-indicator top-2 right-2 absolute flex items-center justify-center w-6 h-6 rounded-full">
 											<div class="check-mark hidden w-4 h-4 font-bold text-white rounded-full">✓</div>
 										</div>
@@ -976,51 +978,61 @@ async function countUniqueProductsWithTag(cart) {
 
 <style>
 	.gift-selector-wrap {
-    margin: 1rem 0;
-  }
+  margin: 1rem 0;
+}
 
-  .gift-option-border {
-    transition: all 0.3s ease;
-    border: 2px solid #e5e7eb;
-    background: #fff;
-    width: 120px;
-	  height: 120px;
-  }
+.gift-option-border {
+  transition: all 0.3s ease;
+  border: 2px solid #e5e7eb;
+  background: #fff;
+  width: 120px;
+  height: 120px;
+}
 
-  .gift-option-border:hover {
-    border-color: var(--primary-color-lighter);
-  }
+.gift-option-border:hover {
+  border-color: var(--primary-color-lighter);
+}
 
-  .gift-option-container.selected .gift-option-border {
-      border-color: var(--primary-color);
-      background-color: rgba(var(--primary-color-rgb), 0.05);
-  }
+.gift-option-container.selected .gift-option-border {
+  border-color: var(--primary-color);
+  background-color: rgba(var(--primary-color-rgb), 0.05);
+}
 
-  .check-mark {
-      transition: all 0.2s ease;
-		  margin-top: -4px;
-	    margin-left: 3px;
-  }
+.check-mark {
+  transition: all 0.2s ease;
+  margin-top: -4px;
+  margin-left: 3px;
+}
 
-  .check-mark.hidden {
-      display: none;
-  }
+.check-mark.hidden {
+  display: none;
+}
 
-  .radio-indicator {
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-  }
+.radio-indicator {
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
 
-  .gift-option-container.selected .radio-indicator {
-	  background-color: var(--primary-color);
-  }
+.gift-option-container.selected .radio-indicator {
+  background-color: var(--primary-color);
+}
 
-  .sale-price {
-    color: var(--primary-color-dark);
-  }
+.sale-price {
+  color: var(--primary-color-dark);
+}
+
+/* Add styles to indicate when max gifts are selected */
+.gift-option-container:not(.selected) {
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.gift-option-container:not(.selected):hover {
+  opacity: 1;
+}
 </style>
 
 <style>
