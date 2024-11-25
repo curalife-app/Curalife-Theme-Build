@@ -126,8 +126,7 @@
 
 {% if customer.email contains 'yotam' %}
 	<script>// Cart Gift Handler Module
-		// Cart Gift Handler Module
-const CartGiftHandler = {
+		const CartGiftHandler = {
   giftProductMapping: {
     "curalin-black-friday-week": "free-curaslim",
     "curaslim-black-friday-week": "free-curalin",
@@ -141,7 +140,11 @@ const CartGiftHandler = {
 
   async handleDeleteButtonClick(event) {
     console.log('Click event detected');
-    const deleteButton = event.target.closest('.styles_TrashButton__deleteButton__8uIHq');
+    // Look for delete button with a more reliable selector
+    const deleteButton = event.target.closest('[data-delete-button]') ||
+                        event.target.closest('.cart-item-remove') ||
+                        event.target.closest('.styles_TrashButton__deleteButton__8uIHq');
+
     if (!deleteButton) {
       console.log('Not a delete button click');
       return;
@@ -149,17 +152,20 @@ const CartGiftHandler = {
 
     console.log('Delete button clicked');
 
-    // Find the parent product row
-    const productRow = deleteButton.closest('.styles_ProductRow__product__AokJ5');
+    // Find the parent product row with multiple possible selectors
+    const productRow = deleteButton.closest('[data-cart-item]') ||
+                      deleteButton.closest('.cart-item') ||
+                      deleteButton.closest('.styles_ProductRow__product__AokJ5');
+
     if (!productRow) {
-      console.error('Product row not found');
+      console.error('Product row not found - check if cart item structure changed');
       return;
     }
 
-    // Get product handle from the link
-    const productLink = productRow.querySelector('.upcart-product-title-link');
+    // Get product handle from the link with error handling
+    const productLink = productRow.querySelector('a[href*="/products/"]');
     if (!productLink) {
-      console.error('Product link not found');
+      console.error('Product link not found - check product link structure');
       return;
     }
 
@@ -172,7 +178,6 @@ const CartGiftHandler = {
     console.log('Product handle:', productHandle);
 
     try {
-      // Get current cart data
       const cartResponse = await this.fetchCart();
       if (!cartResponse.ok) {
         throw new Error('Failed to fetch cart');
@@ -180,7 +185,6 @@ const CartGiftHandler = {
       const cart = await cartResponse.json();
       console.log('Current cart:', cart);
 
-      // Find the items to remove
       const itemsToRemove = this.findItemsToRemove(cart, productHandle);
       console.log('Items to remove:', itemsToRemove);
 
@@ -189,18 +193,16 @@ const CartGiftHandler = {
         return;
       }
 
-      // Remove items from cart
       await this.removeItemsFromCart(itemsToRemove);
       console.log('Items removed successfully');
 
-      // Refresh the cart UI
       if (typeof window.refreshCart === 'function') {
         window.refreshCart();
         console.log('Cart UI refreshed');
       } else {
-        console.warn('refreshCart function not found');
+        console.warn('refreshCart function not found - cart may need manual refresh');
+        window.location.reload();
       }
-
     } catch (error) {
       console.error('Error handling cart item deletion:', error);
     }
