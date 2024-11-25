@@ -149,27 +149,26 @@
 
 		async function validateCartItem(item, currentCart) {
   try {
-    // Get product ID from variant ID if not directly available
-    const productId = item.product_id || await getProductIdFromVariant(item.id);
-    if (!productId) {
-      console.error(`Unable to determine product ID for variant ${item.id}`);
+    // Instead of trying to fetch product ID, work directly with variant IDs
+    const variantId = item.id?.toString();
+    if (!variantId) {
       return {
         isValid: false,
         error: {
-          code: 'INVALID_PRODUCT',
-          message: 'Unable to validate product. Please try again.',
+          code: 'INVALID_VARIANT',
+          message: 'Invalid product variant',
           type: 'error'
         }
       };
     }
 
-    // Get gift options and check if item is free
+    // Check if item is a free gift
     const giftOptions = document.querySelectorAll('.gift-option-border');
     const isItemFree = Array.from(giftOptions).some(giftOption => {
       const giftId = isSubscriptionSelected()
         ? giftOption.dataset.giftIdSubscription
         : giftOption.dataset.giftId;
-      return giftId === item.id.toString();
+      return giftId === variantId;
     });
 
     if (isItemFree) {
@@ -210,26 +209,13 @@
   }
 }
 
-// Helper function to get product ID from variant
-async function getProductIdFromVariant(variantId) {
-  try {
-    const response = await fetch(`/variants/${variantId}.js`);
-    if (!response.ok) return null;
-    const variantData = await response.json();
-    return variantData.product_id;
-  } catch (error) {
-    console.error('Error fetching variant data:', error);
-    return null;
-  }
-}
-
-// Modified addValidItemsToCart function
 async function addValidItemsToCart(items) {
   try {
     const cartResponse = await fetch('/cart.js');
     if (!cartResponse.ok) throw new Error('Failed to fetch current cart');
     let currentCart = await cartResponse.json();
 
+    // Validate items
     const validationResults = await Promise.all(
       items.map(item => validateCartItem(item, currentCart))
     );
@@ -237,6 +223,7 @@ async function addValidItemsToCart(items) {
     const validItems = items.filter((_, index) => validationResults[index].isValid);
     const invalidItems = items.filter((_, index) => !validationResults[index].isValid);
 
+    // Show error messages for invalid items
     invalidItems.forEach((_, index) => {
       const result = validationResults[findFailedValidationIndex(validationResults, index)];
       if (result?.error) showNotification(result.error.message, result.error.type);
@@ -251,36 +238,26 @@ async function addValidItemsToCart(items) {
 
       if (!response.ok) throw new Error('Failed to add items to cart');
 
-      if (invalidItems.length > 0) {
-        showNotification('Some items were added to cart, but free gift limit was exceeded', 'info');
-      } else {
-        showNotification('Items added to cart successfully', 'success');
-      }
+      showNotification(
+        invalidItems.length > 0
+          ? 'Some items were added to cart, but free gift limit was exceeded'
+          : 'Items added to cart successfully',
+        invalidItems.length > 0 ? 'info' : 'success'
+      );
 
-      return {
-        success: true,
-        addedItems: validItems,
-        failedItems: invalidItems
-      };
+      return { success: true, addedItems: validItems, failedItems: invalidItems };
     }
 
     return {
       success: false,
       addedItems: [],
       failedItems: invalidItems,
-      error: {
-        message: 'No items could be added to cart',
-        type: 'error'
-      }
+      error: { message: 'No items could be added to cart', type: 'error' }
     };
   } catch (error) {
     console.error('Error adding items to cart:', error);
     showNotification('An error occurred while adding items to cart. Please try again.');
-    return {
-      success: false,
-      addedItems: [],
-      failedItems: items
-    };
+    return { success: false, addedItems: [], failedItems: items };
   }
 }
 
