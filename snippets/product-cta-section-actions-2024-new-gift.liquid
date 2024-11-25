@@ -135,33 +135,33 @@
 
   init() {
     document.addEventListener('click', e => {
-      console.log('Click detected:', e.target);
-
-      if (e.target.closest('.styles_TrashButton__deleteButton__8uIHq')) {
-        console.log('Delete button clicked');
-        this.handleDeleteButtonClick(e).catch(console.error);
-      }
+      const deleteButton = e.target.closest('.styles_TrashButton__deleteButton__8uIHq');
+      if (!deleteButton) return;
+      console.log('Delete button clicked');
+      this.handleDeleteButtonClick(deleteButton).catch(console.error);
     });
   },
 
-  async handleDeleteButtonClick(event) {
-    const productRow = event.target.closest('.styles_ProductRow__product__AokJ5');
+  async handleDeleteButtonClick(deleteButton) {
+    const productRow = deleteButton.closest('.styles_ProductRow__product__AokJ5');
     if (!productRow) return;
 
-    const productId = productRow.id.split(':')[0];
-    console.log('Product ID:', productId);
+    const titleLink = productRow.querySelector('.upcart-product-title-link');
+    if (!titleLink) return;
+
+    const handle = titleLink.href.split('/products/')[1].split('?')[0];
+    console.log('Product handle:', handle);
 
     try {
       const cart = await (await fetch('/cart.js')).json();
-      console.log('Cart:', cart);
-
       const itemsToRemove = cart.items.filter(item => {
-        const isMainProduct = item.id.toString() === productId;
-        const isGiftProduct = Object.values(this.giftProductMapping).includes(item.handle);
-        return isMainProduct || isGiftProduct;
+        const itemHandle = item.url.split('/products/')[1].split('?')[0];
+        return itemHandle === handle || itemHandle === this.giftProductMapping[handle];
       });
 
-      console.log('Removing items:', itemsToRemove);
+      console.log('Items to remove:', itemsToRemove);
+
+      if (itemsToRemove.length === 0) return;
 
       const updates = {};
       itemsToRemove.forEach(item => updates[item.key] = 0);
@@ -172,6 +172,7 @@
         body: JSON.stringify({ updates })
       });
 
+      await new Promise(resolve => setTimeout(resolve, 500));
       location.reload();
     } catch (error) {
       console.error('Error:', error);
