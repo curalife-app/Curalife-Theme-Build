@@ -457,7 +457,8 @@ function showNotification(message, type = 'error') {
 			}
 		});
 
-		submitButton.addEventListener('click', async function(event) {
+		// Submit button handler
+submitButton.addEventListener('click', async function(event) {
   event.preventDefault();
 
   const selectedBox = productActions.querySelector('.purchase-option-box.selected');
@@ -465,27 +466,34 @@ function showNotification(message, type = 'error') {
   const giftOptionBorder = selectedGiftContainer?.querySelector('.gift-option-border');
 
   const isSubscription = selectedBox?.getAttribute('data-purchase-type') === 'subscribe';
+  const variantId = submitVariantIdInput.value;
   const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
 
-  // Get product IDs from the selected elements
-  const mainProductId = selectedBox?.dataset.productId;
-  const giftProductId = giftOptionBorder?.dataset.productId;
+  // Get product IDs from the original variant
+  const originalVariant = selectedBox?.getAttribute('data-original-variant');
 
-  if (!selectedBox || !giftId || !mainProductId) {
-    console.error('Missing required selection', { selectedBox, giftId, mainProductId });
+  console.log('Debug info:', {
+    selectedBox,
+    variantId,
+    giftId,
+    originalVariant,
+    isSubscription,
+    sellingPlan: submitSellingPlanIdInput?.value
+  });
+
+  if (!selectedBox || !giftId || !variantId) {
+    console.error('Missing required selection');
     return;
   }
 
   const items = [
     {
-      id: submitVariantIdInput.value,
-      product_id: parseInt(mainProductId),
+      id: variantId,
       quantity: 1,
-      selling_plan: submitSellingPlanIdInput.value || undefined
+      selling_plan: submitSellingPlanIdInput?.value || undefined
     },
     {
       id: giftId,
-      product_id: giftProductId ? parseInt(giftProductId) : undefined,
       quantity: 1
     }
   ];
@@ -493,14 +501,30 @@ function showNotification(message, type = 'error') {
   console.log('Submitting items:', items);
 
   try {
+    {% if buyType == "buy_now" %}
+      const cartDrawer = document.getElementById('upCart');
+      if (cartDrawer) {
+        cartDrawer.remove();
+      }
+
+      await fetch('/cart/clear.js', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+    {% endif %}
+
     const result = await addValidItemsToCart(items);
     console.log('Add to cart result:', result);
 
-    if (result.success && buyType === "buy_now") {
+    {% if buyType == "buy_now" and result.success %}
       window.location.href = '/checkout';
-    }
+    {% endif %}
+
   } catch (error) {
-    console.error('Submission error:', error);
+    console.error('Error:', error);
     showNotification('An error occurred while adding items to cart. Please try again.');
   }
 });
