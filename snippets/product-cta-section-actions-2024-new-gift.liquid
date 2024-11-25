@@ -130,6 +130,109 @@
   </div>
 </div>
 
+<script>// Cart Gift Handler Module
+	const CartGiftHandler = {
+		giftProductMapping: {
+			"curalin-black-friday-week": "free-curaslim",
+			"curaslim-black-friday-week": "free-curalin",
+			"curaslin-curaslim-black-friday-week": "free-curalin"
+		},
+
+		init() {
+			document.addEventListener('click', this.handleDeleteButtonClick.bind(this));
+		},
+
+		async handleDeleteButtonClick(event) {
+			const deleteButton = event.target.closest('.styles_TrashButton__deleteButton__8uIHq');
+			if (!deleteButton) return;
+
+			// Find the parent product row
+			const productRow = deleteButton.closest('.styles_ProductRow__product__AokJ5');
+			if (!productRow) return;
+
+			// Get product handle from the link
+			const productLink = productRow.querySelector('.upcart-product-title-link');
+			if (!productLink) return;
+
+			const productHandle = this.extractProductHandle(productLink.href);
+			if (!productHandle) return;
+
+			try {
+				// Get current cart data
+				const cartResponse = await this.fetchCart();
+				if (!cartResponse.ok) throw new Error('Failed to fetch cart');
+				const cart = await cartResponse.json();
+
+				// Find the items to remove
+				const itemsToRemove = this.findItemsToRemove(cart, productHandle);
+				if (itemsToRemove.length === 0) return;
+
+				// Remove items from cart
+				await this.removeItemsFromCart(itemsToRemove);
+
+				// Optionally refresh the cart UI
+				if (typeof window.refreshCart === 'function') {
+					window.refreshCart();
+				}
+			} catch (error) {
+				console.error('Error handling cart item deletion:', error);
+			}
+		},
+
+		extractProductHandle(url) {
+			const match = url.match(/\/products\/([^/?]+)/);
+			return match ? match[1] : null;
+		},
+
+		async fetchCart() {
+			return fetch('/cart.js');
+		},
+
+		findItemsToRemove(cart, productHandle) {
+			const itemsToRemove = [];
+			const giftHandle = this.giftProductMapping[productHandle];
+
+			cart.items.forEach(item => {
+				const itemHandle = this.extractProductHandle(item.url);
+
+				if (itemHandle === productHandle || itemHandle === giftHandle) {
+					itemsToRemove.push({
+						id: item.key,
+						handle: itemHandle
+					});
+				}
+			});
+
+			return itemsToRemove;
+		},
+
+		async removeItemsFromCart(items) {
+			const updates = {};
+			items.forEach(item => {
+				updates[item.id] = 0;
+			});
+
+			const response = await fetch('/cart/update.js', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ updates })
+			});
+
+			if (!response.ok) {
+				throw new Error('Failed to update cart');
+			}
+
+			return response.json();
+		}
+	};
+
+	// Initialize the handler
+	CartGiftHandler.init();
+
+</script>
+
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     const productActions = document.querySelector('#cta-section-{{ SID }} .product-actions');
