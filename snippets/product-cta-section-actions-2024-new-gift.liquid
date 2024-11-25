@@ -134,66 +134,92 @@
   },
 
   init() {
-    console.log('Initializing CartGiftHandler');
-    document.addEventListener('click', this.handleDeleteButtonClick.bind(this));
+    console.debug('[CartGiftHandler] Initializing');
+    document.addEventListener('click', (e) => {
+      const deleteBtn = e.target.closest('.styles_TrashButton__deleteButton__8uIHq svg, .styles_TrashButton__deleteButton__8uIHq path');
+      if (deleteBtn) {
+        console.debug('[CartGiftHandler] Delete button clicked');
+        this.handleDeleteButtonClick(e);
+      }
+    });
   },
 
   async handleDeleteButtonClick(event) {
-    const deleteButton = event.target.closest('.styles_TrashButton__deleteButton__8uIHq, [class*="TrashButton"]');
-    if (!deleteButton) return;
-
-    const productRow = deleteButton.closest('.styles_ProductRow__product__AokJ5, [class*="ProductRow"]');
-    if (!productRow) {
-      console.error('Product row not found - check if cart item structure changed');
+    const deleteButton = event.target.closest('.styles_TrashButton__deleteButton__8uIHq');
+    if (!deleteButton) {
+      console.debug('[CartGiftHandler] No delete button found');
       return;
     }
 
-    const productLink = productRow.querySelector('.upcart-product-title-link, .styles_ProductRow__productTitleLink__YSz6V');
+    const productRow = deleteButton.closest('.styles_ProductRow__product__AokJ5');
+    if (!productRow) {
+      console.debug('[CartGiftHandler] No product row found');
+      return;
+    }
+
+    const productLink = productRow.querySelector('.upcart-product-title-link');
     if (!productLink) {
-      console.error('Product link not found');
+      console.debug('[CartGiftHandler] No product link found');
       return;
     }
 
     const productHandle = this.extractProductHandle(productLink.href);
     if (!productHandle) {
-      console.error('Could not extract product handle from:', productLink.href);
+      console.debug('[CartGiftHandler] Could not extract handle from:', productLink.href);
       return;
     }
+
+    console.debug('[CartGiftHandler] Processing delete for product:', productHandle);
 
     try {
       const cartResponse = await this.fetchCart();
       if (!cartResponse.ok) throw new Error('Failed to fetch cart');
 
       const cart = await cartResponse.json();
+      console.debug('[CartGiftHandler] Current cart:', cart);
+
       const itemsToRemove = this.findItemsToRemove(cart, productHandle);
-      if (itemsToRemove.length === 0) return;
+      console.debug('[CartGiftHandler] Items to remove:', itemsToRemove);
 
-      await this.removeItemsFromCart(itemsToRemove);
+      if (itemsToRemove.length === 0) {
+        console.debug('[CartGiftHandler] No items to remove');
+        return;
+      }
 
-      if (typeof window.upcartRefresh === 'function') {
+      const result = await this.removeItemsFromCart(itemsToRemove);
+      console.debug('[CartGiftHandler] Remove result:', result);
+
+      // Wait briefly before refreshing to ensure update is processed
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      if (window.upcartRefresh) {
         window.upcartRefresh();
-      } else if (typeof window.refreshCart === 'function') {
+      } else if (window.refreshCart) {
         window.refreshCart();
       } else {
-        window.location.reload();
+        location.reload();
       }
     } catch (error) {
-      console.error('Error handling cart item deletion:', error);
+      console.error('[CartGiftHandler] Error:', error);
     }
   },
 
   extractProductHandle(url) {
     const match = url.match(/\/products\/([^/?]+)/);
-    return match ? match[1] : null;
+    const handle = match ? match[1] : null;
+    console.debug('[CartGiftHandler] Extracted handle:', handle, 'from URL:', url);
+    return handle;
   },
 
   async fetchCart() {
+    console.debug('[CartGiftHandler] Fetching cart');
     return fetch('/cart.js');
   },
 
   findItemsToRemove(cart, productHandle) {
     const itemsToRemove = [];
     const giftHandle = this.giftProductMapping[productHandle];
+    console.debug('[CartGiftHandler] Looking for handles:', productHandle, giftHandle);
 
     cart.items.forEach(item => {
       const itemHandle = this.extractProductHandle(item.url);
@@ -202,6 +228,7 @@
           id: item.key,
           handle: itemHandle
         });
+        console.debug('[CartGiftHandler] Adding item for removal:', itemHandle);
       }
     });
 
@@ -209,6 +236,7 @@
   },
 
   async removeItemsFromCart(items) {
+    console.debug('[CartGiftHandler] Removing items:', items);
     const updates = {};
     items.forEach(item => {
       updates[item.id] = 0;
@@ -227,7 +255,8 @@
   }
 };
 
-CartGiftHandler.init()
+// Initialize immediately
+CartGiftHandler.init();
 	</script>
 {% endif %}
 
