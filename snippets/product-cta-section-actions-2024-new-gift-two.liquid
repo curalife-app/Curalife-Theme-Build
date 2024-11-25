@@ -153,18 +153,22 @@
 
     // Gift selection logic
 		const MAX_GIFTS = 2;
-  	let selectedGifts = [];
-    const giftOptionContainers = document.querySelectorAll('.gift-option-container');
+		let selectedGifts = [];
+		const giftOptionContainers = document.querySelectorAll('.gift-option-container');
 
-    giftOptionContainers.forEach(container => {
+		giftOptionContainers.forEach(container => {
 			container.addEventListener('click', function(event) {
-				const isSelected = container.classList.contains('selected');
+				const isSelected = selectedGifts.includes(container);
 
 				if (isSelected) {
-					container.classList.remove('selected');
+					// If already selected, deselect it
 					selectedGifts = selectedGifts.filter(gift => gift !== container);
 				} else if (selectedGifts.length < MAX_GIFTS) {
-					container.classList.add('selected');
+					// If not selected and we haven't reached max gifts, select it
+					selectedGifts.push(container);
+				} else if (selectedGifts.length === MAX_GIFTS) {
+					// If we're at max gifts, shift out the first one and add the new one
+					const oldestGift = selectedGifts.shift();
 					selectedGifts.push(container);
 				}
 
@@ -172,28 +176,29 @@
 			});
 		});
 
-    function updateRadioIndicator(selectedContainer) {
-      giftOptionContainers.forEach(container => {
-        const checkMark = container.querySelector('.check-mark');
-        if (container === selectedContainer) {
-          checkMark.classList.remove('hidden');
-        } else {
-          checkMark.classList.add('hidden');
-        }
-      });
-    }
+    function updateRadioIndicators() {
+			giftOptionContainers.forEach(container => {
+				const checkMark = container.querySelector('.check-mark');
+				if (selectedGifts.includes(container)) {
+					checkMark.classList.remove('hidden');
+					container.classList.add('selected');
+				} else {
+					checkMark.classList.add('hidden');
+					container.classList.remove('selected');
+				}
+			});
+		}
 
     // Initialize the first two gifts as selected by default
     if (giftOptionContainers.length > 0) {
-      // Select up to 2 gifts
-      const giftsToSelect = Math.min(2, giftOptionContainers.length);
-      for(let i = 0; i < giftsToSelect; i++) {
-        const gift = giftOptionContainers[i];
-        gift.classList.add('selected');
-        selectedGifts.push(gift);
-      }
-      updateRadioIndicators();
-    }
+			// Select up to 2 gifts
+			const giftsToSelect = Math.min(2, giftOptionContainers.length);
+			for(let i = 0; i < giftsToSelect; i++) {
+				const gift = giftOptionContainers[i];
+				selectedGifts.push(gift);
+			}
+			updateRadioIndicators();
+		}
 
     function isSubscriptionSelected() {
 			const productActions = document.querySelector('.product-actions');
