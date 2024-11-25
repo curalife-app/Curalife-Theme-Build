@@ -231,74 +231,49 @@ async function addValidItemsToCart(items) {
     if (!cartResponse.ok) throw new Error('Failed to fetch current cart');
     let currentCart = await cartResponse.json();
 
-    // Validate all items first
-    const validationResults = await Promise.all(
-      items.map(item => validateCartItem(item, currentCart))
-    );
+    // Find subscription items
+    const subscriptionItem = items.find(item => item.selling_plan);
 
-    // Handle subscription replacements
-    const subscriptionReplacements = validationResults
-      .filter(result => result.requiresReplacement)
-      .map(result => result.itemToRemove);
+    if (subscriptionItem) {
+      // Check if there's an existing subscription in cart with same product ID
+      const existingSubscription = currentCart.items.find(cartItem =>
+        cartItem.product_id === subscriptionItem.product_id &&
+        cartItem.selling_plan_allocation
+      );
 
-    if (subscriptionReplacements.length > 0) {
-      const updates = {};
-      subscriptionReplacements.forEach(item => {
-        updates[item.key] = 0;  // Remove existing subscription
-      });
+      if (existingSubscription) {
+        // Remove existing subscription first
+        const updates = { [existingSubscription.key]: 0 };
+        await fetch('/cart/update.js', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ updates })
+        });
 
-      await fetch('/cart/update.js', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ updates })
-      });
-
-      // Refresh cart after removals
-      currentCart = await (await fetch('/cart.js')).json();
+        // Refresh cart after removal
+        currentCart = await (await fetch('/cart.js')).json();
+      }
     }
 
-    const validItems = items.filter((_, index) => validationResults[index].isValid);
-    const invalidItems = items.filter((_, index) => !validationResults[index].isValid);
-
-    // Show error messages for invalid items
-    invalidItems.forEach((_, index) => {
-      const result = validationResults[findFailedValidationIndex(validationResults, index)];
-      if (result?.error) showNotification(result.error.message, result.error.type);
+    // Add new items
+    const response = await fetch('/cart/add.js', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items })
     });
 
-    if (validItems.length > 0) {
-      const response = await fetch('/cart/add.js', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: validItems })
-      });
+    if (!response.ok) throw new Error('Failed to add items to cart');
 
-      if (!response.ok) throw new Error('Failed to add items to cart');
-
-      if (subscriptionReplacements.length > 0) {
-        showNotification('Subscription has been updated in your cart', 'success');
-      } else if (invalidItems.length > 0) {
-        showNotification('Some items were added to cart, but free gift limit was exceeded', 'info');
-      } else {
-        showNotification('Items added to cart successfully', 'success');
-      }
-
-      return {
-        success: true,
-        addedItems: validItems,
-        failedItems: invalidItems,
-        replacedItems: subscriptionReplacements
-      };
+    if (subscriptionItem) {
+      showNotification('Subscription has been updated in your cart', 'success');
+    } else {
+      showNotification('Items added to cart successfully', 'success');
     }
 
-    return {
-      success: false,
-      addedItems: [],
-      failedItems: invalidItems,
-      error: { message: 'No items could be added to cart', type: 'error' }
-    };
+    return { success: true, addedItems: items, failedItems: [] };
+
   } catch (error) {
-    console.error('Error adding items to cart:', error);
+    console.error('Error:', error);
     showNotification('An error occurred while adding items to cart. Please try again.');
     return { success: false, addedItems: [], failedItems: items };
   }
