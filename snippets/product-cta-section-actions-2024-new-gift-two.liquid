@@ -698,14 +698,15 @@ async function validateCartItem(item, currentCart) {
         });
       });
 
-      const bfcmDealCount = await countUniqueProductsWithTag(currentCart);
+      // Always allow 2 gifts instead of calculating BFCM count
+      const allowedGiftCount = 2;
 
-      if (currentFreeItems.length >= bfcmDealCount) {
+      if (currentFreeItems.length >= allowedGiftCount) {
         return {
           isValid: false,
           error: {
             code: 'FREE_ITEM_LIMIT',
-            message: `You can have up to ${bfcmDealCount} free gift${bfcmDealCount !== 1 ? 's' : ''} (one for each BFCM deal in your cart).`,
+            message: `You can have up to ${allowedGiftCount} free gift${allowedGiftCount !== 1 ? 's' : ''} in your cart.`,
             type: 'error'
           }
         };
@@ -726,6 +727,7 @@ async function validateCartItem(item, currentCart) {
   }
 }
 
+// Updated addValidItemsToCart function to use simplified gift validation
 async function addValidItemsToCart(items) {
   try {
     // Always fetch the latest cart data
