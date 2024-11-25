@@ -149,15 +149,21 @@
 
 		async function validateCartItem(item, currentCart) {
   try {
-    console.log('Validating item:', item);
-    console.log('Current cart state during validation:', currentCart);
-
-    const productId = parseInt(item.product_id);
+    // Get product ID from variant ID if not directly available
+    const productId = item.product_id || await getProductIdFromVariant(item.id);
     if (!productId) {
-      throw new Error(`Product ID is missing for variant ${item.id}`);
+      console.error(`Unable to determine product ID for variant ${item.id}`);
+      return {
+        isValid: false,
+        error: {
+          code: 'INVALID_PRODUCT',
+          message: 'Unable to validate product. Please try again.',
+          type: 'error'
+        }
+      };
     }
 
-    // Get all gift option elements to check if this is a gift variant
+    // Get gift options and check if item is free
     const giftOptions = document.querySelectorAll('.gift-option-border');
     const isItemFree = Array.from(giftOptions).some(giftOption => {
       const giftId = isSubscriptionSelected()
@@ -166,27 +172,19 @@
       return giftId === item.id.toString();
     });
 
-    console.log('Is item free?', isItemFree, 'Item ID:', item.id);
-
     if (isItemFree) {
-      const currentFreeItems = currentCart.items.filter(cartItem => {
-        // Check if the cart item's variant ID matches any gift variant IDs
-        return Array.from(giftOptions).some(giftOption => {
+      const currentFreeItems = currentCart.items.filter(cartItem =>
+        Array.from(giftOptions).some(giftOption => {
           const giftId = isSubscriptionSelected()
             ? giftOption.dataset.giftIdSubscription
             : giftOption.dataset.giftId;
           return cartItem.variant_id.toString() === giftId;
-        });
-      });
-
-      console.log('Current free items in cart:', currentFreeItems);
+        })
+      );
 
       const bfcmDealCount = await countUniqueProductsWithTag(currentCart);
-      console.log('Current free items count:', currentFreeItems.length);
-      console.log('BFCM deal count:', bfcmDealCount);
 
       if (currentFreeItems.length >= bfcmDealCount) {
-        console.log('Free item limit exceeded');
         return {
           isValid: false,
           error: {
@@ -208,6 +206,80 @@
         message: 'Unable to validate item. Please try again.',
         type: 'error'
       }
+    };
+  }
+}
+
+// Helper function to get product ID from variant
+async function getProductIdFromVariant(variantId) {
+  try {
+    const response = await fetch(`/variants/${variantId}.js`);
+    if (!response.ok) return null;
+    const variantData = await response.json();
+    return variantData.product_id;
+  } catch (error) {
+    console.error('Error fetching variant data:', error);
+    return null;
+  }
+}
+
+// Modified addValidItemsToCart function
+async function addValidItemsToCart(items) {
+  try {
+    const cartResponse = await fetch('/cart.js');
+    if (!cartResponse.ok) throw new Error('Failed to fetch current cart');
+    let currentCart = await cartResponse.json();
+
+    const validationResults = await Promise.all(
+      items.map(item => validateCartItem(item, currentCart))
+    );
+
+    const validItems = items.filter((_, index) => validationResults[index].isValid);
+    const invalidItems = items.filter((_, index) => !validationResults[index].isValid);
+
+    invalidItems.forEach((_, index) => {
+      const result = validationResults[findFailedValidationIndex(validationResults, index)];
+      if (result?.error) showNotification(result.error.message, result.error.type);
+    });
+
+    if (validItems.length > 0) {
+      const response = await fetch('/cart/add.js', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: validItems })
+      });
+
+      if (!response.ok) throw new Error('Failed to add items to cart');
+
+      if (invalidItems.length > 0) {
+        showNotification('Some items were added to cart, but free gift limit was exceeded', 'info');
+      } else {
+        showNotification('Items added to cart successfully', 'success');
+      }
+
+      return {
+        success: true,
+        addedItems: validItems,
+        failedItems: invalidItems
+      };
+    }
+
+    return {
+      success: false,
+      addedItems: [],
+      failedItems: invalidItems,
+      error: {
+        message: 'No items could be added to cart',
+        type: 'error'
+      }
+    };
+  } catch (error) {
+    console.error('Error adding items to cart:', error);
+    showNotification('An error occurred while adding items to cart. Please try again.');
+    return {
+      success: false,
+      addedItems: [],
+      failedItems: items
     };
   }
 }
@@ -236,84 +308,6 @@ async function countUniqueProductsWithTag(cart) {
   } catch (error) {
     console.error('Error counting Black Friday Week products:', error);
     return 1; // Default to 1 if there's an error
-  }
-}
-
-async function addValidItemsToCart(items) {
-  try {
-    // Always fetch the latest cart data
-    const cartResponse = await fetch('/cart.js');
-    if (!cartResponse.ok) {
-      throw new Error('Failed to fetch current cart');
-    }
-    let currentCart = await cartResponse.json();
-    console.log('Current cart state:', currentCart);
-
-    // First, validate all items
-    const validationResults = await Promise.all(
-      items.map(item => validateCartItem(item, currentCart))
-    );
-
-    console.log('Validation results:', validationResults);
-
-    // Get valid and invalid items
-    const validItems = items.filter((_, index) => validationResults[index].isValid);
-    const invalidItems = items.filter((_, index) => !validationResults[index].isValid);
-
-    // Show notifications for invalid items
-    invalidItems.forEach((_, index) => {
-      const result = validationResults[findFailedValidationIndex(validationResults, index)];
-      if (result?.error) {
-        showNotification(result.error.message, result.error.type);
-      }
-    });
-
-    // If we have valid items, add them to cart
-    if (validItems.length > 0) {
-      const response = await fetch('/cart/add.js', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ items: validItems })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to add items to cart');
-      }
-
-      // If some items were invalid but others succeeded
-      if (invalidItems.length > 0) {
-        showNotification('Some items were added to cart, but free gift limit was exceeded', 'info');
-      } else {
-        showNotification('Items added to cart successfully', 'success');
-      }
-
-      return {
-        success: true,
-        addedItems: validItems,
-        failedItems: invalidItems
-      };
-    }
-
-    // If no valid items
-    return {
-      success: false,
-      addedItems: [],
-      failedItems: invalidItems,
-      error: {
-        message: 'No items could be added to cart',
-        type: 'error'
-      }
-    };
-  } catch (error) {
-    console.error('Error adding items to cart:', error);
-    showNotification('An error occurred while adding items to cart. Please try again.');
-    return {
-      success: false,
-      addedItems: [],
-      failedItems: items
-    };
   }
 }
 
