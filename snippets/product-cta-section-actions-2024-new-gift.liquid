@@ -137,45 +137,71 @@
     document.addEventListener('click', e => {
       const deleteButton = e.target.closest('.styles_TrashButton__deleteButton__8uIHq');
       if (!deleteButton) return;
-      console.log('Delete button clicked');
       this.handleDeleteButtonClick(deleteButton).catch(console.error);
     });
   },
 
   async handleDeleteButtonClick(deleteButton) {
-    const productRow = deleteButton.closest('.styles_ProductRow__product__AokJ5');
-    if (!productRow) return;
-
-    const titleLink = productRow.querySelector('.upcart-product-title-link');
-    if (!titleLink) return;
-
-    const handle = titleLink.href.split('/products/')[1].split('?')[0];
-    console.log('Product handle:', handle);
-
     try {
+      const productRow = deleteButton.closest('.styles_ProductRow__product__AokJ5');
+      if (!productRow) {
+        console.error('Product row not found');
+        return;
+      }
+
+      const titleLink = productRow.querySelector('.upcart-product-title-link');
+      if (!titleLink) {
+        console.error('Title link not found');
+        return;
+      }
+
+      const handle = titleLink.href.split('/products/')[1].split('?')[0];
+      console.log('Product handle:', handle);
+
       const cart = await (await fetch('/cart.js')).json();
+      console.log('Current cart:', cart.items.map(item => ({
+        handle: item.url.split('/products/')[1].split('?')[0],
+        title: item.title,
+        key: item.key
+      })));
+
+      const giftHandle = this.giftProductMapping[handle];
+      console.log('Looking for handles:', { handle, giftHandle });
+
       const itemsToRemove = cart.items.filter(item => {
         const itemHandle = item.url.split('/products/')[1].split('?')[0];
-        return itemHandle === handle || itemHandle === this.giftProductMapping[handle];
+        const isMatch = itemHandle === handle || itemHandle === giftHandle;
+        console.log('Checking item:', itemHandle, 'Match:', isMatch);
+        return isMatch;
       });
 
-      console.log('Items to remove:', itemsToRemove);
+      console.log('Items marked for removal:', itemsToRemove);
 
-      if (itemsToRemove.length === 0) return;
+      if (itemsToRemove.length === 0) {
+        console.log('No items to remove');
+        return;
+      }
 
       const updates = {};
-      itemsToRemove.forEach(item => updates[item.key] = 0);
+      itemsToRemove.forEach(item => {
+        updates[item.key] = 0;
+        console.log('Adding to updates:', item.key);
+      });
+      console.log('Final updates payload:', updates);
 
-      await fetch('/cart/update.js', {
+      const response = await fetch('/cart/update.js', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ updates })
       });
 
+      const result = await response.json();
+      console.log('Update response:', result);
+
       await new Promise(resolve => setTimeout(resolve, 500));
       location.reload();
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error in deletion process:', error);
     }
   }
 };
