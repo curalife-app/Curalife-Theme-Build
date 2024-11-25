@@ -227,58 +227,47 @@
 
 async function addValidItemsToCart(items) {
   try {
-    console.log('Starting addValidItemsToCart with items:', items);
-
     const cartResponse = await fetch('/cart.js');
     if (!cartResponse.ok) throw new Error('Failed to fetch current cart');
     let currentCart = await cartResponse.json();
-    console.log('Current cart state:', {
-      items: currentCart.items.map(item => ({
-        id: item.id,
-        product_id: item.product_id,
-        variant_id: item.variant_id,
-        selling_plan: item?.selling_plan_allocation?.selling_plan?.id,
-        key: item.key
-      }))
-    });
 
     const subscriptionItem = items.find(item => item.selling_plan);
-    console.log('New subscription item:', subscriptionItem);
 
     if (subscriptionItem) {
-      const variantResponse = await fetch(`/variants/${subscriptionItem.id}.js`);
-      const variantData = await variantResponse.json();
-      console.log('Variant data for new subscription:', variantData);
+      try {
+        const variantResponse = await fetch(`/variants/${subscriptionItem.id}.js`);
+        const variantData = await variantResponse.json();
+        const targetProductId = variantData.product_id;
 
-      const existingSubscription = currentCart.items.find(cartItem => {
-        console.log('Checking cart item:', {
-          itemId: cartItem.id,
-          itemProductId: cartItem.product_id,
-          targetProductId: variantData.product_id,
-          hasSelllingPlan: Boolean(cartItem.selling_plan_allocation),
-          sellingPlanId: cartItem?.selling_plan_allocation?.selling_plan?.id
+        console.log('Looking for existing subscription with product ID:', targetProductId);
+
+        const existingSubscription = currentCart.items.find(cartItem => {
+          const isSameProduct = cartItem.product_id === targetProductId;
+          const isSubscription = Boolean(cartItem.selling_plan_allocation);
+
+          console.log('Checking cart item:', {
+            itemId: cartItem.id,
+            itemProductId: cartItem.product_id,
+            targetProductId,
+            isSubscription,
+            isSameProduct
+          });
+
+          return isSameProduct && isSubscription;
         });
-        return cartItem.product_id === variantData.product_id && cartItem.selling_plan_allocation;
-      });
 
-      if (existingSubscription) {
-        console.log('Found existing subscription:', {
-          key: existingSubscription.key,
-          productId: existingSubscription.product_id,
-          variantId: existingSubscription.variant_id,
-          sellingPlan: existingSubscription?.selling_plan_allocation?.selling_plan?.id
-        });
+        if (existingSubscription) {
+          const updates = { [existingSubscription.key]: 0 };
+          await fetch('/cart/update.js', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ updates })
+          });
 
-        const updates = { [existingSubscription.key]: 0 };
-        const updateResponse = await fetch('/cart/update.js', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ updates })
-        });
-        console.log('Update response:', await updateResponse.json());
-
-        currentCart = await (await fetch('/cart.js')).json();
-        console.log('Cart after removal:', currentCart);
+          currentCart = await (await fetch('/cart.js')).json();
+        }
+      } catch (variantError) {
+        console.error('Error fetching variant data:', variantError);
       }
     }
 
