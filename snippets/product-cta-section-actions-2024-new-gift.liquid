@@ -135,59 +135,47 @@
 
   init() {
     document.addEventListener('click', e => {
-      const deleteButton = e.target.closest('.styles_TrashButton__deleteButton__8uIHq');
+      const clickPath = e.composedPath();
+      const deleteButton = clickPath.find(el =>
+        el.classList && el.classList.contains('styles_TrashButton__deleteButton__8uIHq')
+      );
+
       if (!deleteButton) return;
-      this.handleDeleteButtonClick(deleteButton).catch(console.error);
+      console.log('Delete button found:', deleteButton);
+
+      const productRow = clickPath.find(el =>
+        el.classList && el.classList.contains('styles_ProductRow__product__AokJ5')
+      );
+
+      if (!productRow) return;
+      console.log('Product row found:', productRow);
+
+      this.handleDeleteButtonClick(deleteButton, productRow).catch(console.error);
     });
   },
 
-  async handleDeleteButtonClick(deleteButton) {
+  async handleDeleteButtonClick(deleteButton, productRow) {
     try {
-      const productRow = deleteButton.closest('.styles_ProductRow__product__AokJ5');
-      if (!productRow) {
-        console.error('Product row not found');
-        return;
-      }
-
       const titleLink = productRow.querySelector('.upcart-product-title-link');
-      if (!titleLink) {
-        console.error('Title link not found');
-        return;
-      }
+      if (!titleLink) return;
 
       const handle = titleLink.href.split('/products/')[1].split('?')[0];
-      console.log('Product handle:', handle);
+      console.log('Deleting product:', handle);
 
       const cart = await (await fetch('/cart.js')).json();
-      console.log('Current cart:', cart.items.map(item => ({
-        handle: item.url.split('/products/')[1].split('?')[0],
-        title: item.title,
-        key: item.key
-      })));
-
-      const giftHandle = this.giftProductMapping[handle];
-      console.log('Looking for handles:', { handle, giftHandle });
+      console.log('Current cart:', cart.items);
 
       const itemsToRemove = cart.items.filter(item => {
         const itemHandle = item.url.split('/products/')[1].split('?')[0];
-        const isMatch = itemHandle === handle || itemHandle === giftHandle;
-        console.log('Checking item:', itemHandle, 'Match:', isMatch);
-        return isMatch;
+        return itemHandle === handle || itemHandle === this.giftProductMapping[handle];
       });
 
-      console.log('Items marked for removal:', itemsToRemove);
+      console.log('Removing items:', itemsToRemove);
 
-      if (itemsToRemove.length === 0) {
-        console.log('No items to remove');
-        return;
-      }
+      if (itemsToRemove.length === 0) return;
 
       const updates = {};
-      itemsToRemove.forEach(item => {
-        updates[item.key] = 0;
-        console.log('Adding to updates:', item.key);
-      });
-      console.log('Final updates payload:', updates);
+      itemsToRemove.forEach(item => updates[item.key] = 0);
 
       const response = await fetch('/cart/update.js', {
         method: 'POST',
@@ -195,13 +183,10 @@
         body: JSON.stringify({ updates })
       });
 
-      const result = await response.json();
-      console.log('Update response:', result);
-
-      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log('Update response:', await response.json());
       location.reload();
     } catch (error) {
-      console.error('Error in deletion process:', error);
+      console.error('Error:', error);
     }
   }
 };
