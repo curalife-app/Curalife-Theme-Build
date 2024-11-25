@@ -232,18 +232,7 @@ async function addValidItemsToCart(items) {
     if (!cartResponse.ok) throw new Error('Failed to fetch current cart');
     let currentCart = await cartResponse.json();
 
-    // Validate all items before adding
-    const validationResults = await Promise.all(
-      items.map(item => validateCartItem(item, currentCart))
-    );
-
-    const invalidItems = validationResults.filter(result => !result.isValid);
-    if (invalidItems.length > 0) {
-      const firstError = invalidItems[0].error;
-      showNotification(firstError.message, firstError.type);
-      return { success: false, addedItems: [], failedItems: items };
-    }
-
+    // First handle subscription replacement if needed
     const subscriptionItem = items.find(item => item.selling_plan);
     if (subscriptionItem) {
       const selectedBox = document.querySelector('.purchase-option-box.selected');
@@ -268,6 +257,37 @@ async function addValidItemsToCart(items) {
       }
     }
 
+    // Then check free gift limits
+    const giftItem = items.find(item => {
+      const giftOptions = document.querySelectorAll('.gift-option-border');
+      return Array.from(giftOptions).some(giftOption => {
+        const giftId = subscriptionItem
+          ? giftOption.dataset.giftIdSubscription
+          : giftOption.dataset.giftId;
+        return item.id.toString() === giftId;
+      });
+    });
+
+    if (giftItem) {
+      const giftOptions = document.querySelectorAll('.gift-option-border');
+      const currentFreeItems = currentCart.items.filter(cartItem =>
+        Array.from(giftOptions).some(giftOption => {
+          const giftId = cartItem.selling_plan_allocation
+            ? giftOption.dataset.giftIdSubscription
+            : giftOption.dataset.giftId;
+          return cartItem.variant_id.toString() === giftId;
+        })
+      );
+
+      const bfcmDealCount = await countUniqueProductsWithTag(currentCart);
+
+      if (currentFreeItems.length >= bfcmDealCount) {
+        showNotification(`You can have up to ${bfcmDealCount} free gift${bfcmDealCount !== 1 ? 's' : ''} (one for each BFCM deal in your cart).`, 'error');
+        return { success: false, addedItems: [], failedItems: items };
+      }
+    }
+
+    // Finally add items to cart
     const response = await fetch('/cart/add.js', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
