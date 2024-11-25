@@ -183,13 +183,17 @@
       });
     }
 
-    // Initialize the first gift as selected by default
+    // Initialize the first two gifts as selected by default
     if (giftOptionContainers.length > 0) {
-			const firstGift = giftOptionContainers[0];
-			firstGift.classList.add('selected');
-			selectedGifts.push(firstGift);
-			updateRadioIndicators();
-		}
+      // Select up to 2 gifts
+      const giftsToSelect = Math.min(2, giftOptionContainers.length);
+      for(let i = 0; i < giftsToSelect; i++) {
+        const gift = giftOptionContainers[i];
+        gift.classList.add('selected');
+        selectedGifts.push(gift);
+      }
+      updateRadioIndicators();
+    }
 
     function isSubscriptionSelected() {
 			const productActions = document.querySelector('.product-actions');
