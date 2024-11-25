@@ -147,13 +147,14 @@
 			ctaText.classList.add('mbl:mb-8');
 		}
 
-async function addValidItemsToCart(items) {
+		async function addValidItemsToCart(items) {
   try {
     const cartResponse = await fetch('/cart.js');
     if (!cartResponse.ok) throw new Error('Failed to fetch current cart');
     let currentCart = await cartResponse.json();
+    let itemsToAdd = [...items];
 
-    // First handle subscription replacement if needed
+    // Handle subscription replacement
     const subscriptionItem = items.find(item => item.selling_plan);
     if (subscriptionItem) {
       const selectedBox = document.querySelector('.purchase-option-box.selected');
@@ -178,7 +179,7 @@ async function addValidItemsToCart(items) {
       }
     }
 
-    // Then check free gift limits
+    // Check free gift limits
     const giftItem = items.find(item => {
       const giftOptions = document.querySelectorAll('.gift-option-border');
       return Array.from(giftOptions).some(giftOption => {
@@ -203,16 +204,19 @@ async function addValidItemsToCart(items) {
       const bfcmDealCount = await countUniqueProductsWithTag(currentCart);
 
       if (currentFreeItems.length >= bfcmDealCount) {
+        itemsToAdd = items.filter(item => item !== giftItem);
         showNotification(`You can have up to ${bfcmDealCount} free gift${bfcmDealCount !== 1 ? 's' : ''} (one for each BFCM deal in your cart).`, 'error');
-        return { success: false, addedItems: [], failedItems: items };
       }
     }
 
-    // Finally add items to cart
+    if (itemsToAdd.length === 0) {
+      return { success: false, addedItems: [], failedItems: items };
+    }
+
     const response = await fetch('/cart/add.js', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items })
+      body: JSON.stringify({ items: itemsToAdd })
     });
 
     if (!response.ok) throw new Error('Failed to add items to cart');
@@ -220,13 +224,17 @@ async function addValidItemsToCart(items) {
     const addResult = await response.json();
     console.log('Add items response:', addResult);
 
-    if (subscriptionItem) {
+    if (subscriptionItem && itemsToAdd.includes(subscriptionItem)) {
       showNotification('Subscription has been updated in your cart', 'success');
     } else {
       showNotification('Items added to cart successfully', 'success');
     }
 
-    return { success: true, addedItems: items, failedItems: [] };
+    return {
+      success: true,
+      addedItems: itemsToAdd,
+      failedItems: items.filter(item => !itemsToAdd.includes(item))
+    };
 
   } catch (error) {
     console.error('Error in addValidItemsToCart:', error);
