@@ -163,21 +163,6 @@
       };
     }
 
-    // Check for existing subscription
-    if (item.selling_plan) {
-      const existingSubscription = currentCart.items.find(cartItem =>
-        cartItem.product_id === productId && cartItem.selling_plan_allocation
-      );
-
-      if (existingSubscription) {
-        return {
-          isValid: true,
-          requiresReplacement: true,
-          itemToRemove: existingSubscription
-        };
-      }
-    }
-
     // Check if item is a free gift
     const giftOptions = document.querySelectorAll('.gift-option-border');
     const isItemFree = Array.from(giftOptions).some(giftOption => {
@@ -188,9 +173,10 @@
     });
 
     if (isItemFree) {
+      // Get current cart free items based on matching variant IDs
       const currentFreeItems = currentCart.items.filter(cartItem =>
         Array.from(giftOptions).some(giftOption => {
-          const giftId = isSubscriptionSelected()
+          const giftId = cartItem.selling_plan_allocation
             ? giftOption.dataset.giftIdSubscription
             : giftOption.dataset.giftId;
           return cartItem.variant_id.toString() === giftId;
@@ -207,6 +193,21 @@
             message: `You can have up to ${bfcmDealCount} free gift${bfcmDealCount !== 1 ? 's' : ''} (one for each BFCM deal in your cart).`,
             type: 'error'
           }
+        };
+      }
+    }
+
+    // Check for existing subscription
+    if (item.selling_plan) {
+      const existingSubscription = currentCart.items.find(cartItem =>
+        cartItem.product_id === productId && cartItem.selling_plan_allocation
+      );
+
+      if (existingSubscription) {
+        return {
+          isValid: true,
+          requiresReplacement: true,
+          itemToRemove: existingSubscription
         };
       }
     }
@@ -231,27 +232,27 @@ async function addValidItemsToCart(items) {
     if (!cartResponse.ok) throw new Error('Failed to fetch current cart');
     let currentCart = await cartResponse.json();
 
-    const subscriptionItem = items.find(item => item.selling_plan);
+    // Validate all items before adding
+    const validationResults = await Promise.all(
+      items.map(item => validateCartItem(item, currentCart))
+    );
 
+    const invalidItems = validationResults.filter(result => !result.isValid);
+    if (invalidItems.length > 0) {
+      const firstError = invalidItems[0].error;
+      showNotification(firstError.message, firstError.type);
+      return { success: false, addedItems: [], failedItems: items };
+    }
+
+    const subscriptionItem = items.find(item => item.selling_plan);
     if (subscriptionItem) {
       const selectedBox = document.querySelector('.purchase-option-box.selected');
       const productId = selectedBox.getAttribute('data-product');
 
       if (productId) {
-        console.log('Looking for existing subscription with product ID:', productId);
-
         const existingSubscription = currentCart.items.find(cartItem => {
           const isSameProduct = cartItem.product_id === parseInt(productId);
           const isSubscription = Boolean(cartItem.selling_plan_allocation);
-
-          console.log('Checking cart item:', {
-            itemId: cartItem.id,
-            itemProductId: cartItem.product_id,
-            productId,
-            isSubscription,
-            isSameProduct
-          });
-
           return isSameProduct && isSubscription;
         });
 
@@ -262,7 +263,6 @@ async function addValidItemsToCart(items) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ updates })
           });
-
           currentCart = await (await fetch('/cart.js')).json();
         }
       }
