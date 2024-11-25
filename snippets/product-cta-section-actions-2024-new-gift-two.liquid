@@ -139,6 +139,7 @@
     window.SID = SID;
 
     const purchaseOptionBoxes = productActions.querySelectorAll('.purchase-option-box');
+		const currentProductId = {{ product.id }};
 
     const styleSheet = document.createElement("style");
     styleSheet.textContent = `
@@ -150,6 +151,33 @@
 
     initializePurchaseOptions();
     setupMutationObserver();
+
+		{% assign giftProductIds = '' %}
+		{% for block in blocks %}
+			{% case block.type %}
+				{% when 'gift' %}
+					{% assign giftProd = block.settings.gift_product %}
+					{% assign giftProdSubscription = block.settings.gift_product_subscription %}
+					{% assign giftProductIds = giftProductIds | append: giftProd.id | append: ',' %}
+					{% assign giftProductIds = giftProductIds | append: giftProdSubscription.id | append: ',' %}
+				{% endcase %}
+			{% endfor %}
+		{% endfor %}
+
+		const giftProductIds = '{{ giftProductIds | strip }}'.split(',').filter(id => id);
+
+		// Build a mapping of gift variant IDs to product IDs
+		const giftVariantToProductIdMap = {
+			{% for block in blocks %}
+				{% case block.type %}
+					{% when 'gift' %}
+						{% assign giftProd = block.settings.gift_product %}
+						{% assign giftProdSubscription = block.settings.gift_product_subscription %}
+						'{{ giftProd.selected_or_first_available_variant.id }}': {{ giftProd.id }},
+						'{{ giftProdSubscription.selected_or_first_available_variant.id }}': {{ giftProdSubscription.id }},
+					{% endcase %}
+				{% endfor %}
+			};
 
     // Gift selection logic
 		const MAX_GIFTS = 2;
@@ -591,18 +619,21 @@
 
       // Create array of items with main product and all selected gifts
       const items = [
-        {
-          id: variantId,
-          product_id: currentProductId,
-          quantity: 1,
-          ...(sellingPlanId && { selling_plan: sellingPlanId })
-        },
-        ...giftIds.map(giftId => ({
-          id: giftId,
-          product_id: giftProductId,
-          quantity: 1
-        }))
-      ];
+			{
+				id: variantId,
+				product_id: currentProductId,
+				quantity: 1,
+				...(sellingPlanId && { selling_plan: sellingPlanId })
+			},
+			...giftIds.map(giftId => {
+				const giftProductId = getProductIdByVariantId(giftId);
+				return {
+					id: giftId,
+					product_id: giftProductId,
+					quantity: 1
+				};
+			})
+		];
 
       {% if buyType == "buy_now" %}
         // Delete cart drawer if it exists
