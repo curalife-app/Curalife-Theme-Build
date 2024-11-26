@@ -509,16 +509,30 @@ submitButton.addEventListener('click', async function(event) {
 						});
 					{% endif %}
 
+					const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
+					const giftOptionBorder = selectedGiftContainer?.querySelector('.gift-option-border');
+					const giftId = giftOptionBorder?.dataset.giftId;
+
+					if (!giftId) {
+						throw new Error('Please select a gift');
+					}
+
 					const response = await fetch('/cart/add.js', {
 						method: 'POST',
 						headers: {
 							'Content-Type': 'application/json',
 						},
 						body: JSON.stringify({
-							items: [{
-								id: 42865141121175,
-								quantity: 1
-							}]
+							items: [
+								{
+									id: 42865141121175,
+									quantity: 1
+								},
+								{
+									id: parseInt(giftId),
+									quantity: 1
+								}
+							]
 						})
 					});
 
