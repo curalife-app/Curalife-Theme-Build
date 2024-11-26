@@ -1,5 +1,24 @@
 {% assign referenced_variant_product = prod %}
 
+{% assign giftsAmount = 0 %}
+{% for block in blocks %}
+	{% case block.type %}
+		{% when 'gift' %}
+			{% assign show_gift = false %}
+			{% if block.settings.show_on == 'both' %}
+				{% assign show_gift = true %}
+			{% elsif block.settings.show_on == 'global' and isGlobal %}
+				{% assign show_gift = true %}
+			{% elsif block.settings.show_on == 'us' and isGlobal == false %}
+				{% assign show_gift = true %}
+			{% endif %}
+
+			{% if show_gift %}
+				{% assign giftsAmount = giftsAmount | plus: 1 %}
+			{% endif %}
+	{% endcase %}
+{% endfor %}
+
 <div class="product-actions {% if isVariantBoxToggle %}with-animation{% endif %}" data-default-variant-index="{{ defaultSelectionIndex }}">
   <div class="purchase-options flex flex-col gap-2">
     {% for block in blocks %}
@@ -33,7 +52,7 @@
     {% endfor %}
 
     <div class="gift-selector-wrap">
-      <div class="gift-selector-title mb-2">Choose your free gift:</div>
+		{% if giftsAmount > 0 %}<div class="gift-selector-title mb-2">Choose your free gift:</div>{% endif %}
 
       <div class="gift-options flex-nowrap flex justify-start gap-4">
         {% for block in blocks %}
