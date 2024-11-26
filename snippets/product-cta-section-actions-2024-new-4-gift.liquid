@@ -571,6 +571,47 @@ submitButton.addEventListener('click', async function(event) {
 			});
 		}
 
+		// Function to update the variant image
+    function updateVariantImage(element) {
+      if (!element || !element.dataset.index) {
+        return;
+      }
+
+      const SID = window.SID || '';
+      const sliderId = `productSliderAllInOne${SID}`;
+      const slider = window[sliderId];
+
+      if (!slider || !slider.slides || !slider.slides.length) {
+        initializeProductSlider()
+          .then((initializedSlider) => {
+            performSlideUpdate(initializedSlider, element);
+          })
+          .catch((error) => {
+            console.error('Failed to initialize slider:', error);
+          });
+        return;
+      }
+
+      performSlideUpdate(slider, element);
+    }
+
+    function performSlideUpdate(slider, element) {
+      try {
+        const elementIndex = parseInt(element.dataset.index);
+
+        if (elementIndex >= 0 && elementIndex < slider.slides.length) {
+          if (slider.activeIndex !== elementIndex) {
+            setTimeout(() => {
+              slider.slideTo(elementIndex, 300, true);
+            }, 50);
+          }
+        }
+      } catch (error) {
+        console.error('Error during slide update:', error);
+        console.error(error.stack);
+      }
+    }
+
 		initializePurchaseOptions();
 	});
 </script>
