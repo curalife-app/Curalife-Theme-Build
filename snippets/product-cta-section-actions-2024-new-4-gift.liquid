@@ -571,7 +571,7 @@ submitButton.addEventListener('click', async function(event) {
 			});
 		}
 
-		// Function to update the variant image
+    // Function to update the variant image
     function updateVariantImage(element) {
       if (!element || !element.dataset.index) {
         return;
@@ -582,13 +582,17 @@ submitButton.addEventListener('click', async function(event) {
       const slider = window[sliderId];
 
       if (!slider || !slider.slides || !slider.slides.length) {
-        initializeProductSlider()
-          .then((initializedSlider) => {
-            performSlideUpdate(initializedSlider, element);
-          })
-          .catch((error) => {
-            console.error('Failed to initialize slider:', error);
-          });
+        if (typeof window.initializeProductSlider === 'function') {
+          window.initializeProductSlider()
+            .then((initializedSlider) => {
+              performSlideUpdate(initializedSlider, element);
+            })
+            .catch((error) => {
+              console.error('Failed to initialize slider:', error);
+            });
+        } else {
+          console.warn('Product slider initialization function not found');
+        }
         return;
       }
 
