@@ -386,7 +386,16 @@
 
 			state.selectedBox = element;
 
-			updateVariantImage(element);
+			{% if variantsAmount > 1 %}
+        {% if isSlideOnLoad %}
+          updateVariantImage(element);
+        {% else %}
+          if (window.hasInitialImageUpdateHappened) {
+            updateVariantImage(element);
+          }
+          window.hasInitialImageUpdateHappened = true;
+        {% endif %}
+      {% endif %}
 		}
 
 		function initializePurchaseOptions() {
