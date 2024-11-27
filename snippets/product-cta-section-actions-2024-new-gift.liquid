@@ -1043,6 +1043,36 @@ async function countUniqueProductsWithTag(cart) {
 
 				performSlideUpdate(slider, targetVariantId);
 		}
+
+		function performSlideUpdate(slider, targetVariantId) {
+				try {
+						if (!slider || !targetVariantId) {
+								console.warn('Invalid slider or variant ID');
+								return;
+						}
+
+						// Find the slide with matching variant ID
+						const slideIndex = Array.from(slider.slides).findIndex(slide =>
+								slide.getAttribute('data-variant-id') === targetVariantId
+						);
+
+						if (slideIndex !== -1) {
+								slider.update();
+
+								requestAnimationFrame(() => {
+										slider.slideTo(slideIndex, 300);
+
+										setTimeout(() => {
+												slider.update();
+										}, 350);
+								});
+						} else {
+								console.warn(`No slide found with variant ID: ${targetVariantId}`);
+						}
+				} catch (error) {
+						console.error('Error during slide update:', error);
+				}
+		}
   });
 </script>
 
