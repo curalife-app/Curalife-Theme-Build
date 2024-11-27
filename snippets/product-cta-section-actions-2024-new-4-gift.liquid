@@ -452,53 +452,49 @@ submitButton.addEventListener('click', async function(event) {
     sellingPlan: submitSellingPlanIdInput?.value
   });
 
-  if (!selectedBox || !giftId || !variantId) {
-    console.error('Missing required selection');
-    return;
-  }
+	if (!selectedBox || !giftId || !variantId) {
+				console.error('Missing required selection');
+				return;
+			}
 
-  const items = [
-    {
-      id: variantId,
-      quantity: 1,
-      selling_plan: submitSellingPlanIdInput?.value || undefined
-    },
-    {
-      id: giftId,
-      quantity: 1
-    }
-  ];
+			const items = [
+				{
+					id: variantId,
+					quantity: 1,
+					selling_plan: submitSellingPlanIdInput?.value || undefined
+				},
+				{
+					id: giftId,
+					quantity: 1
+				}
+			];
 
-  console.log('Submitting items:', items);
+			try {
+				{% if buyType == "buy_now" %}
+					// Clear the cart
+					const clearResponse = await fetch('/cart/clear.js', { method: 'POST' });
+					if (!clearResponse.ok) throw new Error('Failed to clear cart');
 
-  try {
-    {% if buyType == "buy_now" %}
-      const cartDrawer = document.getElementById('upCart');
-      if (cartDrawer) {
-        cartDrawer.remove();
-      }
+					// Add items directly to the cart
+					const addResponse = await fetch('/cart/add.js', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ items })
+					});
+					if (!addResponse.ok) throw new Error('Failed to add items to cart');
 
-      await fetch('/cart/clear.js', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
-    {% endif %}
-
-    const result = await addValidItemsToCart(items);
-    console.log('Add to cart result:', result);
-
-    {% if buyType == "buy_now" and result.success %}
-      window.location.href = '/checkout';
-    {% endif %}
-
-  } catch (error) {
-    console.error('Error:', error);
-    showNotification('An error occurred while adding items to cart. Please try again.');
-  }
-});
+					// Redirect to checkout
+					window.location.href = '/checkout';
+				{% else %}
+					// Use addValidItemsToCart function for "add to cart" scenario
+					const result = await addValidItemsToCart(items);
+					console.log('Add to cart result:', result);
+				{% endif %}
+			} catch (error) {
+				console.error('Error:', error);
+				showNotification('An error occurred while adding items to cart. Please try again.');
+			}
+		});
 
 		// One-time purchase button handler
 		const oneTimePurchaseButton = productActions.querySelector('.one-time-add-to-cart');
