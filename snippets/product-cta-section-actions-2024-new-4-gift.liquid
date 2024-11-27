@@ -470,32 +470,72 @@
 				}
 			});
 
-			// Submit button
-			elements.submitButton.addEventListener('click', async function(event) {
-				event.preventDefault();
+		// Submit button click handler
+		elements.submitButton.addEventListener('click', async function(event) {
+			event.preventDefault();
 
-				const selectedBox = elements.productActions.querySelector('.purchase-option-box.selected');
-				const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
-				const giftOptionBorder = selectedGiftContainer?.querySelector('.gift-option-border');
+			const selectedBox = elements.productActions.querySelector('.purchase-option-box.selected');
+			const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
+			const giftOptionBorder = selectedGiftContainer?.querySelector('.gift-option-border');
 
-				const isSubscription = selectedBox?.getAttribute('data-purchase-type') === 'subscribe';
-				const variantId = elements.submitVariantIdInput.value;
-				const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
+			const isSubscription = selectedBox?.getAttribute('data-purchase-type') === 'subscribe';
+			const variantId = elements.submitVariantIdInput.value;
+			const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
 
-				console.log('Debug info:', {
-					selectedBox,
-					variantId,
-					giftId,
-					originalVariant: selectedBox?.getAttribute('data-original-variant'),
-					isSubscription,
-					sellingPlan: elements.submitSellingPlanIdInput?.value
-				});
+			console.log('Debug info:', {
+				selectedBox,
+				variantId,
+				giftId,
+				originalVariant: selectedBox?.getAttribute('data-original-variant'),
+				isSubscription,
+				sellingPlan: elements.submitSellingPlanIdInput?.value
+			});
 
-				if (!selectedBox || !giftId || !variantId) {
-					console.error('Missing required selection');
-					return;
+			if (!selectedBox || !giftId || !variantId) {
+				console.error('Missing required selection');
+				return;
+			}
+
+			// First, clear the cart if it's a buy now action
+			try {
+				{% if buyType == "buy_now" %}
+					const cartDrawer = document.getElementById('upCart');
+					if (cartDrawer) {
+						cartDrawer.remove();
+					}
+
+					await fetch('/cart/clear.js', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							'Accept': 'application/json'
+						}
+					});
+				{% endif %}
+
+				// Check current cart to prevent duplicates
+				const currentCart = await (await fetch('/cart.js')).json();
+				const existingItem = currentCart.items.find(item =>
+					item.variant_id.toString() === variantId.toString() &&
+					(!item.selling_plan_allocation && !elements.submitSellingPlanIdInput?.value ||
+					 item.selling_plan_allocation?.selling_plan_id === elements.submitSellingPlanIdInput?.value)
+				);
+
+				if (existingItem) {
+					// If the item exists, remove it first
+					await fetch('/cart/change.js', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify({
+							id: existingItem.key,
+							quantity: 0
+						})
+					});
 				}
 
+				// Now add the new items
 				const items = [
 					{
 						id: variantId,
@@ -509,14 +549,30 @@
 				];
 
 				console.log('Submitting items:', items);
+				const result = await addValidItemsToCart(items);
+				console.log('Add to cart result:', result);
+
+				{% if buyType == "buy_now" and result.success %}
+					window.location.href = '/checkout';
+				{% endif %}
+
+			} catch (error) {
+				console.error('Error:', error);
+				showNotification('An error occurred while adding items to cart. Please try again.');
+			}
+		});
+
+		// One-time purchase button handler
+		if (elements.oneTimePurchaseButton) {
+			elements.oneTimePurchaseButton.addEventListener('click', async (event) => {
+				event.preventDefault();
+
+				elements.oneTimePurchaseButton.disabled = true;
+				const originalText = elements.oneTimePurchaseButton.textContent;
+				elements.oneTimePurchaseButton.textContent = 'Adding...';
 
 				try {
 					{% if buyType == "buy_now" %}
-						const cartDrawer = document.getElementById('upCart');
-						if (cartDrawer) {
-							cartDrawer.remove();
-						}
-
 						await fetch('/cart/clear.js', {
 							method: 'POST',
 							headers: {
@@ -526,94 +582,81 @@
 						});
 					{% endif %}
 
-					const result = await addValidItemsToCart(items);
-					console.log('Add to cart result:', result);
+					const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
+					const giftOptionBorder = selectedGiftContainer?.querySelector('.gift-option-border');
+					const giftId = giftOptionBorder?.dataset.giftId;
 
-					{% if buyType == "buy_now" and result.success %}
-						window.location.href = '/checkout';
-					{% endif %}
+					if (!giftId) {
+						throw new Error('Please select a gift');
+					}
 
-				} catch (error) {
-					console.error('Error:', error);
-					showNotification('An error occurred while adding items to cart. Please try again.');
-				}
-			});
+					// Check current cart to prevent duplicates
+					const currentCart = await (await fetch('/cart.js')).json();
+					const existingItem = currentCart.items.find(item =>
+						item.variant_id === 42865141121175 && !item.selling_plan_allocation
+					);
 
-			// One-time purchase button
-			if (elements.oneTimePurchaseButton) {
-				elements.oneTimePurchaseButton.addEventListener('click', async (event) => {
-					event.preventDefault();
-
-					elements.oneTimePurchaseButton.disabled = true;
-					const originalText = elements.oneTimePurchaseButton.textContent;
-					elements.oneTimePurchaseButton.textContent = 'Adding...';
-
-					try {
-						{% if buyType == "buy_now" %}
-							await fetch('/cart/clear.js', {
-								method: 'POST',
-								headers: {
-									'Content-Type': 'application/json',
-									'Accept': 'application/json'
-								}
-							});
-						{% endif %}
-
-						const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
-						const giftOptionBorder = selectedGiftContainer?.querySelector('.gift-option-border');
-						const giftId = giftOptionBorder?.dataset.giftId;
-
-						if (!giftId) {
-							throw new Error('Please select a gift');
-						}
-
-						const response = await fetch('/cart/add.js', {
+					if (existingItem) {
+						// If the item exists, remove it first
+						await fetch('/cart/change.js', {
 							method: 'POST',
 							headers: {
 								'Content-Type': 'application/json',
 							},
 							body: JSON.stringify({
-								items: [
-									{
-										id: 42865141121175,
-										quantity: 1
-									},
-									{
-										id: parseInt(giftId),
-										quantity: 1
-									}
-								]
+								id: existingItem.key,
+								quantity: 0
 							})
 						});
+					}
 
-						if (!response.ok) {
-							throw new Error('Network response was not ok');
+					// Add the new items
+					const response = await fetch('/cart/add.js', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify({
+							items: [
+								{
+									id: 42865141121175,
+									quantity: 1
+								},
+								{
+									id: parseInt(giftId),
+									quantity: 1
+								}
+							]
+						})
+					});
+
+					if (!response.ok) {
+						throw new Error('Network response was not ok');
+					}
+
+					{% if buyType == "buy_now" %}
+						window.location.href = '/checkout';
+					{% else %}
+						if (typeof window.updateCart === 'function') {
+							window.updateCart();
 						}
 
-						{% if buyType == "buy_now" %}
-							window.location.href = '/checkout';
-						{% else %}
-							if (typeof window.updateCart === 'function') {
-								window.updateCart();
-							}
-
-							elements.oneTimePurchaseButton.textContent = 'Added!';
-							setTimeout(() => {
-								elements.oneTimePurchaseButton.textContent = originalText;
-								elements.oneTimePurchaseButton.disabled = false;
-							}, 2000);
-						{% endif %}
-
-					} catch (error) {
-						console.error('Error:', error);
-						elements.oneTimePurchaseButton.textContent = 'Something went wrong! Please contact us.';
+						elements.oneTimePurchaseButton.textContent = 'Added!';
 						setTimeout(() => {
 							elements.oneTimePurchaseButton.textContent = originalText;
 							elements.oneTimePurchaseButton.disabled = false;
 						}, 2000);
-					}
-				});
-			}
+					{% endif %}
+
+				} catch (error) {
+					console.error('Error:', error);
+					elements.oneTimePurchaseButton.textContent = 'Something went wrong! Please contact us.';
+					setTimeout(() => {
+						elements.oneTimePurchaseButton.textContent = originalText;
+						elements.oneTimePurchaseButton.disabled = false;
+					}, 2000);
+				}
+			});
 		}
 
 		// Mobile Layout Adjustments
