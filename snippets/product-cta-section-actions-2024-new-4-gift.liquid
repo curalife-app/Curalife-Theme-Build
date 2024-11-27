@@ -132,6 +132,7 @@
 		const giftOptionContainers = document.querySelectorAll('.gift-option-container');
 		const SID = '{{ SID }}';
     window.SID = SID;
+		const buyType = '{{ buyType }}';
 
 		giftOptionContainers.forEach(container => {
 			container.addEventListener('click', function(event) {
@@ -428,31 +429,22 @@
 			}
 		});
 
-		// Submit button handler
-submitButton.addEventListener('click', async function(event) {
-  event.preventDefault();
+		submitButton.addEventListener('click', async function(event) {
+			event.preventDefault();
 
-  const selectedBox = productActions.querySelector('.purchase-option-box.selected');
-  const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
-  const giftOptionBorder = selectedGiftContainer?.querySelector('.gift-option-border');
+			const selectedBox = productActions.querySelector('.purchase-option-box.selected');
+			const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
+			const giftOptionBorder = selectedGiftContainer?.querySelector('.gift-option-border');
 
-  const isSubscription = selectedBox?.getAttribute('data-purchase-type') === 'subscribe';
-  const variantId = submitVariantIdInput.value;
-  const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
+			const isSubscription = selectedBox?.getAttribute('data-purchase-type') === 'subscribe';
+			const variantId = submitVariantIdInput.value;
+			const giftId = giftOptionBorder
+				? isSubscription
+					? giftOptionBorder.dataset.giftIdSubscription
+					: giftOptionBorder.dataset.giftId
+				: null;
 
-  // Get product IDs from the original variant
-  const originalVariant = selectedBox?.getAttribute('data-original-variant');
-
-  console.log('Debug info:', {
-    selectedBox,
-    variantId,
-    giftId,
-    originalVariant,
-    isSubscription,
-    sellingPlan: submitSellingPlanIdInput?.value
-  });
-
-	if (!selectedBox || !giftId || !variantId) {
+			if (!selectedBox || !giftId || !variantId) {
 				console.error('Missing required selection');
 				return;
 			}
@@ -470,10 +462,28 @@ submitButton.addEventListener('click', async function(event) {
 			];
 
 			try {
-				{% if buyType == "buy_now" %}
+				if (buyType === 'buy_now') {
 					// Clear the cart
 					const clearResponse = await fetch('/cart/clear.js', { method: 'POST' });
 					if (!clearResponse.ok) throw new Error('Failed to clear cart');
+
+					// Wait until the cart is actually empty
+					let cartIsEmpty = false;
+					for (let i = 0; i < 5; i++) {
+						const cartResponse = await fetch('/cart.js');
+						if (!cartResponse.ok) throw new Error('Failed to fetch cart');
+
+						const cartData = await cartResponse.json();
+						if (cartData.item_count === 0) {
+							cartIsEmpty = true;
+							break;
+						}
+						await new Promise(resolve => setTimeout(resolve, 200));
+					}
+
+					if (!cartIsEmpty) {
+						throw new Error('Cart is not empty after clearing');
+					}
 
 					// Add items directly to the cart
 					const addResponse = await fetch('/cart/add.js', {
@@ -485,11 +495,11 @@ submitButton.addEventListener('click', async function(event) {
 
 					// Redirect to checkout
 					window.location.href = '/checkout';
-				{% else %}
+				} else {
 					// Use addValidItemsToCart function for "add to cart" scenario
 					const result = await addValidItemsToCart(items);
 					console.log('Add to cart result:', result);
-				{% endif %}
+				}
 			} catch (error) {
 				console.error('Error:', error);
 				showNotification('An error occurred while adding items to cart. Please try again.');
@@ -519,6 +529,25 @@ submitButton.addEventListener('click', async function(event) {
 						// Clear the cart
 						const clearResponse = await fetch('/cart/clear.js', { method: 'POST' });
 						if (!clearResponse.ok) throw new Error('Failed to clear cart');
+
+						// Wait until the cart is actually empty
+						let cartIsEmpty = false;
+						for (let i = 0; i < 5; i++) { // Try up to 5 times
+							const cartResponse = await fetch('/cart.js');
+							if (!cartResponse.ok) throw new Error('Failed to fetch cart');
+
+							const cartData = await cartResponse.json();
+							if (cartData.item_count === 0) {
+								cartIsEmpty = true;
+								break;
+							}
+							// Wait for 200 milliseconds before checking again
+							await new Promise(resolve => setTimeout(resolve, 200));
+						}
+
+						if (!cartIsEmpty) {
+							throw new Error('Cart is not empty after clearing');
+						}
 
 						// Add items directly to the cart
 						const response = await fetch('/cart/add.js', {
