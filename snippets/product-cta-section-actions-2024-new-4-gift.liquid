@@ -479,16 +479,19 @@
 
 					// Wait until the cart is actually empty
 					let cartIsEmpty = false;
-					for (let i = 0; i < 5; i++) {
+					for (let i = 0; i < 10; i++) { // Try up to 10 times
 						const cartResponse = await fetch('/cart.js');
 						if (!cartResponse.ok) throw new Error('Failed to fetch cart');
 
 						const cartData = await cartResponse.json();
+						console.log('Cart data:', cartData);
+
 						if (cartData.item_count === 0) {
 							cartIsEmpty = true;
 							break;
 						}
-						await new Promise(resolve => setTimeout(resolve, 200));
+						// Wait for 500 milliseconds before checking again
+						await new Promise(resolve => setTimeout(resolve, 500));
 					}
 
 					if (!cartIsEmpty) {
