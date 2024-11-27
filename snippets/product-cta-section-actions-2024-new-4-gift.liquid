@@ -434,7 +434,9 @@
 		});
 
 		submitButton.addEventListener('click', async function(event) {
+			console.log('Submit button clicked');
 			event.preventDefault();
+			submitButton.disabled = true;
 
 			const selectedBox = productActions.querySelector('.purchase-option-box.selected');
 			const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
@@ -468,7 +470,11 @@
 			try {
 				if (buyType === 'buy_now') {
 					// Clear the cart
+					console.log('Clearing cart...');
 					const clearResponse = await fetch('/cart/clear.js', { method: 'POST' });
+					const clearResponseData = await clearResponse.json();
+					console.log('clearResponseData:', clearResponseData);
+
 					if (!clearResponse.ok) throw new Error('Failed to clear cart');
 
 					// Wait until the cart is actually empty
