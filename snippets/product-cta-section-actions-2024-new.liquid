@@ -607,68 +607,69 @@
       });
     }
 
+
     function updateVariantImage(element) {
-        if (!element || !element.dataset.index) {
-            console.warn('Invalid element or missing data-index attribute');
+    if (!element || !element.dataset.variant) {
+        console.warn('Invalid element or missing data-variant attribute');
+        return;
+    }
+
+    const SID = window.SID || '';
+    const sliderId = `productSliderAllInOne${SID}`;
+    let slider = window[sliderId];
+    const targetVariantId = element.dataset.variant;
+
+    if (!slider || !slider.slides || !slider.slides.length) {
+        return new Promise((resolve) => {
+            const checkSlider = setInterval(() => {
+                slider = window[sliderId];
+                if (slider && slider.slides && slider.slides.length > 0) {
+                    clearInterval(checkSlider);
+                    performSlideUpdate(slider, targetVariantId);
+                    resolve();
+                }
+            }, 100);
+
+            setTimeout(() => {
+                clearInterval(checkSlider);
+                console.warn('Slider initialization timed out');
+                resolve();
+            }, 5000);
+        });
+    }
+
+    performSlideUpdate(slider, targetVariantId);
+}
+
+function performSlideUpdate(slider, targetVariantId) {
+    try {
+        if (!slider || !targetVariantId) {
+            console.warn('Invalid slider or variant ID');
             return;
         }
 
-        const SID = window.SID || '';
-        const sliderId = `productSliderAllInOne${SID}`;
-        let slider = window[sliderId];
-        const elementIndex = parseInt(element.dataset.index);
+        // Find the slide with matching variant ID
+        const slideIndex = Array.from(slider.slides).findIndex(slide =>
+            slide.getAttribute('data-variant-id') === targetVariantId
+        );
 
-        if (!slider || !slider.slides || !slider.slides.length) {
-            return new Promise((resolve) => {
-                const checkSlider = setInterval(() => {
-                    slider = window[sliderId];
-                    if (slider && slider.slides && slider.slides.length > 0) {
-                        clearInterval(checkSlider);
-                        performSlideUpdate(slider, elementIndex);
-                        resolve();
-                    }
-                }, 100);
+        if (slideIndex !== -1) {
+            slider.update();
 
-                // Clear interval after 5 seconds to prevent infinite checking
+            requestAnimationFrame(() => {
+                slider.slideTo(slideIndex, 300);
+
                 setTimeout(() => {
-                    clearInterval(checkSlider);
-                    console.warn('Slider initialization timed out');
-                    resolve();
-                }, 5000);
+                    slider.update();
+                }, 350);
             });
+        } else {
+            console.warn(`No slide found with variant ID: ${targetVariantId}`);
         }
-
-        performSlideUpdate(slider, elementIndex);
+    } catch (error) {
+        console.error('Error during slide update:', error);
     }
-
-    function performSlideUpdate(slider, elementIndex) {
-        try {
-            if (!slider || typeof elementIndex !== 'number') {
-                console.warn('Invalid slider or element index');
-                return;
-            }
-
-            // Ensure the slider is ready and has the correct number of slides
-            if (elementIndex >= 0 && elementIndex < slider.slides.length) {
-                // Force slider update and wait for it to be ready
-                slider.update();
-
-                // Use requestAnimationFrame to ensure DOM is ready
-                requestAnimationFrame(() => {
-                    slider.slideTo(elementIndex, 300);
-
-                    // Update slider again after transition
-                    setTimeout(() => {
-                        slider.update();
-                    }, 350);
-                });
-            } else {
-                console.warn(`Invalid slide index: ${elementIndex}. Total slides: ${slider.slides.length}`);
-            }
-        } catch (error) {
-            console.error('Error during slide update:', error);
-        }
-    }
+}
 
     document.addEventListener('DOMContentLoaded', () => {
       const purchaseOptionBoxes = document.querySelectorAll('.purchase-option-box');
