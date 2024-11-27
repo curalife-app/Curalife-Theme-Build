@@ -514,7 +514,7 @@ async function cleanupExistingItems(variantId, sellingPlanId = null, giftId = nu
   }
 
   isSubmitting = true;
-  submitButton.disabled = true;
+  let cartCleared = false;
 
   try {
     const selectedBox = productActions.querySelector('.purchase-option-box.selected');
@@ -524,37 +524,77 @@ async function cleanupExistingItems(variantId, sellingPlanId = null, giftId = nu
     const isSubscription = selectedBox?.getAttribute('data-purchase-type') === 'subscribe';
     const variantId = submitVariantIdInput.value;
     const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
-    const sellingPlanId = submitSellingPlanIdInput?.value || null;
 
     if (!selectedBox || !giftId || !variantId) {
       throw new Error('Please make all required selections');
     }
 
+    // First, check the current cart
+    const cartResponse = await fetch('/cart.js');
+    const currentCart = await cartResponse.json();
+
+    // If it's a buy now operation, clear the cart
     if ("{{ buyType }}" === "buy_now") {
       const cartDrawer = document.getElementById('upCart');
-      if (cartDrawer) cartDrawer.remove();
+      if (cartDrawer) {
+        cartDrawer.remove();
+      }
 
       await fetch('/cart/clear.js', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
+      cartCleared = true;
     } else {
-      await cleanupExistingItems(variantId, sellingPlanId, giftId);
+      // For regular add to cart, remove existing instances of this variant
+      const itemsToUpdate = {};
+      currentCart.items.forEach(item => {
+        if (item.variant_id.toString() === variantId.toString()) {
+          itemsToUpdate[item.key] = 0;
+        }
+      });
+
+      if (Object.keys(itemsToUpdate).length > 0) {
+        await fetch('/cart/update.js', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ updates: itemsToUpdate })
+        });
+      }
     }
 
+    // Wait a short moment to ensure cart updates are processed
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Add the items
     const items = [
       {
         id: variantId,
         quantity: 1,
-        selling_plan: sellingPlanId
-      },
-      {
-        id: giftId,
-        quantity: 1
+        selling_plan: submitSellingPlanIdInput?.value || undefined
       }
     ];
 
-    const result = await addItemsToCart(items);
+    // Add gift separately to ensure proper ordering
+    if (giftId) {
+      items.push({
+        id: giftId,
+        quantity: 1
+      });
+    }
+
+    // Add items one at a time to prevent duplication
+    for (const item of items) {
+      await fetch('/cart/add.js', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: [item] })
+      });
+      // Small delay between additions
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
 
     if ("{{ buyType }}" === "buy_now") {
       window.location.href = '/checkout';
@@ -568,9 +608,21 @@ async function cleanupExistingItems(variantId, sellingPlanId = null, giftId = nu
   } catch (error) {
     console.error('Error:', error);
     showNotification(error.message || 'An error occurred while adding items to cart', 'error');
+
+    // If we cleared the cart but failed to add items, restore it
+    if (cartCleared) {
+      try {
+        await fetch('/cart/add.js', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: currentCart.items })
+        });
+      } catch (restoreError) {
+        console.error('Failed to restore cart:', restoreError);
+      }
+    }
   } finally {
     isSubmitting = false;
-    submitButton.disabled = false;
   }
 });
 
