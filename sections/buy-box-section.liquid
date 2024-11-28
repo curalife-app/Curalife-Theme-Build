@@ -137,178 +137,183 @@
         });
       }
     });
-
-    {% if section.settings.is_popup %}
-      document.addEventListener('DOMContentLoaded', function() {
-        const popup = document.getElementById('cta-section-{{ SID }}');
-        const popupContent = popup.querySelector('.cta-popup-content');
-        const closeButtons = popup.querySelectorAll('.close-popup');
-        const focusableElementsString = 'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]';
-        let focusableElements = [];
-        let firstFocusableElement = null;
-        let lastFocusableElement = null;
-
-        const togglePopup = (show) => {
-          if (show) {
-            popup.setAttribute('aria-hidden', 'false');
-            popup.classList.add('show');
-            focusableElements = popupContent.querySelectorAll(focusableElementsString);
-            firstFocusableElement = focusableElements[0];
-            lastFocusableElement = focusableElements[focusableElements.length - 1];
-            firstFocusableElement.focus();
-            document.addEventListener('keydown', trapTabKey);
-            document.addEventListener('keydown', handleEscape);
-            document.body.style.overflow = 'hidden';
-          } else {
-            popup.setAttribute('aria-hidden', 'true');
-            popup.classList.remove('show');
-            document.removeEventListener('keydown', trapTabKey);
-            document.removeEventListener('keydown', handleEscape);
-            document.body.style.overflow = '';
-          }
-        };
-
-        const trapTabKey = (e) => {
-          if (e.keyCode === 9) {
-            if (e.shiftKey) {
-              if (document.activeElement === firstFocusableElement) {
-                e.preventDefault();
-                lastFocusableElement.focus();
-              }
-            } else {
-              if (document.activeElement === lastFocusableElement) {
-                e.preventDefault();
-                firstFocusableElement.focus();
-              }
-            }
-          }
-        };
-
-        const handleEscape = (e) => {
-          if (e.key === 'Escape' || e.keyCode === 27) {
-            togglePopup(false);
-          }
-        };
-
-        document.querySelectorAll('a[href="#cta-popup"]').forEach(el =>
-          el.addEventListener('click', (e) => {
-            e.preventDefault();
-            togglePopup(true);
-          })
-        );
-
-        closeButtons.forEach(button => {
-          button.addEventListener('click', () => togglePopup(false));
-        });
-
-        popup.addEventListener('click', (e) => {
-          if (e.target === popup) togglePopup(false);
-        });
-      });
-    {% endif %}
   </script>
 
-  {% if section.settings.is_popup %}
-    <style>
-      #shopify-section-{{ section.id }} .product-container {
-        padding: 0 !important;
-      }
+	{% if section.settings.is_popup %}
 
-      #shopify-section-{{ section.id }} .cta-popup {
-        position: fixed;
-        inset: 0;
-        background-color: rgba(0, 0, 0, 0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-        opacity: 0;
-        visibility: hidden;
-        pointer-events: none;
-        transition: opacity 0.3s ease, visibility 0s linear 0.3s;
-      }
+		<script>
+			document.addEventListener('DOMContentLoaded', function() {
+				const popup = document.getElementById('cta-section-{{ SID }}');
+				const popupContent = popup.querySelector('.cta-popup-content');
+				const closeButtons = popup.querySelectorAll('.close-popup');
+				const focusableElementsString = 'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]';
+				let focusableElements = [];
+				let firstFocusableElement = null;
+				let lastFocusableElement = null;
 
-      #shopify-section-{{ section.id }} .cta-popup.show {
-        opacity: 1 !important;
-        visibility: visible !important;
-        pointer-events: auto !important;
-        transition-delay: 0s;
-      }
+				const togglePopup = (show) => {
+					if (show) {
+						popup.setAttribute('aria-hidden', 'false');
+						popup.classList.add('show');
+						focusableElements = popupContent.querySelectorAll(focusableElementsString);
+						firstFocusableElement = focusableElements[0];
+						lastFocusableElement = focusableElements[focusableElements.length - 1];
+						firstFocusableElement.focus();
+						document.addEventListener('keydown', trapTabKey);
+						document.addEventListener('keydown', handleEscape);
+						document.body.style.overflow = 'hidden';
+					} else {
+						popup.setAttribute('aria-hidden', 'true');
+						popup.classList.remove('show');
+						document.removeEventListener('keydown', trapTabKey);
+						document.removeEventListener('keydown', handleEscape);
+						document.body.style.overflow = '';
+					}
+				};
 
-      #shopify-section-{{ section.id }} .cta-popup-content {
-        background-color: #fff;
-        padding: 30px;
-        border-radius: 8px;
-        position: relative;
-        max-width: 1200px;
-        width: 90%;
-        max-height: 90%;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        transform: translateY(-20px);
-        opacity: 0;
-        transition: opacity 0.3s ease, transform 0.3s ease;
-        overflow-y: auto;
-      }
+				const trapTabKey = (e) => {
+					if (e.keyCode === 9) {
+						if (e.shiftKey) {
+							if (document.activeElement === firstFocusableElement) {
+								e.preventDefault();
+								lastFocusableElement.focus();
+							}
+						} else {
+							if (document.activeElement === lastFocusableElement) {
+								e.preventDefault();
+								firstFocusableElement.focus();
+							}
+						}
+					}
+				};
 
-      #shopify-section-{{ section.id }} .cta-popup.show .cta-popup-content {
-        transform: translateY(0);
-        opacity: 1;
-      }
+				const handleEscape = (e) => {
+					if (e.key === 'Escape' || e.keyCode === 27) {
+						togglePopup(false);
+					}
+				};
 
-      @media (max-width: 767px) {
-        #shopify-section-{{ section.id }} .cta-popup-content {
-          width: 100%;
-          height: 100%;
-          max-width: none;
-          max-height: none;
-          border-radius: 0;
-          padding: 20px;
-          transform: none;
-        }
-      }
+				document.querySelectorAll('a[href="#cta-popup"]').forEach(el =>
+					el.addEventListener('click', (e) => {
+						e.preventDefault();
+						togglePopup(true);
+					})
+				);
 
-      #shopify-section-{{ section.id }} .close-popup {
-        cursor: pointer;
-        color: #333;
-      }
+				closeButtons.forEach(button => {
+					button.addEventListener('click', () => togglePopup(false));
+				});
 
-      #shopify-section-{{ section.id }} .close-popup:hover {
-        color: #000;
-      }
+				popup.addEventListener('click', (e) => {
+					if (e.target === popup) togglePopup(false);
+				});
+			});
+		</script>
 
-      #shopify-section-{{ section.id }} .close-popup:focus {
-        outline: 2px solid #000;
-      }
+		<style>
+			#shopify-section-{{ section.id }} {
+				.product-container {
+					padding: 0 !important;
+				}
 
-      #shopify-section-{{ section.id }} .close-popup.top-close {
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        font-size: 24px;
-        background: none;
-        border: none;
-      }
+				.cta-popup {
+					position: fixed;
+					inset: 0;
+					background-color: rgba(0, 0, 0, 0.5);
+					display: flex;
+					justify-content: center;
+					align-items: center;
+					z-index: 1000;
+					opacity: 0;
+					visibility: hidden;
+					pointer-events: none;
+					transition: opacity 0.3s ease, visibility 0s linear 0.3s;
 
-      #shopify-section-{{ section.id }} .close-popup.bottom-close {
-        display: block;
-        margin-top: 20px;
-        text-align: center;
-        font-size: 16px;
-        background: none;
-        border: none;
-        text-decoration: underline;
-      }
+					&.show {
+						opacity: 1 !important;
+						visibility: visible !important;
+						pointer-events: auto !important;
+						transition-delay: 0s;
 
-      #shopify-section-{{ section.id }} .cta-popup-content::-webkit-scrollbar {
-        width: 6px;
-      }
+						.cta-popup-content {
+							transform: translateY(0);
+							opacity: 1;
+						}
+					}
 
-      #shopify-section-{{ section.id }} .cta-popup-content::-webkit-scrollbar-thumb {
-        background-color: rgba(0, 0, 0, 0.2);
-        border-radius: 3px;
-      }
-    </style>
-  {% endif %}
+					.cta-popup-content {
+						background-color: #fff;
+						padding: 30px;
+						border-radius: 8px;
+						position: relative;
+						max-width: 1200px;
+						width: 90%;
+						max-height: 90%;
+						box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+						transform: translateY(-20px);
+						opacity: 0;
+						transition: opacity 0.3s ease, transform 0.3s ease;
+						overflow-y: auto;
+
+						&::-webkit-scrollbar {
+							width: 6px;
+						}
+
+						&::-webkit-scrollbar-thumb {
+							background-color: rgba(0, 0, 0, 0.2);
+							border-radius: 3px;
+						}
+					}
+
+					.close-popup {
+						cursor: pointer;
+						color: #333;
+
+						&:hover {
+							color: #000;
+						}
+
+						&:focus {
+							outline: 2px solid #000;
+						}
+
+						&.top-close {
+							position: absolute;
+							top: 15px;
+							right: 15px;
+							font-size: 24px;
+							background: none;
+							border: none;
+						}
+
+						&.bottom-close {
+							display: block;
+							margin-top: 20px;
+							text-align: center;
+							font-size: 16px;
+							background: none;
+							border: none;
+							text-decoration: underline;
+						}
+					}
+				}
+
+				@media (max-width: 767px) {
+					.cta-popup {
+						.cta-popup-content {
+							width: 100%;
+							height: 100%;
+							max-width: none;
+							max-height: none;
+							border-radius: 0;
+							padding: 20px;
+							transform: none;
+						}
+					}
+				}
+			}
+		</style>
+	{% endif %}
 {% endunless %}
 
 {% schema %}
