@@ -120,17 +120,12 @@
         }));
       };
 
-      (function(ns, fetch) {
-        ns.fetch = function() {
-          const response = fetch.apply(this, arguments);
-          response.then(res => {
-            if (`${window.location.origin}/cart/add.js`.includes(res.url)) {
-              addedToCart();
-            }
-          });
-          return response;
-        };
-      }(window, window.fetch));
+			document.addEventListener('ajax:success', function(event) {
+				var xhr = event.detail[2];
+				if (xhr.responseURL.includes('/cart/add.js')) {
+					addedToCart();
+				}
+			});
 
       var klAjax = true;
       var atcButtons = document.querySelectorAll("form[action*='/cart/add'] button[type='submit']");
