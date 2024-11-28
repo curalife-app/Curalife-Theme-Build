@@ -1,15 +1,15 @@
 {% if section.settings.display_on_pages != blank %}
-  {% assign isDisplayOnThisPage = false %}
-  {% assign displayOnPagesArray = section.settings.display_on_pages | split: ',' %}
-  {% for currentPage in displayOnPagesArray %}
-    {% if currentPage == request.path %}
-      {% assign isDisplayOnThisPage = true %}
-    {% endif %}
-  {% endfor %}
-
-  {% unless isDisplayOnThisPage %}
-    {% assign hideSection = true %}
-  {% endunless %}
+	{% assign isDisplayOnThisPage = false %}
+	{% assign displayOnPagesArray = section.settings.display_on_pages | split: ',' | map: 'strip' %}
+	{% for currentPage in displayOnPagesArray %}
+		{% if currentPage == request.path %}
+			{% assign isDisplayOnThisPage = true %}
+			{% break %}
+		{% endif %}
+	{% endfor %}
+	{% unless isDisplayOnThisPage %}
+		{% assign hideSection = true %}
+	{% endunless %}
 {% endif %}
 
 {% if section.settings.display_on_url_param %}
