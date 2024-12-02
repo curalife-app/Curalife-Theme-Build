@@ -76,10 +76,7 @@
 								{% assign giftVariant = giftProd.selected_or_first_available_variant %}
 								{% assign giftProdSubscription = block.settings.gift_product_subscription %}
 								{% assign giftVariantSubscription = giftProdSubscription.selected_or_first_available_variant %}
-								{% assign giftThumb = block.settings.gift_thumbnail
-									| default: giftProdSubscription.featured_image
-									| default: giftProd.featured_image
-								%}
+								{% assign giftThumb = block.settings.gift_thumbnail | default: giftProdSubscription.featured_image | default: giftProd.featured_image %}
 
 								<div class='gift-option-container flex flex-col items-center'>
 									<div
@@ -135,13 +132,9 @@
 			</div>
 			<div class='one-time-purchase-link mt-3 text-center'>
 				{% if isOneTimePurchaseLink %}
-					<div class='one-time-add-to-cart hover:text-gray-800 mb-2 text-sm font-bold text-gray-600 underline cursor-pointer'>
-						Buy Once for $59.90
-					</div>
+					<div class='one-time-add-to-cart hover:text-gray-800 mb-2 text-sm font-bold text-gray-600 underline cursor-pointer'> Buy Once for $59.90 </div>
 				{% endif %}
-				<p class='text-[14px] italic max-w-[80%] m-auto'>
-					For best results, use daily for 3-6 months. Clinical study shows up to 30% reduction in HbA1c.*
-				</p>
+				<p class='text-[14px] italic max-w-[80%] m-auto'> For best results, use daily for 3-6 months. Clinical study shows up to 30% reduction in HbA1c.* </p>
 			</div>
 		</div>
 	</div>
@@ -149,49 +142,89 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-		const productActions = document.querySelector('#cta-section-{{ SID }} .product-actions');
-		const purchaseOptionBoxes = productActions.querySelectorAll('.purchase-option-box');
-		const submitButton = productActions.querySelector('.checkout-button button');
-		const submitSellingPlanIdInput = document.querySelector('.submit-selling-plan-id');
-		const submitVariantIdInput = document.querySelector('.submit-variant-id');
-		const giftOptionContainers = document.querySelectorAll('.gift-option-container');
-		const SID = '{{ SID }}';
-    window.SID = SID;
-		const buyType = '{{ buyType }}';
+		// Wait a small amount of time to ensure all elements are rendered
+		setTimeout(() => {
+			initializeProductActions();
+		}, 100);
 
-		const submitButtons = productActions.querySelectorAll('.checkout-button button');
-		console.log('Number of submit buttons:', submitButtons.length);
-		console.log('buyType:', buyType);
+		function initializeProductActions() {
+			// First ensure all required elements exist
+			const productActions = document.querySelector('#cta-section-{{ SID }} .product-actions');
+			if (!productActions) {
+				console.error('Product actions container not found');
+				return;
+			}
 
-		giftOptionContainers.forEach(container => {
-			container.addEventListener('click', function(event) {
-				giftOptionContainers.forEach(gift => gift.classList.remove('selected'));
-				container.classList.add('selected');
-				updateRadioIndicator(container);
+			// Initialize required elements
+			const purchaseOptionBoxes = productActions.querySelectorAll('.purchase-option-box');
+			const submitButton = productActions.querySelector('.checkout-button button');
+			const submitSellingPlanIdInput = document.querySelector('.submit-selling-plan-id');
+			const submitVariantIdInput = document.querySelector('.submit-variant-id');
+			const giftOptionContainers = document.querySelectorAll('.gift-option-container');
+
+			// Check if all required elements exist
+			if (!submitButton || !submitSellingPlanIdInput || !submitVariantIdInput) {
+				console.error('Required form elements not found');
+				return;
+			}
+
+			const SID = '{{ SID }}';
+			window.SID = SID;
+			const buyType = '{{ buyType }}';
+
+			// Log initial state for debugging
+			const submitButtons = productActions.querySelectorAll('.checkout-button button');
+			console.log('Number of submit buttons:', submitButtons.length);
+			console.log('buyType:', buyType);
+
+			// Initialize state
+			const state = {
+				selectedBox: null,
+			};
+
+			// Initialize gift selection
+			if (giftOptionContainers.length > 0) {
+				initializeGiftSelection(giftOptionContainers);
+			}
+
+			// Initialize purchase options if they exist
+			if (purchaseOptionBoxes.length > 0) {
+				initializePurchaseOptions(productActions, purchaseOptionBoxes, submitSellingPlanIdInput, submitVariantIdInput);
+			}
+
+			// Set up event listeners
+			setupEventListeners(productActions, purchaseOptionBoxes, submitButton, giftOptionContainers, state, submitSellingPlanIdInput, submitVariantIdInput, buyType);
+
+			// Handle mobile layout adjustments
+			handleMobileLayout();
+		}
+
+		function initializeGiftSelection(giftOptionContainers) {
+			giftOptionContainers.forEach(container => {
+				container.addEventListener('click', function(event) {
+					giftOptionContainers.forEach(gift => gift.classList.remove('selected'));
+					container.classList.add('selected');
+					updateRadioIndicator(container);
+				});
 			});
-		});
+
+			// Select first gift by default
+			if (giftOptionContainers.length > 0) {
+				const firstGift = giftOptionContainers[0];
+				firstGift.classList.add('selected');
+				updateRadioIndicator(firstGift);
+			}
+		}
 
 		function updateRadioIndicator(selectedContainer) {
+			const giftOptionContainers = document.querySelectorAll('.gift-option-container');
 			giftOptionContainers.forEach(container => {
 				const checkMark = container.querySelector('.check-mark');
-				if (container === selectedContainer) {
-					checkMark.classList.remove('hidden');
-				} else {
-					checkMark.classList.add('hidden');
+				if (checkMark) {
+					checkMark.classList.toggle('hidden', container !== selectedContainer);
 				}
 			});
 		}
-
-		// Initialize the first gift as selected by default
-		if (giftOptionContainers.length > 0) {
-			const firstGift = giftOptionContainers[0];
-			firstGift.classList.add('selected');
-			updateRadioIndicator(firstGift);
-		}
-
-		const state = {
-			selectedBox: null,
-		};
 
 		const ctaText = document.querySelector('#cta-section-{{ SID }} .cta-text');
 		const purchaseOptions = document.querySelector('#cta-section-{{ SID }} .purchase-options');
