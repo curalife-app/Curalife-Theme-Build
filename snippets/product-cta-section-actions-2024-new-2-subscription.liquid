@@ -69,67 +69,65 @@
 	<div class='buying-options'>
 		<p class='text-[14px] font-bold'>Buying Options:</p>
 		<div class='purchase-type mt-2'>
-			{% unless isSubscription %}
-				<div class='option one-time-purchase'>
-					<label>
-						<input type='radio' name='purchase-type' value='one-time' id='track:Purchase Type - Buy Once' checked>
-						<span class='option-text'>One Time Purchase</span>
-						{% if page.template_suffix == 'curaslim-lp-2024-v2' or page.template_suffix == 'curaslim-quiz-results' %}
-							<span class='tag bfcm popular-tag'>Cyber Monday</span>
-						{% else %}
-							<span class='tag popular-tag'>Popular</span>
-						{% endif %}
-					</label>
+			<div class='option one-time-purchase'>
+				<label>
+					<input type='radio' name='purchase-type' value='one-time' id='track:Purchase Type - Buy Once' checked>
+					<span class='option-text'>One Time Purchase</span>
+					{% if page.template_suffix == 'curaslim-lp-2024-v2' or page.template_suffix == 'curaslim-quiz-results' %}
+						<span class='tag bfcm popular-tag'>Cyber Monday</span>
+					{% else %}
+						<span class='tag popular-tag'>Popular</span>
+					{% endif %}
+				</label>
 
-					<div class='quantity-options'>
-						<div
-							class='quantity-option'
-							name='track:Buy Once Purchase Option - 1 Month'
-							data-product-id='{{ buyOnceOneMonthProductID }}'
-							data-quantity='1'
-							data-variant-id='{{ buyOnceOneMonthVariantID }}'>
-							<input type='radio' name='quantity' id='qty-1' value='1' href='track:Buy Once Purchase Option - 1 Month'>
-							<label for='qty-1'>
-								<div class='left-wrapper'>
-									<span class='buy-text'>Buy 1</span>
-									{% if buyOnceOneMonthDiscountPercentage > 0 %}
-										<span class='save-tag'>Save {{ buyOnceOneMonthDiscountPercentage }}%</span>
-									{% endif %}
-								</div>
-								<div class='price-wrapper'>
-									<span class='price'>{{ buyOnceOneMonth }}</span>
-									<span class='original-price'>{{ buyOnceOneMonthCAP }}</span>
-								</div>
-							</label>
-						</div>
+				<div class='quantity-options'>
+					<div
+						class='quantity-option'
+						name='track:Buy Once Purchase Option - 1 Month'
+						data-product-id='{{ buyOnceOneMonthProductID }}'
+						data-quantity='1'
+						data-variant-id='{{ buyOnceOneMonthVariantID }}'>
+						<input type='radio' name='quantity' id='qty-1' value='1' href='track:Buy Once Purchase Option - 1 Month'>
+						<label for='qty-1'>
+							<div class='left-wrapper'>
+								<span class='buy-text'>Buy 1</span>
+								{% if buyOnceOneMonthDiscountPercentage > 0 %}
+									<span class='save-tag'>Save {{ buyOnceOneMonthDiscountPercentage }}%</span>
+								{% endif %}
+							</div>
+							<div class='price-wrapper'>
+								<span class='price'>{{ buyOnceOneMonth }}</span>
+								<span class='original-price'>{{ buyOnceOneMonthCAP }}</span>
+							</div>
+						</label>
+					</div>
 
-						<div
-							class='quantity-option'
-							name='track:Buy Once Purchase Option - 3 Months'
-							data-product-id='{{ buyOnceThreeMonthsProductID }}'
-							data-quantity='1'
-							data-variant-id='{{ buyOnceThreeMonthsVariantID }}'>
-							<input
-								type='radio'
-								name='quantity'
-								id='qty-3'
-								value='3'
-								href='track:Purchase Option- Buy Once - 3 Months'
-								checked>
-							<label for='qty-3'>
-								<div class='left-wrapper'>
-									<span class='buy-text'>Buy 3</span>
-									<span class='save-tag'>Save {{ buyOnceThreeMonthsDiscountPercentage }}%</span>
-								</div>
-								<div class='price-wrapper'>
-									<span class='price'>{{ buyOnceThreeMonths }}</span>
-									<span class='original-price'>{{ buyOnceThreeMonthsCAP }}</span>
-								</div>
-							</label>
-						</div>
+					<div
+						class='quantity-option'
+						name='track:Buy Once Purchase Option - 3 Months'
+						data-product-id='{{ buyOnceThreeMonthsProductID }}'
+						data-quantity='1'
+						data-variant-id='{{ buyOnceThreeMonthsVariantID }}'>
+						<input
+							type='radio'
+							name='quantity'
+							id='qty-3'
+							value='3'
+							href='track:Purchase Option- Buy Once - 3 Months'
+							checked>
+						<label for='qty-3'>
+							<div class='left-wrapper'>
+								<span class='buy-text'>Buy 3</span>
+								<span class='save-tag'>Save {{ buyOnceThreeMonthsDiscountPercentage }}%</span>
+							</div>
+							<div class='price-wrapper'>
+								<span class='price'>{{ buyOnceThreeMonths }}</span>
+								<span class='original-price'>{{ buyOnceThreeMonthsCAP }}</span>
+							</div>
+						</label>
 					</div>
 				</div>
-			{% endunless %}
+			</div>
 
 			<div class='option subscription'>
 				<label id='subscription-option-label'>
@@ -225,13 +223,19 @@
 			class='secure-checkout'>
 		<div class='guarantee text-center'>
 			<strong>60 Days Satisfaction Guarantee</strong><br>
-			If our products aren't your cup of tea, just send it back within 60 days for a full refund. No hassle, just health.
+			If our products aren't your cup of tea, just send it back within 60 days for a full refund. No hassle, just
+			health.
 		</div>
 	</div>
 </div>
 
 <script>
-	document.querySelector('.product-image-wrapper').parentNode.insertBefore(document.querySelector('.guarantee-wrapper'), document.querySelector('.product-image-wrapper'));
+	document
+		.querySelector('.product-image-wrapper')
+		.parentNode.insertBefore(
+			document.querySelector('.guarantee-wrapper'),
+			document.querySelector('.product-image-wrapper')
+		);
 </script>
 
 <style>
@@ -663,7 +667,10 @@
 			updatePurchaseOptions(purchaseType);
 
 			// Automatically select the first quantity option of the selected purchase type
-			const firstOptionSelector = purchaseType === 'subscription' ? '.subscription .quantity-option input[type="radio"]' : '.one-time-purchase .quantity-option input[type="radio"]';
+			const firstOptionSelector =
+				purchaseType === 'subscription'
+					? '.subscription .quantity-option input[type="radio"]'
+					: '.one-time-purchase .quantity-option input[type="radio"]';
 			const firstOption = productActions.querySelector(firstOptionSelector);
 
 			if (firstOption) {
@@ -693,15 +700,19 @@
 		}
 
 		function updateSubmitButton() {
-			const isSubscription = productActions.querySelector('input[name="purchase-type"]:checked').value === 'subscription';
+			const isSubscription =
+				productActions.querySelector('input[name="purchase-type"]:checked').value === 'subscription';
 			const buttonText = isSubscription ? 'Subscribe Now' : 'Buy Now';
 			submitButton.querySelector('.submit-button-text').innerHTML = `<strong>${buttonText}</strong>`;
 		}
 
 		function handleSubmit(event) {
 			event.preventDefault();
-			const isSubscription = productActions.querySelector('input[name="purchase-type"]:checked').value === 'subscription';
-			const selector = isSubscription ? 'input[name="subscription-quantity"]:checked' : 'input[name="quantity"]:checked';
+			const isSubscription =
+				productActions.querySelector('input[name="purchase-type"]:checked').value === 'subscription';
+			const selector = isSubscription
+				? 'input[name="subscription-quantity"]:checked'
+				: 'input[name="quantity"]:checked';
 			const selectedOption = productActions.querySelector(selector).closest('.quantity-option');
 			const variantId = selectedOption.dataset.variantId;
 			const quantity = selectedOption.dataset.quantity;
