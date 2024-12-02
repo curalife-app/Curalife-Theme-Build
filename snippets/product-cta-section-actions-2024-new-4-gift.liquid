@@ -141,8 +141,7 @@
 </div>
 
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
-		// Wait a small amount of time to ensure all elements are rendered
+	document.addEventListener('DOMContentLoaded', () => {
 		setTimeout(() => {
 			initializeProductActions();
 		}, 100);
@@ -173,30 +172,111 @@
 			const buyType = '{{ buyType }}';
 
 			// Log initial state for debugging
-			const submitButtons = productActions.querySelectorAll('.checkout-button button');
-			console.log('Number of submit buttons:', submitButtons.length);
-			console.log('buyType:', buyType);
+			console.log('SID:', SID);
+			console.log('Product Actions:', productActions);
+			console.log('Purchase Option Boxes:', purchaseOptionBoxes.length);
 
 			// Initialize state
 			const state = {
 				selectedBox: null,
 			};
 
-			// Initialize gift selection
+			function initializePurchaseOptions() {
+				const defaultVariantIndex = parseInt(productActions.getAttribute('data-default-variant-index')) || 0;
+				const defaultBox = purchaseOptionBoxes[defaultVariantIndex - 1] || purchaseOptionBoxes[0];
+
+				if (defaultBox) {
+					togglePurchaseBox(defaultBox);
+				}
+			}
+
+			function togglePurchaseBox(element) {
+				if (!element) return;
+
+				purchaseOptionBoxes.forEach(box => {
+					box.classList.remove('selected');
+					const radio = box.querySelector('input[type="radio"]');
+					if (radio) {
+						radio.checked = false;
+					}
+				});
+
+				const isSubscription = element.getAttribute('data-purchase-type') === 'subscribe';
+				const subscriptionPlanID = isSubscription ? element.getAttribute('data-subscription-selling-plan-id') : '';
+				const variantID = element.getAttribute('data-variant');
+
+				if (submitSellingPlanIdInput) {
+					submitSellingPlanIdInput.value = subscriptionPlanID;
+				}
+				if (submitVariantIdInput) {
+					submitVariantIdInput.value = variantID;
+				}
+
+				element.classList.add('selected');
+				const radioInput = element.querySelector('input[type="radio"]');
+				if (radioInput) {
+					radioInput.checked = true;
+				}
+
+				state.selectedBox = element;
+
+				if (window.hasInitialImageUpdateHappened) {
+					updateVariantImage(element);
+				} else {
+					window.hasInitialImageUpdateHappened = true;
+				}
+			}
+
+			// Initialize gift selection if containers exist
 			if (giftOptionContainers.length > 0) {
 				initializeGiftSelection(giftOptionContainers);
 			}
 
 			// Initialize purchase options if they exist
 			if (purchaseOptionBoxes.length > 0) {
-				initializePurchaseOptions(productActions, purchaseOptionBoxes, submitSellingPlanIdInput, submitVariantIdInput);
+				initializePurchaseOptions();
 			}
 
 			// Set up event listeners
-			setupEventListeners(productActions, purchaseOptionBoxes, submitButton, giftOptionContainers, state, submitSellingPlanIdInput, submitVariantIdInput, buyType);
+			setupEventListeners();
 
-			// Handle mobile layout adjustments
-			handleMobileLayout();
+			function setupEventListeners() {
+				// Event listeners for purchase options
+				productActions.addEventListener('click', (event) => {
+					const radioInput = event.target.closest('input[type="radio"]');
+					const purchaseOptionBox = event.target.closest('.purchase-option-box');
+
+					if (radioInput) {
+						const parentBox = radioInput.closest('.purchase-option-box');
+						if (parentBox) {
+							event.preventDefault();
+							togglePurchaseBox(parentBox);
+						}
+					} else if (purchaseOptionBox) {
+						event.preventDefault();
+						togglePurchaseBox(purchaseOptionBox);
+					}
+				});
+
+				// Radio input change handler
+				productActions.addEventListener('change', (event) => {
+					if (event.target.type === 'radio') {
+						const parentBox = event.target.closest('.purchase-option-box');
+						if (parentBox) {
+							togglePurchaseBox(parentBox);
+						}
+					}
+				});
+
+				// Submit button click handler
+				if (submitButton) {
+					submitButton.addEventListener('click', handleSubmit);
+				}
+			}
+
+			function handleSubmit(event) {
+				// Your existing submit handler code here
+			}
 		}
 
 		function initializeGiftSelection(giftOptionContainers) {
