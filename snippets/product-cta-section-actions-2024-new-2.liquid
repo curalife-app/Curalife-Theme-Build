@@ -20,18 +20,18 @@
 	{% assign buySubscriptionOneMonthDiscountPercentage = 25 %}
 	{% assign buySubscriptionThreeMonthsDiscountPercentage = 30 %}
 {% elsif request.path contains '-bundles' %}
-	{% assign buyOnceOneMonthProductID = '8583197327511' %}
-	{% assign buyOnceOneMonthVariantID = '44698086998167' %}
-	{% assign buyOnceOneMonth = '$42.42' %}
-	{% assign buyOnceOneMonthCAP = '$49.90' %}
-	{% assign buyOnceOneMonthDiscountPercentage = 15 %}
+	{% assign buyOnceThreeMonths = '112.28' %}
+	{% assign buyOnceThreeMonthsCAP = '$149.70' %}
+	{% assign buyOnceThreeMonthsProductID = '8583197327511' %}
+	{% assign buyOnceThreeMonthsVariantID = '44698087063703' %}
+	{% assign buyOnceThreeMonthsDiscountPercentage = 25 %}
 
-	{% assign buySubscriptionOneMonth = '$37.43' %}
-	{% assign buySubscriptionOneMonthCAP = buyOnceOneMonthCAP %}
-	{% assign buySubscriptionOneMonthDiscountPercentage = 25 %}
-	{% assign buySubscriptionOneMonthProductID = '8583197327511' %}
-	{% assign buySubscriptionOneMonthVariantID = '44698086998167' %}
-	{% assign buySubscriptionOneMonthPlanID = '11271405719' %}
+	{% assign buySubscriptionThreeMonthsProductID = '8583197327511' %}
+	{% assign buySubscriptionThreeMonthsVariantID = '44698087063703' %}
+	{% assign buySubscriptionThreeMonthsPlanID = '11271372951' %}
+	{% assign buySubscriptionThreeMonths = '$104.79' %}
+	{% assign buySubscriptionThreeMonthsCAP = buyOnceThreeMonthsCAP %}
+	{% assign buySubscriptionThreeMonthsDiscountPercentage = 30 %}
 
 	{% assign buyOnceSixMonths = '112.28' %}
 	{% assign buyOnceSixMonthsCAP = '$149.70' %}
@@ -114,26 +114,28 @@
 					</label>
 
 					<div class='quantity-options'>
-						<div
-							class='quantity-option'
-							name='track:Buy Once Purchase Option - 1 Month'
-							data-product-id='{{ buyOnceOneMonthProductID }}'
-							data-quantity='1'
-							data-variant-id='{{ buyOnceOneMonthVariantID }}'>
-							<input type='radio' name='quantity' id='qty-1' value='1' href='track:Buy Once Purchase Option - 1 Month'>
-							<label for='qty-1'>
-								<div class='left-wrapper'>
-									<span class='buy-text'>Buy 1</span>
-									{% if buyOnceOneMonthDiscountPercentage > 0 %}
-										<span class='save-tag'>Save {{ buyOnceOneMonthDiscountPercentage }}%</span>
-									{% endif %}
-								</div>
-								<div class='price-wrapper'>
-									<span class='price'>{{ buyOnceOneMonth }}</span>
-									<span class='original-price'>{{ buyOnceOneMonthCAP }}</span>
-								</div>
-							</label>
-						</div>
+						{% if buyOnceOneMonthProductID %}
+							<div
+								class='quantity-option'
+								name='track:Buy Once Purchase Option - 1 Month'
+								data-product-id='{{ buyOnceOneMonthProductID }}'
+								data-quantity='1'
+								data-variant-id='{{ buyOnceOneMonthVariantID }}'>
+								<input type='radio' name='quantity' id='qty-1' value='1' href='track:Buy Once Purchase Option - 1 Month'>
+								<label for='qty-1'>
+									<div class='left-wrapper'>
+										<span class='buy-text'>Buy 1</span>
+										{% if buyOnceOneMonthDiscountPercentage > 0 %}
+											<span class='save-tag'>Save {{ buyOnceOneMonthDiscountPercentage }}%</span>
+										{% endif %}
+									</div>
+									<div class='price-wrapper'>
+										<span class='price'>{{ buyOnceOneMonth }}</span>
+										<span class='original-price'>{{ buyOnceOneMonthCAP }}</span>
+									</div>
+								</label>
+							</div>
+						{% endif %}
 
 						{% if buyOnceThreeMonthsProductID %}
 							<div
@@ -210,31 +212,33 @@
 				</label>
 
 				<div class='quantity-options'>
-					<div
-						class='quantity-option'
-						name='track:Subscription Purchase Option - 1 Month'
-						data-product-id='{{ buySubscriptionOneMonthProductID }}'
-						data-quantity='1'
-						data-variant-id='{{ buySubscriptionOneMonthVariantID }}'
-						data-subscription-plan-id='{{ buySubscriptionOneMonthPlanID }}'>
-						<input
-							type='radio'
-							name='subscription-quantity'
-							id='sub-qty-1'
-							value='1'
-							href='track:Purchase Option - Subscription - 1 Month'>
-						<label for='sub-qty-1'>
-							<div class='left-wrapper'>
-								<span class='buy-text'>1 Month</span>
-								<span class='save-tag'>Save {{ buySubscriptionOneMonthDiscountPercentage }}%</span>
-							</div>
+					{% if buyOnceOneMonthProductID %}
+						<div
+							class='quantity-option'
+							name='track:Subscription Purchase Option - 1 Month'
+							data-product-id='{{ buySubscriptionOneMonthProductID }}'
+							data-quantity='1'
+							data-variant-id='{{ buySubscriptionOneMonthVariantID }}'
+							data-subscription-plan-id='{{ buySubscriptionOneMonthPlanID }}'>
+							<input
+								type='radio'
+								name='subscription-quantity'
+								id='sub-qty-1'
+								value='1'
+								href='track:Purchase Option - Subscription - 1 Month'>
+							<label for='sub-qty-1'>
+								<div class='left-wrapper'>
+									<span class='buy-text'>1 Month</span>
+									<span class='save-tag'>Save {{ buySubscriptionOneMonthDiscountPercentage }}%</span>
+								</div>
 
-							<div class='price-wrapper'>
-								<span class='price'>{{ buySubscriptionOneMonth }}</span>
-								<span class='original-price'>{{ buySubscriptionOneMonthCAP }}</span>
-							</div>
-						</label>
-					</div>
+								<div class='price-wrapper'>
+									<span class='price'>{{ buySubscriptionOneMonth }}</span>
+									<span class='original-price'>{{ buySubscriptionOneMonthCAP }}</span>
+								</div>
+							</label>
+						</div>
+					{% endif %}
 
 					{% if buyOnceThreeMonthsProductID %}
 						<div
