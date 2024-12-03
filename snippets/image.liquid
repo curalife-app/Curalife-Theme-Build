@@ -11,17 +11,12 @@
 	- Link wrapper functionality
 {%- endcomment -%}
 
-<script>
-	console.log('lazy: {{ lazy }}');
-</script>
-
 {%- liquid
 	#######################################
 	# Initialize variables with defaults
 	#######################################
 	assign desktop_image = image
 	assign mobile_image_provided = mobile_image
-	assign lazy_load = lazy | default: true
 	assign is_priority = priority | default: false
 	assign load_mobile = load_mobile | default: false
 	assign load_global = load_global | default: false
@@ -134,7 +129,7 @@
 	<img
 		id='{{ unique_id }}'
 		src='{{ desktop_variant_url }}'
-		{% if lazy_load and is_priority != true %}
+		{% if lazy and is_priority != true %}
 			loading='lazy'
 			decoding='async'
 		{% else %}
@@ -176,7 +171,7 @@
 	    src: {{ mobile_image_provided.src | json }},
 	    alt: {{ mobile_image_provided.alt | json }}
 	  },
-	  lazy_load: {{ lazy_load | json }},
+	  lazy_load: {{ lazy | json }},
 	  is_priority: {{ is_priority | json }},
 	  load_mobile: {{ load_mobile | json }},
 	  load_global: {{ load_global | json }},
@@ -248,8 +243,4 @@
 	if (window.imageErrors && !window.hasDisplayedImageErrors) {
 	  window.debouncedDisplayErrors();
 	}
-</script>
-
-<script>
-	console.log('lazy_load: {{ lazy_load }}');
 </script>
