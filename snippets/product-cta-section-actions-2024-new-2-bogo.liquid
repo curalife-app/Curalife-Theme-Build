@@ -665,13 +665,11 @@
 			const selectedOption = productActions.querySelector(selector).closest('.quantity-option');
 			const variantId = selectedOption.dataset.variantId;
 			const quantity = selectedOption.dataset.quantity;
-
 			const additionalVariantId = '53761899430212';
-			const additionalQuantity = 1;
 
 			const items = [
 				{ id: variantId, quantity: parseInt(quantity) },
-				{ id: additionalVariantId, quantity: additionalQuantity }
+				{ id: additionalVariantId, quantity: 1 }
 			];
 
 			fetch('/cart/clear.js', { method: 'POST' })
@@ -683,9 +681,8 @@
 					})
 				)
 				.then(response => {
-					if (response.ok) {
-						window.location.href = '/checkout';
-					} else {
+					if (response.ok) window.location.href = '/checkout';
+					else {
 						console.error('Failed to add items to cart.');
 						toggleButtonLoading(false);
 					}
