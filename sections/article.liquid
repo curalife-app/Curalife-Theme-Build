@@ -21,14 +21,15 @@
         {% if article.image %}
           {% unless article.metafields.custom.hide_article_image == true %}
             <div class="picture-container mb-[30px]">
-              {% render 'image-test',
+              {% comment %} {% render 'image-test',
                 image: article.image | image_url: width: 702, height: 400, crop: 'center',
                 lazy: false,
                 preload: true,
 								force_original: true,
                 alt: article.title,
                 class: 'main-image object-cover !p-0 h-[400px] md:h-[250px] w-full'
-              %}
+              %} {% endcomment %}
+							{{ article.image | image_url: width: 702 | image_tag: class: 'main-image object-cover !p-0 h-[400px] md:h-[250px] w-full' }}
             </div>
           {% endunless %}
         {% endif %}
