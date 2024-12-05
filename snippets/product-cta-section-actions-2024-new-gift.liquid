@@ -642,99 +642,101 @@
     // Assuming giftProd is defined in your Liquid code
     var giftProductId = {{ giftProd.id | default: 'null' }};
 
-    submitButton.addEventListener('click', async function(event) {
-      console.log('Button clicked, handling submission...');
-      event.preventDefault();
+		submitButton.addEventListener('click', async function(event) {
+	event.preventDefault();
 
-      if (!productActions) {
-        console.error('Product actions container not found');
-        return;
-      }
+	if (!productActions) {
+		console.error('Product actions container not found');
+		return;
+	}
 
-      // Display the loading spinner
-      toggleButtonLoading(submitButton, true);
+	toggleButtonLoading(submitButton, true);
 
-      try {
-        const variantIdInput = productActions.querySelector('.submit-variant-id');
-        const sellingPlanIdInput = productActions.querySelector('.submit-selling-plan-id');
-        const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
-        const giftOptionBorder = selectedGiftContainer ? selectedGiftContainer.querySelector('.gift-option-border') : null;
+	try {
+		const variantIdInput = productActions.querySelector('.submit-variant-id');
+		const sellingPlanIdInput = productActions.querySelector('.submit-selling-plan-id');
+		const hasGiftOptions = document.querySelector('.gift-option-container') !== null;
+		const selectedGiftContainer = hasGiftOptions ? document.querySelector('.gift-option-container.selected') : null;
+		const giftOptionBorder = selectedGiftContainer ? selectedGiftContainer.querySelector('.gift-option-border') : null;
 
-        // Add error checking for required elements
-        if (!variantIdInput) {
-          throw new Error('Variant ID input not found');
-        }
+		if (!variantIdInput) {
+			throw new Error('Variant ID input not found');
+		}
 
-        const isSubscription = !!sellingPlanIdInput?.value;
-        const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
-        const variantId = variantIdInput.value;
-        const sellingPlanId = sellingPlanIdInput ? sellingPlanIdInput.value : '';
+		const isSubscription = !!sellingPlanIdInput?.value;
+		const giftId = giftOptionBorder ? (isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId) : null;
+		const variantId = variantIdInput.value;
+		const sellingPlanId = sellingPlanIdInput ? sellingPlanIdInput.value : '';
 
-        if (!variantId || !giftId) {
-          const errorMessage = `Missing required data: ${!variantId ? 'variant ID' : ''} ${!giftId ? 'gift ID' : ''}`;
-          console.error(errorMessage);
-          showNotification(errorMessage, 'error');
-          return;
-        }
+		if (!variantId) {
+			showNotification('Missing variant ID', 'error');
+			return;
+		}
 
-        const items = [
-          {
-            id: variantId,
-            product_id: currentProductId, // Include the product ID
-            quantity: 1,
-            ...(sellingPlanId && { selling_plan: sellingPlanId })
-          },
-          {
-            id: giftId,
-            product_id: giftProductId, // Include the gift product ID
-            quantity: 1
-          }
-        ];
+		if (hasGiftOptions && !giftId) {
+			showNotification('Please select a gift', 'error');
+			return;
+		}
 
-        {% if buyType == "buy_now" %}
-          // Delete cart drawer if it exists
-          const cartDrawer = document.getElementById('upCart');
-          if (cartDrawer) {
-            cartDrawer.remove();
-          }
+		const items = [
+			{
+				id: variantId,
+				product_id: currentProductId,
+				quantity: 1,
+				...(sellingPlanId && { selling_plan: sellingPlanId })
+			}
+		];
 
-          // Clean cart
-          try {
-            const clearCartResponse = await fetch('/cart/clear.js', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-              }
-            });
+		if (hasGiftOptions && giftId) {
+			items.push({
+				id: giftId,
+				product_id: giftProductId,
+				quantity: 1
+			});
+		}
 
-            if (!clearCartResponse.ok) {
-              throw new Error('Failed to clear cart');
-            }
-          } catch (error) {
-            console.error('Clear cart error:', error);
-            showNotification('Failed to clear cart. Please try again.', 'error');
-            return;
-          }
-        {% endif %}
+		{% if buyType == "buy_now" %}
+			const cartDrawer = document.getElementById('upCart');
+			if (cartDrawer) {
+				cartDrawer.remove();
+			}
 
-        const result = await addValidItemsToCart(items);
-        console.log('Add to cart result:', result);
+			try {
+				const clearCartResponse = await fetch('/cart/clear.js', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'Accept': 'application/json'
+					}
+				});
 
-        if (result.success) {
-          {% if buyType == "buy_now" %}
-            window.location.href = '/checkout';
-          {% endif %}
-        } else if (result.error) {
-          showNotification(result.error.message || 'Failed to add items to cart', 'error');
-        }
-      } catch (error) {
-        console.error('Submission error:', error);
-        showNotification(error.message || 'An unexpected error occurred', 'error');
-      } finally {
-        toggleButtonLoading(submitButton, false);
-      }
-    });
+				if (!clearCartResponse.ok) {
+					throw new Error('Failed to clear cart');
+				}
+			} catch (error) {
+				console.error('Clear cart error:', error);
+				showNotification('Failed to clear cart. Please try again.', 'error');
+				return;
+			}
+		{% endif %}
+
+		const result = await addValidItemsToCart(items);
+		console.log('Add to cart result:', result);
+
+		if (result.success) {
+			{% if buyType == "buy_now" %}
+				window.location.href = '/checkout';
+			{% endif %}
+		} else if (result.error) {
+			showNotification(result.error.message || 'Failed to add items to cart', 'error');
+		}
+	} catch (error) {
+		console.error('Submission error:', error);
+		showNotification(error.message || 'An unexpected error occurred', 'error');
+	} finally {
+		toggleButtonLoading(submitButton, false);
+	}
+});
 
 // Helper function to find the corresponding failed validation result
 function findFailedValidationIndex(validationResults, invalidItemIndex) {
