@@ -41,53 +41,55 @@
       {% render 'product-cta-section-actions-variant-2024-new', SID: SID, prod: product, var: var, buyBoxColor: buyBoxColor, index: forloop.index %}
     {% endfor %}
 
-    <div class="gift-selector-wrap">
-			{% if giftsAmount > 0 %}<div class="gift-selector-title mb-2">Your free gift:</div>{% endif %}
+		{% if giftsAmount > 0 %}
+			<div class="gift-selector-wrap">
+				<div class="gift-selector-title mb-2">Your free gift:</div>
 
-			<div class="gift-options flex-nowrap flex justify-start gap-4">
-				{% for block in blocks %}
-					{% case block.type %}
-						{% when 'gift' %}
-							{% assign show_gift = false %}
-							{% if block.settings.show_on == 'both' %}
-								{% assign show_gift = true %}
-							{% elsif block.settings.show_on == 'global' and isGlobal %}
-								{% assign show_gift = true %}
-							{% elsif block.settings.show_on == 'us' and isGlobal == false %}
-								{% assign show_gift = true %}
-							{% endif %}
+				<div class="gift-options flex-nowrap flex justify-start gap-4">
+					{% for block in blocks %}
+						{% case block.type %}
+							{% when 'gift' %}
+								{% assign show_gift = false %}
+								{% if block.settings.show_on == 'both' %}
+									{% assign show_gift = true %}
+								{% elsif block.settings.show_on == 'global' and isGlobal %}
+									{% assign show_gift = true %}
+								{% elsif block.settings.show_on == 'us' and isGlobal == false %}
+									{% assign show_gift = true %}
+								{% endif %}
 
-							{% if show_gift %}
-								{% assign giftProd = block.settings.gift_product %}
-								{% assign giftVariant = giftProd.selected_or_first_available_variant %}
-								{% assign giftProdSubscription = block.settings.gift_product_subscription %}
-								{% assign giftVariantSubscription = giftProdSubscription.selected_or_first_available_variant %}
-								{% assign giftThumb = block.settings.gift_thumbnail | default: giftProdSubscription.featured_image | default: giftProd.featured_image %}
+								{% if show_gift %}
+									{% assign giftProd = block.settings.gift_product %}
+									{% assign giftVariant = giftProd.selected_or_first_available_variant %}
+									{% assign giftProdSubscription = block.settings.gift_product_subscription %}
+									{% assign giftVariantSubscription = giftProdSubscription.selected_or_first_available_variant %}
+									{% assign giftThumb = block.settings.gift_thumbnail | default: giftProdSubscription.featured_image | default: giftProd.featured_image %}
 
-								<div class="gift-option-container flex flex-col items-center">
-									<div class="gift-option-border relative w-full p-2 mb-3 border rounded-lg cursor-pointer" data-gift-id="{{ giftVariant.id }}" data-gift-id-subscription="{{ giftVariantSubscription.id }}">
-										<div class="radio-indicator top-2 right-2 absolute flex items-center justify-center w-6 h-6 rounded-full">
-											<div class="check-mark hidden w-4 h-4 font-bold text-white rounded-full">✓</div>
+									<div class="gift-option-container flex flex-col items-center">
+										<div class="gift-option-border relative w-full p-2 mb-3 border rounded-lg cursor-pointer" data-gift-id="{{ giftVariant.id }}" data-gift-id-subscription="{{ giftVariantSubscription.id }}">
+											<div class="radio-indicator top-2 right-2 absolute flex items-center justify-center w-6 h-6 rounded-full">
+												<div class="check-mark hidden w-4 h-4 font-bold text-white rounded-full">✓</div>
+											</div>
+
+											<div class="gift-image-container flex justify-center">
+												<img src="{{ giftThumb | image_url }}" alt="{{ giftProd.title }}" class="object-contain w-24 h-24">
+											</div>
 										</div>
 
-										<div class="gift-image-container flex justify-center">
-											<img src="{{ giftThumb | image_url }}" alt="{{ giftProd.title }}" class="object-contain w-24 h-24">
+										<div class="gift-content text-center">
+											<div class="gift-name mb-1 font-medium">{{ giftProd.title | replace: "Free ","" }}</div>
+											<div class="gift-price flex items-center justify-center gap-2">
+												<span class="original-price text-gray-500 line-through">{{ giftVariantSubscription.compare_at_price | money_with_currency }}</span>
+												<span class="sale-price font-bold">FREE</span>
+											</div>
 										</div>
 									</div>
-
-									<div class="gift-content text-center">
-										<div class="gift-name mb-1 font-medium">{{ giftProd.title | replace: "Free ","" }}</div>
-										<div class="gift-price flex items-center justify-center gap-2">
-											<span class="original-price text-gray-500 line-through">{{ giftVariantSubscription.compare_at_price | money_with_currency }}</span>
-											<span class="sale-price font-bold">FREE</span>
-										</div>
-									</div>
-								</div>
-							{% endif %}
-					{% endcase %}
-				{% endfor %}
+								{% endif %}
+						{% endcase %}
+					{% endfor %}
+				</div>
 			</div>
-		</div>
+		{% endif %}
 
     <div class="submit-wrap flex flex-col w-full">
       <div class="checkout-button">
@@ -1088,12 +1090,11 @@ async function countUniqueProductsWithTag(cart) {
   });
 </script>
 
+{% if giftsAmount > 0 %}
 <style>
-	{% if giftsAmount > 0 %}
-		.gift-selector-wrap {
-			margin: 1rem 0;
-		}
-	{% endif %}
+	.gift-selector-wrap {
+		margin: 1rem 0;
+	}
 
   .gift-option-border {
     transition: all 0.3s ease;
@@ -1138,6 +1139,7 @@ async function countUniqueProductsWithTag(cart) {
     color: var(--primary-color-dark);
   }
 </style>
+{% endif %}
 
 <style>
   :root {
