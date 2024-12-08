@@ -422,6 +422,20 @@
         submitSellingPlanElement.value = ''; // Clear the selling plan ID for "Buy Once"
       }
 
+			// Update selected gift if any
+			const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
+			if (selectedGiftContainer) {
+				const giftBorder = selectedGiftContainer.querySelector('.gift-option-border');
+				const giftId = isSubscription ?
+					giftBorder.getAttribute('data-gift-id-subscription') :
+					giftBorder.getAttribute('data-gift-id');
+
+				// Validate gift selection after purchase type change
+				if (!giftId) {
+					console.warn('No valid gift ID found for', isSubscription ? 'subscription' : 'one-time', 'purchase');
+				}
+			}
+
       // Update all variant boxes
       purchaseOptionBoxes.forEach(box => {
         const subscriptionContent = box.querySelectorAll('.subscription-content');
@@ -642,94 +656,89 @@
     // Assuming giftProd is defined in your Liquid code
     var giftProductId = {{ giftProd.id | default: 'null' }};
 
-		// Modified gift selection handling
 		submitButton.addEventListener('click', async function(event) {
-			event.preventDefault();
+	event.preventDefault();
 
-			if (!productActions) {
-				console.error('Product actions container not found');
-				return;
+	if (!productActions) {
+		console.error('Product actions container not found');
+		return;
+	}
+
+	toggleButtonLoading(submitButton, true);
+
+	try {
+		// Get form inputs
+		const variantIdInput = productActions.querySelector('.submit-variant-id');
+		const sellingPlanIdInput = productActions.querySelector('.submit-selling-plan-id');
+
+		if (!variantIdInput) {
+			throw new Error('Variant ID input not found');
+		}
+
+		// Get gift selection state
+		const giftSelectorWrap = document.querySelector('.gift-selector-wrap');
+		const hasGiftOptions = giftSelectorWrap !== null;
+		const selectedGiftContainer = hasGiftOptions ? document.querySelector('.gift-option-container.selected') : null;
+		const giftOptionBorder = selectedGiftContainer?.querySelector('.gift-option-border');
+
+		// Determine purchase type
+		const isSubscription = !!sellingPlanIdInput?.value;
+		const variantId = variantIdInput.value;
+		const sellingPlanId = sellingPlanIdInput?.value || '';
+
+		// Get the appropriate gift ID
+		let giftId = null;
+		if (hasGiftOptions && giftOptionBorder) {
+			// For subscription, use subscription gift ID
+			if (isSubscription) {
+				giftId = giftOptionBorder.getAttribute('data-gift-id-subscription');
+			} else {
+				// For one-time purchase, use regular gift ID
+				giftId = giftOptionBorder.getAttribute('data-gift-id');
 			}
 
-			toggleButtonLoading(submitButton, true);
-
-			try {
-				const variantIdInput = productActions.querySelector('.submit-variant-id');
-				const sellingPlanIdInput = productActions.querySelector('.submit-selling-plan-id');
-				const hasGiftOptions = document.querySelector('.gift-option-container') !== null;
-				const selectedGiftContainer = hasGiftOptions ? document.querySelector('.gift-option-container.selected') : null;
-				const giftOptionBorder = selectedGiftContainer ? selectedGiftContainer.querySelector('.gift-option-border') : null;
-
-				// Debug logging for subscription state
-				const isSubscription = !!sellingPlanIdInput?.value;
-				console.log('Purchase Type State:', {
+			// Validate gift ID
+			if (!giftId) {
+				console.error('Gift ID not found:', {
 					isSubscription,
-					sellingPlanId: sellingPlanIdInput?.value
+					regularGiftId: giftOptionBorder.getAttribute('data-gift-id'),
+					subscriptionGiftId: giftOptionBorder.getAttribute('data-gift-id-subscription')
 				});
+			}
+		}
 
-				// Debug logging for gift selection state
-				console.log('Gift Selection State:', {
-					hasGiftOptions,
-					selectedGiftContainer: selectedGiftContainer ? true : false,
-					giftBorderElement: giftOptionBorder ? true : false,
-					giftSubscriptionId: giftOptionBorder?.dataset.giftIdSubscription,
-					giftRegularId: giftOptionBorder?.dataset.giftId
-				});
+		// Validate variant ID
+		if (!variantId) {
+			showNotification('Missing variant ID', 'error');
+			return;
+		}
 
-				if (!variantIdInput) {
-					throw new Error('Variant ID input not found');
-				}
+		// Validate gift selection
+		if (hasGiftOptions && !giftId) {
+			showNotification('Please select a gift', 'error');
+			return;
+		}
 
-				// Get the appropriate gift ID based on purchase type
-				let giftId = null;
-				if (giftOptionBorder) {
-					giftId = isSubscription ?
-						giftOptionBorder.dataset.giftIdSubscription :
-						giftOptionBorder.dataset.giftId;
+		// Prepare cart items
+		const items = [
+			{
+				id: variantId,
+				product_id: currentProductId,
+				quantity: 1,
+				...(sellingPlanId && { selling_plan: sellingPlanId })
+			}
+		];
 
-					console.log('Selected Gift ID:', {
-						giftId,
-						purchaseType: isSubscription ? 'subscription' : 'one-time'
-					});
-				}
+		// Add gift to cart items if selected
+		if (hasGiftOptions && giftId) {
+			items.push({
+				id: giftId,
+				product_id: giftProductId,
+				quantity: 1
+			});
+		}
 
-				const variantId = variantIdInput.value;
-				const sellingPlanId = sellingPlanIdInput ? sellingPlanIdInput.value : '';
-
-				if (!variantId) {
-					showNotification('Missing variant ID', 'error');
-					return;
-				}
-
-				// Modified gift validation to check both subscription and regular gift IDs
-				if (hasGiftOptions && !giftId) {
-					console.log('Gift validation failed:', {
-						hasGiftOptions,
-						giftId,
-						subscriptionId: giftOptionBorder?.dataset.giftIdSubscription,
-						regularId: giftOptionBorder?.dataset.giftId
-					});
-					showNotification('Please select a gift', 'error');
-					return;
-				}
-
-				const items = [
-					{
-						id: variantId,
-						product_id: currentProductId,
-						quantity: 1,
-						...(sellingPlanId && { selling_plan: sellingPlanId })
-					}
-				];
-
-				if (hasGiftOptions && giftId) {
-					items.push({
-						id: giftId,
-						product_id: giftProductId,
-						quantity: 1
-					});
-				}
-
+		// Handle buy now vs add to cart
 		{% if buyType == "buy_now" %}
 			const cartDrawer = document.getElementById('upCart');
 			if (cartDrawer) {
@@ -755,6 +764,7 @@
 			}
 		{% endif %}
 
+		// Add items to cart
 		const result = await addValidItemsToCart(items);
 		console.log('Add to cart result:', result);
 
