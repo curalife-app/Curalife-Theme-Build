@@ -642,76 +642,93 @@
     // Assuming giftProd is defined in your Liquid code
     var giftProductId = {{ giftProd.id | default: 'null' }};
 
+		// Modified gift selection handling
 		submitButton.addEventListener('click', async function(event) {
-		event.preventDefault();
+			event.preventDefault();
 
-		if (!productActions) {
-			console.error('Product actions container not found');
-			return;
-		}
-
-		toggleButtonLoading(submitButton, true);
-
-		try {
-			const variantIdInput = productActions.querySelector('.submit-variant-id');
-			const sellingPlanIdInput = productActions.querySelector('.submit-selling-plan-id');
-
-			// Modified gift selection check
-			const giftSelectorWrap = document.querySelector('.gift-selector-wrap');
-			const hasGiftOptions = giftSelectorWrap !== null;
-			const selectedGiftContainer = hasGiftOptions ? document.querySelector('.gift-option-container.selected') : null;
-
-			// Debug logging
-			console.log('Gift selector wrap:', giftSelectorWrap);
-			console.log('Has gift options:', hasGiftOptions);
-			console.log('Selected gift container:', selectedGiftContainer);
-
-			if (!variantIdInput) {
-				throw new Error('Variant ID input not found');
-			}
-
-			const isSubscription = !!sellingPlanIdInput?.value;
-			const giftId = selectedGiftContainer ?
-				(isSubscription ?
-					selectedGiftContainer.querySelector('.gift-option-border')?.dataset.giftIdSubscription :
-					selectedGiftContainer.querySelector('.gift-option-border')?.dataset.giftId
-				) : null;
-
-			console.log('Gift ID:', giftId);
-			console.log('Is subscription:', isSubscription);
-
-			const variantId = variantIdInput.value;
-			const sellingPlanId = sellingPlanIdInput ? sellingPlanIdInput.value : '';
-
-			if (!variantId) {
-				showNotification('Missing variant ID', 'error');
+			if (!productActions) {
+				console.error('Product actions container not found');
 				return;
 			}
 
-			// Only check for gift selection if there are gift options
-			if (hasGiftOptions && !giftId) {
-				console.log('Gift selection required but none selected');
-				showNotification('Please select a gift', 'error');
-				return;
-			}
+			toggleButtonLoading(submitButton, true);
 
-			// Continue with cart addition...
-			const items = [
-				{
-					id: variantId,
-					product_id: currentProductId,
-					quantity: 1,
-					...(sellingPlanId && { selling_plan: sellingPlanId })
-				}
-			];
+			try {
+				const variantIdInput = productActions.querySelector('.submit-variant-id');
+				const sellingPlanIdInput = productActions.querySelector('.submit-selling-plan-id');
+				const hasGiftOptions = document.querySelector('.gift-option-container') !== null;
+				const selectedGiftContainer = hasGiftOptions ? document.querySelector('.gift-option-container.selected') : null;
+				const giftOptionBorder = selectedGiftContainer ? selectedGiftContainer.querySelector('.gift-option-border') : null;
 
-			if (hasGiftOptions && giftId) {
-				items.push({
-					id: giftId,
-					product_id: giftProductId,
-					quantity: 1
+				// Debug logging for subscription state
+				const isSubscription = !!sellingPlanIdInput?.value;
+				console.log('Purchase Type State:', {
+					isSubscription,
+					sellingPlanId: sellingPlanIdInput?.value
 				});
-			}
+
+				// Debug logging for gift selection state
+				console.log('Gift Selection State:', {
+					hasGiftOptions,
+					selectedGiftContainer: selectedGiftContainer ? true : false,
+					giftBorderElement: giftOptionBorder ? true : false,
+					giftSubscriptionId: giftOptionBorder?.dataset.giftIdSubscription,
+					giftRegularId: giftOptionBorder?.dataset.giftId
+				});
+
+				if (!variantIdInput) {
+					throw new Error('Variant ID input not found');
+				}
+
+				// Get the appropriate gift ID based on purchase type
+				let giftId = null;
+				if (giftOptionBorder) {
+					giftId = isSubscription ?
+						giftOptionBorder.dataset.giftIdSubscription :
+						giftOptionBorder.dataset.giftId;
+
+					console.log('Selected Gift ID:', {
+						giftId,
+						purchaseType: isSubscription ? 'subscription' : 'one-time'
+					});
+				}
+
+				const variantId = variantIdInput.value;
+				const sellingPlanId = sellingPlanIdInput ? sellingPlanIdInput.value : '';
+
+				if (!variantId) {
+					showNotification('Missing variant ID', 'error');
+					return;
+				}
+
+				// Modified gift validation to check both subscription and regular gift IDs
+				if (hasGiftOptions && !giftId) {
+					console.log('Gift validation failed:', {
+						hasGiftOptions,
+						giftId,
+						subscriptionId: giftOptionBorder?.dataset.giftIdSubscription,
+						regularId: giftOptionBorder?.dataset.giftId
+					});
+					showNotification('Please select a gift', 'error');
+					return;
+				}
+
+				const items = [
+					{
+						id: variantId,
+						product_id: currentProductId,
+						quantity: 1,
+						...(sellingPlanId && { selling_plan: sellingPlanId })
+					}
+				];
+
+				if (hasGiftOptions && giftId) {
+					items.push({
+						id: giftId,
+						product_id: giftProductId,
+						quantity: 1
+					});
+				}
 
 		{% if buyType == "buy_now" %}
 			const cartDrawer = document.getElementById('upCart');
