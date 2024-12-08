@@ -543,6 +543,11 @@
 						const clearResponse = await fetch('/cart/clear.js', { method: 'POST' });
 						if (!clearResponse.ok) throw new Error('Failed to clear cart');
 
+						const cartPopup = document.querySelector('#CartPopup');
+						if (cartPopup) {
+							cartPopup.remove();
+						}
+
 						// Wait until the cart is actually empty
 						let cartIsEmpty = false;
 						for (let i = 0; i < 5; i++) { // Try up to 5 times
