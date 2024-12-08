@@ -934,14 +934,14 @@ async function addValidItemsToCart(items) {
 
 async function countUniqueProductsWithTag(cart) {
   try {
-    // Use the product title to check for 'Cyber Monday Week'
+    // Use the product title to check for 'Holiday Week'
     const uniqueProducts = cart.items.reduce((acc, item) => {
       if (acc[item.product_id]) {
         return acc;
       }
 
-      const hasBlackFridayWeek = item.title && item.title.includes('Cyber Monday Week');
-      console.log('Checking item:', item.title, 'Has BF Week:', hasBlackFridayWeek);
+      const hasBlackFridayWeek = item.title && item.title.includes('Holiday Sale');
+      console.log('Checking item:', item.title, 'Has Holiday Sale:', hasBlackFridayWeek);
 
       acc[item.product_id] = hasBlackFridayWeek;
       return acc;
@@ -952,7 +952,7 @@ async function countUniqueProductsWithTag(cart) {
     // Always allow at least one free gift
     return Math.max(blackFridayWeekCount, 1);
   } catch (error) {
-    console.error('Error counting Cyber Monday Week products:', error);
+    console.error('Error counting Holiday Sale Week products:', error);
     return 1; // Default to 1 if there's an error
   }
 }
