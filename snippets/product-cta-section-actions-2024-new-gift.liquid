@@ -66,7 +66,9 @@
 									{% assign giftThumb = block.settings.gift_thumbnail | default: giftProdSubscription.featured_image | default: giftProd.featured_image %}
 
 									<div class="gift-option-container flex flex-col items-center">
-										<div class="gift-option-border relative w-full p-2 mb-3 border rounded-lg cursor-pointer" data-gift-id="{{ giftVariant.id }}" data-gift-id-subscription="{{ giftVariantSubscription.id }}">
+										<div class="gift-option-border relative w-full p-2 mb-3 border rounded-lg cursor-pointer"
+										data-gift-id="{{ giftVariant.id }}"
+										data-gift-id-subscription="{{ giftVariantSubscription.id | default: giftVariant.id }}">
 											<div class="radio-indicator top-2 right-2 absolute flex items-center justify-center w-6 h-6 rounded-full">
 												<div class="check-mark hidden w-4 h-4 font-bold text-white rounded-full">✓</div>
 											</div>
@@ -104,7 +106,7 @@
 			<div class="product-form__buttons main-submit-wrapper flex">
 				<button id="ProductSubmitButton-{{SID}}" data-variant-id="{{ variant | default: product.selected_or_first_available_variant.id }}" type="button" name="add" class="text-black product-form__submit button--full-width justify-center button--primary text-[20px] p-0 min-h-[50px] items-center bg-[--orange]">
 					<span class="submit-title">
-						{% if buyType == "buy_now" %}
+						{% if buyType == "buy_now" and shop.name == "Curalife" %}
 							Buy Now
 						{% else %}
 							Add To Cart
@@ -704,7 +706,7 @@
 			});
 		}
 
-		{% if buyType == "buy_now" %}
+		{% if buyType == "buy_now" and shop.name == "Curalife" %}
 			const cartDrawer = document.getElementById('upCart');
 			if (cartDrawer) cartDrawer.remove();
 			await fetch('/cart/clear.js', {
@@ -715,7 +717,7 @@
 
 		const result = await addValidItemsToCart(items);
 		if (result.success) {
-			{% if buyType == "buy_now" %}
+			{% if buyType == "buy_now" and shop.name == "Curalife" %}
 				window.location.href = '/checkout';
 			{% endif %}
 		} else if (result.error) {
