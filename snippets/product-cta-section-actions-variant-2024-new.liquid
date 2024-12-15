@@ -11,6 +11,16 @@
 {% assign subscription_item_price_save = original_item_cap | times: subscription_save_percents | divided_by: 100 %}
 {% assign subscription_item_price = original_item_cap | minus: subscription_item_price_save %}
 {% assign subscription_total_price = subscription_item_price | times: bottle_quantity %}
+{% if prod.metafields.custom.is_price_per_month %}
+	{% assign final_price = item_price %}
+	{% assign final_subscription_price = subscription_item_price %}
+	{% assign final_striked_price = original_item_cap %}
+{% else %}
+	{% assign final_price = var.price %}
+	{% assign final_subscription_price = subscription_total_price %}
+	{% assign final_striked_price = original_item_cap_total %}
+{% endif %}
+
 {% if var.metafields.custom.referenced_variant_product_handle %}
   {% assign prod = all_products[var.metafields.custom.referenced_variant_product_handle] %}
   {% assign referenced_variant = prod.variants | where: 'id', variant_id | first %}
@@ -68,9 +78,9 @@
     {% endif %}
 
     <div class="calculations flex items-center gap-2 font-bold leading-10">
-      <div class="real-price no-letters text-[40px] subscription-content"><span class="floor rounded">{% if prod.metafields.custom.is_price_per_month %}{{ subscription_item_price | money }}{% else %}{{ subscription_total_price | money }}{% endif %}</span></div>
-      <div class="real-price no-letters text-[40px] buy-once-content" style="display: none; opacity: 0;"><span class="floor rounded">{% if prod.metafields.custom.is_price_per_month %}{{ item_price | money }}{% else %}{{ var.price | money }}{% endif %}</span></div>
-      <div class="compared-at-price rounded line-through text-[30px] font-normal text-[#baced5]">{% if prod.metafields.custom.is_price_per_month %}{{ original_item_cap | money }}{% else %}{{ original_item_cap_total | money }}{% endif %}</div>
+      <div class="real-price no-letters text-[40px] subscription-content"><span class="floor rounded">{{ final_subscription_price | money }}</span></div>
+      <div class="real-price no-letters text-[40px] buy-once-content" style="display: none; opacity: 0;"><span class="floor rounded">{{ final_price | money }}</span></div>
+      <div class="compared-at-price rounded line-through text-[30px] font-normal text-[#baced5]">{{ final_striked_price | money }}</div>
     </div>
 
     <div class="per-month font-bold">Per Month</div>
