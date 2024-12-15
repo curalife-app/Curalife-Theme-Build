@@ -11,7 +11,9 @@
 {% assign subscription_item_price_save = original_item_cap | times: subscription_save_percents | divided_by: 100 %}
 {% assign subscription_item_price = original_item_cap | minus: subscription_item_price_save %}
 {% assign subscription_total_price = subscription_item_price | times: bottle_quantity %}
+
 {% if prod.metafields.custom.is_price_per_month %}
+	{% assign is_price_per_month = true %}
 	{% assign final_price = item_price %}
 	{% assign final_subscription_price = subscription_item_price %}
 	{% assign final_striked_price = original_item_cap %}
@@ -68,10 +70,11 @@
   </div>
 
   <div class="price-wrapper pb-2">
-    {% if prod.metafields.custom.is_price_per_month and var.price > item_price %}
+    {% if is_price_per_month and var.price > item_price %}
       <div class="total-price-wrapper mb-1 text-[16px]">
         {% assign staticSubscriptionTotalPrice = var.metafields.subscription.price | metafield_text %}
         {% assign dynamicSubscriptionTotalPrice = subscription_total_price | money %}
+
         <span class="total-price subscription-content">Total <span class="floor rounded">{{ staticSubscriptionTotalPrice | default: dynamicSubscriptionTotalPrice }}</span></span>
         <span class="total-price buy-once-content" style="display: none; opacity: 0;">Total <span class="floor rounded">{{ var.price | money }}</span></span>
       </div>
