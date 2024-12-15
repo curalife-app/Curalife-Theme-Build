@@ -24,7 +24,8 @@
 {% endif %}
 
 {% if var.product.handle == 'curalin-bp' %}
-	{% assign final_price = final_price | times: save_percents | divided_by: 100 %}
+	{% assign save_price = final_price | times: save_percents | divided_by: 100 %}
+	{% assign final_price = final_price | minus: save_price %}
 {% endif %}
 
 {% if var.metafields.custom.referenced_variant_product_handle %}
@@ -43,7 +44,7 @@
   <script>console.log("Didn't find selling plan for the variant")</script>
 {% endif %}
 
-{% if request.path contains "curalin-1-1" or var.product.handle contains 'holiday-sale'  %}
+{% if request.path contains "curalin-1-1" or var.product.handle contains 'holiday-sale' %}
 	{% assign isBFCM = true %}
 {% endif %}
 
