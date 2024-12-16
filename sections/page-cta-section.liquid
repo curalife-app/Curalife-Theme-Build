@@ -82,20 +82,20 @@
 	<!-- JavaScript to handle URL parameter and hide the section -->
 	<script>
 		(() => {
-		  const section = document.getElementById('cta-section-{{ SID | escape }}');
-		  if (!section) return;
+			const section = document.getElementById('cta-section-{{ SID | escape }}');
+			if (!section) return;
 
-		  const params = new URLSearchParams(window.location.search);
-		  const ctaParam = params.get('cta') === 'true';
+			const params = new URLSearchParams(window.location.search);
+			const ctaParam = params.get('cta') === 'true';
 
-		  if (ctaParam) {
-		    document.querySelectorAll('.hide-on-cta').forEach(el => el.remove());
-		  }
+			if (ctaParam) {
+				document.querySelectorAll('.hide-on-cta').forEach(el => el.remove());
+			}
 
-		  if (({{ section.settings.display_on_url_param | json | escape }} && !ctaParam) ||
-		      ({{ section.settings.hide_on_url_param | json | escape }} && ctaParam)) {
-		    section.remove();
-		  }
+			if (({{ section.settings.display_on_url_param | json | escape }} && !ctaParam) ||
+					({{ section.settings.hide_on_url_param | json | escape }} && ctaParam)) {
+				section.remove();
+			}
 		})();
 	</script>
 
