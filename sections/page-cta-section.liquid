@@ -105,125 +105,130 @@
 	</script>
 
 	<script>
-    window.addEventListener('load', function() {
-      var _learnq = window._learnq || [];
-      var item = {};
-      function addedToCart() {
-        fetch(`${window.location.origin}/cart.js`)
-        .then(res => res.clone().json().then(data => {
-          var cart = {
-            total_price: data.total_price/100,
-            $value: data.total_price/100,
-            total_discount: data.total_discount,
-            original_total_price: data.original_total_price/100,
-            items: data.items
-          };
-          if (item !== 'undefined') {
-            cart = Object.assign(cart, item);
-          }
+		window.addEventListener('load', function () {
+			var _learnq = window._learnq || [];
+			var item = {};
+			function addedToCart() {
+				fetch(`${window.location.origin}/cart.js`).then(res =>
+					res
+						.clone()
+						.json()
+						.then(data => {
+							var cart = {
+								total_price: data.total_price / 100,
+								$value: data.total_price / 100,
+								total_discount: data.total_discount,
+								original_total_price: data.original_total_price / 100,
+								items: data.items
+							};
+							if (item !== 'undefined') {
+								cart = Object.assign(cart, item);
+							}
 
-          if (klAjax) {
-            _learnq.push(['track', 'Added to Cart', cart]);
-            klAjax = false;
-          }
-        }));
-      };
+							if (klAjax) {
+								_learnq.push(['track', 'Added to Cart', cart]);
+								klAjax = false;
+							}
+						})
+				);
+			}
 
-      (function(ns, fetch) {
-        ns.fetch = function() {
-          const response = fetch.apply(this, arguments);
-          response.then(res => {
-            if (`${window.location.origin}/cart/add.js`.includes(res.url)) {
-              addedToCart();
-            }
-          });
-          return response;
-        };
-      }(window, window.fetch));
+			(function (ns, fetch) {
+				ns.fetch = function () {
+					const response = fetch.apply(this, arguments);
+					response.then(res => {
+						if (`${window.location.origin}/cart/add.js`.includes(res.url)) {
+							addedToCart();
+						}
+					});
+					return response;
+				};
+			})(window, window.fetch);
 
-      var klAjax = true;
-      var atcButtons = document.querySelectorAll("form[action*='/cart/add'] button[type='submit']");
-      for (var i = 0; i < atcButtons.length; i++) {
-        atcButtons[i].addEventListener("click", function() {
-          if (klAjax) {
-            _learnq.push(['track', 'Added to Cart', item]);
-            klAjax = false;
-          }
-        });
-      }
-    });
-
-    {% if section.settings.is_popup %}
-      document.addEventListener('DOMContentLoaded', function() {
-        const popup = document.getElementById('cta-section-{{ SID }}');
-        const popupContent = popup.querySelector('.cta-popup-content');
-        const closeButtons = popup.querySelectorAll('.close-popup');
-        const focusableElementsString = 'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]';
-        let focusableElements = [];
-        let firstFocusableElement = null;
-        let lastFocusableElement = null;
-
-        const togglePopup = (show) => {
-          if (show) {
-            popup.setAttribute('aria-hidden', 'false');
-            popup.classList.add('show');
-            focusableElements = popupContent.querySelectorAll(focusableElementsString);
-            firstFocusableElement = focusableElements[0];
-            lastFocusableElement = focusableElements[focusableElements.length - 1];
-            firstFocusableElement.focus();
-            document.addEventListener('keydown', trapTabKey);
-            document.addEventListener('keydown', handleEscape);
-            document.body.style.overflow = 'hidden';
-          } else {
-            popup.setAttribute('aria-hidden', 'true');
-            popup.classList.remove('show');
-            document.removeEventListener('keydown', trapTabKey);
-            document.removeEventListener('keydown', handleEscape);
-            document.body.style.overflow = '';
-          }
-        };
-
-        const trapTabKey = (e) => {
-          if (e.keyCode === 9) {
-            if (e.shiftKey) {
-              if (document.activeElement === firstFocusableElement) {
-                e.preventDefault();
-                lastFocusableElement.focus();
-              }
-            } else {
-              if (document.activeElement === lastFocusableElement) {
-                e.preventDefault();
-                firstFocusableElement.focus();
-              }
-            }
-          }
-        };
-
-        const handleEscape = (e) => {
-          if (e.key === 'Escape' || e.keyCode === 27) {
-            togglePopup(false);
-          }
-        };
-
-        document.querySelectorAll('a[href="#cta-popup"]').forEach(el =>
-          el.addEventListener('click', (e) => {
-            e.preventDefault();
-            togglePopup(true);
-          })
-        );
-
-        closeButtons.forEach(button => {
-          button.addEventListener('click', () => togglePopup(false));
-        });
-
-        popup.addEventListener('click', (e) => {
-          if (e.target === popup) togglePopup(false);
-        });
-      });
-    {% endif %}
+			var klAjax = true;
+			var atcButtons = document.querySelectorAll("form[action*='/cart/add'] button[type='submit']");
+			for (var i = 0; i < atcButtons.length; i++) {
+				atcButtons[i].addEventListener('click', function () {
+					if (klAjax) {
+						_learnq.push(['track', 'Added to Cart', item]);
+						klAjax = false;
+					}
+				});
+			}
+		});
 	</script>
 
 	{% if section.settings.is_popup %}
+		<script>
+			document.addEventListener('DOMContentLoaded', function () {
+				const popup = document.getElementById('cta-section-{{ SID }}');
+				const popupContent = popup.querySelector('.cta-popup-content');
+				const closeButtons = popup.querySelectorAll('.close-popup');
+				const focusableElementsString =
+					'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]';
+				let focusableElements = [];
+				let firstFocusableElement = null;
+				let lastFocusableElement = null;
+
+				const togglePopup = show => {
+					if (show) {
+						popup.setAttribute('aria-hidden', 'false');
+						popup.classList.add('show');
+						focusableElements = popupContent.querySelectorAll(focusableElementsString);
+						firstFocusableElement = focusableElements[0];
+						lastFocusableElement = focusableElements[focusableElements.length - 1];
+						firstFocusableElement.focus();
+						document.addEventListener('keydown', trapTabKey);
+						document.addEventListener('keydown', handleEscape);
+						document.body.style.overflow = 'hidden';
+					} else {
+						popup.setAttribute('aria-hidden', 'true');
+						popup.classList.remove('show');
+						document.removeEventListener('keydown', trapTabKey);
+						document.removeEventListener('keydown', handleEscape);
+						document.body.style.overflow = '';
+					}
+				};
+
+				const trapTabKey = e => {
+					if (e.keyCode === 9) {
+						if (e.shiftKey) {
+							if (document.activeElement === firstFocusableElement) {
+								e.preventDefault();
+								lastFocusableElement.focus();
+							}
+						} else {
+							if (document.activeElement === lastFocusableElement) {
+								e.preventDefault();
+								firstFocusableElement.focus();
+							}
+						}
+					}
+				};
+
+				const handleEscape = e => {
+					if (e.key === 'Escape' || e.keyCode === 27) {
+						togglePopup(false);
+					}
+				};
+
+				document.querySelectorAll('a[href="#cta-popup"]').forEach(el =>
+					el.addEventListener('click', e => {
+						e.preventDefault();
+						togglePopup(true);
+					})
+				);
+
+				closeButtons.forEach(button => {
+					button.addEventListener('click', () => togglePopup(false));
+				});
+
+				popup.addEventListener('click', e => {
+					if (e.target === popup) togglePopup(false);
+				});
+			});
+		</script>
+
 		<style>
 			#shopify-section-{{ section.id }} {
 				.product-container {
