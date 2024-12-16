@@ -715,264 +715,263 @@
 
 <style>
 	#cta-section-{{ SID }} {
-	  --primary-color: {{ buyBoxColor }};
-	  --primary-color-dark: color-mix(in srgb, var(--primary-color), black 20%);
-	  --primary-color-light: color-mix(in srgb, var(--primary-color), white 90%);
-	  --text-color: #4a5568;
-	  --border-color: #cbcbcb;
-	  --radio-size: 1em;
-	  --radio-size-mobile: 1em;
-	  --transition-speed: 0.2s;
+		--primary-color: {{ buyBoxColor }};
+		--primary-color-dark: color-mix(in srgb, var(--primary-color), black 20%);
+		--primary-color-light: color-mix(in srgb, var(--primary-color), white 90%);
+		--text-color: #4a5568;
+		--border-color: #cbcbcb;
+		--radio-size: 1em;
+		--radio-size-mobile: 1em;
+		--transition-speed: 0.2s;
 
-	  .product-container {
-	    grid-template-columns: 54% 42% !important;
-	  }
-
-	.cta-text {
-		font-size: 16px !important;
-	}
-
-	.gift-option-container.selected {
-		.gift-option-border {
-			border-color: var(--primary-color);
-			background-color: rgba(var(--primary-color-rgb), 0.05);
+		.product-container {
+			grid-template-columns: 54% 42% !important;
 		}
 
-		.radio-indicator {
-			background-color: var(--primary-color);
-			transition: background-color 0.3s ease;
+		.cta-text {
+			font-size: 16px !important;
 		}
 
-		.check-mark {
-			display: flex;
-		}
-	}
+		.gift-option-container {
+			&.selected {
+				.gift-option-border {
+					border-color: var(--primary-color);
+					background-color: rgba(var(--primary-color-rgb), 0.05);
+				}
 
-	.gift-option-border {
-		transition: all 0.3s ease;
-		border: 2px solid #e5e7eb;
-		background: #fff;
-		width: 120px;
-		height: 120px;
+				.radio-indicator {
+					background-color: var(--primary-color);
+					transition: background-color 0.3s ease;
+				}
 
-		&:hover {
-			border-color: var(--primary-color-lighter);
-			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-		}
-	}
-
-	  .product-actions {
-	    grid-area: 2/2/3/3;
-	    min-height: 415px;
-
-	    &:not(.with-animation) .purchase-option-box {
-			position: relative;
-			gap: 1rem;
-	      max-height: none !important;
-	      transition: none !important;
-	    }
-	  }
-
-	  /* One Time Purchase Link */
-	  .one-time-purchase-link a {
-	    transition: color 0.3s ease;
-	  }
-
-	  /* Radio Input Component */
-	  .radio-input {
-	    display: flex;
-	    align-items: center;
-	    justify-content: center;
-	    position: relative;
-
-	    input[type='radio'] {
-	      &:hover,
-	      .purchase-option-box:hover & {
-	        transform: scale(1.1);
-	        cursor: pointer;
-				transition: 0.1s all;
-	      }
-	    }
-	  }
-
-	  /* Purchase Type Buttons */
-	  .purchase-type {
-	    button {
-	      background-color: var(--primary-color);
-	      color: black;
-	      border-radius: 5px;
-	      font-size: 16px;
-	      min-width: 49%;
-	      padding: 0.65rem;
-	      transition: background-color 0.3s, color 0.3s;
-	      font-weight: 600;
-
-	      &.selected {
-	        color: white !important;
-	      }
-
-	      &:not(.selected) {
-	        background: var(--primary-color-light);
-	        border: 1px solid var(--primary-color);
-
-	        .subscription-details {
-	          color: var(--primary-color-dark);
-	        }
-	      }
-	    }
-	  }
-
-	  /* Purchase Option Box */
-	  .purchase-option-box {
-	    --box-padding: 1rem;
-	    --box-max-height: 72px;
-
-	    background: #fff;
-	    border: 1px solid var(--border-color);
-	    cursor: pointer;
-	    max-height: var(--box-max-height);
-	    filter: drop-shadow(0px 4px 4px rgba(47, 47, 47, 0.1));
-	    transition: max-height 0.5s ease-in-out, filter 0.3s, background-color 0.3s, border-width 0.3s;
-	    border-radius: 10px;
-	    border-color: var(--primary-color);
-	    padding: var(--box-padding);
-
-	    &:hover {
-	      filter: drop-shadow(0px 4px 4px rgba(77, 53, 98, 0.3));
-	    }
-
-	    &.selected {
-	      filter: drop-shadow(0px 4px 4px rgba(77, 53, 98, 0.3));
-	      background-color: var(--primary-color-light);
-	      max-height: max-content;
-	    }
-
-	    &[inert] {
-	      max-height: var(--box-max-height) !important;
-	      background: #ededed;
-	      opacity: 0.6;
-
-	      .option-title {
-	        color: grey;
-	      }
-	    }
-
-	    .radio-box {
-	      align-items: center;
-	      display: flex;
-	    }
-
-	    /* Price and Terms Styling */
-	    .save-title {
-	      background-color: var(--orange);
-	      font-weight: bold;
-	    }
-
-	    .terms {
-	      margin-left: 26px;
-	    }
-
-	    .price-wrapper {
-	      min-width: 5rem;
-
-	      .total-price {
-	        color: {{ buyBoxColor | default: 'var(--primary-color-dark)' }};
-	      }
-	    }
-	  }
-
-	  /* Responsive Styles */
-	  @media (max-width: 1269px) {
-	    .purchase-option-box {
-	      width: 100%;
-	    }
-	  }
-
-	  @media (max-width: 767px) {
-	    .product-actions {
-	      grid-area: unset;
-	      grid-row: 3;
-	      max-width: unset;
-	      min-height: unset;
-	    }
-
-	    .purchase-option-box {
-	      font-size: 4vw;
-	      padding: 3vw;
-	      max-height: 16vw;
-
-			&::before {
-				font-size: 3vw;
-				width: 23vw;
-				height: 5vw;
-				top: -5vw;
-				padding: 0.75vw;
-				border-radius: 2vw 2vw 0 0;
+				.check-mark {
+					display: flex;
+				}
 			}
 
-	      &.selected {
-	        max-height: none;
-	      }
+			.gift-option-border {
+				transition: all 0.3s ease;
+				border: 2px solid #e5e7eb;
+				background: #fff;
+				width: 120px;
+				height: 120px;
 
-	      .top-wrapper {
-	        min-height: 9vw;
-	      }
+				&:hover {
+					border-color: var(--primary-color-lighter);
+					box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+				}
+			}
+		}
 
-	      .left-wrapper {
-	        gap: 2vw;
-	      }
+		.product-actions {
+			grid-area: 2/2/3/3;
+			min-height: 415px;
 
-	      .option-title {
-	        font-size: 3.9vw;
-	      }
+			&:not(.with-animation) {
+				.purchase-option-box {
+					position: relative;
+					gap: 1rem;
+					max-height: none !important;
+					transition: none !important;
+				}
+			}
+		}
 
-	      .price-wrapper {
-	        min-width: 17.7vw;
+		.one-time-purchase-link {
+			a {
+				transition: color 0.3s ease;
+			}
+		}
 
-	        .real-price {
-	          font-size: 4.5vw;
-	        }
-	      }
+		.radio-input {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			position: relative;
 
-	      .terms {
-	        margin-left: 5vw;
+			input[type='radio'] {
+				&:hover,
+				.purchase-option-box:hover & {
+					transform: scale(1.1);
+					cursor: pointer;
+					transition: 0.1s all;
+				}
+			}
+		}
 
-	        .subtitle,
-	        .terms-title {
-	          font-size: 3.5vw;
-	        }
-	      }
+		.purchase-type {
+			button {
+				background-color: var(--primary-color);
+				color: black;
+				border-radius: 5px;
+				font-size: 16px;
+				min-width: 49%;
+				padding: 0.65rem;
+				transition: background-color 0.3s, color 0.3s;
+				font-weight: 600;
 
-	      .radio-box {
-	        label {
-	          width: 3vw;
-	          height: 3vw;
+				&.selected {
+					color: white !important;
+				}
 
-	          &:after {
-	            font-size: 2vw;
-	            width: 3vw !important;
-	            height: 3vw !important;
-	            top: -0.25vw !important;
-	            left: -0.25vw !important;
-	            display: flex;
-	            justify-content: center;
-	            align-items: center;
-	          }
-	        }
-	      }
+				&:not(.selected) {
+					background: var(--primary-color-light);
+					border: 1px solid var(--primary-color);
 
-	      &.selected {
-	        max-height: max-content;
-	      }
+					.subscription-details {
+						color: var(--primary-color-dark);
+					}
+				}
+			}
+		}
 
-	      &[inert] {
-	        max-height: 16vw !important;
-	      }
-	    }
+		.purchase-option-box {
+			--box-padding: 1rem;
+			--box-max-height: 72px;
+			background: #fff;
+			border: 1px solid var(--border-color);
+			cursor: pointer;
+			max-height: var(--box-max-height);
+			filter: drop-shadow(0px 4px 4px rgba(47, 47, 47, 0.1));
+			transition: max-height 0.5s ease-in-out, filter 0.3s, background-color 0.3s, border-width 0.3s;
+			border-radius: 10px;
+			border-color: var(--primary-color);
+			padding: var(--box-padding);
 
-	    .one-time-purchase-link {
-	      font-size: 3.5vw;
-	    }
-	  }
+			&:hover {
+				filter: drop-shadow(0px 4px 4px rgba(77, 53, 98, 0.3));
+			}
+
+			&.selected {
+				filter: drop-shadow(0px 4px 4px rgba(77, 53, 98, 0.3));
+				background-color: var(--primary-color-light);
+				max-height: max-content;
+			}
+
+			&[inert] {
+				max-height: var(--box-max-height) !important;
+				background: #ededed;
+				opacity: 0.6;
+
+				.option-title {
+					color: grey;
+				}
+			}
+
+			.radio-box {
+				align-items: center;
+				display: flex;
+			}
+
+			.save-title {
+				background-color: var(--orange);
+				font-weight: bold;
+			}
+
+			.terms {
+				margin-left: 26px;
+			}
+
+			.price-wrapper {
+				min-width: 5rem;
+
+				.total-price {
+					color: {{ buyBoxColor | default: 'var(--primary-color-dark)' }};
+				}
+			}
+		}
+
+		@media (max-width: 1269px) {
+			.purchase-option-box {
+				width: 100%;
+			}
+		}
+
+		@media (max-width: 767px) {
+			.product-actions {
+				grid-area: unset;
+				grid-row: 3;
+				max-width: unset;
+				min-height: unset;
+			}
+
+			.purchase-option-box {
+				font-size: 4vw;
+				padding: 3vw;
+				max-height: 16vw;
+
+				&::before {
+					font-size: 3vw;
+					width: 23vw;
+					height: 5vw;
+					top: -5vw;
+					padding: 0.75vw;
+					border-radius: 2vw 2vw 0 0;
+				}
+
+				&.selected {
+					max-height: none;
+				}
+
+				.top-wrapper {
+					min-height: 9vw;
+				}
+
+				.left-wrapper {
+					gap: 2vw;
+				}
+
+				.option-title {
+					font-size: 3.9vw;
+				}
+
+				.price-wrapper {
+					min-width: 17.7vw;
+
+					.real-price {
+						font-size: 4.5vw;
+					}
+				}
+
+				.terms {
+					margin-left: 5vw;
+
+					.subtitle,
+					.terms-title {
+						font-size: 3.5vw;
+					}
+				}
+
+				.radio-box {
+					label {
+						width: 3vw;
+						height: 3vw;
+
+						&:after {
+							font-size: 2vw;
+							width: 3vw !important;
+							height: 3vw !important;
+							top: -0.25vw !important;
+							left: -0.25vw !important;
+							display: flex;
+							justify-content: center;
+							align-items: center;
+						}
+					}
+				}
+
+				&.selected {
+					max-height: max-content;
+				}
+
+				&[inert] {
+					max-height: 16vw !important;
+				}
+			}
+
+			.one-time-purchase-link {
+				font-size: 3.5vw;
+			}
+		}
 	}
 </style>
