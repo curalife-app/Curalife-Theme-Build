@@ -28,24 +28,26 @@
 
 	{% unless isHideInfo %}
 		<div class="product-info">
-			<div class="titles mb-4">
-				{% if upperTitleNotice and prod.handle == 'curalin-curabox' -%}
-					<div class="upper-title-notice bg-[--light-pink] w-fit text-[--bronze] text-[16px] rounded-full font-bold px-4 py-2 mbl:mx-auto mbl:my-2">
-						{{ upperTitleNotice }}
-					</div>
-				{%- endif %}
-				<{{ titleTag | default: 'h1' }} class="product-title m-0 text-black">
-					{%- if prod.metafields.my_fields.alternative_title.value -%}
-						{{- prod.metafields.my_fields.alternative_title.value -}}
-					{%- elsif mainTitle != blank -%}
-						{{- mainTitle -}}
-					{%- else -%}
-						{{- prod.title -}}
-					{%- endif -%}
-				</{{ titleTag | default: 'h1' }}>
-				{% if subtitle %}
-					<p class="product-subtitle text-[22px] m-0">{{ subtitle }}</p>
-				{% endif %}
+			<div class="top-wrapper">
+				<div class="titles mb-4">
+					{% if upperTitleNotice and prod.handle == 'curalin-curabox' -%}
+						<div class="upper-title-notice bg-[--light-pink] w-fit text-[--bronze] text-[16px] rounded-full font-bold px-4 py-2 mbl:mx-auto mbl:my-2">
+							{{ upperTitleNotice }}
+						</div>
+					{%- endif %}
+					<{{ titleTag | default: 'h1' }} class="product-title m-0 text-black">
+						{%- if prod.metafields.my_fields.alternative_title.value -%}
+							{{- prod.metafields.my_fields.alternative_title.value -}}
+						{%- elsif mainTitle != blank -%}
+							{{- mainTitle -}}
+						{%- else -%}
+							{{- prod.title -}}
+						{%- endif -%}
+					</{{ titleTag | default: 'h1' }}>
+					{% if subtitle %}
+						<p class="product-subtitle text-[22px] m-0">{{ subtitle }}</p>
+					{% endif %}
+				</div>
 
 				{% if prod.first_available_variant.sku contains 'Curalin' %}
 					<div>
@@ -53,14 +55,14 @@
 						+3000 Reviews
 					</div>
 				{% endif %}
-
-				{%- for block in section.blocks -%}
-					{%- case block.type -%}
-						{%- when '@app' -%}
-							{% render block %}
-					{%- endcase -%}
-				{%- endfor -%}
 			</div>
+
+			{%- for block in section.blocks -%}
+				{%- case block.type -%}
+					{%- when '@app' -%}
+						{% render block %}
+				{%- endcase -%}
+			{%- endfor -%}
 
 			{% if ctaText %}
 				<div class="cta-text text-start mbl:mb-4">{{ ctaText }}</div>
