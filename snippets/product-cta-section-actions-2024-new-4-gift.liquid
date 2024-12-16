@@ -579,21 +579,24 @@
 						// get first variant id
 						const firstVariantID = oneTimePurchaseButton.getAttribute('data-variant-id');
 						// Add items directly to the cart
+						const itemsToAdd = [
+							{
+								id: firstVariantID, // Replace with the actual variant ID for one-time purchase
+								quantity: 1
+							}
+						];
+
+						if (giftId) {
+							itemsToAdd.push({
+								id: parseInt(giftId),
+								quantity: 1
+							});
+						}
+
 						const response = await fetch('/cart/add.js', {
 							method: 'POST',
 							headers: { 'Content-Type': 'application/json' },
-							body: JSON.stringify({
-								items: [
-									{
-										id: firstVariantID, // Replace with the actual variant ID for one-time purchase
-										quantity: 1
-									},
-									{
-										id: parseInt(giftId),
-										quantity: 1
-									}
-								]
-							})
+							body: JSON.stringify({ items: itemsToAdd })
 						});
 
 						if (!response.ok) throw new Error('Failed to add items to cart');
