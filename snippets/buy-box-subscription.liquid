@@ -25,36 +25,38 @@
 {% endfor %}
 
 <div class="product-actions" data-default-variant-index="{{ defaultSelectionIndex }}">
-	<div class="purchase-options flex gap-2">
-		{% for block in blocks %}
-			{% if block.type == 'variant' and block.settings.purchase_type == 'subscribe' %}
-				{% assign referenced_variant = blank %}
-				{% assign blockVarID = block.settings.variant_id | plus: 0 %}
-				{% for vari in referenced_variant_product.variants %}
-					{% assign currVarID = vari.id | plus: 0 %}
-					{% if currVarID == blockVarID %}
-						{% assign referenced_variant = vari %}
-					{% endif %}
-				{% endfor %}
+	<div class="purchase-options flex flex-col gap-2">
+		<div class="variant-boxes flex gap-2">
+			{% for block in blocks %}
+				{% if block.type == 'variant' and block.settings.purchase_type == 'subscribe' %}
+					{% assign referenced_variant = blank %}
+					{% assign blockVarID = block.settings.variant_id | plus: 0 %}
+					{% for vari in referenced_variant_product.variants %}
+						{% assign currVarID = vari.id | plus: 0 %}
+						{% if currVarID == blockVarID %}
+							{% assign referenced_variant = vari %}
+						{% endif %}
+					{% endfor %}
 
-				{% render 'buy-box-subscription-variant',
-					SID: SID,
-					prod: referenced_variant_product,
-					var: referenced_variant,
-					buyBoxColor: block.settings.box_color,
-					pricePer: pricePer,
-					saveFormat: saveFormat,
-					saveText: block.settings.save_text,
-					badgeText: block.settings.badge_text,
-					variantTitle: block.settings.title,
-					variantDescription: block.settings.variant_description,
-					variantSecondDescription: block.settings.variant_second_description,
-					index: forloop.index,
-					purchase_type: block.settings.purchase_type,
-					buyType: buyType
-				%}
-			{% endif %}
-		{% endfor %}
+					{% render 'buy-box-subscription-variant',
+						SID: SID,
+						prod: referenced_variant_product,
+						var: referenced_variant,
+						buyBoxColor: block.settings.box_color,
+						pricePer: pricePer,
+						saveFormat: saveFormat,
+						saveText: block.settings.save_text,
+						badgeText: block.settings.badge_text,
+						variantTitle: block.settings.title,
+						variantDescription: block.settings.variant_description,
+						variantSecondDescription: block.settings.variant_second_description,
+						index: forloop.index,
+						purchase_type: block.settings.purchase_type,
+						buyType: buyType
+					%}
+				{% endif %}
+			{% endfor %}
+		</div>
 
 		{% if giftsAmount > 0 %}
 			<div class="gift-selector-wrap">
