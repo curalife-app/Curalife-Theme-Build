@@ -576,6 +576,8 @@
 							throw new Error('Cart is not empty after clearing');
 						}
 
+						// get first variant id
+						const firstVariantID = oneTimePurchaseButton.getAttribute('data-variant-id');
 						// Add items directly to the cart
 						const response = await fetch('/cart/add.js', {
 							method: 'POST',
@@ -583,7 +585,7 @@
 							body: JSON.stringify({
 								items: [
 									{
-										id: 42865141121175, // Replace with the actual variant ID for one-time purchase
+										id: firstVariantID, // Replace with the actual variant ID for one-time purchase
 										quantity: 1
 									},
 									{
