@@ -40,8 +40,8 @@
 					{% endfor %}
 
 					<div
-						id="purchase-option-box-{{ SID }}-{{ forloop.index }}"
-						class="purchase-option-box flex-1 py-2 px-4 rounded-md border-2 text-lg font-medium transition-all cursor-pointer {% if forloop.index == 1 %}selected{% endif %}"
+						id="variant-box-{{ SID }}-{{ forloop.index }}"
+						class="variant-box flex-1 py-2 px-4 rounded-md border-2 text-lg font-medium transition-all cursor-pointer {% if forloop.index == 1 %}selected{% endif %}"
 						data-variant="{{ variant_id }}"
 						data-product="{{ prod.id }}"
 						data-original-variant="{{ var.id }}"
@@ -157,7 +157,7 @@
 <script>
   document.addEventListener('DOMContentLoaded', () => {
 		const productActions = document.querySelector('#cta-section-{{ SID }} .product-actions');
-		const purchaseOptionBoxes = productActions.querySelectorAll('.purchase-option-box');
+		const purchaseOptionBoxes = productActions.querySelectorAll('.variant-box');
 		const submitButton = productActions.querySelector('.checkout-button button');
 		const submitSellingPlanIdInput = document.querySelector('.submit-selling-plan-id');
 		const submitVariantIdInput = document.querySelector('.submit-variant-id');
@@ -218,7 +218,7 @@
 				// Handle subscription replacement
 				const subscriptionItem = items.find(item => item.selling_plan);
 				if (subscriptionItem) {
-					const selectedBox = document.querySelector('.purchase-option-box.selected');
+					const selectedBox = document.querySelector('.variant-box.selected');
 					const productId = selectedBox.getAttribute('data-product');
 
 					if (productId) {
@@ -347,7 +347,7 @@
 
 		function isSubscriptionSelected() {
 			const productActions = document.querySelector('.product-actions');
-			const selectedBox = productActions?.querySelector('.purchase-option-box.selected');
+			const selectedBox = productActions?.querySelector('.variant-box.selected');
 			return selectedBox?.getAttribute('data-purchase-type') === 'subscribe';
 		}
 
@@ -441,10 +441,10 @@
 		// Event listeners for purchase options
 		productActions.addEventListener('click', (event) => {
 			const radioInput = event.target.closest('input[type="radio"]');
-			const purchaseOptionBox = event.target.closest('.purchase-option-box');
+			const purchaseOptionBox = event.target.closest('.variant-box');
 
 			if (radioInput) {
-				const parentBox = radioInput.closest('.purchase-option-box');
+				const parentBox = radioInput.closest('.variant-box');
 				if (parentBox) {
 					event.preventDefault();
 					togglePurchaseBox(parentBox);
@@ -458,7 +458,7 @@
 		// Radio input change handler
 		productActions.addEventListener('change', (event) => {
 			if (event.target.type === 'radio') {
-				const parentBox = event.target.closest('.purchase-option-box');
+				const parentBox = event.target.closest('.variant-box');
 				if (parentBox) {
 					togglePurchaseBox(parentBox);
 				}
@@ -468,7 +468,7 @@
 		submitButton.addEventListener('click', async function(event) {
 			event.preventDefault();
 
-			const selectedBox = productActions.querySelector('.purchase-option-box.selected');
+			const selectedBox = productActions.querySelector('.variant-box.selected');
 			const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
 			const giftOptionBorder = selectedGiftContainer?.querySelector('.gift-option-border');
 
@@ -760,7 +760,7 @@
 			grid-area: 2/2/3/3;
 			min-height: 415px;
 
-			.purchase-option-box {
+			.variant-box {
 				position: relative;
 				gap: 1rem;
 				max-height: none !important;
@@ -811,7 +811,7 @@
 
 			input[type='radio'] {
 				&:hover,
-				.purchase-option-box:hover & {
+				.variant-box:hover & {
 					transform: scale(1.1);
 					cursor: pointer;
 					transition: 0.1s all;
@@ -820,7 +820,7 @@
 		}
 
 		@media (max-width: 1269px) {
-			.purchase-option-box {
+			.variant-box {
 				width: 100%;
 			}
 		}
@@ -833,7 +833,7 @@
 				min-height: unset;
 			}
 
-			.purchase-option-box {
+			.variant-box {
 				font-size: 4vw;
 				padding: 3vw;
 				max-height: 16vw;
