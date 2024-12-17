@@ -364,11 +364,13 @@
 		}
 
 		function updatePriceDisplay(element) {
-			const subscriptionItemPrice = parseFloat(element.getAttribute('data-subscription-item-price'));
-			const originalItemCap = parseFloat(element.getAttribute('data-original-item-cap'));
+			// Convert cents to dollars by dividing by 100
+			const subscriptionItemPrice = parseFloat(element.getAttribute('data-subscription-item-price')) / 100;
+			const originalItemCap = parseFloat(element.getAttribute('data-original-item-cap')) / 100;
 			const subscriptionDiscount = parseFloat(element.getAttribute('data-subscription-discount'));
 			const bottleQuantity = parseInt(element.getAttribute('data-bottle-quantity'));
 
+			// Calculate total price (already in dollars since we converted above)
 			const subscriptionTotalPrice = subscriptionItemPrice * bottleQuantity;
 
 			const priceDisplay = productActions.querySelector('.price-display');
