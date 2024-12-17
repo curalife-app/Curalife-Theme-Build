@@ -364,46 +364,54 @@
 		}
 
 		function updatePriceDisplay(element) {
-			// Convert cents to dollars by dividing by 100
+			// Get price data from variant box
 			const subscriptionItemPrice = parseFloat(element.getAttribute('data-subscription-item-price')) / 100;
 			const originalItemCap = parseFloat(element.getAttribute('data-original-item-cap')) / 100;
 			const subscriptionDiscount = parseFloat(element.getAttribute('data-subscription-discount'));
 			const bottleQuantity = parseInt(element.getAttribute('data-bottle-quantity'));
 
-			// Calculate total price (already in dollars since we converted above)
+			// Calculate total subscription price
 			const subscriptionTotalPrice = subscriptionItemPrice * bottleQuantity;
 
 			const priceDisplay = productActions.querySelector('.price-display');
 			if (priceDisplay) {
-				const mainPrice = priceDisplay.querySelector('.text-5xl');
-				const comparePrice = priceDisplay.querySelector('.text-gray-500.line-through');
-				const discountBadge = priceDisplay.querySelector('.bg-red-400');
-				const totalPrice = priceDisplay.querySelector('.text-lg.text-gray-700');
+				// Add transition class if not already present
+				if (!priceDisplay.classList.contains('price-transition')) {
+					priceDisplay.classList.add('price-transition');
+				}
 
-				// Add fade-transition class if not already present
-				[mainPrice, comparePrice, discountBadge, totalPrice].forEach(el => {
-					if (el && !el.classList.contains('fade-transition')) {
-						el.classList.add('fade-transition', 'price-amount');
-					}
-				});
+				// Fade out entire price display
+				priceDisplay.classList.add('price-fade-out');
 
-				// Fade out
-				[mainPrice, comparePrice, discountBadge, totalPrice].forEach(el => {
-					if (el) el.classList.add('fade-out');
-				});
-
-				// Update prices after fade out
+				// Update all prices after fade out
 				setTimeout(() => {
-					if (mainPrice) mainPrice.textContent = `$${subscriptionItemPrice.toFixed(2)}`;
-					if (comparePrice) comparePrice.textContent = `$${originalItemCap.toFixed(2)}`;
-					if (discountBadge) discountBadge.textContent = `${subscriptionDiscount}% OFF`;
-					if (totalPrice) totalPrice.textContent = `Total of $${subscriptionTotalPrice.toFixed(2)} payable every ${bottleQuantity} months for ${bottleQuantity} bottles.`;
+					// Update main price
+					const mainPrice = priceDisplay.querySelector('.text-5xl');
+					if (mainPrice) {
+						mainPrice.textContent = `$${subscriptionItemPrice.toFixed(2)}`;
+					}
 
-					// Fade in
-					[mainPrice, comparePrice, discountBadge, totalPrice].forEach(el => {
-						if (el) el.classList.remove('fade-out');
-					});
-				}, 300); // Match this with CSS transition duration
+					// Update compare price
+					const comparePrice = priceDisplay.querySelector('.text-gray-500.line-through');
+					if (comparePrice) {
+						comparePrice.textContent = `$${originalItemCap.toFixed(2)}`;
+					}
+
+					// Update discount badge
+					const discountBadge = priceDisplay.querySelector('.bg-red-400');
+					if (discountBadge) {
+						discountBadge.textContent = `${subscriptionDiscount}% OFF`;
+					}
+
+					// Update total price text
+					const totalPrice = priceDisplay.querySelector('.text-lg.text-gray-700');
+					if (totalPrice) {
+						totalPrice.textContent = `Total of $${subscriptionTotalPrice.toFixed(2)} payable every ${bottleQuantity} months for ${bottleQuantity} bottles.`;
+					}
+
+					// Fade in entire price display
+					priceDisplay.classList.remove('price-fade-out');
+				}, 300); // Duration matches CSS transition
 			}
 		}
 
