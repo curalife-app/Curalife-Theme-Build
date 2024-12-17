@@ -766,6 +766,37 @@
 				gap: 1rem;
 				max-height: none !important;
 				transition: none !important;
+				--box-padding: 1rem;
+				--box-max-height: 72px;
+				background: var(--primary-color-light);
+				border: 1px solid var(--primary-color);
+				cursor: pointer;
+				max-height: var(--box-max-height);
+				filter: drop-shadow(0px 4px 4px rgba(47, 47, 47, 0.1));
+				transition: max-height 0.5s ease-in-out, filter 0.3s, background-color 0.3s, border-width 0.3s;
+				border-radius: 10px;
+				border-color: var(--primary-color);
+				padding: var(--box-padding);
+
+				&:hover {
+					filter: drop-shadow(0px 4px 4px rgba(77, 53, 98, 0.3));
+				}
+
+				&.selected {
+					filter: drop-shadow(0px 4px 4px rgba(77, 53, 98, 0.3));
+					background-color: var(--primary-color);
+					max-height: max-content;
+				}
+
+				&[inert] {
+					max-height: var(--box-max-height) !important;
+					background: #ededed;
+					opacity: 0.6;
+
+					.option-title {
+						color: grey;
+					}
+				}
 			}
 		}
 
@@ -787,62 +818,6 @@
 					transform: scale(1.1);
 					cursor: pointer;
 					transition: 0.1s all;
-				}
-			}
-		}
-
-		.purchase-option-box {
-			--box-padding: 1rem;
-			--box-max-height: 72px;
-			background: var(--primary-color-light);
-			border: 1px solid var(--primary-color);
-			cursor: pointer;
-			max-height: var(--box-max-height);
-			filter: drop-shadow(0px 4px 4px rgba(47, 47, 47, 0.1));
-			transition: max-height 0.5s ease-in-out, filter 0.3s, background-color 0.3s, border-width 0.3s;
-			border-radius: 10px;
-			border-color: var(--primary-color);
-			padding: var(--box-padding);
-
-			&:hover {
-				filter: drop-shadow(0px 4px 4px rgba(77, 53, 98, 0.3));
-			}
-
-			&.selected {
-				filter: drop-shadow(0px 4px 4px rgba(77, 53, 98, 0.3));
-				background-color: var(--primary-color);
-				max-height: max-content;
-			}
-
-			&[inert] {
-				max-height: var(--box-max-height) !important;
-				background: #ededed;
-				opacity: 0.6;
-
-				.option-title {
-					color: grey;
-				}
-			}
-
-			.radio-box {
-				align-items: center;
-				display: flex;
-			}
-
-			.save-title {
-				background-color: var(--orange);
-				font-weight: bold;
-			}
-
-			.terms {
-				margin-left: 26px;
-			}
-
-			.price-wrapper {
-				min-width: 5rem;
-
-				.total-price {
-					color: {{ buyBoxColor | default: 'var(--primary-color-dark)' }};
 				}
 			}
 		}
