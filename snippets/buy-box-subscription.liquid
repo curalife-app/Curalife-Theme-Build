@@ -41,15 +41,16 @@
 
 					<div
 						id="variant-box-{{ SID }}-{{ forloop.index }}"
-						class="variant-box flex-1 py-2 px-4 rounded-md border-2 text-lg font-medium transition-all cursor-pointer {% if forloop.index == 1 %}selected{% endif %}"
+						class="variant-box flex-1 rounded-md border-2 text-lg font-medium transition-all cursor-pointer overflow-hidden {% if forloop.index == 1 %}selected{% endif %}"
 						data-variant="{{ variant_id }}"
 						data-product="{{ prod.id }}"
 						data-original-variant="{{ var.id }}"
 						data-subscription-selling-plan-id="{{ selling_plan_id }}"
 						data-index="{{ forloop.index }}"
 						data-purchase-type="{{ purchase_type }}">
-						<div class="option-title text-center">
-							{{ block.settings.title | default: 'Month' | prepend: forloop.index }}
+						<div class="option-title py-4 text-center">
+							{{ forloop.index }} Month
+							{% if forloop.index != 1 %}s{% endif %}
 						</div>
 					</div>
 				{% endif %}
@@ -723,6 +724,21 @@
 
 		.product-container {
 			grid-template-columns: 54% 42% !important;
+		}
+
+		.purchase-option-box {
+			border-color: rgb(71, 85, 105);
+			color: rgb(71, 85, 105);
+
+			&:hover {
+				border-color: rgb(71, 85, 105);
+				background-color: rgba(71, 85, 105, 0.05);
+			}
+
+			&.selected {
+				background-color: rgb(71, 85, 105);
+				color: white;
+			}
 		}
 
 		.gift-option-container {
