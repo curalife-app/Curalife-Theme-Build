@@ -26,7 +26,8 @@
 
 <div class="product-actions" data-default-variant-index="{{ defaultSelectionIndex }}">
 	<div class="purchase-options flex flex-col gap-2">
-		<div class="variant-boxes flex justify-around gap-2">
+		{% comment %}Duration Selection Tabs{% endcomment %}
+		<div class="variant-boxes flex justify-around gap-2 mb-8">
 			{% for block in blocks %}
 				{% if block.type == 'variant' and block.settings.purchase_type == 'subscribe' %}
 					{% assign referenced_variant = blank %}
@@ -38,154 +39,61 @@
 						{% endif %}
 					{% endfor %}
 
-					{% comment %}
-						{% render 'buy-box-subscription-variant',
-							SID: SID,
-							prod: referenced_variant_product,
-							var: referenced_variant,
-							pricePer: pricePer,
-							saveFormat: saveFormat,
-							saveText: block.settings.save_text,
-							variantTitle: block.settings.title,
-							variantDescription: block.settings.variant_description,
-							variantSecondDescription: block.settings.variant_second_description,
-							index: forloop.index,
-							purchase_type: block.settings.purchase_type,
-							buyType: buyType
-						%}
-					{% endcomment %}
-
-					{% comment %} Core Variable Assignments {% endcomment %}
-					{% assign variant_id = var.metafields.custom.reference_variant_id | default: var.id %}
-					{% assign bottle_quantity = var.metafields.my_fields.pack_bottles_quantity %}
-
-					{% comment %} Price Calculations {% endcomment %}
-					{% assign original_item_price = var.metafields.custom.original_item.value.price %}
-					{% assign original_item_cap = var.metafields.custom.original_item.value.compare_at_price | default: original_item_price %}
-					{% assign original_item_cap_total = original_item_cap | times: bottle_quantity %}
-					{% assign item_price = var.price | divided_by: bottle_quantity %}
-
-					{% comment %} Subscription-specific Calculations {% endcomment %}
-					{% assign subscription_save_percents = var.metafields.subscription.save_percents %}
-					{% assign subscription_item_price_save = original_item_cap | times: subscription_save_percents | divided_by: 100 %}
-					{% assign subscription_item_price = original_item_cap | minus: subscription_item_price_save %}
-					{% assign subscription_total_price = subscription_item_price | times: bottle_quantity %}
-
-					{% comment %} Savings Calculations {% endcomment %}
-					{% assign subscription_save_money = original_item_cap | minus: subscription_item_price %}
-					{% assign buy_once_save_money = original_item_cap | minus: item_price %}
-
-					{% comment %} Selling Plan ID Logic {% endcomment %}
-					{% if var.metafields.custom.referenced_variant_product_handle %}
-						{% assign prod = all_products[var.metafields.custom.referenced_variant_product_handle] %}
-						{% assign referenced_variant = prod.variants | where: 'id', variant_id | first %}
-						{% assign selling_plan_id = referenced_variant.metafields.subscription.selling_plan_id | default: variant.metafields.subscription.selling_plan_id %}
-					{% elsif var.metafields.subscription.selling_plan_id %}
-						{% assign selling_plan_id = var.metafields.subscription.selling_plan_id %}
-					{% elsif var.selling_plan_allocations.size > 0 %}
-						{% for allocation in var.selling_plan_allocations %}
-							{% if allocation.selling_plan.name contains bottle_quantity %}
-								{% assign selling_plan_id = allocation.selling_plan.id %}
-							{% endif %}
-						{% endfor %}
-					{% else %}
-						<script>
-							console.log("Didn't find selling plan for the variant");
-						</script>
-					{% endif %}
-
-					{% comment %} Main Purchase Option Box HTML {% endcomment %}
 					<div
 						id="purchase-option-box-{{ SID }}-{{ forloop.index }}"
-						class="purchase-option-box flex flex-col w-full {% if forloop.index == 1 %}selected{% endif %} {{ purchase_type }}"
+						class="purchase-option-box flex-1 py-2 px-4 rounded-md border-2 text-lg font-medium transition-all cursor-pointer {% if forloop.index == 1 %}selected{% endif %}"
 						data-variant="{{ variant_id }}"
 						data-product="{{ prod.id }}"
 						data-original-variant="{{ var.id }}"
 						data-subscription-selling-plan-id="{{ selling_plan_id }}"
-						data-price="{{ var.price | money_without_currency | replace: ".00", "" }}"
-						data-sku="{{ var.sku }}"
 						data-index="{{ forloop.index }}"
-						data-item-price="{{ item_price }}"
-						data-subscription-item-price="{{ subscription_item_price }}"
-						data-original-item-cap="{{ original_item_cap }}"
-						data-dc="{{ var.metafields.custom.discount_code | base64_encode }}"
-						data-buy-once-discount="{{ var.metafields.custom.save_percents }}"
-						data-subscription-discount="{{ var.metafields.subscription.save_percents }}"
-						data-price-per="{{ pricePer }}"
-						data-bottle-quantity="{{ bottle_quantity }}"
-						data-purchase-type="{{ purchase_type }}"
-						data-buy-type="{{ buyType }}"
-						name="variant-box-{{ var.sku }}-{{ purchase_type }}">
-						{% comment %} Top Section: Radio Button and Title {% endcomment %}
-						<div class="top-wrapper flex items-center justify-center w-full gap-4">
-							<div class="radio-box hidden">
-								<div class="radio-input">
-									<input type="radio" name="variant-selection-{{ SID }}" id="variant-{{ SID }}-{{ forloop.index }}">
-								</div>
-							</div>
-							<div class="titles max-w-max flex flex-col justify-center">
-								<div class="option-title content-center font-semibold text-[16px]">
-									{% if var.title == 'Default Title' %}
-										{{ prod.title }}
-									{% else %}
-										{{ block.settings.title | default: var.title }}
-									{% endif %}
-								</div>
-							</div>
+						data-purchase-type="{{ purchase_type }}">
+						<div class="option-title text-center">
+							{{ block.settings.title | default: 'Month' | prepend: forloop.index }}
 						</div>
 					</div>
 				{% endif %}
 			{% endfor %}
 		</div>
 
-		{% if giftsAmount > 0 %}
-			<div class="gift-selector-wrap">
-				<div class="gift-selector-title mb-2">Your free gift:</div>
+		{% comment %}Price Display{% endcomment %}
+		<div class="price-display mb-8">
+			<div class="flex items-baseline gap-4">
+				<span class="text-5xl font-bold text-teal-700">${{ subscription_item_price | money_without_currency }}</span>
+				<span class="text-xl text-gray-500">/mo</span>
+				<span class="text-2xl text-gray-500 line-through">${{ original_item_cap | money_without_currency }}</span>
+				<span class="bg-red-400 text-white px-4 py-1 rounded-md">{{ subscription_save_percents }}% OFF</span>
+			</div>
+			<p class="text-gray-700 text-lg">Total of ${{ subscription_total_price | money_without_currency }} payable every {{ bottle_quantity }} months for {{ bottle_quantity }} bottles.</p>
+		</div>
 
-				<div class="gift-options flex-nowrap flex justify-start gap-4">
+		{% comment %}Gift Section{% endcomment %}
+		{% if giftsAmount > 0 %}
+			<div class="gift-selector-wrap mb-8">
+				<h2 class="text-2xl font-semibold text-red-500 mb-4">Your Free Gift</h2>
+				<div class="gift-options bg-gray-50 p-4 rounded-lg">
 					{% for block in blocks %}
 						{% case block.type %}
 							{% when 'gift' %}
-								{% assign show_gift = false %}
-								{% if block.settings.show_on == 'both' %}
-									{% assign show_gift = true %}
-								{% elsif block.settings.show_on == 'global' and isGlobal %}
-									{% assign show_gift = true %}
-								{% elsif block.settings.show_on == 'us' and isGlobal == false %}
-									{% assign show_gift = true %}
-								{% endif %}
-
 								{% if show_gift %}
-									{% assign giftProd = block.settings.gift_product %}
-									{% assign giftVariant = giftProd.selected_or_first_available_variant %}
-									{% assign giftProdSubscription = block.settings.gift_product_subscription | default: giftProd %}
-									{% assign giftVariantSubscription = giftProdSubscription.selected_or_first_available_variant %}
-									{% assign giftThumb = block.settings.gift_thumbnail | default: giftProdSubscription.featured_image | default: giftProd.featured_image %}
-
-									<div class="gift-option-container flex flex-col items-center">
-										<div
-											class="gift-option-border relative w-full p-2 mb-3 border rounded-lg cursor-pointer"
-											data-gift-id="{{ giftVariant.id }}"
-											data-gift-id-subscription="{{ giftVariantSubscription.id | default: giftVariant.id }}">
-											<div class="radio-indicator top-2 right-2 absolute flex items-center justify-center w-6 h-6 rounded-full">
-												<div class="check-mark hidden w-4 h-4 font-bold text-white rounded-full">✓</div>
-											</div>
-											<div class="gift-image-container flex justify-center">
-												<img
-													src="{{ giftThumb | image_url }}"
-													alt="{{ giftProd.title }}"
-													class="object-contain w-24 h-24">
+									<div class="gift-option-container flex items-center gap-6">
+										<div class="relative">
+											<img
+												src="{{ giftThumb | image_url }}"
+												alt="{{ giftProd.title }}"
+												class="w-32 h-32 object-contain">
+											<div class="absolute -top-2 -left-2 w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center">
+												<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+													<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+												</svg>
 											</div>
 										</div>
-
-										<div class="gift-content text-center">
-											<div class="gift-name mb-1 font-medium">{{ giftProd.title | replace: 'Free ', '' }}</div>
-											<div class="gift-price flex items-center justify-center gap-2">
-												<span class="original-price text-gray-500 line-through">
-													{{- giftVariantSubscription.compare_at_price | money_with_currency -}}
-												</span>
-												<span class="sale-price font-bold">FREE</span>
+										<div>
+											<div class="flex items-center gap-2 mb-2">
+												<h3 class="text-xl font-semibold">{{ giftProd.title }}</h3>
+												<span class="text-gray-500 line-through">{{ giftVariantSubscription.compare_at_price | money }}</span>
 											</div>
+											<p class="text-gray-600">{{ block.settings.gift_description }}</p>
 										</div>
 									</div>
 								{% endif %}
@@ -194,6 +102,21 @@
 				</div>
 			</div>
 		{% endif %}
+
+		{% comment %}Subscription Benefits{% endcomment %}
+		<div class="subscription-benefits mb-8">
+			<h2 class="text-2xl font-semibold text-teal-700 mb-4">Subscription benefits:</h2>
+			<ul class="space-y-4">
+				{% for benefit in block.settings.subscription_benefits %}
+					<li class="flex items-center gap-2">
+						<svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+						</svg>
+						<span class="text-gray-700 text-lg">{{ benefit }}</span>
+					</li>
+				{% endfor %}
+			</ul>
+		</div>
 
 		<div class="submit-wrap flex flex-col w-full">
 			<div class="checkout-button">
