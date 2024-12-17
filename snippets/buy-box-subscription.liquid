@@ -27,7 +27,7 @@
 <div class="product-actions" data-default-variant-index="{{ defaultSelectionIndex }}">
 	<div class="purchase-options flex flex-col gap-2">
 		{% comment %}Duration Selection Tabs{% endcomment %}
-		<div class="variant-boxes flex justify-around gap-2 mb-4">
+		<div class="variant-boxes flex justify-around gap-2 mb-8">
 			{% for block in blocks %}
 				{% if block.type == 'variant' and block.settings.purchase_type == 'subscribe' %}
 					{% assign referenced_variant = blank %}
@@ -114,7 +114,7 @@
 					<span>/mo</span>
 				</div>
 				<span class="text-gray-500 line-through">${{ original_item_cap | divided_by: 100.00 }}</span>
-				<span class="px-4 py-1 font-bold text-white bg-[--bronze] rounded-full">{{ subscription_save_percents }}% OFF</span>
+				<span class="px-4 py-1 text-white bg-[--bronze] rounded-md">{{ subscription_save_percents }}% OFF</span>
 			</div>
 			<p class="mt-2">Total of ${{ subscription_total_price | divided_by: 100.00 }} payable every {{ bottle_quantity }} months for {{ bottle_quantity }} bottles.</p>
 		</div>
@@ -263,7 +263,7 @@
 		const purchaseOptions = document.querySelector('#cta-section-{{ SID }} .purchase-options');
 		if (ctaText && purchaseOptions && window.innerWidth < 768) {
 			purchaseOptions.insertAdjacentElement('beforebegin', ctaText);
-			ctaText.classList.add('mbl:mt-0', 'mbl:mb-4');
+			ctaText.classList.add('mbl:mt-0', 'mbl:mb-8');
 		}
 
 		// Gift selection functionality
@@ -430,9 +430,11 @@
 						badge.textContent = `${subscriptionDiscount}% OFF`;
 					});
 
-					const totalPrices = priceDisplay.querySelectorAll('.text-lg.text-gray-700');
+					const totalPrices = priceDisplay.querySelectorAll('p');
 					totalPrices.forEach(totalPrice => {
-						totalPrice.textContent = `Total of $${subscriptionTotalPrice.toFixed(2)} payable every ${bottleQuantity} months for ${bottleQuantity} bottles.`;
+						if (totalPrice.classList.contains('mt-2')) {
+							totalPrice.textContent = `Total of $${subscriptionTotalPrice.toFixed(2)} payable every ${bottleQuantity} months for ${bottleQuantity} bottles.`;
+						}
 					});
 
 					// Fade back in
@@ -764,7 +766,7 @@
 
 		.product-actions {
 			grid-area: 2/2/3/3;
-			font-size: 16px;
+			min-height: 415px;
 		}
 
 		.one-time-purchase-link {
