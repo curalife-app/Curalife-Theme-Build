@@ -294,6 +294,7 @@
 
 				container.classList.toggle('selected', isSelected);
 				if (checkMark) {
+					checkMark.style.display = 'block'; // Ensure the check-mark is displayed
 					checkMark.style.opacity = isSelected ? '1' : '0';
 				}
 			});
@@ -792,42 +793,55 @@
 		}
 
 		.gift-selector-wrap {
-			.gift-option-container {
-				.gift-option-border {
-					cursor: pointer;
-					transition: all 0.3s ease;
-					border
-					background-color: white;
-					border: 1px solid var(--primary-color-light);
+				.gift-option-container {
+						.gift-option-border {
+								cursor: pointer;
+								transition: all 0.3s ease;
+								background-color: white;
+								border: 1px solid var(--primary-color-light);
 
-					&:hover {
-						background-color: var(--primary-color-lighter);
-						/* border-color: var(--primary-color-lighter); */
-					}
+								&:hover {
+										background-color: var(--primary-color-lighter);
+								}
 
-					.gift-image-container {
-						width: 80px;
-						height: 80px;
-						flex-shrink: 0;
-					}
+								.gift-image-container {
+										width: 80px;
+										height: 80px;
+										flex-shrink: 0;
+								}
+
+								.check-indicator {
+										width: 32px;
+										height: 32px;
+										border: 2px solid var(--primary-color);
+										border-radius: 50%;
+										display: flex;
+										align-items: center;
+										justify-content: center;
+
+										.check-mark {
+												display: block;
+												opacity: 0;
+												transition: opacity 0.3s ease;
+												fill: currentColor;
+												visibility: visible;
+												width: 20px;
+												height: 20px;
+												color: var(--primary-color);
+										}
+								}
+						}
+
+						&.selected {
+								.gift-option-border {
+										background-color: var(--primary-color-lighter);
+								}
+
+								.check-mark {
+										opacity: 1;
+								}
+						}
 				}
-
-				&.selected {
-					.gift-option-border {
-						background-color: var(--primary-color-lighter);
-						/* border-color: var(--primary-color-lighter); */
-					}
-
-					.check-mark {
-						opacity: 1;
-					}
-				}
-			}
-
-			.check-mark {
-				opacity: 0;
-				transition: opacity 0.2s ease;
-			}
 		}
 
 		.product-actions {
