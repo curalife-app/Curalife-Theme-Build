@@ -571,7 +571,8 @@
 					return;
 				}
 
-				if (!giftOptionBorder) {
+				const selectedGift = document.querySelector('.gift-option-container.selected .gift-option-border');
+				if (!selectedGift) {
 					showNotification('Please select a gift option');
 					return;
 				}
@@ -581,7 +582,7 @@
 				try {
 					const isSubscription = selectedBox.getAttribute('data-purchase-type') === 'subscribe';
 					const variantId = selectedBox.getAttribute('data-variant');
-					const giftId = isSubscription ? giftOptionBorder.dataset.giftIdSubscription : giftOptionBorder.dataset.giftId;
+					const giftId = isSubscription ? selectedGift.dataset.giftIdSubscription : selectedGift.dataset.giftId;
 
 					if (!variantId || !giftId) {
 						throw new Error('Invalid product or gift selection');
