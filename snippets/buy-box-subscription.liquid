@@ -433,7 +433,13 @@
 					const totalPrices = priceDisplay.querySelectorAll('p');
 					totalPrices.forEach(totalPrice => {
 						if (totalPrice.classList.contains('mt-2')) {
+							totalPrice.classList.add('price-description');
+							totalPrice.style.opacity = '0';
 							totalPrice.textContent = `Total of $${subscriptionTotalPrice.toFixed(2)} payable every ${bottleQuantity} months for ${bottleQuantity} bottles.`;
+							// Trigger separate fade-in for description
+							setTimeout(() => {
+								totalPrice.style.opacity = '1';
+							}, 50);
 						}
 					});
 
@@ -888,15 +894,19 @@
 	}
 
 	.price-display {
-			transition: opacity 0.3s ease-in-out;
-
 			.final-price {
 				font-size: 30px;
 				color: var(--primary-color);
+				transition: opacity 0.3s ease-in-out;
 
 				.month-text {
 					font-size: 20px;
 				}
+			}
+
+			.price-description {
+				transition: opacity 0.3s ease-in-out;
+				transition-delay: 0.15s;
 			}
 	}
 </style>
