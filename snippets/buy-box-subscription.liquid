@@ -260,7 +260,8 @@
 		const buyType = '{{ buyType }}';
 
 		const state = {
-			selectedBox: null
+			selectedBox: null,
+			isInitialLoad: true
 		};
 
 		// Move CTA text for mobile if needed
@@ -414,51 +415,79 @@
 				const priceContent = priceDisplay.querySelector('.flex.items-end');
 				const description = priceDisplay.querySelector('.mt-2');
 
-				if (priceContent) {
-					priceContent.classList.add('price-content-transition');
-					priceContent.style.opacity = '0';
-				}
-
-				if (description) {
-					description.classList.add('description-transition');
-					description.style.opacity = '0';
-				}
-
-				setTimeout(() => {
-					// Update values while elements are invisible
-					const mainPrices = priceDisplay.querySelectorAll('.font-bold');
-					mainPrices.forEach(price => {
-						price.textContent = `$${subscriptionItemPrice.toFixed(2)}`;
-					});
-
-					const comparePrices = priceDisplay.querySelectorAll('.text-gray-500.line-through');
-					comparePrices.forEach(price => {
-						price.textContent = `$${originalItemCap.toFixed(2)}`;
-					});
-
-					const discountBadges = priceDisplay.querySelectorAll('.bg-\\[\\-\\-bronze\\]');
-					discountBadges.forEach(badge => {
-						badge.textContent = `${subscriptionDiscount}% OFF`;
-					});
-
-					// Fade in main price content
+				if (state.isInitialLoad) {
+					// Update without animation on initial load
 					if (priceContent) {
-						requestAnimationFrame(() => {
-							priceContent.style.opacity = '1';
+						const mainPrices = priceContent.querySelectorAll('.font-bold');
+						mainPrices.forEach(price => {
+							price.textContent = `$${subscriptionItemPrice.toFixed(2)}`;
+						});
+
+						const comparePrices = priceContent.querySelectorAll('.text-gray-500.line-through');
+						comparePrices.forEach(price => {
+							price.textContent = `$${originalItemCap.toFixed(2)}`;
+						});
+
+						const discountBadges = priceContent.querySelectorAll('.bg-\\[\\-\\-bronze\\]');
+						discountBadges.forEach(badge => {
+							badge.textContent = `${subscriptionDiscount}% OFF`;
 						});
 					}
 
-					// Update and fade in description with delay
 					if (description) {
 						description.textContent = `Total of $${subscriptionTotalPrice.toFixed(2)} payable every ${bottleQuantity} months for ${bottleQuantity} bottles.`;
-						setTimeout(() => {
-							requestAnimationFrame(() => {
-								description.style.opacity = '1';
-							});
-						}, 150);
 					}
-				}, 200);
+				} else {
+					// Normal animated update
+					if (priceContent) {
+						priceContent.classList.add('price-content-transition');
+						priceContent.style.opacity = '0';
+					}
+
+					if (description) {
+						description.classList.add('description-transition');
+						description.style.opacity = '0';
+					}
+
+					setTimeout(() => {
+						// Update values while elements are invisible
+						const mainPrices = priceDisplay.querySelectorAll('.font-bold');
+						mainPrices.forEach(price => {
+							price.textContent = `$${subscriptionItemPrice.toFixed(2)}`;
+						});
+
+						const comparePrices = priceDisplay.querySelectorAll('.text-gray-500.line-through');
+						comparePrices.forEach(price => {
+							price.textContent = `$${originalItemCap.toFixed(2)}`;
+						});
+
+						const discountBadges = priceDisplay.querySelectorAll('.bg-\\[\\-\\-bronze\\]');
+						discountBadges.forEach(badge => {
+							badge.textContent = `${subscriptionDiscount}% OFF`;
+						});
+
+						// Fade in main price content
+						if (priceContent) {
+							requestAnimationFrame(() => {
+								priceContent.style.opacity = '1';
+							});
+						}
+
+						// Update and fade in description with delay
+						if (description) {
+							description.textContent = `Total of $${subscriptionTotalPrice.toFixed(2)} payable every ${bottleQuantity} months for ${bottleQuantity} bottles.`;
+							setTimeout(() => {
+								requestAnimationFrame(() => {
+									description.style.opacity = '1';
+								});
+							}, 150);
+						}
+					}, 200);
+				}
 			});
+
+			// Reset the initial load flag after first update
+			state.isInitialLoad = false;
 		}
 
 		function togglePurchaseBox(element) {
