@@ -109,12 +109,17 @@
 
 		<div class="price-display mb-8">
 			<div class="flex items-baseline gap-4">
-				<span class="text-5xl font-bold text-teal-700">${{ subscription_item_price | money_without_currency }}</span>
+				{% comment %}Divide prices by 100 to convert from cents to dollars{% endcomment %}
+				{% assign subscription_item_price_dollars = subscription_item_price | divided_by: 100.0 %}
+				{% assign original_item_cap_dollars = original_item_cap | divided_by: 100.0 %}
+
+				<span class="text-5xl font-bold text-teal-700">${{ subscription_item_price_dollars | number_format: 2 }}</span>
 				<span class="text-xl text-gray-500">/mo</span>
-				<span class="text-2xl text-gray-500 line-through">${{ original_item_cap | money_without_currency }}</span>
+				<span class="text-2xl text-gray-500 line-through">${{ original_item_cap_dollars | number_format: 2 }}</span>
 				<span class="px-4 py-1 text-white bg-red-400 rounded-md">{{ subscription_save_percents }}% OFF</span>
 			</div>
-			<p class="mt-2 text-lg text-gray-700">Total of ${{ subscription_total_price | money_without_currency }} payable every {{ bottle_quantity }} months for {{ bottle_quantity }} bottles.</p>
+			{% assign subscription_total_price_dollars = subscription_total_price | divided_by: 100.0 %}
+			<p class="mt-2 text-lg text-gray-700">Total of ${{ subscription_total_price_dollars | number_format: 2 }} payable every {{ bottle_quantity }} months for {{ bottle_quantity }} bottles.</p>
 		</div>
 
 		{% comment %}Gift Section{% endcomment %}
