@@ -286,19 +286,29 @@
 			});
 		}
 
+		// Gift selection functionality
+		const updateGiftSelection = selectedContainer => {
+			giftOptionContainers.forEach(container => {
+				const checkMark = container.querySelector('.check-mark');
+				const isSelected = container === selectedContainer;
+
+				container.classList.toggle('selected', isSelected);
+				if (checkMark) {
+					checkMark.style.opacity = isSelected ? '1' : '0';
+				}
+			});
+		};
+
+		// Add click handlers to gift containers
 		giftOptionContainers.forEach(container => {
 			container.addEventListener('click', () => {
-				giftOptionContainers.forEach(gift => gift.classList.remove('selected'));
-				container.classList.add('selected');
-				updateRadioIndicator(container);
+				updateGiftSelection(container);
 			});
 		});
 
 		// Initialize first gift as selected
 		if (giftOptionContainers.length > 0) {
-			const firstGift = giftOptionContainers[0];
-			firstGift.classList.add('selected');
-			updateRadioIndicator(firstGift);
+			updateGiftSelection(giftOptionContainers[0]);
 		}
 
 		async function addValidItemsToCart(items) {
