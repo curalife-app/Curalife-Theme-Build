@@ -363,6 +363,28 @@
 			}, 5000);
 		}
 
+		function updatePriceDisplay(element) {
+			const subscriptionItemPrice = parseFloat(element.getAttribute('data-subscription-item-price'));
+			const originalItemCap = parseFloat(element.getAttribute('data-original-item-cap'));
+			const subscriptionDiscount = parseFloat(element.getAttribute('data-subscription-discount'));
+			const bottleQuantity = parseInt(element.getAttribute('data-bottle-quantity'));
+
+			const subscriptionTotalPrice = subscriptionItemPrice * bottleQuantity;
+
+			const priceDisplay = productActions.querySelector('.price-display');
+			if (priceDisplay) {
+				const mainPrice = priceDisplay.querySelector('.text-5xl');
+				const comparePrice = priceDisplay.querySelector('.text-gray-500.line-through');
+				const discountBadge = priceDisplay.querySelector('.bg-red-400');
+				const totalPrice = priceDisplay.querySelector('.text-lg.text-gray-700');
+
+				if (mainPrice) mainPrice.textContent = `$${subscriptionItemPrice.toFixed(2)}`;
+				if (comparePrice) comparePrice.textContent = `$${originalItemCap.toFixed(2)}`;
+				if (discountBadge) discountBadge.textContent = `${subscriptionDiscount}% OFF`;
+				if (totalPrice) totalPrice.textContent = `Total of $${subscriptionTotalPrice.toFixed(2)} payable every ${bottleQuantity} months for ${bottleQuantity} bottles.`;
+			}
+		}
+
 		function togglePurchaseBox(element) {
 			if (!element) return;
 
@@ -390,6 +412,7 @@
 			}
 
 			state.selectedBox = element;
+			updatePriceDisplay(element);
 
 			if (window.hasInitialImageUpdateHappened) {
 				updateVariantImage(element);
