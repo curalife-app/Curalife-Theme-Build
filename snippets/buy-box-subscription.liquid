@@ -380,10 +380,30 @@
 				const discountBadge = priceDisplay.querySelector('.bg-red-400');
 				const totalPrice = priceDisplay.querySelector('.text-lg.text-gray-700');
 
-				if (mainPrice) mainPrice.textContent = `$${subscriptionItemPrice.toFixed(2)}`;
-				if (comparePrice) comparePrice.textContent = `$${originalItemCap.toFixed(2)}`;
-				if (discountBadge) discountBadge.textContent = `${subscriptionDiscount}% OFF`;
-				if (totalPrice) totalPrice.textContent = `Total of $${subscriptionTotalPrice.toFixed(2)} payable every ${bottleQuantity} months for ${bottleQuantity} bottles.`;
+				// Add fade-transition class if not already present
+				[mainPrice, comparePrice, discountBadge, totalPrice].forEach(el => {
+					if (el && !el.classList.contains('fade-transition')) {
+						el.classList.add('fade-transition', 'price-amount');
+					}
+				});
+
+				// Fade out
+				[mainPrice, comparePrice, discountBadge, totalPrice].forEach(el => {
+					if (el) el.classList.add('fade-out');
+				});
+
+				// Update prices after fade out
+				setTimeout(() => {
+					if (mainPrice) mainPrice.textContent = `$${subscriptionItemPrice.toFixed(2)}`;
+					if (comparePrice) comparePrice.textContent = `$${originalItemCap.toFixed(2)}`;
+					if (discountBadge) discountBadge.textContent = `${subscriptionDiscount}% OFF`;
+					if (totalPrice) totalPrice.textContent = `Total of $${subscriptionTotalPrice.toFixed(2)} payable every ${bottleQuantity} months for ${bottleQuantity} bottles.`;
+
+					// Fade in
+					[mainPrice, comparePrice, discountBadge, totalPrice].forEach(el => {
+						if (el) el.classList.remove('fade-out');
+					});
+				}, 300); // Match this with CSS transition duration
 			}
 		}
 
@@ -858,5 +878,17 @@
 				font-size: 3.5vw;
 			}
 		}
+	}
+
+	.price-display .fade-transition {
+		transition: opacity 0.3s ease-in-out;
+	}
+
+	.price-display .price-amount {
+		opacity: 1;
+	}
+
+	.price-display .price-amount.fade-out {
+		opacity: 0;
 	}
 </style>
