@@ -405,17 +405,21 @@
 
 			// Update all price displays
 			priceDisplays.forEach(priceDisplay => {
-				// Add the transition class if not present
-				if (!priceDisplay.classList.contains('price-transition')) {
-					priceDisplay.classList.add('price-transition');
+				// Fade out main price content
+				const priceContent = priceDisplay.querySelector('.flex.items-end');
+				if (priceContent) {
+					priceContent.style.opacity = '0';
 				}
 
-				// Fade out
-				priceDisplay.style.opacity = '0';
+				// Fade out description separately
+				const description = priceDisplay.querySelector('.mt-2');
+				if (description) {
+					description.style.opacity = '0';
+				}
 
 				setTimeout(() => {
-					// Update all prices while faded out
-					const mainPrices = priceDisplay.querySelectorAll('.text-5xl, .font-bold');
+					// Update prices
+					const mainPrices = priceDisplay.querySelectorAll('.font-bold');
 					mainPrices.forEach(price => {
 						price.textContent = `$${subscriptionItemPrice.toFixed(2)}`;
 					});
@@ -425,27 +429,23 @@
 						price.textContent = `$${originalItemCap.toFixed(2)}`;
 					});
 
-					const discountBadges = priceDisplay.querySelectorAll('.bg-red-400, .bg-\\[\\-\\-bronze\\]');
+					const discountBadges = priceDisplay.querySelectorAll('.bg-\\[\\-\\-bronze\\]');
 					discountBadges.forEach(badge => {
 						badge.textContent = `${subscriptionDiscount}% OFF`;
 					});
 
-					// First fade in the main price elements
-					priceDisplay.style.opacity = '1';
+					// Fade in main price content
+					if (priceContent) {
+						priceContent.style.opacity = '1';
+					}
 
-					// Handle description with delayed animation
-					const totalPrices = priceDisplay.querySelectorAll('p');
-					totalPrices.forEach(totalPrice => {
-						if (totalPrice.classList.contains('mt-2')) {
-							totalPrice.classList.add('price-description');
-							totalPrice.style.opacity = '0';
-							totalPrice.textContent = `Total of $${subscriptionTotalPrice.toFixed(2)} payable every ${bottleQuantity} months for ${bottleQuantity} bottles.`;
-							// Trigger separate fade-in for description after a short delay
-							setTimeout(() => {
-								totalPrice.style.opacity = '1';
-							}, 150);
-						}
-					});
+					// Update and fade in description after a delay
+					if (description) {
+						description.textContent = `Total of $${subscriptionTotalPrice.toFixed(2)} payable every ${bottleQuantity} months for ${bottleQuantity} bottles.`;
+						setTimeout(() => {
+							description.style.opacity = '1';
+						}, 200);
+					}
 				}, 300);
 			});
 		}
@@ -894,20 +894,24 @@
 		}
 	}
 
-	.price-display {
-			.final-price {
-				font-size: 30px;
-				color: var(--primary-color);
-				transition: opacity 0.3s ease-in-out;
+	Price Display Styles
 
-				.month-text {
-					font-size: 20px;
-				}
+	.price-display {
+			.flex.items-end {
+					transition: opacity 0.3s ease-in-out;
 			}
 
-			.price-description {
-				transition: opacity 0.3s ease-in-out;
-				transition-delay: 0.15s;
+			.mt-2 {
+					transition: opacity 0.3s ease-in-out;
+			}
+
+			.final-price {
+					font-size: 30px;
+					color: var(--primary-color);
+
+					.month-text {
+							font-size: 20px;
+					}
 			}
 	}
 </style>
