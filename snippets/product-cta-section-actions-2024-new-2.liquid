@@ -199,15 +199,17 @@
 					<input type="radio" name="purchase-type" value="subscription" id="track:Purchase Type - Subscription">
 					<span class="option-text">Purchase With Subscription</span>
 					{% if page.template_suffix == 'curaslim-lp-2024-v2' or page.template_suffix == 'curaslim-quiz-results' %}
-						<span class="tag bfcm popular-tag"
-							>Holiday Sale<br>
-							<span>Best Value</span></span
-						>
+						<span class="tag bfcm popular-tag"></span>
+						Holiday Sale
+						<br>
+						<span>Best Value</span>
+						</span>
 					{% else %}
-						<span class="tag best-value-tag"
-							>Best Value<br>
-							{{ buySubscriptionThreeMonthsDiscountPercentage }}% Off</span
-						>
+						<span class="tag best-value-tag">
+							Best Value
+							<br>
+							{{ buySubscriptionThreeMonthsDiscountPercentage }}% Off
+						</span>
 					{% endif %}
 				</label>
 
@@ -301,7 +303,10 @@
 
 		<form onsubmit="return false;">
 			<button type="submit" class="submit-button" id="submit-button" name="add">
-				<span class="submit-button-text"><strong>Buy Now</strong> <span class="total-price"></span></span>
+				<span class="submit-button-text">
+					<strong>Buy Now</strong>
+					<span class="total-price"></span>
+				</span>
 				<div class="loader" style="display: none;">
 					<div class="lds-ellipsis">
 						<div></div>
@@ -321,7 +326,8 @@
 			alt="Secure Checkout"
 			class="secure-checkout">
 		<div class="guarantee text-center">
-			<strong>60 Days Satisfaction Guarantee</strong><br>
+			<strong>60 Days Satisfaction Guarantee</strong>
+			<br>
 			If our products aren't your cup of tea, just send it back within 60 days for a full refund. No hassle, just health.
 		</div>
 	</div>
@@ -330,7 +336,7 @@
 <script>
 	document
 		.querySelector('.product-image-wrapper')
-		.parentNode.insertBefore(document.querySelector('.guarantee-wrapper'), document.querySelector('.product-image-wrapper'));
+		.parentNode.insertBefore(document.querySelector('#product-actions-{{ SID }} .guarantee-wrapper'), document.querySelector('#product-actions-{{ SID }} .product-image-wrapper'));
 </script>
 
 <style>
@@ -781,10 +787,7 @@
 			updatePurchaseOptions(purchaseType);
 
 			// Get the appropriate selector based on purchase type
-			const optionSelector =
-				purchaseType === 'subscription'
-					? '.subscription .quantity-option input[type="radio"]'
-					: '.one-time-purchase .quantity-option input[type="radio"]';
+			const optionSelector = purchaseType === 'subscription' ? '.subscription .quantity-option input[type="radio"]' : '.one-time-purchase .quantity-option input[type="radio"]';
 
 			const firstOption = productActions.querySelector(optionSelector);
 			if (firstOption) {
