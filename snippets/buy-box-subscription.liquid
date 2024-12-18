@@ -712,12 +712,14 @@
 							}
 						];
 
-						if (giftId) {
-							itemsToAdd.push({
-								id: parseInt(giftId),
-								quantity: 1
-							});
-						}
+						{% if isGiftOnBuyOnce %}
+							if (giftId) {
+								itemsToAdd.push({
+									id: parseInt(giftId),
+									quantity: 1
+								});
+							}
+						{% endif %}
 
 						const response = await fetch('/cart/add.js', {
 							method: 'POST',
