@@ -8,7 +8,7 @@
 		</script>
 		<div class="sliders-group {% if thumbs == 'horizontal' %}flex flex-col-reverse{% endif %}">
 			{% unless thumbs == 'none' %}
-				<div class="thumbs-slider {% if thumbs == 'vertical' %}absolute{% else %}relative{% endif %}">
+				<div class="thumbs-slider relative">
 					<div id="product-thumbs-slider-nav-prev-{{ section.id }}" class="swiper-nav swiper-button-prev"></div>
 
 					<div id="thumbs-slider-{{ section.id }}" class="swiper">
@@ -239,6 +239,7 @@
 
 <style>
 	#product-thumbnails-{{ section.id }} {
+		--swiper-navigation-sides-offset: 20px;
 		grid-area: 1/1/3/2;
 
 		{% if first_3d_model %}
@@ -310,23 +311,27 @@
 
 			.thumbs-slider {
 				{% if thumbs == 'vertical' %}
-					.swiper {
-						max-height: 320px;
-					}
+					.swiper-wrapper {
+						display: absolute !important;
 
-					.swiper-nav {
-						transform: rotate(90deg);
-						width: 30px;
-						height: 30px;
-						position: relative;
-						left: 30px;
-
-						&.swiper-button-next {
-							bottom: -20px;
+						.swiper {
+							max-height: 320px;
 						}
 
-						&.swiper-button-prev {
-							top: -10px;
+						.swiper-nav {
+							transform: rotate(90deg);
+							width: 30px;
+							height: 30px;
+							position: relative;
+							left: 30px;
+
+							&.swiper-button-next {
+								bottom: -20px;
+							}
+
+							&.swiper-button-prev {
+								top: -10px;
+							}
 						}
 					}
 				{% endif %}
