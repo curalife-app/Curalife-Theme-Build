@@ -2,19 +2,19 @@
 
 {%- assign first_3d_model = product.media | where: 'media_type', 'model' | first -%}
 
-<div id='product-thumbnails-{{ section.id }}' class='product-thumbnails'>
-	<div class='product-slider'>
-		<div class='sliders-group'>
+<div id="product-thumbnails-{{ section.id }}" class="product-thumbnails">
+	<div class="product-slider">
+		<div class="sliders-group">
 			{% unless isHideThumbs %}
-				<div class='thumbs-slider absolute'>
-					<div id='product-thumbs-slider-nav-prev-{{ section.id }}' class='swiper-nav swiper-button-prev'></div>
+				<div class="thumbs-slider absolute">
+					<div id="product-thumbs-slider-nav-prev-{{ section.id }}" class="swiper-nav swiper-button-prev"></div>
 
-					<div id='thumbs-slider-{{ section.id }}' class='swiper'>
-						<div class='swiper-wrapper'>
+					<div id="thumbs-slider-{{ section.id }}" class="swiper">
+						<div class="swiper-wrapper">
 							{% comment %} Render Product Images on Thumbs Slider {% endcomment %}
 							{% if isProductThumbs %}
 								{% for img in product.images %}
-									<div class='swiper-slide cursor-pointer !h-auto'>
+									<div class="swiper-slide cursor-pointer !h-auto">
 										{% render 'image', image: img, lazy: false, preload: true, alt: img.alt %}
 										{% comment %} <img src="{{ img | image_url }}" alt="{{ img.alt | escape }}" width="" height="" loading="lazy"> {% endcomment %}
 									</div>
@@ -24,39 +24,39 @@
 							{% comment %} Render Section Images on Thumbs Slider {% endcomment %}
 							{% for block in blocks %}
 								{% if block.type == 'image' %}
-									<div class='swiper-slide cursor-pointer !h-auto'>
+									<div class="swiper-slide cursor-pointer !h-auto">
 										{% render 'image', image: block.settings.product_img, lazy: false, preload: true, alt: block.settings.product_img.alt %}
 										{% comment %} <img src="{{ block.settings.product_img | image_url }}" width="291" height="278" alt="Product Image" loading="lazy"> {% endcomment %}
 									</div>
 								{% elsif block.type == 'video' %}
-									<div class='swiper-slide cursor-pointer !h-auto'>
-										<div class='thumbs-img video-thumbnail'>
-											<img src='{{ block.settings.video_thumbnail | image_url }}' width='720' height='680' alt='' loading='lazy'>
+									<div class="swiper-slide cursor-pointer !h-auto">
+										<div class="thumbs-img video-thumbnail">
+											<img src="{{ block.settings.video_thumbnail | image_url }}" width="720" height="680" alt="" loading="lazy">
 										</div>
 									</div>
 								{% endif %}
 							{% endfor %}
 
 							{%- if first_3d_model -%}
-								<div class='swiper-slide cursor-pointer !h-auto'>
-									<img class='p-1' src='https://cdn.shopify.com/s/files/1/0452/2459/1511/files/single_supp.png?v=1704621391' width='291' height='278' alt='Product Image' loading='lazy'>
-									<i class='fa-light fa-360-degrees model-icon'></i>
+								<div class="swiper-slide cursor-pointer !h-auto">
+									<img class="p-1" src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/single_supp.png?v=1704621391" width="291" height="278" alt="Product Image" loading="lazy">
+									<i class="fa-light fa-360-degrees model-icon"></i>
 								</div>
 							{%- endif -%}
 						</div>
 					</div>
 
-					<div id='product-thumbs-slider-nav-next-{{ section.id }}' class='swiper-nav swiper-button-next'></div>
+					<div id="product-thumbs-slider-nav-next-{{ section.id }}" class="swiper-nav swiper-button-next"></div>
 				</div>
 			{% endunless %}
 
-			<div class='main-slider {% unless isHideThumbs %} dsk:ml-[160px] {% endunless %}'>
-				<div id='product-main-slider-sc-{{ section.id }}' class='swiper'>
-					<div class='swiper-wrapper'>
+			<div class="main-slider {% unless isHideThumbs %} dsk:ml-[160px] {% endunless %}">
+				<div id="product-main-slider-sc-{{ section.id }}" class="swiper">
+					<div class="swiper-wrapper">
 						{% if thumbnailImage %}
-							<div class='swiper-slide product-image-slide'>
+							<div class="swiper-slide product-image-slide">
 								{% if request.path contains 'lp-wl-curaslim-360-aff-bogo' %}
-									<img src='{{ "product_image.png" | file_url }}' alt='CuraSlim' loading='lazy'>
+									<img src="{{ "product_image.png" | file_url }}" alt="CuraSlim" loading="lazy">
 								{% else %}
 									{% render 'image', image: thumbnailImage, lazy: false, preload: true, alt: thumbnailImage.alt %}
 								{% endif %}
@@ -70,7 +70,7 @@
 										{% assign img = thumbnailImage | default: currentImg %}
 									{% endif %}
 
-									<div class='swiper-slide product-image-slide'>
+									<div class="swiper-slide product-image-slide">
 										{% render 'image', image: img, lazy: false, preload: true, alt: img.alt %}
 									</div>
 								{% endfor %}
@@ -83,35 +83,35 @@
 							{% comment %} Render Section Images on Main Slider {% endcomment %}
 							{% for block in blocks %}
 								{% if block.type == 'image' %}
-									<div class='swiper-slide image-block-slide'>
+									<div class="swiper-slide image-block-slide">
 										{% render 'image', image: block.settings.product_img, lazy: false, preload: true, alt: block.settings.product_img.alt %}
 									</div>
 								{% elsif block.type == 'video' %}
-									<div class='swiper-slide video-block-slide'>
-										<div class='product-video'>
+									<div class="swiper-slide video-block-slide">
+										<div class="product-video">
 											<iframe
-												id='product-video-iframe'
-												src='https://player.vimeo.com/video/{{ block.settings.vimeo_video_id }}?playsinline=0'
-												frameborder='0'
+												id="product-video-iframe"
+												src="https://player.vimeo.com/video/{{ block.settings.vimeo_video_id }}?playsinline=0"
+												frameborder="0"
 												webkitallowfullscreen
 												mozallowfullscreen
 												allowfullscreen
-												loading='lazy'></iframe>
+												loading="lazy"></iframe>
 										</div>
 									</div>
 								{% endif %}
 							{% endfor %}
 
 							{%- if first_3d_model -%}
-								<div class='swiper-slide 3d-image-slide'>
+								<div class="swiper-slide 3d-image-slide">
 									<model-viewer
-										class='w-full h-[500px] md:h-[80vw]'
-										alt='Curalin'
-										src='{{ first_3d_model.sources.first.url }}'
-										poster='//curalife.com/cdn/shop/files/curalinsdsdv.png?v=1704651801'
-										shadow-intensity='1'
+										class="w-full h-[500px] md:h-[80vw]"
+										alt="Curalin"
+										src="{{ first_3d_model.sources.first.url }}"
+										poster="//curalife.com/cdn/shop/files/curalinsdsdv.png?v=1704651801"
+										shadow-intensity="1"
 										camera-controls
-										camera-orbit='300deg 80deg'
+										camera-orbit="300deg 80deg"
 										auto-rotate></model-viewer>
 								</div>
 							{%- endif -%}
@@ -119,7 +119,7 @@
 							{% comment %} Render Vaiants on Main Slider {% endcomment %}
 							{% if product.variants.size > 1 %}
 								{% for var in product.variants %}
-									<div class='swiper-slide variant-image-slide' data-variant-id='{{ var.id }}'>
+									<div class="swiper-slide variant-image-slide" data-variant-id="{{ var.id }}">
 										{% if var.image %}
 											{% render 'image', image: var.image, lazy: false, preload: true, alt: var.image.alt %}
 										{% endif %}
@@ -127,9 +127,9 @@
 										{% if isSaveTitle %}
 											{% assign save_price = var.compare_at_price | minus: var.price %}
 
-											<div class='save-title'
-												><p>SAVE {{ save_price | money_without_trailing_zeros }}</p></div
-											>
+											<div class="save-title">
+												<p>SAVE {{ save_price | money_without_trailing_zeros }}</p>
+											</div>
 										{% endif %}
 
 										{% if badgeImage %}
@@ -141,15 +141,15 @@
 
 							{% if customer.email == 'yotam@curalife.com' %}
 								{% for additionalVariant in product.metafields.custom.additional_variants.value %}
-									<div class='swiper-slide'>
+									<div class="swiper-slide">
 										{% render 'image', image: additionalVariant.image, lazy: false, preload: true, alt: additionalVariant.image.alt %}
 
 										{% if isSaveTitle %}
 											{% assign save_price = additionalVariant.compare_at_price | minus: additionalVariant.price %}
 
-											<div class='save-title'
-												><p>SAVE {{ save_price | money_without_trailing_zeros }}</p></div
-											>
+											<div class="save-title">
+												<p>SAVE {{ save_price | money_without_trailing_zeros }}</p>
+											</div>
 										{% endif %}
 
 										{% if badgeImage %}
@@ -161,11 +161,11 @@
 						{% endif %}
 					</div>
 
-					<div class='swiper-pagination'></div>
+					<div class="swiper-pagination"></div>
 				</div>
 
-				<div id='product-main-slider-nav-prev-{{ section.id }}' class='swiper-button-prev product-main-slider-nav-prev swiper-nav'></div>
-				<div id='product-main-slider-nav-next-{{ section.id }}' class='swiper-button-next product-main-slider-nav-next swiper-nav'></div>
+				<div id="product-main-slider-nav-prev-{{ section.id }}" class="swiper-button-prev product-main-slider-nav-prev swiper-nav"></div>
+				<div id="product-main-slider-nav-next-{{ section.id }}" class="swiper-button-next product-main-slider-nav-next swiper-nav"></div>
 			</div>
 		</div>
 	</div>
@@ -176,7 +176,9 @@
 	  {% unless isHideThumbs %}
 	    loadSwiper(() => {
 	      window.productThumbsSlider{{ SID }} = initializeSwiper('#thumbs-slider-{{ section.id }}', {
+					{% unless product.handle == 'curalife-bp' %}
 	        direction: 'vertical',
+					{% endunless %}
 	        spaceBetween: 10,
 	        watchSlidesVisibility: true,
 	        grabCursor: true,
