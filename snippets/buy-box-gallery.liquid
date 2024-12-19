@@ -1,5 +1,6 @@
 {%- assign variantQuantity = product.variants | size -%}
 {%- assign first_3d_model = product.media | where: 'media_type', 'model' | first -%}
+{%- assign firstImage = product.images.first -%}
 
 <div id="product-thumbnails-{{ SID }}" class="product-thumbnails">
 	<div class="product-slider">
@@ -12,11 +13,9 @@
 						<div class="swiper-wrapper">
 							{% comment %} Render Product Images on Thumbs Slider {% endcomment %}
 							{% if isProductThumbs %}
-								{% for img in product.images %}
 									<div class="swiper-slide cursor-pointer !h-auto">
-										{% render 'image', image: img, lazy: false, preload: true, alt: img.alt %}
+										{% render 'image', image: firstImage, lazy: false, preload: true, alt: img.alt %}
 									</div>
-								{% endfor %}
 							{% endif %}
 
 							{% comment %} Render Section Images on Thumbs Slider {% endcomment %}
@@ -78,7 +77,6 @@
 								{% endif %}
 							</div>
 						{% else %}
-							{% assign firstImage = product.images.first %}
 								<div class="swiper-slide product-image-slide">
 									{% render 'image', image: firstImage, lazy: false, preload: true, alt: img.alt %}
 								</div>
