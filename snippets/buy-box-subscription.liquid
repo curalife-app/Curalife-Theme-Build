@@ -55,27 +55,6 @@
 					{% assign original_item_cap_total = original_item_cap | times: bottle_quantity %}
 					{% assign item_price = var.price | divided_by: bottle_quantity %}
 
-					{% comment %} Subscription-specific Calculations {% endcomment %}
-					{% assign subscription_save_percents = 0 %}
-					{% assign subscription_item_price = original_item_cap %}
-					{% for allocation in var.selling_plan_allocations %}
-						{% if allocation.selling_plan.id == selling_plan_id %}
-							{% if allocation.price_adjustments[0].value %}
-								{% assign subscription_save_percents = allocation.price_adjustments[0].value | abs %}
-							{% elsif allocation.price_adjustments[0].percentage %}
-								{% assign subscription_save_percents = allocation.price_adjustments[0].percentage | abs %}
-							{% endif %}
-							{% assign subscription_item_price_save = original_item_cap | times: subscription_save_percents | divided_by: 100 %}
-							{% assign subscription_item_price = original_item_cap | minus: subscription_item_price_save %}
-							<script>
-								console.log("Allocation:", {{ allocation | json | replace: '"', '\"' }});
-								console.log("Save Percents:", {{ subscription_save_percents }});
-								console.log("Item Price:", {{ subscription_item_price }});
-							</script>
-						{% endif %}
-					{% endfor %}
-					{% assign subscription_total_price = subscription_item_price | times: bottle_quantity %}
-
 					{% comment %} Savings Calculations {% endcomment %}
 					{% assign subscription_save_money = original_item_cap | minus: subscription_item_price %}
 					{% assign buy_once_save_money = original_item_cap | minus: item_price %}
@@ -98,6 +77,27 @@
 							console.log("Didn't find selling plan for the variant");
 						</script>
 					{% endif %}
+
+					{% comment %} Subscription-specific Calculations {% endcomment %}
+					{% assign subscription_save_percents = 0 %}
+					{% assign subscription_item_price = original_item_cap %}
+					{% for allocation in var.selling_plan_allocations %}
+						{% if allocation.selling_plan.id == selling_plan_id %}
+							{% if allocation.price_adjustments[0].value %}
+								{% assign subscription_save_percents = allocation.price_adjustments[0].value | abs %}
+							{% elsif allocation.price_adjustments[0].percentage %}
+								{% assign subscription_save_percents = allocation.price_adjustments[0].percentage | abs %}
+							{% endif %}
+							{% assign subscription_item_price_save = original_item_cap | times: subscription_save_percents | divided_by: 100 %}
+							{% assign subscription_item_price = original_item_cap | minus: subscription_item_price_save %}
+							<script>
+								console.log("Allocation:", {{ allocation | json | replace: '"', '\"' }});
+								console.log("Save Percents:", {{ subscription_save_percents }});
+								console.log("Item Price:", {{ subscription_item_price }});
+							</script>
+						{% endif %}
+					{% endfor %}
+					{% assign subscription_total_price = subscription_item_price | times: bottle_quantity %}
 
 					<div
 						id="variant-box-{{ SID }}-{{ forloop.index }}"
