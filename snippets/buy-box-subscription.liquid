@@ -93,31 +93,32 @@
 					{% comment %} Subscription-specific Calculations {% endcomment %}
 					{% assign subscription_save_percents = 0 %}
 					{% assign subscription_item_price = original_item_cap %}
-					<script>
-						console.log("Starting calculations for variant:", {{ var.id }});
-					</script>
+
 					{% for allocation in var.selling_plan_allocations %}
 						{% if allocation.selling_plan.id == selling_plan_id %}
 							<script>
-								console.log("Match found for selling_plan_id:", {{ selling_plan_id }});
-								console.log("Raw price adjustment data:");
-								console.log("- Value: {{ allocation.price_adjustments[0].value }}");
-								console.log("- Percentage: {{ allocation.price_adjustments[0].percentage }}");
-								console.log("- Type: {{ allocation.price_adjustments[0].type }}");
-								console.log("Original price cap:", {{ original_item_cap }});
+								console.log("Allocation found:", {
+										selling_plan: {{ allocation.selling_plan | json }},
+										price_adjustments: {{ allocation.price_adjustments | json }}
+								});
 							</script>
 
-							{% assign adjustment_type = allocation.price_adjustments[0].type %}
-							{% assign adjustment_value = allocation.price_adjustments[0].percentage | default: allocation.price_adjustments[0].value %}
+							{% for adjustment in allocation.price_adjustments %}
+								<script>
+									console.log("Adjustment:", {
+											percentage: {{ adjustment.percentage | json }},
+											value: {{ adjustment.value | json }},
+											type: {{ adjustment.adjustment_type | json }}
+									});
+								</script>
 
-							<script>
-								console.log("Type:", {{ adjustment_type | json }});
-							</script>
-							<script>
-								console.log("Value: ", {{ adjustment_value }});
-							</script>
+								{% if adjustment.percentage %}
+									{% assign subscription_save_percents = adjustment.percentage | abs %}
+								{% elsif adjustment.value %}
+									{% assign subscription_save_percents = adjustment.value | abs %}
+								{% endif %}
+							{% endfor %}
 
-							{% assign subscription_save_percents = adjustment_value | abs %}
 							{% assign subscription_item_price_save = original_item_cap | times: subscription_save_percents | divided_by: 100 %}
 							{% assign subscription_item_price = original_item_cap | minus: subscription_item_price_save %}
 						{% endif %}
