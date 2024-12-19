@@ -44,6 +44,9 @@
 					{% endfor %}
 
 					{% assign var = referenced_variant %}
+					<script>
+						console.log("Variant assigned:", {{ var | json }});
+					</script>
 
 					{% comment %} Core Variable Assignments {% endcomment %}
 					{% assign variant_id = var.metafields.custom.reference_variant_id | default: var.id %}
@@ -77,12 +80,21 @@
 							console.log("Didn't find selling plan for the variant");
 						</script>
 					{% endif %}
+					<script>
+						console.log("Selling plan ID:", {{ selling_plan_id | json }});
+					</script>
 
 					{% comment %} Subscription-specific Calculations {% endcomment %}
 					{% assign subscription_save_percents = 0 %}
 					{% assign subscription_item_price = original_item_cap %}
 					{% for allocation in var.selling_plan_allocations %}
+						<script>
+							console.log("Checking allocation:", {{ allocation | json }});
+						</script>
 						{% if allocation.selling_plan.id == selling_plan_id %}
+							<script>
+								console.log('Found matching allocation');
+							</script>
 							{% if allocation.price_adjustments[0].value %}
 								{% assign subscription_save_percents = allocation.price_adjustments[0].value | abs %}
 							{% elsif allocation.price_adjustments[0].percentage %}
@@ -90,13 +102,11 @@
 							{% endif %}
 							{% assign subscription_item_price_save = original_item_cap | times: subscription_save_percents | divided_by: 100 %}
 							{% assign subscription_item_price = original_item_cap | minus: subscription_item_price_save %}
-							<script>
-								console.log("Allocation:", {{ allocation | json | replace: '"', '\"' }});
-								console.log("Save Percents:", {{ subscription_save_percents }});
-								console.log("Item Price:", {{ subscription_item_price }});
-							</script>
 						{% endif %}
 					{% endfor %}
+					<script>
+						console.log("Final subscription_save_percents:", {{ subscription_save_percents }});
+					</script>
 					{% assign subscription_total_price = subscription_item_price | times: bottle_quantity %}
 
 					<div
