@@ -104,31 +104,27 @@
 						console.log("Allocations Size:", {{ var.selling_plan_allocations.size }});
 					</script>
 
-					{% comment %} Core Subscription Calculations {% endcomment %}
+					{% comment %} Calculate subscription pricing from selling plan allocation {% endcomment %}
 					{% assign subscription_save_percents = 0 %}
 					{% assign subscription_item_price = original_item_cap %}
 
 					{% for allocation in var.selling_plan_allocations %}
-						<script>
-							console.log("Current Allocation ID:", {{ allocation.selling_plan.id }});
-						</script>
 						{% if allocation.selling_plan.id == selling_plan_id %}
 							<script>
-								console.log('Match Found!');
+								console.log("Found allocation:", {
+										price: {{ allocation.price }},
+										compare_at_price: {{ allocation.compare_at_price }},
+										per_delivery_price: {{ allocation.per_delivery_price }}
+								});
 							</script>
-							{% assign adjustment = allocation.price_adjustments.first %}
-							<script>
-								console.log('Adjustment Type:', '{{ adjustment.type }}');
-							</script>
-							<script>
-								console.log("Adjustment Value:", {{ adjustment.percentage | default: adjustment.value | json }});
-							</script>
-							{% assign subscription_save_percents = adjustment.percentage | default: adjustment.value | abs %}
+
+							{% assign original_price = allocation.compare_at_price | default: original_item_cap %}
+							{% assign adjusted_price = allocation.price | default: original_item_cap %}
+							{% assign subscription_save_percents = original_price | minus: adjusted_price | times: 100.0 | divided_by: original_price %}
+							{% assign subscription_item_price = adjusted_price %}
 						{% endif %}
 					{% endfor %}
 
-					{% assign subscription_item_price_save = original_item_cap | times: subscription_save_percents | divided_by: 100 %}
-					{% assign subscription_item_price = original_item_cap | minus: subscription_item_price_save %}
 					{% assign subscription_total_price = subscription_item_price | times: bottle_quantity %}
 
 					<div
