@@ -91,25 +91,7 @@
 												loading="lazy"></iframe>
 										</div>
 									</div>
-								{% endif %}
-							{% endfor %}
-
-							{%- if first_3d_model -%}
-								<div class="swiper-slide 3d-image-slide">
-									<model-viewer
-										class="w-full h-[500px] md:h-[80vw]"
-										alt="Curalin"
-										src="{{ first_3d_model.sources.first.url }}"
-										poster="//curalife.com/cdn/shop/files/curalinsdsdv.png?v=1704651801"
-										shadow-intensity="1"
-										camera-controls
-										camera-orbit="300deg 80deg"
-										auto-rotate></model-viewer>
-								</div>
-							{%- endif -%}
-
-							{% for block in section.blocks %}
-								{% if block.type == 'variant' and block.settings.purchase_type == 'subscribe' %}
+								{% elsif block.type == 'variant' and block.settings.purchase_type == 'subscribe' %}
 									{% assign referenced_variant = blank %}
 									{% assign blockVarID = block.settings.variant_id | plus: 0 %}
 									{% for vari in referenced_variant_product.variants %}
@@ -128,6 +110,23 @@
 									</div>
 								{% endif %}
 							{% endfor %}
+
+							{% for block in section.blocks %}
+							{% endfor %}
+
+							{%- if first_3d_model -%}
+								<div class="swiper-slide 3d-image-slide">
+									<model-viewer
+										class="w-full h-[500px] md:h-[80vw]"
+										alt="Curalin"
+										src="{{ first_3d_model.sources.first.url }}"
+										poster="//curalife.com/cdn/shop/files/curalinsdsdv.png?v=1704651801"
+										shadow-intensity="1"
+										camera-controls
+										camera-orbit="300deg 80deg"
+										auto-rotate></model-viewer>
+								</div>
+							{%- endif -%}
 						{% endif %}
 					</div>
 
