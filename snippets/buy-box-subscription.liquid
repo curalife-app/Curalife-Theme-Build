@@ -104,24 +104,24 @@
 						console.log("Allocations Size:", {{ var.selling_plan_allocations.size }});
 					</script>
 
-					{% comment %} Calculate subscription pricing from selling plan allocation {% endcomment %}
+					{% comment %}Debug values{% endcomment %}
+					<script>
+						console.log("Selling plan allocations:", {{ var.selling_plan_allocations | json }});
+					</script>
+
 					{% assign subscription_save_percents = 0 %}
 					{% assign subscription_item_price = original_item_cap %}
 
 					{% for allocation in var.selling_plan_allocations %}
 						{% if allocation.selling_plan.id == selling_plan_id %}
-							<script>
-								console.log("Found allocation: ", {
-										price: {{ allocation.price }},
-										compare_at_price: {{ allocation.compare_at_price }},
-										per_delivery_price: {{ allocation.per_delivery_price }}
-								});
-							</script>
-
-							{% assign original_price = allocation.compare_at_price | default: original_item_cap %}
-							{% assign adjusted_price = allocation.price | default: original_item_cap %}
-							{% assign subscription_save_percents = original_price | minus: adjusted_price | times: 100.0 | divided_by: original_price %}
-							{% assign subscription_item_price = adjusted_price %}
+							{% for price_adjustment in allocation.price_adjustments %}
+								<script>
+									console.log("Price adjustment:", {{ price_adjustment | json }});
+								</script>
+								{% assign subscription_save_percents = price_adjustment.value_type == 'percentage' | price_adjustment.value | abs %}
+							{% endfor %}
+							{% assign subscription_item_price_save = original_item_cap | times: subscription_save_percents | divided_by: 100 %}
+							{% assign subscription_item_price = original_item_cap | minus: subscription_item_price_save %}
 						{% endif %}
 					{% endfor %}
 
