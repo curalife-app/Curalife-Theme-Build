@@ -61,9 +61,18 @@
 					{% assign subscription_item_price = original_item_cap %}
 					{% for allocation in var.selling_plan_allocations %}
 						{% if allocation.selling_plan.id == selling_plan_id %}
-							{% assign subscription_save_percents = allocation.price_adjustments[0].value %}
+							{% if allocation.price_adjustments[0].value %}
+								{% assign subscription_save_percents = allocation.price_adjustments[0].value | abs %}
+							{% elsif allocation.price_adjustments[0].percentage %}
+								{% assign subscription_save_percents = allocation.price_adjustments[0].percentage | abs %}
+							{% endif %}
 							{% assign subscription_item_price_save = original_item_cap | times: subscription_save_percents | divided_by: 100 %}
 							{% assign subscription_item_price = original_item_cap | minus: subscription_item_price_save %}
+							<script>
+								console.log("Allocation:", {{ allocation | json | replace: '"', '\"' }});
+								console.log("Save Percents:", {{ subscription_save_percents }});
+								console.log("Item Price:", {{ subscription_item_price }});
+							</script>
 						{% endif %}
 					{% endfor %}
 					{% assign subscription_total_price = subscription_item_price | times: bottle_quantity %}
