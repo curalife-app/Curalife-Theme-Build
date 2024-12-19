@@ -53,10 +53,21 @@
 					{% assign bottle_quantity = var.metafields.my_fields.pack_bottles_quantity %}
 
 					{% comment %} Price Calculations {% endcomment %}
-					{% assign original_item_price = var.metafields.custom.original_item.value.price %}
-					{% assign original_item_cap = var.metafields.custom.original_item.value.compare_at_price | default: original_item_price %}
-					{% assign original_item_cap_total = original_item_cap | times: bottle_quantity %}
-					{% assign item_price = var.price | divided_by: bottle_quantity %}
+					{% comment %} Price Calculations from Selling Plan {% endcomment %}
+					{% for allocation in var.selling_plan_allocations %}
+						{% assign selling = selling_plan_id | minus: 0 %}
+						{% if allocation.selling_plan.id == selling %}
+							{% assign original_item_cap = allocation.compare_at_price | divided_by: bottle_quantity %}
+							{% assign subscription_item_price = allocation.price | divided_by: bottle_quantity %}
+							{% assign subscription_save_percents = allocation.compare_at_price | minus: allocation.price | times: 100 | divided_by: allocation.compare_at_price %}
+							{% assign mod_5_remainder = subscription_save_percents | modulo: 5 %}
+							{% if mod_5_remainder < 3 %}
+								{% assign subscription_save_percents = subscription_save_percents | minus: mod_5_remainder %}
+							{% else %}
+								{% assign subscription_save_percents = subscription_save_percents | plus: 5 | minus: mod_5_remainder %}
+							{% endif %}
+						{% endif %}
+					{% endfor %}
 
 					{% comment %} Savings Calculations {% endcomment %}
 					{% assign subscription_save_money = original_item_cap | minus: subscription_item_price %}
