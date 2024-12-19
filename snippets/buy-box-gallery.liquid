@@ -21,9 +21,9 @@
 									{% endif %}
 								</div>
 							{% else %}
-									<div class="swiper-slide cursor-pointer !h-auto">
-										{% render 'image', image: firstImage, lazy: false, preload: true, alt: img.alt %}
-									</div>
+								<div class="swiper-slide cursor-pointer !h-auto">
+									{% render 'image', image: firstImage, lazy: false, preload: true, alt: img.alt %}
+								</div>
 							{% endif %}
 
 							{% comment %} Render Section Images on Thumbs Slider {% endcomment %}
@@ -85,66 +85,65 @@
 								{% endif %}
 							</div>
 						{% else %}
-								<div class="swiper-slide product-image-slide">
-									{% render 'image', image: firstImage, lazy: false, preload: true, alt: img.alt %}
-								</div>
+							<div class="swiper-slide product-image-slide">
+								{% render 'image', image: firstImage, lazy: false, preload: true, alt: img.alt %}
+							</div>
 						{% endif %}
 
-							{% comment %} Render Section Images on Main Slider {% endcomment %}
-							{% for block in section.blocks %}
-								{% if block.type == 'image' %}
-									<div class="swiper-slide image-block-slide">
-										{% render 'image', image: block.settings.product_img, lazy: false, preload: true, alt: block.settings.product_img.alt %}
+						{% comment %} Render Section Images on Main Slider {% endcomment %}
+						{% for block in section.blocks %}
+							{% if block.type == 'image' %}
+								<div class="swiper-slide image-block-slide">
+									{% render 'image', image: block.settings.product_img, lazy: false, preload: true, alt: block.settings.product_img.alt %}
+								</div>
+							{% elsif block.type == 'video' %}
+								<div class="swiper-slide video-block-slide">
+									<div class="product-video">
+										<iframe
+											id="product-video-iframe"
+											src="https://player.vimeo.com/video/{{ block.settings.vimeo_video_id }}?playsinline=0"
+											frameborder="0"
+											mozallowfullscreen
+											webkitallowfullscreen
+											allowfullscreen
+											loading="lazy"></iframe>
 									</div>
-								{% elsif block.type == 'video' %}
-									<div class="swiper-slide video-block-slide">
-										<div class="product-video">
-											<iframe
-												id="product-video-iframe"
-												src="https://player.vimeo.com/video/{{ block.settings.vimeo_video_id }}?playsinline=0"
-												frameborder="0"
-												mozallowfullscreen
-												webkitallowfullscreen
-												allowfullscreen
-												loading="lazy"></iframe>
-										</div>
+								</div>
+							{% elsif block.type == 'variant' %}
+								{% if isProductThumbs %}
+									{% assign referenced_variant = blank %}
+									{% assign blockVarID = block.settings.variant_id | plus: 0 %}
+									{% for vari in referenced_variant_product.variants %}
+										{% assign currVarID = vari.id | plus: 0 %}
+										{% if currVarID == blockVarID %}
+											{% assign referenced_variant = vari %}
+										{% endif %}
+									{% endfor %}
+
+									{% assign var = referenced_variant %}
+
+									<div class="swiper-slide variant-image-slide" data-variant-id="{{ var.id }}">
+										{% if var.image %}
+											{% render 'image', image: var.image, lazy: false, preload: true, alt: var.image.alt %}
+										{% endif %}
 									</div>
-								{% elsif block.type == 'variant' %}
-									{% if isProductThumbs %}
-										{% assign referenced_variant = blank %}
-										{% assign blockVarID = block.settings.variant_id | plus: 0 %}
-										{% for vari in referenced_variant_product.variants %}
-											{% assign currVarID = vari.id | plus: 0 %}
-											{% if currVarID == blockVarID %}
-												{% assign referenced_variant = vari %}
-											{% endif %}
-										{% endfor %}
-
-										{% assign var = referenced_variant %}
-
-										<div class="swiper-slide variant-image-slide" data-variant-id="{{ var.id }}">
-											{% if var.image %}
-												{% render 'image', image: var.image, lazy: false, preload: true, alt: var.image.alt %}
-											{% endif %}
-										</div>
-									{% endif %}
 								{% endif %}
-							{% endfor %}
+							{% endif %}
+						{% endfor %}
 
-							{%- if first_3d_model -%}
-								<div class="swiper-slide 3d-image-slide">
-									<model-viewer
-										class="w-full h-[500px] md:h-[80vw]"
-										alt="Curalin"
-										src="{{ first_3d_model.sources.first.url }}"
-										poster="//curalife.com/cdn/shop/files/curalinsdsdv.png?v=1704651801"
-										shadow-intensity="1"
-										camera-controls
-										camera-orbit="300deg 80deg"
-										auto-rotate></model-viewer>
-								</div>
-							{%- endif -%}
-						{% endif %}
+						{%- if first_3d_model -%}
+							<div class="swiper-slide 3d-image-slide">
+								<model-viewer
+									class="w-full h-[500px] md:h-[80vw]"
+									alt="Curalin"
+									src="{{ first_3d_model.sources.first.url }}"
+									poster="//curalife.com/cdn/shop/files/curalinsdsdv.png?v=1704651801"
+									shadow-intensity="1"
+									camera-controls
+									camera-orbit="300deg 80deg"
+									auto-rotate></model-viewer>
+							</div>
+						{%- endif -%}
 					</div>
 
 					<div class="swiper-pagination"></div>
