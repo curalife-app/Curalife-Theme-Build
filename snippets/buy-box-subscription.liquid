@@ -460,6 +460,10 @@
 			// Calculate total subscription price
 			const subscriptionTotalPrice = subscriptionItemPrice * bottleQuantity;
 
+			// Determine singular or plural wording
+			const monthText = bottleQuantity > 1 ? 'months' : 'month';
+			const bottleText = bottleQuantity > 1 ? 'bottles' : 'bottle';
+
 			// Update all price displays
 			priceDisplays.forEach(priceDisplay => {
 				// Add transition classes if not present
@@ -486,7 +490,7 @@
 					}
 
 					if (description) {
-						description.textContent = `Total of $${subscriptionTotalPrice.toFixed(2)} payable every ${bottleQuantity} months for ${bottleQuantity} bottles.`;
+						description.textContent = `Total of $${subscriptionTotalPrice.toFixed(2)} payable every ${bottleQuantity} ${monthText} for ${bottleQuantity} ${bottleText}.`;
 					}
 				} else {
 					// Normal animated update
@@ -526,7 +530,7 @@
 
 						// Update and fade in description with delay
 						if (description) {
-							description.textContent = `Total of $${subscriptionTotalPrice.toFixed(2)} payable every ${bottleQuantity} months for ${bottleQuantity} bottles.`;
+							description.textContent = `Total of $${subscriptionTotalPrice.toFixed(2)} payable every ${bottleQuantity} ${monthText} for ${bottleQuantity} ${bottleText}.`;
 							setTimeout(() => {
 								requestAnimationFrame(() => {
 									description.style.opacity = '1';
@@ -540,6 +544,7 @@
 			// Reset the initial load flag after first update
 			state.isInitialLoad = false;
 		}
+
 
 		function togglePurchaseBox(element) {
 			if (!element) return;
