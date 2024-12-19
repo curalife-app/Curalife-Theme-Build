@@ -90,39 +90,45 @@
 						{% endfor %}
 					{% endif %}
 
-					{% comment %} Subscription-specific Calculations {% endcomment %}
+					{% comment %} Debug Setup {% endcomment %}
+					<script>
+						console.log('=== Debug Start ===');
+					</script>
+					<script>
+						console.log("Variant ID:", {{ var.id }});
+					</script>
+					<script>
+						console.log("Selling Plan ID:", {{ selling_plan_id }});
+					</script>
+					<script>
+						console.log("Allocations Size:", {{ var.selling_plan_allocations.size }});
+					</script>
+
+					{% comment %} Core Subscription Calculations {% endcomment %}
 					{% assign subscription_save_percents = 0 %}
 					{% assign subscription_item_price = original_item_cap %}
 
 					{% for allocation in var.selling_plan_allocations %}
+						<script>
+							console.log("Current Allocation ID:", {{ allocation.selling_plan.id }});
+						</script>
 						{% if allocation.selling_plan.id == selling_plan_id %}
 							<script>
-								console.log("Allocation found:", {
-										selling_plan: {{ allocation.selling_plan | json }},
-										price_adjustments: {{ allocation.price_adjustments | json }}
-								});
+								console.log('Match Found!');
 							</script>
-
-							{% for adjustment in allocation.price_adjustments %}
-								<script>
-									console.log("Adjustment:", {
-											percentage: {{ adjustment.percentage | json }},
-											value: {{ adjustment.value | json }},
-											type: {{ adjustment.adjustment_type | json }}
-									});
-								</script>
-
-								{% if adjustment.percentage %}
-									{% assign subscription_save_percents = adjustment.percentage | abs %}
-								{% elsif adjustment.value %}
-									{% assign subscription_save_percents = adjustment.value | abs %}
-								{% endif %}
-							{% endfor %}
-
-							{% assign subscription_item_price_save = original_item_cap | times: subscription_save_percents | divided_by: 100 %}
-							{% assign subscription_item_price = original_item_cap | minus: subscription_item_price_save %}
+							{% assign adjustment = allocation.price_adjustments.first %}
+							<script>
+								console.log('Adjustment Type:', '{{ adjustment.type }}');
+							</script>
+							<script>
+								console.log("Adjustment Value:", {{ adjustment.percentage | default: adjustment.value | json }});
+							</script>
+							{% assign subscription_save_percents = adjustment.percentage | default: adjustment.value | abs %}
 						{% endif %}
 					{% endfor %}
+
+					{% assign subscription_item_price_save = original_item_cap | times: subscription_save_percents | divided_by: 100 %}
+					{% assign subscription_item_price = original_item_cap | minus: subscription_item_price_save %}
 					{% assign subscription_total_price = subscription_item_price | times: bottle_quantity %}
 
 					<div
