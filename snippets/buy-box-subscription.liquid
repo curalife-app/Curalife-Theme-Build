@@ -93,28 +93,35 @@
 					{% comment %} Subscription-specific Calculations {% endcomment %}
 					{% assign subscription_save_percents = 0 %}
 					{% assign subscription_item_price = original_item_cap %}
+					<script>
+						console.log('Starting allocations check...');
+					</script>
+					<script>
+						console.log("Number of allocations:", {{ var.selling_plan_allocations.size }});
+					</script>
+					<script>
+						console.log("Current selling_plan_id:", {{ selling_plan_id }});
+					</script>
 					{% for allocation in var.selling_plan_allocations %}
+						<script>
+							console.log("Checking allocation with selling_plan_id:", {{ allocation.selling_plan.id }});
+						</script>
 						{% if allocation.selling_plan.id == selling_plan_id %}
 							<script>
-								console.log("Matched selling plan:", {{ selling_plan_id }});
+								console.log('Found matching allocation');
 							</script>
 							<script>
-								console.log("Adjustment value:", {{ allocation.price_adjustments[0].value | default: 0 }});
+								console.log("Price adjustments:", {{ allocation.price_adjustments | json }});
 							</script>
+							{% assign subscription_save_percents = allocation.price_adjustments[0].percentage | default: allocation.price_adjustments[0].value | default: 0 %}
 							<script>
-								console.log("Adjustment percentage:", {{ allocation.price_adjustments[0].percentage | default: 0 }});
+								console.log("Save percent assigned:", {{ subscription_save_percents }});
 							</script>
-							{% if allocation.price_adjustments[0].value %}
-								{% assign subscription_save_percents = allocation.price_adjustments[0].value | abs %}
-							{% elsif allocation.price_adjustments[0].percentage %}
-								{% assign subscription_save_percents = allocation.price_adjustments[0].percentage | abs %}
-							{% endif %}
 							{% assign subscription_item_price_save = original_item_cap | times: subscription_save_percents | divided_by: 100 %}
 							{% assign subscription_item_price = original_item_cap | minus: subscription_item_price_save %}
 						{% endif %}
 					{% endfor %}
 					{% assign subscription_total_price = subscription_item_price | times: bottle_quantity %}
-
 					<div
 						id="variant-box-{{ SID }}-{{ forloop.index }}"
 						class="variant-box text-center font-bold w-full {% if forloop.index == 1 %}selected{% endif %} {{ block.settings.purchase_type }}"
