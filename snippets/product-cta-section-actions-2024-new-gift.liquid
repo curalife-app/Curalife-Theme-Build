@@ -372,12 +372,6 @@
       if (defaultBox) {
         updateYotpoPointsWidget(defaultBox);
       }
-
-      {% if variantsAmount > 1 %}
-          if (defaultBox) {
-            updateVariantImage(defaultBox);
-          }
-      {% endif %}
     }
 
     function setupMutationObserver() {
@@ -548,10 +542,17 @@
             submitVariantElement.value = isSubscription ? firstAvailableBox.dataset.originalVariant : firstAvailableBox.dataset.variant;
           }
 
+          // Update radio button
           const radioInput = firstAvailableBox.querySelector("input[type='radio']");
           if (radioInput) radioInput.checked = true;
 
+          // Update other UI elements
           updateYotpoPointsWidget(firstAvailableBox);
+          {% if variantsAmount > 1 %}
+            {% if isSlideOnLoad %}
+              updateVariantImage(firstAvailableBox);
+            {% endif %}
+          {% endif %}
         }
       }
     }
