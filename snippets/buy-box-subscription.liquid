@@ -81,8 +81,8 @@
 					{% for allocation in var.selling_plan_allocations %}
 						{% assign selling = selling_plan_id | minus: 0 %}
 						{% if allocation.selling_plan.id == selling %}
-							{% assign original_price = allocation.compare_at_price %}
-							{% assign discounted_price = allocation.price %}
+							{% assign original_price = allocation.compare_at_price | divided_by: bottle_quantity %}
+							{% assign discounted_price = allocation.price | divided_by: bottle_quantity %}
 							{% assign subscription_save_percents = original_price | minus: discounted_price | times: 100 | divided_by: original_price %}
 							{% assign mod_5_remainder = subscription_save_percents | modulo: 5 %}
 							{% if mod_5_remainder < 3 %}
