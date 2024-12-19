@@ -68,11 +68,18 @@
 					{% elsif var.metafields.subscription.selling_plan_id %}
 						{% assign selling_plan_id = var.metafields.subscription.selling_plan_id %}
 					{% elsif var.selling_plan_allocations.size > 0 %}
+						{% comment %}If no metafields, get first allocated plan or one matching bottle quantity{% endcomment %}
+						{% assign found_plan = false %}
 						{% for allocation in var.selling_plan_allocations %}
 							{% if allocation.selling_plan.name contains bottle_quantity %}
 								{% assign selling_plan_id = allocation.selling_plan.id %}
+								{% assign found_plan = true %}
+								{% break %}
 							{% endif %}
 						{% endfor %}
+						{% if found_plan == false %}
+							{% assign selling_plan_id = var.selling_plan_allocations.first.selling_plan.id %}
+						{% endif %}
 					{% endif %}
 
 					{% assign subscription_save_percents = 0 %}
