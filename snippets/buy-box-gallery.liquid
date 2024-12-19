@@ -127,6 +127,27 @@
 								{% endfor %}
 							{% endif %}
 
+							{% for block in blocks %}
+								{% if block.type == 'variant' and block.settings.purchase_type == 'subscribe' %}
+									{% assign referenced_variant = blank %}
+									{% assign blockVarID = block.settings.variant_id | plus: 0 %}
+									{% for vari in referenced_variant_product.variants %}
+										{% assign currVarID = vari.id | plus: 0 %}
+										{% if currVarID == blockVarID %}
+											{% assign referenced_variant = vari %}
+										{% endif %}
+									{% endfor %}
+
+									{% assign var = referenced_variant %}
+
+									<div class="swiper-slide variant-image-slide" data-variant-id="{{ var.id }}">
+										{% if var.image %}
+											{% render 'image', image: var.image, lazy: false, preload: true, alt: var.image.alt %}
+										{% endif %}
+									</div>
+								{% endif %}
+							{% endfor %}
+
 							{% if customer.email == 'yotam@curalife.com' %}
 								{% for additionalVariant in product.metafields.custom.additional_variants.value %}
 									<div class="swiper-slide">
