@@ -31,6 +31,25 @@
 											<img src="{{ block.settings.video_thumbnail | image_url }}" width="720" height="680" alt="" loading="lazy">
 										</div>
 									</div>
+
+								{% elsif block.type == 'variant' %}
+									{% if isProductThumbs %}
+										{% assign referenced_variant = blank %}
+										{% assign blockVarID = block.settings.variant_id | plus: 0 %}
+										{% for vari in referenced_variant_product.variants %}
+											{% assign currVarID = vari.id | plus: 0 %}
+											{% if currVarID == blockVarID %}
+												{% assign referenced_variant = vari %}
+											{% endif %}
+										{% endfor %}
+
+										{% assign var = referenced_variant %}
+
+										<div class="swiper-slide cursor-pointer !h-auto" data-variant-id="{{ var.id }}">
+											{% if var.image %}
+												{% render 'image', image: var.image, lazy: false, preload: true, alt: var.image.alt %}
+											{% endif %}
+										</div>
 								{% endif %}
 							{% endfor %}
 
