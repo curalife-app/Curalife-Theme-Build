@@ -11,8 +11,16 @@
 
 					<div id="thumbs-slider-{{ SID }}" class="swiper">
 						<div class="swiper-wrapper">
-							{% comment %} Render Product Images on Thumbs Slider {% endcomment %}
-							{% if isProductThumbs %}
+							{% comment %} Render Product Main Thumbnail on Thumbs Slider {% endcomment %}
+							{% if thumbnailImage %}
+								<div class="swiper-slide product-image-slide">
+									{% if request.path contains 'lp-wl-curaslim-360-aff-bogo' %}
+										<img src="{{ "product_image.png" | file_url }}" alt="CuraSlim" loading="lazy">
+									{% else %}
+										{% render 'image', image: thumbnailImage, lazy: false, preload: true, alt: thumbnailImage.alt %}
+									{% endif %}
+								</div>
+							{% else %}
 									<div class="swiper-slide cursor-pointer !h-auto">
 										{% render 'image', image: firstImage, lazy: false, preload: true, alt: img.alt %}
 									</div>
