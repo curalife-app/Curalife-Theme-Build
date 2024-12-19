@@ -59,18 +59,12 @@
 								{% endif %}
 							</div>
 						{% else %}
-							{% if isProductThumbs %}
-								{% for img in product.images %}
-									{% if forloop.index == 1 %}
-										{% assign currentImg = img %}
-										{% assign img = thumbnailImage | default: currentImg %}
-									{% endif %}
-
-									<div class="swiper-slide product-image-slide">
-										{% render 'image', image: img, lazy: false, preload: true, alt: img.alt %}
-									</div>
-								{% endfor %}
-							{% endif %}
+							{% assign firstImage = product.images.first %}
+								<div class="swiper-slide product-image-slide">
+									{% render 'image', image: firstImage, lazy: false, preload: true, alt: img.alt %}
+								</div>
+							{% endfor %}
+						{% endif %}
 
 							{% comment %} Render Section Images on Main Slider {% endcomment %}
 							{% for block in section.blocks %}
@@ -92,22 +86,24 @@
 										</div>
 									</div>
 								{% elsif block.type == 'variant' %}
-									{% assign referenced_variant = blank %}
-									{% assign blockVarID = block.settings.variant_id | plus: 0 %}
-									{% for vari in referenced_variant_product.variants %}
-										{% assign currVarID = vari.id | plus: 0 %}
-										{% if currVarID == blockVarID %}
-											{% assign referenced_variant = vari %}
-										{% endif %}
-									{% endfor %}
+									{% if isProductThumbs %}
+										{% assign referenced_variant = blank %}
+										{% assign blockVarID = block.settings.variant_id | plus: 0 %}
+										{% for vari in referenced_variant_product.variants %}
+											{% assign currVarID = vari.id | plus: 0 %}
+											{% if currVarID == blockVarID %}
+												{% assign referenced_variant = vari %}
+											{% endif %}
+										{% endfor %}
 
-									{% assign var = referenced_variant %}
+										{% assign var = referenced_variant %}
 
-									<div class="swiper-slide variant-image-slide" data-variant-id="{{ var.id }}">
-										{% if var.image %}
-											{% render 'image', image: var.image, lazy: false, preload: true, alt: var.image.alt %}
-										{% endif %}
-									</div>
+										<div class="swiper-slide variant-image-slide" data-variant-id="{{ var.id }}">
+											{% if var.image %}
+												{% render 'image', image: var.image, lazy: false, preload: true, alt: var.image.alt %}
+											{% endif %}
+										</div>
+									{% endif %}
 								{% endif %}
 							{% endfor %}
 
