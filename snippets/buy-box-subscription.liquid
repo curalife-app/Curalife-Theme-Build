@@ -44,9 +44,6 @@
 					{% endfor %}
 
 					{% assign var = referenced_variant %}
-					<script>
-						console.log("Variant assigned:", {{ var | json }});
-					</script>
 
 					{% comment %} Core Variable Assignments {% endcomment %}
 					{% assign variant_id = var.metafields.custom.reference_variant_id | default: var.id %}
@@ -88,14 +85,6 @@
 					{% for allocation in var.selling_plan_allocations %}
 						{% assign selling = selling_plan_id | minus: 0 %}
 						{% if allocation.selling_plan.id == selling %}
-							<script>
-								console.log("Found matching allocation:", {
-										allocId: {{ allocation.selling_plan.id }},
-										planId: {{ selling }},
-										price: {{ allocation.price }},
-										comparePrice: {{ allocation.compare_at_price }}
-								});
-							</script>
 							{% if allocation.compare_at_price %}
 								{% assign original_price = allocation.compare_at_price %}
 								{% assign discounted_price = allocation.price %}
@@ -111,14 +100,6 @@
 								{% assign subscription_save_percents = 0 %}
 								{% assign subscription_item_price = allocation.price | divided_by: bottle_quantity %}
 							{% endif %}
-							<script>
-								console.log("Final calculations:", {
-										originalPrice: {{ original_price }},
-										discountedPrice: {{ discounted_price }},
-										savePercents: {{ subscription_save_percents }},
-										itemPrice: {{ subscription_item_price }}
-								});
-							</script>
 						{% endif %}
 					{% endfor %}
 
@@ -144,7 +125,7 @@
 						data-bottle-quantity="{{ bottle_quantity }}"
 						data-purchase-type="{{ block.settings.purchase_type }}"
 						data-buy-type="{{ buyType }}"
-						name="variant-box-{{ var.sku }}-{{ purchase_type }}">
+						name="{{ var.sku }}-subscription">
 						{{ block.settings.title | default: var.title }}
 					</div>
 				{% endif %}
