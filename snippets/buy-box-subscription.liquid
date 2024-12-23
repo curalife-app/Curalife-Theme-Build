@@ -178,7 +178,7 @@
 								{% assign giftVariantSubscription = giftProdSubscription.selected_or_first_available_variant %}
 								{% assign giftThumb = block.settings.gift_thumbnail | default: giftProdSubscription.featured_image | default: giftProd.featured_image %}
 
-								<div class="gift-option-container" name="track:{{ giftVariant.sku }}-gift">
+								<div class="gift-option-container [&_ *]:pointer-events-none" name="track:{{ giftVariant.sku }}-gift">
 									<div
 										class="gift-option-border p-2 rounded-lg"
 										data-gift-id="{{ giftVariant.id }}"
@@ -207,6 +207,12 @@
 										</div>
 									</div>
 								</div>
+
+								<style>
+									.gift-option-container * {
+										pointer-events: none;
+									}
+								</style>
 							{% endif %}
 					{% endcase %}
 				{% endfor %}
