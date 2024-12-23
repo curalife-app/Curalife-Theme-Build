@@ -259,8 +259,15 @@
 		const ctasection = document.querySelector('#cta-section-{{ SID }}');
 		const productActions = ctasection.querySelector('.product-actions');
 		const giftSelectorWrap = productActions.querySelector('.gift-selector-wrap');
+		const ctaText = ctasection.querySelector('#cta-section-{{ SID }} .cta-text');
 
 		if (ctasection.classList.contains('change-layout')) {
+			if (giftSelectorWrap) productActions.insertAdjacentElement('afterbegin', giftSelectorWrap);
+			if (ctaText && purchaseOptions && window.innerWidth < 768) {
+				purchaseOptions.insertAdjacentElement('beforebegin', ctaText);
+				ctaText.classList.add('mbl:mt-0', 'mbl:mb-4');
+			}
+		} else {
 			if (giftSelectorWrap) productActions.insertAdjacentElement('afterbegin', giftSelectorWrap);
 		}
 	})();
@@ -284,14 +291,6 @@
 			selectedBox: null,
 			isInitialLoad: true
 		};
-
-		// Move CTA text for mobile if needed
-		const ctaText = document.querySelector('#cta-section-{{ SID }} .cta-text');
-		const purchaseOptions = document.querySelector('#cta-section-{{ SID }} .purchase-options');
-		if (ctaText && purchaseOptions && window.innerWidth < 768) {
-			purchaseOptions.insertAdjacentElement('beforebegin', ctaText);
-			ctaText.classList.add('mbl:mt-0', 'mbl:mb-4');
-		}
 
 		// Gift selection functionality
 		function updateRadioIndicator(selectedContainer) {
