@@ -1,10 +1,17 @@
 {% assign loadOnPages = settings.clarity_pages | split: ',' %}
 {% assign loadOnTemplates = 'curaslim-lp-2024-v2,curalin-lp-2024-yng' | split: ',' %}
-
 {% assign currentPage = request.path %}
 {% assign currentTemplate = template.name %}
 
-{% if loadOnPages contains currentPage or currentTemplate contains loadOnTemplates or Activate %}
+{% assign shouldLoad = false %}
+{% for page in loadOnPages %}
+	{% if currentPage contains page %}
+		{% assign shouldLoad = true %}
+		{% break %}
+	{% endif %}
+{% endfor %}
+
+{% if shouldLoad or loadOnTemplates contains currentTemplate or Activate %}
 	<script type="text/javascript">
 		(function (c, l, a, r, i, t, y) {
 			c[a] =
