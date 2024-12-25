@@ -255,23 +255,32 @@
 </style>
 
 <script>
-	(function () {
+	document.addEventListener('DOMContentLoaded', function () {
 		const ctasection = document.querySelector('#cta-section-{{ SID }}');
-		const productActions = ctasection.querySelector('.product-actions');
-		const giftSelectorWrap = productActions.querySelector('.gift-selector-wrap');
-		const ctaText = ctasection.querySelector('.cta-text');
-		const purchaseOptions = productActions.querySelector('.purchase-options');
+		if (!ctasection) return; // Early return if not found
 
+		const productActions = ctasection.querySelector('.product-actions');
+		const giftSelectorWrap = productActions ? productActions.querySelector('.gift-selector-wrap') : null;
+		const ctaText = ctasection.querySelector('.cta-text');
+		const purchaseOptions = productActions ? productActions.querySelector('.purchase-options') : null;
+
+		// Only proceed if essential elements exist
+		if (!productActions) return;
+
+		// If we're on mobile, move the .cta-text above the product actions
 		if (window.innerWidth < 768 && ctaText) {
 			productActions.insertAdjacentElement('afterbegin', ctaText);
 		}
 
+		// If the section has a "change-layout" class and giftSelectorWrap is present,
+		// place the gift selector after the purchase options;
+		// otherwise, place it after the ctaText.
 		if (ctasection.classList.contains('change-layout') && giftSelectorWrap) {
 			purchaseOptions.insertAdjacentElement('afterend', giftSelectorWrap);
-		} else {
+		} else if (ctaText && giftSelectorWrap) {
 			ctaText.insertAdjacentElement('afterend', giftSelectorWrap);
 		}
-	})();
+	});
 </script>
 
 <script>
