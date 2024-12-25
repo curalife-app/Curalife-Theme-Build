@@ -255,35 +255,6 @@
 </style>
 
 <script>
-	document.addEventListener('DOMContentLoaded', function () {
-		const ctasection = document.querySelector('#cta-section-{{ SID }}');
-		if (!ctasection) return; // Early return if not found
-
-		const productActions = ctasection.querySelector('.product-actions');
-		const giftSelectorWrap = productActions ? productActions.querySelector('.gift-selector-wrap') : null;
-		const ctaText = ctasection.querySelector('.cta-text');
-		const purchaseOptions = productActions ? productActions.querySelector('.purchase-options') : null;
-
-		// Only proceed if essential elements exist
-		if (!productActions) return;
-
-		// If we're on mobile, move the .cta-text above the product actions
-		if (window.innerWidth < 768 && ctaText) {
-			productActions.insertAdjacentElement('afterbegin', ctaText);
-		}
-
-		// If the section has a "change-layout" class and giftSelectorWrap is present,
-		// place the gift selector after the purchase options;
-		// otherwise, place it after the ctaText.
-		if (ctasection.classList.contains('change-layout') && giftSelectorWrap) {
-			purchaseOptions.insertAdjacentElement('afterend', giftSelectorWrap);
-		} else if (ctaText && giftSelectorWrap) {
-			ctaText.insertAdjacentElement('afterend', giftSelectorWrap);
-		}
-	});
-</script>
-
-<script>
 	document.addEventListener('DOMContentLoaded', () => {
 		const productActions = document.querySelector('#cta-section-{{ SID }} .product-actions');
 		if (!productActions) return;
@@ -799,6 +770,30 @@
 		}
 
 		initializePurchaseOptions();
+	});
+</script>
+
+<script>
+	document.addEventListener('DOMContentLoaded', function () {
+		const ctasection = document.querySelector('#cta-section-{{ SID }}');
+		if (!ctasection) return;
+
+		const productActions = ctasection.querySelector('.product-actions');
+		const giftSelectorWrap = productActions ? productActions.querySelector('.gift-selector-wrap') : null;
+		const ctaText = ctasection.querySelector('.cta-text');
+		const purchaseOptions = productActions ? productActions.querySelector('.purchase-options') : null;
+
+		if (!productActions) return;
+
+		if (window.innerWidth < 768 && ctaText) {
+			productActions.insertAdjacentElement('afterbegin', ctaText);
+		}
+
+		if (ctasection.classList.contains('change-layout') && giftSelectorWrap) {
+			purchaseOptions.insertAdjacentElement('afterend', giftSelectorWrap);
+		} else if (ctaText && giftSelectorWrap) {
+			ctaText.insertAdjacentElement('afterend', giftSelectorWrap);
+		}
 	});
 </script>
 
