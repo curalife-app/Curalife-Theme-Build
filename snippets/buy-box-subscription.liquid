@@ -784,9 +784,11 @@
 		}
 
 		function initializePurchaseOptions() {
-			const defaultVariantIndex = parseInt(productActions.getAttribute('data-default-variant-index')) || 0;
-			const defaultBox = purchaseOptionBoxes[defaultVariantIndex - 1] || purchaseOptionBoxes[0];
-			if (defaultBox) togglePurchaseBox(defaultBox);
+				const defaultVariantIndex = parseInt(productActions.getAttribute('data-default-variant-index')) || 0;
+				const defaultBox = purchaseOptionBoxes[Math.max(0, defaultVariantIndex - 1)] || purchaseOptionBoxes[0];
+				if (defaultBox) {
+						setTimeout(() => togglePurchaseBox(defaultBox), 0);
+				}
 		}
 
 		initializePurchaseOptions();
