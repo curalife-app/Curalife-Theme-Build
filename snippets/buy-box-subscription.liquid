@@ -255,23 +255,33 @@
 </style>
 
 <script>
-	// (function () {
-	// 	const ctasection = document.querySelector('#cta-section-{{ SID }}');
-	// 	const productActions = ctasection.querySelector('.product-actions');
-	// 	const giftSelectorWrap = productActions.querySelector('.gift-selector-wrap');
-	// 	const ctaText = ctasection.querySelector('.cta-text');
-	// 	const purchaseOptions = productActions.querySelector('.purchase-options');
+	(function () {
+		const ctasection = document.querySelector('#cta-section-{{ SID }}');
+		if (!ctasection) return; // Guard against missing section
 
-	// 	if (window.innerWidth < 768 && ctaText) {
-	// 		productActions.insertAdjacentElement('afterbegin', ctaText);
-	// 	}
+		const productActions = ctasection.querySelector('.product-actions');
+		if (!productActions) return; // Guard against missing product actions
 
-	// 	if (ctasection.classList.contains('change-layout') && giftSelectorWrap) {
-	// 		purchaseOptions.insertAdjacentElement('afterend', giftSelectorWrap);
-	// 	} else {
-	// 		ctaText.insertAdjacentElement('afterend', giftSelectorWrap);
-	// 	}
-	// })();
+		const purchaseOptions = productActions.querySelector('.purchase-options');
+		if (!purchaseOptions) return; // Guard against missing purchase options
+
+		const giftSelectorWrap = productActions.querySelector('.gift-selector-wrap');
+		const ctaText = ctasection.querySelector('.cta-text');
+
+		// Mobile text repositioning
+		if (window.innerWidth < 768 && ctaText) {
+			productActions.insertAdjacentElement('afterbegin', ctaText);
+		}
+
+		// Gift selector positioning - only if gift wrap exists
+		if (giftSelectorWrap) {
+			if (ctasection.classList.contains('change-layout')) {
+				purchaseOptions.insertAdjacentElement('afterend', giftSelectorWrap);
+			} else if (ctaText) {
+				ctaText.insertAdjacentElement('afterend', giftSelectorWrap);
+			}
+		}
+	})();
 </script>
 
 <script>
@@ -784,11 +794,9 @@
 		}
 
 		function initializePurchaseOptions() {
-				const defaultVariantIndex = parseInt(productActions.getAttribute('data-default-variant-index')) || 0;
-				const defaultBox = purchaseOptionBoxes[Math.max(0, defaultVariantIndex - 1)] || purchaseOptionBoxes[0];
-				if (defaultBox) {
-						setTimeout(() => togglePurchaseBox(defaultBox), 0);
-				}
+			const defaultVariantIndex = parseInt(productActions.getAttribute('data-default-variant-index')) || 0;
+			const defaultBox = purchaseOptionBoxes[defaultVariantIndex - 1] || purchaseOptionBoxes[0];
+			if (defaultBox) togglePurchaseBox(defaultBox);
 		}
 
 		initializePurchaseOptions();
