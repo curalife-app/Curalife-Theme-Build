@@ -255,37 +255,23 @@
 </style>
 
 <script>
-	// Instead of self-executing, move to DOMContentLoaded
-	document.addEventListener('DOMContentLoaded', () => {
-		// Keep variant initialization first
-		const productActions = document.querySelector('#cta-section-{{ SID }} .product-actions');
-		if (!productActions) return;
+	(function () {
+		const ctasection = document.querySelector('#cta-section-{{ SID }}');
+		const productActions = ctasection.querySelector('.product-actions');
+		const giftSelectorWrap = productActions.querySelector('.gift-selector-wrap');
+		const ctaText = ctasection.querySelector('.cta-text');
+		const purchaseOptions = productActions.querySelector('.purchase-options');
 
-		// Original variant box setup and events...
-		const purchaseOptionBoxes = productActions.querySelectorAll('.variant-box');
-		// [Rest of your existing variant initialization code]
-
-		// Move layout manipulation to happen after variants are ready
-		function adjustLayout() {
-			const ctasection = document.querySelector('#cta-section-{{ SID }}');
-			const giftSelectorWrap = productActions.querySelector('.gift-selector-wrap');
-			const ctaText = ctasection.querySelector('.cta-text');
-			const purchaseOptions = productActions.querySelector('.purchase-options');
-
-			if (window.innerWidth < 768 && ctaText) {
-				productActions.insertAdjacentElement('afterbegin', ctaText);
-			}
-
-			if (ctasection.classList.contains('change-layout') && giftSelectorWrap) {
-				purchaseOptions.insertAdjacentElement('afterend', giftSelectorWrap);
-			} else if (ctaText) {
-				ctaText.insertAdjacentElement('afterend', giftSelectorWrap);
-			}
+		if (window.innerWidth < 768 && ctaText) {
+			productActions.insertAdjacentElement('afterbegin', ctaText);
 		}
 
-		// Call layout adjustment after variant initialization
-		setTimeout(adjustLayout, 0);
-	});
+		if (ctasection.classList.contains('change-layout') && giftSelectorWrap) {
+			purchaseOptions.insertAdjacentElement('afterend', giftSelectorWrap);
+		} else {
+			ctaText.insertAdjacentElement('afterend', giftSelectorWrap);
+		}
+	})();
 </script>
 
 <script>
