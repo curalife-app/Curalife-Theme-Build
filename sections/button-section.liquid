@@ -48,40 +48,59 @@
 			var stickyHideSetting = "{{ section.settings.sticky_hide | default: '' | strip }}";
 			var hideOnElements = stickyHideSetting
 				.split(',')
-				.map(function (s) {
-					return s.trim();
-				})
-				.filter(function (s) {
-					return s !== '';
-				});
+				.map(s => s.trim())
+				.filter(s => s !== '');
 
-			function checkStickyVisibility() {
-				var shouldHide = false;
-
-				if (hideOnElements.length > 0) {
-					hideOnElements.forEach(function (selector) {
-						if (selector) {
-							var elements = document.querySelectorAll(selector);
-							elements.forEach(function (element) {
-								var rect = element.getBoundingClientRect();
-								if (rect.top < window.innerHeight && rect.bottom > 0) {
-									shouldHide = true;
-								}
-							});
-						}
-					});
-				}
-
-				if (shouldHide) {
-					stickyBar.classList.remove('visible');
-				} else {
-					stickyBar.classList.add('visible');
-				}
+			// Throttle function to limit execution frequency
+			function throttle(func, limit) {
+				let inThrottle;
+				return function () {
+					const args = arguments;
+					const context = this;
+					if (!inThrottle) {
+						func.apply(context, args);
+						inThrottle = true;
+						setTimeout(() => (inThrottle = false), limit);
+					}
+				};
 			}
 
-			window.addEventListener('scroll', checkStickyVisibility);
-			window.addEventListener('resize', checkStickyVisibility);
-			checkStickyVisibility();
+			// Intersection Observer to monitor visibility
+			const observer = new IntersectionObserver(
+				entries => {
+					let shouldHide = entries.some(entry => entry.isIntersecting);
+					stickyBar.classList.toggle('visible', !shouldHide);
+				},
+				{
+					threshold: 0.1,
+					rootMargin: '0px'
+				}
+			);
+
+			// Initial setup and monitoring of elements
+			function setupVisibilityTracking() {
+				hideOnElements.forEach(selector => {
+					if (selector) {
+						document.querySelectorAll(selector).forEach(element => {
+							observer.observe(element);
+						});
+					}
+				});
+			}
+
+			// Monitor DOM changes for dynamically added elements
+			const mutationObserver = new MutationObserver(
+				throttle(() => {
+					setupVisibilityTracking();
+				}, 100)
+			);
+
+			mutationObserver.observe(document.body, {
+				childList: true,
+				subtree: true
+			});
+
+			setupVisibilityTracking();
 		});
 	</script>
 
