@@ -86,7 +86,13 @@
 		</main>
 
 		<script>
-			Shopify.analytics.publish('custom_click', { sample_event_data: 1 });
+			document.addEventListener('DOMContentLoaded', () => {
+				if (window.Shopify && Shopify.analytics) {
+					Shopify.analytics.publish('custom_click', { sample_event_data: 1 });
+				} else {
+					console.error('Shopify.analytics is not available.');
+				}
+			});
 		</script>
 
 		{% if page.template_suffix contains 'curalin-lp-2024' %}
