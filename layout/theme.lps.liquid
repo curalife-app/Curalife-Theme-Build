@@ -38,20 +38,9 @@
 		{% render 'layout.head.swiper' %}
 
 		<script>
-			document.addEventListener('DOMContentLoaded', () => {
-				const clickableElements = document.querySelectorAll('[data-track]');
-				clickableElements.forEach(elem => {
-					elem.addEventListener('click', () => {
-						const eventName = elem.getAttribute('data-track');
-						// Attempt calling the function on the top-level window
-						if (window.myPixelCallback) {
-							window.myPixelCallback(eventName);
-						} else {
-							console.warn('myPixelCallback is not available.');
-						}
-					});
-				});
-			});
+			const event_name = 'custom_click';
+			const event_data = { sample_event_data: 1 };
+			Shopify.analytics.publish(event_name, event_data);
 		</script>
 
 		<style>
