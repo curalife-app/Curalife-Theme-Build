@@ -39,13 +39,16 @@
 
 		<script>
 			document.addEventListener('DOMContentLoaded', () => {
-				const button = document.querySelector('#myButton');
-				if (button) {
-					button.addEventListener('click', () => {
+				const clickableElements = document.querySelectorAll('[data-track]');
+
+				clickableElements.forEach(element => {
+					element.addEventListener('click', () => {
+						const elementName = element.getAttribute('data-track');
+
 						// Post a message that your custom pixel can handle
-						window.postMessage({ event: 'buttonClick', data: { buttonId: 'myButton' } }, '*');
+						window.postMessage({ event: 'elementClick', elementName: elementName }, '*');
 					});
-				}
+				});
 			});
 		</script>
 
