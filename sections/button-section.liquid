@@ -51,10 +51,23 @@
 				.map(s => s.trim())
 				.filter(s => s !== '');
 
-			// Track all intersecting elements to prevent flicker
+			// Debounce function implementation
+			function debounce(func, wait) {
+				let timeout;
+				return function executedFunction(...args) {
+					const later = () => {
+						clearTimeout(timeout);
+						func(...args);
+					};
+					clearTimeout(timeout);
+					timeout = setTimeout(later, wait);
+				};
+			}
+
+			// Track all intersecting elements
 			const intersectingElements = new Set();
 
-			// Intersection Observer with threshold array for smoother transitions
+			// Intersection Observer to handle multiple elements
 			const observer = new IntersectionObserver(
 				entries => {
 					entries.forEach(entry => {
@@ -65,16 +78,16 @@
 						}
 					});
 
-					// Only show button when NO elements are intersecting
+					// Show button only when no elements are intersecting
 					stickyBar.classList.toggle('visible', intersectingElements.size === 0);
 				},
 				{
-					threshold: [0, 0.1, 0.2, 0.3], // Multiple thresholds for smoother detection
+					threshold: [0, 0.1, 0.2, 0.3],
 					rootMargin: '0px'
 				}
 			);
 
-			// Setup visibility tracking
+			// Initialize visibility tracking for elements
 			function setupVisibilityTracking() {
 				hideOnElements.forEach(selector => {
 					if (selector) {
@@ -85,12 +98,8 @@
 				});
 			}
 
-			// Monitor DOM changes with debounce
-			const mutationObserver = new MutationObserver(
-				_.debounce(() => {
-					setupVisibilityTracking();
-				}, 100)
-			);
+			// Monitor DOM changes for dynamic elements
+			const mutationObserver = new MutationObserver(debounce(() => setupVisibilityTracking(), 100));
 
 			mutationObserver.observe(document.body, {
 				childList: true,
