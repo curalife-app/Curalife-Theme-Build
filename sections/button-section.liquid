@@ -44,40 +44,37 @@
 {% if section.settings.is_sticky %}
 	<script>
 		document.addEventListener('DOMContentLoaded', function () {
-			var stickyBar = document.getElementById('sticky-bar');
-			var stickyHideSetting = "{{ section.settings.sticky_hide | default: '' | strip }}";
-			var hideOnElements = stickyHideSetting
+			const stickyBar = document.getElementById('sticky-bar');
+			const stickyHideSetting = "{{ section.settings.sticky_hide | default: '' | strip }}";
+			const hideOnElements = stickyHideSetting
 				.split(',')
 				.map(s => s.trim())
 				.filter(s => s !== '');
 
-			// Throttle function to limit execution frequency
-			function throttle(func, limit) {
-				let inThrottle;
-				return function () {
-					const args = arguments;
-					const context = this;
-					if (!inThrottle) {
-						func.apply(context, args);
-						inThrottle = true;
-						setTimeout(() => (inThrottle = false), limit);
-					}
-				};
-			}
+			// Track all intersecting elements to prevent flicker
+			const intersectingElements = new Set();
 
-			// Intersection Observer to monitor visibility
+			// Intersection Observer with threshold array for smoother transitions
 			const observer = new IntersectionObserver(
 				entries => {
-					let shouldHide = entries.some(entry => entry.isIntersecting);
-					stickyBar.classList.toggle('visible', !shouldHide);
+					entries.forEach(entry => {
+						if (entry.isIntersecting) {
+							intersectingElements.add(entry.target);
+						} else {
+							intersectingElements.delete(entry.target);
+						}
+					});
+
+					// Only show button when NO elements are intersecting
+					stickyBar.classList.toggle('visible', intersectingElements.size === 0);
 				},
 				{
-					threshold: 0.1,
+					threshold: [0, 0.1, 0.2, 0.3], // Multiple thresholds for smoother detection
 					rootMargin: '0px'
 				}
 			);
 
-			// Initial setup and monitoring of elements
+			// Setup visibility tracking
 			function setupVisibilityTracking() {
 				hideOnElements.forEach(selector => {
 					if (selector) {
@@ -88,9 +85,9 @@
 				});
 			}
 
-			// Monitor DOM changes for dynamically added elements
+			// Monitor DOM changes with debounce
 			const mutationObserver = new MutationObserver(
-				throttle(() => {
+				_.debounce(() => {
 					setupVisibilityTracking();
 				}, 100)
 			);
