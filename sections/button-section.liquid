@@ -1,9 +1,10 @@
 {% assign buttonURL = page.metafields.custom.next_page_link | default: section.settings.button_link %}
+{% assign buttonName = section.settings.button_element_name %}
 
 <!-- Sticky Button -->
 {% if section.settings.is_sticky %}
 	<a id="sticky-bar" href="{{ buttonURL }}" class="container">
-		<button class="sticky-button" name="{{ section.settings.button_element_name }}">{{ section.settings.button_text }}</button>
+<button class="sticky-button" {% if buttonName %}name="track:button-click|name:{{ section.settings.button_element_name }}"{% endif %}>{{ section.settings.button_text }}</button>
 	</a>
 {% else %}
 	<section id="button-section-{{ section.id }}" class="button-section {{ section.settings.section_additional_classes }} {% if section.settings.is_sticky %}hidden mbl:w-full{% endif %}">
