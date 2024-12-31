@@ -58,9 +58,7 @@
 				.map(s => s.trim())
 				.filter(s => s !== '');
 
-			// Track intersecting elements and animation state
 			const intersectingElements = new Set();
-			let hasAnimated = false;
 
 			const observer = new IntersectionObserver(
 				entries => {
@@ -72,18 +70,15 @@
 						}
 					});
 
-					// Only show animation on first appearance
-					if (intersectingElements.size === 0 && !hasAnimated) {
+					// Toggle visibility class only
+					if (intersectingElements.size === 0) {
 						stickyBar.classList.add('visible');
-						hasAnimated = true;
-					} else if (intersectingElements.size > 0) {
+					} else {
 						stickyBar.classList.remove('visible');
-						// Reset animation state when button hides
-						hasAnimated = false;
 					}
 				},
 				{
-					threshold: [0, 0.1, 0.2, 0.3],
+					threshold: [0],
 					rootMargin: '50px'
 				}
 			);
@@ -91,22 +86,18 @@
 			function setupVisibilityTracking() {
 				if (hideOnElements.length === 0) {
 					stickyBar.classList.add('visible');
-					hasAnimated = true;
 					return;
 				}
 
 				hideOnElements.forEach(selector => {
 					if (selector) {
 						const elements = document.querySelectorAll(selector);
-						elements.forEach(element => {
-							observer.observe(element);
-						});
+						elements.forEach(element => observer.observe(element));
 					}
 				});
 
 				if (!document.querySelectorAll(hideOnElements.join(',')).length) {
 					stickyBar.classList.add('visible');
-					hasAnimated = true;
 				}
 			}
 
@@ -134,7 +125,6 @@
 				}
 		}
 
-		/* Sticky bar container */
 		#sticky-bar {
 				position: fixed;
 				bottom: 10px;
@@ -148,14 +138,49 @@
 				transform: translateX(-50%);
 		}
 
-		/* Visible state for sticky bar */
+		/* Single animation trigger on visibility class addition */
 		#sticky-bar.visible {
 				opacity: 1;
 				pointer-events: auto;
-				animation: popIn 0.5s forwards;
+				animation: popIn 0.5s ease forwards;
 		}
 
-		/* Button styling */
+		/* Keep the existing animation keyframes unchanged */
+		@keyframes popIn {
+				0% {
+						opacity: 0;
+						transform: translateX(-50%) translateY(100%) scale(0.9);
+				}
+				80% {
+						opacity: 1;
+						transform: translateX(-50%) translateY(-10%) scale(1.05);
+				}
+				100% {
+						opacity: 1;
+						transform: translateX(-50%) translateY(0) scale(1);
+				}
+		}
+
+		/* Keep existing mobile styles unchanged */
+		@media (max-width: 768px) {
+				#sticky-bar {
+						width: 94%;
+						bottom: 3vw;
+				}
+
+				#sticky-bar::after {
+						content: " ";
+						width: 100vw;
+						height: 25vw;
+						display: inline-block;
+						background: linear-gradient(0deg, rgb(255 255 255) 40%, rgb(255 255 255 / 0%) 90%);
+						position: absolute;
+						left: -3vw;
+						bottom: -6vw;
+						z-index: -1;
+				}
+		}
+
 		#sticky-bar .sticky-button {
 				width: 100%;
 				padding: 0.75rem 1rem;
@@ -170,45 +195,6 @@
 				justify-content: center;
 				border: none;
 				cursor: pointer;
-		}
-
-		/* Mobile responsive adjustments */
-		@media (max-width: 768px) {
-				#sticky-bar {
-						width: 94%;
-						bottom: 3vw;
-				}
-		}
-
-		/* Mobile gradient overlay */
-		@media (max-width: 768px) {
-				#sticky-bar::after {
-						content: " ";
-						width: 100vw;
-						height: 25vw;
-						display: inline-block;
-						background: linear-gradient(0deg, rgb(255 255 255) 40%, rgb(255 255 255 / 0%) 90%);
-						position: absolute;
-						left: -3vw;
-						bottom: -6vw;
-						z-index: -1;
-				}
-		}
-
-		/* Animation keyframes */
-		@keyframes popIn {
-				0% {
-						opacity: 0;
-						transform: translateX(-50%) translateY(100%) scale(0.9);
-				}
-				80% {
-						opacity: 1;
-						transform: translateX(-50%) translateY(-10%) scale(1.05);
-				}
-				100% {
-						opacity: 1;
-						transform: translateX(-50%) translateY(0) scale(1);
-				}
 		}
 	</style>
 {% endif %}
