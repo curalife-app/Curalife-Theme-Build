@@ -537,6 +537,8 @@
 				radioInput.checked = true;
 			}
 
+			updateBuyButtonName(element);
+
 			state.selectedBox = element;
 			updatePriceDisplay(element);
 
@@ -593,6 +595,14 @@
 			} catch (error) {
 				console.error('Error during slide update:', error);
 			}
+		}
+
+		// Updates buy button name attribute with SKU and purchase type
+		function updateBuyButtonName(element) {
+				if (!submitButton) return;
+				const sku = element.getAttribute('data-sku');
+				const purchaseType = element.getAttribute('data-purchase-type');
+				submitButton.setAttribute('name', `track:add|variant-sku:${sku}|purchase-type:${purchaseType}`);
 		}
 
 		// Event Listeners
@@ -768,9 +778,12 @@
 		}
 
 		function initializePurchaseOptions() {
-			const defaultVariantIndex = parseInt(productActions.getAttribute('data-default-variant-index')) || 0;
-			const defaultBox = purchaseOptionBoxes[defaultVariantIndex - 1] || purchaseOptionBoxes[0];
-			if (defaultBox) togglePurchaseBox(defaultBox);
+				const defaultVariantIndex = parseInt(productActions.getAttribute('data-default-variant-index')) || 0;
+				const defaultBox = purchaseOptionBoxes[defaultVariantIndex - 1] || purchaseOptionBoxes[0];
+				if (defaultBox) {
+						togglePurchaseBox(defaultBox);
+						updateBuyButtonName(defaultBox);
+				}
 		}
 
 		initializePurchaseOptions();
