@@ -58,10 +58,10 @@
 				.map(s => s.trim())
 				.filter(s => s !== '');
 
-			// Track intersecting elements for visibility state
+			// Track intersecting elements and animation state
 			const intersectingElements = new Set();
+			let hasAnimated = false;
 
-			// Handle visibility based on intersection changes
 			const observer = new IntersectionObserver(
 				entries => {
 					entries.forEach(entry => {
@@ -72,11 +72,14 @@
 						}
 					});
 
-					// Set visibility - show when no elements intersect
-					if (intersectingElements.size === 0) {
+					// Only show animation on first appearance
+					if (intersectingElements.size === 0 && !hasAnimated) {
 						stickyBar.classList.add('visible');
-					} else {
+						hasAnimated = true;
+					} else if (intersectingElements.size > 0) {
 						stickyBar.classList.remove('visible');
+						// Reset animation state when button hides
+						hasAnimated = false;
 					}
 				},
 				{
@@ -88,8 +91,8 @@
 			// Initialize element tracking
 			function setupVisibilityTracking() {
 				if (hideOnElements.length === 0) {
-					// If no hide elements specified, always show button
 					stickyBar.classList.add('visible');
+					hasAnimated = true;
 					return;
 				}
 
@@ -105,10 +108,10 @@
 				// Set initial visibility
 				if (!document.querySelectorAll(hideOnElements.join(',')).length) {
 					stickyBar.classList.add('visible');
+					hasAnimated = true;
 				}
 			}
 
-			// Initialize tracking
 			setupVisibilityTracking();
 		});
 	</script>
