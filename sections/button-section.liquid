@@ -107,22 +107,26 @@
 	</script>
 
 <style>
-	/* Button Section Base Styles */
+	/* Base section styles */
 	#button-section-{{ section.id }} {
 			padding-top: {% if section.settings.padding_top != 50 and section.settings.padding_top != blank %}{{ section.settings.padding_top }}px{% endif %};
 			padding-bottom: {% if section.settings.padding_bottom != 50 and section.settings.padding_top != blank %}{{ section.settings.padding_bottom }}px{% endif %};
+	}
 
-			&.hidden {
-					display: none;
-			}
+	/* Hidden state for button section */
+	#button-section-{{ section.id }}.hidden {
+			display: none;
+	}
 
-			@media screen and (max-width: 768px) {
+	/* Mobile padding adjustments */
+	@media screen and (max-width: 768px) {
+			#button-section-{{ section.id }} {
 					padding-top: {% if section.settings.padding_top_mobile != blank %}{{ section.settings.padding_top_mobile }}vw{% endif %};
 					padding-bottom: {% if section.settings.padding_bottom_mobile != blank %}{{ section.settings.padding_bottom_mobile }}vw{% endif %};
 			}
 	}
 
-	/* Sticky Button Container */
+	/* Sticky bar container */
 	#sticky-bar {
 			position: fixed;
 			bottom: 10px;
@@ -136,14 +140,14 @@
 			transform: translateX(-50%);
 	}
 
-	/* Sticky Button Visible State */
+	/* Visible state for sticky bar */
 	#sticky-bar.visible {
 			opacity: 1;
 			pointer-events: auto;
 			animation: popIn 0.5s forwards;
 	}
 
-	/* Sticky Button Element */
+	/* Button styling */
 	#sticky-bar .sticky-button {
 			width: 100%;
 			padding: 0.75rem 1rem;
@@ -160,13 +164,16 @@
 			cursor: pointer;
 	}
 
-	/* Mobile Styles - Separate from parent selector */
+	/* Mobile responsive adjustments */
 	@media (max-width: 768px) {
 			#sticky-bar {
 					width: 94%;
 					bottom: 3vw;
 			}
+	}
 
+	/* Mobile gradient overlay */
+	@media (max-width: 768px) {
 			#sticky-bar::after {
 					content: " ";
 					width: 100vw;
@@ -180,6 +187,7 @@
 			}
 	}
 
+	/* Animation keyframes */
 	@keyframes popIn {
 			0% {
 					opacity: 0;
