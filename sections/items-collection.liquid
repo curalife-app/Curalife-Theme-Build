@@ -19,7 +19,9 @@
   {% endif %}
 {% endif %}
 
-{% assign isSlider = section.settings.items_slider_on != 'none' %}
+{% if section.settings.items_slider_on != 'none' or section.settings.is_slider = true %}
+	{% assign isSlider = true %}
+{% endif %}
 
 {% unless hideSection %}
   <section id="section-{{ section.id }}" class="items-collection {% if section.settings.is_decor_relative_full %}static{% endif %} {{ section.settings.section_additional_classes }} {% if section.settings.display_on_utm_parmeters != blank %}!hidden{% endif %}">
@@ -29,7 +31,7 @@
         {% render 'title', section_id: section.id, title: mainTitle, title_tag: 'h2', subtitle: section.settings.main_subtitle, title_color: section.settings.title_color, span_color: section.settings.title_highlight_color, is_balance_text: true, padding_bottom: '0', padding_top: 0 %}
       {% endif %}
 
-      {% if section.settings.is_slider %}
+      {% if isSlider %}
         <div class="swiper items !overflow-{{ section.settings.overflow }} z-10 {% if section.settings.is_dots or section.settings.is_scrollbar %}!pb-12{% endif %}" id="items-container-{{ section.id }}" {% if section.settings.animation %}data-aos="{{ section.settings.animation }}"{% endif %}>
           <div class="swiper-wrapper">
       {% else %}
@@ -50,7 +52,7 @@
         {% if linkUrl and section.settings.link_style == 'item' %}<a class="contents">{% endif %}
         {% assign itemID = 'item-' | append: section.id | append: forloop.index %}
 
-        <div class="{% if section.settings.is_slider %}swiper-slide{% endif %} item relative !h-auto" id="{{ itemID }}">
+        <div class="{% if isSlider %}swiper-slide{% endif %} item relative !h-auto" id="{{ itemID }}">
           <div class="item-content flex flex-col items-center justify-{% if section.settings.item_layout_mobile == 'row' %}start{% else %}center{% endif %} text-center gap-4 m-auto">
             {% unless block.settings.is_image_background %}
               <div class="img-wrapper flex items-center">
@@ -109,7 +111,7 @@
       {% endfor %}
     </div>
 
-      {% if section.settings.is_slider %}
+      {% if isSlider %}
         <div class="swiper-navigations">
           {% if section.settings.is_arrows %}
             <div class="swiper-nav swiper-button-next" name="track:Slider Arrow - Next"></div>
@@ -124,7 +126,7 @@
         </div>
       {% endif %}
 
-      {% if section.settings.is_slider %}</div>{% endif %}
+      {% if isSlider %}</div>{% endif %}
 
       {% if section.settings.decor_img %}
         {% render 'decoration', id: section.id, decor_img: section.settings.decor_img, decor_position_top: section.settings.decor_position_top, decor_position_left: section.settings.decor_position_left, decor_position_top_mobile: section.settings.decor_position_top_mobile, decor_position_left_mobile: section.settings.decor_position_left_mobile, decor_opacity: section.settings.decor_opacity, decor_max_width: section.settings.decor_max_width, is_decor_above: section.settings.is_decor_above, is_decor_bg: section.settings.is_decor_bg, is_decor_relative_full: section.settings.is_decor_relative_full, is_decor_remove_on_mobile: section.settings.is_decor_remove_on_mobile %}
