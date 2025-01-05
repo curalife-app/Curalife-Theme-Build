@@ -151,13 +151,13 @@
 					<div class="main-price text-[--primary]">
 						{% if priceFormat == 'total' %}
 							<span class="font-bold leading-none text-[30px] mbl:text-[6vw]">{{ subscription_total_price | money }}</span>
+							<span class="self-end text-gray-500 line-through">{{ original_item_cap_total | money }}</span>
 						{% else %}
 							<span class="font-bold leading-none text-[30px] mbl:text-[6vw]">{{ subscription_item_price | money }}</span>
 							<span class="month-text mt-1 text-[20px]">/bottle</span>
+							<span class="self-end text-gray-500 line-through">{{ original_item_cap | money }}</span>
 						{% endif %}
 					</div>
-
-					<span class="self-end text-gray-500 line-through">{{ original_item_cap | money }}</span>
 					<span class="px-4 py-1 text-[16px] font-bold text-white bg-[--bronze] rounded-full">SAVE {{ subscription_save_money | money }}</span>
 				</div>
 			</div>
@@ -396,58 +396,60 @@
 		}
 
 		function updatePriceDisplay(element) {
+				// Get all price display containers
 				const priceDisplays = document.querySelectorAll('.price-display');
-				console.log('Price format:', priceFormat, 'Subscription total:', element.getAttribute('data-subscription-price'), 'Per item:', element.getAttribute('data-subscription-item-price'));
 
-				// Get price data from element attributes
+				// Parse numerical values from element attributes (converting cents to dollars)
 				const subscriptionItemPrice = parseFloat(element.getAttribute('data-subscription-item-price')) / 100;
 				const subscriptionPrice = parseFloat(element.getAttribute('data-subscription-price')) / 100;
 				const originalItemCap = parseFloat(element.getAttribute('data-original-item-cap')) / 100;
-				const subscriptionDiscount = parseFloat(element.getAttribute('data-subscription-discount'));
 				const bottleQuantity = parseInt(element.getAttribute('data-bottle-quantity'));
 
-				// Format text variables
-				const monthText = bottleQuantity > 1 ? 'months' : 'month';
-				const bottleText = bottleQuantity > 1 ? 'bottles' : 'bottle';
+				// Calculate total compare price (original price × quantity)
+				const totalComparePrice = originalItemCap * bottleQuantity;
 
+				// Update each price display container
 				priceDisplays.forEach(priceDisplay => {
 						const priceContent = priceDisplay.querySelector('.flex.items-end');
 						const description = priceDisplay.querySelector('.mt-2');
 
 						if (priceContent) {
-								// Get price elements
+								// Get all price-related elements
 								const mainPrices = priceContent.querySelectorAll('.font-bold');
+								const monthTexts = priceContent.querySelectorAll('.month-text');
+								const comparePrices = priceContent.querySelectorAll('.text-gray-500.line-through');
+								const discountBadges = priceContent.querySelectorAll('.bg-\\[\\-\\-bronze\\]');
 
-								// IMPORTANT: This was the bug - subscription_total_price should be shown when format is 'total'
-								const displayPrice = priceFormat === 'total' ?
-										subscriptionPrice : // Show total price
-										subscriptionItemPrice; // Show per-bottle price
+								// Determine display prices based on format mode
+								const displayPrice = priceFormat === 'total' ? subscriptionPrice : subscriptionItemPrice;
+								const displayComparePrice = priceFormat === 'total' ? totalComparePrice : originalItemCap;
+								const savingsAmount = (originalItemCap - subscriptionItemPrice) * bottleQuantity;
 
-								// Update prices and display elements
+								// Update main price display
 								mainPrices.forEach(price => {
 										price.textContent = `$${displayPrice.toFixed(2)}`;
 								});
 
-								const monthTexts = priceContent.querySelectorAll('.month-text');
-								monthTexts.forEach(monthText => {
-										monthText.style.display = priceFormat === 'total' ? 'none' : 'inline';
+								// Toggle "/bottle" text visibility based on price format
+								monthTexts.forEach(text => {
+										text.style.display = priceFormat === 'total' ? 'none' : 'inline';
 								});
 
-								const comparePrices = priceContent.querySelectorAll('.text-gray-500.line-through');
+								// Update compare-at price display
 								comparePrices.forEach(price => {
-										price.textContent = `$${originalItemCap.toFixed(2)}`;
+										price.textContent = `$${displayComparePrice.toFixed(2)}`;
 								});
 
-								// Calculate savings amount and update discount badge text
-								const discountBadges = priceContent.querySelectorAll('.bg-\\[\\-\\-bronze\\]');
-								const savingsAmount = (originalItemCap - subscriptionItemPrice) * bottleQuantity;
+								// Update savings amount badge
 								discountBadges.forEach(badge => {
 										badge.textContent = `SAVE $${savingsAmount.toFixed(2)}`;
 								});
 						}
 
+						// Update total price description for per-bottle format
 						if (description && priceFormat === 'per_bottle') {
-							description.textContent = subscriptionPrice > subscriptionItemPrice ? `Total of $${subscriptionPrice.toFixed(2)}` : ' ';
+								description.textContent = subscriptionPrice > subscriptionItemPrice ?
+										`Total of $${subscriptionPrice.toFixed(2)}` : ' ';
 						}
 				});
 		}
