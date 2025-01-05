@@ -140,7 +140,7 @@
 		<div class="price-display" style="margin-bottom: 1.5rem">
 			<div class="gap-y-2 flex flex-wrap items-end gap-2">
 				<div class="final-price flex items-center">
-					{% if price_format == 'total_price' %}
+					{% if price_format == 'total' %}
 						<span class="font-bold leading-none">${{ subscription_total_price | divided_by: 100.00 }}</span>
 						<span class="month-text mt-1">/{{ bottle_quantity }}mo</span>
 					{% else %}
@@ -149,7 +149,7 @@
 					{% endif %}
 				</div>
 				<span class="text-gray-500 line-through">
-					{% if price_format == 'total_price' %}
+					{% if price_format == 'total' %}
 						${{ original_item_cap_total | divided_by: 100.00 }}
 					{% else %}
 						${{ original_item_cap | divided_by: 100.00 }}
@@ -159,7 +159,7 @@
 			</div>
 
 			<div class="mt-2 text-[16px]">
-				{% if price_format == 'total_price' %}
+				{% if price_format == 'total' %}
 					Payable every {{ bottle_quantity }}
 					{% if bottle_quantity > 1 %}months{% else %}month{% endif %}
 					for {{ bottle_quantity }}
@@ -447,9 +447,9 @@
 				const subscriptionTotalPrice = parseFloat(element.getAttribute('data-subscriptio-price')) / 100;
 
 				// Calculate display values based on price format
-				const displayPrice = priceFormat === 'total_price' ? subscriptionTotalPrice : subscriptionItemPrice;
-				const displayOriginalPrice = priceFormat === 'total_price' ? (originalItemCap * bottleQuantity) : originalItemCap;
-				const priceFrequencyText = priceFormat === 'total_price' ? `/${bottleQuantity}mo` : '/mo';
+				const displayPrice = priceFormat === 'total' ? subscriptionTotalPrice : subscriptionItemPrice;
+				const displayOriginalPrice = priceFormat === 'total' ? (originalItemCap * bottleQuantity) : originalItemCap;
+				const priceFrequencyText = priceFormat === 'total' ? `/${bottleQuantity}mo` : '/mo';
 
 				// Text formatting
 				const monthText = bottleQuantity > 1 ? 'months' : 'month';
@@ -504,7 +504,7 @@
 		function _updateDescription(element, format, totalPrice, quantity, monthText, bottleText) {
 				if (!element) return;
 
-				element.textContent = format === 'total_price'
+				element.textContent = format === 'total'
 						? `Payable every ${quantity} ${monthText} for ${quantity} ${bottleText}.`
 						: `Total of $${totalPrice.toFixed(2)} payable every ${quantity} ${monthText} for ${quantity} ${bottleText}.`;
 		}
