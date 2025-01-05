@@ -399,130 +399,81 @@
 		}
 
 		function updatePriceDisplay(element) {
-			 // Get price displays and parse variant data
-			 const priceDisplays = document.querySelectorAll('.price-display');
-			 const subscriptionItemPrice = parseFloat(element.getAttribute('data-subscription-item-price')) / 100;
-			 const subscriptionPrice = parseFloat(element.getAttribute('data-subscription-price')) / 100;
-			 const originalItemCap = parseFloat(element.getAttribute('data-original-item-cap')) / 100;
-			 const bottleQuantity = parseInt(element.getAttribute('data-bottle-quantity'));
+				const priceDisplays = document.querySelectorAll('.price-display');
+				const subscriptionItemPrice = parseFloat(element.getAttribute('data-subscription-item-price')) / 100;
+				const subscriptionPrice = parseFloat(element.getAttribute('data-subscription-price')) / 100;
+				const originalItemCap = parseFloat(element.getAttribute('data-original-item-cap')) / 100;
+				const bottleQuantity = parseInt(element.getAttribute('data-bottle-quantity'));
 
-			 // Calculate total prices
-			 const totalOriginalPrice = originalItemCap * bottleQuantity;
-			 const savingsAmount = priceFormat === 'total' ?
-					 totalOriginalPrice - subscriptionPrice :
-					 (originalItemCap - subscriptionItemPrice) * bottleQuantity;
+				const totalOriginalPrice = originalItemCap * bottleQuantity;
+				const savingsAmount = priceFormat === 'total' ?
+						totalOriginalPrice - subscriptionPrice :
+						(originalItemCap - subscriptionItemPrice) * bottleQuantity;
 
-			 priceDisplays.forEach(priceDisplay => {
-					 const priceContent = priceDisplay.querySelector('.flex.items-end');
-					 const description = priceDisplay.querySelector('.mt-2');
+				priceDisplays.forEach(priceDisplay => {
+						const mainPriceContainer = priceDisplay.querySelector('.main-price');
+						const discountBadge = priceDisplay.querySelector('.discount-badge');
+						const totalLine = priceDisplay.querySelector('.total-line');
 
-					 // Add transition classes if needed
-					 if (!priceContent?.classList.contains('price-content-transition')) {
-							 priceContent?.classList.add('price-content-transition');
-					 }
-					 if (!description?.classList.contains('description-transition')) {
-							 description?.classList.add('description-transition');
-					 }
+						// Prepare new content before animation
+						const newMainPrice = `$${(priceFormat === 'total' ? subscriptionPrice : subscriptionItemPrice).toFixed(2)}`;
+						const newComparePrice = `$${(priceFormat === 'total' ? totalOriginalPrice : originalItemCap).toFixed(2)}`;
+						const newSavings = `SAVE $${savingsAmount.toFixed(2)}`;
 
-					 if (state.isInitialLoad) {
-							 // Initial load - update without animation
-							 updatePriceElements(priceContent, description, {
-								displayPrice: priceFormat === 'total' ? subscriptionPrice : subscriptionItemPrice,
-								 displayComparePrice: priceFormat === 'total' ? totalOriginalPrice : originalItemCap,
-								 savingsAmount: savingsAmount,
-								 subscriptionPrice: subscriptionPrice,
-								 subscriptionItemPrice: subscriptionItemPrice,
-								 bottleQuantity: bottleQuantity
-							 });
-					 } else {
-							 // Animated update
-							 if (priceContent) priceContent.style.opacity = '0';
-							 if (description) description.style.opacity = '0';
+						// Single coordinated animation sequence
+						const animate = () => {
+								// Step 1: Fade out all elements simultaneously
+								[mainPriceContainer, discountBadge, totalLine].forEach(el => {
+										if (el) el.style.transition = 'opacity 200ms ease-out';
+										if (el) el.style.opacity = '0';
+								});
 
-							 setTimeout(() => {
-									 // Update values while invisible
-									 updatePriceElements(priceContent, description, {
-										displayPrice: priceFormat === 'total' ? subscriptionPrice : subscriptionItemPrice,
-										 displayComparePrice: priceFormat === 'total' ? totalOriginalPrice : originalItemCap,
-										 savingsAmount: savingsAmount,
-										 subscriptionPrice: subscriptionPrice,
-										 subscriptionItemPrice: subscriptionItemPrice,
-										 bottleQuantity: bottleQuantity
-									 });
+								// Step 2: Update content and fade in after fade out completes
+								setTimeout(() => {
+										if (mainPriceContainer) {
+												const priceSpan = mainPriceContainer.querySelector('.font-bold');
+												const compareSpan = mainPriceContainer.querySelector('.text-gray-500.line-through');
+												if (priceSpan) priceSpan.textContent = newMainPrice;
+												if (compareSpan) compareSpan.textContent = newComparePrice;
+										}
 
-									 // Fade in price content
-									 requestAnimationFrame(() => {
-											 if (priceContent) priceContent.style.opacity = '1';
-									 });
+										if (discountBadge) {
+												discountBadge.textContent = newSavings;
+										}
 
-									 // Fade in description with delay
-									 if (description) {
-											 setTimeout(() => {
-													 requestAnimationFrame(() => {
-															 description.style.opacity = '1';
-													 });
-											 }, 150);
-									 }
-							 }, 200);
-					 }
-			 });
+										if (totalLine && priceFormat === 'per_bottle' && subscriptionPrice > subscriptionItemPrice) {
+												totalLine.innerHTML = `Total of $${subscriptionPrice.toFixed(2)} <span class="text-gray-500 line-through">$${(originalItemCap * bottleQuantity).toFixed(2)}</span>`;
+										}
 
-			 // Update initial load state
-			 state.isInitialLoad = false;
-		}
+										// Step 3: Fade in all elements with slight stagger
+										setTimeout(() => {
+												if (mainPriceContainer) {
+														mainPriceContainer.style.opacity = '1';
+												}
 
-		function updatePriceElements(priceContent, description, prices) {
-				if (priceContent) {
-						// Create an array of update functions to execute in sequence
-						const updates = [
-								// Update main price with opacity transition
-								() => {
-										const mainPrices = priceContent.querySelectorAll('.font-bold');
-										mainPrices.forEach(price => {
-												price.textContent = `$${prices.displayPrice.toFixed(2)}`;
-										});
-								},
-								// Update compare price with same timing as main price
-								() => {
-										const comparePrices = priceContent.querySelectorAll('.text-gray-500.line-through');
-										comparePrices.forEach(price => {
-												price.textContent = `$${prices.displayComparePrice.toFixed(2)}`;
-										});
-								},
-								// Update bottle indicator visibility
-								() => {
-										const monthTexts = priceContent.querySelectorAll('.month-text');
-										monthTexts.forEach(text => {
-												text.style.display = priceFormat === 'total' ? 'none' : 'inline';
-										});
-								},
-								// Update savings badge with delay
-								() => {
-										const discountBadges = priceContent.querySelectorAll('.bg-\\[\\-\\-bronze\\]');
-										discountBadges.forEach(badge => {
-												badge.style.opacity = '0';
 												setTimeout(() => {
-														badge.textContent = `SAVE $${prices.savingsAmount.toFixed(2)}`;
-														requestAnimationFrame(() => {
-																badge.style.opacity = '1';
-														});
+														if (discountBadge) {
+																discountBadge.style.opacity = '1';
+														}
+												}, 50);
+
+												setTimeout(() => {
+														if (totalLine) {
+																totalLine.style.opacity = '1';
+														}
 												}, 100);
-										});
-								}
-						];
+										}, 50);
+								}, 200);
+						};
 
-						// Execute updates in sequence
-						updates.forEach(update => update());
-				}
-
-				// Update description for per-bottle format
-				if (description && priceFormat === 'per_bottle') {
-					const totalText = prices.subscriptionPrice > prices.subscriptionItemPrice ?
-							`Total of $${prices.subscriptionPrice.toFixed(2)} ` : ' ';
-					const compareText = prices.subscriptionPrice > prices.subscriptionItemPrice ?
-							`<span class="text-gray-500 line-through">$${(prices.displayComparePrice * prices.bottleQuantity).toFixed(2)}</span>` : '';
-					description.innerHTML = totalText + compareText;
-			}
+						// Skip animation on initial load
+						if (state.isInitialLoad) {
+								animate();
+								state.isInitialLoad = false;
+						} else {
+								requestAnimationFrame(animate);
+						}
+				});
 		}
 
 		function togglePurchaseBox(element) {
@@ -1102,13 +1053,48 @@
 			}
 	}
 
-	.price-content-transition {
-			transition: opacity 400ms ease-in-out;
+	/* Add this to your existing <style> block */
+
+	/* Price display container and animation definitions */
+	.price-display {
+			/* Core element transitions */
+			.main-price,
+			.discount-badge,
+			.total-line {
+					transition: opacity 200ms ease-in-out;
+					will-change: opacity;
+			}
+
+			/* Price content wrapper optimization */
+			.flex.items-end {
+					will-change: opacity;
+			}
+
+			/* Total price line optimization */
+			.mt-2 {
+					will-change: opacity;
+			}
+
+			/* Individual element transitions */
+			.main-price {
+					opacity: 1;
+			}
+
+			.discount-badge {
+					opacity: 1;
+			}
+
+			.total-line {
+					opacity: 1;
+			}
 	}
-	.description-transition {
-			transition: opacity 400ms ease-in-out;
+
+	/* Animation state classes */
+	.fade-out {
+			opacity: 0 !important;
 	}
-	.discount-badge {
-			transition: opacity 400ms ease-in-out;
+
+	.fade-in {
+			opacity: 1 !important;
 	}
 </style>
