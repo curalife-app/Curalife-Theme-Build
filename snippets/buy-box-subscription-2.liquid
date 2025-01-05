@@ -396,62 +396,109 @@
 		}
 
 		function updatePriceDisplay(element) {
-				// Get all price display containers
-				const priceDisplays = document.querySelectorAll('.price-display');
+			 // Get price displays and parse variant data
+			 const priceDisplays = document.querySelectorAll('.price-display');
+			 const subscriptionItemPrice = parseFloat(element.getAttribute('data-subscription-item-price')) / 100;
+			 const subscriptionPrice = parseFloat(element.getAttribute('data-subscription-price')) / 100;
+			 const originalItemCap = parseFloat(element.getAttribute('data-original-item-cap')) / 100;
+			 const bottleQuantity = parseInt(element.getAttribute('data-bottle-quantity'));
 
-				// Parse numerical values from element attributes (converting cents to dollars)
-				const subscriptionItemPrice = parseFloat(element.getAttribute('data-subscription-item-price')) / 100;
-				const subscriptionPrice = parseFloat(element.getAttribute('data-subscription-price')) / 100;
-				const originalItemCap = parseFloat(element.getAttribute('data-original-item-cap')) / 100;
-				const bottleQuantity = parseInt(element.getAttribute('data-bottle-quantity'));
+			 // Calculate total prices
+			 const totalOriginalPrice = originalItemCap * bottleQuantity;
+			 const savingsAmount = priceFormat === 'total' ?
+					 totalOriginalPrice - subscriptionPrice :
+					 (originalItemCap - subscriptionItemPrice) * bottleQuantity;
 
-				// Calculate total compare price (original price × quantity)
-				const totalComparePrice = originalItemCap * bottleQuantity;
+			 priceDisplays.forEach(priceDisplay => {
+					 const priceContent = priceDisplay.querySelector('.flex.items-end');
+					 const description = priceDisplay.querySelector('.mt-2');
 
-				// Update each price display container
-				priceDisplays.forEach(priceDisplay => {
-						const priceContent = priceDisplay.querySelector('.flex.items-end');
-						const description = priceDisplay.querySelector('.mt-2');
+					 // Add transition classes if needed
+					 if (!priceContent?.classList.contains('price-content-transition')) {
+							 priceContent?.classList.add('price-content-transition');
+					 }
+					 if (!description?.classList.contains('description-transition')) {
+							 description?.classList.add('description-transition');
+					 }
 
-						if (priceContent) {
-								// Get all price-related elements
-								const mainPrices = priceContent.querySelectorAll('.font-bold');
-								const monthTexts = priceContent.querySelectorAll('.month-text');
-								const comparePrices = priceContent.querySelectorAll('.text-gray-500.line-through');
-								const discountBadges = priceContent.querySelectorAll('.bg-\\[\\-\\-bronze\\]');
+					 if (state.isInitialLoad) {
+							 // Initial load - update without animation
+							 updatePriceElements(priceContent, description, {
+									 displayPrice: priceFormat === 'total' ? subscriptionPrice : subscriptionItemPrice,
+									 displayComparePrice: priceFormat === 'total' ? totalOriginalPrice : originalItemCap,
+									 savingsAmount: savingsAmount,
+									 subscriptionPrice: subscriptionPrice,
+									 subscriptionItemPrice: subscriptionItemPrice
+							 });
+					 } else {
+							 // Animated update
+							 if (priceContent) priceContent.style.opacity = '0';
+							 if (description) description.style.opacity = '0';
 
-								// Determine display prices based on format mode
-								const displayPrice = priceFormat === 'total' ? subscriptionPrice : subscriptionItemPrice;
-								const displayComparePrice = priceFormat === 'total' ? totalComparePrice : originalItemCap;
-								const savingsAmount = (originalItemCap - subscriptionItemPrice) * bottleQuantity;
+							 setTimeout(() => {
+									 // Update values while invisible
+									 updatePriceElements(priceContent, description, {
+											 displayPrice: priceFormat === 'total' ? subscriptionPrice : subscriptionItemPrice,
+											 displayComparePrice: priceFormat === 'total' ? totalOriginalPrice : originalItemCap,
+											 savingsAmount: savingsAmount,
+											 subscriptionPrice: subscriptionPrice,
+											 subscriptionItemPrice: subscriptionItemPrice
+									 });
 
-								// Update main price display
-								mainPrices.forEach(price => {
-										price.textContent = `$${displayPrice.toFixed(2)}`;
-								});
+									 // Fade in price content
+									 requestAnimationFrame(() => {
+											 if (priceContent) priceContent.style.opacity = '1';
+									 });
 
-								// Toggle "/bottle" text visibility based on price format
-								monthTexts.forEach(text => {
-										text.style.display = priceFormat === 'total' ? 'none' : 'inline';
-								});
+									 // Fade in description with delay
+									 if (description) {
+											 setTimeout(() => {
+													 requestAnimationFrame(() => {
+															 description.style.opacity = '1';
+													 });
+											 }, 150);
+									 }
+							 }, 200);
+					 }
+			 });
 
-								// Update compare-at price display
-								comparePrices.forEach(price => {
-										price.textContent = `$${displayComparePrice.toFixed(2)}`;
-								});
+			 // Update initial load state
+			 state.isInitialLoad = false;
+		}
 
-								// Update savings amount badge
-								discountBadges.forEach(badge => {
-										badge.textContent = `SAVE $${savingsAmount.toFixed(2)}`;
-								});
-						}
+		// Helper function to update price elements
+		function updatePriceElements(priceContent, description, prices) {
+			 if (priceContent) {
+					 // Update main price
+					 const mainPrices = priceContent.querySelectorAll('.font-bold');
+					 mainPrices.forEach(price => {
+							 price.textContent = `$${prices.displayPrice.toFixed(2)}`;
+					 });
 
-						// Update total price description for per-bottle format
-						if (description && priceFormat === 'per_bottle') {
-								description.textContent = subscriptionPrice > subscriptionItemPrice ?
-										`Total of $${subscriptionPrice.toFixed(2)}` : ' ';
-						}
-				});
+					 // Update compare price
+					 const comparePrices = priceContent.querySelectorAll('.text-gray-500.line-through');
+					 comparePrices.forEach(price => {
+							 price.textContent = `$${prices.displayComparePrice.toFixed(2)}`;
+					 });
+
+					 // Update per bottle indicator
+					 const monthTexts = priceContent.querySelectorAll('.month-text');
+					 monthTexts.forEach(text => {
+							 text.style.display = priceFormat === 'total' ? 'none' : 'inline';
+					 });
+
+					 // Update savings badge
+					 const discountBadges = priceContent.querySelectorAll('.bg-\\[\\-\\-bronze\\]');
+					 discountBadges.forEach(badge => {
+							 badge.textContent = `SAVE $${prices.savingsAmount.toFixed(2)}`;
+					 });
+			 }
+
+			 // Update description for per-bottle format
+			 if (description && priceFormat === 'per_bottle') {
+					 description.textContent = prices.subscriptionPrice > prices.subscriptionItemPrice ?
+							 `Total of $${prices.subscriptionPrice.toFixed(2)}` : ' ';
+			 }
 		}
 
 		function togglePurchaseBox(element) {
@@ -1029,5 +1076,12 @@
 			.mt-2 {
 					will-change: opacity;
 			}
+	}
+
+	.price-content-transition {
+			transition: opacity 400ms ease-in-out;
+	}
+	.description-transition {
+			transition: opacity 400ms ease-in-out;
 	}
 </style>

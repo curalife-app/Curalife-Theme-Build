@@ -416,110 +416,103 @@
 		}
 
 		function updatePriceDisplay(element) {
-			 // Get price displays and parse variant data
-			 const priceDisplays = document.querySelectorAll('.price-display');
-			 const subscriptionItemPrice = parseFloat(element.getAttribute('data-subscription-item-price')) / 100;
-			 const subscriptionPrice = parseFloat(element.getAttribute('data-subscription-price')) / 100;
-			 const originalItemCap = parseFloat(element.getAttribute('data-original-item-cap')) / 100;
-			 const bottleQuantity = parseInt(element.getAttribute('data-bottle-quantity'));
+			// Get all price displays (there might be multiple)
+			const priceDisplays = document.querySelectorAll('.price-display');
 
-			 // Calculate total prices
-			 const totalOriginalPrice = originalItemCap * bottleQuantity;
-			 const savingsAmount = priceFormat === 'total' ?
-					 totalOriginalPrice - subscriptionPrice :
-					 (originalItemCap - subscriptionItemPrice) * bottleQuantity;
+			// Get values from the variant box
+			const subscriptionItemPrice = parseFloat(element.getAttribute('data-subscription-item-price')) / 100;
+			const originalItemCap = parseFloat(element.getAttribute('data-original-item-cap')) / 100;
+			const subscriptionDiscount = parseFloat(element.getAttribute('data-subscription-discount'));
+			const bottleQuantity = parseInt(element.getAttribute('data-bottle-quantity'));
 
-			 priceDisplays.forEach(priceDisplay => {
-					 const priceContent = priceDisplay.querySelector('.flex.items-end');
-					 const description = priceDisplay.querySelector('.mt-2');
+			// Calculate total subscription price
+			const subscriptionTotalPrice = subscriptionItemPrice * bottleQuantity;
 
-					 // Add transition classes if needed
-					 if (!priceContent?.classList.contains('price-content-transition')) {
-							 priceContent?.classList.add('price-content-transition');
-					 }
-					 if (!description?.classList.contains('description-transition')) {
-							 description?.classList.add('description-transition');
-					 }
+			// Determine singular or plural wording
+			const monthText = bottleQuantity > 1 ? 'months' : 'month';
+			const bottleText = bottleQuantity > 1 ? 'bottles' : 'bottle';
 
-					 if (state.isInitialLoad) {
-							 // Initial load - update without animation
-							 updatePriceElements(priceContent, description, {
-									 displayPrice: priceFormat === 'total' ? subscriptionPrice : subscriptionItemPrice,
-									 displayComparePrice: priceFormat === 'total' ? totalOriginalPrice : originalItemCap,
-									 savingsAmount: savingsAmount,
-									 subscriptionPrice: subscriptionPrice,
-									 subscriptionItemPrice: subscriptionItemPrice
-							 });
-					 } else {
-							 // Animated update
-							 if (priceContent) priceContent.style.opacity = '0';
-							 if (description) description.style.opacity = '0';
+			// Update all price displays
+			priceDisplays.forEach(priceDisplay => {
+				// Add transition classes if not present
+				const priceContent = priceDisplay.querySelector('.flex.items-end');
+				const description = priceDisplay.querySelector('.mt-2');
 
-							 setTimeout(() => {
-									 // Update values while invisible
-									 updatePriceElements(priceContent, description, {
-											 displayPrice: priceFormat === 'total' ? subscriptionPrice : subscriptionItemPrice,
-											 displayComparePrice: priceFormat === 'total' ? totalOriginalPrice : originalItemCap,
-											 savingsAmount: savingsAmount,
-											 subscriptionPrice: subscriptionPrice,
-											 subscriptionItemPrice: subscriptionItemPrice
-									 });
+				if (state.isInitialLoad) {
+					// Update without animation on initial load
+					if (priceContent) {
+						const mainPrices = priceContent.querySelectorAll('.font-bold');
+						mainPrices.forEach(price => {
+							price.textContent = `$${subscriptionItemPrice.toFixed(2)}`;
+						});
 
-									 // Fade in price content
-									 requestAnimationFrame(() => {
-											 if (priceContent) priceContent.style.opacity = '1';
-									 });
+						const comparePrices = priceContent.querySelectorAll('.text-gray-500.line-through');
+						comparePrices.forEach(price => {
+							price.textContent = `$${originalItemCap.toFixed(2)}`;
+						});
 
-									 // Fade in description with delay
-									 if (description) {
-											 setTimeout(() => {
-													 requestAnimationFrame(() => {
-															 description.style.opacity = '1';
-													 });
-											 }, 150);
-									 }
-							 }, 200);
-					 }
-			 });
+						const discountBadges = priceContent.querySelectorAll('.bg-\\[\\-\\-bronze\\]');
+						discountBadges.forEach(badge => {
+							badge.textContent = `${subscriptionDiscount}% OFF`;
+						});
+					}
 
-			 // Update initial load state
-			 state.isInitialLoad = false;
+					if (description) {
+						description.textContent = `Total of $${subscriptionTotalPrice.toFixed(2)} payable every ${bottleQuantity} ${monthText} for ${bottleQuantity} ${bottleText}.`;
+					}
+				} else {
+					// Normal animated update
+					if (priceContent) {
+						priceContent.classList.add('price-content-transition');
+						priceContent.style.opacity = '0';
+					}
+
+					if (description) {
+						description.classList.add('description-transition');
+						description.style.opacity = '0';
+					}
+
+					setTimeout(() => {
+						// Update values while elements are invisible
+						const mainPrices = priceDisplay.querySelectorAll('.font-bold');
+						mainPrices.forEach(price => {
+							price.textContent = `$${subscriptionItemPrice.toFixed(2)}`;
+						});
+
+						const comparePrices = priceDisplay.querySelectorAll('.text-gray-500.line-through');
+						comparePrices.forEach(price => {
+							price.textContent = `$${originalItemCap.toFixed(2)}`;
+						});
+
+						const discountBadges = priceDisplay.querySelectorAll('.bg-\\[\\-\\-bronze\\]');
+						discountBadges.forEach(badge => {
+							badge.textContent = `${subscriptionDiscount}% OFF`;
+						});
+
+						// Fade in main price content
+						if (priceContent) {
+							requestAnimationFrame(() => {
+								priceContent.style.opacity = '1';
+							});
+						}
+
+						// Update and fade in description with delay
+						if (description) {
+							description.textContent = `Total of $${subscriptionTotalPrice.toFixed(2)} payable every ${bottleQuantity} ${monthText} for ${bottleQuantity} ${bottleText}.`;
+							setTimeout(() => {
+								requestAnimationFrame(() => {
+									description.style.opacity = '1';
+								});
+							}, 150);
+						}
+					}, 200);
+				}
+			});
+
+			// Reset the initial load flag after first update
+			state.isInitialLoad = false;
 		}
 
-		// Helper function to update price elements
-		function updatePriceElements(priceContent, description, prices) {
-			 if (priceContent) {
-					 // Update main price
-					 const mainPrices = priceContent.querySelectorAll('.font-bold');
-					 mainPrices.forEach(price => {
-							 price.textContent = `$${prices.displayPrice.toFixed(2)}`;
-					 });
-
-					 // Update compare price
-					 const comparePrices = priceContent.querySelectorAll('.text-gray-500.line-through');
-					 comparePrices.forEach(price => {
-							 price.textContent = `$${prices.displayComparePrice.toFixed(2)}`;
-					 });
-
-					 // Update per bottle indicator
-					 const monthTexts = priceContent.querySelectorAll('.month-text');
-					 monthTexts.forEach(text => {
-							 text.style.display = priceFormat === 'total' ? 'none' : 'inline';
-					 });
-
-					 // Update savings badge
-					 const discountBadges = priceContent.querySelectorAll('.bg-\\[\\-\\-bronze\\]');
-					 discountBadges.forEach(badge => {
-							 badge.textContent = `SAVE $${prices.savingsAmount.toFixed(2)}`;
-					 });
-			 }
-
-			 // Update description for per-bottle format
-			 if (description && priceFormat === 'per_bottle') {
-					 description.textContent = prices.subscriptionPrice > prices.subscriptionItemPrice ?
-							 `Total of $${prices.subscriptionPrice.toFixed(2)}` : ' ';
-			 }
-		}
 
 		function togglePurchaseBox(element) {
 			if (!element) return;
@@ -1088,12 +1081,5 @@
 							font-size: 20px;
 					}
 			}
-	}
-
-	.price-content-transition {
-			transition: opacity 400ms ease-in-out;
-	}
-	.description-transition {
-			transition: opacity 400ms ease-in-out;
 	}
 </style>
