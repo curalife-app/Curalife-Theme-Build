@@ -157,7 +157,9 @@
 				</div>
 			</div>
 
-			<div class="mt-2 text-[16px]">Total of ${{ subscription_total_price | divided_by: 100.00 }}</div>
+			{% if priceFormat == 'per_bottle' %}
+				<div class="mt-2 text-[16px]">Total of ${{ subscription_total_price | divided_by: 100.00 }}</div>
+			{% endif %}
 		</div>
 	</div>
 
@@ -437,7 +439,7 @@
 								});
 						}
 
-						if (description) {
+						if (description && priceFormat === 'per_bottle') {
 							description.textContent = `Total of $${subscriptionPrice.toFixed(2)}`;
 						}
 				});
