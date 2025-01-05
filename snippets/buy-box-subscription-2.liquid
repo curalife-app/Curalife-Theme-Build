@@ -158,7 +158,7 @@
 							<span class="self-end text-gray-500 line-through">{{ original_item_cap | money }}</span>
 						{% endif %}
 					</div>
-					<span class="px-4 py-1 text-[16px] font-bold text-white bg-[--bronze] rounded-full">SAVE {{ subscription_save_money | money }}</span>
+					<span class="discount-badge px-4 py-1 text-[16px] font-bold text-white bg-[--bronze] rounded-full">SAVE {{ subscription_save_money | money }}</span>
 				</div>
 			</div>
 
@@ -466,39 +466,55 @@
 			 state.isInitialLoad = false;
 		}
 
-		// Helper function to update price elements
 		function updatePriceElements(priceContent, description, prices) {
-			 if (priceContent) {
-					 // Update main price
-					 const mainPrices = priceContent.querySelectorAll('.font-bold');
-					 mainPrices.forEach(price => {
-							 price.textContent = `$${prices.displayPrice.toFixed(2)}`;
-					 });
+				if (priceContent) {
+						// Create an array of update functions to execute in sequence
+						const updates = [
+								// Update main price with opacity transition
+								() => {
+										const mainPrices = priceContent.querySelectorAll('.font-bold');
+										mainPrices.forEach(price => {
+												price.textContent = `$${prices.displayPrice.toFixed(2)}`;
+										});
+								},
+								// Update compare price with same timing as main price
+								() => {
+										const comparePrices = priceContent.querySelectorAll('.text-gray-500.line-through');
+										comparePrices.forEach(price => {
+												price.textContent = `$${prices.displayComparePrice.toFixed(2)}`;
+										});
+								},
+								// Update bottle indicator visibility
+								() => {
+										const monthTexts = priceContent.querySelectorAll('.month-text');
+										monthTexts.forEach(text => {
+												text.style.display = priceFormat === 'total' ? 'none' : 'inline';
+										});
+								},
+								// Update savings badge with delay
+								() => {
+										const discountBadges = priceContent.querySelectorAll('.bg-\\[\\-\\-bronze\\]');
+										discountBadges.forEach(badge => {
+												badge.style.opacity = '0';
+												setTimeout(() => {
+														badge.textContent = `SAVE $${prices.savingsAmount.toFixed(2)}`;
+														requestAnimationFrame(() => {
+																badge.style.opacity = '1';
+														});
+												}, 100);
+										});
+								}
+						];
 
-					 // Update compare price
-					 const comparePrices = priceContent.querySelectorAll('.text-gray-500.line-through');
-					 comparePrices.forEach(price => {
-							 price.textContent = `$${prices.displayComparePrice.toFixed(2)}`;
-					 });
+						// Execute updates in sequence
+						updates.forEach(update => update());
+				}
 
-					 // Update per bottle indicator
-					 const monthTexts = priceContent.querySelectorAll('.month-text');
-					 monthTexts.forEach(text => {
-							 text.style.display = priceFormat === 'total' ? 'none' : 'inline';
-					 });
-
-					 // Update savings badge
-					 const discountBadges = priceContent.querySelectorAll('.bg-\\[\\-\\-bronze\\]');
-					 discountBadges.forEach(badge => {
-							 badge.textContent = `SAVE $${prices.savingsAmount.toFixed(2)}`;
-					 });
-			 }
-
-			 // Update description for per-bottle format
-			 if (description && priceFormat === 'per_bottle') {
-					 description.textContent = prices.subscriptionPrice > prices.subscriptionItemPrice ?
-							 `Total of $${prices.subscriptionPrice.toFixed(2)}` : ' ';
-			 }
+				// Update description for per-bottle format
+				if (description && priceFormat === 'per_bottle') {
+						description.textContent = prices.subscriptionPrice > prices.subscriptionItemPrice ?
+								`Total of $${prices.subscriptionPrice.toFixed(2)}` : ' ';
+				}
 		}
 
 		function togglePurchaseBox(element) {
@@ -1082,6 +1098,9 @@
 			transition: opacity 400ms ease-in-out;
 	}
 	.description-transition {
+			transition: opacity 400ms ease-in-out;
+	}
+	.discount-badge {
 			transition: opacity 400ms ease-in-out;
 	}
 </style>
