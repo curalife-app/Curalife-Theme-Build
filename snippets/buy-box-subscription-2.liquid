@@ -734,7 +734,7 @@
 		/**
 		 * Initialize the main "Add to Cart / Checkout" button for subscription or multi-step flow.
 		 */
-		function initializeSubmitButton() {
+		 function initializeSubmitButton() {
 			if (!submitButton) return;
 
 			submitButton.addEventListener('click', async event => {
@@ -742,6 +742,7 @@
 
 				const selectedBox         = productActions.querySelector('.variant-box.selected');
 				const selectedGiftContainer = document.querySelector('.gift-box.selected');
+
 				if (!selectedBox) {
 					showNotification('Please select a purchase option');
 					return;
@@ -751,8 +752,15 @@
 					return;
 				}
 
-				// Disable the button to prevent multi-clicks
+				// Disable the button and store original content
 				submitButton.disabled = true;
+				const originalButtonHTML = submitButton.innerHTML;
+
+				// Show spinner in the button instead of text
+				submitButton.innerHTML = `
+					<div class="button-spinner"></div>
+					<span>Processing...</span>
+				`;
 
 				try {
 					const isSubscription = selectedBox.dataset.purchaseType === 'subscribe';
@@ -767,18 +775,20 @@
 
 					const items = [
 						{
-							id          : variantId,
-							quantity    : 1,
-							selling_plan: isSubscription ? selectedBox.dataset.subscriptionSellingPlanId : undefined
+							id: variantId,
+							quantity: 1,
+							selling_plan: isSubscription
+								? selectedBox.dataset.subscriptionSellingPlanId
+								: undefined
 						},
 						{
-							id       : giftId,
-							quantity : 1
+							id: giftId,
+							quantity: 1
 						}
 					];
 
 					if (buyType === 'buy_now') {
-						await handleBuyNowFlow(items);
+						await handleBuyNowFlow(items);  // or your direct-to-checkout logic
 					} else {
 						await addValidItemsToCart(items);
 					}
@@ -786,7 +796,8 @@
 					console.error('Error:', error);
 					showNotification(error.message || 'Failed to add items to cart');
 				} finally {
-					// Re-enable the button
+					// Restore the original button content and re-enable
+					submitButton.innerHTML = originalButtonHTML;
 					submitButton.disabled = false;
 				}
 			});
@@ -1223,5 +1234,21 @@
 							}
 					}
 			}
+	}
+
+	.button-spinner {
+		display: inline-block;
+		width: 1.5rem;
+		height: 1.5rem;
+		border: 2px solid rgba(0, 0, 0, 0.1);
+		border-radius: 9999px;
+		border-top-color: #000;
+		animation: button-spinner 0.6s linear infinite;
+		margin-right: 0.5rem; /* Some spacing before/after text, if desired */
+	}
+
+	@keyframes button-spinner {
+		0%   { transform: rotate(0deg);   }
+		100% { transform: rotate(360deg); }
 	}
 </style>
