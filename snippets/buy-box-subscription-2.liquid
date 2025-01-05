@@ -140,11 +140,13 @@
 		<div class="price-display" style="margin-bottom: 1.5rem">
 			<div class="gap-y-2 flex flex-wrap items-end gap-2">
 				<div class="final-price flex items-center">
-					<span class="font-bold leading-none">${{ subscription_item_price | divided_by: 100.00 }}</span>
-					<span class="month-text mt-1">/mo</span>
+					{% if price_format == 'total' %}
+						<span class="font-bold leading-none">${{ subscription_total_price | divided_by: 100.00 }}</span>
+					{% else %}
+						<span class="font-bold leading-none">${{ subscription_item_price | divided_by: 100.00 }}</span>
+						<span class="month-text mt-1">/mo</span>
+					{% endif %}
 				</div>
-				<span class="text-gray-500 line-through">${{ original_item_cap | divided_by: 100.00 }}</span>
-				<span class="px-4 py-1 text-[16px] font-bold text-white bg-[--bronze] rounded-full">{{ subscription_save_percents }}% OFF</span>
 			</div>
 
 			<div class="mt-2 text-[16px]">
@@ -385,8 +387,6 @@
 		}
 
 		function updatePriceDisplay(element) {
-				const priceDisplays = document.querySelectorAll('.price-display');
-
 				// Get values from the variant box
 				const subscriptionItemPrice = parseFloat(element.getAttribute('data-subscription-item-price')) / 100;
 				const subscriptionPrice = parseFloat(element.getAttribute('data-subscription-price')) / 100;
@@ -395,7 +395,7 @@
 				const bottleQuantity = parseInt(element.getAttribute('data-bottle-quantity'));
 
 				// Calculate display price based on format
-				const displayPrice = priceFormat === 'total_price' ? subscriptionPrice : subscriptionItemPrice;
+				const displayPrice = priceFormat === 'total' ? subscriptionPrice : subscriptionItemPrice;
 				const subscriptionTotalPrice = subscriptionItemPrice * bottleQuantity;
 
 				// Determine text formats
@@ -425,12 +425,12 @@
 
 										const monthTexts = priceContent.querySelectorAll('.month-text');
 										monthTexts.forEach(monthText => {
-												monthText.style.display = priceFormat === 'total_price' ? 'none' : 'inline';
+												monthText.style.display = priceFormat === 'total' ? 'none' : 'inline';
 										});
 								}
 
 								if (description) {
-										if (priceFormat === 'total_price') {
+										if (priceFormat === 'total') {
 												description.textContent = `Payable every ${bottleQuantity} ${monthText} for ${bottleQuantity} ${bottleText}.`;
 										} else {
 												description.textContent = `Total of $${subscriptionTotalPrice.toFixed(2)} payable every ${bottleQuantity} ${monthText} for ${bottleQuantity} ${bottleText}.`;
@@ -466,7 +466,7 @@
 
 												const monthTexts = priceContent.querySelectorAll('.month-text');
 												monthTexts.forEach(monthText => {
-														monthText.style.display = priceFormat === 'total_price' ? 'none' : 'inline';
+														monthText.style.display = priceFormat === 'total' ? 'none' : 'inline';
 												});
 
 												requestAnimationFrame(() => {
@@ -475,7 +475,7 @@
 										}
 
 										if (description) {
-												if (priceFormat === 'total_price') {
+												if (priceFormat === 'total') {
 														description.textContent = `Payable every ${bottleQuantity} ${monthText} for ${bottleQuantity} ${bottleText}.`;
 												} else {
 														description.textContent = `Total of $${subscriptionTotalPrice.toFixed(2)} payable every ${bottleQuantity} ${monthText} for ${bottleQuantity} ${bottleText}.`;
@@ -777,6 +777,14 @@
 				}
 			});
 		}
+
+		// Initial price format handling
+		document.querySelectorAll('.price-display').forEach(priceDisplay => {
+				const monthText = priceDisplay.querySelector('.month-text');
+				if (monthText && priceFormat === 'total') {
+						monthText.style.display = 'none';
+				}
+		});
 
 		function initializePurchaseOptions() {
 				const defaultVariantIndex = parseInt(productActions.getAttribute('data-default-variant-index')) || 0;
