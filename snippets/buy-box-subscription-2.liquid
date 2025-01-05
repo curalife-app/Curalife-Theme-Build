@@ -390,18 +390,20 @@
 				// Declare priceDisplays inside the function to ensure proper scoping
 				const priceDisplays = document.querySelectorAll('.price-display');
 
-				// Rest of the function remains the same...
+				// Parse all price data
 				const subscriptionItemPrice = parseFloat(element.getAttribute('data-subscription-item-price')) / 100;
 				const subscriptionPrice = parseFloat(element.getAttribute('data-subscription-price')) / 100;
 				const originalItemCap = parseFloat(element.getAttribute('data-original-item-cap')) / 100;
 				const subscriptionDiscount = parseFloat(element.getAttribute('data-subscription-discount'));
 				const bottleQuantity = parseInt(element.getAttribute('data-bottle-quantity'));
 
-				// Calculate display price based on format
+				// Important: Use subscription price directly for total format
 				const displayPrice = priceFormat === 'total' ? subscriptionPrice : subscriptionItemPrice;
+
+				// Calculate total for description
 				const subscriptionTotalPrice = subscriptionItemPrice * bottleQuantity;
 
-				// Determine text formats
+				// Format text elements
 				const monthText = bottleQuantity > 1 ? 'months' : 'month';
 				const bottleText = bottleQuantity > 1 ? 'bottles' : 'bottle';
 
@@ -409,92 +411,42 @@
 						const priceContent = priceDisplay.querySelector('.flex.items-end');
 						const description = priceDisplay.querySelector('.mt-2');
 
-						if (state.isInitialLoad) {
-								if (priceContent) {
-										const mainPrices = priceContent.querySelectorAll('.font-bold');
-										mainPrices.forEach(price => {
-												price.textContent = `$${displayPrice.toFixed(2)}`;
-										});
+						// Update price elements
+						if (priceContent) {
+								// Update main price display
+								const mainPrices = priceContent.querySelectorAll('.font-bold');
+								mainPrices.forEach(price => {
+										price.textContent = `$${displayPrice.toFixed(2)}`;
+								});
 
-										const comparePrices = priceContent.querySelectorAll('.text-gray-500.line-through');
-										comparePrices.forEach(price => {
-												price.textContent = `$${originalItemCap.toFixed(2)}`;
-										});
+								// Update comparison price
+								const comparePrices = priceContent.querySelectorAll('.text-gray-500.line-through');
+								comparePrices.forEach(price => {
+										price.textContent = `$${originalItemCap.toFixed(2)}`;
+								});
 
-										const discountBadges = priceContent.querySelectorAll('.bg-\\[\\-\\-bronze\\]');
-										discountBadges.forEach(badge => {
-												badge.textContent = `${subscriptionDiscount}% OFF`;
-										});
+								// Update discount display
+								const discountBadges = priceContent.querySelectorAll('.bg-\\[\\-\\-bronze\\]');
+								discountBadges.forEach(badge => {
+										badge.textContent = `${subscriptionDiscount}% OFF`;
+								});
 
-										const monthTexts = priceContent.querySelectorAll('.month-text');
-										monthTexts.forEach(monthText => {
-												monthText.style.display = priceFormat === 'total' ? 'none' : 'inline';
-										});
+								// Update month text visibility based on format
+								const monthTexts = priceContent.querySelectorAll('.month-text');
+								monthTexts.forEach(monthText => {
+										monthText.style.display = priceFormat === 'total' ? 'none' : 'inline';
+								});
+						}
+
+						// Update description text
+						if (description) {
+								if (priceFormat === 'total') {
+										description.textContent = `Payable every ${bottleQuantity} ${monthText} for ${bottleQuantity} ${bottleText}.`;
+								} else {
+										description.textContent = `Total of $${subscriptionTotalPrice.toFixed(2)} payable every ${bottleQuantity} ${monthText} for ${bottleQuantity} ${bottleText}.`;
 								}
-
-								if (description) {
-										if (priceFormat === 'total') {
-												description.textContent = `Payable every ${bottleQuantity} ${monthText} for ${bottleQuantity} ${bottleText}.`;
-										} else {
-												description.textContent = `Total of $${subscriptionTotalPrice.toFixed(2)} payable every ${bottleQuantity} ${monthText} for ${bottleQuantity} ${bottleText}.`;
-										}
-								}
-						} else {
-								if (priceContent) {
-										priceContent.classList.add('price-content-transition');
-										priceContent.style.opacity = '0';
-								}
-
-								if (description) {
-										description.classList.add('description-transition');
-										description.style.opacity = '0';
-								}
-
-								setTimeout(() => {
-										if (priceContent) {
-												const mainPrices = priceDisplay.querySelectorAll('.font-bold');
-												mainPrices.forEach(price => {
-														price.textContent = `$${displayPrice.toFixed(2)}`;
-												});
-
-												const comparePrices = priceDisplay.querySelectorAll('.text-gray-500.line-through');
-												comparePrices.forEach(price => {
-														price.textContent = `$${originalItemCap.toFixed(2)}`;
-												});
-
-												const discountBadges = priceDisplay.querySelectorAll('.bg-\\[\\-\\-bronze\\]');
-												discountBadges.forEach(badge => {
-														badge.textContent = `${subscriptionDiscount}% OFF`;
-												});
-
-												const monthTexts = priceContent.querySelectorAll('.month-text');
-												monthTexts.forEach(monthText => {
-														monthText.style.display = priceFormat === 'total' ? 'none' : 'inline';
-												});
-
-												requestAnimationFrame(() => {
-														priceContent.style.opacity = '1';
-												});
-										}
-
-										if (description) {
-												if (priceFormat === 'total') {
-														description.textContent = `Payable every ${bottleQuantity} ${monthText} for ${bottleQuantity} ${bottleText}.`;
-												} else {
-														description.textContent = `Total of $${subscriptionTotalPrice.toFixed(2)} payable every ${bottleQuantity} ${monthText} for ${bottleQuantity} ${bottleText}.`;
-												}
-
-												setTimeout(() => {
-														requestAnimationFrame(() => {
-																description.style.opacity = '1';
-														});
-												}, 150);
-										}
-								}, 200);
 						}
 				});
-
-				state.isInitialLoad = false;
 		}
 
 		function togglePurchaseBox(element) {
