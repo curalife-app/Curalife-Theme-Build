@@ -140,19 +140,38 @@
 		<div class="price-display" style="margin-bottom: 1.5rem">
 			<div class="gap-y-2 flex flex-wrap items-end gap-2">
 				<div class="final-price flex items-center">
-					<span class="font-bold leading-none">${{ subscription_item_price | divided_by: 100.00 }}</span>
-					<span class="month-text mt-1">/mo</span>
+					{% if price_format == 'total_price' %}
+						<span class="font-bold leading-none">${{ subscription_total_price | divided_by: 100.00 }}</span>
+						<span class="month-text mt-1">/{{ bottle_quantity }}mo</span>
+					{% else %}
+						<span class="font-bold leading-none">${{ subscription_item_price | divided_by: 100.00 }}</span>
+						<span class="month-text mt-1">/mo</span>
+					{% endif %}
 				</div>
-				<span class="text-gray-500 line-through">${{ original_item_cap | divided_by: 100.00 }}</span>
+				<span class="text-gray-500 line-through">
+					{% if price_format == 'total_price' %}
+						${{ original_item_cap_total | divided_by: 100.00 }}
+					{% else %}
+						${{ original_item_cap | divided_by: 100.00 }}
+					{% endif %}
+				</span>
 				<span class="px-4 py-1 text-[16px] font-bold text-white bg-[--bronze] rounded-full">{{ subscription_save_percents }}% OFF</span>
 			</div>
 
 			<div class="mt-2 text-[16px]">
-				Total of ${{ subscription_total_price | divided_by: 100.00 }} payable every {{ bottle_quantity }}
-				{% if bottle_quantity > 1 %}months{% else %}month{% endif %}
-				for {{ bottle_quantity }}
-				{% if bottle_quantity > 1 %}bottles{% else %}bottle{% endif %}
-				.
+				{% if price_format == 'total_price' %}
+					Payable every {{ bottle_quantity }}
+					{% if bottle_quantity > 1 %}months{% else %}month{% endif %}
+					for {{ bottle_quantity }}
+					{% if bottle_quantity > 1 %}bottles{% else %}bottle{% endif %}
+					.
+				{% else %}
+					Total of ${{ subscription_total_price | divided_by: 100.00 }} payable every {{ bottle_quantity }}
+					{% if bottle_quantity > 1 %}months{% else %}month{% endif %}
+					for {{ bottle_quantity }}
+					{% if bottle_quantity > 1 %}bottles{% else %}bottle{% endif %}
+					.
+				{% endif %}
 			</div>
 		</div>
 	</div>
@@ -416,103 +435,106 @@
 		}
 
 		function updatePriceDisplay(element) {
-			// Get all price displays (there might be multiple)
-			const priceDisplays = document.querySelectorAll('.price-display');
+				// Core variable initialization
+				const priceDisplays = document.querySelectorAll('.price-display');
+				const priceFormat = '{{ price_format }}';
 
-			// Get values from the variant box
-			const subscriptionItemPrice = parseFloat(element.getAttribute('data-subscription-item-price')) / 100;
-			const originalItemCap = parseFloat(element.getAttribute('data-original-item-cap')) / 100;
-			const subscriptionDiscount = parseFloat(element.getAttribute('data-subscription-discount'));
-			const bottleQuantity = parseInt(element.getAttribute('data-bottle-quantity'));
+				// Extract data attributes from variant box
+				const subscriptionItemPrice = parseFloat(element.getAttribute('data-subscription-item-price')) / 100;
+				const originalItemCap = parseFloat(element.getAttribute('data-original-item-cap')) / 100;
+				const subscriptionDiscount = parseFloat(element.getAttribute('data-subscription-discount'));
+				const bottleQuantity = parseInt(element.getAttribute('data-bottle-quantity'));
+				const subscriptionTotalPrice = parseFloat(element.getAttribute('data-subscriptio-price')) / 100;
 
-			// Calculate total subscription price
-			const subscriptionTotalPrice = subscriptionItemPrice * bottleQuantity;
+				// Calculate display values based on price format
+				const displayPrice = priceFormat === 'total_price' ? subscriptionTotalPrice : subscriptionItemPrice;
+				const displayOriginalPrice = priceFormat === 'total_price' ? (originalItemCap * bottleQuantity) : originalItemCap;
+				const priceFrequencyText = priceFormat === 'total_price' ? `/${bottleQuantity}mo` : '/mo';
 
-			// Determine singular or plural wording
-			const monthText = bottleQuantity > 1 ? 'months' : 'month';
-			const bottleText = bottleQuantity > 1 ? 'bottles' : 'bottle';
+				// Text formatting
+				const monthText = bottleQuantity > 1 ? 'months' : 'month';
+				const bottleText = bottleQuantity > 1 ? 'bottles' : 'bottle';
 
-			// Update all price displays
-			priceDisplays.forEach(priceDisplay => {
-				// Add transition classes if not present
-				const priceContent = priceDisplay.querySelector('.flex.items-end');
-				const description = priceDisplay.querySelector('.mt-2');
+				// Update each price display instance
+				priceDisplays.forEach(priceDisplay => {
+						const priceContent = priceDisplay.querySelector('.flex.items-end');
+						const description = priceDisplay.querySelector('.mt-2');
 
-				if (state.isInitialLoad) {
-					// Update without animation on initial load
-					if (priceContent) {
-						const mainPrices = priceContent.querySelectorAll('.font-bold');
-						mainPrices.forEach(price => {
-							price.textContent = `$${subscriptionItemPrice.toFixed(2)}`;
-						});
-
-						const comparePrices = priceContent.querySelectorAll('.text-gray-500.line-through');
-						comparePrices.forEach(price => {
-							price.textContent = `$${originalItemCap.toFixed(2)}`;
-						});
-
-						const discountBadges = priceContent.querySelectorAll('.bg-\\[\\-\\-bronze\\]');
-						discountBadges.forEach(badge => {
-							badge.textContent = `${subscriptionDiscount}% OFF`;
-						});
-					}
-
-					if (description) {
-						description.textContent = `Total of $${subscriptionTotalPrice.toFixed(2)} payable every ${bottleQuantity} ${monthText} for ${bottleQuantity} ${bottleText}.`;
-					}
-				} else {
-					// Normal animated update
-					if (priceContent) {
-						priceContent.classList.add('price-content-transition');
-						priceContent.style.opacity = '0';
-					}
-
-					if (description) {
-						description.classList.add('description-transition');
-						description.style.opacity = '0';
-					}
-
-					setTimeout(() => {
-						// Update values while elements are invisible
-						const mainPrices = priceDisplay.querySelectorAll('.font-bold');
-						mainPrices.forEach(price => {
-							price.textContent = `$${subscriptionItemPrice.toFixed(2)}`;
-						});
-
-						const comparePrices = priceDisplay.querySelectorAll('.text-gray-500.line-through');
-						comparePrices.forEach(price => {
-							price.textContent = `$${originalItemCap.toFixed(2)}`;
-						});
-
-						const discountBadges = priceDisplay.querySelectorAll('.bg-\\[\\-\\-bronze\\]');
-						discountBadges.forEach(badge => {
-							badge.textContent = `${subscriptionDiscount}% OFF`;
-						});
-
-						// Fade in main price content
-						if (priceContent) {
-							requestAnimationFrame(() => {
-								priceContent.style.opacity = '1';
-							});
-						}
-
-						// Update and fade in description with delay
-						if (description) {
-							description.textContent = `Total of $${subscriptionTotalPrice.toFixed(2)} payable every ${bottleQuantity} ${monthText} for ${bottleQuantity} ${bottleText}.`;
-							setTimeout(() => {
-								requestAnimationFrame(() => {
-									description.style.opacity = '1';
+						if (state.isInitialLoad) {
+								// Initial load updates without animation
+								_updatePriceContent(priceContent, displayPrice, displayOriginalPrice, subscriptionDiscount, priceFrequencyText);
+								_updateDescription(description, priceFormat, subscriptionTotalPrice, bottleQuantity, monthText, bottleText);
+						} else {
+								// Animated updates
+								_animatePriceUpdate(priceContent, description, {
+										displayPrice,
+										displayOriginalPrice,
+										subscriptionDiscount,
+										priceFrequencyText,
+										priceFormat,
+										subscriptionTotalPrice,
+										bottleQuantity,
+										monthText,
+										bottleText
 								});
-							}, 150);
 						}
-					}, 200);
-				}
-			});
+				});
 
-			// Reset the initial load flag after first update
-			state.isInitialLoad = false;
+				state.isInitialLoad = false;
 		}
 
+		// Helper function to update price content
+		function _updatePriceContent(element, displayPrice, displayOriginalPrice, discount, frequencyText) {
+				if (!element) return;
+
+				const mainPrices = element.querySelectorAll('.font-bold');
+				mainPrices.forEach(price => price.textContent = `$${displayPrice.toFixed(2)}`);
+
+				const monthTexts = element.querySelectorAll('.month-text');
+				monthTexts.forEach(text => text.textContent = frequencyText);
+
+				const comparePrices = element.querySelectorAll('.text-gray-500.line-through');
+				comparePrices.forEach(price => price.textContent = `$${displayOriginalPrice.toFixed(2)}`);
+
+				const discountBadges = element.querySelectorAll('.bg-\\[\\-\\-bronze\\]');
+				discountBadges.forEach(badge => badge.textContent = `${discount}% OFF`);
+		}
+
+		// Helper function to update description text
+		function _updateDescription(element, format, totalPrice, quantity, monthText, bottleText) {
+				if (!element) return;
+
+				element.textContent = format === 'total_price'
+						? `Payable every ${quantity} ${monthText} for ${quantity} ${bottleText}.`
+						: `Total of $${totalPrice.toFixed(2)} payable every ${quantity} ${monthText} for ${quantity} ${bottleText}.`;
+		}
+
+		// Helper function for animated price updates
+		function _animatePriceUpdate(priceContent, description, data) {
+				if (priceContent) {
+						priceContent.classList.add('price-content-transition');
+						priceContent.style.opacity = '0';
+				}
+
+				if (description) {
+						description.classList.add('description-transition');
+						description.style.opacity = '0';
+				}
+
+				setTimeout(() => {
+						if (priceContent) {
+								_updatePriceContent(priceContent, data.displayPrice, data.displayOriginalPrice,
+																	data.subscriptionDiscount, data.priceFrequencyText);
+								requestAnimationFrame(() => priceContent.style.opacity = '1');
+						}
+
+						if (description) {
+								_updateDescription(description, data.priceFormat, data.subscriptionTotalPrice,
+																 data.bottleQuantity, data.monthText, data.bottleText);
+								setTimeout(() => requestAnimationFrame(() => description.style.opacity = '1'), 150);
+						}
+				}, 200);
+		}
 
 		function togglePurchaseBox(element) {
 			if (!element) return;
@@ -1057,28 +1079,35 @@
 	}
 
 	.price-display {
+			/* Price content transitions */
 			.price-content-transition {
 					transition: opacity 400ms ease-in-out;
+					will-change: opacity;
 			}
 
 			.description-transition {
 					transition: opacity 400ms ease-in-out;
-			}
-
-			.flex.items-end {
 					will-change: opacity;
 			}
 
-			.mt-2 {
-					will-change: opacity;
-			}
-
+			/* Price styling */
 			.final-price {
 					font-size: 30px;
 					color: var(--primary-color);
 
 					.month-text {
 							font-size: 20px;
+					}
+			}
+
+			/* Mobile responsiveness */
+			@media (max-width: 767px) {
+					.final-price {
+							font-size: 24px;
+
+							.month-text {
+									font-size: 16px;
+							}
 					}
 			}
 	}
