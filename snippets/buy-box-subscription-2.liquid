@@ -163,7 +163,10 @@
 			</div>
 
 			{% if priceFormat == 'per_bottle' and subscription_total_price != subscription_item_price %}
-				<div class="mt-2 text-[16px]">Total of {{ subscription_total_price | money }}</div>
+				<div class="total-line mt-2 text-[16px]">
+					Total of {{ subscription_total_price | money }}
+					<span class="text-gray-500 line-through">{{ original_item_cap_total | money }}</span>
+				</div>
 			{% endif %}
 		</div>
 	</div>
@@ -424,11 +427,12 @@
 					 if (state.isInitialLoad) {
 							 // Initial load - update without animation
 							 updatePriceElements(priceContent, description, {
-									 displayPrice: priceFormat === 'total' ? subscriptionPrice : subscriptionItemPrice,
-									 displayComparePrice: priceFormat === 'total' ? totalOriginalPrice : originalItemCap,
-									 savingsAmount: savingsAmount,
-									 subscriptionPrice: subscriptionPrice,
-									 subscriptionItemPrice: subscriptionItemPrice
+								displayPrice: priceFormat === 'total' ? subscriptionPrice : subscriptionItemPrice,
+								 displayComparePrice: priceFormat === 'total' ? totalOriginalPrice : originalItemCap,
+								 savingsAmount: savingsAmount,
+								 subscriptionPrice: subscriptionPrice,
+								 subscriptionItemPrice: subscriptionItemPrice,
+								 bottleQuantity: bottleQuantity
 							 });
 					 } else {
 							 // Animated update
@@ -438,11 +442,12 @@
 							 setTimeout(() => {
 									 // Update values while invisible
 									 updatePriceElements(priceContent, description, {
-											 displayPrice: priceFormat === 'total' ? subscriptionPrice : subscriptionItemPrice,
-											 displayComparePrice: priceFormat === 'total' ? totalOriginalPrice : originalItemCap,
-											 savingsAmount: savingsAmount,
-											 subscriptionPrice: subscriptionPrice,
-											 subscriptionItemPrice: subscriptionItemPrice
+										displayPrice: priceFormat === 'total' ? subscriptionPrice : subscriptionItemPrice,
+										 displayComparePrice: priceFormat === 'total' ? totalOriginalPrice : originalItemCap,
+										 savingsAmount: savingsAmount,
+										 subscriptionPrice: subscriptionPrice,
+										 subscriptionItemPrice: subscriptionItemPrice,
+										 bottleQuantity: bottleQuantity
 									 });
 
 									 // Fade in price content
@@ -511,10 +516,13 @@
 				}
 
 				// Update description for per-bottle format
-				if (description && priceFormat === 'per_bottle') {
-						description.textContent = prices.subscriptionPrice > prices.subscriptionItemPrice ?
-								`Total of $${prices.subscriptionPrice.toFixed(2)}` : ' ';
-				}
+				f (description && priceFormat === 'per_bottle') {
+					const totalText = prices.subscriptionPrice > prices.subscriptionItemPrice ?
+							`Total of $${prices.subscriptionPrice.toFixed(2)} ` : ' ';
+					const compareText = prices.displayComparePrice > prices.displayPrice ?
+							`<span class="text-gray-500 line-through">$${(prices.displayComparePrice * prices.bottleQuantity).toFixed(2)}</span>` : '';
+					description.innerHTML = totalText + compareText;
+			}
 		}
 
 		function togglePurchaseBox(element) {
