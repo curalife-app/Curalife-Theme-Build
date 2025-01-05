@@ -139,20 +139,26 @@
 		<div class="price-display" style="margin-bottom: 1.5rem">
 			<div class="gap-y-2 flex flex-wrap items-end gap-2">
 				<div class="final-price flex items-center">
-					<span class="font-bold leading-none">${{ subscription_item_price | divided_by: 100.00 }}</span>
-					<span class="month-text mt-1">/mo</span>
+					{% if ctaTextType == 'month' %}
+						<span class="font-bold leading-none">${{ subscription_item_price | divided_by: 100.00 }}</span>
+						<span class="month-text mt-1">/mo</span>
+					{% else %}
+						<span class="font-bold leading-none">${{ subscription_total_price | divided_by: 100.00 }}</span>
+					{% endif %}
 				</div>
 				<span class="text-gray-500 line-through">${{ original_item_cap | divided_by: 100.00 }}</span>
 				<span class="px-4 py-1 text-[16px] font-bold text-white bg-[--bronze] rounded-full">{{ subscription_save_percents }}% OFF</span>
 			</div>
 
-			<div class="mt-2 text-[16px]">
-				Total of ${{ subscription_total_price | divided_by: 100.00 }} payable every {{ bottle_quantity }}
-				{% if bottle_quantity > 1 %}months{% else %}month{% endif %}
-				for {{ bottle_quantity }}
-				{% if bottle_quantity > 1 %}bottles{% else %}bottle{% endif %}
-				.
-			</div>
+			{% if ctaTextType == 'month' %}
+				<div class="mt-2 text-[16px]">
+					Total of ${{ subscription_total_price | divided_by: 100.00 }} payable every {{ bottle_quantity }}
+					{% if bottle_quantity > 1 %}months{% else %}month{% endif %}
+					for {{ bottle_quantity }}
+					{% if bottle_quantity > 1 %}bottles{% else %}bottle{% endif %}
+					.
+				</div>
+			{% endif %}
 		</div>
 	</div>
 
@@ -423,9 +429,11 @@
 			const originalItemCap = parseFloat(element.getAttribute('data-original-item-cap')) / 100;
 			const subscriptionDiscount = parseFloat(element.getAttribute('data-subscription-discount'));
 			const bottleQuantity = parseInt(element.getAttribute('data-bottle-quantity'));
+			const priceFormat = '{{ ctaTextType }}';
 
 			// Calculate total subscription price
 			const subscriptionTotalPrice = subscriptionItemPrice * bottleQuantity;
+			const displayPrice = priceFormat === 'month' ? subscriptionItemPrice : subscriptionTotalPrice;
 
 			// Determine singular or plural wording
 			const monthText = bottleQuantity > 1 ? 'months' : 'month';
@@ -442,7 +450,7 @@
 					if (priceContent) {
 						const mainPrices = priceContent.querySelectorAll('.font-bold');
 						mainPrices.forEach(price => {
-							price.textContent = `$${subscriptionItemPrice.toFixed(2)}`;
+							price.textContent = `$${displayPrice.toFixed(2)}`;
 						});
 
 						const comparePrices = priceContent.querySelectorAll('.text-gray-500.line-through');
@@ -456,7 +464,7 @@
 						});
 					}
 
-					if (description) {
+					if (description && priceFormat === 'month') {
 						description.textContent = `Total of $${subscriptionTotalPrice.toFixed(2)} payable every ${bottleQuantity} ${monthText} for ${bottleQuantity} ${bottleText}.`;
 					}
 				} else {
@@ -475,7 +483,7 @@
 						// Update values while elements are invisible
 						const mainPrices = priceDisplay.querySelectorAll('.font-bold');
 						mainPrices.forEach(price => {
-							price.textContent = `$${subscriptionItemPrice.toFixed(2)}`;
+							price.textContent = `$${displayPrice.toFixed(2)}`;
 						});
 
 						const comparePrices = priceDisplay.querySelectorAll('.text-gray-500.line-through');
@@ -496,7 +504,7 @@
 						}
 
 						// Update and fade in description with delay
-						if (description) {
+						if (description && priceFormat === 'month') {
 							description.textContent = `Total of $${subscriptionTotalPrice.toFixed(2)} payable every ${bottleQuantity} ${monthText} for ${bottleQuantity} ${bottleText}.`;
 							setTimeout(() => {
 								requestAnimationFrame(() => {
