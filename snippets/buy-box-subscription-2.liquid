@@ -387,25 +387,17 @@
 		}
 
 		function updatePriceDisplay(element) {
-				// Declare priceDisplays inside the function to ensure proper scoping
 				const priceDisplays = document.querySelectorAll('.price-display');
-				console.log('Price format:', priceFormat, 'Element price:', element.getAttribute('data-subscription-price'));
+				console.log('Price format:', priceFormat, 'Subscription total:', element.getAttribute('data-subscription-price'), 'Per item:', element.getAttribute('data-subscription-item-price'));
 
-
-				// Parse all price data
+				// Get price data from element attributes
 				const subscriptionItemPrice = parseFloat(element.getAttribute('data-subscription-item-price')) / 100;
 				const subscriptionPrice = parseFloat(element.getAttribute('data-subscription-price')) / 100;
 				const originalItemCap = parseFloat(element.getAttribute('data-original-item-cap')) / 100;
 				const subscriptionDiscount = parseFloat(element.getAttribute('data-subscription-discount'));
 				const bottleQuantity = parseInt(element.getAttribute('data-bottle-quantity'));
 
-				// Important: Use subscription price directly for total format
-				const displayPrice = priceFormat === 'total' ? subscriptionPrice : subscriptionItemPrice;
-
-				// Calculate total for description
-				const subscriptionTotalPrice = subscriptionItemPrice * bottleQuantity;
-
-				// Format text elements
+				// Format text variables
 				const monthText = bottleQuantity > 1 ? 'months' : 'month';
 				const bottleText = bottleQuantity > 1 ? 'bottles' : 'bottle';
 
@@ -413,40 +405,43 @@
 						const priceContent = priceDisplay.querySelector('.flex.items-end');
 						const description = priceDisplay.querySelector('.mt-2');
 
-						// Update price elements
 						if (priceContent) {
-								// Update main price display
+								// Get price elements
 								const mainPrices = priceContent.querySelectorAll('.font-bold');
+
+								// IMPORTANT: This was the bug - subscription_total_price should be shown when format is 'total'
+								const displayPrice = priceFormat === 'total' ?
+										subscriptionPrice : // Show total price
+										subscriptionItemPrice; // Show per-bottle price
+
+								// Update prices and display elements
 								mainPrices.forEach(price => {
 										price.textContent = `$${displayPrice.toFixed(2)}`;
 								});
 
-								// Update comparison price
+								const monthTexts = priceContent.querySelectorAll('.month-text');
+								monthTexts.forEach(monthText => {
+										monthText.style.display = priceFormat === 'total' ? 'none' : 'inline';
+								});
+
+								// Update comparison price display
 								const comparePrices = priceContent.querySelectorAll('.text-gray-500.line-through');
 								comparePrices.forEach(price => {
 										price.textContent = `$${originalItemCap.toFixed(2)}`;
 								});
 
-								// Update discount display
+								// Update discount badge
 								const discountBadges = priceContent.querySelectorAll('.bg-\\[\\-\\-bronze\\]');
 								discountBadges.forEach(badge => {
 										badge.textContent = `${subscriptionDiscount}% OFF`;
 								});
-
-								// Update month text visibility based on format
-								const monthTexts = priceContent.querySelectorAll('.month-text');
-								monthTexts.forEach(monthText => {
-										monthText.style.display = priceFormat === 'total' ? 'none' : 'inline';
-								});
 						}
 
-						// Update description text
+						// Update the description text based on price format
 						if (description) {
-								if (priceFormat === 'total') {
-										description.textContent = `Payable every ${bottleQuantity} ${monthText} for ${bottleQuantity} ${bottleText}.`;
-								} else {
-										description.textContent = `Total of $${subscriptionTotalPrice.toFixed(2)} payable every ${bottleQuantity} ${monthText} for ${bottleQuantity} ${bottleText}.`;
-								}
+								description.textContent = priceFormat === 'total' ?
+										`Payable every ${bottleQuantity} ${monthText} for ${bottleQuantity} ${bottleText}.` :
+										`Total of $${subscriptionPrice.toFixed(2)} payable every ${bottleQuantity} ${monthText} for ${bottleQuantity} ${bottleText}.`;
 						}
 				});
 		}
