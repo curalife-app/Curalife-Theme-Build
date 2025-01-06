@@ -156,21 +156,30 @@
 									 (sliderSetting === 'desktop' && !isMobile);
 					}
 
+					let swiperInstance = null;
+
 					function activateSlider() {
 						if (!itemsContainer.classList.contains('swiper')) {
-							itemsContainer.classList.add('swiper');
-							itemsContainer.classList.remove('items', 'flex', 'flex-wrap');
+							// Clean up existing structure
+							const wrapper = itemsContainer.querySelector('.swiper-wrapper') || document.createElement('div');
+							wrapper.className = 'swiper-wrapper';
 
-							const items = itemsContainer.querySelectorAll('.item');
+							// Move items into wrapper if they're not already there
+							const items = itemsContainer.querySelectorAll('.item:not(.swiper-slide)');
 							items.forEach(item => {
-								if (!item.classList.contains('swiper-slide')) {
-									item.classList.add('swiper-slide');
-								}
+								item.classList.add('swiper-slide');
+								wrapper.appendChild(item);
 							});
 
+							// Setup container
+							itemsContainer.className = 'swiper items';
+							if (!itemsContainer.contains(wrapper)) {
+								itemsContainer.appendChild(wrapper);
+							}
+
 							// Initialize Swiper
-							loadSwiper(() => {
-								const swiperOptions = {
+							if (typeof Swiper !== 'undefined') {
+								swiperInstance = new Swiper(itemsContainer, {
 									spaceBetween: 15,
 									grabCursor: true,
 									slidesPerView: {{ section.settings.items_in_row_mobile }},
@@ -192,29 +201,28 @@
 											slidesPerView: {% if section.settings.items_in_row != 'all' %}{{ section.settings.items_in_row }}{% else %}'auto'{% endif %}
 										}
 									}
-								};
-
-								new Swiper('#items-container-{{ section.id }}', swiperOptions);
-							});
+								});
+							} else {
+								console.error('Swiper is not loaded');
+							}
 
 							arrows.forEach(arrow => arrow.style.display = '');
 						}
 					}
 
 					function deactivateSlider() {
-						if (itemsContainer.classList.contains('swiper')) {
-							itemsContainer.classList.remove('swiper');
-							itemsContainer.classList.add('items', 'flex', 'flex-wrap');
-							// remove swiper-slide class from items but leave its children
-							const swiperWrapper = itemsContainer.querySelector('.swiper-wrapper');
-							swiperWrapper.classList.remove('swiper-wrapper');
-							swiperWrapper.classList.add('contents');
-
-							const items = itemsContainer.querySelectorAll('.item');
-							items.forEach(item => item.classList.remove('swiper-slide'));
-
-							arrows.forEach(arrow => arrow.style.display = 'none');
+						if (swiperInstance) {
+							swiperInstance.destroy(true, true);
+							swiperInstance = null;
 						}
+
+						const items = itemsContainer.querySelectorAll('.swiper-slide');
+						items.forEach(item => {
+							item.classList.remove('swiper-slide');
+						});
+
+						itemsContainer.className = 'items flex flex-wrap';
+						arrows.forEach(arrow => arrow.style.display = 'none');
 					}
 
 					// Initial setup
