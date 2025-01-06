@@ -158,7 +158,10 @@
 							<span class="self-end text-gray-500 line-through">{{ original_item_cap | money }}</span>
 						{% endif %}
 					</div>
-					<span class="discount-badge px-4 py-1 text-[16px] font-bold text-white bg-[--bronze] rounded-full">SAVE {{ subscription_save_money | money }}</span>
+
+					{% if priceFormat == 'total' and subscription_total_price != subscription_item_price %}
+						<span class="discount-badge px-4 py-1 text-[16px] font-bold text-white bg-[--bronze] rounded-full">SAVE {{ subscription_save_money | money }}</span>
+					{% endif %}
 				</div>
 			</div>
 
@@ -453,7 +456,7 @@ document.addEventListener('DOMContentLoaded', () => {
 						if (pSpan) pSpan.textContent = newMain;
 						if (cSpan) cSpan.textContent = newCompare;
 					}
-					if (discount)  discount.textContent = `SAVE $${flooredSave}`;
+					if (discount && priceFormat === 'total' && subPrice > subItem)  discount.textContent = `SAVE $${flooredSave}`;
 					if (totalLine && priceFormat === 'per_bottle' && subPrice > subItem) {
 						totalLine.innerHTML = `
 							Total of $${subPrice.toFixed(2)}
