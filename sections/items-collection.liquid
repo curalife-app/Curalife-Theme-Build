@@ -117,18 +117,18 @@
     </div>
 
       {% if isSlider %}
-				{% if section.settings.is_arrows %}
-					<div class="swiper-nav swiper-button-next" name="track:Slider Arrow - Next"></div>
-					<div class="swiper-nav swiper-button-prev" name="track:Slider Arrow - Preview"></div>
-				{% endif %}
-
-				{% if section.settings.is_dots %}
-					<div class="swiper-pagination"></div>
-				{% endif %}
-
-				{% if section.settings.is_scrollbar %}
-					<div class="swiper-scrollbar"></div>
-				{% endif %}
+        <div class="swiper-navigations">
+          {% if section.settings.is_arrows %}
+            <div class="swiper-nav swiper-button-next" name="track:Slider Arrow - Next"></div>
+            <div class="swiper-nav swiper-button-prev" name="track:Slider Arrow - Preview"></div>
+          {% endif %}
+          {% if section.settings.is_dots %}
+            <div class="swiper-pagination"></div>
+          {% endif %}
+          {% if section.settings.is_scrollbar %}
+            <div class="swiper-scrollbar"></div>
+          {% endif %}
+        </div>
       {% endif %}
 
       {% if isSlider %}</div>{% endif %}
@@ -156,86 +156,68 @@
 									 (sliderSetting === 'desktop' && !isMobile);
 					}
 
-					let swiperInstance = null;
-
 					function activateSlider() {
 						if (!itemsContainer.classList.contains('swiper')) {
-							// Clean up existing structure
-							const wrapper = itemsContainer.querySelector('.swiper-wrapper') || document.createElement('div');
-							wrapper.className = 'swiper-wrapper';
+							itemsContainer.classList.add('swiper');
+							itemsContainer.classList.remove('items', 'flex', 'flex-wrap');
 
-							// Move items into wrapper if they're not already there
-							const items = itemsContainer.querySelectorAll('.item:not(.swiper-slide)');
+							const items = itemsContainer.querySelectorAll('.item');
 							items.forEach(item => {
-								item.classList.add('swiper-slide');
-								wrapper.appendChild(item);
+								if (!item.classList.contains('swiper-slide')) {
+									item.classList.add('swiper-slide');
+								}
 							});
 
-							// Setup container
-							itemsContainer.className = 'swiper items';
-							if (!itemsContainer.contains(wrapper)) {
-								itemsContainer.appendChild(wrapper);
-							}
-
-							// Initialize Swiper with a slight delay to ensure DOM is ready
-							setTimeout(() => {
-								if (typeof Swiper !== 'undefined') {
-									swiperInstance = new Swiper(itemsContainer, {
-										spaceBetween: 15,
-										grabCursor: true,
-										slidesPerView: {{ section.settings.items_in_row_mobile }},
-										autoHeight: {{ section.settings.is_auto_height }},
-										init: false, // Prevent auto initialization
-										{% if section.settings.is_arrows %}
-										navigation: {
-											nextEl: '#items-container-{{ section.id }} .swiper-button-next',
-											prevEl: '#items-container-{{ section.id }} .swiper-button-prev',
+							// Initialize Swiper
+							loadSwiper(() => {
+								const swiperOptions = {
+									spaceBetween: 15,
+									grabCursor: true,
+									slidesPerView: 'auto',
+									autoHeight: {{ section.settings.is_auto_height }},
+									{% if section.settings.is_arrows %}
+									navigation: {
+										nextEl: '#items-container-{{ section.id }} .swiper-button-next',
+										prevEl: '#items-container-{{ section.id }} .swiper-button-prev',
+									},
+									{% endif %}
+									{% if section.settings.is_dots %}
+									pagination: {
+										el: '#items-container-{{ section.id }} .swiper-pagination',
+										clickable: true
+									},
+									{% endif %}
+									breakpoints: {
+										320: {
+											slidesPerView: {{ section.settings.items_in_row_mobile }},
 										},
-										{% endif %}
-										{% if section.settings.is_dots %}
-										pagination: {
-											el: '#items-container-{{ section.id }} .swiper-pagination',
-											clickable: true
-										},
-										{% endif %}
-										breakpoints: {
-											768: {
-												slidesPerView: {% if section.settings.items_in_row != 'all' %}{{ section.settings.items_in_row }}{% else %}'auto'{% endif %}
-											}
-										},
-										on: {
-											init: function() {
-												// Force re-calculation of slide positions
-												this.update();
-											}
+										768: {
+											slidesPerView: {% if section.settings.items_in_row != 'all' %}{{ section.settings.items_in_row }}{% else %}'auto'{% endif %}
 										}
-									});
+									}
+								};
 
-									// Initialize swiper manually
-									swiperInstance.init();
-								} else {
-									console.error('Swiper is not loaded');
-								}
-							}, 100);
+								new Swiper('#items-container-{{ section.id }}', swiperOptions);
+							});
 
 							arrows.forEach(arrow => arrow.style.display = '');
 						}
 					}
 
 					function deactivateSlider() {
-						if (swiperInstance) {
-							swiperInstance.destroy(true, true);
-							swiperInstance = null;
+						if (itemsContainer.classList.contains('swiper')) {
+							itemsContainer.classList.remove('swiper');
+							itemsContainer.classList.add('items', 'flex', 'flex-wrap');
+							// remove swiper-slide class from items but leave its children
+							const swiperWrapper = itemsContainer.querySelector('.swiper-wrapper');
+							swiperWrapper.classList.remove('swiper-wrapper');
+							swiperWrapper.classList.add('contents');
+
+							const items = itemsContainer.querySelectorAll('.item');
+							items.forEach(item => item.classList.remove('swiper-slide'));
+
+							arrows.forEach(arrow => arrow.style.display = 'none');
 						}
-
-						const items = itemsContainer.querySelectorAll('.swiper-slide');
-						items.forEach(item => {
-							item.classList.remove('swiper-slide');
-							item.classList.remove('swiper-slide-active');
-						});
-
-						itemsContainer.className = 'items flex flex-wrap';
-						arrows.forEach(arrow => arrow.style.display = 'none');
 					}
 
 					// Initial setup
@@ -304,45 +286,44 @@
         }
       {% endif %}
 
-			#section-{{ section.id }} .swiper-slide {
-				visibility: hidden; /* Use visibility instead of opacity */
-				transition: visibility 0s linear 0.3s, opacity 0.3s ease;
-				opacity: 0;
-			}
+      #section-{{ section.id }} .swiper-slide {
+        opacity: 0;
+        transition: opacity 1s ease;
+      }
 
-			#section-{{ section.id }} .swiper-slide-active,
-			#section-{{ section.id }} .swiper-slide-next,
-			#section-{{ section.id }} .swiper-slide-prev {
-				visibility: visible;
-				transition-delay: 0s;
-				opacity: 1;
-			}
+      #section-{{ section.id }} .swiper-slide-active {
+        opacity: 1;
+      }
 
-			/* For multiple visible slides */
-			{% if section.settings.items_in_row != '1' %}
-				{% assign items_visible = section.settings.items_in_row | minus: 1 %}
-				{% for i in (1..items_visible) %}
-					#section-{{ section.id }} .swiper-slide-active + .swiper-slide:nth-child({{ i }}) {
-						visibility: visible;
-						transition-delay: 0s;
-						opacity: 1;
-					}
-				{% endfor %}
-			{% endif %}
+      {% if section.settings.items_in_row == 'all' %}
+        {% assign items_in_row = section.blocks.size %}
+      {% else %}
+        {% assign items_in_row = section.settings.items_in_row | minus: 1 %}
+      {% endif %}
 
-			/* Handle mobile visibility */
-			@media (max-width: 768px) {
-				{% if section.settings.items_in_row_mobile != '1' %}
-					{% assign items_visible_mobile = section.settings.items_in_row_mobile | minus: 1 %}
-					{% for i in (1..items_visible_mobile) %}
-						#section-{{ section.id }} .swiper-slide-active + .swiper-slide:nth-child({{ i }}) {
-							visibility: visible;
-							transition-delay: 0s;
-							opacity: 1;
-						}
-					{% endfor %}
-				{% endif %}
-			}
+      {% for i in (1..items_in_row) %}
+        #section-{{ section.id }} .swiper-slide-active{% for j in (1..i) %} + .swiper-slide{% endfor %} {
+          opacity: 1;
+        }
+      {% endfor %}
+
+      @media (max-width: 768px) {
+        #section-{{ section.id }} .swiper-slide-active {
+          opacity: 1;
+        }
+
+        {% if section.settings.items_in_row_mobile == 'all' %}
+          {% assign items_in_row_mobile = section.blocks.size %}
+        {% else %}
+          {% assign items_in_row_mobile = section.settings.items_in_row_mobile | minus: 1 %}
+        {% endif %}
+
+        {% for i in (1..items_in_row_mobile) %}
+          #section-{{ section.id }} .swiper-slide-active{% for j in (1..i) %} + .swiper-slide{% endfor %} {
+            opacity: 1;
+          }
+        {% endfor %}
+      }
     </style>
   {% endif %}
 
