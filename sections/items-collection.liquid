@@ -304,53 +304,45 @@
         }
       {% endif %}
 
-			.items-collection .swiper {
+			#section-{{ section.id }} .swiper-slide {
+				visibility: hidden; /* Use visibility instead of opacity */
+				transition: visibility 0s linear 0.3s, opacity 0.3s ease;
 				opacity: 0;
-				transition: opacity 0.3s ease;
 			}
 
-			.items-collection .swiper.swiper-initialized {
+			#section-{{ section.id }} .swiper-slide-active,
+			#section-{{ section.id }} .swiper-slide-next,
+			#section-{{ section.id }} .swiper-slide-prev {
+				visibility: visible;
+				transition-delay: 0s;
 				opacity: 1;
 			}
 
-      #section-{{ section.id }} .swiper-slide {
-        opacity: 0;
-        transition: opacity 1s ease;
-      }
+			/* For multiple visible slides */
+			{% if section.settings.items_in_row != '1' %}
+				{% assign items_visible = section.settings.items_in_row | minus: 1 %}
+				{% for i in (1..items_visible) %}
+					#section-{{ section.id }} .swiper-slide-active + .swiper-slide:nth-child({{ i }}) {
+						visibility: visible;
+						transition-delay: 0s;
+						opacity: 1;
+					}
+				{% endfor %}
+			{% endif %}
 
-      #section-{{ section.id }} .swiper-slide-active {
-        opacity: 1;
-      }
-
-      {% if section.settings.items_in_row == 'all' %}
-        {% assign items_in_row = section.blocks.size %}
-      {% else %}
-        {% assign items_in_row = section.settings.items_in_row | minus: 1 %}
-      {% endif %}
-
-      {% for i in (1..items_in_row) %}
-        #section-{{ section.id }} .swiper-slide-active{% for j in (1..i) %} + .swiper-slide{% endfor %} {
-          opacity: 1;
-        }
-      {% endfor %}
-
-      @media (max-width: 768px) {
-        #section-{{ section.id }} .swiper-slide-active {
-          opacity: 1;
-        }
-
-        {% if section.settings.items_in_row_mobile == 'all' %}
-          {% assign items_in_row_mobile = section.blocks.size %}
-        {% else %}
-          {% assign items_in_row_mobile = section.settings.items_in_row_mobile | minus: 1 %}
-        {% endif %}
-
-        {% for i in (1..items_in_row_mobile) %}
-          #section-{{ section.id }} .swiper-slide-active{% for j in (1..i) %} + .swiper-slide{% endfor %} {
-            opacity: 1;
-          }
-        {% endfor %}
-      }
+			/* Handle mobile visibility */
+			@media (max-width: 768px) {
+				{% if section.settings.items_in_row_mobile != '1' %}
+					{% assign items_visible_mobile = section.settings.items_in_row_mobile | minus: 1 %}
+					{% for i in (1..items_visible_mobile) %}
+						#section-{{ section.id }} .swiper-slide-active + .swiper-slide:nth-child({{ i }}) {
+							visibility: visible;
+							transition-delay: 0s;
+							opacity: 1;
+						}
+					{% endfor %}
+				{% endif %}
+			}
     </style>
   {% endif %}
 
