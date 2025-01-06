@@ -143,15 +143,14 @@
 				<div class="final-price flex items-center gap-2">
 					<div class="main-price text-[--primary] flex items-baseline">
 						{% if priceFormat == 'total' %}
-							<span class="font-bold leading-none text-[30px] mbl:text-[6vw]">{{ subscription_total_price | money }}</span>
-							<span class="self-end text-gray-500 line-through">{{ original_item_cap_total | money }}</span>
+							<span class="price font-bold leading-none text-[30px] mbl:text-[6vw]">{{ subscription_total_price | money }}</span>
 						{% else %}
-							<span class="font-bold leading-none text-[30px] mbl:text-[6vw]">{{ subscription_item_price | money }}</span>
-							<span class="month-text mt-1 text-[20px]">/bottle</span>
+							<span class="price font-bold leading-none text-[30px] mbl:text-[6vw]">{{ subscription_item_price | money }}</span>
+							<span class="per-text mt-1 text-[20px]">/bottle</span>
 						{% endif %}
 					</div>
 
-					<span class="self-end text-gray-500 line-through">{{ original_item_cap | money }}</span>
+					<span class="cap self-end text-gray-500 line-through">{{ original_item_cap | money }}</span>
 
 					{% if priceFormat == 'total' and subscription_total_price != subscription_item_price %}
 						<span class="discount-badge px-4 py-1 text-[16px] font-bold text-white bg-[--bronze] rounded-full">SAVE {{ subscription_save_money | money }}</span>
@@ -458,8 +457,8 @@ document.addEventListener('DOMContentLoaded', () => {
 				});
 				setTimeout(() => {
 					if (mainPrice) {
-						const pSpan = mainPrice.querySelector('.font-bold');
-						const cSpan = mainPrice.querySelector('.text-gray-500.line-through');
+						const pSpan = mainPrice.querySelector('.price');
+						const cSpan = mainPrice.querySelector('.cap');
 						if (pSpan) pSpan.textContent = newMain;
 						if (cSpan) cSpan.textContent = newCompare;
 					}
@@ -736,7 +735,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	function hideMonthTextIfNeeded() {
 		document.querySelectorAll('.price-display').forEach(d => {
-			const monthText = d.querySelector('.month-text');
+			const monthText = d.querySelector('.per-text');
 			if (monthText && priceFormat === 'total') {
 				monthText.style.display = 'none';
 			}
