@@ -177,34 +177,46 @@
 								itemsContainer.appendChild(wrapper);
 							}
 
-							// Initialize Swiper
-							if (typeof Swiper !== 'undefined') {
-								swiperInstance = new Swiper(itemsContainer, {
-									spaceBetween: 15,
-									grabCursor: true,
-									slidesPerView: {{ section.settings.items_in_row_mobile }},
-									autoHeight: {{ section.settings.is_auto_height }},
-									{% if section.settings.is_arrows %}
-									navigation: {
-										nextEl: '#items-container-{{ section.id }} .swiper-button-next',
-										prevEl: '#items-container-{{ section.id }} .swiper-button-prev',
-									},
-									{% endif %}
-									{% if section.settings.is_dots %}
-									pagination: {
-										el: '#items-container-{{ section.id }} .swiper-pagination',
-										clickable: true
-									},
-									{% endif %}
-									breakpoints: {
-										768: {
-											slidesPerView: {% if section.settings.items_in_row != 'all' %}{{ section.settings.items_in_row }}{% else %}'auto'{% endif %}
+							// Initialize Swiper with a slight delay to ensure DOM is ready
+							setTimeout(() => {
+								if (typeof Swiper !== 'undefined') {
+									swiperInstance = new Swiper(itemsContainer, {
+										spaceBetween: 15,
+										grabCursor: true,
+										slidesPerView: {{ section.settings.items_in_row_mobile }},
+										autoHeight: {{ section.settings.is_auto_height }},
+										init: false, // Prevent auto initialization
+										{% if section.settings.is_arrows %}
+										navigation: {
+											nextEl: '#items-container-{{ section.id }} .swiper-button-next',
+											prevEl: '#items-container-{{ section.id }} .swiper-button-prev',
+										},
+										{% endif %}
+										{% if section.settings.is_dots %}
+										pagination: {
+											el: '#items-container-{{ section.id }} .swiper-pagination',
+											clickable: true
+										},
+										{% endif %}
+										breakpoints: {
+											768: {
+												slidesPerView: {% if section.settings.items_in_row != 'all' %}{{ section.settings.items_in_row }}{% else %}'auto'{% endif %}
+											}
+										},
+										on: {
+											init: function() {
+												// Force re-calculation of slide positions
+												this.update();
+											}
 										}
-									}
-								});
-							} else {
-								console.error('Swiper is not loaded');
-							}
+									});
+
+									// Initialize swiper manually
+									swiperInstance.init();
+								} else {
+									console.error('Swiper is not loaded');
+								}
+							}, 100);
 
 							arrows.forEach(arrow => arrow.style.display = '');
 						}
@@ -219,6 +231,7 @@
 						const items = itemsContainer.querySelectorAll('.swiper-slide');
 						items.forEach(item => {
 							item.classList.remove('swiper-slide');
+							item.classList.remove('swiper-slide-active');
 						});
 
 						itemsContainer.className = 'items flex flex-wrap';
