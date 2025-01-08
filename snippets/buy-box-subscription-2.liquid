@@ -76,26 +76,67 @@
 						{% endif %}
 					{% endif %}
 
+					{% comment %} Initialize variables with debug output {% endcomment %}
 					{% assign subscription_save_percents = 0 %}
 					{% assign subscription_item_price = original_item_cap %}
+					{% comment %}Debug 1{% endcomment %}
+					<script>
+						console.log('Initial values:', {
+							subscription_save_percents: {{ subscription_save_percents }},
+							subscription_item_price: {{ subscription_item_price }},
+							original_item_cap: {{ original_item_cap }}
+						});
+					</script>
 
 					{% for allocation in var.selling_plan_allocations %}
 						{% assign selling = selling_plan_id | minus: 0 %}
+						{% comment %}Debug 2{% endcomment %}
+						<script>
+							console.log('Checking allocation:', {
+								selling_plan_id: {{ selling }},
+								allocation_id: {{ allocation.selling_plan.id }},
+								has_compare_price: {{ allocation.compare_at_price != blank }}
+							});
+						</script>
+
 						{% if allocation.selling_plan.id == selling %}
 							{% if allocation.compare_at_price %}
-								{% assign original_price = allocation.compare_at_price | times: 100 %}
-								{% assign discounted_price = allocation.price | times: 100 %}
-								{% assign raw_save_percent = original_price | minus: discounted_price | times: 100 | divided_by: original_price %}
-								{% assign mod_5 = raw_save_percent | modulo: 5 %}
+								{% assign original_price = allocation.compare_at_price %}
+								{% assign discounted_price = allocation.price %}
+								{% comment %}Debug 3{% endcomment %}
+								<script>
+									console.log('Found matching plan with prices:', {
+										original_price: {{ original_price }},
+										discounted_price: {{ discounted_price }}
+									});
+								</script>
 
-								{% if mod_5 < 3 %}
-									{% assign subscription_save_percents = raw_save_percent | minus: mod_5 %}
+								{% assign subscription_save_percents = original_price | minus: discounted_price | times: 100 | divided_by: original_price %}
+								{% assign mod_5_remainder = subscription_save_percents | modulo: 5 %}
+
+								{% comment %}Debug 4{% endcomment %}
+								<script>
+									console.log('Calculated savings:', {
+										raw_save_percents: {{ subscription_save_percents }},
+										mod_5_remainder: {{ mod_5_remainder }}
+									});
+								</script>
+
+								{% if mod_5_remainder < 3 %}
+									{% assign subscription_save_percents = subscription_save_percents | minus: mod_5_remainder %}
 								{% else %}
-									{% assign temp = 5 | minus: mod_5 %}
-									{% assign subscription_save_percents = raw_save_percent | plus: temp %}
+									{% assign temp = 5 | minus: mod_5_remainder %}
+									{% assign subscription_save_percents = subscription_save_percents | plus: temp %}
 								{% endif %}
 
-								{% assign subscription_item_price = discounted_price | divided_by: 100.0 %}
+								{% comment %}Debug 5{% endcomment %}
+								<script>
+									console.log('Final adjusted savings:', {
+										subscription_save_percents: {{ subscription_save_percents }}
+									});
+								</script>
+
+								{% assign subscription_item_price = discounted_price | divided_by: bottle_quantity %}
 							{% endif %}
 						{% endif %}
 					{% endfor %}
