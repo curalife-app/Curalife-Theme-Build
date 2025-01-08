@@ -5,7 +5,7 @@
 {% if buyType == 'buy_now' %}
 	<div class="submit-wrap flex flex-col w-full">
 		<input class="submit-variant-id" type="hidden" name="id" value="{{ variant | default: product.selected_or_first_available_variant.id }}">
-		<button name="add" class="main-btn w-full p-0 text-black !bg-[--orange] min-h-[50px]" id="buy-button-{{ SID }}">
+		<button name="add" class="buy-button clickable main-btn w-full p-0 text-black !bg-[--orange] min-h-[50px]" id="buy-button-{{ SID }}" data-buybox-submit>
 			<span class="button-text flex justify-center md:text-[5vw]">{{ buttonText | default: 'Shop Now' }}</span>
 
 			<div class="loading-overlay__spinner hidden m-auto">
@@ -124,7 +124,8 @@
 						data-variant-id="{{ variant | default: product.selected_or_first_available_variant.id }}"
 						type="submit"
 						name="add"
-						class="!text-black product-form__submit button--full-width justify-center button--primary text-[20px] p-0 min-h-[50px] items-center !bg-[--orange]">
+						data-buybox-submit
+						class="buy-button clickable !text-black product-form__submit button--full-width justify-center button--primary text-[20px] p-0 min-h-[50px] items-center !bg-[--orange]">
 						<span class="submit-title">Add To Cart</span>
 						<div class="loading-overlay__spinner hidden">
 							<svg aria-hidden="true" focusable="false" class="spinner" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
@@ -255,23 +256,70 @@
 			}
 		}
 
-		document.addEventListener('DOMContentLoaded', function () {
-			var incrementButton = document.querySelector('.increment');
-			var decrementButton = document.querySelector('.decrement');
+		// Create a self-executing function to avoid polluting global scope
+		(function () {
+			// Function to set up event listeners
+			function setupQuantityListeners() {
+				console.log('Setting up quantity listeners');
+				var incrementButton = document.querySelector('.increment');
+				var decrementButton = document.querySelector('.decrement');
 
-			if (incrementButton) {
-				incrementButton.addEventListener('click', function (event) {
-					event.stopPropagation();
-					incrementQty();
-				});
+				// Remove any existing listeners first
+				if (incrementButton && incrementButton.hasAttribute('data-listener-attached')) {
+					var oldIncrementListener = incrementButton.getAttribute('data-listener-function');
+					if (oldIncrementListener) {
+						incrementButton.removeEventListener('click', window[oldIncrementListener]);
+					}
+				}
+
+				if (decrementButton && decrementButton.hasAttribute('data-listener-attached')) {
+					var oldDecrementListener = decrementButton.getAttribute('data-listener-function');
+					if (oldDecrementListener) {
+						decrementButton.removeEventListener('click', window[oldDecrementListener]);
+					}
+				}
+
+				// Add new increment listener
+				if (incrementButton) {
+					const incrementHandler = function (event) {
+						event.stopPropagation();
+						console.log('Incrementing quantity');
+						incrementQty();
+					};
+
+					// Store the handler function name
+					const handlerName = 'incrementHandler_' + Math.random().toString(36).substr(2, 9);
+					window[handlerName] = incrementHandler;
+
+					incrementButton.addEventListener('click', incrementHandler);
+					incrementButton.setAttribute('data-listener-attached', 'true');
+					incrementButton.setAttribute('data-listener-function', handlerName);
+				}
+
+				// Add new decrement listener
+				if (decrementButton) {
+					const decrementHandler = function (event) {
+						event.stopPropagation();
+						console.log('Decrementing quantity');
+						decrementQty();
+					};
+
+					// Store the handler function name
+					const handlerName = 'decrementHandler_' + Math.random().toString(36).substr(2, 9);
+					window[handlerName] = decrementHandler;
+
+					decrementButton.addEventListener('click', decrementHandler);
+					decrementButton.setAttribute('data-listener-attached', 'true');
+					decrementButton.setAttribute('data-listener-function', handlerName);
+				}
 			}
 
-			if (decrementButton) {
-				decrementButton.addEventListener('click', function (event) {
-					event.stopPropagation();
-					decrementQty();
-				});
+			// Set up the listeners when DOM is ready
+			if (document.readyState === 'loading') {
+				document.addEventListener('DOMContentLoaded', setupQuantityListeners);
+			} else {
+				setupQuantityListeners();
 			}
-		});
+		})();
 	</script>
 {% endif %}
