@@ -76,65 +76,26 @@
 						{% endif %}
 					{% endif %}
 
-					{% comment %} Initial state debug {% endcomment %}
-					<script>
-						console.log('Initial values:', {
-							subscription_save_percents: '{{ subscription_save_percents }}',
-							subscription_item_price: '{{ subscription_item_price }}',
-							original_item_cap: {{ original_item_cap }}
-						});
-					</script>
+					{% assign subscription_save_percents = 0 %}
+					{% assign subscription_item_price = original_item_cap %}
 
 					{% for allocation in var.selling_plan_allocations %}
 						{% assign selling = selling_plan_id | minus: 0 %}
-
-						{% comment %} Allocation check debug {% endcomment %}
-						<script>
-							console.log('Checking allocation:', {
-								selling_plan_id: {{ selling }},
-								allocation_id: {{ allocation.selling_plan.id }}
-							});
-						</script>
-
 						{% if allocation.selling_plan.id == selling %}
 							{% if allocation.compare_at_price %}
 								{% assign original_price = allocation.compare_at_price %}
 								{% assign discounted_price = allocation.price %}
-
-								{% comment %} Price comparison debug {% endcomment %}
-								<script>
-									console.log('Found matching plan with prices:', {
-										original_price: {{ original_price }},
-										discounted_price: {{ discounted_price }}
-									});
-								</script>
-
 								{% assign subscription_save_percents = original_price | minus: discounted_price | times: 100 | divided_by: original_price %}
 								{% assign mod_5_remainder = subscription_save_percents | modulo: 5 %}
-
-								{% comment %} Savings calculation debug {% endcomment %}
-								<script>
-									console.log('Calculated savings:', {
-										raw_save_percents: {{ subscription_save_percents }},
-										mod_5_remainder: {{ mod_5_remainder }}
-									});
-								</script>
-
 								{% if mod_5_remainder < 3 %}
 									{% assign subscription_save_percents = subscription_save_percents | minus: mod_5_remainder %}
 								{% else %}
 									{% assign subscription_save_percents = subscription_save_percents | plus: 5 | minus: mod_5_remainder %}
 								{% endif %}
-
-								{% comment %} Final values debug {% endcomment %}
-								<script>
-									console.log('Final adjusted savings:', {
-										subscription_save_percents: '{{ subscription_save_percents }}',
-										subscription_item_price: '{{ subscription_item_price }}'
-									});
-								</script>
-
 								{% assign subscription_item_price = discounted_price | divided_by: bottle_quantity %}
+							{% else %}
+								{% assign subscription_save_percents = 0 %}
+								{% assign subscription_item_price = allocation.price | divided_by: bottle_quantity %}
 							{% endif %}
 						{% endif %}
 					{% endfor %}
@@ -205,11 +166,6 @@
 				</div>
 			</div>
 
-			<script>
-				console.log('Price format:', '{{ priceFormat }}');
-				console.log('Subscription total price:', '{{ subscription_total_price }}');
-				console.log('Subscription item price:', '{{ subscription_item_price }}');
-			</script>
 			{% if priceFormat == 'per_bottle' and subscription_total_price != subscription_item_price %}
 				<div class="total-line mt-1 text-[16px] h-4">
 					Total {{ subscription_total_price | money }}
