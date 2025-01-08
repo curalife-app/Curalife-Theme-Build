@@ -78,37 +78,43 @@
 
 					{% comment %} Initial state debug {% endcomment %}
 					<script>
-						console.log('Variant object:', {{ var | json }});
 						console.log('Initial values:', {
-							original_price_cents: {{ allocation.compare_at_price }},
-							discounted_price_cents: {{ allocation.price }}
+							subscription_save_percents: '{{ subscription_save_percents }}',
+							subscription_item_price: '{{ subscription_item_price }}',
+							original_item_cap: {{ original_item_cap }}
 						});
 					</script>
 
 					{% for allocation in var.selling_plan_allocations %}
 						{% assign selling = selling_plan_id | minus: 0 %}
 
+						{% comment %} Allocation check debug {% endcomment %}
+						<script>
+							console.log('Checking allocation:', {
+								selling_plan_id: {{ selling }},
+								allocation_id: {{ allocation.selling_plan.id }}
+							});
+						</script>
+
 						{% if allocation.selling_plan.id == selling %}
 							{% if allocation.compare_at_price %}
-								{% comment %} Convert cents to dollars first {% endcomment %}
-								{% assign original_price_dollars = allocation.compare_at_price | divided_by: 100.0 %}
-								{% assign discounted_price_dollars = allocation.price | divided_by: 100.0 %}
+								{% assign original_price = allocation.compare_at_price %}
+								{% assign discounted_price = allocation.price %}
 
+								{% comment %} Price comparison debug {% endcomment %}
 								<script>
-									console.log('Price in dollars:', {
-										original: {{ original_price_dollars }},
-										discounted: {{ discounted_price_dollars }}
+									console.log('Found matching plan with prices:', {
+										original_price: {{ original_price }},
+										discounted_price: {{ discounted_price }}
 									});
 								</script>
 
-								{% comment %} Calculate percentage using dollar values {% endcomment %}
-								{% assign price_diff = original_price_dollars | minus: discounted_price_dollars %}
-								{% assign subscription_save_percents = price_diff | times: 100 | divided_by: original_price_dollars %}
+								{% assign subscription_save_percents = original_price | minus: discounted_price | times: 100 | divided_by: original_price %}
 								{% assign mod_5_remainder = subscription_save_percents | modulo: 5 %}
 
+								{% comment %} Savings calculation debug {% endcomment %}
 								<script>
-									console.log('Savings calculation:', {
-										price_diff: {{ price_diff }},
+									console.log('Calculated savings:', {
 										raw_save_percents: {{ subscription_save_percents }},
 										mod_5_remainder: {{ mod_5_remainder }}
 									});
@@ -120,7 +126,15 @@
 									{% assign subscription_save_percents = subscription_save_percents | plus: 5 | minus: mod_5_remainder %}
 								{% endif %}
 
-								{% assign subscription_item_price = discounted_price_dollars %}
+								{% comment %} Final values debug {% endcomment %}
+								<script>
+									console.log('Final adjusted savings:', {
+										subscription_save_percents: '{{ subscription_save_percents }}',
+										subscription_item_price: '{{ subscription_item_price }}'
+									});
+								</script>
+
+								{% assign subscription_item_price = discounted_price | divided_by: bottle_quantity %}
 							{% endif %}
 						{% endif %}
 					{% endfor %}
