@@ -83,19 +83,19 @@
 						{% assign selling = selling_plan_id | minus: 0 %}
 						{% if allocation.selling_plan.id == selling %}
 							{% if allocation.compare_at_price %}
-								{% assign original_price = allocation.compare_at_price %}
-								{% assign discounted_price = allocation.price %}
-								{% assign subscription_save_percents = original_price | minus: discounted_price | times: 100 | divided_by: original_price %}
-								{% assign mod_5_remainder = subscription_save_percents | modulo: 5 %}
-								{% if mod_5_remainder < 3 %}
-									{% assign subscription_save_percents = subscription_save_percents | minus: mod_5_remainder %}
+								{% assign original_price = allocation.compare_at_price | times: 100 %}
+								{% assign discounted_price = allocation.price | times: 100 %}
+								{% assign raw_save_percent = original_price | minus: discounted_price | times: 100 | divided_by: original_price %}
+								{% assign mod_5 = raw_save_percent | modulo: 5 %}
+
+								{% if mod_5 < 3 %}
+									{% assign subscription_save_percents = raw_save_percent | minus: mod_5 %}
 								{% else %}
-									{% assign subscription_save_percents = subscription_save_percents | plus: 5 | minus: mod_5_remainder %}
+									{% assign temp = 5 | minus: mod_5 %}
+									{% assign subscription_save_percents = raw_save_percent | plus: temp %}
 								{% endif %}
-								{% assign subscription_item_price = discounted_price | divided_by: bottle_quantity %}
-							{% else %}
-								{% assign subscription_save_percents = 0 %}
-								{% assign subscription_item_price = allocation.price | divided_by: bottle_quantity %}
+
+								{% assign subscription_item_price = discounted_price | divided_by: 100.0 %}
 							{% endif %}
 						{% endif %}
 					{% endfor %}
