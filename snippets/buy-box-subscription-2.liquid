@@ -684,58 +684,59 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 	function initSubmitButton() {
-		if (!submitButton) return;
-		submitButton.addEventListener('click', async e => {
-			e.preventDefault();
-			const box = productActions.querySelector('.variant-box.selected');
-			const giftsAmount = parseInt(productActions.dataset.giftsAmount || '0', 10);
+			if (!submitButton) return;
+			submitButton.addEventListener('click', async e => {
+					e.preventDefault();
+					const box = productActions.querySelector('.variant-box.selected');
+					const giftsAmount = parseInt(productActions.dataset.giftsAmount || '0', 10);
 
-			if (!box) {
-					showNotification('Please select a purchase option');
-					return;
-			}
-
-			if (giftsAmount > 0) {
-					const giftEl = document.querySelector('.gift-box.selected');
-					if (!giftEl?.querySelector('.gift-option-border')) {
-							showNotification('Please select a gift option');
+					if (!box) {
+							showNotification('Please select a purchase option');
 							return;
 					}
-			}
 
-			submitButton.disabled = true;
-			const btnHTML         = submitButton.innerHTML;
-			submitButton.innerHTML = `<div class="button-spinner"></div>`;
+					submitButton.disabled = true;
+					const btnHTML = submitButton.innerHTML;
+					submitButton.innerHTML = `<div class="button-spinner"></div>`;
 
-			try {
-				const isSub   = box.dataset.purchaseType === 'subscribe';
-				const variant = box.dataset.variant;
-				const giftB   = giftEl.querySelector('.gift-option-border');
-				const giftID  = isSub ? giftB?.dataset.giftIdSubscription : giftB?.dataset.giftId;
-				if (!variant || !giftID) throw new Error('Invalid selections');
+					try {
+							const isSub = box.dataset.purchaseType === 'subscribe';
+							const variant = box.dataset.variant;
 
-				const items = [
-					{
-						id: variant,
-						quantity: 1,
-						selling_plan: isSub ? box.dataset.subscriptionSellingPlanId : undefined
-					},
-					{ id: giftID, quantity: 1 }
-				];
+							let items = [{
+									id: variant,
+									quantity: 1,
+									selling_plan: isSub ? box.dataset.subscriptionSellingPlanId : undefined
+							}];
 
-				if (buyType === 'buy_now') {
-					await handleBuyNowFlow(items);
-				} else {
-					await addValidItemsToCart(items);
-				}
-			} catch (err) {
-				console.error('Error:', err);
-				showNotification(err.message || 'Error adding items');
-			} finally {
-				submitButton.innerHTML = btnHTML;
-				submitButton.disabled  = false;
-			}
-		});
+							// Only add gift item if gifts are available and selected
+							if (giftsAmount > 0) {
+									const giftEl = document.querySelector('.gift-box.selected');
+									if (!giftEl?.querySelector('.gift-option-border')) {
+											throw new Error('Please select a gift option');
+									}
+									const giftB = giftEl.querySelector('.gift-option-border');
+									const giftID = isSub ? giftB?.dataset.giftIdSubscription : giftB?.dataset.giftId;
+									if (!giftID) throw new Error('Invalid gift selection');
+
+									items.push({ id: giftID, quantity: 1 });
+							}
+
+							if (!variant) throw new Error('Invalid variant selection');
+
+							if (buyType === 'buy_now') {
+									await handleBuyNowFlow(items);
+							} else {
+									await addValidItemsToCart(items);
+							}
+					} catch (err) {
+							console.error('Error:', err);
+							showNotification(err.message || 'Error adding items');
+					} finally {
+							submitButton.innerHTML = btnHTML;
+							submitButton.disabled = false;
+					}
+			});
 	}
 
 	function initOneTimeButton() {
