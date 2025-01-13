@@ -134,7 +134,7 @@
 					<div
 						id="variant-box-{{ SID }}-{{ forloop.index }}"
 						class="variant-box flex flex-col items-center variant-tab-style text-center w-full {% if forloop.index == 1 %}selected{% endif %} {{ varPurchaseType }}"
-						data-variant="{{ block.settings.variant_id }}"
+						data-variant="{{ blockVarID }}"
 						data-product="{{ prod.id }}"
 						data-original-variant="{{ var.id }}"
 						data-subscription-selling-plan-id="{{ selling_plan_id }}"
@@ -717,21 +717,36 @@ document.addEventListener('DOMContentLoaded', () => {
 							return;
 					}
 
+					// Debug variant data
+					console.log('Selected box data:', {
+							variant: box.dataset.variant,
+							originalVariant: box.dataset.originalVariant,
+							product: box.dataset.product,
+							purchaseType: box.dataset.purchaseType,
+							sellingPlanId: box.dataset.subscriptionSellingPlanId
+					});
+
 					submitButton.disabled = true;
 					const btnHTML = submitButton.innerHTML;
 					submitButton.innerHTML = `<div class="button-spinner"></div>`;
 
 					try {
 							const isSub = box.dataset.purchaseType === 'subscribe';
-							const variant = box.dataset.variant;
+							// Try originalVariant if variant is not available
+							const variant = box.dataset.originalVariant || box.dataset.variant;
+
+							if (!variant) {
+									throw new Error('No valid variant ID found');
+							}
 
 							let items = [{
-									id: variant,
+									id: parseInt(variant, 10), // Ensure variant ID is a number
 									quantity: 1,
 									selling_plan: isSub ? box.dataset.subscriptionSellingPlanId : undefined
 							}];
 
-							// Only add gift item if gifts are available and selected
+							console.log('Items to add:', items); // Debug log
+
 							if (giftsAmount > 0) {
 									const giftEl = document.querySelector('.gift-box.selected');
 									if (!giftEl?.querySelector('.gift-option-border')) {
@@ -741,21 +756,11 @@ document.addEventListener('DOMContentLoaded', () => {
 									const giftID = isSub ? giftB?.dataset.giftIdSubscription : giftB?.dataset.giftId;
 									if (!giftID) throw new Error('Invalid gift selection');
 
-									items.push({ id: giftID, quantity: 1 });
+									items.push({ id: parseInt(giftID, 10), quantity: 1 });
 							}
 
-							if (!variant) throw new Error('Invalid variant selection');
-
-							// Log the items being added
-							console.log('Adding items to cart:', items);
-
 							if (buyType === 'buy_now') {
-									try {
-											await handleBuyNowFlow(items);
-									} catch (buyErr) {
-											// Get more specific error message if possible
-											throw new Error(buyErr.message || 'Failed to process buy now flow');
-									}
+									await handleBuyNowFlow(items);
 							} else {
 									await addValidItemsToCart(items);
 							}
