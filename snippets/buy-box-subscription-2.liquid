@@ -687,16 +687,22 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (!submitButton) return;
 		submitButton.addEventListener('click', async e => {
 			e.preventDefault();
-			const box    = productActions.querySelector('.variant-box.selected');
-			const giftEl = document.querySelector('.gift-box.selected');
+			const box = productActions.querySelector('.variant-box.selected');
+			const giftsAmount = parseInt(productActions.dataset.giftsAmount || '0', 10);
+
 			if (!box) {
-				showNotification('Please select a purchase option');
-				return;
+					showNotification('Please select a purchase option');
+					return;
 			}
-			if (!giftEl?.querySelector('.gift-option-border')) {
-				showNotification('Please select a gift option');
-				return;
+
+			if (giftsAmount > 0) {
+					const giftEl = document.querySelector('.gift-box.selected');
+					if (!giftEl?.querySelector('.gift-option-border')) {
+							showNotification('Please select a gift option');
+							return;
+					}
 			}
+
 			submitButton.disabled = true;
 			const btnHTML         = submitButton.innerHTML;
 			submitButton.innerHTML = `<div class="button-spinner"></div>`;
