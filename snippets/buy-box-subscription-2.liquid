@@ -33,11 +33,15 @@
 				{% assign varPurchaseType = block.settings.purchase_type %}
 				{% if block.type == 'variant' and varPurchaseType == 'subscribe' %}
 					{% assign referenced_variant = blank %}
-					{% assign blockVarID = block.settings.variant_id | plus: 0 %}
+					{% if isGlobal %}
+						{% assign blockVarID = block.settings.variant_id_global | plus: 0 %}
+					{% else %}
+						{% assign blockVarID = block.settings.variant_id | plus: 0 %}
+					{% endif %}
+
 					{% for vari in referenced_variant_product.variants %}
 						{% assign currVarID = vari.id | plus: 0 %}
 						<script>
-							console.log('referenced_variant_product: {{ referenced_variant_product | json }}');
 							console.log('currVarID: {{ currVarID }}');
 							console.log('blockVarID: {{ blockVarID }}');
 						</script>
