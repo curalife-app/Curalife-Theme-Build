@@ -37,6 +37,27 @@
 	</section>
 {% endif %}
 
+<style>
+	/* Base section styles */
+	#button-section-{{ section.id }} {
+			padding-top: {% if section.settings.padding_top != 50 and section.settings.padding_top != blank %}{{ section.settings.padding_top }}px{% endif %};
+			padding-bottom: {% if section.settings.padding_bottom != 50 and section.settings.padding_top != blank %}{{ section.settings.padding_bottom }}px{% endif %};
+	}
+
+	/* Hidden state for button section */
+	#button-section-{{ section.id }}.hidden {
+			display: none;
+	}
+
+	/* Mobile padding adjustments */
+	@media screen and (max-width: 768px) {
+			#button-section-{{ section.id }} {
+					padding-top: {% if section.settings.padding_top_mobile != blank %}{{ section.settings.padding_top_mobile }}vw{% endif %};
+					padding-bottom: {% if section.settings.padding_bottom_mobile != blank %}{{ section.settings.padding_bottom_mobile }}vw{% endif %};
+			}
+	}
+</style>
+
 {% if section.settings.is_pass_url_parameters %}
 	<script>
 		document.addEventListener('DOMContentLoaded', function () {
@@ -114,25 +135,6 @@
 	</script>
 
 	<style>
-		/* Base section styles */
-		#button-section-{{ section.id }} {
-				padding-top: {% if section.settings.padding_top != 50 and section.settings.padding_top != blank %}{{ section.settings.padding_top }}px{% endif %};
-				padding-bottom: {% if section.settings.padding_bottom != 50 and section.settings.padding_top != blank %}{{ section.settings.padding_bottom }}px{% endif %};
-		}
-
-		/* Hidden state for button section */
-		#button-section-{{ section.id }}.hidden {
-				display: none;
-		}
-
-		/* Mobile padding adjustments */
-		@media screen and (max-width: 768px) {
-				#button-section-{{ section.id }} {
-						padding-top: {% if section.settings.padding_top_mobile != blank %}{{ section.settings.padding_top_mobile }}vw{% endif %};
-						padding-bottom: {% if section.settings.padding_bottom_mobile != blank %}{{ section.settings.padding_bottom_mobile }}vw{% endif %};
-				}
-		}
-
 		/* Sticky bar container */
 		#sticky-bar {
 				position: fixed;
