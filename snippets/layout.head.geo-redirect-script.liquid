@@ -31,97 +31,202 @@
 
 {% unless admin %}
 	<script>
-		// Update the Logger class implementation
-		class Logger {
-			static DEBUG = new URLSearchParams(window.location.search).get('debug') === 'true';
-			static #startTime = performance.now();
-			static #levels = { info: '🔵', warn: '🟡', error: '🔴', success: '🟢' };
+// Core configuration object - defined first
+const CONFIG = {
+		RETRY: { LIMIT: 50, DELAY: 10 },
+		TIMING: { REDIRECT: 3000, FETCH: 5000 },
+		COOKIE_HOURS: 12,
+		GEO_URL: 'https://geo.curalife.com/',
+		REGIONS: {
+				EU: { LT: 'curalife.lv', LV: 'curalife.lv', HU: 'curalife.hu' },
+				ASIA: { SG: 'curalife.sg', MY: 'curalife.sg', KZ: 'curalife.kz' },
+				MIDDLE_EAST: { KW: 'trycuralife.com' }
+		},
+		US_REGIONS: new Set(['US', 'PR', 'CA', 'AU', 'BR'])
+};
 
-			static log(level, msg, data) {
+// Pass Liquid variables to JavaScript
+window.isBlog = {{ isBlog | json }};
+window.isCuralinSubPage = {{ isCuralinSubPage | json }};
+
+// Enhanced logging implementation
+class Logger {
+		static DEBUG = new URLSearchParams(window.location.search).get('debug') === 'true';
+		static #startTime = performance.now();
+		static #levels = { info: '🔵', warn: '🟡', error: '🔴', success: '🟢' };
+
+		static log(level, msg, data) {
 				if (!this.DEBUG) return;
 				const elapsed = (performance.now() - this.#startTime).toFixed(2);
 				const message = `[${elapsed}ms] ${this.#levels[level]} ${msg}${data ? ` | ${JSON.stringify(data)}` : ''}`;
 
 				switch (level) {
-					case 'error':
-						console.error(message);
-						break;
-					case 'warn':
-						console.warn(message);
-						break;
-					default:
-						console.log(message);
+						case 'error': console.error(message); break;
+						case 'warn': console.warn(message); break;
+						default: console.log(message);
 				}
-			}
-
-			static info(msg, data) {
-				this.log('info', msg, data);
-			}
-			static warn(msg, data) {
-				this.log('warn', msg, data);
-			}
-			static error(msg, data) {
-				this.log('error', msg, data);
-			}
-			static success(msg, data) {
-				this.log('success', msg, data);
-			}
 		}
 
-		// Update initialization to use Logger methods
-		async function initialize() {
-			Logger.info('Starting initialization');
+		static info(msg, data) { this.log('info', msg, data); }
+		static warn(msg, data) { this.log('warn', msg, data); }
+		static error(msg, data) { this.log('error', msg, data); }
+		static success(msg, data) { this.log('success', msg, data); }
+}
 
-			if (!document.body) {
+// Cookie management
+class CookieManager {
+		static set(name, value, hours) {
+				const expires = new Date(Date.now() + hours * 3600000).toUTCString();
+				document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; secure; samesite=strict`;
+				Logger.success('Cookie set', { name, expires });
+		}
+
+		static get(name) {
+				const value = document.cookie.split('; ')
+						.find(row => row.startsWith(name + '='))
+						?.split('=')[1];
+				return value ? decodeURIComponent(value) : null;
+		}
+}
+
+// URL management
+class URLManager {
+		static getParam(param) {
+				return new URLSearchParams(window.location.search).get(param);
+		}
+
+		static buildRedirectUrl(baseUrl, keepPath) {
+				return keepPath ? `${baseUrl}${window.location.pathname}${window.location.search}` : baseUrl;
+		}
+
+		static isRobot() {
+				return /bot|crawler|spider|crawling/i.test(navigator.userAgent);
+		}
+}
+
+// Redirect handling
+class RedirectManager {
+		static #overlay = null;
+
+		static #createOverlay() {
+				const overlay = document.createElement('div');
+				overlay.innerHTML = `
+						<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.8);z-index:10000;display:flex;justify-content:center;align-items:center">
+								<div style="background:#fff;padding:2rem;border-radius:15px;box-shadow:0 16px 29px rgba(0,0,0,0.28);text-align:center">
+										<div style="color:#325f69;font-size:1.5em;font-weight:bold;margin-bottom:20px">
+												Directing you to the right store...
+										</div>
+										<div class="redirect-spinner"></div>
+								</div>
+						</div>
+				`;
+				return overlay;
+		}
+
+		static async redirect(url, keepPath = false) {
+				if (!this.#overlay) {
+						this.#overlay = this.#createOverlay();
+						document.body.appendChild(this.#overlay);
+				}
+				const redirectUrl = URLManager.buildRedirectUrl(url, keepPath);
+				Logger.info('Redirecting to', { url: redirectUrl });
+				await new Promise(resolve => setTimeout(resolve, CONFIG.TIMING.REDIRECT));
+				window.location.href = redirectUrl;
+		}
+
+		static #getCountryUrl(country) {
+				return Object.values(CONFIG.REGIONS)
+						.reduce((url, region) => url || region[country], null);
+		}
+
+		static async handleRedirection(country) {
+				const isGlobalSite = location.hostname === 'global.curalife.com';
+				const countryUrl = this.#getCountryUrl(country);
+
+				if (countryUrl) {
+						await this.redirect(`https://${countryUrl}`, false);
+						return;
+				}
+
+				const needsGlobalRedirect = !isGlobalSite && !CONFIG.US_REGIONS.has(country) && !window.isBlog;
+				const needsUSRedirect = isGlobalSite && CONFIG.US_REGIONS.has(country) && !window.isBlog;
+
+				if (needsGlobalRedirect) {
+						const path = window.isCuralinSubPage ? '/products/curalin' : '';
+						await this.redirect(`https://global.curalife.com${path}`, !window.isCuralinSubPage);
+				} else if (needsUSRedirect) {
+						await this.redirect('https://curalife.com', true);
+				}
+		}
+}
+
+// Add spinner styles
+const style = document.createElement('style');
+style.textContent = `
+		.redirect-spinner {
+				width: 60px;
+				height: 60px;
+				border: 5px solid #f3f3f3;
+				border-top: 5px solid #FFB22D;
+				border-radius: 50%;
+				animation: spin 2s linear infinite;
+		}
+		@keyframes spin {
+				0% { transform: rotate(0deg); }
+				100% { transform: rotate(360deg); }
+		}
+`;
+document.head.appendChild(style);
+
+// Main initialization
+async function initialize() {
+		Logger.info('Starting initialization');
+
+		if (!document.body) {
 				Logger.warn('Document body not ready');
 				return;
-			}
+		}
 
-			if (URLManager.isRobot()) {
+		if (URLManager.isRobot()) {
 				Logger.info('Robot detected, skipping redirect');
 				return;
-			}
+		}
 
-			const geoOverride = URLManager.getParam('geo');
-			if (geoOverride) {
+		const geoOverride = URLManager.getParam('geo');
+		if (geoOverride) {
 				Logger.info('Geo override detected', { geo: geoOverride });
 				CookieManager.set('country', geoOverride.toUpperCase(), CONFIG.COOKIE_HOURS);
-			}
+		}
 
-			try {
+		try {
 				Logger.info('Checking country');
 				const cachedCountry = CookieManager.get('country');
 
 				if (cachedCountry) {
-					Logger.info('Using cached country', { country: cachedCountry });
+						Logger.info('Using cached country', { country: cachedCountry });
 				}
 
-				const country =
-					cachedCountry ||
-					(await fetch(CONFIG.GEO_URL)
+				const country = cachedCountry || await fetch(CONFIG.GEO_URL)
 						.then(res => res.json())
 						.then(data => {
-							Logger.success('Country detected from API', { country: data.country });
-							CookieManager.set('country', data.country, CONFIG.COOKIE_HOURS);
-							return data.country;
-						}));
+								Logger.success('Country detected from API', { country: data.country });
+								CookieManager.set('country', data.country, CONFIG.COOKIE_HOURS);
+								return data.country;
+						});
 
 				if (country) {
-					Logger.info('Processing redirection', { country });
-					await RedirectManager.handleRedirection(country);
+						Logger.info('Processing redirection', { country });
+						await RedirectManager.handleRedirection(country);
 				}
-			} catch (err) {
+		} catch (err) {
 				Logger.error('Redirection failed', err);
-			}
 		}
+}
 
-		// Remove CONFIG.DEBUG and use Logger.DEBUG instead
-		delete CONFIG.DEBUG;
-
-		// Initialize on DOMContentLoaded
-		document.addEventListener('DOMContentLoaded', () => {
-			Logger.info('DOM loaded, starting application');
-			initialize();
-		});
+// Initialize on DOMContentLoaded
+document.addEventListener('DOMContentLoaded', () => {
+		Logger.info('DOM loaded, starting application');
+		initialize();
+});
 	</script>
 {% endunless %}
