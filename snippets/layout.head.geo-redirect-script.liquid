@@ -1,7 +1,6 @@
 {% comment %}
 	Configuration Settings - Consider moving to theme settings
 {% endcomment %}
-{% assign bypassUsers = 'yotam@curalife.com|yotamon@gmail.com' | split: '|' %}
 {% assign adminIdentifiers = 'adminBarInjector,admin-bar-iframe,preview_bar_injector-' | split: ',' %}
 
 {% comment %}
@@ -21,21 +20,6 @@
 		{% break %}
 	{% endif %}
 {% endfor %}
-
-{% comment %}
-	Check URL parameters and special conditions
-{% endcomment %}
-{% if CFH contains 'redirect=false' %}
-	{% assign admin = true %}
-	<script>
-		console.log('Redirect disabled: URL parameter override');
-	</script>
-{% elsif bypassUsers contains customer.email %}
-	{% assign admin = true %}
-	<script>
-		console.log('Redirect disabled: Employee email detected');
-	</script>
-{% endif %}
 
 {% comment %}
 	Check page type and special paths
