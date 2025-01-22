@@ -52,13 +52,11 @@ window.isCuralinSubPage = {{ isCuralinSubPage | json }};
 // Enhanced logging implementation
 class Logger {
 		static DEBUG = new URLSearchParams(window.location.search).get('debug') === 'true';
-		static #startTime = performance.now();
 		static #levels = { info: '🔵', warn: '🟡', error: '🔴', success: '🟢' };
 
 		static log(level, msg, data) {
 				if (!this.DEBUG) return;
-				const elapsed = (performance.now() - this.#startTime).toFixed(2);
-				const message = `[${elapsed}ms] ${this.#levels[level]} ${msg}${data ? ` | ${JSON.stringify(data)}` : ''}`;
+				const message = `${this.#levels[level]} ${msg}${data ? ` | ${JSON.stringify(data)}` : ''}`;
 
 				switch (level) {
 						case 'error': console.error(message); break;
