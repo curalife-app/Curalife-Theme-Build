@@ -80,34 +80,51 @@ const CONFIG = {
 
 // Debug logger utility with optional logging
 class Logger {
-static #log(level, message, data = null) {
-	if (!CONFIG.DEBUG_MODE) return;
+		static #log(level, message, data = null) {
+				if (!CONFIG.DEBUG_MODE) return;
 
-	const icons = {
-		info: '🔵',
-		warn: '🟡',
-		error: '🔴',
-		success: '🟢'
-	};
+				const icons = {
+						info: '🔵',
+						warn: '🟡',
+						error: '🔴',
+						success: '🟢'
+				};
 
-	const logMessage = data
-		? `${icons[level]} ${message}${data ? ` | ${JSON.stringify(data)}` : ''}`
-		: `${icons[level]} ${message}`;
+				const logMessage = data
+						? `${icons[level]} ${message}${data ? ` | ${JSON.stringify(data)}` : ''}`
+						: `${icons[level]} ${message}`;
 
-	switch (level) {
-		case 'warn':
-			console.warn(logMessage);
-			break;
-		case 'error':
-			if (data instanceof Error) {
-				console.error(`${logMessage}\nError: ${data.message}\n${data.stack}`);
-			} else {
-				console.error(logMessage);
-			}
-			break;
-		default:
-			console.log(logMessage);
-	}
+				switch (level) {
+						case 'warn':
+								console.warn(logMessage);
+								break;
+						case 'error':
+								if (data instanceof Error) {
+										console.error(`${logMessage}\nError: ${data.message}\n${data.stack}`);
+								} else {
+										console.error(logMessage);
+								}
+								break;
+						default:
+								console.log(logMessage);
+				}
+		}
+
+		static info(message, data = null) {
+				this.#log('info', message, data);
+		}
+
+		static warn(message, data = null) {
+				this.#log('warn', message, data);
+		}
+
+		static error(message, error = null) {
+				this.#log('error', message, error);
+		}
+
+		static success(message, data = null) {
+				this.#log('success', message, data);
+		}
 }
 
 // Cookie handling
