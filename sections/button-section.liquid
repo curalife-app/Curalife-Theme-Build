@@ -75,10 +75,15 @@
 		document.addEventListener('DOMContentLoaded', function () {
 			const stickyBar = document.getElementById('sticky-bar');
 			const stickyHideSetting = "{{ section.settings.sticky_hide | default: '' | strip }}";
-			const hideOnElements = stickyHideSetting
-				.split(',')
-				.map(s => s.trim())
-				.filter(s => s !== '');
+			const hideOnElements = [
+				...new Set([
+					'.cta-section',
+					...stickyHideSetting
+						.split(',')
+						.map(s => s.trim())
+						.filter(s => s !== '')
+				])
+			];
 
 			// Track intersecting elements for visibility state
 			const intersectingElements = new Set();
