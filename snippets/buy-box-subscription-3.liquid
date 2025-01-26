@@ -12,6 +12,7 @@
 {% assign referenced_variant_product = prod %}
 
 {% assign giftsAmount = 0 %}
+{% assign faqsAmount = value %}
 {% for block in blocks %}
 	{% case block.type %}
 		{% when 'gift' %}
@@ -27,6 +28,9 @@
 			{% if show_gift %}
 				{% assign giftsAmount = giftsAmount | plus: 1 %}
 			{% endif %}
+
+		{% when 'faq' %}
+			{% assign faqsAmount = faqsAmount | plus: 1 %}
 	{% endcase %}
 {% endfor %}
 
@@ -200,6 +204,25 @@
 		<div class="notice flex text-[--primary] my-4 gap-2" style="font-size:15px">
 			<span>ⓘ</span>
 			<span>{{ variantsNotice }}</span>
+		</div>
+	{% endif %}
+
+	//if block
+	{% if isHideInfo == false %}
+		<div class="faq-wrap flex flex-col gap-3 mb-3">
+			<div class="faq-title text-[18px] font-medium">FAQs</div>
+
+			<div class="faq-questions flex flex-col gap-2">
+				{% for block in blocks %}
+					{% case block.type %}
+						{% when 'faq' %}
+							<div class="faq-question">
+								<div class="faq-question-title text-[16px] font-bold">{{ block.settings.question }}</div>
+								<div class="faq-answer text-gray-600" style="font-size: 14px">{{ block.settings.answer }}</div>
+							</div>
+					{% endcase %}
+				{% endfor %}
+			</div>
 		</div>
 	{% endif %}
 
