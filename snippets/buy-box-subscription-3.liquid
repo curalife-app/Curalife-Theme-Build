@@ -209,12 +209,24 @@
 
 	{% if faqsAmount > 0 %}
 		<div class="faq-wrap flex flex-col gap-3 mb-3">
-			<div class="faq-questions flex flex-col gap-2">
+			<div class="faq-title text-[18px] font-medium mb-2">Frequently Asked Questions</div>
+			<div class="faq-questions flex flex-col gap-3">
 				{% for block in blocks %}
 					{% if block.type == 'faq' %}
-						<div class="faq-question">
-							<div class="faq-question-title text-[16px] font-bold">{{ block.settings.question }}</div>
-							<div class="faq-answer text-gray-600" style="font-size: 14px">{{ block.settings.answer }}</div>
+						<div class="faq-question overflow-hidden bg-white border border-gray-200 rounded-lg">
+							<div class="faq-question-header flex items-center justify-between p-4 cursor-pointer">
+								<div class="faq-question-title text-[16px] font-semibold pr-8">{{ block.settings.question }}</div>
+								<div class="faq-toggle-icon">
+									<svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+										<path d="M12 5v14M5 12h14"></path>
+									</svg>
+								</div>
+							</div>
+							<div class="faq-answer-wrapper">
+								<div class="faq-answer p-4 pt-0 text-gray-600">
+									{{ block.settings.answer }}
+								</div>
+							</div>
 						</div>
 					{% endif %}
 				{% endfor %}
@@ -224,9 +236,38 @@
 		<script>
 			document.addEventListener('DOMContentLoaded', () => {
 				const faqQuestions = document.querySelectorAll('.faq-question');
-				faqQuestions.forEach(q => {
-					q.addEventListener('click', () => {
-						q.classList.toggle('open');
+
+				faqQuestions.forEach(question => {
+					const header = question.querySelector('.faq-question-header');
+					const answerWrapper = question.querySelector('.faq-answer-wrapper');
+					const answer = question.querySelector('.faq-answer');
+					const toggle = question.querySelector('.faq-toggle-icon');
+
+					// Initially set height to 0
+					answerWrapper.style.height = '0px';
+
+					header.addEventListener('click', () => {
+						const isOpen = question.classList.contains('open');
+
+						// Close all other questions first
+						faqQuestions.forEach(q => {
+							if (q !== question && q.classList.contains('open')) {
+								q.classList.remove('open');
+								q.querySelector('.faq-answer-wrapper').style.height = '0px';
+								q.querySelector('.faq-toggle-icon').classList.remove('rotate-45');
+							}
+						});
+
+						// Toggle current question
+						question.classList.toggle('open');
+
+						if (!isOpen) {
+							answerWrapper.style.height = answer.offsetHeight + 'px';
+							toggle.classList.add('rotate-45');
+						} else {
+							answerWrapper.style.height = '0px';
+							toggle.classList.remove('rotate-45');
+						}
 					});
 				});
 			});
@@ -234,15 +275,33 @@
 
 		<style>
 			.faq-question {
-				cursor: pointer;
+				transition: all 0.3s ease;
 			}
 
-			.faq-question.open .faq-answer {
-				display: block;
+			.faq-question:hover {
+				box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 			}
 
-			.faq-answer {
-				display: none;
+			.faq-answer-wrapper {
+				transition: height 0.3s ease-in-out;
+			}
+
+			.faq-toggle-icon {
+				transition: transform 0.3s ease;
+			}
+
+			.rotate-45 {
+				transform: rotate(45deg);
+			}
+
+			@media (max-width: 767px) {
+				.faq-question-title {
+					font-size: 14px;
+				}
+
+				.faq-answer {
+					font-size: 13px;
+				}
 			}
 		</style>
 	{% endif %}
