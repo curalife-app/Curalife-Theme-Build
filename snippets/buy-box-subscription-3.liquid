@@ -215,11 +215,6 @@
 						<div class="faq-question overflow-hidden bg-white border border-gray-200 rounded-lg">
 							<div class="faq-question-header flex items-center justify-between p-4 cursor-pointer">
 								<div class="faq-question-title text-[16px] font-semibold pr-8">{{ block.settings.question }}</div>
-								<div class="faq-toggle-icon" aria-hidden="true">
-									<svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" role="img" aria-label="Toggle FAQ">
-										<path d="M12 5v14M5 12h14" stroke="currentColor"></path>
-									</svg>
-								</div>
 							</div>
 							<div class="faq-answer-wrapper">
 								<div class="faq-answer p-4 pt-0 text-gray-600">
@@ -240,7 +235,6 @@
 					const header = question.querySelector('.faq-question-header');
 					const answerWrapper = question.querySelector('.faq-answer-wrapper');
 					const answer = question.querySelector('.faq-answer');
-					const toggle = question.querySelector('.faq-toggle-icon');
 
 					// Initially set height to 0
 					answerWrapper.style.height = '0px';
@@ -253,7 +247,6 @@
 							if (q !== question && q.classList.contains('open')) {
 								q.classList.remove('open');
 								q.querySelector('.faq-answer-wrapper').style.height = '0px';
-								q.querySelector('.faq-toggle-icon').classList.remove('rotate-45');
 							}
 						});
 
@@ -262,10 +255,8 @@
 
 						if (!isOpen) {
 							answerWrapper.style.height = answer.offsetHeight + 'px';
-							toggle.classList.add('rotate-45');
 						} else {
 							answerWrapper.style.height = '0px';
-							toggle.classList.remove('rotate-45');
 						}
 					});
 				});
@@ -285,17 +276,20 @@
 				transition: height 0.3s ease-in-out;
 			}
 
-			.faq-toggle-icon {
-				transition: transform 0.3s ease;
-				color: #333;
+			.faq-question-header {
+				position: relative;
 			}
 
-			.faq-toggle-icon svg {
-				display: block;
-				pointer-events: none;
+			.faq-question-header::after {
+				content: '+';
+				position: absolute;
+				right: 1rem;
+				font-size: 2rem;
+				transition: transform 0.3s;
+				line-height: 1;
 			}
 
-			.rotate-45 {
+			.faq-question.open .faq-question-header::after {
 				transform: rotate(45deg);
 			}
 
