@@ -209,17 +209,14 @@
 
 	{% if faqsAmount > 0 %}
 		<div class="faq-wrap flex flex-col gap-3 mb-3">
-			<div class="faq-title text-[18px] font-medium">FAQs</div>
-
 			<div class="faq-questions flex flex-col gap-2">
 				{% for block in blocks %}
-					{% case block.type %}
-						{% when 'faq' %}
-							<div class="faq-question">
-								<div class="faq-question-title text-[16px] font-bold">{{ block.settings.question }}</div>
-								<div class="faq-answer text-gray-600" style="font-size: 14px">{{ block.settings.answer }}</div>
-							</div>
-					{% endcase %}
+					{% if block.type == 'faq' %}
+						<div class="faq-question">
+							<div class="faq-question-title text-[16px] font-bold">{{ block.settings.question }}</div>
+							<div class="faq-answer text-gray-600" style="font-size: 14px">{{ block.settings.answer }}</div>
+						</div>
+					{% endif %}
 				{% endfor %}
 			</div>
 		</div>
