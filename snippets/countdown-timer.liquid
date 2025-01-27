@@ -1,12 +1,12 @@
 {%- comment -%}
-	Configurable countdown timer for Shopify
-	Parameters:
-	- section_id: Unique identifier for the section
-	- bgColor: Background color
-	- isShowDays: Boolean to toggle days display
-	- showLabels: Boolean to toggle time unit labels
-	- urgencyMinutes: Duration for countdown reset
-	- targetDate: Specific end date (format: "Month Day, Year Hour:Minute:00")
+	Countdown Timer Snippet
+	Configuration:
+	- section_id: Unique section identifier
+	- bgColor: Background color setting
+	- isShowDays: Toggle days display
+	- showLabels: Toggle time unit labels
+	- urgencyMinutes: Reset duration in minutes
+	- targetDate: Specific end date (Month Day, Year Hour:Minute:00)
 {%- endcomment -%}
 
 <div id="countdown-{{ section_id }}" class="countdown">
@@ -96,11 +96,11 @@
 	const MINUTE = SECOND * 60;
 	const HOUR = MINUTE * 60;
 	const DAY = HOUR * 24;
+	const SECTION_ID = '{{ section_id }}';
 
-	// Utility functions
 	const pad = num => String(num).padStart(2, '0');
 
-	const getStorageKey = () => `countdown_${{{ section_id }}}`;
+	const getStorageKey = () => `countdown_${SECTION_ID}`;
 
 	const getStoredEndTime = () => {
 		const stored = localStorage.getItem(getStorageKey());
@@ -113,14 +113,13 @@
 
 	const updateDisplay = (timeLeft) => {
 		{% if isShowDays %}
-		document.getElementById(`days-{{ section_id }}`).textContent = pad(timeLeft.days);
+		document.getElementById(`days-${SECTION_ID}`).textContent = pad(timeLeft.days);
 		{% endif %}
-		document.getElementById(`hours-{{ section_id }}`).textContent = pad(timeLeft.hours);
-		document.getElementById(`minutes-{{ section_id }}`).textContent = pad(timeLeft.minutes);
-		document.getElementById(`seconds-{{ section_id }}`).textContent = pad(timeLeft.seconds);
+		document.getElementById(`hours-${SECTION_ID}`).textContent = pad(timeLeft.hours);
+		document.getElementById(`minutes-${SECTION_ID}`).textContent = pad(timeLeft.minutes);
+		document.getElementById(`seconds-${SECTION_ID}`).textContent = pad(timeLeft.seconds);
 	};
 
-	// Initialize countdown
 	{% if urgencyMinutes > 0 %}
 		let endTime = getStoredEndTime() || Date.now() + ({{ urgencyMinutes }} * MINUTE);
 		setStoredEndTime(endTime);
@@ -153,7 +152,7 @@
 			const distance = targetDate - now;
 
 			if (distance < 0) {
-				document.getElementById("countdown-{{ section_id }}").remove();
+				document.getElementById(`countdown-${SECTION_ID}`).remove();
 				return;
 			}
 
