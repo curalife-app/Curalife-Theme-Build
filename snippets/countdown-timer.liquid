@@ -1,16 +1,9 @@
 {%- comment -%}
-	Countdown Timer Snippet
-	Configuration:
-	- section_id: Unique section identifier
-	- bgColor: Background color setting
-	- isShowDays: Toggle days display
-	- showLabels: Toggle time unit labels
-	- urgencyMinutes: Reset duration in minutes
-	- targetDate: Specific end date (Month Day, Year Hour:Minute:00)
+	Countdown Timer with Separators
 {%- endcomment -%}
 
 <div id="countdown-{{ section_id }}" class="countdown">
-	<ul class="no-style">
+	<ul>
 		{%- if isShowDays -%}
 			<li>
 				<span id="days-{{ section_id }}"></span>
@@ -18,6 +11,7 @@
 					<span class="label">Days</span>
 				{%- endif -%}
 			</li>
+			<li class="separator">:</li>
 		{%- endif -%}
 		<li>
 			<span id="hours-{{ section_id }}"></span>
@@ -25,12 +19,14 @@
 				<span class="label">Hours</span>
 			{%- endif -%}
 		</li>
+		<li class="separator">:</li>
 		<li>
 			<span id="minutes-{{ section_id }}"></span>
 			{%- if showLabels -%}
 				<span class="label">Minutes</span>
 			{%- endif -%}
 		</li>
+		<li class="separator">:</li>
 		<li>
 			<span id="seconds-{{ section_id }}"></span>
 			{%- if showLabels -%}
@@ -50,10 +46,11 @@
 
 	.countdown ul {
 		display: flex;
-		gap: 1rem;
+		align-items: center;
 		list-style: none;
 		margin: 0;
 		padding: 0;
+		gap: 0.25rem;
 	}
 
 	.countdown li {
@@ -63,10 +60,19 @@
 		min-width: 70px;
 	}
 
+	.countdown li.separator {
+		min-width: auto;
+		font-size: 2.5rem;
+		line-height: 2.5rem;
+		margin-top: -0.5rem;
+		padding: 0 0.25rem;
+	}
+
 	.countdown li span:first-child {
 		font-size: 2.5rem;
 		font-weight: 500;
 		font-variant-numeric: tabular-nums;
+		line-height: 1;
 	}
 
 	.countdown .label {
@@ -82,6 +88,11 @@
 
 		.countdown li span:first-child {
 			font-size: 2rem;
+		}
+
+		.countdown li.separator {
+			font-size: 2rem;
+			line-height: 2rem;
 		}
 
 		.countdown .label {
