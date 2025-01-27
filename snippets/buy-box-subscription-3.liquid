@@ -564,13 +564,23 @@ document.addEventListener('DOMContentLoaded', () => {
 			const subPrice = parseFloat(el.dataset.subscriptionPrice) / 100 || 0;
 			const origPerItem = parseFloat(el.dataset.originalItemCap) / 100 || 0;
 			const bottles = parseInt(el.dataset.bottleQuantity, 10) || 1;
-			const firstMonthDiscount = parseFloat(el.dataset.firstMonthDiscount) || 0;
 
 			// Calculate original and discounted prices
-			const totalOrig = origPerItem * bottles;
-			const firstMonthDiscountMultiplier = (100 - firstMonthDiscount) / 100;
+			// Get subscription and first month discounts
+			const subscriptionDiscount = parseFloat(el.dataset.subscriptionDiscount) || 0;
+			const firstMonthDiscount = parseFloat(el.dataset.firstMonthDiscount) || 0;
+
+			// Combine discounts for first month
+			const totalFirstMonthDiscount = subscriptionDiscount + firstMonthDiscount;
+			const firstMonthDiscountMultiplier = (100 - totalFirstMonthDiscount) / 100;
+
+			// Calculate prices
 			const firstMonthSubItem = subItem * firstMonthDiscountMultiplier;
 			const firstMonthSubPrice = subPrice * firstMonthDiscountMultiplier;
+
+			// Regular subscription price for future months uses only subscription discount
+			const regularDiscountMultiplier = (100 - subscriptionDiscount) / 100;
+			const regularPrice = (priceFormat === 'total' ? subPrice : subItem) * regularDiscountMultiplier;
 
 			// Calculate savings amount based on price format
 			const saveAmt = priceFormat === 'total'
