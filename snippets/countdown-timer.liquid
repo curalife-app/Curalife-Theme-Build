@@ -1,21 +1,34 @@
+{%- comment -%}
+	Countdown Timer Snippet
+	Configuration:
+	- section_id: Unique section identifier
+	- bgColor: Background color setting
+	- isShowDays: Toggle days display (only for non-urgency timer)
+	- showLabels: Toggle time unit labels
+	- urgencyMinutes: Reset duration in minutes
+	- targetDate: Specific end date (Month Day, Year Hour:Minute:00)
+{%- endcomment -%}
+
 <div id="countdown-{{ section_id }}" class="countdown">
 	<ul class="no-style">
-		{%- if isShowDays -%}
+		{%- if urgencyMinutes == 0 -%}
+			{%- if isShowDays -%}
+				<li>
+					<span id="days-{{ section_id }}"></span>
+					{%- if showLabels -%}
+						<span class="label">Days</span>
+					{%- endif -%}
+				</li>
+				<li class="separator">:</li>
+			{%- endif -%}
 			<li>
-				<span id="days-{{ section_id }}"></span>
+				<span id="hours-{{ section_id }}"></span>
 				{%- if showLabels -%}
-					<span class="label">Days</span>
+					<span class="label">Hours</span>
 				{%- endif -%}
 			</li>
 			<li class="separator">:</li>
 		{%- endif -%}
-		<li>
-			<span id="hours-{{ section_id }}"></span>
-			{%- if showLabels -%}
-				<span class="label">Hours</span>
-			{%- endif -%}
-		</li>
-		<li class="separator">:</li>
 		<li>
 			<span id="minutes-{{ section_id }}"></span>
 			{%- if showLabels -%}
@@ -118,12 +131,19 @@
 	};
 
 	const updateDisplay = (timeLeft) => {
-		{% if isShowDays %}
-		document.getElementById(`days-${SECTION_ID}`).textContent = pad(timeLeft.days);
+		{% if urgencyMinutes > 0 %}
+			// For urgency timer, only show minutes and seconds
+			const totalMinutes = (timeLeft.hours * 60) + timeLeft.minutes;
+			document.getElementById(`minutes-${SECTION_ID}`).textContent = pad(totalMinutes);
+			document.getElementById(`seconds-${SECTION_ID}`).textContent = pad(timeLeft.seconds);
+		{% else %}
+			{% if isShowDays %}
+				document.getElementById(`days-${SECTION_ID}`).textContent = pad(timeLeft.days);
+			{% endif %}
+			document.getElementById(`hours-${SECTION_ID}`).textContent = pad(timeLeft.hours);
+			document.getElementById(`minutes-${SECTION_ID}`).textContent = pad(timeLeft.minutes);
+			document.getElementById(`seconds-${SECTION_ID}`).textContent = pad(timeLeft.seconds);
 		{% endif %}
-		document.getElementById(`hours-${SECTION_ID}`).textContent = pad(timeLeft.hours);
-		document.getElementById(`minutes-${SECTION_ID}`).textContent = pad(timeLeft.minutes);
-		document.getElementById(`seconds-${SECTION_ID}`).textContent = pad(timeLeft.seconds);
 	};
 
 	{% if urgencyMinutes > 0 %}
