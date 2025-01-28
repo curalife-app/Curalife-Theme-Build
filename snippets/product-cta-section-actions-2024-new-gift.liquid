@@ -126,11 +126,6 @@
 							Add To Cart
 						{% endif %}
 					</span>
-					<div class="loading-overlay__spinner hidden">
-						<svg aria-hidden="true" focusable="false" class="spinner" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
-							<circle class="path !stroke-black" fill="black" stroke-width="6" cx="33" cy="33" r="30"></circle>
-						</svg>
-					</div>
 				</button>
 			</div>
 
@@ -724,7 +719,7 @@
 		const result = await addValidItemsToCart(items);
 		if (result.success) {
 			{% if buyType == "buy_now" and shop.name != "CuraLife Global" %}
-				// window.location.href = '/checkout';
+				window.location.href = '/checkout';
 			{% endif %}
 		} else if (result.error) {
 			showNotification(result.error.message || 'Failed to add items to cart', 'error');
@@ -732,7 +727,7 @@
 	} catch (error) {
 		showNotification(error.message || 'An unexpected error occurred', 'error');
 	} finally {
-		toggleButtonLoading(submitButton, false);
+		// toggleButtonLoading(submitButton, false);
 	}
 });
 
