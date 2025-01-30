@@ -2,7 +2,7 @@
 
 {% assign variant_id = var.metafields.custom.reference_variant_id | default: var.id %}
 {% assign bottle_quantity = var.metafields.my_fields.pack_bottles_quantity | default: 1 %}
-{% assign original_item_cap = var.metafields.custom.original_item.value.compare_at_price | default: var.metafields.custom.original_item.value.price | default: var.compare_at_price | default: var.price  %}
+{% assign original_item_cap = var.metafields.custom.original_item.value.compare_at_price | default: var.metafields.custom.original_item.value.price | default: var.compare_at_price %}
 {% assign original_item_cap_total = original_item_cap | times: bottle_quantity %}
 {% assign original_item_price = var.metafields.custom.original_item.value.price %}
 {% assign item_price = var.price | divided_by: bottle_quantity %}
@@ -47,23 +47,6 @@
 {% if request.path contains "curalin-1-1" or var.product.handle contains 'holiday-sale' %}
 	{% assign isBFCM = true %}
 {% endif %}
-
-<script>
-	console.log('variant_id: {{ variant_id }}');
-	console.log('bottle_quantity: {{ bottle_quantity }}');
-	console.log('original_item_cap: {{ original_item_cap }}');
-	console.log('original_item_cap_total: {{ original_item_cap_total }}');
-	console.log('original_item_price: {{ original_item_price }}');
-	console.log('item_price: {{ item_price }}');
-	console.log('save_percents: {{ save_percents }}');
-	console.log('subscription_save_percents: {{ subscription_save_percents }}');
-	console.log('subscription_item_price_save: {{ subscription_item_price_save }}');
-	console.log('subscription_item_price: {{ subscription_item_price }}');
-	console.log('subscription_total_price: {{ subscription_total_price }}');
-	console.log('final_price: {{ final_price }}');
-	console.log('final_subscription_price: {{ final_subscription_price }}');
-	console.log('final_striked_price: {{ final_striked_price }}');
-</script>
 
 <div class="purchase-option-box flex flex-col items-start overflow-hidden {% if index == 1 %}selected{% endif %}" data-variant="{{ variant_id }}" data-original-variant="{{ var.id }}" data-subscription-selling-plan-id="{{ selling_plan_id }}" data-price="{{ var.price | money_without_currency | replace: ".00", "" }}" data-sku="{{ var.sku }}" data-index="{{ index }}" data-item-price="{{ item_price }}" data-subscription-item-price="{{ subscription_item_price }}" data-original-item-cap="{{ original_item_cap }}" data-dc="{{ var.metafields.custom.discount_code | base64_encode }}" data-buy-once-discount="{{ save_percents }}" data-subscription-discount="{{ subscription.save_percents }}" data-bottle-quantity="{{ bottle_quantity }}">
   <div class="top-wrapper flex items-center justify-between w-full gap-4 pb-3">
