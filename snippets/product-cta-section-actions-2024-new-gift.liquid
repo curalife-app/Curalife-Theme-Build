@@ -302,7 +302,12 @@
 			return selectedButton?.classList.contains('subscription') ?? true;
 		}
 
-    function initializePurchaseOptions() {
+		function initializePurchaseOptions() {
+			// Set initial purchase type for all variant boxes to "subscribe"
+			purchaseOptionBoxes.forEach(box => {
+				box.setAttribute('data-purchase-type', 'subscribe');
+			});
+
       const urlParams = new URLSearchParams(window.location.search);
       const defaultVariant = urlParams.get('default-variant') ?
         parseInt(urlParams.get('default-variant')) :
@@ -422,13 +427,18 @@
       productActions.querySelectorAll('.purchase-type button').forEach(btn => btn.classList.remove('selected'));
       button.classList.add('selected');
 
-      const isSubscription = button.classList.contains('subscription');
-      const submitSellingPlanElement = productActions.querySelector('.submit-selling-plan-id');
+			const isSubscription = button.classList.contains('subscription');
+			const submitSellingPlanElement = productActions.querySelector('.submit-selling-plan-id');
 
-      // Set selling plan to blank if "Buy Once" is selected
-      if (!isSubscription && submitSellingPlanElement) {
-        submitSellingPlanElement.value = ''; // Clear the selling plan ID for "Buy Once"
-      }
+			// Update data-purchase-type attribute for all variant boxes
+			purchaseOptionBoxes.forEach(box => {
+				box.setAttribute('data-purchase-type', isSubscription ? 'subscribe' : 'buyonce');
+			});
+
+			// Set selling plan to blank if "Buy Once" is selected
+			if (!isSubscription && submitSellingPlanElement) {
+				submitSellingPlanElement.value = ''; // Clear the selling plan ID for "Buy Once"
+			}
 
 			// Update selected gift if any
 			const selectedGiftContainer = document.querySelector('.gift-option-container.selected');
