@@ -1,4 +1,6 @@
-{{ 'customer.css' | asset_url | stylesheet_tag }}
+
+
+                {{ 'customer.css' | asset_url | stylesheet_tag }}
 
 {%- style -%}
   .section-{{ section.id }}-padding {
@@ -152,6 +154,7 @@
       <a href="{{ routes.account_register_url }}">
         {{ 'customer.login_page.create_account' | t }}
       </a>
+      {% if shop.name == 'CuraLife' %}<a href="https://b2b.curalife.com">Wholesale Customer? Login here</a>{% endif %}
     {%- endform -%}
   </div>
 
@@ -173,6 +176,12 @@
 {
   "name": "t:sections.main-login.name",
   "settings": [
+    {
+      "type": "checkbox",
+      "id": "enable_shop_login_button",
+      "label": "t:sections.main-login.shop_login_button.enable",
+      "default": true
+    },
     {
       "type": "header",
       "content": "t:sections.all.padding.section_padding_heading"
@@ -200,3 +209,4 @@
   ]
 }
 {% endschema %}
+
