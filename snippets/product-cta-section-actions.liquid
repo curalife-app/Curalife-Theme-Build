@@ -488,9 +488,22 @@
 							throw new Error('Failed to add item to cart');
 						}
 						window.location.href = '/checkout';
-					{% else %}
-						// Otherwise (buyType is "add_to_cart"): redirect to the cart URL.
-						window.location.href = `https://${location.hostname}/cart/${packValue}:${quantityValue}`;
+						{% else %}
+						// For add_to_cart: add the item via AJAX without a redirect.
+						const addResponse = await fetch('/cart/add.js', {
+							method: 'POST',
+							headers: { 'Content-Type': 'application/json' },
+							body: JSON.stringify({ items: [{ id: packValue, quantity: parseInt(quantityValue) }] })
+						});
+						if (!addResponse.ok) {
+							throw new Error('Failed to add item to cart');
+						}
+						// Optionally update the cart UI, e.g., update the cart quantity.
+						const newCart = await addResponse.json();
+						if (typeof updateCartQty === 'function') {
+							updateCartQty(newCart.item_count);
+						}
+						alert('Item added to cart!');
 					{% endif %}
 				} catch (error) {
 					console.error(error);
