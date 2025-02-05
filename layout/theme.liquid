@@ -103,6 +103,23 @@
 			};
 		</script>
 
+		<script>
+			(function () {
+				function addAttribute() {
+					const widgetElement = document.querySelector('.uwy');
+					if (widgetElement && !widgetElement.hasAttribute('name')) {
+						widgetElement.setAttribute('name', 'track:userway-widget|name:userway-widget');
+						observer.disconnect();
+					}
+				}
+				const observer = new MutationObserver((mutationsList, observer) => {
+					addAttribute();
+				});
+				observer.observe(document.body, { childList: true, subtree: true });
+				addAttribute();
+			})();
+		</script>
+
 		<script type="speculationrules">
 			{
 				"prerender": [
