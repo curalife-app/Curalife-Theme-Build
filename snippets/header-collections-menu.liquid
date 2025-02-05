@@ -14,11 +14,13 @@
 					{% assign collection_products_amount = selected_collection.products | size %}
 					{% assign product_title = selected_collection.title %}
 
+					//console log collection details
+					<script>console.log("collection handle: {{  }}")</script>
+
 					{% case selected_collection.handle %}
-						{% when 'glucose-support' %}
-							{% assign linkURL = '/products/curalin' %}
-						{% when 'weight-loss' %}
-							{% assign linkURL = '/products/curaslim' %}
+						{% if selected_collection.metafields.custom.is_collection_of_single_product == 'true' %}
+							{% assign firstProduct = selected_collection.products | first %}
+							{% assign linkURL = firstProduct.url %}
 						{% else %}
 							{% assign linkURL = selected_collection.url %}
 					{% endcase %}
