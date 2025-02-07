@@ -755,32 +755,33 @@
 
 async function addValidItemsToCart(items) {
 	try {
-		// Fetch the current cart
-		const cartResponse = await fetch('/cart.js');
-		const currentCart = await cartResponse.json();
+		// Fetch the current cart.
+		let cartResponse = await fetch('/cart.js');
+		let currentCart = await cartResponse.json();
 
-		// Identify the main item being added based on the current product id.
+		// Identify the main item being added (based on currentProductId).
 		const mainItem = items.find(item => item.product_id === currentProductId);
 		if (!mainItem) {
 			throw new Error('Main product not found in items');
 		}
 
-		// Determine the "type" of the main item:
-		// If selling_plan exists, it is a subscription; otherwise, it is buy-once.
+		// Determine the type of the new item:
+		// It is a subscription if a selling_plan is present; otherwise, it’s a buy once.
 		const newType = mainItem.selling_plan ? 'subscription' : 'buy_once';
 
-		// Find all existing cart lines for this product id.
+		// Get all existing cart lines for this product.
 		const existingLines = currentCart.items.filter(item => item.product_id === mainItem.product_id);
 
-		// Remove any cart lines that are of a different type than the new item.
-		const itemsToRemove = existingLines.filter(item => {
-			const existingType = item.selling_plan ? 'subscription' : 'buy_once';
-			return existingType !== newType;
+		// Identify any conflicting lines (lines whose type is different from the new item's type).
+		const conflictingLines = existingLines.filter(item => {
+			const type = item.selling_plan ? 'subscription' : 'buy_once';
+			return type !== newType;
 		});
 
-		if (itemsToRemove.length > 0) {
+		// Remove conflicting lines (if any) from the cart.
+		if (conflictingLines.length > 0) {
 			const updates = {};
-			itemsToRemove.forEach(item => {
+			conflictingLines.forEach(item => {
 				updates[item.key] = 0;
 			});
 			await fetch('/cart/update.js', {
@@ -788,18 +789,23 @@ async function addValidItemsToCart(items) {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ updates })
 			});
-			// Optional pause for cart update to process.
+			// Allow a brief pause for the update to process.
 			await new Promise(resolve => setTimeout(resolve, 500));
+
+			// Re-fetch the updated cart.
+			cartResponse = await fetch('/cart.js');
+			currentCart = await cartResponse.json();
 		}
 
-		// Now check if a cart line of the same type already exists.
-		const sameTypeLine = existingLines.find(item => {
-			const existingType = item.selling_plan ? 'subscription' : 'buy_once';
-			return existingType === newType;
+		// Now, check if a cart line of the same type already exists.
+		const updatedLines = currentCart.items.filter(item => item.product_id === mainItem.product_id);
+		const sameTypeLine = updatedLines.find(item => {
+			const type = item.selling_plan ? 'subscription' : 'buy_once';
+			return type === newType;
 		});
 
 		if (sameTypeLine) {
-			// If it exists, update its quantity.
+			// If a same-type line exists, update its quantity.
 			const updates = {};
 			updates[sameTypeLine.key] = sameTypeLine.quantity + 1;
 			const updateResponse = await fetch('/cart/update.js', {
