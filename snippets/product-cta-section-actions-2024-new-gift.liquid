@@ -743,71 +743,53 @@
 
 async function addValidItemsToCart(items) {
 	try {
-		console.log('Items to add:', items);
+		// Check if variant supports selling plan
+		const productResponse = await fetch(`/products/${currentProductHandle}.js`);
+		const productData = await productResponse.json();
 
-		// Clear cart first
+		// Clear cart
 		const cartResponse = await fetch('/cart.js');
 		const currentCart = await cartResponse.json();
 
 		if (currentCart.items.length > 0) {
-			const updates = {};
-			currentCart.items.forEach(item => {
-				updates[item.key] = 0;
-			});
-
-			const clearResponse = await fetch('/cart/update.js', {
+			await fetch('/cart/clear.js', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ updates })
+				headers: { 'Content-Type': 'application/json' }
 			});
-
-			if (!clearResponse.ok) {
-				throw new Error('Failed to clear cart');
-			}
-
-			// Wait a moment for cart to clear
-			await new Promise(resolve => setTimeout(resolve, 500));
+			await new Promise(resolve => setTimeout(resolve, 1000));
 		}
 
-		// Validate and prepare items
+		// Validate items
 		const validItems = items.map(item => {
 			const newItem = { ...item };
+			const variant = productData.variants.find(v => v.id.toString() === newItem.id.toString());
 
-			// For subscription items, verify selling plan exists
-			if (newItem.selling_plan) {
-				if (!newItem.selling_plan || newItem.selling_plan === '0') {
-					delete newItem.selling_plan;
-				}
-			}
+			console.log('Variant:', variant);
+			console.log('Selling plan:', newItem.selling_plan);
 
-			// For non-subscription items, ensure no selling plan
-			if (!newItem.selling_plan) {
+			if (newItem.selling_plan && (!variant || !variant.requires_selling_plan)) {
 				delete newItem.selling_plan;
 			}
 
 			return newItem;
 		});
 
-		console.log('Prepared items for cart:', validItems);
+		console.log('Final items to add:', validItems);
 
-		// Add items to cart
 		const response = await fetch('/cart/add.js', {
 			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-			},
+			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ items: validItems })
 		});
 
 		if (!response.ok) {
 			const errorData = await response.json();
 			console.error('Cart add error:', errorData);
-			throw new Error(errorData.description || 'Failed to add items to cart');
+			throw new Error(errorData.description);
 		}
 
 		const result = await response.json();
-		console.log('Cart add success:', result);
-
+		console.log('Success:', result);
 		showNotification('Items added to cart successfully', 'success');
 		return { success: true, addedItems: validItems };
 
