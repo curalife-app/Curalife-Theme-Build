@@ -766,32 +766,49 @@
 
 async function addValidItemsToCart(items) {
 	try {
-		// Fetch the current cart
+		// Fetch the current cart.
 		let cartResponse = await fetch('/cart.js');
 		let currentCart = await cartResponse.json();
 
-		// Find the main item to be added based on the current product ID.
+		// Find the main item for the current product.
 		const mainItem = items.find(item => item.product_id === currentProductId);
 		if (!mainItem) {
 			throw new Error('Main product not found in items');
 		}
 
-		// Validate if there’s already a conflicting line item in the cart.
-		const validation = await validateCartItem(mainItem, currentCart);
-		if (!validation.isValid) {
-			showNotification(validation.error.message, 'error');
-			return { success: false, error: validation.error };
-		}
+		// Determine purchase mode: subscription (has selling_plan) or buy-once.
+		const isSubscription = !!mainItem.selling_plan;
 
-		// If this is a buy-once item (no selling plan)
-		if (!mainItem.selling_plan) {
-			// Remove any subscription items for the same product
-			const subscriptionItemsToRemove = currentCart.items.filter(item =>
+		// Depending on the purchase type, remove conflicting items.
+		if (isSubscription) {
+			// Remove any buy-once items (without selling_plan) for this product.
+			const conflictingItems = currentCart.items.filter(item =>
+				item.product_id === mainItem.product_id && !item.selling_plan
+			);
+			if (conflictingItems.length > 0) {
+				const updates = {};
+				conflictingItems.forEach(item => {
+					updates[item.key] = 0; // Remove by setting quantity to zero.
+				});
+				await fetch('/cart/update.js', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ updates })
+				});
+				// Give a moment for Shopify to process the removal.
+				await new Promise(resolve => setTimeout(resolve, 500));
+				// Refetch the cart.
+				cartResponse = await fetch('/cart.js');
+				currentCart = await cartResponse.json();
+			}
+		} else {
+			// For a buy-once item, remove any subscription items (with a selling_plan).
+			const conflictingItems = currentCart.items.filter(item =>
 				item.product_id === mainItem.product_id && item.selling_plan
 			);
-			if (subscriptionItemsToRemove.length > 0) {
+			if (conflictingItems.length > 0) {
 				const updates = {};
-				subscriptionItemsToRemove.forEach(item => {
+				conflictingItems.forEach(item => {
 					updates[item.key] = 0;
 				});
 				await fetch('/cart/update.js', {
@@ -799,12 +816,35 @@ async function addValidItemsToCart(items) {
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ updates })
 				});
-				// Refetch the cart to ensure removal of conflicting items
+				await new Promise(resolve => setTimeout(resolve, 500));
 				cartResponse = await fetch('/cart.js');
 				currentCart = await cartResponse.json();
 			}
+		}
 
-			// Add the new buy-once item (leaving other items intact)
+		// After ensuring there are no conflicting items, check if an item
+		// of the same type already exists in the cart.
+		let existingItem = currentCart.items.find(item =>
+			item.product_id === mainItem.product_id &&
+			(!!item.selling_plan) === isSubscription
+		);
+
+		if (existingItem) {
+			// Replace (i.e. update the quantity) for the existing item.
+			const updates = {};
+			// Here, we add the quantity from mainItem (default 1) to the current quantity.
+			updates[existingItem.key] = existingItem.quantity + (mainItem.quantity || 1);
+			const updateResponse = await fetch('/cart/update.js', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ updates })
+			});
+			if (!updateResponse.ok) {
+				const errorData = await updateResponse.json();
+				throw new Error(errorData.description);
+			}
+		} else {
+			// No existing line item of this type: add a new line.
 			const addResponse = await fetch('/cart/add.js', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -814,59 +854,9 @@ async function addValidItemsToCart(items) {
 				const errorData = await addResponse.json();
 				throw new Error(errorData.description);
 			}
-		} else {
-			// For subscription items:
-			// Remove any buy-once items for the same product
-			const buyOnceItemsToRemove = currentCart.items.filter(item =>
-				item.product_id === mainItem.product_id && !item.selling_plan
-			);
-			if (buyOnceItemsToRemove.length > 0) {
-				const updates = {};
-				buyOnceItemsToRemove.forEach(item => {
-					updates[item.key] = 0;
-				});
-				await fetch('/cart/update.js', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ updates })
-				});
-				// Refetch the cart to ensure removal of conflicting items
-				cartResponse = await fetch('/cart.js');
-				currentCart = await cartResponse.json();
-			}
-
-			// Check if a subscription line for this product already exists
-			const existingSubscription = currentCart.items.find(item =>
-				item.product_id === mainItem.product_id && item.selling_plan
-			);
-			if (existingSubscription) {
-				// Increase the quantity for the existing subscription line.
-				const updates = {};
-				updates[existingSubscription.key] = existingSubscription.quantity + 1;
-				const updateResponse = await fetch('/cart/update.js', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ updates })
-				});
-				if (!updateResponse.ok) {
-					const errorData = await updateResponse.json();
-					throw new Error(errorData.description);
-				}
-			} else {
-				// Otherwise, add the new subscription item as a new line.
-				const addResponse = await fetch('/cart/add.js', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ items: [mainItem] })
-				});
-				if (!addResponse.ok) {
-					const errorData = await addResponse.json();
-					throw new Error(errorData.description);
-				}
-			}
 		}
 
-		// Process any gift items as usual.
+		// Process gift items (if any) as before.
 		const giftItems = items.filter(item => item.product_id !== currentProductId);
 		if (giftItems.length > 0) {
 			for (const giftItem of giftItems) {
@@ -876,7 +866,7 @@ async function addValidItemsToCart(items) {
 				);
 				if (existingGift) {
 					const updates = {};
-					updates[existingGift.key] = existingGift.quantity + 1;
+					updates[existingGift.key] = existingGift.quantity + (giftItem.quantity || 1);
 					await fetch('/cart/update.js', {
 						method: 'POST',
 						headers: { 'Content-Type': 'application/json' },
@@ -905,7 +895,6 @@ async function addValidItemsToCart(items) {
 		return { success: false, error };
 	}
 }
-
 
 async function validateCartItem(item, currentCart) {
 		try {
