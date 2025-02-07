@@ -12,11 +12,6 @@
 					<div id="thumbs-slider-{{ SID }}" class="swiper">
 						<div class="swiper-wrapper">
 							{% if isProductThumbs %}
-								{% for image in product.images %}
-									<div class="swiper-slide cursor-pointer !h-auto max-w-1/3">
-										{% render 'image', image: image, lazy: false, preload: true, alt: image.alt %}
-									</div>
-								{% endfor %}
 								{% if thumbnailImage %}
 									<div class="swiper-slide main-image-slide product-image-slide max-w-1/3">
 										{% if request.path contains 'lp-wl-curaslim-360-aff-bogo' %}
@@ -30,6 +25,14 @@
 										{% render 'image', image: firstImage, lazy: false, preload: true, alt: img.alt %}
 									</div>
 								{% endif %}
+
+								{% for image in product.images %}
+									{% if forloop.index != 1 %}
+										<div class="swiper-slide cursor-pointer !h-auto max-w-1/3">
+											{% render 'image', image: image, lazy: false, preload: true, alt: image.alt %}
+										</div>
+									{% endif %}
+								{% endfor %}
 
 								{% for block in section.blocks %}
 									{% if block.type == 'image' %}
