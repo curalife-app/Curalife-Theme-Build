@@ -85,7 +85,7 @@
 	{% endunless %}
 
 	<!-- Product Actions Section -->
-	{% if customer.b2b? or page.template_suffix == 'supplement' %}
+	{% if customer.b2b? %}
 		{% render 'product-cta-section-actions-add-to-cart',
 			SID: SID,
 			ctaTextType: ctaTextType,
@@ -137,6 +137,23 @@
 				isHideInfo: isHideInfo,
 				buyType: buyType,
 				buttonTitle: buttonTitle
+			%}
+		{% elsif buyboxType == 'add-to-cart' %}
+			{% render 'product-cta-section-actions-add-to-cart',
+				SID: SID,
+				ctaTextType: ctaTextType,
+				isVariantNotice: isVariantNotice,
+				product: prod,
+				blocks: blocks,
+				ctaColor: ctaColor,
+				ctaTextColor: ctaTextColor,
+				variantsTitle: 'Select Your Product:',
+				isHighlightSubtitle: isHighlightSubtitle,
+				isReversed: isReversed,
+				defaultSelectionIndex: defaultSelectionIndex,
+				pricePer: pricePer,
+				isBuyQuantity: true,
+				isBuyWithPrime: isBuyWithPrime
 			%}
 		{% elsif buyboxType == '2024-new' %}
 			{% render 'product-cta-section-actions-2024-new',
