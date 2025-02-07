@@ -1012,23 +1012,29 @@ async function countUniqueProductsWithTag(cart) {
       }, 5000);
     }
 
-    function toggleButtonLoading(buttonElement, isLoading) {
-      if (!buttonElement) {
-        console.error('Button element not found in toggleButtonLoading');
-        return;
-      }
+		function toggleButtonLoading(buttonElement, isLoading) {
+			if (!buttonElement) {
+				console.error('Button element not found in toggleButtonLoading');
+				return;
+			}
 
-      const loader = buttonElement.querySelector('.loading-overlay__spinner');
-      const buttonText = buttonElement.querySelector('.button-text, .submit-title');
+			// Query for spinner and button text.
+			const loader = buttonElement.querySelector('.loading-overlay__spinner');
+			const buttonText = buttonElement.querySelector('.button-text, .submit-title');
 
-      if (!loader || !buttonText) {
-        console.error('Loader or buttonText element not found');
-        return;
-      }
+			// If neither element exists, simply return.
+			if (!loader && !buttonText) {
+				console.warn('Neither loader nor buttonText found; skipping toggleButtonLoading.');
+				return;
+			}
 
-      loader.style.display = isLoading ? 'block' : 'none';
-      buttonText.style.display = isLoading ? 'none' : 'block';
-    }
+			if (loader) {
+				loader.style.display = isLoading ? 'block' : 'none';
+			}
+			if (buttonText) {
+				buttonText.style.display = isLoading ? 'none' : 'block';
+			}
+		}
 
     function updateVariantImage(element) {
 				if (!element || !element.dataset.variant) {
