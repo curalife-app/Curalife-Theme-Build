@@ -770,17 +770,22 @@ async function addValidItemsToCart(items) {
 		let cartResponse = await fetch('/cart.js');
 		let currentCart = await cartResponse.json();
 
-		// Find the main item based on the current product ID.
+		// Find the main item for the current product.
 		const mainItem = items.find(item => item.product_id === currentProductId);
 		if (!mainItem) {
 			throw new Error('Main product not found in items');
 		}
 
-		// Determine purchase mode: subscription if a selling_plan is present, otherwise buy-once.
-		const isSubscription = !!mainItem.selling_plan;
+		// Determine purchase mode:
+		// If mainItem.selling_plan is a non-empty value, then it's a subscription.
+		let isSubscription = !!(mainItem.selling_plan && mainItem.selling_plan !== '' && mainItem.selling_plan !== '0');
+		// **Force removal of the selling_plan property if it's meant to be a buy-once item.**
+		if (!isSubscription) {
+			delete mainItem.selling_plan;
+		}
 
 		if (isSubscription) {
-			// Force subscription items to have a quantity of 1.
+			// For subscriptions, force the quantity to 1.
 			mainItem.quantity = 1;
 
 			// Remove any buy-once items for this product.
@@ -790,14 +795,14 @@ async function addValidItemsToCart(items) {
 			if (conflictingItems.length > 0) {
 				const updates = {};
 				conflictingItems.forEach(item => {
-					updates[item.key] = 0;
+					updates[item.key] = 0; // Set quantity to 0 to remove.
 				});
 				await fetch('/cart/update.js', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ updates })
 				});
-				// Wait briefly and refetch the cart.
+				// Wait briefly to allow Shopify to process the removal.
 				await new Promise(resolve => setTimeout(resolve, 500));
 				cartResponse = await fetch('/cart.js');
 				currentCart = await cartResponse.json();
@@ -808,7 +813,7 @@ async function addValidItemsToCart(items) {
 				item.product_id === mainItem.product_id && item.selling_plan
 			);
 			if (existingSubscription) {
-				// Force its quantity to be 1 (even if it’s currently more than 1).
+				// Force its quantity to be 1 (if for some reason it's not already).
 				if (existingSubscription.quantity !== 1) {
 					const updates = {};
 					updates[existingSubscription.key] = 1;
@@ -823,7 +828,7 @@ async function addValidItemsToCart(items) {
 					}
 				}
 			} else {
-				// Otherwise, add the new subscription item.
+				// Add the new subscription item.
 				const addResponse = await fetch('/cart/add.js', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
@@ -836,6 +841,7 @@ async function addValidItemsToCart(items) {
 			}
 		} else {
 			// For buy-once items:
+
 			// Remove any subscription items for this product.
 			const conflictingItems = currentCart.items.filter(item =>
 				item.product_id === mainItem.product_id && item.selling_plan
@@ -854,14 +860,16 @@ async function addValidItemsToCart(items) {
 				cartResponse = await fetch('/cart.js');
 				currentCart = await cartResponse.json();
 			}
-			// Check if a buy-once item already exists.
-			let existingItem = currentCart.items.find(item =>
+
+			// Now check if there is already a buy-once item.
+			const existingBuyOnce = currentCart.items.find(item =>
 				item.product_id === mainItem.product_id && !item.selling_plan
 			);
-			if (existingItem) {
-				// Increase its quantity.
+			if (existingBuyOnce) {
+				// Instead of incrementing the subscription, we replace it.
+				// Here we update the existing buy-once item's quantity.
 				const updates = {};
-				updates[existingItem.key] = existingItem.quantity + (mainItem.quantity || 1);
+				updates[existingBuyOnce.key] = (existingBuyOnce.quantity || 0) + (mainItem.quantity || 1);
 				const updateResponse = await fetch('/cart/update.js', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
