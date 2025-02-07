@@ -777,9 +777,8 @@ async function addValidItemsToCart(items) {
 		}
 
 		if (!mainItem.selling_plan) {
-			// This branch is for buy-once items (no selling_plan)
-
-			// Instead of clearing the entire cart, remove only subscription items for this product
+			// BUY-ONCE branch
+			// Remove any subscription items for this product ID
 			const subscriptionItemsToRemove = currentCart.items.filter(item =>
 				item.product_id === mainItem.product_id && item.selling_plan
 			);
@@ -797,7 +796,7 @@ async function addValidItemsToCart(items) {
 				await new Promise(resolve => setTimeout(resolve, 500));
 			}
 
-			// Add the new buy-once item (leave all other items intact)
+			// Add the new buy-once item (leaving all other items intact)
 			const addResponse = await fetch('/cart/add.js', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -808,7 +807,24 @@ async function addValidItemsToCart(items) {
 				throw new Error(errorData.description);
 			}
 		} else {
-			// This branch is for subscription items
+			// SUBSCRIPTION branch
+			// Remove any buy-once items for this product ID
+			const buyOnceItemsToRemove = currentCart.items.filter(item =>
+				item.product_id === mainItem.product_id && !item.selling_plan
+			);
+			if (buyOnceItemsToRemove.length > 0) {
+				const updates = {};
+				buyOnceItemsToRemove.forEach(item => {
+					updates[item.key] = 0;
+				});
+				await fetch('/cart/update.js', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ updates })
+				});
+				await new Promise(resolve => setTimeout(resolve, 500));
+			}
+
 			// Check if a subscription line for the same product already exists
 			const existingSubscription = currentCart.items.find(item =>
 				item.product_id === mainItem.product_id && item.selling_plan
@@ -875,10 +891,11 @@ async function addValidItemsToCart(items) {
 
 	} catch (error) {
 		console.error('Cart error:', error);
-		showNotification(error.message || 'Error adding items to cart');
+		showNotification(error.message || 'Error adding items to cart', 'error');
 		return { success: false, error };
 	}
 }
+
 
 
 async function validateCartItem(item, currentCart) {
