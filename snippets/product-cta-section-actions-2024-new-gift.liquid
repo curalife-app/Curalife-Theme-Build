@@ -882,65 +882,81 @@ async function addValidItemsToCart(items) {
 
 
 async function validateCartItem(item, currentCart) {
-	try {
-		console.log('Validating item:', item);
+		try {
+				console.log('Validating item:', item);
 
-		const productId = parseInt(item.product_id);
-		if (!productId) {
-			throw new Error(`Product ID is missing for variant ${item.id}`);
-		}
+				const productId = parseInt(item.product_id);
+				if (!productId) {
+						throw new Error(`Product ID is missing for variant ${item.id}`);
+				}
 
-		// Always allow the main product
-		const isMainProduct = productId === currentProductId;
-		if (isMainProduct) {
-			return { isValid: true };
-		}
+				// Check for subscription/one-time conflict
+				const isSubscription = !!item.selling_plan;
+				const existingItems = currentCart.items.filter(cartItem =>
+						cartItem.product_id === productId
+				);
 
-		// Check if this is a gift item
-		const giftOptions = document.querySelectorAll('.gift-option-border');
-		const isItemFree = Array.from(giftOptions).some(giftOption => {
-			const giftId = isSubscriptionSelected()
-				? giftOption.dataset.giftIdSubscription
-				: giftOption.dataset.giftId;
-			return giftId === item.id.toString();
-		});
+				if (existingItems.length > 0) {
+						const hasSubscription = existingItems.some(cartItem => !!cartItem.selling_plan);
+						const hasBuyOnce = existingItems.some(cartItem => !cartItem.selling_plan);
 
-		if (isItemFree) {
-			const currentFreeItems = currentCart.items.filter(cartItem => {
-				return Array.from(giftOptions).some(giftOption => {
-					const giftId = isSubscriptionSelected()
-						? giftOption.dataset.giftIdSubscription
-						: giftOption.dataset.giftId;
-					return cartItem.variant_id.toString() === giftId;
+						if ((isSubscription && hasBuyOnce) || (!isSubscription && hasSubscription)) {
+								return {
+										isValid: false,
+										error: {
+												code: 'SUBSCRIPTION_CONFLICT',
+												message: 'Cannot mix subscription and one-time purchases for the same product',
+												type: 'error'
+										}
+								};
+						}
+				}
+
+				// Check if this is a gift item
+				const giftOptions = document.querySelectorAll('.gift-option-border');
+				const isItemFree = Array.from(giftOptions).some(giftOption => {
+						const giftId = isSubscriptionSelected()
+								? giftOption.dataset.giftIdSubscription
+								: giftOption.dataset.giftId;
+						return giftId === item.id.toString();
 				});
-			});
 
-			const bfcmDealCount = await countUniqueProductsWithTag(currentCart);
+				if (isItemFree) {
+						const currentFreeItems = currentCart.items.filter(cartItem => {
+								return Array.from(giftOptions).some(giftOption => {
+										const giftId = isSubscriptionSelected()
+												? giftOption.dataset.giftIdSubscription
+												: giftOption.dataset.giftId;
+										return cartItem.variant_id.toString() === giftId;
+								});
+						});
 
-			if (currentFreeItems.length >= bfcmDealCount) {
+						const bfcmDealCount = await countUniqueProductsWithTag(currentCart);
+
+						if (currentFreeItems.length >= bfcmDealCount) {
+								return {
+										isValid: false,
+										error: {
+												code: 'FREE_ITEM_LIMIT',
+												message: `You can have up to ${bfcmDealCount} free gift${bfcmDealCount !== 1 ? 's' : ''} (one for each BFCM deal in your cart).`,
+												type: 'error'
+										}
+								};
+						}
+				}
+
+				return { isValid: true };
+		} catch (error) {
+				console.error('Validation error:', error);
 				return {
-					isValid: false,
-					error: {
-						code: 'FREE_ITEM_LIMIT',
-						message: `You can have up to ${bfcmDealCount} free gift${bfcmDealCount !== 1 ? 's' : ''} (one for each BFCM deal in your cart).`,
-						type: 'error'
-					}
+						isValid: false,
+						error: {
+								code: 'VALIDATION_ERROR',
+								message: 'Unable to validate item. Please try again.',
+								type: 'error'
+						}
 				};
-			}
 		}
-
-		return { isValid: true };
-	} catch (error) {
-		console.error('Validation error:', error);
-		return {
-			isValid: false,
-			error: {
-				code: 'VALIDATION_ERROR',
-				message: 'Unable to validate item. Please try again.',
-				type: 'error'
-			}
-		};
-	}
 }
 
 function findFailedValidationIndex(validationResults, invalidItemIndex) {
