@@ -12,6 +12,11 @@
 					<div id="thumbs-slider-{{ SID }}" class="swiper">
 						<div class="swiper-wrapper">
 							{% if isProductThumbs %}
+								{% for image in product.images %}
+									<div class="swiper-slide cursor-pointer !h-auto max-w-1/3">
+										{% render 'image', image: image, lazy: false, preload: true, alt: image.alt %}
+									</div>
+								{% endfor %}
 								{% if thumbnailImage %}
 									<div class="swiper-slide product-image-slide max-w-1/3">
 										{% if request.path contains 'lp-wl-curaslim-360-aff-bogo' %}
@@ -75,6 +80,12 @@
 				<div id="product-main-slider-sc-{{ SID }}" class="swiper">
 					<div class="swiper-wrapper">
 						{% if isProductThumbs %}
+							{% for image in product.images %}
+								{% assign main_slider_slide_count = main_slider_slide_count | plus: 1 %}
+								<div class="swiper-slide product-image-slide">
+									{% render 'image', image: image, lazy: false, preload: true, alt: image.alt %}
+								</div>
+							{% endfor %}
 							{% if thumbnailImage %}
 								{% assign main_slider_slide_count = main_slider_slide_count | plus: 1 %}
 								<div class="swiper-slide product-image-slide">
