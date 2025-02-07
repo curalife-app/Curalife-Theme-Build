@@ -741,192 +741,166 @@
 	}
 });
 
-// Helper function to find the corresponding failed validation result
-function findFailedValidationIndex(validationResults, invalidItemIndex) {
-  let failedCount = 0;
-  for (let i = 0; i < validationResults.length; i++) {
-    if (!validationResults[i].isValid) {
-      if (failedCount === invalidItemIndex) {
-        return i;
-      }
-      failedCount++;
-    }
-  }
-  return -1;
+async function addValidItemsToCart(items) {
+	try {
+		// First clear the cart using updates
+		const cartResponse = await fetch('/cart.js');
+		const currentCart = await cartResponse.json();
+
+		const updates = {};
+		currentCart.items.forEach(item => {
+			updates[item.key] = 0;
+		});
+
+		await fetch('/cart/update.js', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ updates })
+		});
+
+		// Get fresh cart state
+		const freshCartResponse = await fetch('/cart.js');
+		if (!freshCartResponse.ok) {
+			throw new Error('Failed to fetch current cart');
+		}
+		let freshCart = await freshCartResponse.json();
+
+		// Validate all items
+		const validationResults = await Promise.all(
+			items.map(item => validateCartItem(item, freshCart))
+		);
+
+		console.log('Validation results:', validationResults);
+
+		// Get valid and invalid items
+		const validItems = items.filter((_, index) => validationResults[index].isValid);
+		const invalidItems = items.filter((_, index) => !validationResults[index].isValid);
+
+		// Show notifications for invalid items
+		invalidItems.forEach((_, index) => {
+			const result = validationResults[findFailedValidationIndex(validationResults, index)];
+			if (result?.error) {
+				showNotification(result.error.message, result.error.type);
+			}
+		});
+
+		// Add valid items to cart
+		if (validItems.length > 0) {
+			const response = await fetch('/cart/add.js', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ items: validItems })
+			});
+
+			if (!response.ok) {
+				throw new Error('Failed to add items to cart');
+			}
+
+			showNotification('Items added to cart successfully', 'success');
+
+			return {
+				success: true,
+				addedItems: validItems,
+				failedItems: invalidItems
+			};
+		}
+
+		return {
+			success: false,
+			addedItems: [],
+			failedItems: invalidItems,
+			error: {
+				message: 'No items could be added to cart',
+				type: 'error'
+			}
+		};
+
+	} catch (error) {
+		console.error('Error adding items to cart:', error);
+		showNotification('An error occurred while adding items to cart. Please try again.');
+		return {
+			success: false,
+			addedItems: [],
+			failedItems: items
+		};
+	}
 }
 
 async function validateCartItem(item, currentCart) {
-		try {
-			console.log('Validating item:', item);
+	try {
+		console.log('Validating item:', item);
 
-			const productId = parseInt(item.product_id);
-			if (!productId) {
-				throw new Error(`Product ID is missing for variant ${item.id}`);
-			}
+		const productId = parseInt(item.product_id);
+		if (!productId) {
+			throw new Error(`Product ID is missing for variant ${item.id}`);
+		}
 
-			// Always allow the main product
-			const isMainProduct = productId === currentProductId;
-			if (isMainProduct) {
-				return { isValid: true };
-			}
+		// Always allow the main product
+		const isMainProduct = productId === currentProductId;
+		if (isMainProduct) {
+			return { isValid: true };
+		}
 
-			// Continue with gift validation
-			const giftOptions = document.querySelectorAll('.gift-option-border');
-			const isItemFree = Array.from(giftOptions).some(giftOption => {
-				const giftId = isSubscriptionSelected()
-					? giftOption.dataset.giftIdSubscription
-					: giftOption.dataset.giftId;
-				return giftId === item.id.toString();
+		// Check if this is a gift item
+		const giftOptions = document.querySelectorAll('.gift-option-border');
+		const isItemFree = Array.from(giftOptions).some(giftOption => {
+			const giftId = isSubscriptionSelected()
+				? giftOption.dataset.giftIdSubscription
+				: giftOption.dataset.giftId;
+			return giftId === item.id.toString();
+		});
+
+		if (isItemFree) {
+			const currentFreeItems = currentCart.items.filter(cartItem => {
+				return Array.from(giftOptions).some(giftOption => {
+					const giftId = isSubscriptionSelected()
+						? giftOption.dataset.giftIdSubscription
+						: giftOption.dataset.giftId;
+					return cartItem.variant_id.toString() === giftId;
+				});
 			});
 
-    if (isItemFree) {
-      const currentFreeItems = currentCart.items.filter(cartItem => {
-        return Array.from(giftOptions).some(giftOption => {
-          const giftId = isSubscriptionSelected()
-            ? giftOption.dataset.giftIdSubscription
-            : giftOption.dataset.giftId;
-          return cartItem.variant_id.toString() === giftId;
-        });
-      });
+			const bfcmDealCount = await countUniqueProductsWithTag(currentCart);
 
-      const bfcmDealCount = await countUniqueProductsWithTag(currentCart);
+			if (currentFreeItems.length >= bfcmDealCount) {
+				return {
+					isValid: false,
+					error: {
+						code: 'FREE_ITEM_LIMIT',
+						message: `You can have up to ${bfcmDealCount} free gift${bfcmDealCount !== 1 ? 's' : ''} (one for each BFCM deal in your cart).`,
+						type: 'error'
+					}
+				};
+			}
+		}
 
-      if (currentFreeItems.length >= bfcmDealCount) {
-        return {
-          isValid: false,
-          error: {
-            code: 'FREE_ITEM_LIMIT',
-            message: `You can have up to ${bfcmDealCount} free gift${bfcmDealCount !== 1 ? 's' : ''} (one for each BFCM deal in your cart).`,
-            type: 'error'
-          }
-        };
-      }
-    }
-
-    return { isValid: true };
-  } catch (error) {
-    console.error('Validation error:', error);
-    return {
-      isValid: false,
-      error: {
-        code: 'VALIDATION_ERROR',
-        message: 'Unable to validate item. Please try again.',
-        type: 'error'
-      }
-    };
-  }
+		return { isValid: true };
+	} catch (error) {
+		console.error('Validation error:', error);
+		return {
+			isValid: false,
+			error: {
+				code: 'VALIDATION_ERROR',
+				message: 'Unable to validate item. Please try again.',
+				type: 'error'
+			}
+		};
+	}
 }
 
-async function addValidItemsToCart(items) {
-  try {
-    // Always fetch the latest cart data
-    const cartResponse = await fetch('/cart.js');
-    if (!cartResponse.ok) {
-      throw new Error('Failed to fetch current cart');
-    }
-    let currentCart = await cartResponse.json();
-    console.log('Current cart state:', currentCart);
-
-    // First, validate all items and check for subscription replacements
-    const validationResults = await Promise.all(
-      items.map(item => validateCartItem(item, currentCart))
-    );
-
-    console.log('Validation results:', validationResults);
-
-    // Handle subscription replacements first
-    const subscriptionReplacements = validationResults
-      .filter(result => result.requiresReplacement)
-      .map(result => result.itemToRemove);
-
-    if (subscriptionReplacements.length > 0) {
-      // Remove existing subscription items that need to be replaced
-      console.log('Removing existing subscriptions:', subscriptionReplacements);
-
-      const updates = {};
-      subscriptionReplacements.forEach(item => {
-        updates[item.key] = 0;  // Set quantity to 0 to remove the item
-      });
-
-      const removeResponse = await fetch('/cart/update.js', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ updates })
-      });
-
-      if (!removeResponse.ok) {
-        throw new Error('Failed to remove existing subscription items');
-      }
-
-      // Refresh cart data after removals
-      const updatedCartResponse = await fetch('/cart.js');
-      currentCart = await updatedCartResponse.json();
-    }
-
-    // Get valid items and invalid items
-    const validItems = items.filter((_, index) => validationResults[index].isValid);
-    const invalidItems = items.filter((_, index) => !validationResults[index].isValid);
-
-    // Show notifications for invalid items
-    invalidItems.forEach((_, index) => {
-      const result = validationResults[findFailedValidationIndex(validationResults, index)];
-      if (result?.error) {
-        showNotification(result.error.message, result.error.type);
-      }
-    });
-
-    // If we have valid items, add them to cart
-    if (validItems.length > 0) {
-      const response = await fetch('/cart/add.js', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ items: validItems })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to add items to cart');
-      }
-
-      // Show appropriate notification
-      if (subscriptionReplacements.length > 0) {
-        showNotification('Subscription has been updated in your cart', 'success');
-      } else if (invalidItems.length > 0) {
-        showNotification('Some items were added to cart, but free gift limit was exceeded', 'info');
-      } else {
-        showNotification('Items added to cart successfully', 'success');
-      }
-
-      return {
-        success: true,
-        addedItems: validItems,
-        failedItems: invalidItems,
-        replacedItems: subscriptionReplacements
-      };
-    }
-
-    // If no valid items
-    return {
-      success: false,
-      addedItems: [],
-      failedItems: invalidItems,
-      error: {
-        message: 'No items could be added to cart',
-        type: 'error'
-      }
-    };
-  } catch (error) {
-    console.error('Error adding items to cart:', error);
-    showNotification('An error occurred while adding items to cart. Please try again.');
-    return {
-      success: false,
-      addedItems: [],
-      failedItems: items
-    };
-  }
+function findFailedValidationIndex(validationResults, invalidItemIndex) {
+	let failedCount = 0;
+	for (let i = 0; i < validationResults.length; i++) {
+		if (!validationResults[i].isValid) {
+			if (failedCount === invalidItemIndex) {
+				return i;
+			}
+			failedCount++;
+		}
+	}
+	return -1;
 }
 
 async function countUniqueProductsWithTag(cart) {
