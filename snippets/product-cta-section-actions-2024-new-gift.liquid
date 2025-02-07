@@ -766,122 +766,68 @@
 
 async function addValidItemsToCart(items) {
 	try {
-		// 1. Fetch the current cart.
+		// 1. Fetch the current cart
 		let cartResponse = await fetch('/cart.js');
 		let currentCart = await cartResponse.json();
 
-		// 2. Find the main item for the current product.
+		// 2. Find the main item
 		const mainItem = items.find(item => item.product_id === currentProductId);
 		if (!mainItem) {
 			throw new Error('Main product not found in items');
 		}
 
-		// Determine purchase mode:
-		// A subscription item will have a valid selling_plan (not '', '0', or false).
+		// Determine if new item is subscription
 		const isSubscription = !!(mainItem.selling_plan && mainItem.selling_plan !== '' && mainItem.selling_plan !== '0');
 
-		// For subscriptions, enforce quantity = 1.
+		// Force subscription quantity to 1
 		if (isSubscription) {
 			mainItem.quantity = 1;
 		} else {
-			// For buy-once items, make sure we don't inadvertently include a selling_plan.
 			delete mainItem.selling_plan;
 		}
 
-		// 3. Check if any line item for this product already exists.
+		// 3. Check for existing line item
 		let existingLineItem = currentCart.items.find(item => item.product_id === mainItem.product_id);
-		if (existingLineItem) {
-			// Determine the type of the existing item.
-			const existingIsSubscription = !!(existingLineItem.selling_plan && existingLineItem.selling_plan !== '' && existingLineItem.selling_plan !== '0');
 
-			if (existingIsSubscription !== isSubscription) {
-				// Conflicting types – remove the existing line item.
-				const updates = {};
-				updates[existingLineItem.key] = 0;
-				await fetch('/cart/update.js', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ updates })
-				});
-				// Allow Shopify time to process the removal.
-				await new Promise(resolve => setTimeout(resolve, 500));
-				cartResponse = await fetch('/cart.js');
-				currentCart = await cartResponse.json();
-				existingLineItem = null;
-			} else {
-				// The existing item is of the same type.
-				if (isSubscription) {
-					// For subscription items, force the quantity to 1.
-					if (existingLineItem.quantity !== 1) {
-						const updates = {};
-						updates[existingLineItem.key] = 1;
-						const updateResponse = await fetch('/cart/update.js', {
-							method: 'POST',
-							headers: { 'Content-Type': 'application/json' },
-							body: JSON.stringify({ updates })
-						});
-						if (!updateResponse.ok) {
-							const errorData = await updateResponse.json();
-							throw new Error(errorData.description);
-						}
-					}
-					// Since the subscription already exists (with quantity 1), no further action is needed.
-					showNotification('Subscription already in cart (quantity enforced to 1)', 'info');
-					return { success: true, addedItems: [] };
-				} else {
-					// For buy-once items, update the quantity as desired.
-					const updates = {};
-					// (If you want to replace instead of incrementing, remove the existing item instead.)
-					updates[existingLineItem.key] = existingLineItem.quantity + (mainItem.quantity || 1);
-					const updateResponse = await fetch('/cart/update.js', {
-						method: 'POST',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify({ updates })
-					});
-					if (!updateResponse.ok) {
-						const errorData = await updateResponse.json();
-						throw new Error(errorData.description);
-					}
-					showNotification('Buy-once item quantity updated', 'success');
-					return { success: true, addedItems: [] };
-				}
-			}
+		if (existingLineItem) {
+			// Always remove existing line item when adding new one of different type
+			const updates = {};
+			updates[existingLineItem.key] = 0;
+			await fetch('/cart/update.js', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ updates })
+			});
+
+			// Allow time for removal to process
+			await new Promise(resolve => setTimeout(resolve, 500));
 		}
 
-		// 4. If no existing line item (or it was removed due to a conflict), add the new item.
+		// 4. Add the new item
 		const addResponse = await fetch('/cart/add.js', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ items: [mainItem] })
 		});
+
 		if (!addResponse.ok) {
 			const errorData = await addResponse.json();
 			throw new Error(errorData.description);
 		}
 
-		// (Optional) Process gift items as before…
+		// 5. Handle gift items
 		const giftItems = items.filter(item => item.product_id !== currentProductId);
 		if (giftItems.length > 0) {
 			for (const giftItem of giftItems) {
-				const existingGift = currentCart.items.find(item => item.product_id === giftItem.product_id);
-				if (existingGift) {
-					const updates = {};
-					updates[existingGift.key] = existingGift.quantity + (giftItem.quantity || 1);
-					await fetch('/cart/update.js', {
-						method: 'POST',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify({ updates })
-					});
-				} else {
-					const giftResponse = await fetch('/cart/add.js', {
-						method: 'POST',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify({ items: [giftItem] })
-					});
-					if (!giftResponse.ok) {
-						const errorData = await giftResponse.json();
-						throw new Error(errorData.description);
-					}
+				const giftResponse = await fetch('/cart/add.js', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ items: [giftItem] })
+				});
+
+				if (!giftResponse.ok) {
+					const errorData = await giftResponse.json();
+					throw new Error(errorData.description);
 				}
 			}
 		}
