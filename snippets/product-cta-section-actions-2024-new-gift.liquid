@@ -743,88 +743,62 @@
 
 async function addValidItemsToCart(items) {
 	try {
-		// First clear the cart using updates
+		console.log('Items to add:', items);
+
+		// Clear cart
 		const cartResponse = await fetch('/cart.js');
 		const currentCart = await cartResponse.json();
+		console.log('Current cart:', currentCart);
 
-		const updates = {};
-		currentCart.items.forEach(item => {
-			updates[item.key] = 0;
-		});
-
-		await fetch('/cart/update.js', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ updates })
-		});
-
-		// Get fresh cart state
-		const freshCartResponse = await fetch('/cart.js');
-		if (!freshCartResponse.ok) {
-			throw new Error('Failed to fetch current cart');
-		}
-		let freshCart = await freshCartResponse.json();
-
-		// Validate all items
-		const validationResults = await Promise.all(
-			items.map(item => validateCartItem(item, freshCart))
-		);
-
-		console.log('Validation results:', validationResults);
-
-		// Get valid and invalid items
-		const validItems = items.filter((_, index) => validationResults[index].isValid);
-		const invalidItems = items.filter((_, index) => !validationResults[index].isValid);
-
-		// Show notifications for invalid items
-		invalidItems.forEach((_, index) => {
-			const result = validationResults[findFailedValidationIndex(validationResults, index)];
-			if (result?.error) {
-				showNotification(result.error.message, result.error.type);
-			}
-		});
-
-		// Add valid items to cart
-		if (validItems.length > 0) {
-			const response = await fetch('/cart/add.js', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({ items: validItems })
+		if (currentCart.items.length > 0) {
+			const updates = {};
+			currentCart.items.forEach(item => {
+				updates[item.key] = 0;
 			});
 
-			if (!response.ok) {
-				throw new Error('Failed to add items to cart');
-			}
-
-			showNotification('Items added to cart successfully', 'success');
-
-			return {
-				success: true,
-				addedItems: validItems,
-				failedItems: invalidItems
-			};
+			await fetch('/cart/update.js', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ updates })
+			});
 		}
 
-		return {
-			success: false,
-			addedItems: [],
-			failedItems: invalidItems,
-			error: {
-				message: 'No items could be added to cart',
-				type: 'error'
+		// Validate items
+		const validItems = items.map(item => {
+			// Ensure selling_plan is undefined rather than empty string
+			if (item.selling_plan === '') {
+				delete item.selling_plan;
 			}
-		};
+			return item;
+		});
+
+		console.log('Validated items:', validItems);
+
+		// Add items to cart
+		const response = await fetch('/cart/add.js', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({ items: validItems })
+		});
+
+		if (!response.ok) {
+			const errorData = await response.json();
+			console.error('Cart add error:', errorData);
+			throw new Error(errorData.description || 'Failed to add items to cart');
+		}
+
+		const result = await response.json();
+		console.log('Cart add result:', result);
+
+		showNotification('Items added to cart successfully', 'success');
+		return { success: true, addedItems: validItems };
 
 	} catch (error) {
-		console.error('Error adding items to cart:', error);
-		showNotification('An error occurred while adding items to cart. Please try again.');
-		return {
-			success: false,
-			addedItems: [],
-			failedItems: items
-		};
+		console.error('Cart error:', error);
+		showNotification(error.message || 'Error adding items to cart');
+		return { success: false, error };
 	}
 }
 
