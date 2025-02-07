@@ -743,49 +743,64 @@
 
 async function addValidItemsToCart(items) {
 	try {
-		// Clear cart
+		// Clear existing cart items first
 		const cartResponse = await fetch('/cart.js');
 		const currentCart = await cartResponse.json();
 
 		if (currentCart.items.length > 0) {
-			await fetch('/cart/clear.js', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' }
+			const updates = {};
+			currentCart.items.forEach(item => {
+				updates[item.key] = 0;
 			});
+
+			await fetch('/cart/update.js', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ updates })
+			});
+
+			// Wait for cart to clear
 			await new Promise(resolve => setTimeout(resolve, 1000));
 		}
 
-		// Prepare items for cart
-		const validItems = items.map(item => {
-			const newItem = { ...item };
+		// Add main product first
+		const mainItem = items.find(item => item.product_id === currentProductId);
+		if (!mainItem) {
+			throw new Error('Main product not found in items');
+		}
 
-			if (!newItem.selling_plan || newItem.selling_plan === '0') {
-				delete newItem.selling_plan;
-			} else if (typeof newItem.selling_plan === 'string') {
-				newItem.selling_plan = parseInt(newItem.selling_plan);
-			}
-
-			return newItem;
-		});
-
-		console.log('Adding to cart:', validItems);
-
-		const response = await fetch('/cart/add.js', {
+		console.log('Adding main product:', mainItem);
+		const mainItemResponse = await fetch('/cart/add.js', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ items: validItems })
+			body: JSON.stringify({ items: [mainItem] })
 		});
 
-		if (!response.ok) {
-			const errorData = await response.json();
-			console.error('Cart add error:', errorData);
+		if (!mainItemResponse.ok) {
+			const errorData = await mainItemResponse.json();
+			console.error('Main product add error:', errorData);
 			throw new Error(errorData.description);
 		}
 
-		const result = await response.json();
-		console.log('Success:', result);
+		// Add gift items separately if they exist
+		const giftItems = items.filter(item => item.product_id !== currentProductId);
+		if (giftItems.length > 0) {
+			console.log('Adding gift items:', giftItems);
+			const giftResponse = await fetch('/cart/add.js', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ items: giftItems })
+			});
+
+			if (!giftResponse.ok) {
+				const errorData = await giftResponse.json();
+				console.error('Gift items add error:', errorData);
+				throw new Error(errorData.description);
+			}
+		}
+
 		showNotification('Items added to cart successfully', 'success');
-		return { success: true, addedItems: validItems };
+		return { success: true, addedItems: items };
 
 	} catch (error) {
 		console.error('Cart error:', error);
