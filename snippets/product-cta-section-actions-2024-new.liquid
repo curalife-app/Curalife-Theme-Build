@@ -741,44 +741,61 @@
 
 		async function buySubscription(variant_id, qty, selling_plan) {
 			try {
-				// First try to clear the cart
-				const clearResponse = await fetch('/cart/clear.js', {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json'
-					}
-				});
+				// First get current cart state
+				const cartResponse = await fetch('/cart.js');
+				const cart = await cartResponse.json();
 
-				if (!clearResponse.ok) {
-					throw new Error('Failed to clear cart');
+				// If cart is not empty, clear it
+				if (cart.item_count > 0) {
+					const clearResponse = await fetch('/cart/clear.js', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json'
+						}
+					});
+
+					if (!clearResponse.ok) {
+						throw new Error('Failed to clear cart');
+					}
+
+					// Wait for cart to clear
+					await new Promise(resolve => setTimeout(resolve, 500));
 				}
 
-				// Wait a brief moment to ensure cart is cleared
-				await new Promise(resolve => setTimeout(resolve, 100));
+				// Get cart again to verify it's empty
+				const verifyResponse = await fetch('/cart.js');
+				const verifiedCart = await verifyResponse.json();
+
+				if (verifiedCart.item_count > 0) {
+					throw new Error('Cart not properly cleared');
+				}
 
 				// Add subscription item
 				const addResponse = await fetch('/cart/add.js', {
 					method: 'POST',
 					headers: {
-						'Content-Type': 'application/json'
+						'Content-Type': 'application/json',
+						'Accept': 'application/json'
 					},
 					body: JSON.stringify({
-						"id": variant_id,
-						"quantity": qty,
-						"selling_plan": selling_plan
+						items: [{
+							id: variant_id,
+							quantity: qty,
+							selling_plan: selling_plan
+						}]
 					})
 				});
 
-				if (!addResponse.ok) {
-					const errorData = await addResponse.json();
-					throw new Error(errorData.description || 'Failed to add subscription to cart');
+				const addResponseData = await addResponse.json();
+
+				if (!addResponse.ok || addResponseData.items?.length === 0) {
+					throw new Error(addResponseData.description || 'Failed to add subscription to cart');
 				}
 
-				// Successful add - redirect to checkout
 				window.location.href = '/checkout';
 			} catch (error) {
 				console.error('Subscription error:', error);
-				// Here you could add UI feedback about the error
+				alert('Failed to add subscription to cart. Please try again or contact support if the issue persists.');
 			}
 		}
   });
