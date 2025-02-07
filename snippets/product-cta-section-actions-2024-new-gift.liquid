@@ -767,18 +767,25 @@
 async function addValidItemsToCart(items) {
 	try {
 		// Fetch the current cart
-		const cartResponse = await fetch('/cart.js');
-		const currentCart = await cartResponse.json();
+		let cartResponse = await fetch('/cart.js');
+		let currentCart = await cartResponse.json();
 
-		// Find the main item being added based on the current product ID.
+		// Find the main item to be added based on the current product ID.
 		const mainItem = items.find(item => item.product_id === currentProductId);
 		if (!mainItem) {
 			throw new Error('Main product not found in items');
 		}
 
+		// Validate if there’s already a conflicting line item in the cart.
+		const validation = await validateCartItem(mainItem, currentCart);
+		if (!validation.isValid) {
+			showNotification(validation.error.message, 'error');
+			return { success: false, error: validation.error };
+		}
+
+		// If this is a buy-once item (no selling plan)
 		if (!mainItem.selling_plan) {
-			// BUY-ONCE branch
-			// Remove any subscription items for this product ID
+			// Remove any subscription items for the same product
 			const subscriptionItemsToRemove = currentCart.items.filter(item =>
 				item.product_id === mainItem.product_id && item.selling_plan
 			);
@@ -792,11 +799,12 @@ async function addValidItemsToCart(items) {
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ updates })
 				});
-				// Optional: wait a brief moment to let the cart update
-				await new Promise(resolve => setTimeout(resolve, 500));
+				// Refetch the cart to ensure removal of conflicting items
+				cartResponse = await fetch('/cart.js');
+				currentCart = await cartResponse.json();
 			}
 
-			// Add the new buy-once item (leaving all other items intact)
+			// Add the new buy-once item (leaving other items intact)
 			const addResponse = await fetch('/cart/add.js', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -807,8 +815,8 @@ async function addValidItemsToCart(items) {
 				throw new Error(errorData.description);
 			}
 		} else {
-			// SUBSCRIPTION branch
-			// Remove any buy-once items for this product ID
+			// For subscription items:
+			// Remove any buy-once items for the same product
 			const buyOnceItemsToRemove = currentCart.items.filter(item =>
 				item.product_id === mainItem.product_id && !item.selling_plan
 			);
@@ -822,10 +830,12 @@ async function addValidItemsToCart(items) {
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ updates })
 				});
-				await new Promise(resolve => setTimeout(resolve, 500));
+				// Refetch the cart to ensure removal of conflicting items
+				cartResponse = await fetch('/cart.js');
+				currentCart = await cartResponse.json();
 			}
 
-			// Check if a subscription line for the same product already exists
+			// Check if a subscription line for this product already exists
 			const existingSubscription = currentCart.items.find(item =>
 				item.product_id === mainItem.product_id && item.selling_plan
 			);
@@ -856,11 +866,11 @@ async function addValidItemsToCart(items) {
 			}
 		}
 
-		// Process gift items (if any) associated with the product.
+		// Process any gift items as usual.
 		const giftItems = items.filter(item => item.product_id !== currentProductId);
 		if (giftItems.length > 0) {
 			for (const giftItem of giftItems) {
-				// Check if the gift is already in the cart.
+				// If the gift already exists, update its quantity.
 				const existingGift = currentCart.items.find(item =>
 					item.product_id === giftItem.product_id
 				);
@@ -895,7 +905,6 @@ async function addValidItemsToCart(items) {
 		return { success: false, error };
 	}
 }
-
 
 
 async function validateCartItem(item, currentCart) {
