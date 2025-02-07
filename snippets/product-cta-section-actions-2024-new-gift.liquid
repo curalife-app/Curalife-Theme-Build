@@ -756,42 +756,28 @@ function findFailedValidationIndex(validationResults, invalidItemIndex) {
 }
 
 async function validateCartItem(item, currentCart) {
-  try {
-    console.log('Validating item:', item);
-    console.log('Current cart state during validation:', currentCart);
+		try {
+			console.log('Validating item:', item);
 
-    const productId = parseInt(item.product_id);
-    if (!productId) {
-      throw new Error(`Product ID is missing for variant ${item.id}`);
-    }
+			const productId = parseInt(item.product_id);
+			if (!productId) {
+				throw new Error(`Product ID is missing for variant ${item.id}`);
+			}
 
-    // Check if this is a subscription item
-    const isSubscription = !!item.selling_plan;
+			// Always allow the main product
+			const isMainProduct = productId === currentProductId;
+			if (isMainProduct) {
+				return { isValid: true };
+			}
 
-    if (isSubscription) {
-      // Look for existing subscription items with the same product ID
-      const existingSubscription = currentCart.items.find(cartItem =>
-        cartItem.product_id === productId && cartItem.selling_plan_allocation
-      );
-
-      if (existingSubscription) {
-        console.log('Found existing subscription for product:', productId);
-        return {
-          isValid: true,
-          requiresReplacement: true,
-          itemToRemove: existingSubscription
-        };
-      }
-    }
-
-    // Continue with regular gift validation
-    const giftOptions = document.querySelectorAll('.gift-option-border');
-    const isItemFree = Array.from(giftOptions).some(giftOption => {
-      const giftId = isSubscriptionSelected()
-        ? giftOption.dataset.giftIdSubscription
-        : giftOption.dataset.giftId;
-      return giftId === item.id.toString();
-    });
+			// Continue with gift validation
+			const giftOptions = document.querySelectorAll('.gift-option-border');
+			const isItemFree = Array.from(giftOptions).some(giftOption => {
+				const giftId = isSubscriptionSelected()
+					? giftOption.dataset.giftIdSubscription
+					: giftOption.dataset.giftId;
+				return giftId === item.id.toString();
+			});
 
     if (isItemFree) {
       const currentFreeItems = currentCart.items.filter(cartItem => {
