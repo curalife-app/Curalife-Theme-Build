@@ -745,10 +745,9 @@ async function addValidItemsToCart(items) {
 	try {
 		console.log('Items to add:', items);
 
-		// Clear cart
+		// Clear cart first
 		const cartResponse = await fetch('/cart.js');
 		const currentCart = await cartResponse.json();
-		console.log('Current cart:', currentCart);
 
 		if (currentCart.items.length > 0) {
 			const updates = {};
@@ -756,23 +755,40 @@ async function addValidItemsToCart(items) {
 				updates[item.key] = 0;
 			});
 
-			await fetch('/cart/update.js', {
+			const clearResponse = await fetch('/cart/update.js', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ updates })
 			});
+
+			if (!clearResponse.ok) {
+				throw new Error('Failed to clear cart');
+			}
+
+			// Wait a moment for cart to clear
+			await new Promise(resolve => setTimeout(resolve, 500));
 		}
 
-		// Validate items
+		// Validate and prepare items
 		const validItems = items.map(item => {
-			// Ensure selling_plan is undefined rather than empty string
-			if (item.selling_plan === '') {
-				delete item.selling_plan;
+			const newItem = { ...item };
+
+			// For subscription items, verify selling plan exists
+			if (newItem.selling_plan) {
+				if (!newItem.selling_plan || newItem.selling_plan === '0') {
+					delete newItem.selling_plan;
+				}
 			}
-			return item;
+
+			// For non-subscription items, ensure no selling plan
+			if (!newItem.selling_plan) {
+				delete newItem.selling_plan;
+			}
+
+			return newItem;
 		});
 
-		console.log('Validated items:', validItems);
+		console.log('Prepared items for cart:', validItems);
 
 		// Add items to cart
 		const response = await fetch('/cart/add.js', {
@@ -790,7 +806,7 @@ async function addValidItemsToCart(items) {
 		}
 
 		const result = await response.json();
-		console.log('Cart add result:', result);
+		console.log('Cart add success:', result);
 
 		showNotification('Items added to cart successfully', 'success');
 		return { success: true, addedItems: validItems };
