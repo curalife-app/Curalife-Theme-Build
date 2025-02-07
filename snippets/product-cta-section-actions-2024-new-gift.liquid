@@ -743,10 +743,6 @@
 
 async function addValidItemsToCart(items) {
 	try {
-		// Check if variant supports selling plan
-		const productResponse = await fetch(`/products/${currentProductHandle}.js`);
-		const productData = await productResponse.json();
-
 		// Clear cart
 		const cartResponse = await fetch('/cart.js');
 		const currentCart = await cartResponse.json();
@@ -759,22 +755,20 @@ async function addValidItemsToCart(items) {
 			await new Promise(resolve => setTimeout(resolve, 1000));
 		}
 
-		// Validate items
+		// Prepare items for cart
 		const validItems = items.map(item => {
 			const newItem = { ...item };
-			const variant = productData.variants.find(v => v.id.toString() === newItem.id.toString());
 
-			console.log('Variant:', variant);
-			console.log('Selling plan:', newItem.selling_plan);
-
-			if (newItem.selling_plan && (!variant || !variant.requires_selling_plan)) {
+			if (!newItem.selling_plan || newItem.selling_plan === '0') {
 				delete newItem.selling_plan;
+			} else if (typeof newItem.selling_plan === 'string') {
+				newItem.selling_plan = parseInt(newItem.selling_plan);
 			}
 
 			return newItem;
 		});
 
-		console.log('Final items to add:', validItems);
+		console.log('Adding to cart:', validItems);
 
 		const response = await fetch('/cart/add.js', {
 			method: 'POST',
