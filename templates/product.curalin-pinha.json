@@ -105,7 +105,7 @@
         "is_reverse": false,
         "is_reviews": true,
         "is_save_title": false,
-        "is_product_thumbs": true,
+        "is_product_thumbs": false,
         "is_hide_thumbs": false,
         "is_hide_info": false,
         "is_buy_quantity": false,
@@ -263,6 +263,7 @@
         "image_MWaQP4",
         "image_Le6FL4"
       ],
+      "disabled": true,
       "custom_css": [
         "section {padding-bottom: 50px;}",
         ".product-container {grid-template-columns: 48% 48%;}",
@@ -1326,9 +1327,8 @@
     },
     "5e170931-20cc-4103-966c-bce1ab9ff8e8": {
       "type": "custom-liquid",
-      "disabled": true,
       "settings": {
-        "custom_liquid": "{% if customer.tags contains 'B2B' %}\n<script>window.location.href=\"/products/curalin-wholesale\"</script>\n{% endif %}",
+        "custom_liquid": "<script>\n    // Retrieve the click_id parameter from the URL\n    const urlParams = new URLSearchParams(window.location.search);\n    const clickId = urlParams.get('click_id');\n    \n    // Select all elements with the .buy-button class\n    const buyButtons = document.querySelectorAll('.buy-button');\n\n    if (buyButtons.length > 0) {\n      buyButtons.forEach(function(button) {\n        button.addEventListener('click', function(event) {\n          if (clickId) {\n            // Construct the postback URL using the click_id from the URL\n            const postbackUrl = 'https://c.cleverhealthy.me/cf/cv?click_id=' + encodeURIComponent(clickId) + '&ct=checkout';\n            // Fire the postback by creating an image beacon\n            const img = new Image();\n            img.src = postbackUrl;\n    \n            console.log(\"Postback fired:\", postbackUrl);\n          } else {\n            console.log(\"No click_id parameter found in the URL.\");\n          }\n        });\n      });\n    }\n  });\n</script>",
         "color_scheme": "background-1",
         "additional_classes": "",
         "run_on_pages": "",
