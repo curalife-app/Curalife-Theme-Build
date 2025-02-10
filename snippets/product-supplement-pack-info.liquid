@@ -1,9 +1,11 @@
 {% comment %}
-	Pack Info Section – Responsive Tabs on Mobile / Side‑by‑Side Panels on Desktop
+	Responsive Pack Info Section
+	- Mobile (≤768px): Vertical tab navigation, only one panel visible at a time.
+	- Desktop (≥800px): All panels are visible side‑by‑side with headers.
 {% endcomment %}
 <section class="pack-info-section instance-{{ index }}">
 	<div class="container">
-		<!-- Header area with product title, description, highlights, and image -->
+		<!-- Product Header -->
 		<div class="header">
 			<div class="titles">
 				<h2 class="title">{{ product.title }}</h2>
@@ -20,21 +22,21 @@
 			<img class="product-image" src="{{ product.metafields.custom.pill_image | img_url: 'original' }}" alt="{{ product.title }}" loading="lazy">
 		</div>
 
-		<!-- Tabbed content area -->
+		<!-- Tabbed Content -->
 		<div class="tabbed-content">
-			<!-- Mobile Tab Navigation -->
+			<!-- Mobile Vertical Tabs Navigation -->
 			<nav class="tabs">
 				<ul>
 					<li>
-						<a href="#instructions-{{ index }}" data-tab="instructions">Usage Instructions</a>
+						<a href="#instructions-{{ index }}" data-tab="instructions" class="tab-link">Usage Instructions</a>
 					</li>
 					{% if product.metafields.custom.ingredients.value %}
-					<li>
-						<a href="#ingredients-{{ index }}" data-tab="ingredients">Ingredients</a>
-					</li>
+						<li>
+							<a href="#ingredients-{{ index }}" data-tab="ingredients" class="tab-link">Ingredients</a>
+						</li>
 					{% endif %}
 					<li>
-						<a href="#facts-{{ index }}" data-tab="facts">Supplement Facts</a>
+						<a href="#facts-{{ index }}" data-tab="facts" class="tab-link">Supplement Facts</a>
 					</li>
 				</ul>
 			</nav>
@@ -63,19 +65,19 @@
 				</div>
 
 				{% if product.metafields.custom.ingredients.value %}
-				<!-- Ingredients Panel -->
-				<div id="ingredients-{{ index }}" class="tab-panel" data-tab="ingredients">
-					<h3 class="panel-header">Ingredients</h3>
-					<div class="ingredients">
-						{% for ingredient in product.metafields.custom.ingredients.value %}
-							<div class="ingredient">
-								{% assign ingredient_handle = ingredient | downcase | replace: ' ', '-' %}
-								<img src="{{ 'product-supplement-pack-info-ingredient-icon-' | append: ingredient_handle | append: '.png' | asset_url }}" alt="{{ ingredient }}">
-								<p>{{ ingredient }}</p>
-							</div>
-						{% endfor %}
+					<!-- Ingredients Panel -->
+					<div id="ingredients-{{ index }}" class="tab-panel" data-tab="ingredients">
+						<h3 class="panel-header">Ingredients</h3>
+						<div class="ingredients">
+							{% for ingredient in product.metafields.custom.ingredients.value %}
+								<div class="ingredient">
+									{% assign ingredient_handle = ingredient | downcase | replace: ' ', '-' %}
+									<img src="{{ 'product-supplement-pack-info-ingredient-icon-' | append: ingredient_handle | append: '.png' | asset_url }}" alt="{{ ingredient }}">
+									<p>{{ ingredient }}</p>
+								</div>
+							{% endfor %}
+						</div>
 					</div>
-				</div>
 				{% endif %}
 
 				<!-- Supplement Facts Panel -->
@@ -99,19 +101,18 @@
 	.pack-info-section .header {
 		display: flex;
 		flex-wrap: wrap;
-		align-items: center;
 		justify-content: space-between;
 		margin-bottom: 20px;
 	}
 	.pack-info-section .titles {
 		max-width: 60%;
 	}
-	.pack-info-section .titles .check-list {
+	.pack-info-section .check-list {
 		list-style: none;
 		padding: 0;
-		margin: 0;
+		margin: 10px 0 0;
 	}
-	.pack-info-section .titles .highlight {
+	.pack-info-section .highlight {
 		margin-bottom: 10px;
 	}
 	.pack-info-section .product-image {
@@ -119,25 +120,23 @@
 		height: auto;
 	}
 
-	/* Tabs Navigation (Mobile) */
+	/* Tabs Navigation – Mobile Vertical Alignment */
 	.tabbed-content .tabs ul {
 		list-style: none;
-		padding: 0;
 		margin: 0 0 10px;
-		display: flex;
-		gap: 10px;
+		padding: 0;
 	}
 	.tabbed-content .tabs li {
-		margin: 0;
+		margin-bottom: 5px;
 	}
 	.tabbed-content .tabs a {
 		display: block;
-		padding: 8px 16px;
+		padding: 10px;
 		background: #f0f0f0;
-		border-radius: 4px;
 		text-decoration: none;
 		color: #333;
 		border: 1px solid transparent;
+		border-radius: 4px;
 	}
 	.tabbed-content .tabs a.active {
 		background: var(--light-green);
@@ -146,13 +145,14 @@
 	}
 
 	/* Tab Panels */
-	.tabbed-content .tab-panel {
+	.tab-panels .tab-panel {
 		display: none;
 	}
-	.tabbed-content .tab-panel.active {
+	.tab-panels .tab-panel.active {
 		display: block;
 	}
-	/* Panel Headers (only visible on desktop) */
+
+	/* Panel Headers (Desktop Only) */
 	.panel-header {
 		display: none;
 		margin-bottom: 10px;
@@ -173,67 +173,73 @@
 		.tabbed-content .tabs {
 			display: none;
 		}
-		.tabbed-content .tab-panels {
+		.tab-panels {
 			display: flex;
 			gap: 20px;
 		}
-		.tabbed-content .tab-panel {
+		.tab-panels .tab-panel {
 			display: block;
 			flex: 1;
 		}
 		.panel-header {
 			display: block;
+			text-align: center;
 			font-size: 1.5em;
 			font-weight: bold;
-			text-align: center;
-			margin-bottom: 1em;
+			margin-bottom: 10px;
 		}
 	}
 </style>
 
 <script>
 	document.addEventListener("DOMContentLoaded", function() {
-		var instanceSelector = '.pack-info-section.instance-{{ index }}';
+		var instanceSelector = ".pack-info-section.instance-{{ index }}";
 		var container = document.querySelector(instanceSelector);
 		if (!container) return;
 
-		var tabs = container.querySelectorAll('.tabs a');
-		var panels = container.querySelectorAll('.tab-panel');
+		var tabLinks = container.querySelectorAll(".tab-link");
+		var tabPanels = container.querySelectorAll(".tab-panel");
 
-		// Clears active classes from all tabs and panels.
+		// Remove active classes from all tabs and panels.
 		function clearActive() {
-			tabs.forEach(function(tab) { tab.classList.remove('active'); });
-			panels.forEach(function(panel) { panel.classList.remove('active'); });
+			tabLinks.forEach(function(link) {
+				link.classList.remove("active");
+			});
+			tabPanels.forEach(function(panel) {
+				panel.classList.remove("active");
+			});
 		}
 
-		// Activates the given tab and its corresponding panel.
-		function activateTab(tab) {
-			var targetId = tab.getAttribute('href');
+		// Activate the given tab link and show its corresponding panel.
+		function activateTab(tabLink) {
+			var targetId = tabLink.getAttribute("href");
 			clearActive();
-			tab.classList.add('active');
+			tabLink.classList.add("active");
 			var targetPanel = container.querySelector(targetId);
 			if (targetPanel) {
-				targetPanel.classList.add('active');
+				targetPanel.classList.add("active");
 			}
 		}
 
-		// Initialize tabs based on viewport width.
+		// Initialize mobile tabs
 		function initTabs() {
 			if (window.innerWidth <= 768) {
-				// On mobile, attach click events and set default active tab.
-				tabs.forEach(function(tab) {
-					tab.addEventListener('click', function(e) {
+				// Bind click events on mobile if not already bound.
+				tabLinks.forEach(function(link) {
+					link.addEventListener("click", function(e) {
 						e.preventDefault();
-						activateTab(tab);
+						activateTab(link);
 					});
 				});
-				if (tabs.length > 0) {
-					activateTab(tabs[0]);
+				// Activate the first tab if none is active.
+				if (tabLinks.length && !container.querySelector(".tab-link.active")) {
+					activateTab(tabLinks[0]);
 				}
 			} else {
 				// On desktop, show all panels.
-				panels.forEach(function(panel) {
-					panel.classList.add('active');
+				clearActive();
+				tabPanels.forEach(function(panel) {
+					panel.classList.add("active");
 				});
 			}
 		}
@@ -241,19 +247,10 @@
 		initTabs();
 
 		// Reinitialize on window resize (debounced)
-		window.addEventListener('resize', function() {
-			clearTimeout(window.resizeTimeout);
-			window.resizeTimeout = setTimeout(function() {
-				if (window.innerWidth > 768) {
-					panels.forEach(function(panel) {
-						panel.classList.add('active');
-					});
-				} else {
-					clearActive();
-					if (tabs.length > 0) {
-						activateTab(tabs[0]);
-					}
-				}
+		window.addEventListener("resize", function() {
+			clearTimeout(window.tabResizeTimer);
+			window.tabResizeTimer = setTimeout(function() {
+				initTabs();
 			}, 250);
 		});
 	});
