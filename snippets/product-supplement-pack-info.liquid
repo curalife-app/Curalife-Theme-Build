@@ -18,27 +18,32 @@
 
 <section class="pack-info-section instance-{{ index }}">
 	<div class="container">
-		<div class="titles mbl:flex-col mbl:items-baseline gap-2">
-			<h2 class="title">{{ product.title }}</h2>
-			<div class="subtitle">{{ product.description }}</div>
-		</div>
+		<div class="wrap">
+			<div class="titles mbl:flex-col mbl:items-baseline gap-2">
+				<h2 class="title">{{ product.title }}</h2>
+				<div class="subtitle">{{ product.description }}</div>
 
-		<div class="product-image-wrapper">
-			{% if index %}
-				<p class="number">{{ index }}</p>
-			{% endif %}
+				<div id="highlights-{{ index }}" class="item active always-active" data-title="Product Highlights">
+					<div class="highlights item-content">
+						{% for highlight in product.metafields.custom['product-highlights'].value %}
+							<div class="highlight">
+								<div class="highlight-icon"><i class="fa-solid fa-circle-check"></i></div>
+								<p>
+									<b>{{ highlight.title }}</b>
+									<br>
+									{{ highlight.subtitle }}
+								</p>
+							</div>
+						{% endfor %}
+					</div>
+				</div>
+			</div>
 
 			<img class="product-image" src="{{ product.metafields.custom.pill_image | img_url: 'original' }}" alt="{{ product.title }}" loading="lazy">
 		</div>
 
 		<div class="tabbed-content tabs-side">
 			<nav class="tabs">
-				<div class="tab">
-					<a href="#highlights-{{ index }}" class="active">
-						Product Highlights
-						<i>></i>
-					</a>
-				</div>
 				<div class="tab">
 					<a href="#instructions-{{ index }}">
 						Usage Instructions
@@ -59,32 +64,9 @@
 						<i>></i>
 					</a>
 				</div>
-				{% if product.metafields.custom.reviews.value %}
-					<div class="tab">
-						<a href="#reviews-{{ index }}">
-							Reviews
-							<i>></i>
-						</a>
-					</div>
-				{% endif %}
 			</nav>
 
 			<div class="content">
-				<div id="highlights-{{ index }}" class="item active always-active" data-title="Product Highlights">
-					<div class="highlights item-content">
-						{% for highlight in product.metafields.custom['product-highlights'].value %}
-							<div class="highlight">
-								<div class="highlight-icon"><i class="fa-solid fa-circle-check"></i></div>
-								<p>
-									<b>{{ highlight.title }}</b>
-									<br>
-									{{ highlight.subtitle }}
-								</p>
-							</div>
-						{% endfor %}
-					</div>
-				</div>
-
 				<div id="instructions-{{ index }}" class="item" data-title="Usage Instructions">
 					<div class="instructions item-content">
 						{% for step in product.metafields.custom.instructions.value %}
@@ -124,20 +106,11 @@
 						<img src="{{ product.metafields.custom.supplement_fact | image_url }}" alt="Supplement Facts" loading="lazy">
 					</div>
 				</div>
-
-				{% if product.metafields.custom.reviews.value %}
-					<div id="reviews-{{ index }}" class="item" data-title="Reviews">
-						<div class="reviews item-content">
-							{% render 'product-supplement-pack-info-reviews', reviews: reviews %}
-						</div>
-					</div>
-				{% endif %}
 			</div>
 		</div>
 	</div>
 </section>
 
-{% if isLastRender %}
 	<style>
 		.pack-info-section {
 		  background: var(--primary-color-lightest);
@@ -460,7 +433,6 @@
 		  }
 		}
 	</style>
-{% endif %}
 
 <script>
 	(function () {
