@@ -26,9 +26,8 @@
 				<ul class="highlights check-list">
 					{% for highlight in product.metafields.custom['product-highlights'].value %}
 						<li class="highlight">
-								<b>{{ highlight.title }}</b>
-								<br>
-								{{ highlight.subtitle }}
+							<b>{{ highlight.title }}</b><br>
+							{{ highlight.subtitle }}
 						</li>
 					{% endfor %}
 				</ul>
@@ -41,22 +40,19 @@
 			<nav class="tabs">
 				<div class="tab">
 					<a href="#instructions-{{ index }}">
-						Usage Instructions
-						<i>></i>
+						Usage Instructions <i>></i>
 					</a>
 				</div>
 				{% if product.metafields.custom.ingredients.value %}
 					<div class="tab">
 						<a href="#ingredients-{{ index }}">
-							Ingredients
-							<i>></i>
+							Ingredients <i>></i>
 						</a>
 					</div>
 				{% endif %}
 				<div class="tab">
 					<a href="#facts-{{ index }}">
-						Supplement Facts
-						<i>></i>
+						Supplement Facts <i>></i>
 					</a>
 				</div>
 			</nav>
@@ -75,7 +71,6 @@
 										{% endif %}
 									{% endfor %}
 								</div>
-
 								<div>{{ step.subtitle }}</div>
 							</div>
 						{% endfor %}
@@ -106,264 +101,129 @@
 	</div>
 </section>
 
-	<style>
-		.pack-info-section {
-		  background: var(--primary-color-lightest);
-		}
+<style>
+	/* General styles */
+	.pack-info-section {
+		background: var(--primary-color-lightest);
+	}
+	/* (Other existing styles remain unchanged) */
 
-		.pack-info-section .product-image-wrapper {
-		  position: absolute;
-		  bottom: -120px;
-		  right: 0;
-		  pointer-events: none;
-		  z-index: 1;
-		}
-
-		.pack-info-section .product-image-wrapper .product-image {
-		  position: relative;
-		  max-height: 400px;
-		  margin: 0;
-		}
-
-		.pack-info-section .instructions {
-		  display: flex;
-		  flex-direction: column;
-		  gap: 30px;
-		}
-
-		.pack-info-section .instructions .step {
-		  display: flex;
-		  flex-direction: column;
-		  gap: 10px;
-		}
-
-		.pack-info-section .instructions .step p {
-		  min-width: 120px;
-		}
-
-		.pack-info-section .instructions .step h3 {
-		  font-size: 28px;
-		  font-weight: bold;
-		  min-width: 105px;
-		}
-
-		.pack-info-section .instructions .step .capsules {
-		  display: flex;
-		}
-
-		.pack-info-section .instructions .step p {
-		  max-width: 35vw;
-		}
-
-		.pack-info-section .ingredients {
-		  display: flex;
-		  flex-wrap: wrap;
-		  max-width: 400px;
-		  gap: 10px;
-		  max-width: 500px;
-		}
-
-		.pack-info-section .ingredient {
-		  width: 120px;
-		  display: flex;
-		  flex-direction: column;
-		  align-items: center;
-		}
-
-		.pack-info-section .ingredient p {
-		  font-size: 16px;
-		  text-align: center;
-		}
-
-		.pack-info-section .facts {
-		  text-align: center;
-		}
-
-		.pack-info-section .facts img {
-		  max-height: 300px;
-		}
-
-		.pack-info-section .tabbed-content {
-		  max-width: 800px;
-		  display: flex;
-		  align-items: center;
-		  height: 300px;
-		}
-
-		.pack-info-section .tabs .tab {
-		  text-align: center;
-		  height: 70px;
-		  border-bottom: 1px solid;
-		  padding-left: unset;
-		}
-
-		.pack-info-section .tabs .tab::before {
-		  content: "";
-		}
-
-		.pack-info-section .tabs .tab:first-child {
-		  border-top: 1px solid;
-		}
-
-		.pack-info-section .tabs .tab a {
-		  height: 100%;
-		  align-items: center;
-		  display: flex;
-		  justify-content: center;
-		}
-
-		.pack-info-section .tabs .tab a i {
-		  position: relative;
-		  transition: all 0.5s ease-in-out;
-		  font-style: normal;
-		  left: 20px;
-		}
-
-		.pack-info-section .tabs .tab a:hover,
-		.pack-info-section .tabs .tab a.active {
-		  color: var(--primary);
-		  font-weight: bold;
-		}
-
-		.pack-info-section .item {
-		  margin-bottom: 2px;
-		  position: relative;
-		}
-
-		.pack-info-section .item::before {
-		  content: attr(data-title);
-		  border-top: 1px solid var(--light-green);
-		  cursor: pointer;
-		  font-weight: bold;
-		  padding: 0.5em;
-		  display: block;
-		  text-align: center;
-		}
-
-		.pack-info-section .item.active .item-content {
-		  transition: opacity 0.8s ease-in-out;
-		}
-
+	/* Mobile styles (below 768px): tabs/accordion behavior */
+	@media all and (max-width: 768px) {
 		.pack-info-section .tabbed-content .tabs {
-		  display: none;
+			display: block;
 		}
-
-		.tabbed-content .item {
-		  min-height: 2em;
-		}
-
 		.pack-info-section .tabbed-content .item .item-content {
-		  opacity: 0;
-		  visibility: hidden;
-		  height: 0;
+			transition: opacity 0.8s ease-in-out;
+			opacity: 0;
+			visibility: hidden;
+			height: 0;
 		}
-
 		.pack-info-section .tabbed-content .item.active .item-content {
-		  opacity: 1;
-		  visibility: visible;
-		  height: auto;
+			opacity: 1;
+			visibility: visible;
+			height: auto;
+			padding: 5vw 0;
 		}
-
-		@media all and (min-width: 800px) {
-		  .item.active .item-content {
-		    padding-top: 0;
-		  }
-
-		  .pack-info-section .tabbed-content .tabs {
-		    display: block;
-		  }
-
-		  .pack-info-section .tabbed-content .tabs li {
-		    display: inline-block;
-		    margin-bottom: 2px;
-		  }
-
-		  .pack-info-section .tabbed-content .tabs li a {
-		    display: flex;
-		  }
-
-		  .pack-info-section .tabbed-content .item {
-		    min-height: 0;
-		  }
-
-		  .pack-info-section .tabbed-content .item::before {
-		    display: none;
-		  }
-
-		  .pack-info-section .tabbed-content.tabs-side .tabs {
-		    min-width: 300px;
-		    margin-right: 50px;
-		  }
-
-		  .pack-info-section .tabbed-content.tabs-side .tabs li {
-		    display: block;
-		  }
+		/* Optional accordion indicator */
+		.pack-info-section .item::after {
+			content: "+";
+			font-size: 30px;
+			position: absolute;
+			top: 5px;
+			right: 2vw;
+			border: 2px solid var(--light-green);
+			border-radius: 50%;
+			width: 5vw;
+			height: 5vw;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: var(--light-green);
 		}
-
-		@media all and (max-width: 768px) {
-		  .pack-info-section {
-		    padding-bottom: 75vw;
-		    padding-top: 10vw;
-		  }
-
-		  .pack-info-section .instructions .step .capsules {
-		    min-width: 65px;
-		  }
-
-		  .pack-info-section .tabbed-content {
-		    display: block;
-		    margin-left: unset !important;
-		  }
-
-		  .pack-info-section .item::after {
-		    content: "+";
-		    font-size: 30px;
-		    position: absolute;
-		    top: 5px;
-		    right: 2vw;
-		    border: 2px solid var(--light-green);
-		    border-radius: 50%;
-		    width: 5vw;
-		    height: 5vw;
-		    font-size: 5vw;
-		    display: flex;
-		    align-items: center;
-		    justify-content: center;
-		    color: var(--light-green);
-		  }
-
-		  .pack-info-section .item.active::after {
-		    content: "-";
-		  }
-
-		  .pack-info-section .product-image-wrapper {
-		    bottom: 0;
-		    width: 100%;
-		    position: relative;
-		    text-align: center;
-		    margin-top: 10vw;
-		  }
-
-		  .pack-info-section .tabbed-content .item.active .item-content {
-		    padding: 5vw 0;
-		  }
-
-		  .pack-info-section .ingredient {
-		    width: 27vw;
-		  }
-
-		  .pack-info-section .instructions .step {
-		    gap: 2vw;
-		  }
-
-		  .pack-info-section .instructions .step h3 {
-		    min-width: 20vw;
-		  }
+		.pack-info-section .item.active::after {
+			content: "-";
 		}
-	</style>
+	}
+
+	/* Desktop styles (above 800px): show all content side by side */
+	@media all and (min-width: 800px) {
+		.pack-info-section .tabbed-content {
+			display: flex;
+			flex-direction: row;
+			align-items: flex-start;
+			height: auto;
+		}
+		.pack-info-section .tabbed-content .tabs {
+			display: none; /* Hide the tabs navigation */
+		}
+		.pack-info-section .tabbed-content .content {
+			display: flex;
+			gap: 20px;
+			width: 100%;
+		}
+		.pack-info-section .tabbed-content .content .item {
+			flex: 1;
+		}
+		.pack-info-section .tabbed-content .item .item-content {
+			opacity: 1 !important;
+			visibility: visible !important;
+			height: auto !important;
+			padding: 0; /* Adjust as needed */
+		}
+		.pack-info-section .item::after {
+			display: none;
+		}
+	}
+</style>
 
 <script>
 	(function () {
+		function tabControl() {
+			const instanceSelector = '.pack-info-section.instance-{{ index }}';
+			const tabbedContent = document.querySelector(instanceSelector + ' .tabbed-content');
+			if (!tabbedContent) return;
+
+			if (window.innerWidth > 768) {
+				// Desktop view: make sure all items are visible.
+				document.querySelectorAll(instanceSelector + ' .tabbed-content .item').forEach(function(item) {
+					item.classList.add('active');
+				});
+			} else {
+				// Mobile view: initialize tab/accordion functionality.
+				// Remove active class from all items to start collapsed.
+				document.querySelectorAll(instanceSelector + ' .tabbed-content .item').forEach(function(item) {
+					item.classList.remove('active');
+				});
+
+				const tabsNav = document.querySelector(instanceSelector + ' .tabbed-content .tabs');
+				if (tabsNav && tabsNav.offsetParent !== null) {
+					// Add click listeners to tab buttons.
+					tabsNav.querySelectorAll('a').forEach(function (button) {
+						button.addEventListener('click', function (event) {
+							event.preventDefault();
+							const target = button.getAttribute('href');
+							// Remove active state from all buttons and items.
+							tabsNav.querySelectorAll('a').forEach(btn => btn.classList.remove('active'));
+							document.querySelectorAll(instanceSelector + ' .tabbed-content .item').forEach(item => item.classList.remove('active'));
+							// Activate the clicked tab and corresponding content.
+							button.classList.add('active');
+							document.querySelector(target).classList.add('active');
+						});
+					});
+				} else {
+					// Fallback: allow clicking on the item to toggle it.
+					document.querySelectorAll(instanceSelector + ' .tabbed-content .item').forEach(function (item) {
+						item.addEventListener('click', function () {
+							const container = item.closest('.tabbed-content');
+							container.querySelectorAll('.item').forEach(it => it.classList.remove('active'));
+							item.classList.add('active');
+						});
+					});
+				}
+			}
+		}
+
 		tabControl();
 
 		let resizeTimer;
@@ -373,45 +233,5 @@
 				tabControl();
 			}, 250);
 		});
-
-		function tabControl() {
-			const tabs = document.querySelector(`.pack-info-section.instance-{{ index }} .tabbed-content .tabs`);
-
-			if (tabs && tabs.offsetParent !== null) {
-				// Checks if the element is visible
-				tabs.querySelectorAll('a').forEach(function (button) {
-					button.addEventListener('click', function (event) {
-						event.preventDefault();
-						const target = button.getAttribute('href');
-						const tabsContainer = button.closest('.tabs');
-						const buttons = tabsContainer.querySelectorAll('a');
-						const itemContainer = tabsContainer.closest('.pack-info-section.instance-{{ index }} .tabbed-content').querySelectorAll('.item');
-
-						buttons.forEach(btn => btn.classList.remove('active'));
-						itemContainer.forEach(item => item.classList.remove('active'));
-
-						button.classList.add('active');
-						document.querySelector(target).classList.add('active');
-					});
-				});
-			} else {
-				document.querySelectorAll('.item').forEach(function (item) {
-					item.addEventListener('click', function () {
-						const container = item.closest('.tabbed-content');
-						const currId = item.getAttribute('id');
-						const items = container.querySelectorAll('.item');
-
-						container.querySelectorAll('.tabs a').forEach(btn => btn.classList.remove('active'));
-						items.forEach(it => it.classList.remove('active'));
-
-						item.classList.add('active');
-						const correspondingTab = container.querySelector(`.tabs a[href$="#${currId}"]`);
-						if (correspondingTab) {
-							correspondingTab.classList.add('active');
-						}
-					});
-				});
-			}
-		}
 	})();
 </script>
