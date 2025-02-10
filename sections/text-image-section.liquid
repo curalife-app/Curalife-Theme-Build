@@ -122,19 +122,21 @@
 
 
 	<script>
-		document.addEventListener('DOMContentLoaded', () => {
+		(() => {
 			const section = document.getElementById('section-{{ section.id }}');
 			if (!section) return;
 
 			const params = new URLSearchParams(window.location.search);
-			const ctaParam = params.get('cta');
+			const ctaParam = params.get('cta') === 'true';
 
-			if (ctaParam === 'true') {
+			if (ctaParam) {
 				document.querySelectorAll('.hide-on-cta').forEach(el => el.remove());
-			} else if (section.classList.contains('show-on-cta')) {
+			}
+
+			if ({{ section.settings.display_on_url_param | json }} && !ctaParam) {
 				section.remove();
 			}
-		});
+		})();
 	</script>
 
 	{% if section.settings.is_sticky %}
@@ -1024,6 +1026,11 @@
 				"label": "Display Only On UTM Parameters",
 				"info": "Enter a UTM Prameter needs to be to the banner to. example: 'sale=flash'. Leave blank to display on all pages."
 			},
+			{
+				"type": "checkbox",
+				"id": "display_on_url_param",
+				"label": "Display Only on cta=true URL Param"
+			}
 			{
 				"type": "checkbox",
 				"id": "is_hide_on_global",
