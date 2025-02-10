@@ -60,11 +60,7 @@
 					<div class="swiper-wrapper">
 						{% if thumbnailImage %}
 							<div class="swiper-slide product-image-slide">
-								{% if request.path contains 'lp-wl-curaslim-360-aff-bogo' %}
-									<img src="{{ "product_image.png" | file_url }}" alt="CuraSlim" loading="lazy">
-								{% else %}
-									{% render 'image', image: thumbnailImage, lazy: false, preload: true, alt: thumbnailImage.alt %}
-								{% endif %}
+								{% render 'image', image: thumbnailImage, lazy: false, preload: true, alt: thumbnailImage.alt %}
 							</div>
 						{% else %}
 							{% comment %} Render Product Images on Main Slider {% endcomment %}
@@ -72,10 +68,11 @@
 								{% for img in product.images %}
 									{% if forloop.index == 1 %}
 										{% assign currentImg = img %}
-										{% assign img = thumbnailImage | default: currentImg %}
+										{% assign theImage = thumbnailImage | default: currentImg %}
 									{% endif %}
+
 									<div class="swiper-slide product-image-slide">
-										{% render 'image', image: img, lazy: false, preload: true, alt: img.alt %}
+										{% render 'image', image: theImage, lazy: false, preload: true, alt: img.alt %}
 									</div>
 								{% endfor %}
 							{% else %}
