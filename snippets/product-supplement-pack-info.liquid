@@ -26,7 +26,8 @@
 				<ul class="highlights check-list">
 					{% for highlight in product.metafields.custom['product-highlights'].value %}
 						<li class="highlight">
-							<b>{{ highlight.title }}</b><br>
+							<b>{{ highlight.title }}</b>
+							<br>
 							{{ highlight.subtitle }}
 						</li>
 					{% endfor %}
@@ -40,25 +41,31 @@
 			<nav class="tabs">
 				<div class="tab">
 					<a href="#instructions-{{ index }}">
-						Usage Instructions <i>></i>
+						Usage Instructions
+						<i>></i>
 					</a>
 				</div>
 				{% if product.metafields.custom.ingredients.value %}
 					<div class="tab">
 						<a href="#ingredients-{{ index }}">
-							Ingredients <i>></i>
+							Ingredients
+							<i>></i>
 						</a>
 					</div>
 				{% endif %}
 				<div class="tab">
 					<a href="#facts-{{ index }}">
-						Supplement Facts <i>></i>
+						Supplement Facts
+						<i>></i>
 					</a>
 				</div>
 			</nav>
 
 			<div class="content">
+				<!-- Usage Instructions -->
 				<div id="instructions-{{ index }}" class="item" data-title="Usage Instructions">
+					<!-- Desktop header -->
+					<h3 class="desktop-header">Usage Instructions</h3>
 					<div class="instructions item-content">
 						{% for step in product.metafields.custom.instructions.value %}
 							<div class="step">
@@ -78,7 +85,10 @@
 				</div>
 
 				{% if product.metafields.custom.ingredients.value %}
+					<!-- Ingredients -->
 					<div id="ingredients-{{ index }}" class="item" data-title="Ingredients">
+						<!-- Desktop header -->
+						<h3 class="desktop-header">Ingredients</h3>
 						<div class="ingredients item-content">
 							{% for ingredient in product.metafields.custom.ingredients.value %}
 								<div class="ingredient">
@@ -91,7 +101,10 @@
 					</div>
 				{% endif %}
 
+				<!-- Supplement Facts -->
 				<div id="facts-{{ index }}" class="item" data-title="Supplement Facts">
+					<!-- Desktop header -->
+					<h3 class="desktop-header">Supplement Facts</h3>
 					<div class="facts item-content">
 						<img src="{{ product.metafields.custom.supplement_fact | image_url }}" alt="Supplement Facts" loading="lazy">
 					</div>
@@ -102,30 +115,26 @@
 </section>
 
 <style>
-	/* General styles */
+	/* General Styles */
 	.pack-info-section {
 		background: var(--primary-color-lightest);
 	}
-	/* (Other existing styles remain unchanged) */
+	/* (Include any other general styles you already have) */
 
-	/* Mobile styles (below 768px): tabs/accordion behavior */
+	/* Mobile Styles (max-width: 768px) */
 	@media all and (max-width: 768px) {
-		.pack-info-section .tabbed-content .tabs {
+		.pack-info-section {
+			padding-bottom: 75vw;
+			padding-top: 10vw;
+		}
+		.pack-info-section .instructions .step .capsules {
+			min-width: 65px;
+		}
+		.pack-info-section .tabbed-content {
 			display: block;
+			margin-left: unset !important;
 		}
-		.pack-info-section .tabbed-content .item .item-content {
-			transition: opacity 0.8s ease-in-out;
-			opacity: 0;
-			visibility: hidden;
-			height: 0;
-		}
-		.pack-info-section .tabbed-content .item.active .item-content {
-			opacity: 1;
-			visibility: visible;
-			height: auto;
-			padding: 5vw 0;
-		}
-		/* Optional accordion indicator */
+		/* Accordion indicator */
 		.pack-info-section .item::after {
 			content: "+";
 			font-size: 30px;
@@ -136,6 +145,7 @@
 			border-radius: 50%;
 			width: 5vw;
 			height: 5vw;
+			font-size: 5vw;
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -144,18 +154,51 @@
 		.pack-info-section .item.active::after {
 			content: "-";
 		}
+		.pack-info-section .product-image-wrapper {
+			bottom: 0;
+			width: 100%;
+			position: relative;
+			text-align: center;
+			margin-top: 10vw;
+		}
+		.pack-info-section .tabbed-content .item.active .item-content {
+			padding: 5vw 0;
+		}
+		.pack-info-section .ingredient {
+			width: 27vw;
+		}
+		.pack-info-section .instructions .step {
+			gap: 2vw;
+		}
+		.pack-info-section .instructions .step h3 {
+			min-width: 20vw;
+		}
+		/* Hide the extra desktop header on mobile */
+		.desktop-header {
+			display: none;
+		}
 	}
 
-	/* Desktop styles (above 800px): show all content side by side */
+	/* Desktop Styles (min-width: 800px) */
 	@media all and (min-width: 800px) {
+		/* Show the desktop headers */
+		.desktop-header {
+			display: block;
+			font-size: 1.5em;
+			font-weight: bold;
+			margin-bottom: 1em;
+			text-align: center;
+		}
+		/* Layout adjustments for side‑by‑side display */
 		.pack-info-section .tabbed-content {
 			display: flex;
 			flex-direction: row;
 			align-items: flex-start;
 			height: auto;
 		}
+		/* Hide the tabs navigation on desktop */
 		.pack-info-section .tabbed-content .tabs {
-			display: none; /* Hide the tabs navigation */
+			display: none;
 		}
 		.pack-info-section .tabbed-content .content {
 			display: flex;
@@ -164,13 +207,16 @@
 		}
 		.pack-info-section .tabbed-content .content .item {
 			flex: 1;
+			position: relative;
 		}
 		.pack-info-section .tabbed-content .item .item-content {
 			opacity: 1 !important;
 			visibility: visible !important;
 			height: auto !important;
-			padding: 0; /* Adjust as needed */
+			padding: 10px; /* Adjust as needed */
 		}
+		/* Remove mobile accordion pseudo‑elements on desktop */
+		.pack-info-section .item::before,
 		.pack-info-section .item::after {
 			display: none;
 		}
@@ -185,25 +231,22 @@
 			if (!tabbedContent) return;
 
 			if (window.innerWidth > 768) {
-				// Desktop view: make sure all items are visible.
+				// Desktop: ensure all items are visible.
 				document.querySelectorAll(instanceSelector + ' .tabbed-content .item').forEach(function(item) {
 					item.classList.add('active');
 				});
 			} else {
-				// Mobile view: initialize tab/accordion functionality.
-				// Remove active class from all items to start collapsed.
+				// Mobile: initialize tab/accordion functionality.
 				document.querySelectorAll(instanceSelector + ' .tabbed-content .item').forEach(function(item) {
 					item.classList.remove('active');
 				});
-
 				const tabsNav = document.querySelector(instanceSelector + ' .tabbed-content .tabs');
 				if (tabsNav && tabsNav.offsetParent !== null) {
-					// Add click listeners to tab buttons.
 					tabsNav.querySelectorAll('a').forEach(function (button) {
 						button.addEventListener('click', function (event) {
 							event.preventDefault();
 							const target = button.getAttribute('href');
-							// Remove active state from all buttons and items.
+							// Remove active states.
 							tabsNav.querySelectorAll('a').forEach(btn => btn.classList.remove('active'));
 							document.querySelectorAll(instanceSelector + ' .tabbed-content .item').forEach(item => item.classList.remove('active'));
 							// Activate the clicked tab and corresponding content.
@@ -212,7 +255,7 @@
 						});
 					});
 				} else {
-					// Fallback: allow clicking on the item to toggle it.
+					// Fallback: toggle on item click.
 					document.querySelectorAll(instanceSelector + ' .tabbed-content .item').forEach(function (item) {
 						item.addEventListener('click', function () {
 							const container = item.closest('.tabbed-content');
