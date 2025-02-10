@@ -1,13 +1,17 @@
+{% comment %}
+	Pack Info Section – Responsive Tabs on Mobile / Side‑by‑Side Panels on Desktop
+{% endcomment %}
 <section class="pack-info-section instance-{{ index }}">
 	<div class="container">
-		<div class="wrap mbl:flex-col mbl:items-center flex gap-4">
-			<div class="titles mbl:flex-col mbl:items-baseline gap-2">
+		<!-- Header area with product title, description, highlights, and image -->
+		<div class="header">
+			<div class="titles">
 				<h2 class="title">{{ product.title }}</h2>
 				<div class="subtitle">{{ product.description }}</div>
 				<ul class="highlights check-list">
 					{% for highlight in product.metafields.custom['product-highlights'].value %}
 						<li class="highlight">
-							<b>{{ highlight.title }}</b><br>
+							<strong>{{ highlight.title }}</strong><br>
 							{{ highlight.subtitle }}
 						</li>
 					{% endfor %}
@@ -16,74 +20,69 @@
 			<img class="product-image" src="{{ product.metafields.custom.pill_image | img_url: 'original' }}" alt="{{ product.title }}" loading="lazy">
 		</div>
 
-		<div class="tabbed-content tabs-side">
+		<!-- Tabbed content area -->
+		<div class="tabbed-content">
+			<!-- Mobile Tab Navigation -->
 			<nav class="tabs">
-				<div class="tab">
-					<a href="#instructions-{{ index }}">
-						Usage Instructions
-						<i>></i>
-					</a>
-				</div>
-				{% if product.metafields.custom.ingredients.value %}
-					<div class="tab">
-						<a href="#ingredients-{{ index }}">
-							Ingredients
-							<i>></i>
-						</a>
-					</div>
-				{% endif %}
-				<div class="tab">
-					<a href="#facts-{{ index }}">
-						Supplement Facts
-						<i>></i>
-					</a>
-				</div>
+				<ul>
+					<li>
+						<a href="#instructions-{{ index }}" data-tab="instructions">Usage Instructions</a>
+					</li>
+					{% if product.metafields.custom.ingredients.value %}
+					<li>
+						<a href="#ingredients-{{ index }}" data-tab="ingredients">Ingredients</a>
+					</li>
+					{% endif %}
+					<li>
+						<a href="#facts-{{ index }}" data-tab="facts">Supplement Facts</a>
+					</li>
+				</ul>
 			</nav>
 
-			<div class="content">
-				<!-- Usage Instructions -->
-				<div id="instructions-{{ index }}" class="item" data-title="Usage Instructions">
-					<!-- Header for desktop -->
-					<h3 class="desktop-header">Usage Instructions</h3>
-					<div class="instructions item-content">
+			<!-- Panels / Tab Content -->
+			<div class="tab-panels">
+				<!-- Usage Instructions Panel -->
+				<div id="instructions-{{ index }}" class="tab-panel" data-tab="instructions">
+					<h3 class="panel-header">Usage Instructions</h3>
+					<div class="instructions">
 						{% for step in product.metafields.custom.instructions.value %}
 							<div class="step">
 								<div class="capsules">
-									{% for item in (1..step.capsules) %}
+									{% for i in (1..step.capsules) %}
 										{% if product.tags contains 'gummies' %}
-											<img class="gummies m-0" src="{{ "icon-gummy.png" | asset_url }}" width="20" height="31" alt="Capsule Pill" loading="lazy">
+											<img src="{{ 'icon-gummy.png' | asset_url }}" alt="Capsule Pill" width="20" height="31">
 										{% else %}
-											<img class="caps m-0" src="{{ "icon-capsule.png" | asset_url }}" width="20" height="31" alt="Capsule Pill" loading="lazy" style="min-width: 35px">
+											<img src="{{ 'icon-capsule.png' | asset_url }}" alt="Capsule Pill" width="20" height="31" style="min-width:35px">
 										{% endif %}
 									{% endfor %}
 								</div>
-								<div>{{ step.subtitle }}</div>
+								<div class="step-text">{{ step.subtitle }}</div>
 							</div>
 						{% endfor %}
 					</div>
 				</div>
 
 				{% if product.metafields.custom.ingredients.value %}
-					<!-- Ingredients -->
-					<div id="ingredients-{{ index }}" class="item" data-title="Ingredients">
-						<h3 class="desktop-header">Ingredients</h3>
-						<div class="ingredients item-content">
-							{% for ingredient in product.metafields.custom.ingredients.value %}
-								<div class="ingredient">
-									{% assign ingredient_handle = ingredient | downcase | replace: ' ', '-' %}
-									<img src="{{ "product-supplement-pack-info-ingredient-icon-" | append: ingredient_handle | append: ".png" | asset_url }}" alt="Ingredient" loading="lazy">
-									<p>{{ ingredient }}</p>
-								</div>
-							{% endfor %}
-						</div>
+				<!-- Ingredients Panel -->
+				<div id="ingredients-{{ index }}" class="tab-panel" data-tab="ingredients">
+					<h3 class="panel-header">Ingredients</h3>
+					<div class="ingredients">
+						{% for ingredient in product.metafields.custom.ingredients.value %}
+							<div class="ingredient">
+								{% assign ingredient_handle = ingredient | downcase | replace: ' ', '-' %}
+								<img src="{{ 'product-supplement-pack-info-ingredient-icon-' | append: ingredient_handle | append: '.png' | asset_url }}" alt="{{ ingredient }}">
+								<p>{{ ingredient }}</p>
+							</div>
+						{% endfor %}
 					</div>
+				</div>
 				{% endif %}
 
-				<!-- Supplement Facts -->
-				<div id="facts-{{ index }}" class="item" data-title="Supplement Facts">
-					<h3 class="desktop-header">Supplement Facts</h3>
-					<div class="facts item-content">
-						<img src="{{ product.metafields.custom.supplement_fact | image_url }}" alt="Supplement Facts" loading="lazy">
+				<!-- Supplement Facts Panel -->
+				<div id="facts-{{ index }}" class="tab-panel" data-tab="facts">
+					<h3 class="panel-header">Supplement Facts</h3>
+					<div class="facts">
+						<img src="{{ product.metafields.custom.supplement_fact | image_url }}" alt="Supplement Facts">
 					</div>
 				</div>
 			</div>
@@ -92,173 +91,170 @@
 </section>
 
 <style>
-	/* General Styles */
+	/* Base Styles */
 	.pack-info-section {
 		background: var(--primary-color-lightest);
+		padding: 20px;
 	}
-	/* Mobile Styles (max-width: 768px) */
-	@media all and (max-width: 768px) {
-		.pack-info-section {
-			padding-bottom: 75vw;
-			padding-top: 10vw;
-		}
-		.pack-info-section .tabbed-content .tabs {
+	.pack-info-section .header {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 20px;
+	}
+	.pack-info-section .titles {
+		max-width: 60%;
+	}
+	.pack-info-section .titles .check-list {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+	.pack-info-section .titles .highlight {
+		margin-bottom: 10px;
+	}
+	.pack-info-section .product-image {
+		max-width: 35%;
+		height: auto;
+	}
+
+	/* Tabs Navigation (Mobile) */
+	.tabbed-content .tabs ul {
+		list-style: none;
+		padding: 0;
+		margin: 0 0 10px;
+		display: flex;
+		gap: 10px;
+	}
+	.tabbed-content .tabs li {
+		margin: 0;
+	}
+	.tabbed-content .tabs a {
+		display: block;
+		padding: 8px 16px;
+		background: #f0f0f0;
+		border-radius: 4px;
+		text-decoration: none;
+		color: #333;
+		border: 1px solid transparent;
+	}
+	.tabbed-content .tabs a.active {
+		background: var(--light-green);
+		color: #fff;
+		border-color: var(--light-green);
+	}
+
+	/* Tab Panels */
+	.tabbed-content .tab-panel {
+		display: none;
+	}
+	.tabbed-content .tab-panel.active {
+		display: block;
+	}
+	/* Panel Headers (only visible on desktop) */
+	.panel-header {
+		display: none;
+		margin-bottom: 10px;
+	}
+
+	/* Mobile Styles (≤768px) */
+	@media (max-width: 768px) {
+		.tabbed-content .tabs {
 			display: block;
 		}
-		/* Hide the extra header on mobile */
-		.desktop-header {
+		.panel-header {
 			display: none;
 		}
-		/* Tab panels: hidden by default */
-		.pack-info-section .tabbed-content .item .item-content {
-			transition: opacity 0.8s ease-in-out;
-			opacity: 0;
-			visibility: hidden;
-			height: 0;
-		}
-		.pack-info-section .tabbed-content .item.active .item-content {
-			opacity: 1;
-			visibility: visible;
-			height: auto;
-			padding: 5vw 0;
-		}
-		/* Optional accordion indicator */
-		.pack-info-section .item::after {
-			content: "+";
-			font-size: 30px;
-			position: absolute;
-			top: 5px;
-			right: 2vw;
-			border: 2px solid var(--light-green);
-			border-radius: 50%;
-			width: 5vw;
-			height: 5vw;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			color: var(--light-green);
-		}
-		.pack-info-section .item.active::after {
-			content: "-";
-		}
 	}
-	/* Desktop Styles (min-width: 800px) */
-	@media all and (min-width: 800px) {
-		/* Show headers */
-		.desktop-header {
+
+	/* Desktop Styles (≥800px) */
+	@media (min-width: 800px) {
+		.tabbed-content .tabs {
+			display: none;
+		}
+		.tabbed-content .tab-panels {
+			display: flex;
+			gap: 20px;
+		}
+		.tabbed-content .tab-panel {
+			display: block;
+			flex: 1;
+		}
+		.panel-header {
 			display: block;
 			font-size: 1.5em;
 			font-weight: bold;
-			margin-bottom: 1em;
 			text-align: center;
-		}
-		.pack-info-section .tabbed-content {
-			display: flex;
-			flex-direction: row;
-			align-items: flex-start;
-			height: auto;
-		}
-		/* Hide tabs nav */
-		.pack-info-section .tabbed-content .tabs {
-			display: none;
-		}
-		.pack-info-section .tabbed-content .content {
-			display: flex;
-			gap: 20px;
-			width: 100%;
-		}
-		.pack-info-section .tabbed-content .content .item {
-			flex: 1;
-			position: relative;
-		}
-		/* Always show panel content */
-		.pack-info-section .tabbed-content .item .item-content {
-			opacity: 1 !important;
-			visibility: visible !important;
-			height: auto !important;
-			padding: 10px;
-		}
-		.pack-info-section .item::after,
-		.pack-info-section .item::before {
-			display: none;
+			margin-bottom: 1em;
 		}
 	}
 </style>
 
 <script>
-	(function() {
+	document.addEventListener("DOMContentLoaded", function() {
 		var instanceSelector = '.pack-info-section.instance-{{ index }}';
-		var tabsNav = document.querySelector(instanceSelector + ' .tabbed-content .tabs');
-		var items = document.querySelectorAll(instanceSelector + ' .tabbed-content .item');
+		var container = document.querySelector(instanceSelector);
+		if (!container) return;
 
-		// Clear active classes on all tabs and panels
+		var tabs = container.querySelectorAll('.tabs a');
+		var panels = container.querySelectorAll('.tab-panel');
+
+		// Clears active classes from all tabs and panels.
 		function clearActive() {
-			if (tabsNav) {
-				var links = tabsNav.querySelectorAll('a');
-				links.forEach(function(link) {
-					link.classList.remove('active');
-				});
-			}
-			items.forEach(function(item) {
-				item.classList.remove('active');
-			});
+			tabs.forEach(function(tab) { tab.classList.remove('active'); });
+			panels.forEach(function(panel) { panel.classList.remove('active'); });
 		}
 
-		// Set a default active tab on mobile (first tab)
-		function setDefaultActive() {
-			if (tabsNav) {
-				var links = tabsNav.querySelectorAll('a');
-				if (links.length > 0) {
-					links[0].classList.add('active');
-					var target = links[0].getAttribute('href');
-					var firstItem = document.querySelector(target);
-					if (firstItem) {
-						firstItem.classList.add('active');
-					}
-				}
-			}
-		}
-
-		// Delegated mobile click handler – only active on mobile view
-		function mobileTabHandler(e) {
-			if (window.innerWidth > 768) return; // Only process clicks on mobile
-			var clickedLink = e.target.closest('a');
-			if (!clickedLink || !tabsNav.contains(clickedLink)) return;
-			e.preventDefault();
+		// Activates the given tab and its corresponding panel.
+		function activateTab(tab) {
+			var targetId = tab.getAttribute('href');
 			clearActive();
-			clickedLink.classList.add('active');
-			var targetId = clickedLink.getAttribute('href');
-			var targetItem = document.querySelector(targetId);
-			if (targetItem) targetItem.classList.add('active');
+			tab.classList.add('active');
+			var targetPanel = container.querySelector(targetId);
+			if (targetPanel) {
+				targetPanel.classList.add('active');
+			}
 		}
 
-		// Initialize based on viewport width
+		// Initialize tabs based on viewport width.
 		function initTabs() {
 			if (window.innerWidth <= 768) {
-				clearActive();
-				setDefaultActive();
+				// On mobile, attach click events and set default active tab.
+				tabs.forEach(function(tab) {
+					tab.addEventListener('click', function(e) {
+						e.preventDefault();
+						activateTab(tab);
+					});
+				});
+				if (tabs.length > 0) {
+					activateTab(tabs[0]);
+				}
 			} else {
-				// On desktop, simply show all panels
-				items.forEach(function(item) {
-					item.classList.add('active');
+				// On desktop, show all panels.
+				panels.forEach(function(panel) {
+					panel.classList.add('active');
 				});
 			}
 		}
 
-		// Initialize on page load
 		initTabs();
 
-		// Bind one delegated event listener for mobile tabs
-		if (tabsNav) {
-			tabsNav.addEventListener('click', mobileTabHandler);
-		}
-
-		// Re-initialize on window resize (debounced)
+		// Reinitialize on window resize (debounced)
 		window.addEventListener('resize', function() {
-			clearTimeout(window.resizeTabTimer);
-			window.resizeTabTimer = setTimeout(function() {
-				initTabs();
+			clearTimeout(window.resizeTimeout);
+			window.resizeTimeout = setTimeout(function() {
+				if (window.innerWidth > 768) {
+					panels.forEach(function(panel) {
+						panel.classList.add('active');
+					});
+				} else {
+					clearActive();
+					if (tabs.length > 0) {
+						activateTab(tabs[0]);
+					}
+				}
 			}, 250);
 		});
-	})();
+	});
 </script>
