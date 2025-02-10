@@ -4,18 +4,15 @@
 			<div class="titles mbl:flex-col mbl:items-baseline gap-2">
 				<h2 class="title">{{ product.title }}</h2>
 				<div class="subtitle">{{ product.description }}</div>
-
 				<ul class="highlights check-list">
 					{% for highlight in product.metafields.custom['product-highlights'].value %}
 						<li class="highlight">
-							<b>{{ highlight.title }}</b>
-							<br>
+							<b>{{ highlight.title }}</b><br>
 							{{ highlight.subtitle }}
 						</li>
 					{% endfor %}
 				</ul>
 			</div>
-
 			<img class="product-image" src="{{ product.metafields.custom.pill_image | img_url: 'original' }}" alt="{{ product.title }}" loading="lazy">
 		</div>
 
@@ -46,7 +43,7 @@
 			<div class="content">
 				<!-- Usage Instructions -->
 				<div id="instructions-{{ index }}" class="item" data-title="Usage Instructions">
-					<!-- Desktop header -->
+					<!-- Header for desktop -->
 					<h3 class="desktop-header">Usage Instructions</h3>
 					<div class="instructions item-content">
 						{% for step in product.metafields.custom.instructions.value %}
@@ -69,7 +66,6 @@
 				{% if product.metafields.custom.ingredients.value %}
 					<!-- Ingredients -->
 					<div id="ingredients-{{ index }}" class="item" data-title="Ingredients">
-						<!-- Desktop header -->
 						<h3 class="desktop-header">Ingredients</h3>
 						<div class="ingredients item-content">
 							{% for ingredient in product.metafields.custom.ingredients.value %}
@@ -85,7 +81,6 @@
 
 				<!-- Supplement Facts -->
 				<div id="facts-{{ index }}" class="item" data-title="Supplement Facts">
-					<!-- Desktop header -->
 					<h3 class="desktop-header">Supplement Facts</h3>
 					<div class="facts item-content">
 						<img src="{{ product.metafields.custom.supplement_fact | image_url }}" alt="Supplement Facts" loading="lazy">
@@ -101,22 +96,33 @@
 	.pack-info-section {
 		background: var(--primary-color-lightest);
 	}
-	/* (Include any other general styles you already have) */
-
 	/* Mobile Styles (max-width: 768px) */
 	@media all and (max-width: 768px) {
 		.pack-info-section {
 			padding-bottom: 75vw;
 			padding-top: 10vw;
 		}
-		.pack-info-section .instructions .step .capsules {
-			min-width: 65px;
-		}
-		.pack-info-section .tabbed-content {
+		.pack-info-section .tabbed-content .tabs {
 			display: block;
-			margin-left: unset !important;
 		}
-		/* Accordion indicator */
+		/* Hide the extra header on mobile */
+		.desktop-header {
+			display: none;
+		}
+		/* Tab panels: hidden by default */
+		.pack-info-section .tabbed-content .item .item-content {
+			transition: opacity 0.8s ease-in-out;
+			opacity: 0;
+			visibility: hidden;
+			height: 0;
+		}
+		.pack-info-section .tabbed-content .item.active .item-content {
+			opacity: 1;
+			visibility: visible;
+			height: auto;
+			padding: 5vw 0;
+		}
+		/* Optional accordion indicator */
 		.pack-info-section .item::after {
 			content: "+";
 			font-size: 30px;
@@ -127,7 +133,6 @@
 			border-radius: 50%;
 			width: 5vw;
 			height: 5vw;
-			font-size: 5vw;
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -136,34 +141,10 @@
 		.pack-info-section .item.active::after {
 			content: "-";
 		}
-		.pack-info-section .product-image-wrapper {
-			bottom: 0;
-			width: 100%;
-			position: relative;
-			text-align: center;
-			margin-top: 10vw;
-		}
-		.pack-info-section .tabbed-content .item.active .item-content {
-			padding: 5vw 0;
-		}
-		.pack-info-section .ingredient {
-			width: 27vw;
-		}
-		.pack-info-section .instructions .step {
-			gap: 2vw;
-		}
-		.pack-info-section .instructions .step h3 {
-			min-width: 20vw;
-		}
-		/* Hide the extra desktop header on mobile */
-		.desktop-header {
-			display: none;
-		}
 	}
-
 	/* Desktop Styles (min-width: 800px) */
 	@media all and (min-width: 800px) {
-		/* Show the desktop headers */
+		/* Show headers */
 		.desktop-header {
 			display: block;
 			font-size: 1.5em;
@@ -171,14 +152,13 @@
 			margin-bottom: 1em;
 			text-align: center;
 		}
-		/* Layout adjustments for side‑by‑side display */
 		.pack-info-section .tabbed-content {
 			display: flex;
 			flex-direction: row;
 			align-items: flex-start;
 			height: auto;
 		}
-		/* Hide the tabs navigation on desktop */
+		/* Hide tabs nav */
 		.pack-info-section .tabbed-content .tabs {
 			display: none;
 		}
@@ -191,71 +171,93 @@
 			flex: 1;
 			position: relative;
 		}
+		/* Always show panel content */
 		.pack-info-section .tabbed-content .item .item-content {
 			opacity: 1 !important;
 			visibility: visible !important;
 			height: auto !important;
-			padding: 10px; /* Adjust as needed */
+			padding: 10px;
 		}
-		/* Remove mobile accordion pseudo‑elements on desktop */
-		.pack-info-section .item::before,
-		.pack-info-section .item::after {
+		.pack-info-section .item::after,
+		.pack-info-section .item::before {
 			display: none;
 		}
 	}
 </style>
 
 <script>
-	(function () {
-		function tabControl() {
-			const instanceSelector = '.pack-info-section.instance-{{ index }}';
-			const tabbedContent = document.querySelector(instanceSelector + ' .tabbed-content');
-			if (!tabbedContent) return;
+	(function() {
+		var instanceSelector = '.pack-info-section.instance-{{ index }}';
+		var tabsNav = document.querySelector(instanceSelector + ' .tabbed-content .tabs');
+		var items = document.querySelectorAll(instanceSelector + ' .tabbed-content .item');
 
-			if (window.innerWidth > 768) {
-				// Desktop: ensure all items are visible.
-				document.querySelectorAll(instanceSelector + ' .tabbed-content .item').forEach(function(item) {
-					item.classList.add('active');
+		// Clear active classes on all tabs and panels
+		function clearActive() {
+			if (tabsNav) {
+				var links = tabsNav.querySelectorAll('a');
+				links.forEach(function(link) {
+					link.classList.remove('active');
 				});
-			} else {
-				// Mobile: initialize tab/accordion functionality.
-				document.querySelectorAll(instanceSelector + ' .tabbed-content .item').forEach(function(item) {
-					item.classList.remove('active');
-				});
-				const tabsNav = document.querySelector(instanceSelector + ' .tabbed-content .tabs');
-				if (tabsNav && tabsNav.offsetParent !== null) {
-					tabsNav.querySelectorAll('a').forEach(function (button) {
-						button.addEventListener('click', function (event) {
-							event.preventDefault();
-							const target = button.getAttribute('href');
-							// Remove active states.
-							tabsNav.querySelectorAll('a').forEach(btn => btn.classList.remove('active'));
-							document.querySelectorAll(instanceSelector + ' .tabbed-content .item').forEach(item => item.classList.remove('active'));
-							// Activate the clicked tab and corresponding content.
-							button.classList.add('active');
-							document.querySelector(target).classList.add('active');
-						});
-					});
-				} else {
-					// Fallback: toggle on item click.
-					document.querySelectorAll(instanceSelector + ' .tabbed-content .item').forEach(function (item) {
-						item.addEventListener('click', function () {
-							const container = item.closest('.tabbed-content');
-							container.querySelectorAll('.item').forEach(it => it.classList.remove('active'));
-							item.classList.add('active');
-						});
-					});
+			}
+			items.forEach(function(item) {
+				item.classList.remove('active');
+			});
+		}
+
+		// Set a default active tab on mobile (first tab)
+		function setDefaultActive() {
+			if (tabsNav) {
+				var links = tabsNav.querySelectorAll('a');
+				if (links.length > 0) {
+					links[0].classList.add('active');
+					var target = links[0].getAttribute('href');
+					var firstItem = document.querySelector(target);
+					if (firstItem) {
+						firstItem.classList.add('active');
+					}
 				}
 			}
 		}
 
-		tabControl();
+		// Delegated mobile click handler – only active on mobile view
+		function mobileTabHandler(e) {
+			if (window.innerWidth > 768) return; // Only process clicks on mobile
+			var clickedLink = e.target.closest('a');
+			if (!clickedLink || !tabsNav.contains(clickedLink)) return;
+			e.preventDefault();
+			clearActive();
+			clickedLink.classList.add('active');
+			var targetId = clickedLink.getAttribute('href');
+			var targetItem = document.querySelector(targetId);
+			if (targetItem) targetItem.classList.add('active');
+		}
 
-		let resizeTimer;
-		window.addEventListener('resize', function () {
-			clearTimeout(resizeTimer);
-			resizeTimer = setTimeout(function () {
-				tabControl();
+		// Initialize based on viewport width
+		function initTabs() {
+			if (window.innerWidth <= 768) {
+				clearActive();
+				setDefaultActive();
+			} else {
+				// On desktop, simply show all panels
+				items.forEach(function(item) {
+					item.classList.add('active');
+				});
+			}
+		}
+
+		// Initialize on page load
+		initTabs();
+
+		// Bind one delegated event listener for mobile tabs
+		if (tabsNav) {
+			tabsNav.addEventListener('click', mobileTabHandler);
+		}
+
+		// Re-initialize on window resize (debounced)
+		window.addEventListener('resize', function() {
+			clearTimeout(window.resizeTabTimer);
+			window.resizeTabTimer = setTimeout(function() {
+				initTabs();
 			}, 250);
 		});
 	})();
