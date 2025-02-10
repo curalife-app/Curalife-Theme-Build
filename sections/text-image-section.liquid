@@ -121,6 +121,21 @@
 	</section>
 
 
+	<script>
+		document.addEventListener('DOMContentLoaded', () => {
+			const section = document.getElementById('section-{{ section.id }}');
+			if (!section) return;
+
+			const params = new URLSearchParams(window.location.search);
+			const ctaParam = params.get('cta');
+
+			if (ctaParam === 'true') {
+				document.querySelectorAll('.hide-on-cta').forEach(el => el.remove());
+			} else if (section.classList.contains('show-on-cta')) {
+				section.remove();
+			}
+		});
+	</script>
 
 	{% if section.settings.is_sticky %}
 		<div class="sticky-margin"></div>
