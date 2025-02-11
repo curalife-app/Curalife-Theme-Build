@@ -395,18 +395,21 @@
 		{% endif %}
 
 		#section-{{ section.id }} .item {
-			{% if section.settings.items_in_row == 'all' %}
-				{% assign itemsInRow = section.blocks.size %}
-			{% else %}
-				{% assign itemsInRow = section.settings.items_in_row %}
-			{% endif %}
+				{% if section.settings.items_in_row == 'all' %}
+						{% assign itemsInRow = section.blocks.size %}
+				{% else %}
+						{% assign itemsInRow = section.settings.items_in_row %}
+				{% endif %}
 
-			{% assign gapsInRow = itemsInRow | minus: 1 %}
+				{% assign gapsInRow = itemsInRow | minus: 1 %}
 
-			width: calc((100% / {{ itemsInRow }}) - ({{ gapsInRow }} * ({{ section.settings.column_gap }}rem / {{ itemsInRow }})));
-			padding: {{ section.settings.item_padding }}rem;
-			align-self: stretch;
-			border-radius: 15px;
+				width: calc((100% / {{ itemsInRow }}) - ({{ gapsInRow }} * ({{ section.settings.column_gap }}rem / {{ itemsInRow }})));
+				padding: {{ section.settings.item_padding }}rem;
+				align-self: stretch;
+				border-radius: 15px;
+				{% if section.settings.item_bg_color != blank %}
+						background-color: {{ section.settings.item_bg_color }};
+				{% endif %}
 		}
 
 		#section-{{ section.id }} .item-content {
