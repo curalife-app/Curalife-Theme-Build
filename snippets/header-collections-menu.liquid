@@ -1,129 +1,127 @@
+{% comment %}
+	Determine the collections link based on the customer's status.
+{% endcomment %}
 {% if customer.b2b? %}
 	{% assign collectionsLink = '/collections/wholesale' %}
 {% else %}
 	{% assign collectionsLink = '/collections/all' %}
 {% endif %}
 
-<div class="dropdown">
-	<a href="{{ collectionsLink }}" class="xl:text-[1.5vw] xl:py-[2vw] prerender"><button class="dropbtn">Shop</button></a>
+<div class="dropdown {% unless customer.b2b? %}{% unless request.path contains '/blogs/blog' %}show-dropdown{% endunless %}{% endunless %}">
+	<a href="{{ collectionsLink }}" class="dropdown-toggle xl:text-[1.5vw] xl:py-[2vw] prerender" aria-haspopup="true">
+		Shop
+	</a>
 
-	{% unless request.path contains '/blogs/blog' %}
-		{% unless customer.b2b? %}
-			<div class="dropdown-content">
-				{% for selected_collection in selected_collections %}
-					{% assign collection_products_amount = selected_collection.products | size %}
-					{% assign product_title = selected_collection.title %}
+	{% unless customer.b2b? or request.path contains '/blogs/blog' %}
+		<div class="dropdown-content">
+			{% for selected_collection in selected_collections %}
+				{% if selected_collection.metafields.custom.is_collection_of_single_product %}
+					{% assign firstProduct = selected_collection.products | first %}
+					{% assign linkURL = firstProduct.url %}
+				{% else %}
+					{% assign linkURL = selected_collection.url %}
+				{% endif %}
 
-					{% if selected_collection.metafields.custom.is_collection_of_single_product %}
-						{% assign firstProduct = selected_collection.products | first %}
-						{% assign linkURL = firstProduct.url %}
-					{% else %}
-						{% assign linkURL = selected_collection.url %}
-					{% endif %}
-
-					<a href="{{ linkURL }}">
-						<div class="img-card">
-							{% render 'image', image: selected_collection.image, force_original: true, lazy: false, preload: true, alt: selected_collection.image.alt %}
-						</div>
-
-						<span>{{ selected_collection.title }}</span>
-					</a>
-				{% endfor %}
-			</div>
-		{% endunless %}
+				<a href="{{ linkURL }}">
+					<div class="img-card">
+						{% render 'image', image: selected_collection.image, force_original: true, lazy: false, preload: true, alt: selected_collection.image.alt %}
+					</div>
+					<span>{{ selected_collection.title }}</span>
+				</a>
+			{% endfor %}
+		</div>
 	{% endunless %}
 </div>
 
 <style>
 	.dropdown {
-			display: inline-block;
+		display: inline-block;
+		position: relative; /* Ensure dropdown-content is positioned relative to this container */
 	}
-	.dropdown .dropbtn {
-			display: inline-block;
-			position: relative;
-			color: black;
-			padding: 0;
-			border: none;
-			cursor: pointer;
-			-webkit-transition: background-color 0.3s ease;
-			transition: background-color 0.3s ease;
+	.dropdown-toggle {
+		display: inline-block;
+		color: black;
+		padding: 0;
+		text-decoration: none;
+		cursor: pointer;
+		-webkit-transition: background-color 0.3s ease;
+		transition: background-color 0.3s ease;
 	}
-	.dropdown .dropbtn:after {
-			content: '';
-			position: absolute;
-			width: 100%;
-			-webkit-transform: scaleX(0);
-			transform: scaleX(0);
-			height: 3px;
-			bottom: -3px;
-			left: 0;
-			background-color: #007bff; /* Fallback color */
-			background-color: var(--blue);
-			-webkit-transform-origin: bottom right;
-			transform-origin: bottom right;
-			-webkit-transition: -webkit-transform 0.25s ease-out;
-			transition: transform 0.25s ease-out;
+	.dropdown-toggle:after {
+		content: '';
+		position: absolute;
+		width: 100%;
+		-webkit-transform: scaleX(0);
+		transform: scaleX(0);
+		height: 3px;
+		bottom: -3px;
+		left: 0;
+		background-color: #007bff; /* Fallback color */
+		background-color: var(--blue);
+		-webkit-transform-origin: bottom right;
+		transform-origin: bottom right;
+		-webkit-transition: -webkit-transform 0.25s ease-out;
+		transition: transform 0.25s ease-out;
 	}
-	.dropdown .dropbtn:hover:after {
-			-webkit-transform: scaleX(1);
-			transform: scaleX(1);
-			-webkit-transform-origin: bottom left;
-			transform-origin: bottom left;
+	.dropdown-toggle:hover:after {
+		-webkit-transform: scaleX(1);
+		transform: scaleX(1);
+		-webkit-transform-origin: bottom left;
+		transform-origin: bottom left;
 	}
-	.dropdown .dropdown-content {
-			position: absolute;
-			z-index: 1;
-			top: 80px;
-			left: 0;
-			background-color: #fff;
-			-webkit-transition: all 0.3s ease-in-out;
-			transition: all 0.3s ease-in-out;
-			max-height: 0;
-			overflow: hidden;
-			display: -webkit-flex;
-			display: flex;
-			-webkit-justify-content: center;
-			justify-content: center;
-			-webkit-align-items: center;
-			align-items: center;
-			box-shadow: 0px 10px 15px -7px rgba(0, 0, 0, 0.2);
-			border-radius: 8px;
-			/* Liquid logic output from your conditions */
-			/* width: 100%; OR margin-left: 170px; */
+	.dropdown-content {
+		position: absolute;
+		z-index: 1;
+		top: 80px;
+		left: 0;
+		background-color: #fff;
+		-webkit-transition: all 0.3s ease-in-out;
+		transition: all 0.3s ease-in-out;
+		max-height: 0;
+		overflow: hidden;
+		display: -webkit-flex;
+		display: flex;
+		-webkit-justify-content: center;
+		justify-content: center;
+		-webkit-align-items: center;
+		align-items: center;
+		box-shadow: 0px 10px 15px -7px rgba(0, 0, 0, 0.2);
+		border-radius: 8px;
+		/* Adjust the width or margin via conditional classes in your Liquid */
 	}
-	.dropdown .dropdown-content a {
-			display: -webkit-flex;
-			display: flex;
-			-webkit-flex-direction: column;
-			flex-direction: column;
-			-webkit-align-items: center;
-			align-items: center;
-			padding: 15px;
-			text-decoration: none;
+	.dropdown-content a {
+		display: -webkit-flex;
+		display: flex;
+		-webkit-flex-direction: column;
+		flex-direction: column;
+		-webkit-align-items: center;
+		align-items: center;
+		padding: 15px;
+		text-decoration: none;
 	}
-	.dropdown .dropdown-content a .img-card {
-			overflow: hidden;
-			border-radius: 5px;
-			max-width: 200px;
+	.img-card {
+		overflow: hidden;
+		border-radius: 5px;
+		max-width: 200px;
 	}
-	.dropdown .dropdown-content a .img-card img {
-			-webkit-transition: 0.4s ease;
-			transition: 0.4s ease;
+	.img-card img {
+		-webkit-transition: 0.4s ease;
+		transition: 0.4s ease;
 	}
-	.dropdown .dropdown-content a .img-card img:hover {
-			-webkit-transform: scale(1.08);
-			transform: scale(1.08);
-			z-index: 1;
+	.img-card img:hover {
+		-webkit-transform: scale(1.08);
+		transform: scale(1.08);
+		z-index: 1;
 	}
-	.dropdown .dropdown-content a span {
-			padding-top: 10px;
-			font-size: 16px;
+	.dropdown-content a span {
+		padding-top: 10px;
+		font-size: 16px;
 	}
-	.dropdown:hover .dropdown-content {
-			max-height: 400px;
+	/* Show dropdown on hover when applicable */
+	.dropdown.show-dropdown:hover .dropdown-content {
+		max-height: 400px;
 	}
 	.dropdown.active .dropdown-content {
-			pointer-events: auto;
+		pointer-events: auto;
 	}
-
 </style>
