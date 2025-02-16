@@ -99,22 +99,26 @@
 
 		/* Ingredient Text Container */
 		.ingredient-text-container {
-			/* Normal flow container for text */
+			position: relative;
+			min-height: 200px; /* Adjust this as needed to accommodate your text */
 		}
 
-		/* Ingredient Text Blocks */
+		/* Ingredient Text Blocks (absolutely positioned for stable fade/slide) */
 		.ingredient-text {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
 			opacity: 0;
-			max-height: 0;
-			overflow: hidden;
 			transform: translateY(20px);
-			transition: opacity 0.5s ease, transform 0.5s ease, max-height 0.5s ease;
+			transition: opacity 0.5s ease, transform 0.5s ease;
+			pointer-events: none;
 		}
 
 		.ingredient-text.visible {
 			opacity: 1;
-			max-height: 500px; /* Adjust as needed */
 			transform: translateY(0);
+			pointer-events: auto;
 		}
 
 		.ingredient-text h3 {
@@ -128,38 +132,38 @@
 			line-height: 1.4em;
 		}
 
-		/* Right Column: Image */
+		/* Right Column: Image (absolutely positioned for a smooth fade/scale) */
 		.right-column {
 			flex: 1 1 300px;
+			position: relative;
 			display: flex;
 			justify-content: center;
 			align-items: center;
-			position: relative;
 		}
 
-		/* Ingredient Image Animation with display control */
 		.ingredient-image {
-			display: none;
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
 			opacity: 0;
 			transform: scale(0.95);
 			transition: opacity 0.5s ease, transform 0.5s ease;
-			width: 100%;
-			height: 100%;
+			pointer-events: none;
 		}
 
 		.ingredient-image.visible {
-			display: block;
 			opacity: 1;
 			transform: scale(1);
+			pointer-events: auto;
 		}
 
 		.ingredient-image img {
-			max-width: 100%;
-			height: auto;
-			border-radius: 15px;
 			width: 100%;
 			height: 100%;
 			object-fit: cover;
+			border-radius: 15px;
 		}
 
 		/* Responsive adjustments */
@@ -169,6 +173,10 @@
 			}
 			.left-column, .right-column {
 				max-width: 100%;
+			}
+			/* On mobile, let images flow normally */
+			.ingredient-image {
+				position: relative;
 			}
 		}
 	</style>
