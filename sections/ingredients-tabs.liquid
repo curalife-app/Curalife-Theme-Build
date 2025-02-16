@@ -11,13 +11,11 @@
 				<!-- Tab Buttons -->
 				<ul class="ingredient-tab-buttons no-style">
 					{% for block in section.blocks %}
-						<li
-							class="tab-button"
+						<li class="tab-button"
 							data-tab="tab-{{ block.id }}"
 							role="button"
 							aria-controls="tab-{{ block.id }}"
-							aria-selected="false"
-						>
+							aria-selected="false">
 							{{ block.settings.ingredient_title }}
 						</li>
 					{% endfor %}
@@ -39,10 +37,8 @@
 				{% for block in section.blocks %}
 					{% if block.settings.ingredient_image %}
 						<div class="ingredient-image" id="img-{{ block.id }}">
-							<img
-								src="{{ block.settings.ingredient_image | img_url: 'master' }}"
-								alt="{{ block.settings.ingredient_title | escape }}"
-							/>
+							<img src="{{ block.settings.ingredient_image | img_url: 'master' }}"
+									 alt="{{ block.settings.ingredient_title | escape }}" />
 						</div>
 					{% endif %}
 				{% endfor %}
@@ -51,7 +47,7 @@
 	</div>
 
 	<style>
-		/* Desktop Styles */
+		/* ============= DESKTOP STYLES ============= */
 		.blue-box {
 			background-color: var(--primary-color);
 			display: flex;
@@ -98,12 +94,13 @@
 			font-weight: bold;
 		}
 
-		/* Desktop: Ingredient Text Container & Blocks */
+		/* Ingredient Text Container (Desktop) */
 		.ingredient-text-container {
 			position: relative;
-			min-height: 200px;
+			min-height: 200px; /* Adjust if needed */
 		}
 
+		/* Text Blocks: absolutely positioned & anchored at the bottom */
 		.ingredient-text {
 			position: absolute;
 			bottom: 0;
@@ -132,7 +129,7 @@
 			line-height: 1.4em;
 		}
 
-		/* Desktop: Right Column & Image */
+		/* Right Column & Image (Desktop) */
 		.right-column {
 			flex: 1 1 300px;
 			position: relative;
@@ -166,7 +163,7 @@
 			border-radius: 15px;
 		}
 
-		/* Mobile Styles */
+		/* ============= MOBILE STYLES ============= */
 		@media (max-width: 768px) {
 			.blue-box {
 				flex-direction: column;
@@ -175,11 +172,11 @@
 
 			.left-column,
 			.right-column {
-				max-width: 100%;
 				position: static;
+				max-width: 100%;
 			}
 
-			/* Make the text container and its blocks flow naturally */
+			/* For mobile, let elements flow naturally and use display toggling */
 			.ingredient-text-container {
 				position: static;
 				min-height: auto;
@@ -187,35 +184,30 @@
 
 			.ingredient-text {
 				position: static;
-				overflow: hidden;
-				max-height: 0;
-				opacity: 0;
-				transform: translateY(20px);
-				transition: opacity 0.5s ease, transform 0.5s ease, max-height 0.5s ease;
+				opacity: 1 !important;
+				transform: none !important;
+				transition: none !important;
+				pointer-events: auto;
+				display: none;
 				margin-bottom: 20px;
 			}
 
 			.ingredient-text.visible {
-				opacity: 1;
-				transform: translateY(0);
-				max-height: 500px; /* Adjust if needed */
+				display: block;
 			}
 
-			/* For images, collapse inactive ones using max-height */
 			.ingredient-image {
 				position: static;
-				overflow: hidden;
-				max-height: 0;
-				opacity: 0;
-				transform: scale(0.95);
-				transition: opacity 0.5s ease, transform 0.5s ease, max-height 0.5s ease;
+				opacity: 1 !important;
+				transform: none !important;
+				transition: none !important;
+				pointer-events: auto;
+				display: none;
 				margin-top: 20px;
 			}
 
 			.ingredient-image.visible {
-				opacity: 1;
-				transform: scale(1);
-				max-height: 600px; /* Adjust as needed */
+				display: block;
 			}
 		}
 	</style>
@@ -228,7 +220,7 @@
 			const imageBlocks = document.querySelectorAll('#ingredient-tabs-section .ingredient-image');
 
 			function showTab(tabId) {
-				// Remove the "visible" class from all text blocks and images
+				// Remove "visible" class from all text blocks and images
 				textBlocks.forEach(text => text.classList.remove('visible'));
 				imageBlocks.forEach(img => img.classList.remove('visible'));
 
@@ -246,7 +238,7 @@
 				}
 			}
 
-			// Set up the click handler for each tab button
+			// Click handler for each tab button
 			tabButtons.forEach(button => {
 				button.addEventListener('click', () => {
 					tabButtons.forEach(btn => btn.classList.remove('active'));
