@@ -23,26 +23,22 @@
 					{% endfor %}
 				</ul>
 
-				<!-- Ingredient Text (shown below the tab buttons) -->
-				{% for block in section.blocks %}
-					<div
-						class="ingredient-text"
-						id="tab-{{ block.id }}"
-						role="tabpanel"
-						hidden
-					>
-						<h3>{{ block.settings.ingredient_title }}</h3>
-						<p>{{ block.settings.ingredient_description }}</p>
-					</div>
-				{% endfor %}
+				<!-- Ingredient Text Wrapper (for animated switching) -->
+				<div class="ingredient-text-wrapper">
+					{% for block in section.blocks %}
+						<div class="ingredient-text" id="tab-{{ block.id }}">
+							<h3>{{ block.settings.ingredient_title }}</h3>
+							<p>{{ block.settings.ingredient_description }}</p>
+						</div>
+					{% endfor %}
+				</div>
 			</div>
 
 			<!-- Image Area on the Right -->
 			<div class="right-column">
-				<!-- We'll dynamically switch images with JS to match the selected tab -->
 				{% for block in section.blocks %}
 					{% if block.settings.ingredient_image %}
-						<div class="ingredient-image" id="img-{{ block.id }}" hidden>
+						<div class="ingredient-image" id="img-{{ block.id }}">
 							<img
 								src="{{ block.settings.ingredient_image | img_url: 'master' }}"
 								alt="{{ block.settings.ingredient_title | escape }}"
@@ -75,7 +71,7 @@
 		/* Tab Buttons */
 		.ingredient-tab-buttons {
 			display: flex;
-			flex-wrap: wrap; /* so the buttons wrap if they exceed width */
+			flex-wrap: wrap;
 			list-style: none;
 			padding: 0;
 			margin: 0 0 15px;
@@ -102,10 +98,28 @@
 			font-weight: bold;
 		}
 
-		/* Ingredient Text (below the buttons) */
+		/* Ingredient Text Wrapper */
+		.ingredient-text-wrapper {
+			position: relative;
+			min-height: 200px; /* Adjust as needed to prevent layout shift */
+		}
+
+		/* Ingredient Text (animated) */
 		.ingredient-text {
-			display: none; /* Hidden by default; toggled by JS */
-			margin-top: 10px;
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			opacity: 0;
+			transform: translateY(20px);
+			transition: opacity 0.5s ease, transform 0.5s ease;
+			pointer-events: none;
+		}
+
+		.ingredient-text.visible {
+			opacity: 1;
+			transform: translateY(0);
+			pointer-events: auto;
 		}
 
 		.ingredient-text h3 {
@@ -128,11 +142,18 @@
 			position: relative;
 		}
 
+		/* Ingredient Image (animated) */
 		.ingredient-image {
-			display: none; /* Hidden by default; toggled by JS */
-			max-width: 100%;
-			text-align: center;
-			height: 100%;
+			opacity: 0;
+			transform: scale(0.95);
+			transition: opacity 0.5s ease, transform 0.5s ease;
+			pointer-events: none;
+		}
+
+		.ingredient-image.visible {
+			opacity: 1;
+			transform: scale(1);
+			pointer-events: auto;
 		}
 
 		.ingredient-image img {
@@ -144,7 +165,7 @@
 			object-fit: cover;
 		}
 
-		/* Responsive adjustments (optional) */
+		/* Responsive adjustments */
 		@media (max-width: 768px) {
 			.blue-box {
 				flex-direction: column;
@@ -155,7 +176,7 @@
 		}
 	</style>
 
-	<!-- JavaScript for Tab Behavior -->
+	<!-- JavaScript for Tab Behavior with Animation -->
 	<script>
 		document.addEventListener('DOMContentLoaded', function() {
 			const tabButtons = document.querySelectorAll('#ingredient-tabs-section .tab-button');
@@ -163,48 +184,39 @@
 			const imageBlocks = document.querySelectorAll('#ingredient-tabs-section .ingredient-image');
 
 			function showTab(tabId) {
-				// Hide all text blocks
-				textBlocks.forEach(text => {
-					text.style.display = 'none';
-					text.setAttribute('hidden', true);
-				});
-				// Hide all images
-				imageBlocks.forEach(img => {
-					img.style.display = 'none';
-					img.setAttribute('hidden', true);
-				});
+				// Remove "visible" class from all text blocks and images
+				textBlocks.forEach(text => text.classList.remove('visible'));
+				imageBlocks.forEach(img => img.classList.remove('visible'));
 
-				// Show the matched text block
+				// Activate the corresponding text block
 				const activeText = document.getElementById(tabId);
 				if (activeText) {
-					activeText.style.display = 'block';
-					activeText.removeAttribute('hidden');
+					activeText.classList.add('visible');
 				}
 
-				// Show the matched image (assuming the ID is "img-" + tabId’s suffix)
+				// Activate the corresponding image block (using matching ID suffix)
 				const imageId = 'img-' + tabId.split('tab-')[1];
 				const activeImage = document.getElementById(imageId);
 				if (activeImage) {
-					activeImage.style.display = 'block';
-					activeImage.removeAttribute('hidden');
+					activeImage.classList.add('visible');
 				}
 			}
 
 			// Click handler for each tab button
 			tabButtons.forEach(button => {
 				button.addEventListener('click', () => {
-					// Remove active from all buttons
+					// Remove "active" class from all buttons
 					tabButtons.forEach(btn => btn.classList.remove('active'));
-					// Add active to clicked button
+					// Add "active" to the clicked button
 					button.classList.add('active');
 
-					// Show corresponding tab content
+					// Show corresponding tab content with animation
 					const targetTab = button.getAttribute('data-tab');
 					showTab(targetTab);
 				});
 			});
 
-			// Optionally, activate the first tab by default
+			// Activate the first tab by default
 			if (tabButtons.length > 0) {
 				tabButtons[0].classList.add('active');
 				showTab(tabButtons[0].getAttribute('data-tab'));
