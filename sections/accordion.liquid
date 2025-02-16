@@ -3,6 +3,7 @@
 	Purpose: Displays a full-width background image with an overlay accordion widget.
 {% endcomment %}
 
+<<<<<<< HEAD
 <section id="accordion-component" class="accordion-component-section" style="
 	position: relative;
 	width: 100%;
@@ -22,6 +23,41 @@
 			padding: 2rem;
 		">
 			{{ section.settings.heading }}
+=======
+<section id="accordion-component" class="accordion-component-section"
+	style="display: flex; flex-wrap: wrap; max-width: 1200px; margin: 0 auto;">
+
+	<!-- LEFT COLUMN (Background Image + Text Overlay) -->
+	<div class="left-col"
+			 style="
+				 flex: 1 1 50%;
+				 position: relative;
+				 background-size: cover;
+				 background-position: center;
+				 display: flex;
+				 align-items: center;
+				 justify-content: center;
+				 min-height: 400px;
+				 {% if section.settings.background_image != blank %}
+					 background-image: url('{{ section.settings.background_image | image_url: width:1200 }}');
+				 {% endif %}
+			 ">
+		<div class="text-overlay"
+				 style="
+					 color: #fff;
+					 text-align: center;
+					 padding: 2rem;
+					 max-width: 80%;
+				 ">
+			<h2 style="margin-bottom: 0.5rem;">
+				{{ section.settings.heading }}
+			</h2>
+			{% if section.settings.subheading != blank %}
+				<p style="margin-bottom: 0;">
+					{{ section.settings.subheading }}
+				</p>
+			{% endif %}
+>>>>>>> bc3abf5b18670e6dea8fc5b94c3a1014e7419559
 		</div>
 	{% endif %}
 
@@ -100,10 +136,16 @@ document.addEventListener('DOMContentLoaded', function() {
 	"name": "Accordion",
 	"settings": [
 		{
-			"type": "richtext",
+			"type": "text",
 			"id": "heading",
 			"label": "Overlay Heading",
 			"default": "<h2>Your Journey: Shed Pounds & Feel Great</h2>"
+		},
+		{
+			"type": "textarea",
+			"id": "subheading",
+			"label": "Subheading",
+			"default": "Add any supporting text or tagline here."
 		},
 		{
 			"type": "image_picker",
