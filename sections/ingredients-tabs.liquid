@@ -98,13 +98,12 @@
 			font-weight: bold;
 		}
 
-		/* Ingredient Text Container (Desktop) */
+		/* Desktop: Ingredient Text Container & Blocks */
 		.ingredient-text-container {
 			position: relative;
-			min-height: 200px; /* Adjust as needed */
+			min-height: 200px;
 		}
 
-		/* Ingredient Text Blocks - Absolutely Positioned & Anchored at Bottom */
 		.ingredient-text {
 			position: absolute;
 			bottom: 0;
@@ -133,7 +132,7 @@
 			line-height: 1.4em;
 		}
 
-		/* Right Column: Image (Desktop) */
+		/* Desktop: Right Column & Image */
 		.right-column {
 			flex: 1 1 300px;
 			position: relative;
@@ -180,7 +179,7 @@
 				position: static;
 			}
 
-			/* Reset text container & text blocks */
+			/* Make the text container and its blocks flow naturally */
 			.ingredient-text-container {
 				position: static;
 				min-height: auto;
@@ -188,26 +187,35 @@
 
 			.ingredient-text {
 				position: static;
-				opacity: 1 !important;
-				transform: none !important;
-				transition: none !important;
-				pointer-events: auto;
+				overflow: hidden;
+				max-height: 0;
+				opacity: 0;
+				transform: translateY(20px);
+				transition: opacity 0.5s ease, transform 0.5s ease, max-height 0.5s ease;
 				margin-bottom: 20px;
 			}
 
-			/* Only show the active text block */
-			.ingredient-text:not(.visible) {
-				display: none;
+			.ingredient-text.visible {
+				opacity: 1;
+				transform: translateY(0);
+				max-height: 500px; /* Adjust if needed */
 			}
 
-			/* Reset image styles */
+			/* For images, collapse inactive ones using max-height */
 			.ingredient-image {
 				position: static;
-				opacity: 1 !important;
-				transform: none !important;
-				transition: none !important;
-				pointer-events: auto;
+				overflow: hidden;
+				max-height: 0;
+				opacity: 0;
+				transform: scale(0.95);
+				transition: opacity 0.5s ease, transform 0.5s ease, max-height 0.5s ease;
 				margin-top: 20px;
+			}
+
+			.ingredient-image.visible {
+				opacity: 1;
+				transform: scale(1);
+				max-height: 600px; /* Adjust as needed */
 			}
 		}
 	</style>
