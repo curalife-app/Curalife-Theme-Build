@@ -23,8 +23,8 @@
 					{% endfor %}
 				</ul>
 
-				<!-- Ingredient Text Wrapper (for animated switching) -->
-				<div class="ingredient-text-wrapper">
+				<!-- Ingredient Text Container -->
+				<div class="ingredient-text-container">
 					{% for block in section.blocks %}
 						<div class="ingredient-text" id="tab-{{ block.id }}">
 							<h3>{{ block.settings.ingredient_title }}</h3>
@@ -98,28 +98,24 @@
 			font-weight: bold;
 		}
 
-		/* Ingredient Text Wrapper */
-		.ingredient-text-wrapper {
-			position: relative;
-			min-height: 200px; /* Adjust as needed to prevent layout shift */
+		/* Ingredient Text Container */
+		.ingredient-text-container {
+			/* This container will hold one active text block in flow */
 		}
 
-		/* Ingredient Text (animated) */
+		/* Ingredient Text Blocks */
 		.ingredient-text {
-			position: absolute;
-			top: 0;
-			left: 0;
-			width: 100%;
 			opacity: 0;
+			max-height: 0;
+			overflow: hidden;
 			transform: translateY(20px);
-			transition: opacity 0.5s ease, transform 0.5s ease;
-			pointer-events: none;
+			transition: opacity 0.5s ease, transform 0.5s ease, max-height 0.5s ease;
 		}
 
 		.ingredient-text.visible {
 			opacity: 1;
+			max-height: 500px; /* Adjust this value to suit your content */
 			transform: translateY(0);
-			pointer-events: auto;
 		}
 
 		.ingredient-text h3 {
@@ -142,18 +138,16 @@
 			position: relative;
 		}
 
-		/* Ingredient Image (animated) */
+		/* Ingredient Image Animation */
 		.ingredient-image {
 			opacity: 0;
 			transform: scale(0.95);
 			transition: opacity 0.5s ease, transform 0.5s ease;
-			pointer-events: none;
 		}
 
 		.ingredient-image.visible {
 			opacity: 1;
 			transform: scale(1);
-			pointer-events: auto;
 		}
 
 		.ingredient-image img {
@@ -194,7 +188,7 @@
 					activeText.classList.add('visible');
 				}
 
-				// Activate the corresponding image block (using matching ID suffix)
+				// Activate the corresponding image block
 				const imageId = 'img-' + tabId.split('tab-')[1];
 				const activeImage = document.getElementById(imageId);
 				if (activeImage) {
@@ -205,12 +199,9 @@
 			// Click handler for each tab button
 			tabButtons.forEach(button => {
 				button.addEventListener('click', () => {
-					// Remove "active" class from all buttons
 					tabButtons.forEach(btn => btn.classList.remove('active'));
-					// Add "active" to the clicked button
 					button.classList.add('active');
 
-					// Show corresponding tab content with animation
 					const targetTab = button.getAttribute('data-tab');
 					showTab(targetTab);
 				});
