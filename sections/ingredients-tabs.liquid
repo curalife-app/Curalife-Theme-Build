@@ -1,171 +1,239 @@
 {% comment %}
-	INGREDIENTS TABS SECTION
-	Place this file in 'sections/ingredients-tabs.liquid'
+	INGREDIENT TABS SECTION
+	This section replicates the "blue box" layout with tabs on the left and an image on the right.
 {% endcomment %}
 
-<section id="ingredients-tab-section" class="ingredients-tab-section">
+<section id="ingredient-tabs-section" class="ingredient-tabs-section">
 	<div class="container">
-		<!-- Section Heading -->
 		{% if section.settings.section_heading != blank %}
-			<h2>{{ section.settings.section_heading }}</h2>
+			<h2 class="section-heading">{{ section.settings.section_heading }}</h2>
 		{% endif %}
 
-		<!-- Section Subheading -->
 		{% if section.settings.section_subheading != blank %}
 			<p class="section-subheading">{{ section.settings.section_subheading }}</p>
 		{% endif %}
 
-		<!-- Tabs Navigation -->
-		<ul class="tab-buttons">
-			{% for block in section.blocks %}
-				<li
-					class="tab-button"
-					data-tab="tab-{{ block.id }}"
-					role="button"
-					aria-controls="tab-{{ block.id }}"
-					aria-selected="false"
-				>
-					{{ block.settings.ingredient_title }}
-				</li>
-			{% endfor %}
-		</ul>
+		<!-- Blue Box Container -->
+		<div class="blue-box">
+			<div class="left-column">
+				<!-- Tab Buttons -->
+				<ul class="ingredient-tab-buttons">
+					{% for block in section.blocks %}
+						<li
+							class="tab-button"
+							data-tab="tab-{{ block.id }}"
+							role="button"
+							aria-controls="tab-{{ block.id }}"
+							aria-selected="false"
+						>
+							{{ block.settings.ingredient_title }}
+						</li>
+					{% endfor %}
+				</ul>
 
-		<!-- Tab Contents -->
-		<div class="tab-contents">
-			{% for block in section.blocks %}
-				<div
-					class="tab-content"
-					id="tab-{{ block.id }}"
-					role="tabpanel"
-					aria-labelledby="tab-button-{{ block.id }}"
-					hidden
-				>
+				<!-- Ingredient Text (shown below the tab buttons) -->
+				{% for block in section.blocks %}
+					<div
+						class="ingredient-text"
+						id="tab-{{ block.id }}"
+						role="tabpanel"
+						hidden
+					>
+						<h3>{{ block.settings.ingredient_title }}</h3>
+						<p>{{ block.settings.ingredient_description }}</p>
+					</div>
+				{% endfor %}
+			</div>
+
+			<!-- Image Area on the Right -->
+			<div class="right-column">
+				<!-- We'll dynamically switch images with JS to match the selected tab -->
+				{% for block in section.blocks %}
 					{% if block.settings.ingredient_image %}
-						<div class="ingredient-image">
+						<div class="ingredient-image" id="img-{{ block.id }}" hidden>
 							<img
 								src="{{ block.settings.ingredient_image | img_url: 'master' }}"
 								alt="{{ block.settings.ingredient_title | escape }}"
 							/>
 						</div>
 					{% endif %}
-					<div class="ingredient-text">
-						<h3>{{ block.settings.ingredient_title }}</h3>
-						<p>{{ block.settings.ingredient_description }}</p>
-					</div>
-				</div>
-			{% endfor %}
+				{% endfor %}
+			</div>
 		</div>
 	</div>
 
-	<!-- Minimal CSS for demonstration; customize as needed -->
+	<!-- CSS (adjust colors, spacing, etc. to match your design) -->
 	<style>
-		.ingredients-tab-section {
+		/* Container & Headings */
+		.ingredient-tabs-section {
 			padding: 20px;
 			max-width: 1200px;
 			margin: 0 auto;
-			font-family: sans-serif;
+			font-family: Arial, sans-serif;
 		}
 
-		.ingredients-tab-section h2 {
+		.section-heading {
+			font-size: 28px;
 			margin-bottom: 10px;
+			color: #333;
 		}
 
 		.section-subheading {
-			margin-bottom: 30px;
+			font-size: 16px;
 			color: #666;
+			margin-bottom: 20px;
+			line-height: 1.4em;
 		}
 
-		.tab-buttons {
+		/* The "Blue Box" wrapper */
+		.blue-box {
+			background-color: #eaf6ff; /* Light blue background, adjust as needed */
+			border: 3px solid #00a0e3; /* Vibrant blue border, adjust as needed */
 			display: flex;
-			flex-wrap: wrap;
+			flex-wrap: wrap; /* Allows wrapping on smaller screens */
+			padding: 20px;
+			gap: 20px;
+		}
+
+		/* Left Column: Tabs + Text */
+		.left-column {
+			flex: 1 1 300px;
+			display: flex;
+			flex-direction: column;
+			max-width: 500px; /* Adjust as needed */
+		}
+
+		/* Tab Buttons */
+		.ingredient-tab-buttons {
+			display: flex;
+			flex-wrap: wrap; /* so the buttons wrap if they exceed width */
 			list-style: none;
 			padding: 0;
-			margin: 0 0 20px 0;
-			border-bottom: 2px solid #ddd;
+			margin: 0 0 15px;
+			gap: 10px;
 		}
 
 		.tab-button {
-			margin-right: 15px;
-			padding: 10px 15px;
+			background-color: #5fbceb;
+			color: #fff;
+			padding: 8px 12px;
+			border-radius: 20px;
 			cursor: pointer;
 			border: none;
-			background: none;
-			font-size: 16px;
-			outline: none;
-			transition: color 0.2s;
+			font-size: 14px;
+			transition: background-color 0.2s, color 0.2s;
+		}
+
+		.tab-button:hover {
+			background-color: #4aa3cc;
 		}
 
 		.tab-button.active {
-			border-bottom: 2px solid #000;
+			background-color: #007bcf;
 			font-weight: bold;
-			color: #000;
 		}
 
-		.tab-contents {
-			display: block;
-		}
-
-		.tab-content {
-			display: none;
-		}
-
-		.tab-content.active {
-			display: flex;
-			flex-wrap: wrap;
-			align-items: center;
-			margin-bottom: 30px;
-		}
-
-		.ingredient-image img {
-			max-width: 300px;
-			margin-right: 20px;
-		}
-
+		/* Ingredient Text (below the buttons) */
 		.ingredient-text {
-			flex: 1;
-			min-width: 200px;
+			display: none; /* Hidden by default; toggled by JS */
+			margin-top: 10px;
 		}
 
 		.ingredient-text h3 {
-			margin-top: 0;
-			margin-bottom: 10px;
+			margin: 0 0 8px;
+			color: #333;
+		}
+
+		.ingredient-text p {
+			color: #555;
+			line-height: 1.4em;
+		}
+
+		/* Right Column: Image */
+		.right-column {
+			flex: 1 1 300px;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			position: relative;
+		}
+
+		.ingredient-image {
+			display: none; /* Hidden by default; toggled by JS */
+			max-width: 100%;
+			text-align: center;
+		}
+
+		.ingredient-image img {
+			max-width: 100%;
+			height: auto;
+			border: 2px solid #ccc; /* Optional image border */
+		}
+
+		/* Responsive adjustments (optional) */
+		@media (max-width: 768px) {
+			.blue-box {
+				flex-direction: column;
+			}
+			.left-column, .right-column {
+				max-width: 100%;
+			}
 		}
 	</style>
 
-	<!-- Vanilla JS for tab toggling -->
+	<!-- JavaScript for Tab Behavior -->
 	<script>
 		document.addEventListener('DOMContentLoaded', function() {
-			const tabButtons = document.querySelectorAll('#ingredients-tab-section .tab-button');
-			const tabContents = document.querySelectorAll('#ingredients-tab-section .tab-content');
+			const tabButtons = document.querySelectorAll('#ingredient-tabs-section .tab-button');
+			const textBlocks = document.querySelectorAll('#ingredient-tabs-section .ingredient-text');
+			const imageBlocks = document.querySelectorAll('#ingredient-tabs-section .ingredient-image');
 
-			function showTabContent(tabId) {
-				tabContents.forEach(content => {
-					if (content.id === tabId) {
-						content.classList.add('active');
-						content.removeAttribute('hidden');
-					} else {
-						content.classList.remove('active');
-						content.setAttribute('hidden', true);
-					}
+			function showTab(tabId) {
+				// Hide all text blocks
+				textBlocks.forEach(text => {
+					text.style.display = 'none';
+					text.setAttribute('hidden', true);
 				});
+				// Hide all images
+				imageBlocks.forEach(img => {
+					img.style.display = 'none';
+					img.setAttribute('hidden', true);
+				});
+
+				// Show the matched text block
+				const activeText = document.getElementById(tabId);
+				if (activeText) {
+					activeText.style.display = 'block';
+					activeText.removeAttribute('hidden');
+				}
+
+				// Show the matched image (assuming the ID is "img-" + tabId’s suffix)
+				const imageId = 'img-' + tabId.split('tab-')[1];
+				const activeImage = document.getElementById(imageId);
+				if (activeImage) {
+					activeImage.style.display = 'block';
+					activeImage.removeAttribute('hidden');
+				}
 			}
 
+			// Click handler for each tab button
 			tabButtons.forEach(button => {
 				button.addEventListener('click', () => {
-					// Remove active state from all buttons
+					// Remove active from all buttons
 					tabButtons.forEach(btn => btn.classList.remove('active'));
-					// Add active state to the clicked button
+					// Add active to clicked button
 					button.classList.add('active');
+
 					// Show corresponding tab content
 					const targetTab = button.getAttribute('data-tab');
-					showTabContent(targetTab);
+					showTab(targetTab);
 				});
 			});
 
-			// Optional: Activate the first tab by default
+			// Optionally, activate the first tab by default
 			if (tabButtons.length > 0) {
 				tabButtons[0].classList.add('active');
-				showTabContent(tabButtons[0].getAttribute('data-tab'));
+				showTab(tabButtons[0].getAttribute('data-tab'));
 			}
 		});
 	</script>
@@ -179,7 +247,7 @@
 			"type": "text",
 			"id": "section_heading",
 			"label": "Section Heading",
-			"default": "It's What's Inside That Counts"
+			"default": "It's What Inside That Counts"
 		},
 		{
 			"type": "text",
