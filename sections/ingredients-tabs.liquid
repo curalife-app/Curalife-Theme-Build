@@ -51,6 +51,7 @@
 	</div>
 
 	<style>
+		/* Desktop Styles */
 		.blue-box {
 			background-color: var(--primary-color);
 			display: flex;
@@ -97,20 +98,19 @@
 			font-weight: bold;
 		}
 
-		/* Ingredient Text Container */
+		/* Ingredient Text Container (Desktop) */
 		.ingredient-text-container {
 			position: relative;
 			min-height: 200px; /* Adjust as needed */
 		}
 
-		/* Ingredient Text Blocks Anchored at the Bottom */
+		/* Ingredient Text Blocks - Absolutely Positioned & Anchored at Bottom */
 		.ingredient-text {
 			position: absolute;
 			bottom: 0;
 			left: 0;
 			width: 100%;
 			opacity: 0;
-			/* Initially positioned 20px lower than final state */
 			transform: translateY(20px);
 			transition: opacity 0.5s ease, transform 0.5s ease;
 			pointer-events: none;
@@ -133,7 +133,7 @@
 			line-height: 1.4em;
 		}
 
-		/* Right Column: Image */
+		/* Right Column: Image (Desktop) */
 		.right-column {
 			flex: 1 1 300px;
 			position: relative;
@@ -167,16 +167,47 @@
 			border-radius: 15px;
 		}
 
-		/* Responsive adjustments */
+		/* Mobile Styles */
 		@media (max-width: 768px) {
 			.blue-box {
 				flex-direction: column;
+				height: auto;
 			}
-			.left-column, .right-column {
+
+			.left-column,
+			.right-column {
 				max-width: 100%;
+				position: static;
 			}
+
+			/* Reset text container & text blocks */
+			.ingredient-text-container {
+				position: static;
+				min-height: auto;
+			}
+
+			.ingredient-text {
+				position: static;
+				opacity: 1 !important;
+				transform: none !important;
+				transition: none !important;
+				pointer-events: auto;
+				margin-bottom: 20px;
+			}
+
+			/* Only show the active text block */
+			.ingredient-text:not(.visible) {
+				display: none;
+			}
+
+			/* Reset image styles */
 			.ingredient-image {
-				position: relative;
+				position: static;
+				opacity: 1 !important;
+				transform: none !important;
+				transition: none !important;
+				pointer-events: auto;
+				margin-top: 20px;
 			}
 		}
 	</style>
