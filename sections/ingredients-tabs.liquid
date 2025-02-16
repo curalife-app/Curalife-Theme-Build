@@ -100,16 +100,17 @@
 		/* Ingredient Text Container */
 		.ingredient-text-container {
 			position: relative;
-			min-height: 200px; /* Adjust this as needed to accommodate your text */
+			min-height: 200px; /* Adjust as needed */
 		}
 
-		/* Ingredient Text Blocks (absolutely positioned for stable fade/slide) */
+		/* Ingredient Text Blocks Anchored at the Bottom */
 		.ingredient-text {
 			position: absolute;
-			top: 0;
+			bottom: 0;
 			left: 0;
 			width: 100%;
 			opacity: 0;
+			/* Initially positioned 20px lower than final state */
 			transform: translateY(20px);
 			transition: opacity 0.5s ease, transform 0.5s ease;
 			pointer-events: none;
@@ -132,7 +133,7 @@
 			line-height: 1.4em;
 		}
 
-		/* Right Column: Image (absolutely positioned for a smooth fade/scale) */
+		/* Right Column: Image */
 		.right-column {
 			flex: 1 1 300px;
 			position: relative;
@@ -174,7 +175,6 @@
 			.left-column, .right-column {
 				max-width: 100%;
 			}
-			/* On mobile, let images flow normally */
 			.ingredient-image {
 				position: relative;
 			}
@@ -189,7 +189,7 @@
 			const imageBlocks = document.querySelectorAll('#ingredient-tabs-section .ingredient-image');
 
 			function showTab(tabId) {
-				// Remove "visible" class from all text blocks and images
+				// Remove the "visible" class from all text blocks and images
 				textBlocks.forEach(text => text.classList.remove('visible'));
 				imageBlocks.forEach(img => img.classList.remove('visible'));
 
@@ -207,7 +207,7 @@
 				}
 			}
 
-			// Click handler for each tab button
+			// Set up the click handler for each tab button
 			tabButtons.forEach(button => {
 				button.addEventListener('click', () => {
 					tabButtons.forEach(btn => btn.classList.remove('active'));
