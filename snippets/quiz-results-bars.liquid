@@ -1,15 +1,18 @@
 <div class="quiz-results">
 	<h2>CuraSlim Users Also Notice:</h2>
 	{% for benefit in benefits %}
-		<!-- Debug Output: {{ benefit | json }} -->
+		{% assign parts = benefit | split: "|" %}
+		{% assign title = parts[0] %}
+		{% assign percentage = parts[1] %}
+		<!-- Debug: benefit parts for item {{ forloop.index }}: title="{{ title }}", percentage="{{ percentage }}" -->
 		<div class="benefit-item">
 			<div class="benefit-label">
-				{{ benefit.title }}
-				<span class="benefit-percentage">{{ benefit.percentage }}%</span>
+				{{ title }}
+				<span class="benefit-percentage">{{ percentage }}%</span>
 			</div>
 			<div class="benefit-bar-container">
-				<!-- The data-percentage attribute is used to animate the bar -->
-				<div class="benefit-bar-fill" data-percentage="{{ benefit.percentage }}"></div>
+				<!-- data-percentage is used by JS below to animate the bar -->
+				<div class="benefit-bar-fill" data-percentage="{{ percentage }}"></div>
 			</div>
 		</div>
 	{% endfor %}
@@ -54,16 +57,15 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-	// Debug: Log the benefits array passed from Liquid
-	var benefits = {{ benefits | json }};
-	console.log("Benefits array:", benefits);
+	// Debug: Log the benefits array as passed from Liquid
+	console.log("Benefits array:", {{ benefits | json }});
 
 	var bars = document.querySelectorAll('.benefit-bar-fill');
 	console.log("Found " + bars.length + " benefit bars.");
 
 	bars.forEach(function(bar, index) {
 		var percentage = bar.getAttribute('data-percentage');
-		console.log("Animating Benefit " + index + " with percentage: " + percentage);
+		console.log("Animating Benefit " + (index + 1) + " with percentage: " + percentage);
 		bar.style.width = percentage + '%';
 	});
 });
