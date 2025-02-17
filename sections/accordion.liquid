@@ -3,30 +3,25 @@
 	Purpose: Displays a full-width background image with an overlay accordion widget.
 {% endcomment %}
 
-<section id="accordion-component" class="accordion-component-section" style="
+<style>
+#accordion-component {
 	position: relative;
 	width: 100%;
 	background-size: cover;
 	background-position: center;
 	{% if section.settings.background_image != blank %}
-		background-image: url('{{ section.settings.background_image | image_url: width:2000 }}');
-	{% endif %}
-">
-	<!-- Optional overlay heading on the background image -->
-	{% if section.settings.heading != blank %}
-		<div class="image-overlay-heading" style="
-			position: relative;
-			z-index: 2;
-			text-align: center;
-			color: #fff;
-			padding: 2rem;
-		">
-			{{ section.settings.heading }}
-		</div>
+	background-image: url('{{ section.settings.background_image | image_url: width:2000 }}');
 	{% endif %}
 
-	<!-- Accordion Widget -->
-	<div class="accordion-widget" style="
+	.image-overlay-heading {
+		position: relative;
+		z-index: 2;
+		text-align: center;
+		color: #fff;
+		padding: 2rem;
+	}
+
+	.accordion-widget {
 		position: absolute;
 		bottom: 2rem;
 		left: 50%;
@@ -38,20 +33,47 @@
 		width: 90%;
 		max-width: 600px;
 		z-index: 3;
-	">
+
+		.accordion-item {
+			border-bottom: 1px solid #ccc;
+			padding: 1rem 0;
+
+			.accordion-header {
+				cursor: pointer;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+
+			.accordion-content {
+				overflow: hidden;
+				max-height: 0;
+				transition: max-height 0.3s ease;
+				margin-top: 0.5rem;
+			}
+		}
+	}
+}
+</style>
+
+<section id="accordion-component" class="accordion-component-section">
+	<!-- Optional overlay heading on the background image -->
+	{% if section.settings.heading != blank %}
+		<div class="image-overlay-heading">
+			{{ section.settings.heading }}
+		</div>
+	{% endif %}
+
+	<!-- Accordion Widget -->
+	<div class="accordion-widget">
 		{% for block in section.blocks %}
 			{% if block.type == 'accordion_item' %}
-				<div class="accordion-item" style="border-bottom: 1px solid #ccc; padding: 1rem 0;">
-					<div class="accordion-header" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+				<div class="accordion-item">
+					<div class="accordion-header">
 						<span style="font-weight: bold;">{{ block.settings.month_title }}</span>
 						<span class="accordion-icon" style="margin-left: 1rem;">+</span>
 					</div>
-					<div class="accordion-content" style="
-						overflow: hidden;
-						max-height: 0;
-						transition: max-height 0.3s ease;
-						margin-top: 0.5rem;
-					">
+					<div class="accordion-content">
 						{% if block.settings.subtitle != blank %}
 							<h4 style="margin: 0 0 0.25rem;">{{ block.settings.subtitle }}</h4>
 						{% endif %}
@@ -74,7 +96,7 @@ document.addEventListener('DOMContentLoaded', function() {
 			var content = parentItem.querySelector('.accordion-content');
 			var icon = header.querySelector('.accordion-icon');
 
-			// OPTIONAL: If you want only one accordion open at a time, uncomment below:
+			// Close other open accordion items
 			document.querySelectorAll('#accordion-component .accordion-content').forEach(function(otherContent) {
 				if (otherContent !== content) {
 					otherContent.style.maxHeight = "0px";
