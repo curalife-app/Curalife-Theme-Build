@@ -1,17 +1,25 @@
+{% comment %}
+	Inside the snippet, we'll process the passed-in benefits_string.
+	We split the string by commas to get individual benefit entries,
+	then split each entry by "|" to extract the title and percentage.
+{% endcomment %}
+
+{% assign benefits = benefits_string | split: "," %}
+
 <div class="quiz-results">
 	<h2>CuraSlim Users Also Notice:</h2>
+
 	{% for benefit in benefits %}
 		{% assign parts = benefit | split: "|" %}
 		{% assign title = parts[0] %}
 		{% assign percentage = parts[1] %}
-		<!-- Debug: benefit parts for item {{ forloop.index }}: title="{{ title }}", percentage="{{ percentage }}" -->
+		<!-- Debug: benefit item {{ forloop.index }}: title="{{ title }}", percentage="{{ percentage }}" -->
 		<div class="benefit-item">
 			<div class="benefit-label">
 				{{ title }}
 				<span class="benefit-percentage">{{ percentage }}%</span>
 			</div>
 			<div class="benefit-bar-container">
-				<!-- data-percentage is used by JS below to animate the bar -->
 				<div class="benefit-bar-fill" data-percentage="{{ percentage }}"></div>
 			</div>
 		</div>
@@ -57,8 +65,10 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-	// Debug: Log the benefits array as passed from Liquid
-	console.log("Benefits array:", {{ benefits | json }});
+	// Debug: Log the benefits array as processed in Liquid.
+	var benefitsString = "{{ benefits_string }}";
+	var benefitsArray = benefitsString.split(',');
+	console.log("Benefits array:", benefitsArray);
 
 	var bars = document.querySelectorAll('.benefit-bar-fill');
 	console.log("Found " + bars.length + " benefit bars.");
