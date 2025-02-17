@@ -3,7 +3,7 @@
 	This section replicates the "blue box" layout with tabs on the left and an image on the right.
 {% endcomment %}
 
-<section id="ingredient-tabs-section" class="ingredient-tabs-section">
+<section id="ingredient-tabs-section" class="ingredient-tabs-section{% unless section.settings.enable_animations %} no-animations{% endunless %}">
 	<div class="container">
 		<!-- Blue Box Container -->
 		<div class="blue-box">
@@ -199,10 +199,10 @@
 				max-height: 0;
 				overflow: hidden;
 				transition: max-height 0.5s ease, opacity 0.5s ease, transform 0.5s ease;
+			}
 
-				h3 {
-					font-size: 7vw;
-				}
+			.ingredient-text h3 {
+				font-size: 7vw;
 			}
 
 			.ingredient-text.visible {
@@ -235,6 +235,13 @@
 			.ingredient-image img {
 				height: 40vw;
 			}
+		}
+
+		/* ============= No Animations Override ============= */
+		.no-animations .ingredient-text,
+		.no-animations .ingredient-image {
+			transition: none !important;
+			animation: none !important;
 		}
 	</style>
 
@@ -287,7 +294,14 @@
 {% schema %}
 {
 	"name": "Ingredients Tabs Section",
-	"settings": [],
+	"settings": [
+		{
+			"type": "checkbox",
+			"id": "enable_animations",
+			"label": "Enable Animations",
+			"default": true
+		}
+	],
 	"blocks": [
 		{
 			"type": "ingredient",
