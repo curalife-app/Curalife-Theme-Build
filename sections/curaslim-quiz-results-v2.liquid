@@ -8,13 +8,15 @@
 					in just 6 months with Curaslim
 				</h1>
 
-				<p class="text-[--bronze] text-center mbl:text-start font-bold font-[21px]">No Injectables Required!</p>
+				<p class="text-[--bronze] text-center mbl:text-start font-bold font-[21px]">
+					No Injectables Required!
+				</p>
 			</div>
 
 			<div class="estimated-results mbl:flex-col flex items-center justify-between w-full gap-8">
 				<img class="m-0" src="{{ 'curaslim_results_v2.png' | file_url }}" alt="Curaslim Quiz Results">
 				<div class="estimated-results-wrapper mbl:w-full w-1/2" id="results-bars-container">
-						<!-- The results bars will be inserted here by JS -->
+					<!-- The results bars will be inserted here by JS -->
 				</div>
 			</div>
 		</div>
@@ -26,6 +28,45 @@
 		.quiz-results-section .titles h1,
 		.quiz-results-section .titles p {
 			text-align: start;
+		}
+	}
+
+	/* Progress Bar Styles */
+	.quiz-bar-wrapper {
+		opacity: 0;
+		transform: translateY(20px);
+		animation: fadeInUp 0.5s forwards;
+	}
+	.quiz-bar-label {
+		margin-bottom: 0.5rem;
+		font-weight: bold;
+	}
+	.quiz-bar-container {
+		background: #e5e7eb; /* Tailwind gray-200 */
+		border-radius: 9999px;
+		height: 1rem;
+		overflow: hidden;
+		position: relative;
+	}
+	.quiz-bar-fill {
+		background: var(--primary, #2563eb); /* Fallback blue */
+		height: 100%;
+		width: 0%;
+		line-height: 1rem;
+		color: white;
+		font-size: 0.75rem;
+		text-align: right;
+		padding-right: 0.5rem;
+		transition: width 1.5s ease-out;
+	}
+	@keyframes fadeInUp {
+		from {
+			opacity: 0;
+			transform: translateY(20px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
 		}
 	}
 </style>
@@ -49,15 +90,15 @@
 				'Content-Type': 'application/json'
 			}
 		})
-			.then(response => {
-				if (!response.ok) {
-					throw new Error('Network response was not ok');
-				}
-				console.log('Data successfully sent to Zapier');
-			})
-			.catch(error => {
-				console.error('Error sending data to Zapier:', error);
-			});
+		.then(response => {
+			if (!response.ok) {
+				throw new Error('Network response was not ok');
+			}
+			console.log('Data successfully sent to Zapier');
+		})
+		.catch(error => {
+			console.error('Error sending data to Zapier:', error);
+		});
 	}
 
 	function processGeneralUrlParams() {
@@ -81,7 +122,6 @@
 		console.log('Finished processing general URL parameters.');
 	}
 
-	// Rest of your existing functions remain the same
 	function processCanParam() {
 		console.log("Processing 'can' URL parameter...");
 		const urlParams = new URLSearchParams(window.location.search);
@@ -94,7 +134,7 @@
 				console.log(`Original value of 'wgt': ${canValue}, Processed value: ${processedValue}`);
 				element.textContent = processedValue.toFixed(0);
 			} else {
-				console.warn(`No element found with ID: can`);
+				console.warn("No element found with ID: 'can'");
 			}
 		}
 
@@ -102,70 +142,80 @@
 	}
 
 	function processGoalsParam() {
-			console.log("Processing 'gls' URL parameter...");
-			const urlParams = new URLSearchParams(window.location.search);
-			const goalsValue = urlParams.get('gls');
+		console.log("Processing 'gls' URL parameter...");
+		const urlParams = new URLSearchParams(window.location.search);
+		const goalsValue = urlParams.get('gls');
 
-			if (goalsValue !== null) {
-					const goalsArray = goalsValue.split(',');
-					let quizBenefitsData = [];
+		if (goalsValue !== null) {
+			const goalsArray = goalsValue.split(',');
+			let quizBenefitsData = [];
 
-					goalsArray.forEach((goal, index) => {
-							const trimmedGoal = goal.trim();
-							if (trimmedGoal.toLowerCase() !== 'other') {
-									// Assign a default percentage or use your own logic
-									let percentage = 80 - (index * 5); // Example logic to decrease values
-									if (percentage < 50) percentage = 50; // Ensure a minimum value
-									quizBenefitsData.push({ goal: trimmedGoal, percentage });
-							}
-					});
+			goalsArray.forEach((goal, index) => {
+				const trimmedGoal = goal.trim();
+				if (trimmedGoal.toLowerCase() !== 'other') {
+					// Example logic: Start with 80% and decrease by 5% per goal (min 50%)
+					let percentage = 80 - (index * 5);
+					if (percentage < 50) percentage = 50;
+					quizBenefitsData.push({ goal: trimmedGoal, percentage });
+				}
+			});
 
-					console.log("Quiz Benefits Data:", quizBenefitsData);
-					renderResultsBars(quizBenefitsData);
-			} else {
-					console.warn("No 'gls' parameter found in the URL.");
-			}
+			console.log("Quiz Benefits Data:", quizBenefitsData);
+			renderResultsBars(quizBenefitsData);
+		} else {
+			console.warn("No 'gls' parameter found in the URL.");
+		}
 
-			console.log("Finished processing 'gls' URL parameter.");
+		console.log("Finished processing 'gls' URL parameter.");
 	}
 
 	function renderResultsBars(benefits) {
-			const container = document.getElementById('results-bars-container');
-			if (!container) return;
+		const container = document.getElementById('results-bars-container');
+		if (!container) return;
 
-			// Clear any existing content
-			container.innerHTML = '';
+		// Clear any existing content
+		container.innerHTML = '';
 
-			// Loop through each benefit and create a bar element
-			benefits.forEach(item => {
-					// Create the container for each bar
-					const barWrapper = document.createElement('div');
-					barWrapper.className = 'quiz-bar-wrapper mb-4';
+		benefits.forEach((item, idx) => {
+			// Create the container for each bar
+			const barWrapper = document.createElement('div');
+			barWrapper.className = 'quiz-bar-wrapper mb-4';
+			// Add a slight animation delay for a staggered effect
+			barWrapper.style.animationDelay = `${idx * 0.15}s`;
 
-					// Create the label element
-					const label = document.createElement('div');
-					label.className = 'quiz-bar-label font-bold mb-1';
-					label.textContent = item.goal;
+			// Create the label element
+			const label = document.createElement('div');
+			label.className = 'quiz-bar-label';
+			label.textContent = item.goal;
 
-					// Create the progress bar container
-					const progressBarContainer = document.createElement('div');
-					progressBarContainer.className = 'quiz-bar-container bg-gray-200 rounded-full h-4';
+			// Create the progress bar container
+			const progressBarContainer = document.createElement('div');
+			progressBarContainer.className = 'quiz-bar-container';
 
-					// Create the progress bar fill element
-					const progressBarFill = document.createElement('div');
-					progressBarFill.className = 'quiz-bar-fill bg-[--primary] h-4 rounded-full';
-					progressBarFill.style.width = `${item.percentage}%`;
-					progressBarFill.textContent = `${item.percentage}%`; // Optional: Display percentage inside
+			// Create the progress bar fill element
+			const progressBarFill = document.createElement('div');
+			progressBarFill.className = 'quiz-bar-fill';
+			// Set a data attribute for the target width for later animation
+			progressBarFill.setAttribute('data-target-width', item.percentage);
 
-					// Assemble the elements
-					progressBarContainer.appendChild(progressBarFill);
-					barWrapper.appendChild(label);
-					barWrapper.appendChild(progressBarContainer);
-					container.appendChild(barWrapper);
+			// Optionally, you can display the percentage text inside the bar:
+			progressBarFill.textContent = `${item.percentage}%`;
+
+			// Assemble the elements
+			progressBarContainer.appendChild(progressBarFill);
+			barWrapper.appendChild(label);
+			barWrapper.appendChild(progressBarContainer);
+			container.appendChild(barWrapper);
+		});
+
+		// Trigger the animation after a short delay to ensure elements are rendered
+		setTimeout(() => {
+			document.querySelectorAll('.quiz-bar-fill').forEach(bar => {
+				const targetWidth = bar.getAttribute('data-target-width');
+				bar.style.width = `${targetWidth}%`;
 			});
+		}, 100); // 100ms delay
 	}
-
-
 
 	document.addEventListener('DOMContentLoaded', () => {
 		processGeneralUrlParams();
