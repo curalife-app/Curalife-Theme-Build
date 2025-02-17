@@ -77,9 +77,47 @@
 </style>
 
 <script>
+	// Save and retrieve the quiz benefits data for 24 hours
+	function getQuizBenefitsData(goalsValue) {
+		const now = Date.now();
+		const storageKey = 'quizResultsData';
+		const savedDataStr = localStorage.getItem(storageKey);
+		if (savedDataStr) {
+			try {
+				const savedData = JSON.parse(savedDataStr);
+				// Check if saved data is less than 24 hours old
+				if (now - savedData.timestamp < 24 * 60 * 60 * 1000) {
+					return savedData.data;
+				}
+			} catch (e) {
+				console.error("Error parsing saved data", e);
+			}
+		}
+
+		// Generate new data if not found or expired
+		let quizBenefitsData = [];
+		if (goalsValue !== null) {
+			const goalsArray = goalsValue.split(',');
+			goalsArray.forEach(goal => {
+				const trimmedGoal = goal.trim();
+				if (trimmedGoal.toLowerCase() !== 'other' && trimmedGoal !== '') {
+					// Generate a random percentage between 80 and 95
+					let percentage = Math.floor(Math.random() * (95 - 80 + 1)) + 80;
+					quizBenefitsData.push({ goal: trimmedGoal, percentage });
+				}
+			});
+		}
+
+		// Append the static goal at the end
+		quizBenefitsData.push({ goal: "Hunger & Portion Control", percentage: 96 });
+
+		// Save the data along with a timestamp
+		localStorage.setItem(storageKey, JSON.stringify({ timestamp: now, data: quizBenefitsData }));
+		return quizBenefitsData;
+	}
+
 	function sendToZapier(params) {
 		const ZAPIER_WEBHOOK_URL = 'https://hooks.zapier.com/hooks/catch/10900898/2zlu7dg/';
-
 		const webhookData = {};
 		params.forEach((value, key) => {
 			webhookData[key] = value;
@@ -88,9 +126,7 @@
 		fetch(ZAPIER_WEBHOOK_URL, {
 			method: 'POST',
 			body: JSON.stringify(webhookData),
-			headers: {
-				'Content-Type': 'application/json'
-			}
+			headers: { 'Content-Type': 'application/json' }
 		})
 		.then(response => {
 			if (!response.ok) {
@@ -106,7 +142,6 @@
 	function processGeneralUrlParams() {
 		console.log('Processing general URL parameters...');
 		const urlParams = new URLSearchParams(window.location.search);
-
 		sendToZapier(urlParams);
 
 		urlParams.forEach((value, key) => {
@@ -119,7 +154,6 @@
 				console.warn(`No element found with ID: ${key}`);
 			}
 		});
-
 		console.log('Finished processing general URL parameters.');
 	}
 
@@ -127,7 +161,6 @@
 		console.log("Processing 'can' URL parameter...");
 		const urlParams = new URLSearchParams(window.location.search);
 		const canValue = urlParams.get('wgt');
-
 		if (canValue !== null) {
 			const element = document.getElementById('can');
 			if (element) {
@@ -138,7 +171,6 @@
 				console.warn("No element found with ID: 'can'");
 			}
 		}
-
 		console.log("Finished processing 'can' URL parameter.");
 	}
 
@@ -147,28 +179,9 @@
 		const urlParams = new URLSearchParams(window.location.search);
 		const goalsValue = urlParams.get('gls');
 
-		let quizBenefitsData = [];
-
-		if (goalsValue !== null) {
-			const goalsArray = goalsValue.split(',');
-			goalsArray.forEach(goal => {
-				const trimmedGoal = goal.trim();
-				if (trimmedGoal.toLowerCase() !== 'other' && trimmedGoal !== '') {
-					// Random percentage between 80 and 95
-					let percentage = Math.floor(Math.random() * (95 - 80 + 1)) + 80;
-					quizBenefitsData.push({ goal: trimmedGoal, percentage });
-				}
-			});
-		} else {
-			console.warn("No 'gls' parameter found in the URL.");
-		}
-
-		// Append the static goal at the end
-		quizBenefitsData.push({ goal: "Hunger & Portion Control", percentage: 96 });
-
+		const quizBenefitsData = getQuizBenefitsData(goalsValue);
 		console.log("Quiz Benefits Data:", quizBenefitsData);
 		renderResultsBars(quizBenefitsData);
-
 		console.log("Finished processing 'gls' URL parameter.");
 	}
 
@@ -189,7 +202,6 @@
 			// Create the container for each bar
 			const barWrapper = document.createElement('div');
 			barWrapper.className = 'quiz-bar-wrapper mb-8';
-			// Add a slight animation delay for a staggered effect
 			barWrapper.style.animationDelay = `${idx * 0.15}s`;
 
 			// Create the label element
@@ -204,9 +216,7 @@
 			// Create the progress bar fill element
 			const progressBarFill = document.createElement('div');
 			progressBarFill.className = 'quiz-bar-fill';
-			// Set a data attribute for the target width for later animation
 			progressBarFill.setAttribute('data-target-width', item.percentage);
-			// Display the percentage text inside the bar:
 			progressBarFill.textContent = `${item.percentage}%`;
 
 			// Assemble the elements
@@ -222,7 +232,7 @@
 				const targetWidth = bar.getAttribute('data-target-width');
 				bar.style.width = `${targetWidth}%`;
 			});
-		}, 100); // 100ms delay
+		}, 100);
 	}
 
 	document.addEventListener('DOMContentLoaded', () => {
