@@ -13,6 +13,7 @@
 					{% for block in section.blocks %}
 						<li class="tab-button"
 							data-tab="tab-{{ block.id }}"
+							data-title="{{ block.settings.ingredient_title }}"
 							role="button"
 							aria-controls="tab-{{ block.id }}"
 							aria-selected="false">
@@ -83,6 +84,17 @@
 			cursor: pointer;
 			border: none;
 			transition: background-color 0.2s, color 0.2s;
+			position: relative;
+		}
+
+		/* Pseudo-element to reserve space for bold text */
+		.tab-button::after {
+			content: attr(data-title);
+			font-weight: bold;
+			visibility: hidden;
+			height: 0;
+			overflow: hidden;
+			display: block;
 		}
 
 		.tab-button:hover {
