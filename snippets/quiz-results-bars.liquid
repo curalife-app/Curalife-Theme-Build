@@ -1,12 +1,14 @@
 <div class="quiz-results">
 	<h2>CuraSlim Users Also Notice:</h2>
 	{% for benefit in benefits %}
+		<!-- Debug Output: {{ benefit | json }} -->
 		<div class="benefit-item">
 			<div class="benefit-label">
 				{{ benefit.title }}
 				<span class="benefit-percentage">{{ benefit.percentage }}%</span>
 			</div>
 			<div class="benefit-bar-container">
+				<!-- The data-percentage attribute is used to animate the bar -->
 				<div class="benefit-bar-fill" data-percentage="{{ benefit.percentage }}"></div>
 			</div>
 		</div>
@@ -52,9 +54,16 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
+	// Debug: Log the benefits array passed from Liquid
+	var benefits = {{ benefits | json }};
+	console.log("Benefits array:", benefits);
+
 	var bars = document.querySelectorAll('.benefit-bar-fill');
-	bars.forEach(function(bar) {
+	console.log("Found " + bars.length + " benefit bars.");
+
+	bars.forEach(function(bar, index) {
 		var percentage = bar.getAttribute('data-percentage');
+		console.log("Animating Benefit " + index + " with percentage: " + percentage);
 		bar.style.width = percentage + '%';
 	});
 });
