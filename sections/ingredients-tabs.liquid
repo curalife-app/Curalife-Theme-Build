@@ -38,7 +38,7 @@
 					{% if block.settings.ingredient_image %}
 						<div class="ingredient-image" id="img-{{ block.id }}">
 							<img src="{{ block.settings.ingredient_image | img_url: 'master' }}"
-									 alt="{{ block.settings.ingredient_title | escape }}" />
+								 alt="{{ block.settings.ingredient_title | escape }}" />
 						</div>
 					{% endif %}
 				{% endfor %}
@@ -185,41 +185,50 @@
 				flex: unset;
 			}
 
-			/* For mobile, let elements flow naturally and use display toggling */
+			/* Allow elements to flow naturally while animating their appearance */
 			.ingredient-text-container {
 				position: static;
 				min-height: auto;
 			}
 
+			/* Animate the text block using max-height, opacity and transform */
 			.ingredient-text {
 				position: static;
-				opacity: 1 !important;
-				transform: none !important;
-				transition: none !important;
-				pointer-events: auto;
-				display: none;
+				opacity: 0;
+				transform: translateY(20px);
+				max-height: 0;
+				overflow: hidden;
+				transition: max-height 0.5s ease, opacity 0.5s ease, transform 0.5s ease;
 				margin-bottom: 20px;
 			}
 
 			.ingredient-text.visible {
-				display: block;
+				opacity: 1;
+				transform: translateY(0);
+				max-height: 1000px; /* A high value to accommodate varying text lengths */
 			}
 
+			/* Animate the image similarly */
 			.ingredient-image {
 				position: static;
-				opacity: 1 !important;
-				transform: none !important;
-				transition: none !important;
-				pointer-events: auto;
-				display: none;
-
-				img {
-					height: 50%;
-				}
+				opacity: 0;
+				transform: scale(0.95);
+				max-height: 0;
+				overflow: hidden;
+				transition: max-height 0.5s ease, opacity 0.5s ease, transform 0.5s ease;
 			}
 
 			.ingredient-image.visible {
-				display: block;
+				opacity: 1;
+				transform: scale(1);
+				max-height: 1000px;
+			}
+
+			.ingredient-image img {
+				width: 100%;
+				height: auto;
+				object-fit: cover;
+				border-radius: 15px;
 			}
 		}
 	</style>
