@@ -14,12 +14,12 @@
 				<img class="max-w-1/2 mbl:max-w-full" src="{{ 'curaslim_results_v2.png' | file_url }}" alt="Curaslim Quiz Results">
 				<div class="estimated-results-wrapper">
 					{% assign quiz_benefits_raw = "Reduced cravings|95,Boosted energy|85,Elevated self-confidence|90,Quick results|82" %}
-					{% assign quiz_benefits = "" | split: "," %}
+					{% assign quiz_benefits = '[]' | parse_json %}
 					{% assign pairs = quiz_benefits_raw | split: "," %}
 					{% for pair in pairs %}
 						{% assign item = pair | split: "|" %}
-						{% assign benefit = '{"title":"' | append: item[0] | append: '","percentage":' | append: item[1] | append: '}' %}
-						{% assign quiz_benefits = quiz_benefits | push: benefit | parse_json %}
+						{% assign benefit = '{"title":"' | append: item[0] | append: '","percentage":' | append: item[1] | append: '}' | parse_json %}
+						{% assign quiz_benefits = quiz_benefits | push: benefit %}
 					{% endfor %}
 					{% include 'quiz-results-bars', benefits: quiz_benefits %}
 				</div>

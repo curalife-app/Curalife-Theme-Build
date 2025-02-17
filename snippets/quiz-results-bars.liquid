@@ -1,22 +1,3 @@
-{% comment %}
-	Snippet Name: quiz-results.liquid
-	Usage Example (in a Shopify template):
-		{% include 'quiz-results', benefits: my_quiz_benefits_array %}
-
-	Where `my_quiz_benefits_array` is something like:
-		[
-			{ "title": "Reduced cravings", "percentage": 95 },
-			{ "title": "Boosted energy", "percentage": 85 },
-			{ "title": "Elevated self-confidence", "percentage": 90 },
-			{ "title": "Quick results", "percentage": 82 }
-		]
-
-	This snippet will:
-	- Render a heading ("CuraSlim Users Also Notice:")
-	- Loop over each item in `benefits`
-	- Animate the progress bar from 0% to the specified percentage
-{% endcomment %}
-
 <div class="quiz-results">
 	<h2>CuraSlim Users Also Notice:</h2>
 
@@ -27,10 +8,6 @@
 				<span class="benefit-percentage">{{ benefit.percentage }}%</span>
 			</div>
 			<div class="benefit-bar-container">
-				<!--
-					data-percentage is used by the JS below to animate the bar
-					from 0% to the final width
-				-->
 				<div class="benefit-bar-fill" data-percentage="{{ benefit.percentage }}"></div>
 			</div>
 		</div>
@@ -38,37 +15,27 @@
 </div>
 
 <style>
-	/* Container styling */
 	.quiz-results {
 		max-width: 600px;
 		margin: 0 auto;
 		font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
 	}
-
-	/* Heading */
 	.quiz-results h2 {
 		margin-bottom: 1rem;
 		font-size: 1.25rem;
 	}
-
-	/* Each benefit item */
 	.benefit-item {
 		margin-bottom: 1.5rem;
 	}
-
-	/* Benefit label + percentage text */
 	.benefit-label {
 		font-weight: 600;
 		margin-bottom: 0.5rem;
 	}
-
 	.benefit-percentage {
 		margin-left: 0.5rem;
 		font-weight: normal;
 		color: #666;
 	}
-
-	/* Progress bar container */
 	.benefit-bar-container {
 		background-color: #e0e0e0;
 		border-radius: 6px;
@@ -76,8 +43,6 @@
 		overflow: hidden;
 		position: relative;
 	}
-
-	/* Progress bar fill */
 	.benefit-bar-fill {
 		background-color: #007acc;
 		height: 100%;
@@ -87,12 +52,11 @@
 </style>
 
 <script>
-	document.addEventListener("DOMContentLoaded", function() {
-		var bars = document.querySelectorAll('.benefit-bar-fill');
-		bars.forEach(function(bar) {
-			var percentage = bar.getAttribute('data-percentage');
-			// Trigger the transition
-			bar.style.width = percentage + '%';
-		});
+document.addEventListener("DOMContentLoaded", function() {
+	var bars = document.querySelectorAll('.benefit-bar-fill');
+	bars.forEach(function(bar) {
+		var percentage = bar.getAttribute('data-percentage');
+		bar.style.width = percentage + '%';
 	});
+});
 </script>
