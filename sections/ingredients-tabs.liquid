@@ -185,13 +185,12 @@
 				flex: unset;
 			}
 
-			/* Allow elements to flow naturally while animating their appearance */
+			/* For text, use a smooth max-height transition to accommodate dynamic content */
 			.ingredient-text-container {
 				position: static;
 				min-height: auto;
 			}
 
-			/* Animate the text block using max-height, opacity and transform */
 			.ingredient-text {
 				position: static;
 				opacity: 0;
@@ -205,23 +204,26 @@
 			.ingredient-text.visible {
 				opacity: 1;
 				transform: translateY(0);
-				max-height: 1000px; /* A high value to accommodate varying text lengths */
+				max-height: 1000px; /* Adjust to a value high enough for your content */
 			}
 
-			/* Animate the image similarly */
+			/* For images, prevent inactive ones from reserving space */
 			.ingredient-image {
-				position: static;
-				opacity: 0;
-				transform: scale(0.95);
-				max-height: 0;
-				overflow: hidden;
-				transition: max-height 0.5s ease, opacity 0.5s ease, transform 0.5s ease;
+				display: none;
 			}
 
 			.ingredient-image.visible {
-				opacity: 1;
-				transform: scale(1);
-				max-height: 1000px;
+				display: block;
+				opacity: 0;
+				transform: scale(0.95);
+				animation: fadeInImage 0.5s forwards;
+			}
+
+			@keyframes fadeInImage {
+				to {
+					opacity: 1;
+					transform: scale(1);
+				}
 			}
 
 			.ingredient-image img {
