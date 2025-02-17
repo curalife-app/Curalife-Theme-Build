@@ -101,9 +101,76 @@
 		console.log("Finished processing 'can' URL parameter.");
 	}
 
+	function processGoalsParam() {
+			console.log("Processing 'gls' URL parameter...");
+			const urlParams = new URLSearchParams(window.location.search);
+			const goalsValue = urlParams.get('gls');
+
+			if (goalsValue !== null) {
+					const goalsArray = goalsValue.split(',');
+					let quizBenefitsData = [];
+
+					goalsArray.forEach((goal, index) => {
+							const trimmedGoal = goal.trim();
+							if (trimmedGoal.toLowerCase() !== 'other') {
+									// Assign a default percentage or use your own logic
+									let percentage = 80 - (index * 5); // Example logic to decrease values
+									if (percentage < 50) percentage = 50; // Ensure a minimum value
+									quizBenefitsData.push({ goal: trimmedGoal, percentage });
+							}
+					});
+
+					console.log("Quiz Benefits Data:", quizBenefitsData);
+					renderResultsBars(quizBenefitsData);
+			} else {
+					console.warn("No 'gls' parameter found in the URL.");
+			}
+
+			console.log("Finished processing 'gls' URL parameter.");
+	}
+
+	function renderResultsBars(benefits) {
+			const container = document.getElementById('results-bars-container');
+			if (!container) return;
+
+			// Clear any existing content
+			container.innerHTML = '';
+
+			// Loop through each benefit and create a bar element
+			benefits.forEach(item => {
+					// Create the container for each bar
+					const barWrapper = document.createElement('div');
+					barWrapper.className = 'quiz-bar-wrapper mb-4';
+
+					// Create the label element
+					const label = document.createElement('div');
+					label.className = 'quiz-bar-label font-bold mb-1';
+					label.textContent = item.goal;
+
+					// Create the progress bar container
+					const progressBarContainer = document.createElement('div');
+					progressBarContainer.className = 'quiz-bar-container bg-gray-200 rounded-full h-4';
+
+					// Create the progress bar fill element
+					const progressBarFill = document.createElement('div');
+					progressBarFill.className = 'quiz-bar-fill bg-[--primary] h-4 rounded-full';
+					progressBarFill.style.width = `${item.percentage}%`;
+					progressBarFill.textContent = `${item.percentage}%`; // Optional: Display percentage inside
+
+					// Assemble the elements
+					progressBarContainer.appendChild(progressBarFill);
+					barWrapper.appendChild(label);
+					barWrapper.appendChild(progressBarContainer);
+					container.appendChild(barWrapper);
+			});
+	}
+
+
+
 	document.addEventListener('DOMContentLoaded', () => {
 		processGeneralUrlParams();
 		processCanParam();
+		processGoalsParam();
 	});
 </script>
 
