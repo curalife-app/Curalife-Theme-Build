@@ -49,7 +49,7 @@
 		position: relative;
 	}
 	.quiz-bar-fill {
-		background: var(--primary, #2563eb);
+		background: var(--primary-color, #2563eb);
 		height: 100%;
 		width: 0%;
 		line-height: 1rem;
@@ -146,25 +146,27 @@
 		const urlParams = new URLSearchParams(window.location.search);
 		const goalsValue = urlParams.get('gls');
 
+		let quizBenefitsData = [];
+
 		if (goalsValue !== null) {
 			const goalsArray = goalsValue.split(',');
-			let quizBenefitsData = [];
-
-			goalsArray.forEach((goal, index) => {
+			goalsArray.forEach(goal => {
 				const trimmedGoal = goal.trim();
-				if (trimmedGoal.toLowerCase() !== 'other') {
-					// Example logic: Start with 80% and decrease by 5% per goal (min 50%)
-					let percentage = 80 - (index * 5);
-					if (percentage < 50) percentage = 50;
+				if (trimmedGoal.toLowerCase() !== 'other' && trimmedGoal !== '') {
+					// Random percentage between 80 and 95
+					let percentage = Math.floor(Math.random() * (95 - 80 + 1)) + 80;
 					quizBenefitsData.push({ goal: trimmedGoal, percentage });
 				}
 			});
-
-			console.log("Quiz Benefits Data:", quizBenefitsData);
-			renderResultsBars(quizBenefitsData);
 		} else {
 			console.warn("No 'gls' parameter found in the URL.");
 		}
+
+		// Append the static goal at the end
+		quizBenefitsData.push({ goal: "Hunger & Portion Control", percentage: 96 });
+
+		console.log("Quiz Benefits Data:", quizBenefitsData);
+		renderResultsBars(quizBenefitsData);
 
 		console.log("Finished processing 'gls' URL parameter.");
 	}
@@ -175,6 +177,12 @@
 
 		// Clear any existing content
 		container.innerHTML = '';
+
+		// Add the title header
+		const header = document.createElement('h4');
+		header.textContent = "CuraSlim Users Also Notice:";
+		header.style.marginBottom = '1rem';
+		container.appendChild(header);
 
 		benefits.forEach((item, idx) => {
 			// Create the container for each bar
@@ -197,8 +205,7 @@
 			progressBarFill.className = 'quiz-bar-fill';
 			// Set a data attribute for the target width for later animation
 			progressBarFill.setAttribute('data-target-width', item.percentage);
-
-			// Optionally, you can display the percentage text inside the bar:
+			// Display the percentage text inside the bar:
 			progressBarFill.textContent = `${item.percentage}%`;
 
 			// Assemble the elements
