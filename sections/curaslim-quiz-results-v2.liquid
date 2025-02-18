@@ -85,7 +85,6 @@
 </style>
 
 <script>
-	// Save and retrieve the quiz benefits data for 24 hours
 	function getQuizBenefitsData(goalsValue) {
 		const now = Date.now();
 		const storageKey = 'quizResultsData';
@@ -102,16 +101,31 @@
 			}
 		}
 
-		// Generate new data if not found or expired
+		// Mapping of URL goals to new title and percentage
+		const mapping = {
+			"Improved Health & Reduced Risks": { title: "Improved Well-Being", percentage: 89 },
+			"Increased Energy Levels": { title: "Boosted Energy", percentage: 88 },
+			"Felt Great in Their Clothes": { title: "Wardrobe Freedom", percentage: 81 },
+			"Enhanced Their Appearance": { title: "Happy with Appearance", percentage: 86 },
+			"Gained More Self-Confidence": { title: "More Self-Confident", percentage: 83 },
+			"Boosted Their Physical Performance": { title: "Enhanced Performance", percentage: 82 }
+		};
+
 		let quizBenefitsData = [];
 		if (goalsValue !== null) {
 			const goalsArray = goalsValue.split(',');
 			goalsArray.forEach(goal => {
 				const trimmedGoal = goal.trim();
 				if (trimmedGoal.toLowerCase() !== 'other' && trimmedGoal !== '') {
-					// Generate a random percentage between 80 and 95
-					let percentage = Math.floor(Math.random() * (95 - 80 + 1)) + 80;
-					quizBenefitsData.push({ goal: trimmedGoal, percentage });
+					if (mapping[trimmedGoal]) {
+						quizBenefitsData.push({
+							goal: mapping[trimmedGoal].title,
+							percentage: mapping[trimmedGoal].percentage
+						});
+					} else {
+						// Fallback: if the goal is not in the mapping, you can set a default percentage.
+						quizBenefitsData.push({ goal: trimmedGoal, percentage: 80 });
+					}
 				}
 			});
 		}
@@ -119,7 +133,7 @@
 		// Append the static goal at the end
 		quizBenefitsData.push({ goal: "Hunger & Portion Control", percentage: 96 });
 
-		// Save the data along with a timestamp
+		// Save the data along with a timestamp for 24 hours caching
 		localStorage.setItem(storageKey, JSON.stringify({ timestamp: now, data: quizBenefitsData }));
 		return quizBenefitsData;
 	}
