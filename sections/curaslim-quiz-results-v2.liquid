@@ -86,21 +86,6 @@
 
 <script>
 	function getQuizBenefitsData(goalsValue) {
-		const now = Date.now();
-		const storageKey = 'quizResultsData';
-		const savedDataStr = localStorage.getItem(storageKey);
-		if (savedDataStr) {
-			try {
-				const savedData = JSON.parse(savedDataStr);
-				// Check if saved data is less than 24 hours old
-				if (now - savedData.timestamp < 24 * 60 * 60 * 1000) {
-					return savedData.data;
-				}
-			} catch (e) {
-				console.error("Error parsing saved data", e);
-			}
-		}
-
 		// Mapping of URL goals to new title and percentage
 		const mapping = {
 			"Improved Health & Reduced Risks": { title: "Improved Well-Being", percentage: 89 },
@@ -133,8 +118,6 @@
 		// Append the static goal at the end
 		quizBenefitsData.push({ goal: "Hunger & Portion Control", percentage: 96 });
 
-		// Save the data along with a timestamp for 24 hours caching
-		localStorage.setItem(storageKey, JSON.stringify({ timestamp: now, data: quizBenefitsData }));
 		return quizBenefitsData;
 	}
 
