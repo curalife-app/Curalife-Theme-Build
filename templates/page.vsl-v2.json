@@ -146,12 +146,11 @@
     },
     "custom_liquid_4zQwFp": {
       "type": "custom-liquid",
-      "disabled": true,
       "settings": {
-        "custom_liquid": "<section>\n<div class=\"container\">\n<div id=\"vid_667a87e58fbf9c000afd997d\" style=\"position:relative;width:100%;padding: 56.25% 0 0;\"> <img id=\"thumb_667a87e58fbf9c000afd997d\" src=\"https://images.converteai.net/857d249e-e698-4657-9d4e-91d895bbed1a/players/667a87e58fbf9c000afd997d/thumbnail.jpg\" style=\"position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;display:block;\"> <div id=\"backdrop_667a87e58fbf9c000afd997d\" style=\"position:absolute;top:0;width:100%;height:100%;-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);\"></div> </div>\n</div>\n</div>\n</section>\n<script type=\"text/javascript\" id=\"scr_667a87e58fbf9c000afd997d\"> var s=document.createElement(\"script\"); s.src=\"https://scripts.converteai.net/857d249e-e698-4657-9d4e-91d895bbed1a/players/667a87e58fbf9c000afd997d/player.js\", s.async=!0,document.head.appendChild(s); </script>\n<script>\n  function moveCTA(container) {\n   const cta = container.querySelector(\".smartplay + .smartplayer-call-action\");\n\n   if (!cta) return;\n\n   container.parentNode.insertBefore(cta, container.nextSibling);\n  }\n\n  function insertBeforePlayer(instance, prefix) {\n   if(!instance) return;\n\n   const player = instance.mobileContainer || instance.container;\n\n   const container = document.createElement(\"div\");\n\n   container.id = `${prefix}-${instance.options.id}`\n   container.classList.add(prefix);\n\n   player.parentNode.insertBefore(container, player);\n\n   container.appendChild(player);\n\n   return container;\n  }\n\n  function mountContainers() {\n   const instances = window.smartplayer.instances;\n\n   instances.forEach(instance => {\n    const container = insertBeforePlayer(instance, `player-fake-fs`)\n\n    if(!container) return;\n\n    moveCTA(container)\n\n    let firstClick = instance.resume?.inResume === undefined;\n\n    container.addEventListener(\"click\", () => {\n     console.log(instance.resume)\n     if (!firstClick && container.dataset.fullscreen === \"true\") instance.pause();\n\n     firstClick = false;\n    });\n   });\n\n   instances.forEach(instance => insertBeforePlayer(instance, `player-auto-height`));\n  }\n\n  function mountStyles() {\n   const styles = document.createElement(\"style\");\n\n   styles.innerHTML = `\n    .player-fake-fs[data-fullscreen='true'] {\n     display: flex !important;\n     align-items: center !important;\n     background-color: #000 !important;\n     height: 100vh !important;\n     width: 100vw !important;\n     cursor: pointer;\n    }\n\n    .player-fake-fs[data-fullscreen='true'] .player-auto-height .smartplayer-mobile-container {\n     max-width: 100% !important;\n    }\n\n    .player-fake-fs[data-fullscreen='false'] .player-auto-height {\n     width: 100% !important;\n    }\n\n    .player-fake-fs[data-fullscreen='false'] {\n     margin-left: 0 !important;\n    }\n\n    .player-auto-height {\n     margin: 0 auto;\n     width: 100%;\n    }\n   `;\n\n   document.head.appendChild(styles);\n  }\n\n  function adjustXPositionFs() {\n   const currentFs = document.querySelectorAll(\".player-fake-fs[data-fullscreen='true']\");\n\n   currentFs.forEach(container => {\n    container.style.marginLeft = \"0\";\n\n    const position = container.getBoundingClientRect()\n\n    if(position.left <= 0) return;\n\n    container.style.marginLeft = `-${position.left}px`;\n   });\n  }\n\n  function changeWidthByHeight() {\n   const containers = document.querySelectorAll(\".player-auto-height\");\n\n   containers.forEach(container => {\n    const video = container.querySelector(\"video\");\n\n    if (!video) return;\n\n    const aspectRatio = video.clientWidth / video.clientHeight;\n\n    const windowHeight = window.innerHeight;\n    const newWidth = windowHeight * aspectRatio;\n\n    const width = (newWidth / window.innerWidth) * 100;\n\n    container.style.width = `${width >= 100 ? 100 : width}%`;\n   });\n  }\n\n  function scrollToFS(container) {\n   const position = container.getBoundingClientRect();\n\n   window.scrollTo({\n    top: position.top + window.scrollY,\n    left: position.left + window.scrollX,\n   });\n  }\n\n  function toggleFs(id, inFullscreen = false) {\n   const container = document.getElementById(`player-fake-fs-${id}`);\n\n   if (!container) return;\n\n   container.dataset.fullscreen = inFullscreen.toString()\n\n   if (inFullscreen) {\n    window.addEventListener(\"resize\", changeWidthByHeight);\n\n    changeWidthByHeight();\n    adjustXPositionFs();\n\n    return scrollToFS(container);\n   }\n\n   window.removeEventListener(\"resize\", changeWidthByHeight);\n  }\n\n  function mountFakeFsEvents() {\n   const instances = window.smartplayer.instances;\n\n   window.addEventListener(\"resize\", adjustXPositionFs);\n\n   instances.forEach(instance => {\n    instance.on(\"play\", () => toggleFs(instance.options.id, true));\n\n    instance.on(\"pause\", () => toggleFs(instance.options.id, false));\n   });\n  }\n\n  function customEvents() {\n   mountContainers();\n   mountStyles();\n   mountFakeFsEvents()\n  }\n\n  function checkPlayerLoaded() {\n   if (window.smartplayer && window.smartplayer.instances) return customEvents()\n\n   return setTimeout(checkPlayerLoaded, 100)\n  }\n\n  window.addEventListener(\"load\", () => checkPlayerLoaded())\n</script>",
+        "custom_liquid": "<style>\nbackground: rgb(48,115,131);\nbackground: linear-gradient(180deg, rgba(48,115,131,1) 0%, rgba(58,118,132,1) 43%, rgba(255,255,255,1) 43%, rgba(255,255,255,1) 100%);\n</style>",
         "color_scheme": "background-1",
         "additional_classes": "",
-        "run_on_pages": "/pages/the-natural-breakthrough-to-support-healthy-blood-sugar-levels-full-internal",
+        "run_on_pages": "",
         "padding_top": 0,
         "padding_bottom": 32
       }
@@ -215,7 +214,7 @@
         "h3 {color: var(--orange); margin-bottom: 1rem;}",
         "p {border: 1px solid white; padding: 1rem; border-radius: 5px; margin: 0; padding: 1rem 6rem;}",
         ".title-wrapper {padding: 0;}",
-        ".item {align-content:center;}",
+        ".item {align-content: center;}",
         "@media (max-width: 768px) {.items a:nth-child(1) .item {order: 3; } .items a:nth-child(2) .item {order: 1; } .items a:nth-child(3) .item {order: 2; } p {padding: 1rem; }}"
       ],
       "settings": {
@@ -272,6 +271,37 @@
         "is_decor_bg": false,
         "is_decor_relative_full": false,
         "is_decor_remove_on_mobile": false
+      }
+    },
+    "button_section_3HxpMX": {
+      "type": "button-section",
+      "custom_css": [
+        "button {border: 1px solid black; border-radius: 15px; font-size: 22px;}",
+        "@media (width<768px) {button {font-size: 4.5vw; }}"
+      ],
+      "settings": {
+        "button_text": "Buy Once for $55.00 + Shipping $10",
+        "button_link": "",
+        "is_pass_url_parameters": false,
+        "is_sticky": false,
+        "sticky_hide": "",
+        "bg_color": "",
+        "button_bg_color": "#ffffff",
+        "button_title_color": "",
+        "button_bg_hover": "",
+        "button_title_color_hover": "",
+        "button_under_title": "",
+        "button_under_title_color": "",
+        "button_under_title_classes": "",
+        "padding_top": 50,
+        "padding_bottom": 50,
+        "padding_top_mobile": 10,
+        "padding_bottom_mobile": 10,
+        "remove_padding_top": false,
+        "remove_padding_bottom": false,
+        "section_additional_classes": "",
+        "button_element_name": "",
+        "animation": "none"
       }
     },
     "c4bef136-771a-4e3e-a36d-c9249f6cc96d": {
@@ -1311,6 +1341,7 @@
     "custom_liquid_rXxiNw",
     "custom_liquid_4zQwFp",
     "dd5374c8-c5f1-47ba-b227-22fd735b4595",
+    "button_section_3HxpMX",
     "c4bef136-771a-4e3e-a36d-c9249f6cc96d",
     "5cdb61bf-722f-41c4-9a82-f550af57a165",
     "0435ebae-7ab7-4f7b-bac3-87caa43babc7",
