@@ -575,11 +575,21 @@ document.addEventListener('DOMContentLoaded', () => {
 			// Calculate original total price
 			const totalOrig = origPerItem * bottles;
 
+			// Price Updates (inside updatePriceDisplay)
 			const subscriptionDiscount = parseFloat(el.dataset.subscriptionDiscount) || 0;
 			const firstMonthDiscount = parseFloat(el.dataset.firstMonthDiscount) || 0;
+
 			const originalMultiplier = (100 - subscriptionDiscount) / 100;
 			const additionalMultiplier = (100 - firstMonthDiscount) / 100;
 			const firstMonthDiscountMultiplier = originalMultiplier * additionalMultiplier;
+
+			// Insert console logs to debug the discount calculations
+			console.log("Subscription Discount:", subscriptionDiscount);
+			console.log("First Month Discount:", firstMonthDiscount);
+			console.log("Original Multiplier:", originalMultiplier);
+			console.log("Additional Multiplier:", additionalMultiplier);
+			console.log("Compound Discount Multiplier:", firstMonthDiscountMultiplier);
+
 			const firstMonthSubItem = origPerItem * firstMonthDiscountMultiplier;
 			const firstMonthSubPrice = totalOrig * firstMonthDiscountMultiplier;
 
