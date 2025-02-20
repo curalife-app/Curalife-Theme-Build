@@ -1,4 +1,4 @@
-<section class="quiz-results-section">
+<section class="quiz-results-section {{ section.settings.section_additional_classes }}">
 	<div class="container text-center">
 		<div class="flex-col flex items-center gap-y-8 gap-x-20 justify-between [&>*]:w-1/2 mbl:[&>*]:w-full">
 			<div class="titles">
@@ -23,6 +23,24 @@
 		</div>
 	</div>
 </section>
+
+<script>
+	(() => {
+		const section = document.getElementById('section-{{ section.id }}');
+		if (!section) return;
+
+		const params = new URLSearchParams(window.location.search);
+		const ctaParam = params.get('cta') === 'true';
+
+		if (ctaParam) {
+			document.querySelectorAll('.hide-on-cta').forEach(el => el.remove());
+		}
+
+		if ({{ section.settings.display_on_url_param | json }} && !ctaParam) {
+			section.remove();
+		}
+	})();
+</script>
 
 <style>
 	@media (max-width: 768px) {
@@ -323,6 +341,16 @@
 			"id": "static_benefit_percentage",
 			"label": "Static Benefit Percentage",
 			"default": 96
+		},
+		{
+			"type": "checkbox",
+			"id": "display_on_url_param",
+			"label": "Display Only on cta=true URL Param"
+		},
+		{
+			"type": "text",
+			"id": "section_additional_classes",
+			"label": "Additional Classes"
 		}
 	],
 	"presets": [
