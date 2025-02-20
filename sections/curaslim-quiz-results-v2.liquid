@@ -38,7 +38,6 @@
 			font-size: 5vw;
 		}
 	}
-
 	h1 {
 		font-size: 60px !important;
 	}
@@ -47,7 +46,6 @@
 			font-size: 10vw !important;
 		}
 	}
-
 	.quiz-bar-wrapper {
 		opacity: 0;
 		transform: translateY(20px);
@@ -102,7 +100,6 @@
 		params.forEach((value, key) => {
 			webhookData[key] = value;
 		});
-
 		let attempts = 0;
 		(async function retry() {
 			while (attempts < maxAttempts) {
@@ -166,7 +163,6 @@
 			"Elevate your self-confidence": { title: "More Self-Confident", percentage: 83 },
 			"Boost physical performance": { title: "Enhanced Performance", percentage: 82 }
 		};
-
 		let quizBenefitsData = [];
 		if (goalsValue !== null) {
 			const goalsArray = goalsValue.split(',');
@@ -193,48 +189,38 @@
 		const container = document.getElementById('results-bars-container');
 		if (!container) return;
 		container.innerHTML = '';
-
 		const header = document.createElement('h4');
 		header.textContent = headerText;
 		header.style.marginBottom = '2rem';
 		container.appendChild(header);
-
 		benefits.forEach((item, idx) => {
 			const barWrapper = document.createElement('div');
 			barWrapper.className = 'quiz-bar-wrapper mb-8';
 			barWrapper.style.animationDelay = `${idx * 0.15}s`;
-
 			const labelContainer = document.createElement('div');
 			labelContainer.className = 'quiz-bar-label';
 			labelContainer.style.display = 'flex';
 			labelContainer.style.justifyContent = 'start';
 			labelContainer.style.gap = '1rem';
 			labelContainer.style.alignItems = 'center';
-
 			const labelText = document.createElement('span');
 			labelText.textContent = item.goal;
-
 			const percentageText = document.createElement('span');
 			percentageText.textContent = `${item.percentage}%`;
 			percentageText.className = 'quiz-percentage';
 			percentageText.style.color = 'var(--primary-color)';
-
 			labelContainer.appendChild(labelText);
 			labelContainer.appendChild(percentageText);
-
 			const progressBarContainer = document.createElement('div');
 			progressBarContainer.className = 'quiz-bar-container';
-
 			const progressBarFill = document.createElement('div');
 			progressBarFill.className = 'quiz-bar-fill';
 			progressBarFill.setAttribute('data-target-width', item.percentage);
-
 			progressBarContainer.appendChild(progressBarFill);
 			barWrapper.appendChild(labelContainer);
 			barWrapper.appendChild(progressBarContainer);
 			container.appendChild(barWrapper);
 		});
-
 		setTimeout(() => {
 			document.querySelectorAll('.quiz-bar-fill').forEach(bar => {
 				const targetWidth = bar.getAttribute('data-target-width');
@@ -253,7 +239,6 @@
 	document.addEventListener('DOMContentLoaded', () => {
 		const section = document.getElementById('section-{{ section.id }}');
 		if (!section) return;
-
 		// Check URL parameters for CTA and display settings.
 		const params = new URLSearchParams(window.location.search);
 		const ctaParam = params.get('cta') === 'true';
@@ -264,14 +249,12 @@
 			section.remove();
 			return;
 		}
-
 		// Retrieve configurable settings from Liquid.
 		const calcFactor = parseFloat("{{ section.settings.calc_factor }}");
 		const benefitsHeaderText = "{{ section.settings.benefits_header | escape }}";
 		const staticBenefitText = "{{ section.settings.static_benefit_text | escape }}";
 		const staticBenefitPercentage = {{ section.settings.static_benefit_percentage }};
 		const benefitsSource = "{{ section.settings.benefits_source }}";
-
 		// Depending on the source setting, either use dynamic URL-based benefits or static blocks.
 		if (benefitsSource === "dynamic") {
 			processGoalsParam(staticBenefitText, staticBenefitPercentage, benefitsHeaderText);
@@ -280,14 +263,32 @@
 			var staticBenefits = [
 				{% for block in section.blocks %}
 					{
+						"original_key": "{{ block.settings.original_mapping_key | escape }}",
 						"goal": "{{ block.settings.benefit_title | escape }}",
 						"percentage": {{ block.settings.benefit_percentage }}
 					}{% unless forloop.last %},{% endunless %}
 				{% endfor %}
 			];
+			// Use the original mapping key if available.
+			var mapping = {
+				"Improve health & reduce risks": { title: "Improved Well-Being", percentage: 89 },
+				"Increase your energy levels": { title: "Boosted Energy", percentage: 88 },
+				"Feel great in your clothes": { title: "Wardrobe Freedom", percentage: 81 },
+				"Enhance your appearance": { title: "Happy with Appearance", percentage: 86 },
+				"Elevate your self-confidence": { title: "More Self-Confident", percentage: 83 },
+				"Boost physical performance": { title: "Enhanced Performance", percentage: 82 }
+			};
+			staticBenefits = staticBenefits.map(function(item) {
+				if (item.original_key && mapping[item.original_key]) {
+					return {
+						goal: mapping[item.original_key].title,
+						percentage: mapping[item.original_key].percentage
+					};
+				}
+				return item;
+			});
 			renderResultsBars(staticBenefits, benefitsHeaderText);
 		}
-
 		// Always process general URL parameters and the weight (wgt) parameter.
 		processGeneralUrlParams();
 		processCanParam(calcFactor);
@@ -378,6 +379,12 @@
 			"type": "benefit",
 			"name": "Benefit",
 			"settings": [
+				{
+					"type": "text",
+					"id": "original_mapping_key",
+					"label": "Original Mapping Key",
+					"default": "Improve health & reduce risks"
+				},
 				{
 					"type": "text",
 					"id": "benefit_title",
