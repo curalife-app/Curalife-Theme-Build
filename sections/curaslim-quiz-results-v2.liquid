@@ -11,13 +11,12 @@
 					{{ section.settings.subheading }}
 				</p>
 			</div>
-
 			<div class="estimated-results mbl:flex-col flex items-center justify-between w-full gap-8">
 				{% if section.settings.result_image %}
 					<img class="mbl:my-4 m-0" src="{{ section.settings.result_image | image_url }}" alt="Curaslim Quiz Results">
 				{% endif %}
 				<div class="estimated-results-wrapper mbl:w-full w-1/2" id="results-bars-container">
-					<!-- The results bars will be inserted here by JS -->
+					<!-- Results bars will be rendered here -->
 				</div>
 			</div>
 		</div>
@@ -27,43 +26,20 @@
 <style>
 	@media (max-width: 768px) {
 		.quiz-results-section .titles h1,
-		.quiz-results-section .titles p {
-			text-align: start;
-			font-size: 5vw;
-		}
-		h4 {
-			font-size: 6vw;
-		}
-		.quiz-results-section .quiz-bar-label {
-			font-size: 5vw;
-		}
+		.quiz-results-section .titles p { text-align: start; font-size: 5vw; }
+		h4 { font-size: 6vw; }
+		.quiz-results-section .quiz-bar-label { font-size: 5vw; }
 	}
-	h1 {
-		font-size: 60px !important;
-	}
-	@media (max-width: 768px) {
-		h1 {
-			font-size: 10vw !important;
-		}
-	}
+	h1 { font-size: 60px !important; }
+	@media (max-width: 768px) { h1 { font-size: 10vw !important; } }
 	.quiz-bar-wrapper {
 		opacity: 0;
 		transform: translateY(20px);
 		animation: fadeInUp 0.5s forwards;
 	}
-	h4 {
-		text-align: start;
-		font-weight: bold;
-	}
-	.quiz-bar-label {
-		margin-bottom: 0.5rem;
-		font-style: italic;
-		font-size: 26px;
-		text-align: start;
-	}
-	.quiz-percentage {
-		font-weight: bold;
-	}
+	h4 { text-align: start; font-weight: bold; }
+	.quiz-bar-label { margin-bottom: 0.5rem; font-style: italic; font-size: 26px; text-align: start; }
+	.quiz-percentage { font-weight: bold; }
 	.quiz-bar-container {
 		background: var(--bg-color, #f3f3f3);
 		border-radius: 9999px;
@@ -81,207 +57,207 @@
 		transition: width 1.5s ease-out;
 	}
 	@keyframes fadeInUp {
-		from {
-			opacity: 0;
-			transform: translateY(20px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
+		from { opacity: 0; transform: translateY(20px); }
+		to { opacity: 1; transform: translateY(0); }
 	}
 </style>
 
 <script>
-	// Helper function to send data to Zapier
-	function sendToZapier(params, maxAttempts = 3, delay = 1000) {
-		const ZAPIER_WEBHOOK_URL = 'https://hooks.zapier.com/hooks/catch/10900898/2zlu7dg/';
-		const webhookData = {};
-		params.forEach((value, key) => {
-			webhookData[key] = value;
-		});
-		let attempts = 0;
-		(async function retry() {
-			while (attempts < maxAttempts) {
-				try {
-					const response = await fetch(ZAPIER_WEBHOOK_URL, {
-						method: 'POST',
-						body: JSON.stringify(webhookData),
-						headers: { 'Content-Type': 'application/json' }
-					});
-					if (!response.ok) {
-						throw new Error('Network response was not ok: ' + response.status);
-					}
-					console.log('Data successfully sent to Zapier on attempt', attempts + 1);
-					return response;
-				} catch (error) {
-					attempts++;
-					console.error(`Attempt ${attempts} failed to send data to Zapier:`, error);
-					if (attempts < maxAttempts) {
-						console.log(`Retrying in ${delay}ms...`);
-						await new Promise(resolve => setTimeout(resolve, delay));
-						delay *= 2;
-					} else {
-						console.error('Max attempts reached. Giving up on sending data to Zapier.');
-					}
-				}
-			}
-		})();
-	}
-
-	// Process general URL parameters
-	function processGeneralUrlParams() {
-		console.log('Processing general URL parameters...');
-		const urlParams = new URLSearchParams(window.location.search);
-		sendToZapier(urlParams);
-		urlParams.forEach((value, key) => {
-			const element = document.getElementById(key);
-			if (element) {
-				element.textContent = value;
-			}
-		});
-		console.log('Finished processing general URL parameters.');
-	}
-
-	// Process the weight parameter ("wgt")
-	function processCanParam(calcFactor) {
-		const urlParams = new URLSearchParams(window.location.search);
-		const canValue = urlParams.get('wgt');
-		if (canValue !== null) {
-			const element = document.getElementById('can');
-			if (element) {
-				const processedValue = parseFloat(canValue) * calcFactor;
-				element.textContent = processedValue.toFixed(0);
-			}
-		}
-	}
-
-	// Build mapping from dynamic benefit blocks (only blocks of type "benefit")
-	function getMappingFromBlocks() {
-		var mapping = {};
-		{% for block in section.blocks %}
-			{% if block.type == 'benefit' %}
-				mapping["{{ block.settings.original_mapping_key | escape }}"] = {
-					title: "{{ block.settings.benefit_title | escape }}",
-					percentage: {{ block.settings.benefit_percentage }}
-				};
-			{% endif %}
-		{% endfor %}
-		return mapping;
-	}
-
-	// Generate benefit data based on the URL parameter using the mapping from blocks
-	function getQuizBenefitsData(goalsValue) {
-		const mapping = getMappingFromBlocks();
-		let quizBenefitsData = [];
-		if (goalsValue !== null) {
-			const goalsArray = goalsValue.split(',');
-			goalsArray.forEach(goal => {
-				const trimmedGoal = goal.trim();
-				if (trimmedGoal.toLowerCase() !== 'other' && trimmedGoal !== '') {
-					if (mapping[trimmedGoal]) {
-						quizBenefitsData.push({
-							goal: mapping[trimmedGoal].title,
-							percentage: mapping[trimmedGoal].percentage
+	// Encapsulate functionality into a modular object
+	const QuizResults = {
+		// Send data to Zapier with retry logic
+		sendToZapier: (params, maxAttempts = 3, delay = 1000) => {
+			const ZAPIER_WEBHOOK_URL = 'https://hooks.zapier.com/hooks/catch/10900898/2zlu7dg/';
+			const webhookData = {};
+			params.forEach((value, key) => webhookData[key] = value);
+			let attempts = 0;
+			const attemptSend = async () => {
+				while (attempts < maxAttempts) {
+					try {
+						const response = await fetch(ZAPIER_WEBHOOK_URL, {
+							method: 'POST',
+							body: JSON.stringify(webhookData),
+							headers: { 'Content-Type': 'application/json' }
 						});
-					} else {
-						quizBenefitsData.push({ goal: trimmedGoal, percentage: 80 });
+						if (!response.ok) throw new Error(`Status: ${response.status}`);
+						console.log('Data sent to Zapier on attempt', attempts + 1);
+						return response;
+					} catch (error) {
+						attempts++;
+						console.error(`Attempt ${attempts} failed:`, error);
+						if (attempts < maxAttempts) {
+							console.log(`Retrying in ${delay}ms...`);
+							await new Promise(resolve => setTimeout(resolve, delay));
+							delay *= 2;
+						} else {
+							console.error('Max attempts reached.');
+						}
 					}
 				}
+			};
+			attemptSend();
+		},
+		// Process URL parameters and update any matching elements
+		processGeneralUrlParams: () => {
+			console.log('Processing URL parameters...');
+			const urlParams = new URLSearchParams(window.location.search);
+			QuizResults.sendToZapier(urlParams);
+			urlParams.forEach((value, key) => {
+				const el = document.getElementById(key);
+				if (el) el.textContent = value;
 			});
-		}
-		return quizBenefitsData;
-	}
-
-	// Retrieve static benefit blocks (blocks of type "static_benefit") as an array
-	function getStaticBenefits() {
-		var staticBenefits = [
+			console.log('Finished processing URL parameters.');
+		},
+		// Process the weight ("wgt") parameter and update the "can" element
+		processCanParam: (calcFactor) => {
+			const urlParams = new URLSearchParams(window.location.search);
+			const canValue = urlParams.get('wgt');
+			if (canValue !== null) {
+				const canEl = document.getElementById('can');
+				if (canEl) {
+					const processed = parseFloat(canValue) * calcFactor;
+					canEl.textContent = processed.toFixed(0);
+				}
+			}
+		},
+		// Build the mapping from dynamic benefit blocks (type "benefit")
+		getMappingFromBlocks: () => {
+			const mapping = {};
 			{% for block in section.blocks %}
-				{% if block.type == 'static_benefit' %}
-					{ goal: "{{ block.settings.benefit_title | escape }}", percentage: {{ block.settings.benefit_percentage }} }{% unless forloop.last %},{% endunless %}
+				{% if block.type == 'benefit' %}
+					mapping["{{ block.settings.original_mapping_key | escape }}"] = {
+						title: "{{ block.settings.benefit_title | escape }}",
+						percentage: {{ block.settings.benefit_percentage }}
+					};
 				{% endif %}
 			{% endfor %}
-		];
-		return staticBenefits;
-	}
+			return mapping;
+		},
+		// Generate dynamic benefit data based on the "gls" URL parameter
+		getQuizBenefitsData: (goalsValue) => {
+			const mapping = QuizResults.getMappingFromBlocks();
+			const data = [];
+			if (goalsValue) {
+				goalsValue.split(',').forEach(key => {
+					const trimmed = key.trim();
+					if (trimmed && trimmed.toLowerCase() !== 'other') {
+						if (mapping[trimmed]) {
+							data.push({
+								goal: mapping[trimmed].title,
+								percentage: mapping[trimmed].percentage
+							});
+						} else {
+							data.push({ goal: trimmed, percentage: 80 });
+						}
+					}
+				});
+			}
+			return data;
+		},
+		// Retrieve static benefits (blocks of type "static_benefit")
+		getStaticBenefits: () => {
+			const staticBenefits = [];
+			{% for block in section.blocks %}
+				{% if block.type == 'static_benefit' %}
+					staticBenefits.push({
+						goal: "{{ block.settings.benefit_title | escape }}",
+						percentage: {{ block.settings.benefit_percentage }}
+					});
+				{% endif %}
+			{% endfor %}
+			return staticBenefits;
+		},
+		// Render the benefit bars using a document fragment and ARIA attributes for accessibility
+		renderResultsBars: (benefits, headerText) => {
+			const container = document.getElementById('results-bars-container');
+			if (!container) return;
+			container.innerHTML = '';
+			const header = document.createElement('h4');
+			header.textContent = headerText;
+			header.style.marginBottom = '2rem';
+			container.appendChild(header);
 
-	// Render the benefits bars with a header
-	function renderResultsBars(benefits, headerText) {
-		const container = document.getElementById('results-bars-container');
-		if (!container) return;
-		container.innerHTML = '';
-		const header = document.createElement('h4');
-		header.textContent = headerText;
-		header.style.marginBottom = '2rem';
-		container.appendChild(header);
-		benefits.forEach((item, idx) => {
-			const barWrapper = document.createElement('div');
-			barWrapper.className = 'quiz-bar-wrapper mb-8';
-			barWrapper.style.animationDelay = `${idx * 0.15}s`;
-			const labelContainer = document.createElement('div');
-			labelContainer.className = 'quiz-bar-label';
-			labelContainer.style.display = 'flex';
-			labelContainer.style.justifyContent = 'start';
-			labelContainer.style.gap = '1rem';
-			labelContainer.style.alignItems = 'center';
-			const labelText = document.createElement('span');
-			labelText.textContent = item.goal;
-			const percentageText = document.createElement('span');
-			percentageText.textContent = `${item.percentage}%`;
-			percentageText.className = 'quiz-percentage';
-			percentageText.style.color = 'var(--primary-color)';
-			labelContainer.appendChild(labelText);
-			labelContainer.appendChild(percentageText);
-			const progressBarContainer = document.createElement('div');
-			progressBarContainer.className = 'quiz-bar-container';
-			const progressBarFill = document.createElement('div');
-			progressBarFill.className = 'quiz-bar-fill';
-			progressBarFill.setAttribute('data-target-width', item.percentage);
-			progressBarContainer.appendChild(progressBarFill);
-			barWrapper.appendChild(labelContainer);
-			barWrapper.appendChild(progressBarContainer);
-			container.appendChild(barWrapper);
-		});
-		setTimeout(() => {
-			document.querySelectorAll('.quiz-bar-fill').forEach(bar => {
-				const targetWidth = bar.getAttribute('data-target-width');
-				bar.style.width = `${targetWidth}%`;
+			const fragment = document.createDocumentFragment();
+			benefits.forEach((item, idx) => {
+				const barWrapper = document.createElement('div');
+				barWrapper.className = 'quiz-bar-wrapper mb-8';
+				barWrapper.style.animationDelay = `${idx * 0.15}s`;
+
+				const labelContainer = document.createElement('div');
+				labelContainer.className = 'quiz-bar-label';
+				labelContainer.style.display = 'flex';
+				labelContainer.style.justifyContent = 'start';
+				labelContainer.style.gap = '1rem';
+				labelContainer.style.alignItems = 'center';
+
+				const labelText = document.createElement('span');
+				labelText.textContent = item.goal;
+
+				const percentageText = document.createElement('span');
+				percentageText.textContent = `${item.percentage}%`;
+				percentageText.className = 'quiz-percentage';
+				percentageText.style.color = 'var(--primary-color)';
+
+				labelContainer.append(labelText, percentageText);
+
+				const progressBarContainer = document.createElement('div');
+				progressBarContainer.className = 'quiz-bar-container';
+
+				const progressBarFill = document.createElement('div');
+				progressBarFill.className = 'quiz-bar-fill';
+				progressBarFill.setAttribute('data-target-width', item.percentage);
+				// Add ARIA attributes for accessibility
+				progressBarFill.setAttribute('role', 'progressbar');
+				progressBarFill.setAttribute('aria-valuenow', item.percentage);
+				progressBarFill.setAttribute('aria-valuemin', '0');
+				progressBarFill.setAttribute('aria-valuemax', '100');
+
+				progressBarContainer.appendChild(progressBarFill);
+				barWrapper.append(labelContainer, progressBarContainer);
+				fragment.appendChild(barWrapper);
 			});
-		}, 100);
-	}
+			container.appendChild(fragment);
 
-	// Process the "gls" URL parameter and append static benefits at the end
-	function processGoalsParam(benefitsHeader) {
-		const urlParams = new URLSearchParams(window.location.search);
-		const goalsValue = urlParams.get('gls');
-		const dynamicBenefits = getQuizBenefitsData(goalsValue);
-		const staticBenefits = getStaticBenefits();
-		const combinedBenefits = dynamicBenefits.concat(staticBenefits);
-		renderResultsBars(combinedBenefits, benefitsHeader);
-	}
+			// Trigger animation after a short delay
+			setTimeout(() => {
+				document.querySelectorAll('.quiz-bar-fill').forEach(bar => {
+					const target = bar.getAttribute('data-target-width');
+					bar.style.width = `${target}%`;
+				});
+			}, 100);
+		},
+		// Process the "gls" parameter and append static benefits at the end
+		processGoalsParam: (benefitsHeader) => {
+			const urlParams = new URLSearchParams(window.location.search);
+			const goalsValue = urlParams.get('gls');
+			const dynamicBenefits = QuizResults.getQuizBenefitsData(goalsValue);
+			const staticBenefits = QuizResults.getStaticBenefits();
+			const combined = dynamicBenefits.concat(staticBenefits);
+			QuizResults.renderResultsBars(combined, benefitsHeader);
+		},
+		// Initialize the section
+		init: () => {
+			const section = document.getElementById('section-{{ section.id }}');
+			if (!section) return;
+			const params = new URLSearchParams(window.location.search);
+			if (params.get('cta') === 'true') {
+				document.querySelectorAll('.hide-on-cta').forEach(el => el.remove());
+			}
+			if ({{ section.settings.display_on_url_param | json }} && params.get('cta') !== 'true') {
+				section.remove();
+				return;
+			}
+			const calcFactor = parseFloat("{{ section.settings.calc_factor }}");
+			const benefitsHeaderText = "{{ section.settings.benefits_header | escape }}";
+			// Always process dynamic mapping from URL and then append static benefits
+			QuizResults.processGoalsParam(benefitsHeaderText);
+			QuizResults.processGeneralUrlParams();
+			QuizResults.processCanParam(calcFactor);
+		}
+	};
 
-	document.addEventListener('DOMContentLoaded', () => {
-		const section = document.getElementById('section-{{ section.id }}');
-		if (!section) return;
-		// Check URL parameters for CTA and display settings.
-		const params = new URLSearchParams(window.location.search);
-		const ctaParam = params.get('cta') === 'true';
-		if (ctaParam) {
-			document.querySelectorAll('.hide-on-cta').forEach(el => el.remove());
-		}
-		if ({{ section.settings.display_on_url_param | json }} && !ctaParam) {
-			section.remove();
-			return;
-		}
-		// Retrieve configurable settings from Liquid.
-		const calcFactor = parseFloat("{{ section.settings.calc_factor }}");
-		const benefitsHeaderText = "{{ section.settings.benefits_header | escape }}";
-		// Always process dynamic goals (via URL parameter) and then append static benefits.
-		processGoalsParam(benefitsHeaderText);
-		// Process general URL parameters and the weight ("wgt") parameter.
-		processGeneralUrlParams();
-		processCanParam(calcFactor);
-	});
+	// Initialize when DOM is ready
+	document.addEventListener('DOMContentLoaded', QuizResults.init);
 </script>
 
 {% schema %}
