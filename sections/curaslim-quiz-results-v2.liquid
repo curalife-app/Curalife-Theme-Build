@@ -93,7 +93,7 @@
 </style>
 
 <script>
-	// Helper functions
+	// Helper function to send data to Zapier
 	function sendToZapier(params, maxAttempts = 3, delay = 1000) {
 		const ZAPIER_WEBHOOK_URL = 'https://hooks.zapier.com/hooks/catch/10900898/2zlu7dg/';
 		const webhookData = {};
@@ -129,6 +129,7 @@
 		})();
 	}
 
+	// Process general URL parameters
 	function processGeneralUrlParams() {
 		console.log('Processing general URL parameters...');
 		const urlParams = new URLSearchParams(window.location.search);
@@ -142,6 +143,7 @@
 		console.log('Finished processing general URL parameters.');
 	}
 
+	// Process the weight parameter ("wgt")
 	function processCanParam(calcFactor) {
 		const urlParams = new URLSearchParams(window.location.search);
 		const canValue = urlParams.get('wgt');
@@ -154,10 +156,21 @@
 		}
 	}
 
-	function getQuizBenefitsData(goalsValue, staticText, staticPercentage) {
-		// In dynamic mode, you might fill the mapping as needed.
-		// Here the mapping is empty so dynamic mode falls back to defaults.
-		const mapping = {};
+	// Build mapping from block settings (each block represents a mapping entry)
+	function getMappingFromBlocks() {
+		var mapping = {};
+		{% for block in section.blocks %}
+			mapping["{{ block.settings.original_mapping_key | escape }}"] = {
+				title: "{{ block.settings.benefit_title | escape }}",
+				percentage: {{ block.settings.benefit_percentage }}
+			};
+		{% endfor %}
+		return mapping;
+	}
+
+	// Generate benefit data based on the URL parameter and the mapping from blocks
+	function getQuizBenefitsData(goalsValue) {
+		const mapping = getMappingFromBlocks();
 		let quizBenefitsData = [];
 		if (goalsValue !== null) {
 			const goalsArray = goalsValue.split(',');
@@ -175,11 +188,10 @@
 				}
 			});
 		}
-		// Append the extra static benefit from settings
-		quizBenefitsData.push({ goal: staticText, percentage: staticPercentage });
 		return quizBenefitsData;
 	}
 
+	// Render the benefits bars with a header
 	function renderResultsBars(benefits, headerText) {
 		const container = document.getElementById('results-bars-container');
 		if (!container) return;
@@ -224,10 +236,11 @@
 		}, 100);
 	}
 
-	function processGoalsParam(staticBenefitText, staticBenefitPercentage, benefitsHeader) {
+	// Process the "gls" URL parameter using the mapping from blocks
+	function processGoalsParam(benefitsHeader) {
 		const urlParams = new URLSearchParams(window.location.search);
 		const goalsValue = urlParams.get('gls');
-		const data = getQuizBenefitsData(goalsValue, staticBenefitText, staticBenefitPercentage);
+		const data = getQuizBenefitsData(goalsValue);
 		renderResultsBars(data, benefitsHeader);
 	}
 
@@ -247,44 +260,9 @@
 		// Retrieve configurable settings from Liquid.
 		const calcFactor = parseFloat("{{ section.settings.calc_factor }}");
 		const benefitsHeaderText = "{{ section.settings.benefits_header | escape }}";
-		const staticBenefitText = "{{ section.settings.static_benefit_text | escape }}";
-		const staticBenefitPercentage = {{ section.settings.static_benefit_percentage }};
-		const benefitsSource = "{{ section.settings.benefits_source }}";
-		// Depending on the source setting, either use dynamic URL-based benefits or static blocks.
-		if (benefitsSource === "dynamic") {
-			processGoalsParam(staticBenefitText, staticBenefitPercentage, benefitsHeaderText);
-		} else if (benefitsSource === "static") {
-			// Build an array from the section blocks.
-			var staticBenefits = [
-				{% for block in section.blocks %}
-					{
-						"original_key": "{{ block.settings.original_mapping_key | escape }}",
-						"goal": "{{ block.settings.benefit_title | escape }}",
-						"percentage": {{ block.settings.benefit_percentage }}
-					}{% unless forloop.last %},{% endunless %}
-				{% endfor %}
-			];
-			// If an original mapping key is provided, override only the percentage while keeping the block's benefit title.
-			var mapping = {
-				"Improve health & reduce risks": { percentage: 89 },
-				"Increase your energy levels": { percentage: 88 },
-				"Feel great in your clothes": { percentage: 81 },
-				"Enhance your appearance": { percentage: 86 },
-				"Elevate your self-confidence": { percentage: 83 },
-				"Boost physical performance": { percentage: 82 }
-			};
-			staticBenefits = staticBenefits.map(function(item) {
-				if (item.original_key && mapping[item.original_key]) {
-					return {
-						goal: item.goal, // use the block's benefit title
-						percentage: mapping[item.original_key].percentage
-					};
-				}
-				return item;
-			});
-			renderResultsBars(staticBenefits, benefitsHeaderText);
-		}
-		// Always process general URL parameters and the weight (wgt) parameter.
+		// Always process dynamic goals from the URL parameter using mapping from blocks.
+		processGoalsParam(benefitsHeaderText);
+		// Always process general URL parameters and the weight ("wgt") parameter.
 		processGeneralUrlParams();
 		processCanParam(calcFactor);
 	});
@@ -331,37 +309,9 @@
 			"default": "0.075"
 		},
 		{
-			"type": "text",
-			"id": "static_benefit_text",
-			"label": "Static Benefit Text",
-			"default": "Hunger and Portion Control"
-		},
-		{
-			"type": "number",
-			"id": "static_benefit_percentage",
-			"label": "Static Benefit Percentage",
-			"default": 96
-		},
-		{
 			"type": "checkbox",
 			"id": "display_on_url_param",
 			"label": "Display Only on cta=true URL Param"
-		},
-		{
-			"type": "select",
-			"id": "benefits_source",
-			"label": "Benefits Source",
-			"default": "dynamic",
-			"options": [
-				{
-					"value": "dynamic",
-					"label": "Dynamic (URL Parameter)"
-				},
-				{
-					"value": "static",
-					"label": "Static (Use Blocks)"
-				}
-			]
 		},
 		{
 			"type": "text",
@@ -377,12 +327,14 @@
 				{
 					"type": "text",
 					"id": "original_mapping_key",
-					"label": "Original Mapping Key"
+					"label": "Original Mapping Key",
+					"default": "Improve health & reduce risks"
 				},
 				{
 					"type": "text",
 					"id": "benefit_title",
-					"label": "Benefit Title"
+					"label": "Benefit Title",
+					"default": "Improved Well-Being"
 				},
 				{
 					"type": "number",
