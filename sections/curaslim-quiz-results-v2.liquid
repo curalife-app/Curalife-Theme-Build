@@ -3,18 +3,18 @@
 		<div class="flex-col flex items-center gap-y-8 gap-x-20 justify-between [&>*]:w-1/2 mbl:[&>*]:w-full">
 			<div class="titles">
 				<h1 class="h1 !text-black text-center font-thin mbl:text-start">
-					{{ settings.heading_pre }}
+					{{ section.settings.heading_pre }}
 					<span class="text-[--primary]"><span id="can"></span></span>
-					{{ settings.heading_post }}
+					{{ section.settings.heading_post }}
 				</h1>
 				<p class="text-[--bronze] text-center mbl:text-start italic font-bold text-[22px]">
-					{{ settings.subheading }}
+					{{ section.settings.subheading }}
 				</p>
 			</div>
 
 			<div class="estimated-results mbl:flex-col flex items-center justify-between w-full gap-8">
-				{% if settings.result_image != blank %}
-					<img class="mbl:my-4 m-0" src="{{ settings.result_image | file_url }}" alt="Curaslim Quiz Results">
+				{% if section.settings.result_image != blank %}
+					<img class="mbl:my-4 m-0" src="{{ section.settings.result_image | file_url }}" alt="Curaslim Quiz Results">
 				{% endif %}
 				<div class="estimated-results-wrapper mbl:w-full w-1/2" id="results-bars-container">
 					<!-- The results bars will be inserted here by JS -->
@@ -96,10 +96,10 @@
 
 <script>
 	// Configurable values from the settings
-	const benefitsHeader = "{{ settings.benefits_header | escape }}";
-	const calcFactor = parseFloat("{{ settings.calc_factor }}");
-	const staticBenefitText = "{{ settings.static_benefit_text | escape }}";
-	const staticBenefitPercentage = {{ settings.static_benefit_percentage }};
+	const benefitsHeader = "{{ section.settings.benefits_header | escape }}";
+	const calcFactor = parseFloat("{{ section.settings.calc_factor }}");
+	const staticBenefitText = "{{ section.settings.static_benefit_text | escape }}";
+	const staticBenefitPercentage = {{ section.settings.static_benefit_percentage }};
 
 	function getQuizBenefitsData(goalsValue) {
 		const mapping = {
