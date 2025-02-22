@@ -199,7 +199,8 @@
     "custom_liquid_KceJxC": {
       "type": "custom-liquid",
       "custom_css": [
-        "#vturb-headline-image {display: none;}"
+        "#vturb-headline-image {display: none;}",
+        "section {padding: 0;}"
       ],
       "settings": {
         "custom_liquid": "<section>\n<div class=\"container mbl:max-w-full\">\n\n<style>\n@media (width < 768px) {\n#smartplayer {\n  padding-block: max(0px, 70%) !important;\n}\n}\n</style>\n\n<script type=\"text/javascript\" id=\"scr_66abb7832250c2000b53bded\"> var s=document.createElement(\"script\"); s.src=\"https://scripts.converteai.net/857d249e-e698-4657-9d4e-91d895bbed1a/players/66abb7832250c2000b53bded/player.js\", s.async=!0,document.head.appendChild(s); </script> <style> .elementor-element:has(#smartplayer) { width: 100%; } </style>\n\n</div>\n<section>",
@@ -210,19 +211,9 @@
         "padding_bottom": 0
       }
     },
-    "custom_liquid_rXxiNw": {
-      "type": "custom-liquid",
-      "settings": {
-        "custom_liquid": "<section>\n<div class=\"container\">\n<div style=\"position: relative; width: 100%; padding: 45% 0 0;\" id=\"vid_6617e2b6f46db9000810b522\"><img style=\"position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; display: block;\" src=\"https://images.converteai.net/857d249e-e698-4657-9d4e-91d895bbed1a/players/6617e2b6f46db9000810b522/thumbnail.jpg\" id=\"thumb_6617e2b6f46db9000810b522\">\n<div style=\"position: absolute; top: 0; width: 100%; height: 100%; -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px);\" id=\"backdrop_6617e2b6f46db9000810b522\"></div>\n</div>\n</div>\n</section>\n<script type=\"text/javascript\" id=\"scr_6617e2b6f46db9000810b522\"> var s=document.createElement(\"script\"); s.src=\"https://scripts.converteai.net/857d249e-e698-4657-9d4e-91d895bbed1a/players/6617e2b6f46db9000810b522/player.js\", s.async=!0,document.head.appendChild(s); </script>\n<script>\n  function moveCTA(container) {\n   const cta = container.querySelector(\".smartplay + .smartplayer-call-action\");\n\n   if (!cta) return;\n\n   container.parentNode.insertBefore(cta, container.nextSibling);\n  }\n\n  function insertBeforePlayer(instance, prefix) {\n   if(!instance) return;\n\n   const player = instance.mobileContainer || instance.container;\n\n   const container = document.createElement(\"div\");\n\n   container.id = `${prefix}-${instance.options.id}`\n   container.classList.add(prefix);\n\n   player.parentNode.insertBefore(container, player);\n\n   container.appendChild(player);\n\n   return container;\n  }\n\n  function mountContainers() {\n   const instances = window.smartplayer.instances;\n\n   instances.forEach(instance => {\n    const container = insertBeforePlayer(instance, `player-fake-fs`)\n\n    if(!container) return;\n\n    moveCTA(container)\n\n    let firstClick = instance.resume?.inResume === undefined;\n\n    container.addEventListener(\"click\", () => {\n     console.log(instance.resume)\n     if (!firstClick && container.dataset.fullscreen === \"true\") instance.pause();\n\n     firstClick = false;\n    });\n   });\n\n   instances.forEach(instance => insertBeforePlayer(instance, `player-auto-height`));\n  }\n\n  function mountStyles() {\n   const styles = document.createElement(\"style\");\n\n   styles.innerHTML = `\n    .player-fake-fs[data-fullscreen='true'] {\n     display: flex !important;\n     align-items: center !important;\n     background-color: #000 !important;\n     height: 100vh !important;\n     width: 100vw !important;\n     cursor: pointer;\n    }\n\n    .player-fake-fs[data-fullscreen='true'] .player-auto-height .smartplayer-mobile-container {\n     max-width: 100% !important;\n    }\n\n    .player-fake-fs[data-fullscreen='false'] .player-auto-height {\n     width: 100% !important;\n    }\n\n    .player-fake-fs[data-fullscreen='false'] {\n     margin-left: 0 !important;\n    }\n\n    .player-auto-height {\n     margin: 0 auto;\n     width: 100%;\n    }\n   `;\n\n   document.head.appendChild(styles);\n  }\n\n  function adjustXPositionFs() {\n   const currentFs = document.querySelectorAll(\".player-fake-fs[data-fullscreen='true']\");\n\n   currentFs.forEach(container => {\n    container.style.marginLeft = \"0\";\n\n    const position = container.getBoundingClientRect()\n\n    if(position.left <= 0) return;\n\n    container.style.marginLeft = `-${position.left}px`;\n   });\n  }\n\n  function changeWidthByHeight() {\n   const containers = document.querySelectorAll(\".player-auto-height\");\n\n   containers.forEach(container => {\n    const video = container.querySelector(\"video\");\n\n    if (!video) return;\n\n    const aspectRatio = video.clientWidth / video.clientHeight;\n\n    const windowHeight = window.innerHeight;\n    const newWidth = windowHeight * aspectRatio;\n\n    const width = (newWidth / window.innerWidth) * 100;\n\n    container.style.width = `${width >= 100 ? 100 : width}%`;\n   });\n  }\n\n  function scrollToFS(container) {\n   const position = container.getBoundingClientRect();\n\n   window.scrollTo({\n    top: position.top + window.scrollY,\n    left: position.left + window.scrollX,\n   });\n  }\n\n  function toggleFs(id, inFullscreen = false) {\n   const container = document.getElementById(`player-fake-fs-${id}`);\n\n   if (!container) return;\n\n   container.dataset.fullscreen = inFullscreen.toString()\n\n   if (inFullscreen) {\n    window.addEventListener(\"resize\", changeWidthByHeight);\n\n    changeWidthByHeight();\n    adjustXPositionFs();\n\n    return scrollToFS(container);\n   }\n\n   window.removeEventListener(\"resize\", changeWidthByHeight);\n  }\n\n  function mountFakeFsEvents() {\n   const instances = window.smartplayer.instances;\n\n   window.addEventListener(\"resize\", adjustXPositionFs);\n\n   instances.forEach(instance => {\n    instance.on(\"play\", () => toggleFs(instance.options.id, true));\n\n    instance.on(\"pause\", () => toggleFs(instance.options.id, false));\n   });\n  }\n\n  function customEvents() {\n   mountContainers();\n   mountStyles();\n   mountFakeFsEvents()\n  }\n\n  function checkPlayerLoaded() {\n   if (window.smartplayer && window.smartplayer.instances) return customEvents()\n\n   return setTimeout(checkPlayerLoaded, 100)\n  }\n\n  window.addEventListener(\"load\", () => checkPlayerLoaded())\n</script>",
-        "color_scheme": "background-1",
-        "additional_classes": "",
-        "run_on_pages": "/pages/the-natural-breakthrough-to-support-healthy-blood-sugar-levels-full-cb",
-        "padding_top": 0,
-        "padding_bottom": 32
-      }
-    },
     "custom_liquid_4zQwFp": {
       "type": "custom-liquid",
+      "custom_css": [],
       "settings": {
         "custom_liquid": "<style>\nh2 {\nfont-size: 45px !important;\nfont-weight: 100 !important;\n}\n .items-collection.buy-buttons {\nbackground: rgb(48,115,131);\nbackground: linear-gradient(180deg, rgba(48,115,131,1) 0%, rgba(58,118,132,1) 40%, rgba(255,255,255,1) 40%, rgba(255,255,255,1) 100%);\n}\n\n.items-collection.reviews .title:after {\n  content: \" \";\n  display: block;\n    background-image: url(\"https://cdn.shopify.com/s/files/1/0452/2459/1511/files/curalin-reviews-line.png\");\n  background-repeat: no-repeat;\nbackground-position: center;\n  background-size: contain;\n  height: 60px;\n}\n\n@media screen and (max-width: 768px) {\n.items-collection.reviews .title:after {\n    background-image: url(\"https://cdn.shopify.com/s/files/1/0452/2459/1511/files/curalin-reviews-line-mbl.png?v=1739991996\");\n    margin-top: 1rem;\n}\n\nh2 {\nfont-size: 9vw !important;\n}\n\n}\n</style>",
         "color_scheme": "background-1",
@@ -230,6 +221,124 @@
         "run_on_pages": "",
         "padding_top": 0,
         "padding_bottom": 0
+      }
+    },
+    "items_collection_aWQdPJ": {
+      "type": "items-collection",
+      "blocks": {
+        "item_3x6qyY": {
+          "type": "item",
+          "settings": {
+            "icon": "",
+            "title": "Damir L.",
+            "description": "<p>Amazing supplements, been taking it for years. A game changer for me</p>",
+            "is_image_background": false,
+            "is_hide_on_mobile": false,
+            "link_title": "",
+            "link_url": "",
+            "link_url_global": ""
+          }
+        },
+        "item_Yh8xjf": {
+          "type": "item",
+          "settings": {
+            "icon": "",
+            "title": "Samfred K.",
+            "description": "<p>I just can't  live  without it It's  has improved my energy level and feels great!</p>",
+            "is_image_background": false,
+            "is_hide_on_mobile": false,
+            "link_title": "",
+            "link_url": "",
+            "link_url_global": ""
+          }
+        },
+        "item_PqfYDa": {
+          "type": "item",
+          "settings": {
+            "icon": "",
+            "title": "Martin G.",
+            "description": "<p>Excellent product, that helps me maintain my sugar levels to a very satisfactory level.</p>",
+            "is_image_background": false,
+            "is_hide_on_mobile": false,
+            "link_title": "",
+            "link_url": "",
+            "link_url_global": ""
+          }
+        },
+        "item_DiEKVg": {
+          "type": "item",
+          "settings": {
+            "icon": "",
+            "title": "Usman D.",
+            "description": "<p>Helps in controlling my sugar levels .. will recommend to all who have issues in controlling there sugar levels<br/><br/></p>",
+            "is_image_background": false,
+            "is_hide_on_mobile": false,
+            "link_title": "",
+            "link_url": "",
+            "link_url_global": ""
+          }
+        }
+      },
+      "block_order": [
+        "item_3x6qyY",
+        "item_Yh8xjf",
+        "item_PqfYDa",
+        "item_DiEKVg"
+      ],
+      "settings": {
+        "bg_color": "",
+        "container_color": "",
+        "item_bg_color": "#f7f7f7",
+        "title_color": "",
+        "item_title_color": "",
+        "text_color": "",
+        "main_title": "",
+        "main_title_rich": "",
+        "main_subtitle": "",
+        "title_highlight_color": "",
+        "item_layout": "column",
+        "collection_align": "center",
+        "items_align": "start",
+        "item_layout_mobile": "column",
+        "item_content_align": "start",
+        "item_content_align_mobile": "center",
+        "title_tag": "h5",
+        "items_in_row": "4",
+        "items_in_row_mobile": "1",
+        "item_padding": 1,
+        "column_gap": 1,
+        "row_gap": 1,
+        "collection_width": 100,
+        "item_content_width": 100,
+        "link_style": "item",
+        "overflow": "visible",
+        "slider_autoplay_speed": 0,
+        "is_slider": false,
+        "is_ticker": false,
+        "is_arrows": true,
+        "is_dots": true,
+        "is_scrollbar": false,
+        "is_arrows_bottom": false,
+        "is_auto_height": false,
+        "is_bigger_center_item": false,
+        "is_hover_animation": true,
+        "anchor_id": "",
+        "section_additional_classes": "",
+        "display_on_pages": "",
+        "display_on_utm_parmeters": "",
+        "padding_top": 50,
+        "padding_bottom": 50,
+        "animation": "none",
+        "decor_opacity": 100,
+        "decor_max_width": 50,
+        "decor_position_top": 0,
+        "decor_position_left": 0,
+        "decor_position_top_mobile": 0,
+        "decor_position_left_mobile": 0,
+        "is_decor_above": false,
+        "is_decor_bg": false,
+        "is_decor_relative_full": false,
+        "is_decor_remove_on_mobile": false
       }
     },
     "items_collection_m4ma7T": {
@@ -1207,8 +1316,8 @@
     "text_image_section_FYdHbG",
     "title_rpBeAj",
     "custom_liquid_KceJxC",
-    "custom_liquid_rXxiNw",
     "custom_liquid_4zQwFp",
+    "items_collection_aWQdPJ",
     "items_collection_m4ma7T",
     "button_section_rtqKcf",
     "text_image_section_LDL6Dw",
