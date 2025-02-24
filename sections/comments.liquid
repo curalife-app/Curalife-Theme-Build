@@ -6,6 +6,139 @@
 {% endcomment %}
 
 <section class="comments-section" id="comments-section">
+	<!-- Inline styles to replicate the design in the screenshot -->
+	<style>
+		/* Root container */
+		.comments-section {
+			max-width: 800px;
+			margin: 0 auto;
+			padding: 30px 15px;
+			font-family: Arial, sans-serif;
+			color: #333;
+		}
+
+		/* Section Heading */
+		.comments-section h2 {
+			font-size: 24px;
+			font-weight: bold;
+			margin-bottom: 25px;
+			border-bottom: 2px solid #ddd;
+			padding-bottom: 10px;
+		}
+
+		/* Comment list container */
+		.comments-list {
+			margin-bottom: 25px;
+		}
+
+		/* Each comment container */
+		.comment {
+			display: flex;
+			align-items: flex-start;
+			margin-bottom: 20px;
+		}
+
+		/* Avatar image styling */
+		.comment-avatar {
+			width: 60px;
+			height: 60px;
+			object-fit: cover;
+			border-radius: 50%;
+			margin-right: 15px;
+		}
+
+		/* Comment text bubble */
+		.comment-content {
+			background-color: #f9f9f9;
+			border: 1px solid #e5e5e5;
+			border-radius: 8px;
+			padding: 15px;
+			flex: 1;
+			position: relative;
+		}
+		/* Optional "speech-bubble" arrow effect */
+		.comment-content::before {
+			content: "";
+			position: absolute;
+			left: -10px;
+			top: 20px;
+			width: 0;
+			height: 0;
+			border-top: 10px solid transparent;
+			border-bottom: 10px solid transparent;
+			border-right: 10px solid #f9f9f9;
+		}
+		.comment-content::after {
+			content: "";
+			position: absolute;
+			left: -11px;
+			top: 20px;
+			width: 0;
+			height: 0;
+			border-top: 10px solid transparent;
+			border-bottom: 10px solid transparent;
+			border-right: 10px solid #e5e5e5;
+			z-index: -1;
+		}
+
+		/* Author name */
+		.comment-author {
+			font-weight: bold;
+			margin-bottom: 5px;
+			color: #333;
+		}
+
+		/* Comment text */
+		.comment-text {
+			margin: 0;
+			color: #555;
+			line-height: 1.4em;
+		}
+
+		/* Form container */
+		.comment-form-container {
+			background-color: #fafafa;
+			border: 1px solid #e5e5e5;
+			border-radius: 6px;
+			padding: 20px;
+		}
+
+		/* Labels, inputs, and button in the form */
+		.comment-form-container label {
+			display: block;
+			margin-bottom: 5px;
+			font-weight: bold;
+		}
+		.comment-form-container input[type="text"],
+		.comment-form-container textarea {
+			width: 100%;
+			padding: 10px;
+			margin-bottom: 15px;
+			border: 1px solid #ccc;
+			border-radius: 4px;
+			font-size: 14px;
+		}
+		.comment-form-container button {
+			padding: 10px 20px;
+			background-color: #333;
+			color: #fff;
+			border: none;
+			border-radius: 4px;
+			cursor: pointer;
+			font-size: 14px;
+		}
+		.comment-form-container button:hover {
+			background-color: #555;
+		}
+
+		/* Thank-you message styling */
+		#thank-you-message {
+			margin-top: 10px;
+			font-style: italic;
+			color: #333;
+		}
+	</style>
+
 	<!-- Section Heading -->
 	{% if section.settings.title != blank %}
 		<h2>{{ section.settings.title }}</h2>
@@ -16,13 +149,11 @@
 		{% for block in section.blocks %}
 			{% if block.type == 'comment' %}
 				<div class="comment">
-					<!-- Optional Avatar (from image_picker) -->
 					{% if block.settings.comment_avatar != blank %}
 						<img
 							class="comment-avatar"
 							src="{{ block.settings.comment_avatar | img_url: '60x60' }}"
 							alt="{{ block.settings.comment_author | escape }}"
-							width="60" height="60"
 						>
 					{% endif %}
 
@@ -43,7 +174,7 @@
 			<input type="text" id="new-comment-name" name="new-comment-name" required>
 
 			<label for="new-comment-text">Comment</label>
-			<textarea id="new-comment-text" name="new-comment-text" required></textarea>
+			<textarea id="new-comment-text" name="new-comment-text" rows="3" required></textarea>
 
 			<button type="submit">{{ section.settings.submit_button_label }}</button>
 		</form>
