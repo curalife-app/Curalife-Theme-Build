@@ -37,9 +37,11 @@
 							<div class="social-links flex gap-4 mt-4 text-2xl">
 								{% for block in social_blocks %}
 									{% if block.settings.social_link != blank %}
-										<a href="{{ block.settings.social_link }}" target="_blank" rel="noopener noreferrer" class="hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-current p-1 transition-opacity rounded-full" aria-label="Visit us on social">
+										<a href="{{ block.settings.social_link }}" target="_blank" rel="noopener noreferrer" class="hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-current transition-opacity rounded-full" aria-label="Visit us on social">
 											{% if block.settings.social_icon_svg != blank %}
-												{{ block.settings.social_icon_svg }}
+												<span style="fill: {{ block.settings.social_icon_fill }};">
+													{{ block.settings.social_icon_svg }}
+												</span>
 											{% elsif block.settings.social_icon_class != blank %}
 												<i class="{{ block.settings.social_icon_class }}"></i>
 											{% endif %}
@@ -110,6 +112,14 @@
 			</div>
 		</div>
 	</footer>
+
+	<style>
+		.social-links {
+			svg {
+				max-width: 25px;
+			}
+		}
+	</style>
 {%- endif %}
 
 {% schema %}
@@ -200,6 +210,13 @@
 					"id": "social_icon_svg",
 					"label": "SVG Code",
 					"info": "Enter custom SVG markup to display. If provided, it will override the icon class."
+				},
+				{
+					"type": "color",
+					"id": "social_icon_fill",
+					"label": "SVG Fill Color",
+					"default": "#ffffff",
+					"info": "Set the fill color for the SVG icon. Only used if SVG Code is provided."
 				},
 				{
 					"type": "text",
