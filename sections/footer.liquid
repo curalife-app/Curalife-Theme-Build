@@ -24,7 +24,7 @@
 {%- endif -%}
 
 {%- if show_footer and isDisplayOnThisPage -%}
-	<footer class="print:hidden text-white" style="background-color: {{ section.settings.bg_color }}">
+	<footer class="print:hidden" style="background-color: {{ section.settings.bg_color }}; color: {{ section.settings.text_color }};">
 		<div class="container px-4 mx-auto">
 			{%- # Top Section -%}
 			<div class="pt-12 pb-4">
@@ -32,8 +32,8 @@
 					{%- # Brand & Social Column -%}
 					<div class="shrink-0 md:w-auto">
 						<a href="/" class="block">
-							{%- # Use native lazy loading and exact dimensions -%}
-							<img class="logo invert max-w-[150px]" src="{{ 'logo-new.svg' | asset_url }}" alt="{{ shop_name }} logo" width="134" height="32" loading="lazy" decoding="async">
+							{%- # Use the configured logo if provided -%}
+							<img class="logo invert max-w-[150px]" src="{% if section.settings.logo_img != blank %}{{ section.settings.logo_img | img_url: '134x32' }}{% else %}{{ 'logo-new.svg' | asset_url }}{% endif %}" alt="{{ shop_name }} logo" width="134" height="32" loading="lazy" decoding="async">
 						</a>
 
 						{%- # Only show social icons if there are any social blocks -%}
@@ -41,7 +41,7 @@
 							<div class="social-links flex gap-4 mt-4 text-2xl">
 								{% for block in social_blocks %}
 									{% if block.settings.social_link != blank %}
-										<a href="{{ block.settings.social_link }}" target="_blank" rel="noopener noreferrer" class="hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-white/20 p-1 transition-opacity rounded-full" aria-label="Visit us on social">
+										<a href="{{ block.settings.social_link }}" target="_blank" rel="noopener noreferrer" class="hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-current p-1 transition-opacity rounded-full" aria-label="Visit us on social">
 											{% if block.settings.social_icon_class != blank %}
 												<i class="{{ block.settings.social_icon_class }}"></i>
 											{% endif %}
@@ -58,10 +58,10 @@
 						{% assign footer_linklist = block.settings.footer_linklist %}
 						{% assign links = linklists[footer_linklist].links %}
 						{% if links.size > 0 %}
-							<div class="grow flex items-center justify-end">
+							<div class="grow flex items-center">
 								<nav class="flex flex-row gap-4" aria-label="Footer menu">
 									{% for link in links %}
-										<a href="{{ link.url | escape }}" class="font-light text-[16px] hover:opacity-80 transition-opacity focus:outline-none focus:text-white/80 whitespace-nowrap">
+										<a href="{{ link.url | escape }}" class="font-light text-[16px] hover:opacity-80 transition-opacity focus:outline-none whitespace-nowrap">
 											{{ link.title }}
 										</a>
 									{% endfor %}
@@ -77,13 +77,13 @@
 									{% if links.size > 0 %}
 										<div class="flex flex-col gap-2.5 min-w-[150px]" {{ block.shopify_attributes }}>
 											{% if block.settings.menu_title != blank %}
-												<h2 class="text-sm font-bold text-white uppercase">
+												<h2 class="text-sm font-bold uppercase" style="color: {{ section.settings.titles_color }};">
 													{{ block.settings.menu_title }}
 												</h2>
 											{% endif %}
 											<nav class="flex flex-col gap-4" aria-label="{{ block.settings.menu_title | default: 'Footer menu' | escape }}">
 												{% for link in links %}
-													<a href="{{ link.url | escape }}" class="font-light text-[16px] hover:opacity-80 transition-opacity focus:outline-none focus:text-white/80 whitespace-nowrap">
+													<a href="{{ link.url | escape }}" class="font-light text-[16px] hover:opacity-80 transition-opacity focus:outline-none whitespace-nowrap">
 														{{ link.title }}
 													</a>
 												{% endfor %}
@@ -98,14 +98,14 @@
 
 				{%- # Disclaimer Section -%}
 				{% if section.settings.disclaimer != blank %}
-					<div class="text-white/70 mt-8 text-xs">
+					<div class="mt-8 text-xs" style="opacity: 0.7;">
 						{{ section.settings.disclaimer }}
 					</div>
 				{% endif %}
 			</div>
 
 			{%- # Footer Bottom -%}
-			<div class="py-2.5 border-t border-white/40">
+			<div class="py-2.5 border-t" style="border-color: {{ section.settings.text_color }}80;">
 				<div class="flex items-center justify-between gap-4 text-xs">
 					<p class="md:order-1 order-2">
 						&copy; {{ current_year }} {{ shop_name | escape }}
@@ -136,7 +136,13 @@
 			"type": "color",
 			"id": "bg_color",
 			"label": "Background Color",
-			"default": "#3A7684"
+			"default": "#3490dc"
+		},
+		{
+			"type": "color",
+			"id": "text_color",
+			"label": "Text Color",
+			"default": "#ffffff"
 		},
 		{
 			"type": "header",
