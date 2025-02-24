@@ -1,0 +1,130 @@
+{% comment %}
+	COMMENTS SECTION
+	- Displays a list of predefined (fake) comments via section blocks.
+	- Includes a form that, upon submission, simply shows a "thank you" message.
+	- Does not actually store or display the user’s new comment.
+{% endcomment %}
+
+<section class="comments-section" id="comments-section">
+	<!-- Section Heading -->
+	{% if section.settings.title != blank %}
+		<h2>{{ section.settings.title }}</h2>
+	{% endif %}
+
+	<!-- Predefined Comments List -->
+	<div class="comments-list">
+		{% for block in section.blocks %}
+			{% if block.type == 'comment' %}
+				<div class="comment">
+					<!-- Optional Avatar -->
+					{% if block.settings.comment_avatar_url != blank %}
+						<img
+							class="comment-avatar"
+							src="{{ block.settings.comment_avatar_url | img_url: '60x60' }}"
+							alt="{{ block.settings.comment_author | escape }}"
+							width="60" height="60"
+						>
+					{% endif %}
+
+					<!-- Comment Text -->
+					<div class="comment-content">
+						<h4 class="comment-author">{{ block.settings.comment_author }}</h4>
+						<p class="comment-text">{{ block.settings.comment_text }}</p>
+					</div>
+				</div>
+			{% endif %}
+		{% endfor %}
+	</div>
+
+	<!-- Comment Submission Form -->
+	<div class="comment-form-container">
+		<form id="fake-comment-form">
+			<label for="new-comment-name">Name</label>
+			<input type="text" id="new-comment-name" name="new-comment-name" required>
+
+			<label for="new-comment-text">Comment</label>
+			<textarea id="new-comment-text" name="new-comment-text" required></textarea>
+
+			<button type="submit">{{ section.settings.submit_button_label }}</button>
+		</form>
+
+		<!-- Thank You Message -->
+		<div id="thank-you-message" style="display: none;">
+			{{ section.settings.thank_you_message }}
+		</div>
+	</div>
+
+	<!-- Basic JS to handle form submission -->
+	<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			var commentForm = document.getElementById('fake-comment-form');
+			var thankYouMessage = document.getElementById('thank-you-message');
+
+			commentForm.addEventListener('submit', function(e) {
+				e.preventDefault();
+				// Show the "thank you" message
+				thankYouMessage.style.display = 'block';
+				// Reset the form (or you could hide it if preferred)
+				commentForm.reset();
+			});
+		});
+	</script>
+</section>
+
+{% schema %}
+{
+	"name": "Comments Section",
+	"settings": [
+		{
+			"type": "text",
+			"id": "title",
+			"label": "Section Title",
+			"default": "Comments"
+		},
+		{
+			"type": "text",
+			"id": "submit_button_label",
+			"label": "Submit Button Label",
+			"default": "Submit"
+		},
+		{
+			"type": "text",
+			"id": "thank_you_message",
+			"label": "Thank You Message",
+			"default": "Thank you! Your comment will be reviewed."
+		}
+	],
+	"blocks": [
+		{
+			"type": "comment",
+			"name": "Comment",
+			"settings": [
+				{
+					"type": "text",
+					"id": "comment_author",
+					"label": "Author Name",
+					"default": "John Doe"
+				},
+				{
+					"type": "textarea",
+					"id": "comment_text",
+					"label": "Comment Text",
+					"default": "This is a fantastic product! Changed my life."
+				},
+				{
+					"type": "url",
+					"id": "comment_avatar_url",
+					"label": "Avatar Image URL",
+					"default": ""
+				}
+			]
+		}
+	],
+	"presets": [
+		{
+			"name": "Comments Section",
+			"category": "Custom"
+		}
+	]
+}
+{% endschema %}
