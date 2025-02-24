@@ -455,23 +455,22 @@
 				align-self: stretch;
 				border-radius: 15px;
 				background-color: {{ section.settings.item_bg_color | default: 'unset' }};
-				{% if section.settings.is_item_shadow %}box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);{% endif %}
 
+				.item-content {
+					{% if section.settings.is_item_shadow %}box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);{% endif %}
+					max-width: {{ section.settings.item_content_width }}%;
+					flex-direction: {{ section.settings.item_layout }};
+					color: {{ section.settings.text_color }};
+
+					svg {
+						font-size: 40px;
+					}
+				}
 
 				.text-wrapper {
 					text-align: {{ section.settings.item_content_align }};
 					justify-content: {{ section.settings.item_content_align }};
 				}
-		}
-
-		#section-{{ section.id }} .item-content {
-			max-width: {{ section.settings.item_content_width }}%;
-			flex-direction: {{ section.settings.item_layout }};
-			color: {{ section.settings.text_color }};
-		}
-
-		#section-{{ section.id }} .item-content svg {
-			font-size: 40px;
 		}
 
 		#section-{{ section.id }} .item-content .text-wrapper strong {
