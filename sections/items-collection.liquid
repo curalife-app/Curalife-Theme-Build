@@ -57,7 +57,7 @@
 				{% if linkUrl and section.settings.link_style == 'item' %}<a class="contents">{% endif %}
 				{% assign itemID = 'item-' | append: section.id | append: forloop.index %}
 
-				<div class="{% if section.settings.is_slider %}swiper-slide{% endif %} item relative !h-auto" id="{{ itemID }}" {% if onlyImage %}style="padding: 0;"{% endif %}>
+				<div class="{% if section.settings.is_slider %}swiper-slide{% endif %} item relative !h-auto" id="{{ itemID }}">
 					<div class="item-content flex flex-col items-center justify-{% if section.settings.item_layout_mobile == 'row' %}start{% else %}center{% endif %} text-center gap-4 m-auto">
 						{% unless block.settings.is_image_background %}
 							<div class="img-wrapper contents">
@@ -455,7 +455,7 @@
 				{% assign gapsInRow = itemsInRow | minus: 1 %}
 
 				width: calc((100% / {{ itemsInRow }}) - ({{ gapsInRow }} * ({{ section.settings.column_gap }}rem / {{ itemsInRow }})));
-				padding: {{ section.settings.item_padding }}rem;
+				padding:  {% if onlyImage %}0{% else %}{{ section.settings.item_padding }}rem{% endif %};
 				align-self: stretch;
 				border-radius: 15px;
 				background-color: {{ section.settings.item_bg_color | default: 'unset' }};
