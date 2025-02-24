@@ -20,6 +20,10 @@
 {% endif %}
 
 {% unless hideSection %}
+	{% if section.blocks.first.settings.image != blank and section.blocks.first.settings.title == blank and section.blocks.first.settings.description == blank %}
+		{% assign onlyImage = true %}
+	{% endif %}
+
 	{% if section.settings.anchor_id != blank %}<div id="{{ section.settings.anchor_id }}"></div>{% endif %}
 	<section id="section-{{ section.id }}" class="items-collection {% if section.settings.is_decor_relative_full %}static{% endif %} {{ section.settings.section_additional_classes }} {% if section.settings.display_on_utm_parmeters != blank %}!hidden{% endif %}">
 		<div class="container main-container {% if section.settings.is_decor_relative_full %}static{% endif %}">
@@ -36,14 +40,6 @@
 			{% endif %}
 
 			{% for block in section.blocks %}
-				{%- comment -%}
-					Determine if this is the first block that contains only an image (and no title/description)
-				{%- endcomment -%}
-				{% assign onlyImage = false %}
-				{% if forloop.first and block.settings.image != blank and block.settings.title == blank and block.settings.description == blank %}
-					{% assign onlyImage = true %}
-				{% endif %}
-
 				{% if shop.name == 'CuraLife Global' %}
 					{% assign imageLink = block.settings.image_global | default: block.settings.image %}
 					{% assign imageMobileLink = block.settings.image_mobile_global | default: block.settings.image_mobile %}
