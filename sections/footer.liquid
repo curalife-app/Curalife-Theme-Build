@@ -9,8 +9,8 @@
 	{% endfor %}
 {% endif %}
 
-{% assign pageProduct = page.metafields.custom.product.value %}
-{% assign disclaimer = section.settings.disclaimer | default: pageProduct.metafields.custom.disclaimer.value %}
+{% assign disclaimer = section.settings.disclaimer | default: page.metafields.custom.disclaimer %}
+{% assign sources = section.settings.sources | default: page.metafields.custom.sources %}
 
 {%- assign current_year = 'now' | date: '%Y' -%}
 
@@ -37,11 +37,7 @@
 	<footer class="print:hidden {{ section.settings.additional_classes }}" style="background-color: {{ bg_color }}; color: {{ section.settings.text_color }};">
 		<div class="container px-4 mx-auto">
 			<div class="pt-12 pb-4">
-				{% if section.settings.sources != blank %}
-					<div class="mb-8 text-xs">
-						{{ section.settings.sources }}
-					</div>
-				{% endif %}
+				{% if sources %}<div class="mb-8 text-xs">{{ sources }}</div>{% endif %}
 
 				<div class="{% if menu_blocks.size == 1 %}flex md:flex-col items-center md:items-start justify-between gap-8{% else %}md:flex-col flex items-start justify-between gap-8{% endif %}">
 					<div class="shrink-0 md:w-auto">
