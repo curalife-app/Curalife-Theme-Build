@@ -20,7 +20,11 @@
 	{%- assign bg_color = 'var(--bg-color)' -%}
 {% endif %}
 
-{%- assign text_color = section.settings.text_color | default: 'var(--primary-color)' -%}
+{% if section.settings.text_color.alpha != 0.0 and section.settings.text_color != blank %}
+	{%- assign text_color = section.settings.text_color -%}
+{% else %}
+	{%- assign text_color = 'var(--primary-color)' -%}
+{% endif %}
 
 {%- # Process blocks for performance -%}
 {%- assign menu_blocks = section.blocks | where: 'type', 'menu' -%}
