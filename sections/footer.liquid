@@ -9,6 +9,9 @@
 	{% endfor %}
 {% endif %}
 
+{% assign pageProduct = page.metafields.custom.product.value %}
+{% assign disclaimer = section.settings.disclaimer | default: pageProduct.metafields.custom.disclaimer.value %}
+
 {%- assign current_year = 'now' | date: '%Y' -%}
 
 {% if section.settings.bg_color.alpha != 0.0 and section.settings.bg_color != blank %}
@@ -126,12 +129,7 @@
 					{% endif %}
 				</div>
 
-				{% if section.settings.disclaimer != blank %}
-					<div class="mt-8 text-xs">
-						{{ section.settings.disclaimer }}
-					</div>
-				{% endif %}
-			</div>
+				{% if disclaimer %}<div class="mt-8 text-xs">{{ disclaimer }}</div>{% endif %}</div>
 
 			<div class="py-2.5 border-t" style="border-color: {{ section.settings.text_color }}80;">
 				<div class="flex items-center justify-between gap-4 text-xs">
