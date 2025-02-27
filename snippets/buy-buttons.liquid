@@ -107,12 +107,21 @@
 
 				<div class="product-form__buttons main-submit-wrapper flex">
 					{% if isBuyQuantity %}
-						<div class="qty flex">
-							<input type="text" name="quantity" maxlength="12" value="1" title="" class="input-text">
-							<div class="qty_inc_dec">
-								<i class="increment">+</i>
-								<i class="decrement">-</i>
-							</div>
+						<div class="qty flex overflow-hidden border border-gray-300 rounded-lg shadow-sm">
+							<button type="button" class="decrement-btn hover:bg-gray-200 flex items-center justify-center w-10 h-10 transition-colors bg-gray-100">
+								<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+									<line x1="5" y1="12" x2="19" y2="12"></line>
+								</svg>
+							</button>
+
+							<input type="text" name="quantity" maxlength="3" value="1" title="Quantity" class="input-text border-x w-12 text-center border-gray-300 outline-none">
+
+							<button type="button" class="increment-btn hover:bg-gray-200 flex items-center justify-center w-10 h-10 transition-colors bg-gray-100">
+								<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+									<line x1="12" y1="5" x2="12" y2="19"></line>
+									<line x1="5" y1="12" x2="19" y2="12"></line>
+								</svg>
+							</button>
 						</div>
 					{% endif %}
 
@@ -166,157 +175,179 @@
 
 {% if isBuyQuantity %}
 	<style>
+		/* Main quantity selector styles */
 		.qty {
-			float: left;
-			width: 100px;
-			-webkit-user-select: none;
-			-moz-user-select: none;
-			-ms-user-select: none;
-			user-select: none;
+			max-width: 120px;
+			height: 40px;
+			margin-right: 10px;
+			transition: transform 0.2s, box-shadow 0.2s;
 		}
 
-		.qty_inc_dec .increment,
-		.qty_inc_dec .decrement {
+		/* Focus state for the quantity container */
+		.qty:focus-within {
+			border-color: var(--orange);
+			box-shadow: 0 0 0 1px var(--orange);
+		}
+
+		/* Input field styles */
+		.input-text {
+			height: 100%;
+			-moz-appearance: textfield;
+			background-color: white;
+		}
+
+		/* Remove spinner arrows from number input */
+		.input-text::-webkit-outer-spin-button,
+		.input-text::-webkit-inner-spin-button {
+			-webkit-appearance: none;
+			margin: 0;
+		}
+
+		/* Button styles */
+		.decrement-btn, .increment-btn {
+			transition: background-color 0.2s;
 			cursor: pointer;
-			font-size: 1.2em;
-			height: 50%;
-			background-color: #fff;
-			border: 1px solid #ccc;
-			display: flex;
-			justify-content: center;
-			align-items: center;
+			border: none;
+			outline: none;
 		}
 
-		.qty_inc_dec .increment {
-			border-bottom: 0;
-			line-height: 25px;
+		/* Hover states for buttons */
+		.decrement-btn:hover, .increment-btn:hover {
+			background-color: #e5e5e5;
 		}
 
-		.qty_inc_dec {
-			width: 30px;
-			height: 100%;
-			display: inline-block;
+		.decrement-btn:active, .increment-btn:active {
+			background-color: #d9d9d9;
 		}
 
-		.qty input[type='text'] {
-			float: left;
-			font-family: 'Open Sans', sans-serif;
-			outline: 0;
-			font-size: 1.2em;
-			text-align: center;
-			width: 50px;
-			height: 100%;
-			color: #2a2a2a;
-			line-height: 40px;
-			border: 1px solid #ccc;
-			border-right: 0;
-			border-radius: 10px 0 0 10px;
+		/* Animation for quantity change */
+		@keyframes pulse {
+			0% { transform: scale(1); }
+			50% { transform: scale(1.05); }
+			100% { transform: scale(1); }
 		}
 
-		/* Quantity Selector Transition */
-		.qty {
-			transition: width 0.3s ease;
-			width: -webkit-fill-available;
+		.qty-changed {
+			animation: pulse 0.3s ease-in-out;
 		}
 
-		.qty_inc_dec {
-			transition: opacity 0.3s ease;
+		/* Animation for cart quantity indicator */
+		@keyframes rotate-x {
+			0% { transform: rotateX(0deg); }
+			100% { transform: rotateX(360deg); }
+		}
+
+		.rotate-x {
+			animation: rotate-x 0.5s ease-in-out;
 		}
 	</style>
 
 	<script>
-		function incrementQty() {
-			var quantityInput = document.querySelector('input[name="quantity"]');
-			var value = parseInt(quantityInput.value);
-			var cardQty = document.querySelector('.cart-qty');
-			value = isNaN(value) ? 1 : value;
-			value++;
-			quantityInput.value = value;
+		document.addEventListener('DOMContentLoaded', function() {
+			// Select all required elements
+			const quantityInput = document.querySelector('.qty input[name="quantity"]');
+			const incrementBtn = document.querySelector('.increment-btn');
+			const decrementBtn = document.querySelector('.decrement-btn');
 
-			if (cardQty) {
-				cardQty.innerHTML = value;
-				cardQty.classList.add('rotate-x');
-			}
-		}
-
-		function decrementQty() {
-			var quantityInput = document.querySelector('input[name="quantity"]');
-			var value = parseInt(quantityInput.value);
-			var cardQty = document.querySelector('.cart-qty');
-			value = isNaN(value) ? 1 : value;
-			value = value > 1 ? value - 1 : 1;
-			quantityInput.value = value;
-
-			if (cardQty) {
-				cardQty.innerHTML = value;
-				cardQty.classList.add('rotate-x');
-			}
-		}
-
-		// Create a self-executing function to avoid polluting global scope
-		(function () {
-			// Function to set up event listeners
-			function setupQuantityListeners() {
-				console.log('Setting up quantity listeners');
-				var incrementButton = document.querySelector('.increment');
-				var decrementButton = document.querySelector('.decrement');
-
-				// Remove any existing listeners first
-				if (incrementButton && incrementButton.hasAttribute('data-listener-attached')) {
-					var oldIncrementListener = incrementButton.getAttribute('data-listener-function');
-					if (oldIncrementListener) {
-						incrementButton.removeEventListener('click', window[oldIncrementListener]);
-					}
-				}
-
-				if (decrementButton && decrementButton.hasAttribute('data-listener-attached')) {
-					var oldDecrementListener = decrementButton.getAttribute('data-listener-function');
-					if (oldDecrementListener) {
-						decrementButton.removeEventListener('click', window[oldDecrementListener]);
-					}
-				}
-
-				// Add new increment listener
-				if (incrementButton) {
-					const incrementHandler = function (event) {
-						event.stopPropagation();
-						console.log('Incrementing quantity');
-						incrementQty();
-					};
-
-					// Store the handler function name
-					const handlerName = 'incrementHandler_' + Math.random().toString(36).substr(2, 9);
-					window[handlerName] = incrementHandler;
-
-					incrementButton.addEventListener('click', incrementHandler);
-					incrementButton.setAttribute('data-listener-attached', 'true');
-					incrementButton.setAttribute('data-listener-function', handlerName);
-				}
-
-				// Add new decrement listener
-				if (decrementButton) {
-					const decrementHandler = function (event) {
-						event.stopPropagation();
-						console.log('Decrementing quantity');
-						decrementQty();
-					};
-
-					// Store the handler function name
-					const handlerName = 'decrementHandler_' + Math.random().toString(36).substr(2, 9);
-					window[handlerName] = decrementHandler;
-
-					decrementButton.addEventListener('click', decrementHandler);
-					decrementButton.setAttribute('data-listener-attached', 'true');
-					decrementButton.setAttribute('data-listener-function', handlerName);
-				}
+			// Exit if any required elements are missing
+			if (!quantityInput || !incrementBtn || !decrementBtn) {
+				console.error('Could not find all required elements for quantity selector');
+				return;
 			}
 
-			// Set up the listeners when DOM is ready
-			if (document.readyState === 'loading') {
-				document.addEventListener('DOMContentLoaded', setupQuantityListeners);
-			} else {
-				setupQuantityListeners();
+			// Handle increment button click
+			incrementBtn.addEventListener('click', function(event) {
+				// Prevent default button behavior
+				event.preventDefault();
+				event.stopPropagation();
+
+				// Get current value and calculate new value
+				const currentValue = parseInt(quantityInput.value, 10) || 1;
+				const newValue = currentValue + 1;
+
+				// Enforce maximum value of 999
+				if (newValue <= 999) {
+					quantityInput.value = newValue;
+					updateCartQty(newValue);
+					animateQuantityChange();
+				}
+			});
+
+			// Handle decrement button click
+			decrementBtn.addEventListener('click', function(event) {
+				// Prevent default button behavior
+				event.preventDefault();
+				event.stopPropagation();
+
+				// Get current value and calculate new value (minimum of 1)
+				const currentValue = parseInt(quantityInput.value, 10) || 1;
+				const newValue = Math.max(1, currentValue - 1);
+
+				// Update input value
+				quantityInput.value = newValue;
+				updateCartQty(newValue);
+				animateQuantityChange();
+			});
+
+			// Handle manual input changes
+			quantityInput.addEventListener('change', function() {
+				// Parse input value
+				let value = parseInt(this.value, 10);
+
+				// Validate: must be a number between 1 and 999
+				value = isNaN(value) ? 1 : value;
+				value = Math.max(1, Math.min(999, value));
+
+				// Update with validated value
+				this.value = value;
+				updateCartQty(value);
+			});
+
+			// Prevent non-numeric input in quantity field
+			quantityInput.addEventListener('keypress', function(event) {
+				// Only allow digits 0-9
+				if (!/[0-9]/.test(event.key)) {
+					event.preventDefault();
+				}
+			});
+
+			// Update cart quantity display if it exists
+			function updateCartQty(value) {
+				const cartQty = document.querySelector('.cart-qty');
+				if (cartQty) {
+					// Update text content
+					cartQty.textContent = value;
+
+					// Remove animation class if it exists
+					cartQty.classList.remove('rotate-x');
+
+					// Force reflow to restart animation
+					void cartQty.offsetWidth;
+
+					// Add animation class back
+					cartQty.classList.add('rotate-x');
+				}
 			}
-		})();
+
+			// Add animation effect when quantity changes
+			function animateQuantityChange() {
+				const qty = document.querySelector('.qty');
+				if (!qty) return;
+
+				// Remove animation class if it exists
+				qty.classList.remove('qty-changed');
+
+				// Force reflow to restart animation
+				void qty.offsetWidth;
+
+				// Add animation class back
+				qty.classList.add('qty-changed');
+
+				// Remove class after animation completes
+				setTimeout(() => {
+					qty.classList.remove('qty-changed');
+				}, 300);
+			}
+		});
 	</script>
 {% endif %}
