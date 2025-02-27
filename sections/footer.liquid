@@ -55,21 +55,21 @@
 						{% if section.settings.logo_img != blank %}
 							{% if section.settings.logo_url != blank %}
 								<a href="{{ section.settings.logo_url }}" class="block">
-									<img class="logo max-w-[150px] {% if section.settings.logo_img == blank %}invert{% endif %}" style="{% if section.settings.logo_fill_color != blank %}fill: {{ section.settings.logo_fill_color }};{% endif %}" src="{{ section.settings.logo_img | img_url: '134x32' }}" alt="Curalife logo" width="134" height="32" loading="lazy" decoding="async">
+									<img class="logo max-w-[150px] {% if section.settings.logo_img == blank %}invert{% endif %} logo-custom-color" src="{{ section.settings.logo_img | img_url: '134x32' }}" alt="Curalife logo" width="134" height="32" loading="lazy" decoding="async">
 								</a>
 							{% else %}
 								<div class="block">
-									<img class="logo max-w-[150px] {% if section.settings.logo_img == blank %}invert{% endif %}" style="{% if section.settings.logo_fill_color != blank %}fill: {{ section.settings.logo_fill_color }};{% endif %}" src="{{ section.settings.logo_img | img_url: '134x32' }}" alt="Curalife logo" width="134" height="32" loading="lazy" decoding="async">
+									<img class="logo max-w-[150px] {% if section.settings.logo_img == blank %}invert{% endif %} logo-custom-color" src="{{ section.settings.logo_img | img_url: '134x32' }}" alt="Curalife logo" width="134" height="32" loading="lazy" decoding="async">
 								</div>
 							{% endif %}
 						{% else %}
 							{% if section.settings.logo_url != blank %}
 								<a href="{{ section.settings.logo_url }}" class="block">
-									<img class="logo max-w-[150px] invert" style="{% if section.settings.logo_fill_color != blank %}fill: {{ section.settings.logo_fill_color }};{% endif %}" src="{{ 'logo-new.svg' | asset_url }}" alt="Curalife logo" width="134" height="32" loading="lazy" decoding="async">
+									<img class="logo max-w-[150px] invert logo-custom-color" src="{{ 'logo-new.svg' | asset_url }}" alt="Curalife logo" width="134" height="32" loading="lazy" decoding="async">
 								</a>
 							{% else %}
 								<div class="block">
-									<img class="logo max-w-[150px] invert" style="{% if section.settings.logo_fill_color != blank %}fill: {{ section.settings.logo_fill_color }};{% endif %}" src="{{ 'logo-new.svg' | asset_url }}" alt="Curalife logo" width="134" height="32" loading="lazy" decoding="async">
+									<img class="logo max-w-[150px] invert logo-custom-color" src="{{ 'logo-new.svg' | asset_url }}" alt="Curalife logo" width="134" height="32" loading="lazy" decoding="async">
 								</div>
 							{% endif %}
 						{% endif %}
@@ -156,6 +156,19 @@
 				max-height: 25px;
 			}
 		}
+
+		{% if section.settings.logo_fill_color.alpha != 0.0 and section.settings.logo_fill_color != blank %}
+		/* For SVG loaded via img tag */
+		.logo-custom-color {
+			filter: brightness(0) saturate(100%) drop-shadow(0 0 0 {{ logo_fill_color }});
+		}
+
+		/* For inline SVG */
+		svg.logo-custom-color,
+		.logo-custom-color svg {
+			fill: {{ logo_fill_color }};
+		}
+		{% endif %}
 	</style>
 {%- endif %}
 
@@ -171,7 +184,8 @@
 		{
 			"type": "color",
 			"id": "logo_fill_color",
-			"label": "Logo Fill Color"
+			"label": "Logo Fill Color",
+			"info": "Works best with SVG logos. For other formats, a color filter will be applied."
 		},
 		{
 			"type": "color",
