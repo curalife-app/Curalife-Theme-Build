@@ -26,6 +26,13 @@
 	{%- assign text_color = 'var(--primary-color)' -%}
 {% endif %}
 
+{% if section.settings.logo_fill_color.alpha != 0.0 and section.settings.logo_fill_color != blank %}
+	{%- assign logo_fill_color = section.settings.logo_fill_color -%}
+{% else %}
+	{%- assign logo_fill_color = 'var(--primary-color)' -%}
+{% endif %}
+
+
 {%- # Process blocks for performance -%}
 {%- assign menu_blocks = section.blocks | where: 'type', 'menu' -%}
 {%- assign social_blocks = section.blocks | where: 'type', 'social' -%}
@@ -164,8 +171,7 @@
 		{
 			"type": "color",
 			"id": "logo_fill_color",
-			"label": "Logo Fill Color",
-			"info": "Set the fill color for the SVG logo"
+			"label": "Logo Fill Color"
 		},
 		{
 			"type": "color",
