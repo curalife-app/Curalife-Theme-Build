@@ -10,7 +10,12 @@
 {% endif %}
 
 {%- assign current_year = 'now' | date: '%Y' -%}
-{%- assign bg_color = section.settings.bg_color | default: 'var(--bg-color)' -%}
+
+{% if section.settings.bg_color.alpha != 0.0 and section.settings.bg_color != blank %}
+	{%- assign bg_color = section.settings.bg_color -%}
+{% else %}
+	{%- assign bg_color = 'var(--bg-color)' -%}
+{% endif %}
 
 {%- # Process blocks for performance -%}
 {%- assign menu_blocks = section.blocks | where: 'type', 'menu' -%}
