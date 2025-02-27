@@ -55,21 +55,29 @@
 						{% if section.settings.logo_img != blank %}
 							{% if section.settings.logo_url != blank %}
 								<a href="{{ section.settings.logo_url }}" class="block">
-									<img class="logo max-w-[150px] {% if section.settings.logo_img == blank %}invert{% endif %} logo-custom-color" src="{{ section.settings.logo_img | img_url: '134x32' }}" alt="Curalife logo" width="134" height="32" loading="lazy" decoding="async">
+									<div class="logo-wrapper max-w-[150px]" style="{% if section.settings.logo_fill_color.alpha != 0.0 and section.settings.logo_fill_color != blank %}--logo-color: {{ logo_fill_color }};{% endif %}">
+										<img src="{{ section.settings.logo_img | img_url: '134x32' }}" alt="Curalife logo" width="134" height="32" loading="lazy" decoding="async" class="logo {% if section.settings.logo_img == blank %}invert{% endif %}">
+									</div>
 								</a>
 							{% else %}
 								<div class="block">
-									<img class="logo max-w-[150px] {% if section.settings.logo_img == blank %}invert{% endif %} logo-custom-color" src="{{ section.settings.logo_img | img_url: '134x32' }}" alt="Curalife logo" width="134" height="32" loading="lazy" decoding="async">
+									<div class="logo-wrapper max-w-[150px]" style="{% if section.settings.logo_fill_color.alpha != 0.0 and section.settings.logo_fill_color != blank %}--logo-color: {{ logo_fill_color }};{% endif %}">
+										<img src="{{ section.settings.logo_img | img_url: '134x32' }}" alt="Curalife logo" width="134" height="32" loading="lazy" decoding="async" class="logo {% if section.settings.logo_img == blank %}invert{% endif %}">
+									</div>
 								</div>
 							{% endif %}
 						{% else %}
 							{% if section.settings.logo_url != blank %}
 								<a href="{{ section.settings.logo_url }}" class="block">
-									<img class="logo max-w-[150px] invert logo-custom-color" src="{{ 'logo-new.svg' | asset_url }}" alt="Curalife logo" width="134" height="32" loading="lazy" decoding="async">
+									<div class="logo-wrapper max-w-[150px]" style="{% if section.settings.logo_fill_color.alpha != 0.0 and section.settings.logo_fill_color != blank %}--logo-color: {{ logo_fill_color }};{% endif %}">
+										<img src="{{ 'logo-new.svg' | asset_url }}" alt="Curalife logo" width="134" height="32" loading="lazy" decoding="async" class="logo invert">
+									</div>
 								</a>
 							{% else %}
 								<div class="block">
-									<img class="logo max-w-[150px] invert logo-custom-color" src="{{ 'logo-new.svg' | asset_url }}" alt="Curalife logo" width="134" height="32" loading="lazy" decoding="async">
+									<div class="logo-wrapper max-w-[150px]" style="{% if section.settings.logo_fill_color.alpha != 0.0 and section.settings.logo_fill_color != blank %}--logo-color: {{ logo_fill_color }};{% endif %}">
+										<img src="{{ 'logo-new.svg' | asset_url }}" alt="Curalife logo" width="134" height="32" loading="lazy" decoding="async" class="logo invert">
+									</div>
 								</div>
 							{% endif %}
 						{% endif %}
@@ -158,15 +166,39 @@
 		}
 
 		{% if section.settings.logo_fill_color.alpha != 0.0 and section.settings.logo_fill_color != blank %}
-		/* For SVG loaded via img tag */
-		.logo-custom-color {
-			filter: brightness(0) saturate(100%) drop-shadow(0 0 0 {{ logo_fill_color }});
+		.logo-wrapper {
+			position: relative;
+			display: inline-block;
 		}
 
-		/* For inline SVG */
-		svg.logo-custom-color,
-		.logo-custom-color svg {
-			fill: {{ logo_fill_color }};
+		/* Method 1: Using CSS Variables and filters */
+		.logo-wrapper img.logo {
+			filter: brightness(0) saturate(100%);
+		}
+
+		/* Method 2: Using mask-image approach */
+		.logo-wrapper::after {
+			content: '';
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background-color: {{ logo_fill_color }};
+			-webkit-mask-image: url({% if section.settings.logo_img != blank %}{{ section.settings.logo_img | img_url: '134x32' }}{% else %}{{ 'logo-new.svg' | asset_url }}{% endif %});
+			-webkit-mask-size: contain;
+			-webkit-mask-repeat: no-repeat;
+			-webkit-mask-position: center;
+			mask-image: url({% if section.settings.logo_img != blank %}{{ section.settings.logo_img | img_url: '134x32' }}{% else %}{{ 'logo-new.svg' | asset_url }}{% endif %});
+			mask-size: contain;
+			mask-repeat: no-repeat;
+			mask-position: center;
+			z-index: 1;
+		}
+
+		/* Hide original image when using the mask approach */
+		.logo-wrapper img.logo {
+			visibility: hidden;
 		}
 		{% endif %}
 	</style>
@@ -185,7 +217,7 @@
 			"type": "color",
 			"id": "logo_fill_color",
 			"label": "Logo Fill Color",
-			"info": "Works best with SVG logos. For other formats, a color filter will be applied."
+			"info": "Changes logo color. Works with SVG logos or logos with transparent backgrounds. For best results, use a simple, single-color logo."
 		},
 		{
 			"type": "color",
