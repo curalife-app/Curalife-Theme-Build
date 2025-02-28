@@ -161,6 +161,27 @@
 			{% if section.settings.decor_img %}
 				{% render 'decoration', id: section.id, decor_img: section.settings.decor_img, decor_position_top: section.settings.decor_position_top, decor_position_left: section.settings.decor_position_left, decor_position_top_mobile: section.settings.decor_position_top_mobile, decor_position_left_mobile: section.settings.decor_position_left_mobile, decor_opacity: section.settings.decor_opacity, decor_max_width: section.settings.decor_max_width, is_decor_above: section.settings.is_decor_above, is_decor_bg: section.settings.is_decor_bg, is_decor_relative_full: section.settings.is_decor_relative_full, is_decor_remove_on_mobile: section.settings.is_decor_remove_on_mobile %}
 			{% endif %}
+
+			{% for block in section.blocks %}
+				{% if block.type == 'decoration' and block.settings.decor_img != blank %}
+					{% render 'decoration',
+						id: block.id,
+						decor_img: block.settings.decor_img,
+						decor_position_top: block.settings.decor_position_top,
+						decor_position_left: block.settings.decor_position_left,
+						decor_position_top_mobile: block.settings.decor_position_top_mobile,
+						decor_position_left_mobile: block.settings.decor_position_left_mobile,
+						decor_opacity: block.settings.decor_opacity,
+						decor_max_width: block.settings.decor_max_width,
+						decor_max_width_mobile: block.settings.decor_max_width_mobile,
+						is_decor_above: block.settings.is_decor_above,
+						is_decor_bg: block.settings.is_decor_bg,
+						is_decor_relative_full: block.settings.is_decor_relative_full,
+						is_decor_remove_on_desktop: block.settings.is_decor_remove_on_desktop,
+						is_decor_remove_on_mobile: block.settings.is_decor_remove_on_mobile
+					%}
+				{% endif %}
+			{% endfor %}
 		</div>
 	</section>
 
@@ -1256,7 +1277,8 @@
 		{
 			"type": "image_picker",
 			"id": "decor_img",
-			"label": "Decoration Image"
+			"label": "Decoration Image",
+			"info": "Deprecated: Please use Decoration blocks instead"
 		},
 		{
 			"type": "range",
@@ -1266,7 +1288,8 @@
 			"max": 100,
 			"step": 1,
 			"unit": "%",
-			"default": 100
+			"default": 100,
+			"info": "Deprecated: Please use Decoration blocks instead"
 		},
 		{
 			"type": "range",
@@ -1276,7 +1299,8 @@
 			"max": 100,
 			"step": 1,
 			"unit": "%",
-			"default": 50
+			"default": 50,
+			"info": "Deprecated: Please use Decoration blocks instead"
 		},
 		{
 			"type": "range",
@@ -1286,7 +1310,8 @@
 			"max": 100,
 			"step": 1,
 			"unit": "%",
-			"default": 0
+			"default": 0,
+			"info": "Deprecated: Please use Decoration blocks instead"
 		},
 		{
 			"type": "range",
@@ -1296,7 +1321,8 @@
 			"max": 100,
 			"step": 1,
 			"unit": "%",
-			"default": 0
+			"default": 0,
+			"info": "Deprecated: Please use Decoration blocks instead"
 		},
 		{
 			"type": "range",
@@ -1306,7 +1332,8 @@
 			"max": 100,
 			"step": 1,
 			"unit": "%",
-			"default": 0
+			"default": 0,
+			"info": "Deprecated: Please use Decoration blocks instead"
 		},
 		{
 			"type": "range",
@@ -1316,27 +1343,32 @@
 			"max": 100,
 			"step": 1,
 			"unit": "%",
-			"default": 0
+			"default": 0,
+			"info": "Deprecated: Please use Decoration blocks instead"
 		},
 		{
 			"type": "checkbox",
 			"id": "is_decor_above",
-			"label": "Decoration Above Content"
+			"label": "Decoration Above Content",
+			"info": "Deprecated: Please use Decoration blocks instead"
 		},
 		{
 			"type": "checkbox",
 			"id": "is_decor_bg",
-			"label": "Decoration is a Background"
+			"label": "Decoration is a Background",
+			"info": "Deprecated: Please use Decoration blocks instead"
 		},
 		{
 			"type": "checkbox",
 			"id": "is_decor_relative_full",
-			"label": "Decoration Relative to Full Width"
+			"label": "Decoration Relative to Full Width",
+			"info": "Deprecated: Please use Decoration blocks instead"
 		},
 		{
 			"type": "checkbox",
 			"id": "is_decor_remove_on_mobile",
-			"label": "Remove Decoration On Mobile"
+			"label": "Remove Decoration On Mobile",
+			"info": "Deprecated: Please use Decoration blocks instead"
 		}
 	],
 	"blocks": [
@@ -1405,6 +1437,112 @@
 					"type": "url",
 					"id": "link_url_global",
 					"label": "Link URL - Global"
+				}
+			]
+		},
+		{
+			"type": "decoration",
+			"name": "Decoration",
+			"settings": [
+				{
+					"type": "image_picker",
+					"id": "decor_img",
+					"label": "Decoration Image"
+				},
+				{
+					"type": "range",
+					"id": "decor_opacity",
+					"label": "Decoration Opacity",
+					"min": 0,
+					"max": 100,
+					"step": 1,
+					"unit": "%",
+					"default": 100
+				},
+				{
+					"type": "range",
+					"id": "decor_max_width",
+					"label": "Decoration Maximum Width",
+					"min": 0,
+					"max": 100,
+					"step": 1,
+					"unit": "%",
+					"default": 50
+				},
+				{
+					"type": "range",
+					"id": "decor_max_width_mobile",
+					"label": "Decoration Maximum Width on Mobile",
+					"min": 0,
+					"max": 100,
+					"step": 1,
+					"unit": "%",
+					"default": 50
+				},
+				{
+					"type": "range",
+					"id": "decor_position_top",
+					"label": "Decoration Position Top",
+					"min": 0,
+					"max": 100,
+					"step": 1,
+					"unit": "%",
+					"default": 0
+				},
+				{
+					"type": "range",
+					"id": "decor_position_left",
+					"label": "Decoration Position Left",
+					"min": 0,
+					"max": 100,
+					"step": 1,
+					"unit": "%",
+					"default": 0
+				},
+				{
+					"type": "range",
+					"id": "decor_position_top_mobile",
+					"label": "Decoration Mobile Top",
+					"min": 0,
+					"max": 100,
+					"step": 1,
+					"unit": "%",
+					"default": 0
+				},
+				{
+					"type": "range",
+					"id": "decor_position_left_mobile",
+					"label": "Decoration Mobile Left",
+					"min": 0,
+					"max": 100,
+					"step": 1,
+					"unit": "%",
+					"default": 0
+				},
+				{
+					"type": "checkbox",
+					"id": "is_decor_above",
+					"label": "Decoration Above Content"
+				},
+				{
+					"type": "checkbox",
+					"id": "is_decor_bg",
+					"label": "Decoration is a Background"
+				},
+				{
+					"type": "checkbox",
+					"id": "is_decor_relative_full",
+					"label": "Decoration Relative to Full Width"
+				},
+				{
+					"type": "checkbox",
+					"id": "is_decor_remove_on_desktop",
+					"label": "Remove Decoration On Desktop"
+				},
+				{
+					"type": "checkbox",
+					"id": "is_decor_remove_on_mobile",
+					"label": "Remove Decoration On Mobile"
 				}
 			]
 		}
