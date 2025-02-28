@@ -549,41 +549,41 @@
 
 				.items {
 					width: 100%;
-				}
 
-				.item {
-					{% if section.settings.items_in_row_mobile == 'all' %}
-					{% assign itemsInRowMobile = section.blocks.size %}
-					{% for block in section.blocks %}
-					{% if block.settings.is_hide_on_mobile %}
-					{% assign itemsInRowMobile = itemsInRowMobile | minus: 1 %}
-					{% endif %}
-					{% endfor %}
-					{% else %}
-					{% assign itemsInRowMobile = section.settings.items_in_row_mobile %}
-					{% endif %}
+					.item {
+						{% if section.settings.items_in_row_mobile == 'all' %}
+						{% assign itemsInRowMobile = section.blocks.size %}
+						{% for block in section.blocks %}
+						{% if block.settings.is_hide_on_mobile %}
+						{% assign itemsInRowMobile = itemsInRowMobile | minus: 1 %}
+						{% endif %}
+						{% endfor %}
+						{% else %}
+						{% assign itemsInRowMobile = section.settings.items_in_row_mobile %}
+						{% endif %}
 
-					{% assign gapsInRowMobile = itemsInRowMobile | minus: 1 %}
-					width: calc((100% / {{ itemsInRowMobile }}) - ({{ gapsInRowMobile }} * ({{ section.settings.column_gap }}rem / {{ itemsInRowMobile }})));
-					max-width: unset;
-
-					.item-content {
-						flex-direction: {{ section.settings.item_layout_mobile }};
-						text-align: {{ section.settings.item_content_align_mobile }};
+						{% assign gapsInRowMobile = itemsInRowMobile | minus: 1 %}
+						width: calc((100% / {{ itemsInRowMobile }}) - ({{ gapsInRowMobile }} * ({{ section.settings.column_gap }}rem / {{ itemsInRowMobile }})));
 						max-width: unset;
 
-						{% unless section.settings.item_content_align_mobile == 'center' %}
-						.title-tag {
-							margin: unset;
-						}
-						{% endunless %}
+						.item-content {
+							flex-direction: {{ section.settings.item_layout_mobile }};
+							text-align: {{ section.settings.item_content_align_mobile }};
+							max-width: unset;
 
-						{% if section.settings.items_in_row_mobile == 'all' %}
-						.title-tag {
-							font-size: 3vw;
-							min-height: 7vw;
+							{% unless section.settings.item_content_align_mobile == 'center' %}
+							.title-tag {
+								margin: unset;
+							}
+							{% endunless %}
+
+							{% if section.settings.items_in_row_mobile == 'all' %}
+							.title-tag {
+								font-size: 3vw;
+								min-height: 7vw;
+							}
+							{% endif %}
 						}
-						{% endif %}
 					}
 				}
 
