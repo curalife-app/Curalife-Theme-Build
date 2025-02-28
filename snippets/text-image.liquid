@@ -1,0 +1,677 @@
+{% assign section_id = block_index | default: SID | default: section.id %}
+
+{% if shop.name contains 'Global' %}
+  {% assign mainImage = main_image_global | default: main_image %}
+  {% assign mainMobileImage = main_mobile_image_global | default: main_mobile_image %}
+{% else %}
+  {% assign mainImage = main_image %}
+  {% assign mainMobileImage = main_mobile_image %}
+{% endif %}
+
+{% assign itemsDirection = 'vertical' %}
+{% if image_position == 'right' or image_position == 'left' %}
+  {% if mainImage or videoURL != blank %}
+    {% if title != blank or content != blank %}
+      {% assign itemsDirection = 'horizontal' %}
+    {% endif %}
+  {% endif %}
+{% endif %}
+
+{% assign imageClass = 'main-image relative z-auto object-contain' %}
+{% if is_hide_image_on_mobile %}
+  {% assign imageClass = imageClass | append: ' mbl:hidden' %}
+{% endif %}
+
+{% if is_image_overlap_style %}
+  {% assign imageClass = imageClass | append: ' h-[calc(100%+135px)] object-cover object-left' %}
+{% endif %}
+
+{% if is_limit_image_size %}
+  {% assign imageClass = imageClass | append: ' max-h-500px' %}
+{% endif %}
+
+<div class="text-image-wrapper w-full">
+  <div class="container static !p-0 h-auto flex md:gap-4 md:items-center gap-x-16 gap-y-4 {% case image_position %}{% when 'right' %}flex-row-reverse{% when 'left' %}flex-row{% when 'bottom' %}flex-col-reverse{% when 'top' %}flex-col{% endcase %} {% unless is_no_wrap %}{% if is_image_middle_mobile or is_reverse_on_mobile %}md:flex-col{% else %}md:flex-col-reverse{% endif %}{% endunless %} {% if is_image_overlap and image_position == 'left' %}justify-end{% else %}justify-between{% endif %} {% if is_remove_container_padding_mobile %}md:p-0{% endif %}">
+    {% if is_image_middle_mobile and title != blank %}
+      <div class="mobile-titles mobile">
+        <div class="mobile-title title z-[1] justify-{{ alignment }} md:justify-{{ mobile_alignment }} text-{{ alignment }} md:text-{{ mobile_alignment }} {% if is_line_seperator %}m-0{% endif %}"><{{ title_tag }} class="{{ title_tag }}">{{ title }}</{{ title_tag }}></div>
+        <p class="mobile-subtitle subtitle z-[1] justify-{{ alignment }} md:justify-{{ mobile_alignment }} text-{{ alignment }} md:text-{{ mobile_alignment }} {% if is_line_seperator %}m-0{% endif %}">{{ subtitle }}</p>
+      </div>
+    {% endif %}
+
+    {% if mainImage or mainMobileImage or videoURL != blank or embedCode != blank %}
+      <div class="image-wrapper z-[1] h-auto w-auto md:mb-0 max-w-full {% if mainMobileImage and mainImage == blank %}mobile{% endif %} {% if itemsDirection == 'vertical' %}place-self-center{% endif %} {% if is_image_bottom %}self-end md:self-auto{% endif %}">
+        {% assign videoCounter = section_blocks | where: 'type', 'video' | size %}
+        {% if videoCounter > 0 %}
+          <div class="video-carousel swiper">
+            <div class="swiper-wrapper">
+              {% for block in section_blocks %}
+                {% case block.type %}
+                  {% when 'video' %}
+                    <div class="swiper-slide">
+                      {% render 'video', main_image: block.settings.video_thumbnail, main_mobile_image: block.settings.video_thumbnail, SID: section_id, videoInput: block.settings.video_url %}
+                    </div>
+                {% endcase %}
+              {% endfor %}
+            </div>
+
+            <div class="swiper-nav swiper-button-prev" name="track:Video Slider Arrow - Preview"></div>
+            <div class="swiper-nav swiper-button-next" name="track:Video Slider Arrow - Next"></div>
+          </div>
+
+          <script>
+            document.addEventListener('DOMContentLoaded', function() {
+              loadSwiper(() => {
+                let swiper = initializeSwiper('#section-{{ section_id }} .image-wrapper .swiper', {
+                  slidesPerView: 1,
+                  spaceBetween: 10,
+                  grabCursor: true,
+                  navigation: {
+                    nextEl: '#section-{{ section_id }} .swiper-button-next',
+                    prevEl: '#section-{{ section_id }} .swiper-button-prev',
+                  },
+                  pagination: {
+                    el: '#section-{{ section_id }} .swiper-pagination',
+                    clickable: true,
+                  },
+                  breakpoints: {
+                    768: {
+                      slidesPerView: 3,
+                    }
+                  },
+                });
+              });
+            });
+          </script>
+				{% elsif embedCode != blank %}
+					{{ embedCode }}
+        {% elsif videoURL != blank %}
+          {% render 'video', main_image: mainImage, main_mobile_image: mainMobileImage, SID: section_id, videoInput: videoURL %}
+        {% else %}
+          {% if is_dont_lazyload == false %}{% assign lazyLoad = true %}{% endif %}
+
+						{% if customer.email contains 'yotam' %}
+							{% render 'image-test',
+								image: mainImage,
+								mobile_image: mainMobileImage,
+								is_retina: isRetina,
+								is_log: true,
+								load_mobile: true,
+								link: image_link,
+								lazy: lazyLoad,
+								alt: mainImage.alt,
+								class: imageClass
+							%}
+						{% else %}
+							{% render 'image',
+								image: mainImage,
+								mobile_image: mainMobileImage,
+								load_mobile: true,
+								lazy: lazyLoad,
+								link: image_link,
+								alt: mainImage.alt,
+								class: imageClass
+							%}
+						{% endif %}
+        {% endif %}
+      </div>
+    {% endif %}
+
+    {% assign blocks_amount = section_blocks | size %}
+    {% if title != blank or content != blank or subtitle != blank or blocks_amount > 0 %}
+      <div class="content-wrapper break-word z-[1] flex md:py-0 md:!w-full gap-12 md:gap-4 md:m-auto {% if alignment == 'center' %}justify-center m-auto{% endif %} {% if itemsDirection == 'horizontal' %}w-45%{% else %}w-70%{% endif %}" {% if content_animation != 'none'%}data-aos="{{ content_animation }}" data-aos-duration="{{ animation_duration }}"{% endif %}>
+        <div class="content flex flex-col justify-center gap-4 md:w-full text-{{ alignment }} md:text-{{ mobile_alignment }} items-{{ alignment }} md:items-{{ mobile_alignment }} {% unless mainImage %}w-full{% endunless %}">
+          {% if title != blank or subtitle != blank %}
+            <div class="titles">
+              {% if title != blank %}
+                <{% if title_tag == 'h1' %}h1{% else %}h2{% endif %} class="title text-wrap {% if subtitle != blank %}mb-0{% endif %} {{ title_tag }} w-full {% if is_image_middle_mobile %}md:hidden md:!hidden{% endif %} {% if is_line_seperator %}m-0{% endif %}">
+                  {{ title }}
+                </{% if title_tag == 'h1' %}h1{% else %}h2{% endif %}>
+              {% endif %}
+
+              {% if subtitle != blank %}
+                <p class="subtitle {% if title_tag == 'h1' %}text-[30px]{% endif %} md:text-[6vw] {% if is_no_p_margin %}m-0{% endif %} {% if is_image_middle_mobile %}md:hidden{% endif %}">{{ subtitle }}</p>
+              {% endif %}
+            </div>
+          {% endif %}
+
+          {% if is_line_seperator %}
+            <div class="line-seperator my-2 border-b border-black w-[100px] md:w-[30vw]"></div>
+          {% endif %}
+
+          {% if content != blank %}
+            <div class="description {% if is_hide_description_on_mobile %}md:hidden{% endif %} text-{{ alignment }} md:text-{{ mobile_alignment }}">{{ content }}</div>
+          {% endif %}
+
+          {% for block in section_blocks %}
+            {% case block.type %}
+              {% when 'text' %}
+                <div id="text-block-{{ block.id }}" class="text-block">{{ block.settings.text }}</div>
+
+                <style>
+                    #text-block-{{ block.id }} {
+                      opacity: {{ block.settings.opacity }}%;
+                      color: {{ block.settings.text_color }};
+                      border-radius: 10px;
+
+                      {% if block.settings.box_border_color != blank %}
+                        border: 1px solid {{ block.settings.box_border_color }};
+                        padding: 20px;
+                      {% endif %}
+
+                      {% if block.settings.is_box_shadow %}box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);{% endif %}
+                      {% if block.settings.box_bg_color != blank %}
+                        background-color: {{ block.settings.box_bg_color }};
+                        padding: 20px;
+                      {% endif %}
+
+                      p {
+                        font-size: {{ block.settings.font_size }}px !important;
+                      }
+                    }
+                </style>
+              {% when 'button' %}
+                {% render 'button',
+                  button_text: block.settings.button_text,
+                  button_url: block.settings.button_url,
+                  button_url_global: block.settings.button_url_global,
+                  button_icon: block.settings.button_icon,
+                  button_align: block.settings.button_align,
+                  button_style: block.settings.button_style,
+                  button_text_color: block.settings.button_text_color,
+                  button_bg_color: block.settings.button_bg_color,
+                  button_is_new_tab: block.settings.button_is_new_tab,
+                  button_is_link_to_top: block.settings.button_is_link_to_top,
+                  button_is_prerender_link: block.settings.button_is_prerender_link,
+                  button_under_title: block.settings.button_under_title,
+                  button_under_title_color: block.settings.button_under_title_color,
+                  button_additional_classes: block.settings.additional_classes,
+                  button_element_name: block.settings.button_element_name,
+                  button_id: block.id
+                %}
+              {% when 'image' %}
+                {% if shop.name contains 'Global' %}
+                  {% assign blockMainImage = block.settings.image_global | default: block.settings.image %}
+                  {% assign blockMainMobileImage = block.settings.main_mobile_global | default: block.settings.image_mobile %}
+                {% else %}
+                  {% assign blockMainImage = block.settings.image %}
+                  {% assign blockMainMobileImage = block.settings.image_mobile %}
+                {% endif %}
+
+                {% render 'image',
+                  image: blockMainImage,
+                  mobile_image: blockMainMobileImage,
+                  lazy: lazyLoad,
+                  preload: false,
+                  alt: blockMainImage.alt,
+                  link: block.settings.image_link,
+                  class: block.settings.additional_classes
+                %}
+              {% when 'countdown' %}
+                  {% render 'countdown-timer', section_id: section.id, day: block.settings.day, month: block.settings.month, year: block.settings.year, hour: block.settings.hour, minute: block.settings.minute, urgencyMinutes: block.settings.urgency_minutes, bgColor: block.settings.bg_color, isShowDays: block.settings.is_show_days %}
+                  <style>
+										#section-{{ section_id }} .content-wrapper {
+											justify-content: right;
+										}
+									</style>
+              {% when 'code' %}
+                {{ block.settings.content }}
+            {% endcase %}
+          {% endfor %}
+
+          {% if items_hidden_title != blank %}
+            <a class="collection-link" href="#" name="track:Collapsed Collection - {{ items_hidden_title }}">
+              {{ items_hidden_title }} <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><path d="M12 17.414 3.293 8.707l1.414-1.414L12 14.586l7.293-7.293 1.414 1.414L12 17.414z"/></svg>
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  {% assign itemsCounter = section_blocks | where: 'type', 'item' | size %}
+  {% if itemsCounter > 0 %}
+    <div id="collection-container-{{ section.id }}" class="collection-container mt-8 {% if items_hidden_title == blank %}open{% endif %}">
+      <div class="collection-content">
+        <div class="swiper items !overflow-visible {{ sliderClass }}">
+          <div class="swiper-wrapper flex-nowrap flex">
+            {% for block in section_blocks %}
+              {% case block.type %}
+              {% when 'item' %}
+                  {% render 'item',
+                    image: block.settings.image,
+                    image_global: block.settings.image_global,
+                    img_mobile: block.settings.image_mobile,
+                    title: block.settings.title,
+                    title_tag: 'p',
+                    description: block.settings.description,
+                    link_title: block.settings.link_title,
+                    link_style: section.settings.link_style,
+                    link_url: block.settings.link_url,
+                    link_url_global: block.settings.link_url_global,
+                    is_image_background: block.settings.is_image_background,
+                    item_layout_mobile: section.settings.item_layout_mobile,
+                    is_slider: true,
+                    index: forloop.index,
+                    section_id: section.id
+                  %}
+              {% endcase %}
+            {% endfor %}
+          </div>
+
+          {% unless items_slider_on == 'none' %}
+            <div class="swiper-nav swiper-button-prev" name="track:Slider Arrow - Preview"></div>
+            <div class="swiper-nav swiper-button-next" name="track:Slider Arrow - Next"></div>
+          {% endunless %}
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        var collectionLink = document.querySelector('#section-{{ section_id }} .collection-link');
+        var itemsContainer = document.querySelector('#section-{{ section_id }} .collection-container');
+        var contentContainer = document.querySelector('#section-{{ section_id }} .collection-content');
+
+        if (collectionLink && itemsContainer && contentContainer) {
+          collectionLink.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            if (itemsContainer.classList.contains('open')) {
+              contentContainer.style.opacity = '0';
+              collectionLink.style.opacity = '1';
+              collectionLink.style.pointerEvents = 'auto';
+              collectionLink.style.maxHeight = collectionLink.scrollHeight + 'px';
+              setTimeout(function() {
+                itemsContainer.style.height = '0px';
+                itemsContainer.classList.remove('open');
+                collectionLink.classList.remove('open');
+                collectionLink.style.maxHeight = collectionLink.scrollHeight + 'px';
+              }, 300);
+            } else {
+              itemsContainer.style.height = contentContainer.scrollHeight + 'px';
+              itemsContainer.classList.add('open');
+              collectionLink.classList.add('open');
+              collectionLink.style.opacity = '0';
+              collectionLink.style.pointerEvents = 'none';
+              collectionLink.style.maxHeight = '0px';
+              setTimeout(function() {
+                contentContainer.style.opacity = '1';
+              }, 50);
+            }
+          });
+        }
+
+        var sliderOn = '{{ items_slider_on | escape }}';
+        var isMobile = window.innerWidth <= 768;
+
+        var shouldInitializeSwiper = false;
+        if (sliderOn === 'both') {
+          shouldInitializeSwiper = true;
+        } else if (sliderOn === 'desktop' && !isMobile) {
+          shouldInitializeSwiper = true;
+        } else if (sliderOn === 'mobile' && isMobile) {
+          shouldInitializeSwiper = true;
+        } else if (sliderOn === 'none') {
+          shouldInitializeSwiper = false;
+        }
+
+        if (shouldInitializeSwiper) {
+          loadSwiper(() => {
+            let swiper = initializeSwiper('#collection-container-{{ section.id }} .swiper', {
+              slidesPerView: 1,
+							spaceBetween: 10,
+              grabCursor: true,
+              navigation: {
+                nextEl: '#section-{{ section_id }} .swiper-button-next',
+                prevEl: '#section-{{ section_id }} .swiper-button-prev',
+              },
+              breakpoints: {
+                768: {
+                  slidesPerView: 3,
+                }
+              },
+            });
+          });
+        } else {
+          var swiperContainer = document.querySelector('#section-{{ section_id }} .swiper.items');
+          if (swiperContainer) {
+            swiperContainer.classList.remove('swiper');
+            var swiperWrapper = swiperContainer.querySelector('.swiper-wrapper');
+            if (swiperWrapper) {
+              swiperWrapper.classList.remove('swiper-wrapper');
+              swiperWrapper.classList.add('non-swiper-wrapper');
+            }
+            var swiperSlides = swiperWrapper.querySelectorAll('.swiper-slide');
+            swiperSlides.forEach(function(slide) {
+              slide.classList.remove('swiper-slide');
+              slide.classList.add('non-swiper-slide');
+            });
+          }
+        }
+      });
+    </script>
+
+    <style>
+      #section-{{ section_id }} .main-container {
+        overflow: hidden;
+      }
+
+      #section-{{ section_id }} .collection-container {
+        height: 0;
+        transition: height 0.3s ease-out;
+        overflow: hidden;
+
+        .collection-content {
+          opacity: 0;
+          transition: opacity 0.3s ease-out;
+        }
+
+        &.open {
+          overflow: visible;
+          height: auto !important;
+
+          .collection-content {
+            opacity: 1;
+          }
+        }
+
+        &.open {
+          &:has(.non-swiper-wrapper) {
+            padding-bottom: 0 !important;
+          }
+
+          @media (max-width: 768px) {
+            overflow-y: hidden;
+            padding-bottom: 20vw;
+            scrollbar-width: none !important;
+          }
+        }
+
+        @media (width < 768px) {
+          .non-swiper-wrapper {
+            flex-direction: column;
+            gap: 1rem;
+          }
+        }
+
+				@media (width > 768px) {
+					.non-swiper-wrapper {
+						.item {
+							width: calc((100% / 3) - (2 * (1rem / 3))) !important;
+						}
+					}
+				}
+
+        .items {
+          justify-content: space-between;
+
+          @media (width > 768px) {
+            gap: 1rem;
+          }
+
+          .item {
+            background-color: var(--bg-color);
+            border-radius: 15px;
+            padding: 1rem;
+
+            .item-content {
+              text-align: start;
+              align-items: start;
+
+              .img-wrapper {
+                align-items: start;
+              }
+
+              .title-tag {
+                margin: unset;
+                text-wrap: wrap;
+                font-size: 18px;
+								color: var(--primary-color);
+
+								@media (width < 768px) {
+									font-size: 5vw !important;
+								}
+              }
+            }
+          }
+        }
+
+
+        .swiper-nav {
+          --swiper-navigation-sides-offset: -26px;
+
+          @media (width < 768px) {
+            --swiper-navigation-sides-offset: 30%;
+            --swiper-navigation-top-offset: 110%
+          }
+        }
+      }
+
+      @media (width > 768px) {
+        #section-{{ section_id }}.container-fades .text-image-wrapper:after,
+        #section-{{ section_id }}.container-fades .text-image-wrapper:before {
+          content: " ";
+          width: calc((1200px - {{ max_width }}px) / 2);
+          height: 100%;
+          position: absolute;
+          top: 0;
+          z-index: 10;
+        }
+
+        #section-{{ section_id }}.container-fades .text-image-wrapper:after {
+          background: linear-gradient(270deg, {{ contentBG }} 0%, {{ contentBG }} 10%, rgba(255, 255, 255, 0) 100%);
+          right: 0;
+        }
+
+        #section-{{ section_id }}.container-fades .text-image-wrapper:before {
+          background: linear-gradient(90deg, {{ contentBG }} 0%, {{ contentBG }} 10%, rgba(255, 255, 255, 0) 100%);
+          left: 0;
+        }
+      }
+
+      {% if items_hidden_title != blank %}
+        #section-{{ section_id }} .collection-link {
+          display: inline-flex;
+          align-items: center;
+          transition: opacity 0.3s ease, transform 0.3s ease, margin 0.3s ease, max-height 0.3s ease;
+          cursor: pointer;
+          margin-bottom: 1rem;
+          overflow: hidden;
+          max-height: 50px;
+        }
+
+        #section-{{ section_id }} .collection-link svg {
+          transition: transform 0.3s ease;
+          margin-left: 0.5rem;
+        }
+
+        #section-{{ section_id }} .collection-link.open {
+          opacity: 0;
+          pointer-events: none;
+          transform: translateY(-10px);
+          margin-bottom: 0;
+          max-height: 0;
+        }
+
+        #section-{{ section_id }} .collection-link.open svg {
+          transform: rotate(180deg);
+        }
+
+        @media screen and (max-width: 768px) {
+          #section-{{ section_id }} .collection-link {
+            margin: auto;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-height: 70px;
+          }
+        }
+      {% endif %}
+    </style>
+  {% endif %}
+</div>
+
+<style>
+  {% unless max_width == 1200 %}
+    #section-{{ section_id }} .text-image-wrapper {
+      max-width: {{ max_width }}px !important;
+      margin-inline: auto;
+    }
+  {% endunless %}
+
+  {% if is_image_shadow %}
+    #section-{{ section_id }} .image-wrapper img {
+      filter: drop-shadow({{ shadow_position_inline }}px {{ shadow_position_block }}px {{ shadow_blur }}px rgba(0, 0, 0, {{ shadow_opacity }}));
+    }
+  {% endif %}
+
+  {% if is_image_overlap_style %}
+    #section-{{ section_id }} .image-wrapper img {
+      filter: drop-shadow(-21px 22px 21px rgba(0, 0, 0, 0.2));
+    }
+  {% endif %}
+
+  {% if is_image_full_width_mobile %}
+    @media screen and (max-width: 768px) {
+      #section-{{ section_id }} .container {
+        padding-left: 0;
+        padding-right: 0;
+      }
+
+      #section-{{ section_id }} .image-wrapper {
+        width: 100vw;
+        margin-left: calc(-50vw + 50%);
+      }
+
+      #section-{{ section_id }} .image-wrapper img {
+        width: 100%;
+        max-width: none;
+        height: auto;
+        object-fit: cover;
+      }
+
+      #section-{{ section_id }} .content-wrapper .content {
+        padding: 0 15px;
+      }
+    }
+  {% endif %}
+
+  {% if title_badge != blank %}
+    #section-{{ section_id }} .title,
+    #section-{{ section_id }} .content-wrapper .content h1,
+    #section-{{ section_id }} .content-wrapper .content h2,
+    #section-{{ section_id }} .mobile-title h1,
+    #section-{{ section_id }} .mobile-title h2 {
+      &::before {
+        content: '{{ title_badge }}';
+        background: {{ title_color | default: "var(--primary-color)" }};
+        color: white;
+        padding: 0.25rem 0.75rem;
+        font-size: 12px;
+        border-radius: 50px;
+        align-self: center;
+        margin-right: 0.5rem;
+      }
+    }
+  {% endif %}
+
+
+  {% if text_color %}
+    #section-{{ section_id }} {
+      color: {{ text_color }};
+    }
+
+    #section-{{ section_id }} .title,
+    #section-{{ section_id }} .content h1,
+    #section-{{ section_id }} .content h2,
+    #section-{{ section_id }} .mobile-title * {
+      color: {{ title_color | default: text_color }};
+    }
+  {% endif %}
+
+  {% if is_image_overlap %}
+    #section-{{ section_id }} .image-wrapper img {
+      {% if image_position == 'right' %}
+        min-width: 55vw;
+        object-position: top left;
+        object-fit: contain;
+      {% elsif image_position == 'left'%}
+        object-position: top right;
+        object-fit: cover;
+        position: absolute;
+        right: 50%;
+        top: 0;
+        min-width: 50vw;
+      {% endif %}
+      height: 500px;
+      max-height: 100%;
+
+      @media (width < 768px) {
+        min-width: 100vw;
+        object-fit: cover;
+        object-position: top;
+        position: unset;
+        right: unset;
+        top: unset;
+        bottom: unset;
+        margin: unset;
+        height: unset;
+      }
+    }
+  {% endif %}
+
+  {% if padding_top == 0 and padding_bottom == 0 %}
+    #section-{{ section_id }} .content {
+      margin: 50px 0;
+    }
+  {% endif %}
+
+  {% if title_highlight_color %}
+    #section-{{ section_id }} .content-wrapper h1 strong,
+    #section-{{ section_id }} .content-wrapper h2 strong,
+    #section-{{ section_id }} .mobile-title strong {
+      color: {{ title_highlight_color }};
+    }
+
+    #section-{{ section_id }} .content-wrapper .description ul li::before {
+      background-color: {{ title_highlight_color }};
+    }
+  {% endif %}
+
+  #section-{{ section_id }} .content-wrapper {
+    width: {{ content_width }}%;
+
+    p {
+      font-size: {{ text_size }}px;
+    }
+  }
+
+  #section-{{ section_id }} .content-wrapper .content a {
+    color: var(--primary-color);
+    font-weight: bold;
+  }
+
+  #section-{{ section_id }} .content-wrapper .content p:last-of-type {
+    margin: unset;
+  }
+
+  #section-{{ section_id }} .content-wrapper .content strong em,
+  #section-{{ section_id }} .content-wrapper .content em strong {
+    vertical-align: super;
+    font-size: 0.8em;
+  }
+
+  {% if itemsDirection == 'horizontal' %}
+    #section-{{ section_id }} .image-wrapper {
+      max-width: calc(100% - {{ content_width }}%);
+
+      @media (max-width: 768px) {
+        max-width: 100%;
+      }
+    }
+  {% endif %}
+
+  #section-{{ section_id }} h2 {
+    text-align: inherit;
+  }
+</style>
