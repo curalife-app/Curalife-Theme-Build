@@ -39,8 +39,11 @@
 				<div class="items !overflow-{{ section.settings.overflow }} z-10 py-8 flex flex-wrap {% if section.settings.items_align == 'center' %}items-center{% else %}items-start{% endif %} {% if section.settings.collection_align == 'center' %}m-auto{% endif %} justify-center overflow-visible" id="items-container-{{ section.id }}" {% if section.settings.animation %}data-aos="{{ section.settings.animation }}"{% endif %}>
 			{% endif %}
 
+			{% assign itemsCounter = 0 %}
 			{% for block in section.blocks %}
 				{% if block.type == 'item' %}
+					{% assign itemsCounter = itemsCounter | plus: 1 %}
+
 					{% if shop.name == 'CuraLife Global' %}
 						{% assign imageLink = block.settings.image_global | default: block.settings.image %}
 						{% assign imageMobileLink = block.settings.image_mobile_global | default: block.settings.image_mobile %}
@@ -407,7 +410,7 @@
 			}
 
 			{% if section.settings.items_in_row == 'all' %}
-				{% assign items_in_row = section.blocks.size %}
+				{% assign items_in_row = itemsCounter %}
 			{% else %}
 				{% assign items_in_row = section.settings.items_in_row | minus: 1 %}
 			{% endif %}
@@ -424,7 +427,7 @@
 				}
 
 				{% if section.settings.items_in_row_mobile == 'all' %}
-					{% assign items_in_row_mobile = section.blocks.size %}
+					{% assign items_in_row_mobile = itemsCounter %}
 				{% else %}
 					{% assign items_in_row_mobile = section.settings.items_in_row_mobile | minus: 1 %}
 				{% endif %}
@@ -473,7 +476,7 @@
 
 		#section-{{ section.id }} .item {
 				{% if section.settings.items_in_row == 'all' %}
-						{% assign itemsInRow = section.blocks.size %}
+						{% assign itemsInRow = itemsCounter %}
 				{% else %}
 						{% assign itemsInRow = section.settings.items_in_row %}
 				{% endif %}
@@ -591,7 +594,7 @@
 
 			#section-{{ section.id }} .item {
 				{% if section.settings.items_in_row_mobile == 'all' %}
-					{% assign itemsInRowMobile = section.blocks.size %}
+					{% assign itemsInRowMobile = itemsCounter %}
 					{% for block in section.blocks %}
 						{% if block.settings.is_hide_on_mobile %}
 							{% assign itemsInRowMobile = itemsInRowMobile | minus: 1 %}
@@ -628,8 +631,8 @@
 	</style>
 
 	{% if section.settings.is_bigger_center_item %}
-		{% assign centerPosition = section.blocks.size | divided_by: 2 | plus: 1 %}
-		{% assign centerElementSelector = "swiper-slide[aria-label='" | append: centerPosition | append: " / " | append: section.blocks.size | append: "']" %}
+		{% assign centerPosition = itemsCounter | divided_by: 2 | plus: 1 %}
+		{% assign centerElementSelector = "swiper-slide[aria-label='" | append: centerPosition | append: " / " | append: itemsCounter | append: "']" %}
 
 		<style>
 			#section-{{ section.id }} swiper-slide img {
