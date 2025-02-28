@@ -40,103 +40,105 @@
 			{% endif %}
 
 			{% for block in section.blocks %}
-				{% if shop.name == 'CuraLife Global' %}
-					{% assign imageLink = block.settings.image_global | default: block.settings.image %}
-					{% assign imageMobileLink = block.settings.image_mobile_global | default: block.settings.image_mobile %}
-					{% assign linkUrl = block.settings.link_url_global | default: block.settings.link_url %}
-				{% else %}
-					{% assign imageLink = block.settings.image %}
-					{% assign imageMobileLink = block.settings.image_mobile %}
-					{% assign linkUrl = block.settings.link_url %}
-				{% endif %}
+				{% if block.type == 'item' %}
+					{% if shop.name == 'CuraLife Global' %}
+						{% assign imageLink = block.settings.image_global | default: block.settings.image %}
+						{% assign imageMobileLink = block.settings.image_mobile_global | default: block.settings.image_mobile %}
+						{% assign linkUrl = block.settings.link_url_global | default: block.settings.link_url %}
+					{% else %}
+						{% assign imageLink = block.settings.image %}
+						{% assign imageMobileLink = block.settings.image_mobile %}
+						{% assign linkUrl = block.settings.link_url %}
+					{% endif %}
 
-				{% if linkUrl and section.settings.link_style == 'item' %}<a class="contents">{% endif %}
-				{% assign itemID = 'item-' | append: section.id | append: forloop.index %}
+					{% if linkUrl and section.settings.link_style == 'item' %}<a class="contents">{% endif %}
+					{% assign itemID = 'item-' | append: section.id | append: forloop.index %}
 
-				<div class="{% if section.settings.is_slider %}swiper-slide{% endif %} item relative !h-auto" id="{{ itemID }}">
-					<div class="item-content flex flex-col items-center justify-{% if section.settings.item_layout_mobile == 'row' %}start{% else %}center{% endif %} text-center m-auto">
-						{% unless block.settings.is_image_background %}
-							<div class="img-wrapper">
-								{% if imageLink != blank or imageMobileLink != blank %}
-									{% if onlyImage %}
-										{% render 'image-test',
-											image: imageLink,
-											mobile_image: imageMobileLink,
-											lazy: lazyLoad,
-											preload: false,
-											alt: imageLink.alt,
-											link: linkUrl,
-											class: 'w-full h-full object-contain m-0'
-										%}
-									{% else %}
-										{% render 'image-test',
-											image: imageLink,
-											mobile_image: imageMobileLink,
-											lazy: lazyLoad,
-											preload: false,
-											alt: imageLink.alt,
-											link: linkUrl,
-											class: 'max-h-350px object-contain m-0'
-										%}
-									{% endif %}
-								{% endif %}
-							</div>
-
-							{% if block.settings.title != blank or block.settings.description != blank or block.settings.link_title != blank %}
-								<div class="text-wrapper flex flex-col gap-2 {% if section.settings.item_layout_mobile == 'row' %}md:items-start md:w-[70vw]{% endif %}">
-									{% if block.settings.title != blank %}
-										<h3 class="title-tag text-wrap flex gap-1 w-fit justify-center items-center {% if section.settings.item_content_align == 'center' %}m-auto{% endif %} {{ section.settings.title_tag }}">
-											<div>{{ block.settings.title }}</div>
-											{% if section.settings.is_reviews %}
-												<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6" style="max-width:20px;">
-													<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-												</svg><span class="font-thin ml-2 text-[18px]"> Varified</span>
-
-												<style>
-													#{{ itemID }} .text-wrapper {
-														gap: 0;
-													}
-													#{{ itemID }} .title-tag {
-														width: 100%;
-														justify-content: start;
-														margin-bottom:0;
-													}
-												</style>
-											{% endif %}
-										</h3>
-									{% endif %}
-									{% if section.settings.is_reviews %}{% render 'rating-stars', rating: '5' %}{% endif %}
-									{% if block.settings.description != blank %}<div class="description">{{ block.settings.description }}</div>{% endif %}
-									{% if section.settings.link_style == 'a' %}
-										<a class="underline" href="{{ linkUrl }}">{{ block.settings.link_title }}</a>
-									{% elsif section.settings.link_style == 'button' %}
-										<a class="w-max m-auto" href="{{ linkUrl }}"><button>{{ block.settings.link_title }}</button></a>
+					<div class="{% if section.settings.is_slider %}swiper-slide{% endif %} item relative !h-auto" id="{{ itemID }}">
+						<div class="item-content flex flex-col items-center justify-{% if section.settings.item_layout_mobile == 'row' %}start{% else %}center{% endif %} text-center m-auto">
+							{% unless block.settings.is_image_background %}
+								<div class="img-wrapper">
+									{% if imageLink != blank or imageMobileLink != blank %}
+										{% if onlyImage %}
+											{% render 'image-test',
+												image: imageLink,
+												mobile_image: imageMobileLink,
+												lazy: lazyLoad,
+												preload: false,
+												alt: imageLink.alt,
+												link: linkUrl,
+												class: 'w-full h-full object-contain m-0'
+											%}
+										{% else %}
+											{% render 'image-test',
+												image: imageLink,
+												mobile_image: imageMobileLink,
+												lazy: lazyLoad,
+												preload: false,
+												alt: imageLink.alt,
+												link: linkUrl,
+												class: 'max-h-350px object-contain m-0'
+											%}
+										{% endif %}
 									{% endif %}
 								</div>
-							{% endif %}
-						{% endunless %}
+
+								{% if block.settings.title != blank or block.settings.description != blank or block.settings.link_title != blank %}
+									<div class="text-wrapper flex flex-col gap-2 {% if section.settings.item_layout_mobile == 'row' %}md:items-start md:w-[70vw]{% endif %}">
+										{% if block.settings.title != blank %}
+											<h3 class="title-tag text-wrap flex gap-1 w-fit justify-center items-center {% if section.settings.item_content_align == 'center' %}m-auto{% endif %} {{ section.settings.title_tag }}">
+												<div>{{ block.settings.title }}</div>
+												{% if section.settings.is_reviews %}
+													<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6" style="max-width:20px;">
+														<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+													</svg><span class="font-thin ml-2 text-[18px]"> Varified</span>
+
+													<style>
+														#{{ itemID }} .text-wrapper {
+															gap: 0;
+														}
+														#{{ itemID }} .title-tag {
+															width: 100%;
+															justify-content: start;
+															margin-bottom:0;
+														}
+													</style>
+												{% endif %}
+											</h3>
+										{% endif %}
+										{% if section.settings.is_reviews %}{% render 'rating-stars', rating: '5' %}{% endif %}
+										{% if block.settings.description != blank %}<div class="description">{{ block.settings.description }}</div>{% endif %}
+										{% if section.settings.link_style == 'a' %}
+											<a class="underline" href="{{ linkUrl }}">{{ block.settings.link_title }}</a>
+										{% elsif section.settings.link_style == 'button' %}
+											<a class="w-max m-auto" href="{{ linkUrl }}"><button>{{ block.settings.link_title }}</button></a>
+										{% endif %}
+									</div>
+								{% endif %}
+							{% endunless %}
+						</div>
 					</div>
-				</div>
 
-				{% if linkUrl and section.settings.link_style == 'item' %}</a>{% endif %}
+					{% if linkUrl and section.settings.link_style == 'item' %}</a>{% endif %}
 
-				{% if block.settings.is_image_background %}
-					<style>
-						#{{ itemID }} {
-							background-image: url('{{ imageLink | image_url }}') !important;
-							background-repeat: no-repeat;
-							background-size: cover;
-							background-position: center;
-						}
-
-						{% if imageMobileLink %}
-							@media screen and (max-width: 768px) {
-								#{{ itemID }} {
-									background-image: url('{{ imageMobileLink | image_url }}') !important;
-								}
+					{% if block.settings.is_image_background %}
+						<style>
+							#{{ itemID }} {
+								background-image: url('{{ imageLink | image_url }}') !important;
+								background-repeat: no-repeat;
+								background-size: cover;
+								background-position: center;
 							}
-						{% endif %}
-					</style>
+
+							{% if imageMobileLink %}
+								@media screen and (max-width: 768px) {
+									#{{ itemID }} {
+										background-image: url('{{ imageMobileLink | image_url }}') !important;
+									}
+								}
+							{% endif %}
+						</style>
+					{% endif %}
 				{% endif %}
 			{% endfor %}
 		</div>
