@@ -1,0 +1,459 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "layout": "theme.lps",
+  "sections": {
+    "custom_liquid_4zQwFp": {
+      "type": "custom-liquid",
+      "custom_css": [],
+      "settings": {
+        "custom_liquid": "<style>\nh2 {\nfont-size: 35px !important;\nfont-weight: 100 !important;\n}\n .items-collection.buy-buttons {\nbackground: rgb(48,115,131);\nbackground: linear-gradient(180deg, rgba(48,115,131,1) 0%, rgba(58,118,132,1) 40%, rgba(255,255,255,1) 40%, rgba(255,255,255,1) 100%);\n}\n\n.items-collection.reviews .title:after {\n  content: \" \";\n  display: block;\n    background-image: url(\"https://cdn.shopify.com/s/files/1/0452/2459/1511/files/curalin-reviews-line.png\");\n  background-repeat: no-repeat;\nbackground-position: center;\n  background-size: contain;\n  height: 60px;\n}\n\n@media screen and (max-width: 768px) {\n.items-collection.reviews .title:after {\n    background-image: url(\"https://cdn.shopify.com/s/files/1/0452/2459/1511/files/curalin-reviews-line-mbl.png?v=1739991996\");\n    margin-top: 1rem;\n}\n\nh2 {\nfont-size: 9vw !important;\n}\n\n}\n</style>",
+        "color_scheme": "background-1",
+        "additional_classes": "",
+        "run_on_pages": "",
+        "padding_top": 0,
+        "padding_bottom": 0
+      }
+    },
+    "custom_liquid_VNgYma": {
+      "type": "custom-liquid",
+      "disabled": true,
+      "settings": {
+        "custom_liquid": "<script>\n        // Format time in MM:SS\nfunction formatTime(milliseconds) {\n  const totalSeconds = Math.floor(milliseconds / 1000);\n  const minutes = Math.floor(totalSeconds / 60);\n  const seconds = totalSeconds % 60;\n  return `${minutes}:${seconds.toString().padStart(2, '0')}`;\n}\n\n// Function to get URL parameters\nfunction getUrlParameter(name) {\n  const params = new URLSearchParams(window.location.search);\n  return params.get(name);\n}\n\n// Function to set cookie\nfunction setCookie(name, value, days) {\n  const date = new Date();\n  date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));\n  const expires = \"expires=\" + date.toUTCString();\n  document.cookie = name + \"=\" + value + \"; path=/; \" + expires;\n  console.log(`Cookie set: ${name}=${value}, expires in ${days} days`);\n}\n\n// Function to get cookie\nfunction getCookie(name) {\n  const nameEQ = name + \"=\";\n  const ca = document.cookie.split(';');\n  for(let i = 0; i < ca.length; i++) {\n    let c = ca[i];\n    while (c.charAt(0) === ' ') c = c.substring(1, c.length);\n    if (c.indexOf(nameEQ) === 0) {\n      const value = c.substring(nameEQ.length, c.length);\n      console.log(`Cookie found: ${name}=${value}`);\n      return value;\n    }\n  }\n  console.log(`Cookie not found: ${name}`);\n  return null;\n}\n\n// Function to show all full elements\nfunction showFullElements() {\n  const fullElements = document.querySelectorAll('.full');\n  console.log(`Showing ${fullElements.length} full elements`);\n  fullElements.forEach(element => {\n    element.style.display = 'block';\n  });\n}\n\n// Function to handle URL updates\nfunction updateUrlWithFullParam() {\n  const currentParams = new URLSearchParams(window.location.search);\n  if (!currentParams.has('full')) {\n    currentParams.set('full', 'true');\n    const newUrl = `${window.location.pathname}?${currentParams.toString()}`;\n    window.history.replaceState({}, '', newUrl);\n    console.log('URL updated with full parameter');\n  }\n}\n\n// Function to get remaining time\nfunction getRemainingTime(startTime) {\n  const THIRTY_THREE_MINUTES = 33 * 60 * 1000;\n  const elapsedTime = Date.now() - startTime;\n  const remainingTime = Math.max(0, THIRTY_THREE_MINUTES - elapsedTime);\n  console.log(`Time elapsed: ${formatTime(elapsedTime)}, Remaining: ${formatTime(remainingTime)}`);\n  return remainingTime;\n}\n\n// Main logic\ndocument.addEventListener('DOMContentLoaded', function() {\n  console.log('Page loaded, initializing timer logic');\n\n  const hasSeenContent = getCookie('hasSeenContent');\n  const hasFullParam = getUrlParameter('full') === 'true';\n  const startTime = localStorage.getItem('pageStartTime');\n\n  console.log('Initial state:', {\n    hasSeenContent,\n    hasFullParam,\n    startTime: startTime ? new Date(parseInt(startTime)).toLocaleString() : null\n  });\n\n  if (hasSeenContent === 'true' || hasFullParam) {\n    console.log('Content already seen or full parameter present, showing content immediately');\n    showFullElements();\n    updateUrlWithFullParam();\n  } else {\n    const currentTime = Date.now();\n\n    if (!startTime) {\n      console.log('First visit, starting 33-minute timer');\n      localStorage.setItem('pageStartTime', currentTime.toString());\n      setTimeout(() => {\n        console.log('Timer complete, showing content');\n        showFullElements();\n        updateUrlWithFullParam();\n        setCookie('hasSeenContent', 'true', 90);\n      }, 33 * 60 * 1000);\n    } else {\n      const remainingTime = getRemainingTime(parseInt(startTime));\n\n      if (remainingTime <= 0) {\n        console.log('Timer already expired, showing content immediately');\n        showFullElements();\n        updateUrlWithFullParam();\n        setCookie('hasSeenContent', 'true', 90);\n      } else {\n        console.log(`Resuming timer with ${formatTime(remainingTime)} remaining`);\n        setTimeout(() => {\n          console.log('Timer complete, showing content');\n          showFullElements();\n          updateUrlWithFullParam();\n          setCookie('hasSeenContent', 'true', 90);\n        }, remainingTime);\n      }\n    }\n  }\n\n});\n      </script>\n\n<style>\nsection.full {\n display: none !important; \n}\n</style>",
+        "color_scheme": "background-1",
+        "additional_classes": "",
+        "run_on_pages": "",
+        "padding_top": 0,
+        "padding_bottom": 0
+      }
+    },
+    "text_image_section_hiTE3w": {
+      "type": "text-image-section",
+      "custom_css": [
+        "img {max-width: 200px;}"
+      ],
+      "settings": {
+        "main_title": "",
+        "main_title_rich": "",
+        "main_subtitle": "",
+        "main_title_color": "",
+        "is_reverse_main_titles": false,
+        "image": "shopify://shop_images/curalin-logo-white.svg",
+        "embed_code": "",
+        "video_embed": "",
+        "image_link": "",
+        "title": "",
+        "subtitle": "",
+        "title_badge": "",
+        "content": "",
+        "bg_color": "{{ page.metafields.custom.primary_color.value }}",
+        "title_color": "",
+        "text_color": "",
+        "container_bg_color": "",
+        "border_color": "",
+        "title_highlight_color": "",
+        "max_width": 1200,
+        "content_width": 0,
+        "text_size": 18,
+        "title_tag": "h2",
+        "image_position": "top",
+        "alignment": "center",
+        "mobile_alignment": "center",
+        "bg_width": "full",
+        "is_full_width": false,
+        "is_no_p_margin": false,
+        "is_line_seperator": false,
+        "is_dynamic_height": true,
+        "is_image_cover": false,
+        "is_reverse_on_mobile": false,
+        "is_image_full_width_mobile": false,
+        "is_image_middle_mobile": false,
+        "is_image_bottom": false,
+        "is_image_overlap": false,
+        "is_limit_image_size": false,
+        "is_no_wrap": false,
+        "is_image_overlap_style": false,
+        "is_dont_lazyload": false,
+        "is_force_original_image": false,
+        "padding_top": 10,
+        "padding_bottom": 10,
+        "is_remove_container_padding_mobile": false,
+        "is_image_shadow": false,
+        "shadow_opacity": 0.3,
+        "shadow_blur": 10,
+        "shadow_position_inline": 0,
+        "shadow_position_block": 0,
+        "content_animation": "none",
+        "image_animation": "none",
+        "animation_duration": 1000,
+        "display_on_pages": "",
+        "display_on_utm_parmeters": "",
+        "display_on_url_param": false,
+        "is_hide_on_global": false,
+        "is_hide_description_on_mobile": false,
+        "is_hide_image_on_mobile": false,
+        "is_sticky": false,
+        "items_slider_on": "none",
+        "items_hidden_title": "",
+        "anchor_id": "",
+        "section_additional_classes": "",
+        "additional_code": ""
+      }
+    },
+    "text_image_section_FYdHbG": {
+      "type": "text-image-section",
+      "custom_css": [
+        ".text-image-wrapper {margin-left: 0;}",
+        "em {display: block; font-size: inherit;}",
+        "h2 {width: 100%; margin-bottom: 1rem !important; line-height: 1 !important;}",
+        "p {/* color: var(--orange); */ font-weight: bold; font-size: 25px !important; color: #fdb13e;}",
+        "@media (width<768px) {p {font-size: 4.5vw !important; }}"
+      ],
+      "settings": {
+        "main_title": "",
+        "main_title_rich": "",
+        "main_subtitle": "",
+        "main_title_color": "",
+        "is_reverse_main_titles": false,
+        "image": "shopify://shop_images/New_Project.webp",
+        "image_mobile": "shopify://shop_images/Group_1597877987.png",
+        "embed_code": "",
+        "video_embed": "",
+        "image_link": "",
+        "title": "",
+        "subtitle": "",
+        "title_badge": "",
+        "content": "<h2>I finally found a method to balance blood sugar naturally. <em>Here is how I do it</em></h2><p>Clinically Proven & 100% Natural Way</p>",
+        "bg_color": "",
+        "title_color": "",
+        "text_color": "",
+        "container_bg_color": "",
+        "border_color": "",
+        "title_highlight_color": "",
+        "max_width": 1050,
+        "content_width": 100,
+        "text_size": 18,
+        "title_tag": "h2",
+        "image_position": "top",
+        "alignment": "start",
+        "mobile_alignment": "start",
+        "bg_width": "full",
+        "is_full_width": false,
+        "is_no_p_margin": false,
+        "is_line_seperator": false,
+        "is_dynamic_height": true,
+        "is_image_cover": false,
+        "is_reverse_on_mobile": true,
+        "is_image_full_width_mobile": false,
+        "is_image_middle_mobile": false,
+        "is_image_bottom": false,
+        "is_image_overlap": false,
+        "is_limit_image_size": false,
+        "is_no_wrap": false,
+        "is_image_overlap_style": false,
+        "is_dont_lazyload": false,
+        "is_force_original_image": false,
+        "padding_top": 50,
+        "padding_bottom": 0,
+        "is_remove_container_padding_mobile": false,
+        "is_image_shadow": false,
+        "shadow_opacity": 0.3,
+        "shadow_blur": 10,
+        "shadow_position_inline": 0,
+        "shadow_position_block": 0,
+        "content_animation": "none",
+        "image_animation": "none",
+        "animation_duration": 1000,
+        "display_on_pages": "",
+        "display_on_utm_parmeters": "",
+        "display_on_url_param": false,
+        "is_hide_on_global": false,
+        "is_hide_description_on_mobile": false,
+        "is_hide_image_on_mobile": false,
+        "is_sticky": false,
+        "items_slider_on": "none",
+        "items_hidden_title": "",
+        "anchor_id": "",
+        "section_additional_classes": "",
+        "additional_code": ""
+      }
+    },
+    "custom_liquid_KceJxC": {
+      "type": "custom-liquid",
+      "custom_css": [
+        "#vturb-headline-image {display: none;}",
+        "section {padding: 0;}"
+      ],
+      "settings": {
+        "custom_liquid": "<section>\n<div class=\"container mbl:max-w-full\">\n\n<style>\n@media (width < 768px) {\n#smartplayer {\n  padding-block: max(0px, 70%) !important;\n}\n}\n</style>\n\n<script type=\"text/javascript\" id=\"scr_66abb7832250c2000b53bded\"> var s=document.createElement(\"script\"); s.src=\"https://scripts.converteai.net/857d249e-e698-4657-9d4e-91d895bbed1a/players/66abb7832250c2000b53bded/player.js\", s.async=!0,document.head.appendChild(s); </script> <style> .elementor-element:has(#smartplayer) { width: 100%; } </style>\n\n</div>\n<section>",
+        "color_scheme": "background-1",
+        "additional_classes": "",
+        "run_on_pages": "",
+        "padding_top": 0,
+        "padding_bottom": 0
+      }
+    },
+    "comments_miJJzg": {
+      "type": "comments",
+      "blocks": {
+        "comment_VYtDqP": {
+          "type": "comment",
+          "settings": {
+            "comment_author": "Mia",
+            "comment_text": "Wow! This video completely shifted how I think about blood sugar management. I’m already noticing more steady energy throughout the day.",
+            "comment_avatar": "shopify://shop_images/comment-avatar_1.png"
+          }
+        },
+        "comment_HVHnWp": {
+          "type": "comment",
+          "settings": {
+            "comment_author": "Sarah",
+            "comment_text": "I’ve watched so many videos on blood sugar, but Amy really broke it down in a way that made sense. Finally, I get why I was always craving carbs!",
+            "comment_avatar": "shopify://shop_images/comment-avatar_11.png"
+          }
+        },
+        "comment_DAqPFk": {
+          "type": "comment",
+          "settings": {
+            "comment_author": "Ethan",
+            "comment_text": "I wish I had seen this video sooner. My blood sugar was like a rollercoaster, but the tips here made it so much easier to manage.",
+            "comment_avatar": "shopify://shop_images/comment-avatar_10.png"
+          }
+        },
+        "comment_iGqwNd": {
+          "type": "comment",
+          "settings": {
+            "comment_author": "Isabella",
+            "comment_text": "Thank you, Amy! I had no idea how much my blood sugar was impacting my mood and energy. This video was a real eye-opener.",
+            "comment_avatar": "shopify://shop_images/comment-avatar_9.png"
+          }
+        },
+        "comment_73HTMc": {
+          "type": "comment",
+          "settings": {
+            "comment_author": "Noah",
+            "comment_text": "Finally, a video that makes sense of blood sugar issues. I’ve struggled for years, but now I feel like I have a real solution.",
+            "comment_avatar": "shopify://shop_images/comment-avatar_8.png"
+          }
+        },
+        "comment_y7YqX4": {
+          "type": "comment",
+          "settings": {
+            "comment_author": "Olivia",
+            "comment_text": "This video just clicked for me. My blood sugar used to spike and crash all the time—now I feel like I’m in control, not the other way around!",
+            "comment_avatar": "shopify://shop_images/comment-avatar_7.png"
+          }
+        },
+        "comment_A63bQc": {
+          "type": "comment",
+          "settings": {
+            "comment_author": "Grace",
+            "comment_text": "I had so many ‘aha’ moments watching Amy’s video. I’m already seeing changes in my cravings and energy levels—this is a game-changer!",
+            "comment_avatar": "shopify://shop_images/comment-avatar_6.png"
+          }
+        },
+        "comment_JKQaKe": {
+          "type": "comment",
+          "settings": {
+            "comment_author": "Daniel",
+            "comment_text": "Seriously, Amy’s video just connected all the dots. I feel so much more in control of my blood sugar. I wish I’d found this sooner!",
+            "comment_avatar": "shopify://shop_images/comment-avatar_5.png"
+          }
+        },
+        "comment_PPQqwH": {
+          "type": "comment",
+          "settings": {
+            "comment_author": "Zoe",
+            "comment_text": "I learned more in this short video from Amy than I have from months of research. My blood sugar feels so much more stable now!",
+            "comment_avatar": "shopify://shop_images/comment-avatar_4.png"
+          }
+        },
+        "comment_fqEcNb": {
+          "type": "comment",
+          "settings": {
+            "comment_author": "Lily",
+            "comment_text": "I was skeptical at first, but the natural approach explained in this video really works. My blood sugar is more stable than ever.",
+            "comment_avatar": "shopify://shop_images/comment-avatar_3.png"
+          }
+        },
+        "comment_UG8kf8": {
+          "type": "comment",
+          "settings": {
+            "comment_author": "Nina",
+            "comment_text": "Mind blown! I had no idea my energy crashes were blood sugar related until Amy explained it. This video is a must-watch!",
+            "comment_avatar": "shopify://shop_images/comment-avatar_2.png"
+          }
+        }
+      },
+      "block_order": [
+        "comment_VYtDqP",
+        "comment_HVHnWp",
+        "comment_DAqPFk",
+        "comment_iGqwNd",
+        "comment_73HTMc",
+        "comment_y7YqX4",
+        "comment_A63bQc",
+        "comment_JKQaKe",
+        "comment_PPQqwH",
+        "comment_fqEcNb",
+        "comment_UG8kf8"
+      ],
+      "custom_css": [
+        "section {padding-bottom: 0;}"
+      ],
+      "settings": {
+        "title": "Comments",
+        "submit_button_label": "Submit",
+        "thank_you_message": "Thank you! Your comment will be reviewed."
+      }
+    },
+    "items_collection_3QQtyR": {
+      "type": "items-collection",
+      "blocks": {
+        "item_TRfKnW": {
+          "type": "item",
+          "settings": {
+            "image": "shopify://shop_images/research-logo_1.png",
+            "title": "",
+            "description": "",
+            "is_image_background": false,
+            "is_hide_on_mobile": false,
+            "link_title": "",
+            "link_url": "",
+            "link_url_global": ""
+          }
+        },
+        "item_iCtFWB": {
+          "type": "item",
+          "settings": {
+            "image": "shopify://shop_images/research-logo_3.png",
+            "title": "",
+            "description": "",
+            "is_image_background": false,
+            "is_hide_on_mobile": false,
+            "link_title": "",
+            "link_url": "",
+            "link_url_global": ""
+          }
+        },
+        "item_yXwEPF": {
+          "type": "item",
+          "settings": {
+            "image": "shopify://shop_images/research-logo_2.png",
+            "title": "",
+            "description": "",
+            "is_image_background": false,
+            "is_hide_on_mobile": false,
+            "link_title": "",
+            "link_url": "",
+            "link_url_global": ""
+          }
+        }
+      },
+      "block_order": [
+        "item_TRfKnW",
+        "item_iCtFWB",
+        "item_yXwEPF"
+      ],
+      "custom_css": [
+        "@media (width<768px) {img {width: fit-content; }}"
+      ],
+      "settings": {
+        "bg_color": "",
+        "container_color": "",
+        "item_bg_color": "",
+        "title_color": "#121212",
+        "item_title_color": "",
+        "text_color": "",
+        "main_title": "",
+        "main_title_rich": "<p>Clinical Studies Published at</p>",
+        "main_subtitle": "",
+        "title_highlight_color": "",
+        "item_layout": "column",
+        "collection_align": "center",
+        "items_align": "start",
+        "item_layout_mobile": "column",
+        "item_content_align": "center",
+        "item_content_align_mobile": "center",
+        "title_tag": "h5",
+        "items_in_row": "all",
+        "items_in_row_mobile": "1",
+        "item_padding": 1,
+        "column_gap": 5,
+        "row_gap": 1,
+        "collection_width": 80,
+        "item_content_width": 100,
+        "link_style": "item",
+        "overflow": "visible",
+        "slider_autoplay_speed": 0,
+        "is_slider": false,
+        "is_ticker": false,
+        "is_arrows": true,
+        "is_dots": true,
+        "is_scrollbar": false,
+        "is_arrows_bottom": false,
+        "is_auto_height": false,
+        "is_item_shadow": false,
+        "is_bigger_center_item": false,
+        "is_hover_animation": false,
+        "is_reviews": false,
+        "anchor_id": "",
+        "section_additional_classes": "",
+        "display_on_pages": "",
+        "display_on_utm_parmeters": "",
+        "padding_top": 30,
+        "padding_bottom": 50,
+        "padding_top_mobile": 10,
+        "animation": "none"
+      }
+    },
+    "footer_ghKrcK": {
+      "type": "footer",
+      "blocks": {
+        "menu_FH64fn": {
+          "type": "menu",
+          "settings": {
+            "menu_title": "Legal",
+            "footer_linklist": "footer-menu-6"
+          }
+        }
+      },
+      "block_order": [
+        "menu_FH64fn"
+      ],
+      "custom_css": [
+        ".right-column .menu-list {justify-content: start; gap: 5rem;}",
+        ".pre-bottom-text {font-size: 12px;}"
+      ],
+      "settings": {
+        "logo_fill_color": "",
+        "titles_color": "",
+        "bg_color": "#ebf1f3",
+        "text_color": "{{ page.metafields.custom.primary_color.value }}",
+        "logo_url": "",
+        "sources": "<p><strong>Sources:</strong></p><p>CDC National Di**tes Statistics Report.American Di**tes Association Professional Practice Committee; 6. Glycemic Targets: Standards of Medical Care in Di**tes—2022. Diabetes Care 1 January 2022; 45 (Supplement_1): S83–S96. https://doi.org/10.2337/dc22-S006.</p><p>Lundeen EA, Burke-Conte Z, Rein DB, et al. Prevalence of Di**tic Retinopathy in the US in 2021. JAMA Ophthalmol. 2023;141(8):747–754. doi:10.1001/jamaophthalmol.2023.2289</p><p>Zachary T. Bloomgarden; Cardiovascular Disease, Neuropathy, and Retinopathy. Di**tes Care1 June 2009; 32 (6): e64–e68. https://doi.org/10.2337/dc09-zb06</p><p>Muhammad Shariq Usman, Muhammad Shahzeb Khan, Javed Butler; The Interplay Between Di**tes, Cardiovascular Disease, and Kidney Disease. ADA Clinical Compendia 1 June 2021; 2021 (1): 13–18. https://doi.org/10.2337/db20211-13Bramlage, P., Lanzinger, S., van Mark, G. et al. Patient and disease characteristics of type-2 di**tes patients with or without chronic kidney disease: an analysis of the German DPV and DIVE databases. Cardiovasc Diabetol 18, 33 (2019). https://doi.org/10.1186/s12933-019-0837-x</p><p>*Weinberg Sibony R, Wainstein J, Ish Shalom M, et al. Curalin supplement for patients with type 2 di**tes mellitus. Diabetes Metab Res Rev. 2023; 39(4):e3624. https://doi.org/10.1002/dmrr.3624</p>",
+        "disclaimer": "<p>*Curalin, Curalife products, and statements on this website and other Curalife assets have not been evaluated by the Food and Drug Administration, and are not intended to diagnose, treat, cure, or prevent any disease. Results will vary from one person to another and there is no guarantee of specific results. We recommend consulting your doctor or your primary healthcare provider before using our products, especially when if you’re taking any medications.\\<br/><br/>**The video testimonials on this page feature individuals who are not actual clients but are used for illustrative and marketing purposes. To protect the privacy of our real customers, their names, images, and personal details have been kept confidential.</p>",
+        "hide_on_affiliate_pages": true,
+        "additional_classes": "",
+        "display_on_pages": ""
+      }
+    }
+  },
+  "order": [
+    "custom_liquid_4zQwFp",
+    "custom_liquid_VNgYma",
+    "text_image_section_hiTE3w",
+    "text_image_section_FYdHbG",
+    "custom_liquid_KceJxC",
+    "comments_miJJzg",
+    "items_collection_3QQtyR",
+    "footer_ghKrcK"
+  ]
+}
