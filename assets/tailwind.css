@@ -1,491 +1,146 @@
-/* Tailwind directives with v4.0.7 compatibility */
-/* Note: Using simplified imports for better compatibility */
-@tailwind style-guide;
+/* Tailwind CSS v4 with CSS-first configuration */
+@import "tailwindcss";
 
-/* Enhanced theme features using CSS Variables API */
+/* Explicitly load JavaScript config for backward compatibility */
+@config "../../tailwind.config.js";
+
+/* Explicit content sources if needed (uncomment if automatic detection misses files) */
+/* @source "./src/liquid/**/*.liquid"; */
+/* @source "./src/scripts/**/*.js"; */
+
+/* Define the layer order */
+@layer theme, base, components, utilities;
+
+/* Theme configuration using CSS variables */
 @theme {
+	/* Font Sizes */
+	--text-xs: 12px;
+	--text-xs--line-height: 16px;
+	--text-sm: 16px;
+	--text-sm--line-height: 20px;
+	--text-base: 18px;
+	--text-base--line-height: 24px;
+	--text-lg: 20px;
+	--text-lg--line-height: 28px;
+	--text-xl: 24px;
+	--text-xl--line-height: 32px;
+
 	/* Screens (Breakpoints) */
-	--breakpoint-sm: (max-width: 640px);
-	--breakpoint-md: (max-width: 768px);
-	--breakpoint-lg: (max-width: 1024px);
-	--breakpoint-xl: (max-width: 1200px);
-	--breakpoint-mbl: (max-width: 768px);
-	--breakpoint-dsk: (min-width: 768px);
+	--breakpoint-sm: 640px;
+	--breakpoint-md: 768px;
+	--breakpoint-lg: 1024px;
+	--breakpoint-xl: 1200px;
+	--breakpoint-mbl: 768px;
+	--breakpoint-dsk: 768px;
 
-	/* Colors using CSS variables for better customization */
-	--primary: var(--primary-color);
-	--primary-hover: color-mix(in srgb, var(--primary), black 10%);
-	--primary-light: color-mix(in srgb, var(--primary), white 30%);
+	/* Spacing */
+	--spacing: 0.25rem;
+	--spacing-45\%: 45%;
+	--spacing-50\%: 50%;
+	--spacing-70\%: 70%;
+	--spacing-250px: 250px;
+	--spacing-448px: 448px;
+	--spacing-500px: 500px;
 
-	/* Other theme values can be defined here */
-}
+	/* Colors */
+	--color-primary: #0077b6;
+	--color-primary-hover: color-mix(in srgb, var(--color-primary), black 10%);
+	--color-primary-light: color-mix(in srgb, var(--color-primary), white 30%);
 
-@layer style-guide {
-	:root {
-		--transition: 0.3s ease-in-out;
-		--main-font: "PP Radio Grotesk", "DM Sans", sans-serif;
-		--sub-font: "DM Sans", sans-serif;
-		--container-width: 1200px;
-		--swiper-navigation-size: 44px !important;
-		--swiper-scrollbar-size: 8px;
-		--swiper-scrollbar-drag-bg-color: var(--bg-color);
-		--swiper-scrollbar-bg-color: var(--primary-color);
-		--swiper-theme-color: var(--primary-color) !important;
-		--swiper-scrollbar-bottom: 0 !important;
+	/* Typography */
+	--font-main: "PP Radio Grotesk", "DM Sans", system-ui, sans-serif;
+	--font-sub: "DM Sans", system-ui, sans-serif;
 
-		@media (width > 768px) {
-			--swiper-scrollbar-sides-offset: 470px;
-		}
+	/* Container size */
+	--container-width: 1200px;
 
-		@media (width <= 768px) {
-			--swiper-scrollbar-sides-offset: 25% !important;
-		}
+	/* Width constraints */
+	--max-width-1\/2: 50%;
+	--max-width-1\/3: 33.333333%;
+	--max-width-1\/4: 25%;
+	--max-width-30\%: 30%;
+	--min-width-1\/2: 50%;
 
-		--white: #ffffff;
-		--black: #121212;
-		--dark-blue: #325f69;
-		--blue: #3a7684;
-		--curalin: #3a7684;
-		--curalin-dark: #325f69;
-		--curaslim: #0f7cbf;
-		--curaslim-bg: #b3e1fd;
-		--light-blue: #ebf1f3;
-		--dark-beige: #ffe4d0;
-		--beige: #fff8f3;
-		--dark: #222222;
-		--dark-grey: #838383;
-		--grey: #c4c4c4;
-		--darker-green: #2d3224;
-		--dark-green: #404733;
-		--green: #4b643d;
-		--dark-turquoise: #5d8f8f;
-		--light-turquoise: #f9ffff;
-		--light-green: #9eb069;
-		--lighter-green: #e1e8cf;
-		--vomit: #e8e8b0;
-		--light-vomit: #fafaef;
-		--dark-purple: #897389;
-		--purple: #d6c7d6;
-		--light-purple: #fcf9fc;
-		--dark-brown: #a86129;
-		--brown: #c0956b;
-		--light-brown: #f0d4a6;
-		--lighter-brown: #fffaf5;
-		--dark-orange: #ffb22d;
-		--orange: #ffcb5e;
-		--red: #ed073e;
-		--light-red: #ffe8e8;
-		--bronze: #d96a49;
-		--dark-peach: #cc6f4f;
-		--peach: #f59e80;
-		--light-peach: #f6cdbf;
-		--lighter-peach: #fff6f8;
-		--light-pink: #fff1e8;
-	}
+	/* Transitions */
+	--transition: 0.3s ease-in-out;
 
-	.bfcm-tag {
-		background-color: #c20000 !important;
-		color: #ffe576 !important;
-	}
+	/* Swiper configuration */
+	--swiper-navigation-size: 44px;
+	--swiper-scrollbar-size: 8px;
+	--swiper-scrollbar-drag-bg-color: var(--bg-color);
+	--swiper-scrollbar-bg-color: var(--color-primary);
+	--swiper-theme-color: var(--color-primary);
+	--swiper-scrollbar-bottom: 0;
 
-	*,
-	*:before,
-	*:after {
-		-webkit-box-sizing: border-box;
-		box-sizing: border-box;
-	}
-
-	[inert] {
-		opacity: 0.3;
-	}
-
-	html {
-		scroll-behavior: smooth;
-		overflow-x: hidden;
-	}
-
-	body {
-		font-family: var(--sub-font);
-		line-height: 1.2;
-		font-size: 18px;
-		accent-color: var(--primary-color);
-		overflow-x: hidden;
-	}
-
-	main {
-		overflow: hidden;
-	}
-
-	.container {
-		position: relative;
-		height: auto;
-		max-width: var(--container-width) !important;
-		margin: 0 auto;
-		width: -webkit-fill-available;
-	}
-
-	section {
-		padding: 50px 0;
-		overflow: hidden;
-		position: relative;
-
-		&.no-padding {
-			padding: unset;
-		}
-	}
-
-	h1,
-	h2,
-	h3,
-	h4,
-	h5,
-	h6,
-	.h1,
-	.h2,
-	.h3,
-	.h4,
-	.h5,
-	.h6 {
-		font-family: "PP Radio Grotesk", sans-serif;
-		font-weight: bold;
-		line-height: 1.2 !important;
-		letter-spacing: 0.03em;
-		margin-bottom: 0.25em;
-	}
-
-	h1,
-	.h1 {
-		font-size: 44px;
-		color: var(--primary-color);
-		line-height: 1 !important;
-		/* font-weight: 100;*/
-	}
-
-	h2,
-	.h2 {
-		font-size: 40px;
-		color: var(--primary-color);
-		/* font-weight: 100; */
-	}
-
-	h3,
-	.h3 {
-		font-size: 36px;
-	}
-
-	h4,
-	.h4 {
-		font-size: 32px;
-	}
-
-	h5,
-	.h5 {
-		font-size: 24px;
-	}
-
-	h6,
-	.h6 {
-		font-size: 20px;
-	}
-
-	main p,
-	main .p {
-		line-height: 1.4;
-		margin-bottom: 1em;
-	}
-
-	section small {
-		font-weight: lighter;
-	}
-
-	section strong {
-		font-weight: bold;
-	}
-
-	section .description em {
-		font-size: 12px;
-		line-height: inherit;
-		display: inline-block;
-	}
-
-	img {
-		margin: auto;
-	}
-
+	/* Media query specific values */
 	@media (width > 768px) {
-		.mobile {
-			display: none !important;
-		}
-
-		.desktop {
-			display: block !important;
-		}
+		--swiper-scrollbar-sides-offset: 470px;
 	}
 
 	@media (width <= 768px) {
-		.desktop {
-			display: none !important;
-		}
+		--swiper-scrollbar-sides-offset: 25%;
+	}
+}
 
-		.mobile {
-			display: block !important;
-		}
+/* Base layer customizations */
+@layer base {
+	/* Base styles for modern browsers */
+	:root {
+		color-scheme: light;
+		/* Base colors */
+		--bg-color: white;
+		--text-color: #121212;
 	}
 
-	.offscreen {
-		position: absolute;
-		left: -9999px;
+	/* Restore v3 placeholder styles */
+	input::placeholder,
+	textarea::placeholder {
+		color: var(--color-gray-400);
 	}
 
-	.revert {
-		color: var(--primary-color);
-		background-color: white;
-	}
-
-	section button,
-	.section button {
-		position: relative;
-		padding: 1rem 2rem;
-		color: white;
-		background-color: var(--primary-color);
-		border: none;
-		border-radius: 100px;
-		font-size: 20px;
-		min-width: 200px;
-		max-width: 100%;
-		transition: all 0.2s;
-		z-index: 1;
-	}
-
-	section button span {
-		position: relative;
-		z-index: 2;
-		display: contents;
-	}
-
-	section button::after {
-		content: "";
-		position: absolute;
-		display: block;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		border-radius: inherit;
-		background: rgba(0, 0, 0, 0.1);
-		transition: opacity 200ms ease-in-out;
-		opacity: 0;
-		z-index: -1;
-		pointer-events: none;
-	}
-
-	section button:hover::after {
-		opacity: 1;
-	}
-
-	article ul,
-	section ul {
-		margin-bottom: 1em;
-		list-style-type: none;
-		padding-left: 0;
-	}
-
-	article ul:not(.no-style),
-	section ul:not(.no-style) {
-		text-align: left;
-		position: relative;
-
-		li {
-			position: relative;
-			padding-inline-start: 2rem;
-			margin-bottom: 1rem;
-		}
-	}
-
-	article ul:not(.no-style) li::before,
-	section ul:not(.no-style) li::before {
-		content: " ";
-		background: var(--primary-color);
-		position: absolute;
-		top: 0.25em;
-		left: 0;
-		width: 20px;
-		border-radius: 10px;
-		height: 10px;
-	}
-
-	.check-list li::before,
-	article ul.check li::before,
-	section ul.check li::before {
-		content: "✔" !important;
-		background: var(--primary-color) !important;
-		color: white !important;
-		position: absolute !important;
-		top: 0.25em !important;
-		left: 0 !important;
-		border-radius: 10px !important;
-		width: 20px !important;
-		height: 20px !important;
-		font-size: 13px !important;
-		display: flex !important;
-		justify-content: center !important;
-		align-items: center !important;
-	}
-
-	article ul li::marker {
-		content: "";
-	}
-
-	article ul li strong,
-	section ul li strong {
-		color: var(--primary-color);
-	}
-
-	section .side-menu .menu-item {
-		background: var(--light-blue);
-		border-radius: 10px;
-		margin: 0px 10px 10px 0px;
-		width: 270px;
-	}
-
-	section .side-menu .menu-item a {
-		height: 100%;
-		align-items: center;
-		display: flex;
-		padding: 1.2rem;
-		transition: all 0.2s;
-		font-size: 20px;
-	}
-
-	section .side-menu .menu-item:hover,
-	section .side-menu .menu-item.active {
-		color: white;
-		background: var(--primary-color);
-	}
-
-	body.b2b .b2b-hidden {
-		display: none;
-	}
-
-	.swiper {
-		z-index: unset !important;
-	}
-
-	.swiper-nav {
-		--nav-deepness: 3px;
-		background-color: var(--bg-color);
-		color: var(--primary-color) !important;
-		box-shadow: 0px var(--nav-deepness) 0px 0px var(--primary-color);
-		border-radius: 50%;
-		width: var(--swiper-navigation-size) !important;
-		height: var(--swiper-navigation-size) !important;
-		z-index: 50 !important;
-		display: flex;
-		transition: all 0.3s;
-		font-size: 0.75em;
-
-		&::after {
-			font-size: 1em !important;
-			font-weight: bold;
-		}
-
-		&.disabled {
-			opacity: 0 !important;
-			box-shadow: none;
-		}
-
-		&:active {
-			box-shadow: unset;
-			margin-top: calc(var(--nav-deepness) - (var(--swiper-navigation-size) / 2));
-		}
-	}
-
-	.swiper-pagination {
-		bottom: 0 !important;
-
-		.swiper-pagination-bullet {
-			background: var(--primary-color) !important;
-			opacity: 0.2 !important;
-
-			&.swiper-pagination-bullet-active {
-				opacity: 1 !important;
-			}
-		}
-	}
-
-	.swiper-scrollbar {
-		border-width: 2px;
-		border-color: var(--curaslim);
-	}
-
-	.locale-selectors__content {
-		margin: auto !important;
-	}
-
-	.shopify-policy__container {
-		max-width: 1200px !important;
-		padding-top: 50px;
-		padding-bottom: 50px;
-
-		h2 {
-			font-size: 30px !important;
-		}
-	}
-
-	.clickable {
-		pointer-events: auto;
+	/* Restore v3 button cursor behavior */
+	button:not(:disabled),
+	[role="button"]:not(:disabled) {
 		cursor: pointer;
 	}
 
-	.clickable * {
-		pointer-events: none;
+	/* Other base styles */
+	html {
+		font-family: var(--font-main);
+		font-size: var(--text-base);
+		line-height: var(--text-base--line-height);
 	}
 
-	@media screen and (max-width: 1200px) {
-		.container {
-			padding-inline: 15px;
+	body {
+		background-color: var(--bg-color);
+		color: var(--text-color);
+	}
+}
 
-			&.with-bg {
-				margin-inline: 15px;
-			}
-		}
+/* Define utility values */
+@layer utilities {
+	/* Utility classes that need to be theme-aware */
+	.text-primary {
+		color: var(--color-primary);
 	}
 
-	@media screen and (max-width: 768px) {
-		section {
-			padding: 10vw 0;
+	.bg-primary {
+		background-color: var(--color-primary);
+	}
+
+	/* Container utility replacing the core plugin */
+	.container {
+		width: 100%;
+		max-width: var(--container-width);
+		margin-inline: auto;
+		padding-inline: 1rem;
+
+		@media (width >= 640px) {
+			padding-inline: 1.5rem;
 		}
 
-		h1,
-		h2,
-		h3,
-		h4,
-		h5,
-		h6 {
-			line-height: 1.2;
-		}
-
-		h1,
-		.h1 {
-			font-size: 10vw;
-		}
-
-		h2,
-		.h2 {
-			font-size: 9vw;
-		}
-
-		h3,
-		.h3 {
-			font-size: 7vw;
-		}
-
-		section button {
-			font-size: 5vw;
-			width: 90vw;
-			min-width: -webkit-fill-available;
-			max-width: -webkit-fill-available;
-			padding: 3vw;
+		@media (width >= 1024px) {
+			padding-inline: 2rem;
 		}
 	}
 }
