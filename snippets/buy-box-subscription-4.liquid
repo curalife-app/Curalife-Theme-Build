@@ -207,17 +207,18 @@
 
 	<!-- Subscription Frequency Selector -->
 	<div class="subscription-frequency-container hidden my-4">
-		<div class="font-semibold text-[16px] mb-2">Delivery Frequency:</div>
+		<div class="font-semibold text-[16px] mb-3">Delivery Frequency:</div>
 		<div class="subscription-frequency-selector relative">
-			<select id="frequency-selector-{{ SID }}" class="w-full p-3 pr-8 text-gray-700 bg-white border border-gray-300 rounded-md appearance-none cursor-pointer">
+			<select id="frequency-selector-{{ SID }}" class="frequency-select w-full py-3 px-4 text-[15px] text-gray-700 bg-white border-2 border-primary rounded-md appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-20 transition-all duration-200">
 				<!-- Options will be dynamically populated by JavaScript -->
 			</select>
-			<div class="absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 pointer-events-none">
+			<div class="text-primary absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
 				<svg class="w-4 h-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
 					<path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
 				</svg>
 			</div>
 		</div>
+		<div class="frequency-description text-[14px] text-gray-600 mt-2"></div>
 	</div>
 
 	{% render 'subscription-box-faq',
@@ -1036,14 +1037,16 @@ document.addEventListener('DOMContentLoaded', () => {
 			// Format the option text based on the plan name
 			// Often plan names are like "Deliver every 1 Month" or "Deliver every 2 Months"
 			let planText = plan.name;
+			const months = extractFrequencyMonths(plan.name);
+
 			if (plan.name.includes('Month')) {
-				const months = extractFrequencyMonths(plan.name);
 				planText = months === 1
-					? `Deliver monthly`
-					: `Deliver every ${months} months`;
+					? `Monthly delivery`
+					: `Every ${months} months`;
 			}
 
 			option.textContent = planText;
+			option.dataset.months = months;
 
 			// Set selected option
 			if (plan.id.toString() === currentSellingPlanId) {
@@ -1053,14 +1056,49 @@ document.addEventListener('DOMContentLoaded', () => {
 			frequencySelector.appendChild(option);
 		});
 
-		// Make sure the container is visible
-		frequencyContainer.classList.remove('hidden');
+		// Add description for the selected option
+		updateFrequencyDescription();
+
+		// Make sure the container is visible with a smooth animation
+		if (frequencyContainer.classList.contains('hidden')) {
+			frequencyContainer.style.opacity = '0';
+			frequencyContainer.classList.remove('hidden');
+			setTimeout(() => {
+				frequencyContainer.style.opacity = '1';
+			}, 10);
+		}
 	}
 
 	function extractFrequencyMonths(planName) {
 		// Extract number of months from plan name (e.g., "Deliver every 3 Months" -> 3)
 		const match = planName.match(/(\d+)\s*Month/i);
 		return match ? parseInt(match[1], 10) : 0;
+	}
+
+	// Add a new function to update the frequency description
+	function updateFrequencyDescription() {
+		const descriptionEl = productActions.querySelector('.frequency-description');
+		if (!descriptionEl || !frequencySelector) return;
+
+		const selectedOption = frequencySelector.options[frequencySelector.selectedIndex];
+		if (!selectedOption) return;
+
+		const months = selectedOption.dataset.months || '1';
+		const bottleQuantity = state.selectedBox?.dataset.bottleQuantity || '1';
+
+		let description = '';
+		if (months === '1') {
+			description = `You'll receive ${bottleQuantity} bottle${bottleQuantity > 1 ? 's' : ''} every month.`;
+		} else {
+			description = `You'll receive ${bottleQuantity} bottle${bottleQuantity > 1 ? 's' : ''} every ${months} months.`;
+		}
+
+		// Animate the description update
+		descriptionEl.style.opacity = '0';
+		setTimeout(() => {
+			descriptionEl.textContent = description;
+			descriptionEl.style.opacity = '1';
+		}, 200);
 	}
 
 	// ~~~~~~~~~~~~~~~~~~~~~
@@ -1079,6 +1117,9 @@ document.addEventListener('DOMContentLoaded', () => {
 				if (selectedBox && selectedBox.dataset.purchaseType === 'subscribe') {
 					// Update the data attribute with the new selling plan ID
 					selectedBox.dataset.subscriptionSellingPlanId = this.value;
+
+					// Update the description text
+					updateFrequencyDescription();
 
 					// Update price display if needed - assuming prices may change with different frequencies
 					const selectedOption = this.options[this.selectedIndex];
@@ -1279,31 +1320,58 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	/* Subscription Frequency Selector Styles */
 	.subscription-frequency-container {
-		transition: opacity 0.3s ease;
+		transition: all 0.3s ease;
+		border-top: 1px solid #f0f0f0;
+		padding-top: 1rem;
+		margin-top: 1.25rem;
 	}
 
 	.subscription-frequency-selector select {
-		border: 2px solid var(--primary-color);
-		transition: border-color 0.3s ease, box-shadow 0.3s ease;
+		border-color: var(--primary-color);
+		transition: all 0.3s ease;
+		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+		font-weight: 500;
+	}
+
+	.subscription-frequency-selector select:hover {
+		border-color: var(--primary-color);
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 	}
 
 	.subscription-frequency-selector select:focus {
 		outline: none;
 		border-color: var(--primary-color);
-		box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2);
+		box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.15);
 	}
 
 	.subscription-frequency-selector .pointer-events-none {
 		color: var(--primary-color);
 	}
 
+	.frequency-description {
+		transition: opacity 0.3s ease;
+		line-height: 1.4;
+	}
+
 	@media (max-width: 767px) {
 		.subscription-frequency-container {
-			font-size: 16px;
+			border-top: 1px solid #f0f0f0;
+			padding-top: 0.75rem;
+			margin-top: 1rem;
 		}
 
 		.subscription-frequency-container .font-semibold {
+			font-size: 15px;
+		}
+
+		.subscription-frequency-selector select {
 			font-size: 14px;
+			padding-top: 0.65rem;
+			padding-bottom: 0.65rem;
+		}
+
+		.frequency-description {
+			font-size: 12px;
 		}
 	}
 </style>
