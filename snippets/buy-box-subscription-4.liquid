@@ -205,6 +205,21 @@
 		</div>
 	{% endif %}
 
+	<!-- Subscription Frequency Selector -->
+	<div class="subscription-frequency-container hidden my-4">
+		<div class="font-semibold text-[16px] mb-2">Delivery Frequency:</div>
+		<div class="subscription-frequency-selector relative">
+			<select id="frequency-selector-{{ SID }}" class="w-full p-3 pr-8 text-gray-700 bg-white border border-gray-300 rounded-md appearance-none cursor-pointer">
+				<!-- Options will be dynamically populated by JavaScript -->
+			</select>
+			<div class="absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 pointer-events-none">
+				<svg class="w-4 h-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+					<path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+				</svg>
+			</div>
+		</div>
+	</div>
+
 	{% render 'subscription-box-faq',
 		SID: SID,
 		faqsAmount: faqsAmount,
@@ -273,6 +288,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	const submitSellingPlanId  = productActions.querySelector('.submit-selling-plan-id');
 	const submitVariantId      = productActions.querySelector('.submit-variant-id');
 	const oneTimeButton        = productActions.querySelector('.one-time-add-to-cart');
+	const frequencySelector    = document.getElementById('frequency-selector-{{ SID }}');
+	const frequencyContainer   = productActions.querySelector('.subscription-frequency-container');
 
 	// Liquid Data
 	const SID         = '{{ SID }}';
@@ -592,6 +609,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		updateBuyButton(el);
 		state.selectedBox = el;
 		updatePriceDisplay(el);
+		populateFrequencySelector(el);
 
 		{% if isSlideVariant %}
 			if (window.hasInitialImageUpdateHappened) {
@@ -695,10 +713,16 @@ document.addEventListener('DOMContentLoaded', () => {
 									throw new Error('No valid variant ID found');
 							}
 
+							// Use selected selling plan if available
+							let sellingPlanId = isSub ? box.dataset.subscriptionSellingPlanId : undefined;
+							if (isSub && frequencySelector && !frequencySelector.classList.contains('hidden')) {
+									sellingPlanId = frequencySelector.value;
+							}
+
 							let items = [{
 									id: parseInt(variant, 10), // Ensure variant ID is a number
 									quantity: 1,
-									selling_plan: isSub ? box.dataset.subscriptionSellingPlanId : undefined
+									selling_plan: isSub ? sellingPlanId : undefined
 							}];
 
 							console.log('Items to add:', items); // Debug log
@@ -832,6 +856,133 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 	// ~~~~~~~~~~~~~~~~~~~~~
+	//  Update Frequency Selector
+	// ~~~~~~~~~~~~~~~~~~~~~
+	function populateFrequencySelector(el) {
+		if (!frequencySelector || !frequencyContainer) return;
+
+		// Clear existing options
+		frequencySelector.innerHTML = '';
+
+		// Get variant data
+		const variant = el.dataset.originalVariant || el.dataset.variant;
+		const isSub = el.dataset.purchaseType === 'subscribe';
+
+		// Show frequency selector only for subscription variants
+		if (!isSub) {
+			frequencyContainer.classList.add('hidden');
+			return;
+		}
+
+		// Get the variant object from the window store
+		const productId = el.dataset.product;
+		const variantId = parseInt(variant);
+
+		// Try to find the variant in the product data
+		let selectedVariant = null;
+		if (window.productData && window.productData[productId]) {
+			const product = window.productData[productId];
+			if (product.variants) {
+				selectedVariant = product.variants.find(v => v.id === variantId);
+			}
+		}
+
+		// If variant cannot be found in window data, use API to fetch it
+		if (!selectedVariant) {
+			// Use the displayed data for now
+			const currentSellingPlanId = el.dataset.subscriptionSellingPlanId;
+			if (currentSellingPlanId) {
+				const option = document.createElement('option');
+				option.value = currentSellingPlanId;
+				option.textContent = `Current subscription plan`;
+				option.selected = true;
+				frequencySelector.appendChild(option);
+				frequencyContainer.classList.remove('hidden');
+			} else {
+				frequencyContainer.classList.add('hidden');
+			}
+
+			// Fetch product data asynchronously (for future use)
+			fetch(`/products/${product.handle}.js`)
+				.then(res => res.json())
+				.then(productData => {
+					// Store product data for future use
+					if (!window.productData) window.productData = {};
+					window.productData[productId] = productData;
+
+					// Find the variant again
+					const fetchedVariant = productData.variants.find(v => v.id === variantId);
+					if (fetchedVariant) {
+						updateFrequencyOptionsFromVariant(fetchedVariant, currentSellingPlanId);
+					}
+				})
+				.catch(err => console.error('Error fetching product data:', err));
+
+			return;
+		}
+
+		// If we have the variant, populate the options
+		updateFrequencyOptionsFromVariant(selectedVariant, el.dataset.subscriptionSellingPlanId);
+	}
+
+	function updateFrequencyOptionsFromVariant(variant, currentSellingPlanId) {
+		if (!variant || !variant.selling_plan_allocations || !frequencySelector) return;
+
+		// Clear existing options
+		frequencySelector.innerHTML = '';
+
+		// Get all selling plans for this variant
+		const sellingPlans = variant.selling_plan_allocations || [];
+
+		if (sellingPlans.length === 0) {
+			frequencyContainer.classList.add('hidden');
+			return;
+		}
+
+		// Sort selling plans by delivery interval
+		sellingPlans.sort((a, b) => {
+			const freqA = extractFrequencyMonths(a.selling_plan.name);
+			const freqB = extractFrequencyMonths(b.selling_plan.name);
+			return freqA - freqB;
+		});
+
+		// Populate the selector with all available selling plans
+		sellingPlans.forEach(allocation => {
+			const plan = allocation.selling_plan;
+			const option = document.createElement('option');
+			option.value = plan.id;
+
+			// Format the option text based on the plan name
+			// Often plan names are like "Deliver every 1 Month" or "Deliver every 2 Months"
+			let planText = plan.name;
+			if (plan.name.includes('Month')) {
+				const months = extractFrequencyMonths(plan.name);
+				planText = months === 1
+					? `Deliver monthly`
+					: `Deliver every ${months} months`;
+			}
+
+			option.textContent = planText;
+
+			// Set selected option
+			if (plan.id.toString() === currentSellingPlanId) {
+				option.selected = true;
+			}
+
+			frequencySelector.appendChild(option);
+		});
+
+		// Make sure the container is visible
+		frequencyContainer.classList.remove('hidden');
+	}
+
+	function extractFrequencyMonths(planName) {
+		// Extract number of months from plan name (e.g., "Deliver every 3 Months" -> 3)
+		const match = planName.match(/(\d+)\s*Month/i);
+		return match ? parseInt(match[1], 10) : 0;
+	}
+
+	// ~~~~~~~~~~~~~~~~~~~~~
 	//      Initialize
 	// ~~~~~~~~~~~~~~~~~~~~~
 	function init() {
@@ -839,6 +990,50 @@ document.addEventListener('DOMContentLoaded', () => {
 		initSubmitButton();
 		initOneTimeButton();
 		hideMonthTextIfNeeded();
+
+		// Initialize frequency selector event handling
+		if (frequencySelector) {
+			frequencySelector.addEventListener('change', function() {
+				const selectedBox = productActions.querySelector('.variant-box.selected');
+				if (selectedBox && selectedBox.dataset.purchaseType === 'subscribe') {
+					// Update the data attribute with the new selling plan ID
+					selectedBox.dataset.subscriptionSellingPlanId = this.value;
+
+					// Update price display if needed - assuming prices may change with different frequencies
+					const selectedOption = this.options[this.selectedIndex];
+					const newSellingPlanId = this.value;
+
+					// Only update price if we have complete product data
+					const productId = selectedBox.dataset.product;
+					const variantId = parseInt(selectedBox.dataset.variant);
+
+					if (window.productData && window.productData[productId]) {
+						const product = window.productData[productId];
+						const variant = product.variants.find(v => v.id === variantId);
+
+						if (variant && variant.selling_plan_allocations) {
+							const newPlanAllocation = variant.selling_plan_allocations.find(
+								spa => spa.selling_plan.id.toString() === newSellingPlanId
+							);
+
+							if (newPlanAllocation) {
+								// Update price data in the selectedBox element
+								const bottleQuantity = parseInt(selectedBox.dataset.bottleQuantity) || 1;
+								const newPrice = newPlanAllocation.price;
+								const newPricePerBottle = newPrice / bottleQuantity;
+
+								// Update data attributes
+								selectedBox.dataset.subscriptionPrice = newPrice;
+								selectedBox.dataset.subscriptionItemPrice = newPricePerBottle;
+
+								// Update display
+								updatePriceDisplay(selectedBox);
+							}
+						}
+					}
+				}
+			});
+		}
 	}
 	init();
 });
@@ -999,5 +1194,35 @@ document.addEventListener('DOMContentLoaded', () => {
 	@keyframes button-spinner {
 		0%   { transform: rotate(0deg);   }
 		100% { transform: rotate(360deg); }
+	}
+
+	/* Subscription Frequency Selector Styles */
+	.subscription-frequency-container {
+		transition: opacity 0.3s ease;
+	}
+
+	.subscription-frequency-selector select {
+		border: 2px solid var(--primary-color);
+		transition: border-color 0.3s ease, box-shadow 0.3s ease;
+	}
+
+	.subscription-frequency-selector select:focus {
+		outline: none;
+		border-color: var(--primary-color);
+		box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2);
+	}
+
+	.subscription-frequency-selector .pointer-events-none {
+		color: var(--primary-color);
+	}
+
+	@media (max-width: 767px) {
+		.subscription-frequency-container {
+			font-size: 16px;
+		}
+
+		.subscription-frequency-container .font-semibold {
+			font-size: 14px;
+		}
 	}
 </style>
