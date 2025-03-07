@@ -205,168 +205,18 @@
 		</div>
 	{% endif %}
 
-	{% if faqsAmount > 0 %}
-		<div class="faq-questions flex flex-col my-4">
-			{% for block in blocks %}
-				{% if block.type == 'faq' %}
-					<div class="faq-question overflow-hidden bg-white">
-						<div class="faq-question-header flex items-center justify-between p-4 cursor-pointer">
-							<div class="faq-question-title text-[16px] font-semibold pr-8">{{ block.settings.question }}</div>
-						</div>
-						<div class="faq-answer-wrapper">
-							<div class="faq-answer p-4 pt-0 text-gray-600 text-[16px]">
-								{{ block.settings.answer }}
-							</div>
-						</div>
-					</div>
-				{% endif %}
-			{% endfor %}
-		</div>
+	{% render 'components/subscription-box-faq',
+		SID: SID,
+		faqsAmount: faqsAmount,
+		blocks: blocks
+	%}
 
-		<script>
-			document.addEventListener('DOMContentLoaded', () => {
-				const faqQuestions = document.querySelectorAll('.faq-question');
-
-				faqQuestions.forEach(question => {
-					const header = question.querySelector('.faq-question-header');
-					const answerWrapper = question.querySelector('.faq-answer-wrapper');
-					const answer = question.querySelector('.faq-answer');
-
-					// Initially set height to 0
-					answerWrapper.style.height = '0px';
-
-					header.addEventListener('click', () => {
-						const isOpen = question.classList.contains('open');
-
-						// Close all other questions first
-						faqQuestions.forEach(q => {
-							if (q !== question && q.classList.contains('open')) {
-								q.classList.remove('open');
-								q.querySelector('.faq-answer-wrapper').style.height = '0px';
-							}
-						});
-
-						// Toggle current question
-						question.classList.toggle('open');
-
-						if (!isOpen) {
-							answerWrapper.style.height = answer.offsetHeight + 'px';
-						} else {
-							answerWrapper.style.height = '0px';
-						}
-					});
-				});
-			});
-		</script>
-
-		<style>
-			.faq-question {
-				transition: all 0.3s ease;
-				border-top-width: 1px;
-				border-color: var(--primary-color-light);
-
-				&:last-child {
-					border-bottom-width: 1px;
-				}
-			}
-
-			.faq-answer-wrapper {
-				transition: height 0.3s ease-in-out;
-			}
-
-			.faq-question-header {
-				position: relative;
-				color: var(--primary-color);
-			}
-
-			.faq-question-header::after {
-				content: '+';
-				position: absolute;
-				right: 1rem;
-				font-size: 2rem;
-				transition: transform 0.3s;
-				line-height: 1;
-			}
-
-			.faq-question.open .faq-question-header::after {
-				transform: rotate(45deg);
-			}
-
-			.faq-answer p {
-				margin: 0;
-			}
-
-			@media (max-width: 767px) {
-				.faq-question-title {
-					font-size: 4vw;
-				}
-
-				.faq-answer {
-					font-size: 4vw;
-				}
-			}
-		</style>
-	{% endif %}
-
-	{% if giftsAmount > 0 %}
-		<div class="gift-selector-wrap flex flex-col gap-3 mb-3">
-			<div class="gift-selector-title text-[18px] font-medium">Pick your free gift</div>
-
-			<div class="gift-options flex flex-col gap-2">
-				{% for block in blocks %}
-					{% case block.type %}
-						{% when 'gift' %}
-							{% assign show_gift = false %}
-							{% if block.settings.show_on == 'both' %}
-								{% assign show_gift = true %}
-							{% elsif block.settings.show_on == 'global' and isGlobal %}
-								{% assign show_gift = true %}
-							{% elsif block.settings.show_on == 'us' and isGlobal == false %}
-								{% assign show_gift = true %}
-							{% endif %}
-
-							{% if show_gift %}
-								{% assign giftProd = block.settings.gift_product %}
-								{% assign giftVariant = giftProd.selected_or_first_available_variant %}
-								{% assign giftProdSubscription = block.settings.gift_product_subscription | default: giftProd %}
-								{% assign giftVariantSubscription = giftProdSubscription.selected_or_first_available_variant %}
-								{% assign giftThumb = block.settings.gift_thumbnail | default: giftProdSubscription.featured_image | default: giftProd.featured_image %}
-
-								<div class="gift-box clickable block" name="track:gift|variant-sku:{{ giftVariant.sku }}">
-									<div
-										class="gift-option-border p-2 rounded-lg"
-										data-gift-id="{{ giftVariant.id }}"
-										data-gift-id-subscription="{{ giftVariantSubscription.id | default: giftVariant.id }}">
-										<div class="flex items-center self-end gap-2 ml-auto" style="width:93%">
-											<div class="gift-image-container flex-shrink-0">
-												<img
-													src="{{ giftThumb | image_url: width: 160, height: 160 }}"
-													alt="{{ giftProd.title }}"
-													class="object-contain w-full h-full">
-											</div>
-
-											<div class="gift-content flex-grow">
-												<div class="flex items-center gap-2 mb-1">
-													<div class="gift-name text-[16px] font-bold">{{ giftProd.title | replace: 'Free ', '' }} - FREE</div>
-													<span class="text-gray-600 line-through">${{ giftVariantSubscription.compare_at_price | money_without_currency }}</span>
-												</div>
-												<div class="text-gray-600" style="font-size: 14px">{{ block.settings.variant_description | default: giftProd.metafields.custom.short_description }}</div>
-											</div>
-
-											<div class="check-indicator w-8 h-8 rounded-full border-2 border-[--primary-color] flex items-center justify-center">
-												<svg class="check-mark text-primary w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
-													<path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-												</svg>
-											</div>
-										</div>
-									</div>
-								</div>
-							{% endif %}
-					{% endcase %}
-				{% endfor %}
-			</div>
-		</div>
-	{% endif %}
+	{% render 'components/subscription-box-gift-selector',
+		SID: SID,
+		giftsAmount: giftsAmount,
+		blocks: blocks,
+		isGlobal: isGlobal
+	%}
 
 	<div class="submit-wrap flex flex-col w-full">
 		<div class="checkout-button">
@@ -422,7 +272,6 @@ document.addEventListener('DOMContentLoaded', () => {
 	const submitButton         = productActions.querySelector('.checkout-button button');
 	const submitSellingPlanId  = productActions.querySelector('.submit-selling-plan-id');
 	const submitVariantId      = productActions.querySelector('.submit-variant-id');
-	const giftOptionContainers = productActions.querySelectorAll('.gift-box');
 	const oneTimeButton        = productActions.querySelector('.one-time-add-to-cart');
 
 	// Liquid Data
@@ -527,30 +376,6 @@ document.addEventListener('DOMContentLoaded', () => {
 			showNotification('Error adding items. Please try again.');
 			return { success: false, addedItems: [] };
 		}
-	}
-
-	// ~~~~~~~~~~~~~~~~~~~~~
-	//     Gift Logic
-	// ~~~~~~~~~~~~~~~~~~~~~
-	function updateGiftSelection(container) {
-		giftOptionContainers.forEach(c => {
-			const mark = c.querySelector('.check-mark');
-			const sel  = c === container;
-			c.classList.toggle('selected', sel);
-			if (mark) {
-				mark.style.display = 'block';
-				mark.style.opacity = sel ? '1' : '0';
-			}
-		});
-	}
-
-	function initGiftSelection() {
-		if (giftOptionContainers.length > 0) {
-			updateGiftSelection(giftOptionContainers[0]);
-		}
-		giftOptionContainers.forEach(c => {
-			c.addEventListener('click', () => updateGiftSelection(c));
-		});
 	}
 
 	// ~~~~~~~~~~~~~~~~~~~~~
@@ -1010,7 +835,6 @@ document.addEventListener('DOMContentLoaded', () => {
 	//      Initialize
 	// ~~~~~~~~~~~~~~~~~~~~~
 	function init() {
-		initGiftSelection();
 		initPurchaseOptions();
 		initSubmitButton();
 		initOneTimeButton();
@@ -1026,7 +850,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (!ctasection) return;
 
 		const productActions = ctasection.querySelector('.product-actions');
-		const giftSelectorWrap = productActions ? productActions.querySelector('.gift-selector-wrap') : null;
 		const ctaText = ctasection.querySelector('.cta-text');
 		const purchaseOptions = productActions ? productActions.querySelector('.purchase-options') : null;
 
@@ -1064,91 +887,6 @@ document.addEventListener('DOMContentLoaded', () => {
 									background-color: var(--orange);
 									color: var(--primary-color);
 									transition: all 0.3s ease;
-							}
-					}
-			}
-
-			/* Gift Selector Component */
-			.gift-selector-wrap {
-					.gift-box {
-							.gift-option-border {
-									position: relative;
-									cursor: pointer;
-									background-color: white;
-									border: 1px solid var(--primary-color-light);
-									transition: all 0.3s ease;
-
-									&:hover {
-											background-color: var(--primary-color-lighter);
-									}
-
-									/* Gift Option Layout */
-									& > div.flex.items-center.gap-4 {
-											padding-left: 3rem;
-									}
-
-									.gift-image-container {
-											width: 80px;
-											height: 80px;
-											flex-shrink: 0;
-									}
-
-									/* Check Indicator */
-									.check-indicator {
-											position: absolute;
-											left: 3%;
-											top: 50%;
-											transform: translateY(-50%);
-											width: 20px;
-											height: 20px;
-											min-width: 20px;
-											min-height: 20px;
-											border: 1px solid var(--primary-color);
-											border-radius: 9999px;
-											display: flex;
-											align-items: center;
-											justify-content: center;
-											background-color: transparent;
-
-											svg.check-mark {
-													width: 12px;
-													height: 12px;
-													min-width: 12px;
-													min-height: 12px;
-													color: white;
-													stroke: var(--primary-color);
-													stroke-width: 2;
-													fill: none;
-													opacity: 0;
-													transition: opacity 0.3s ease;
-											}
-									}
-
-									.gift-content {
-											flex-grow: 1;
-									}
-							}
-
-							/* Selected State */
-							&.selected {
-									.gift-option-border {
-											background-color: var(--primary-color-lighter) !important;
-
-											.check-indicator {
-													background-color: var(--primary-color);
-
-													svg.check-mark {
-															opacity: 1;
-															stroke: white;
-													}
-											}
-									}
-							}
-
-							&:hover {
-									.gift-option-border {
-											background-color: var(--primary-color-lightest);
-									}
 							}
 					}
 			}
@@ -1226,74 +964,6 @@ document.addEventListener('DOMContentLoaded', () => {
 							grid-row: 3;
 							max-width: unset;
 							min-height: unset;
-					}
-
-					.gift-content {
-							font-size: 4vw;
-					}
-
-					.variant-box {
-							font-size: 4vw;
-
-							&::before {
-									font-size: 3vw;
-									width: 23vw;
-									height: 5vw;
-									top: -5vw;
-									padding: 0.75vw;
-									border-radius: 2vw 2vw 0 0;
-							}
-
-							&.selected {
-									max-height: none;
-							}
-
-							.top-wrapper {
-									min-height: 9vw;
-							}
-
-							.left-wrapper {
-									gap: 2vw;
-							}
-
-							.option-title {
-									font-size: 3.9vw;
-							}
-
-							.price-wrapper {
-									min-width: 17.7vw;
-
-									.real-price {
-											font-size: 4.5vw;
-									}
-							}
-
-							.terms {
-									margin-left: 5vw;
-
-									.subtitle,
-									.terms-title {
-											font-size: 3.5vw;
-									}
-							}
-
-							.radio-box {
-									label {
-											width: 3vw;
-											height: 3vw;
-
-											&:after {
-													font-size: 2vw;
-													width: 3vw !important;
-													height: 3vw !important;
-													top: -0.25vw !important;
-													left: -0.25vw !important;
-													display: flex;
-													justify-content: center;
-													align-items: center;
-											}
-									}
-							}
 					}
 
 					.one-time-purchase-link {
