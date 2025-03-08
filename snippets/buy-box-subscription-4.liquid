@@ -269,12 +269,13 @@
 		{% if blocks.size > 0 %}
 			{% for block in blocks %}
 				{% if block.type == 'text' %}
-					<div class="text-content text-[14px] text-primary whitespace-break-spaces">{{ block.settings.content }}</div>
+					<div class="text-content text-[14px] text-primary" style="white-space: break-spaces;">{{ block.settings.content }}</div>
 				{% endif %}
 			{% endfor %}
 		{% endif %}
 	</div>
 </div>
+
 
 <style>
 	.buy-box {
@@ -358,6 +359,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			selectedFrequency: null,
 			isInitialLoad: true,
 			isLoading: false,
+			isRedirectingToCheckout: false, // New flag to track if we're redirecting to checkout
 			selectedGift: null,
 			productId: null,
 			variantId: null,
@@ -882,6 +884,10 @@ document.addEventListener('DOMContentLoaded', () => {
 			// Invalidate cart cache after modification
 			CartCache.invalidate();
 
+			// Set a flag to indicate we're redirecting to checkout
+			// This prevents the loading state from being reset in the finally block
+			BuyBoxState.setState({ isRedirectingToCheckout: true });
+
 			// If we get here, redirect to checkout
 			window.location.href = '/checkout';
 		} catch (err) {
@@ -1282,6 +1288,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				if (buyType === 'buy_now') {
 					await handleBuyNowFlow(items);
+					// Note: We're redirecting to checkout, so we don't want to reset the loading state
+					// The handleBuyNowFlow function sets isRedirectingToCheckout to true
 				} else {
 					await addValidItemsToCart(items);
 				}
@@ -1289,8 +1297,10 @@ document.addEventListener('DOMContentLoaded', () => {
 				console.error('Submit error:', err);
 				showNotification(parseErrorMessage(err, 'checkout'), 'error');
 			} finally {
-				// Reset loading state
-				BuyBoxState.setState({ isLoading: false });
+				// Only reset loading state if we're not redirecting to checkout
+				if (!BuyBoxState.data.isRedirectingToCheckout) {
+					BuyBoxState.setState({ isLoading: false });
+				}
 			}
 		});
 	}
@@ -1347,6 +1357,8 @@ document.addEventListener('DOMContentLoaded', () => {
 						throw error;
 					}
 
+					// Set redirecting flag before redirect
+					BuyBoxState.setState({ isRedirectingToCheckout: true });
 					window.location.href = '/checkout';
 				} else {
 					const res = await fetch('/cart/add.js', {
@@ -1394,10 +1406,12 @@ document.addEventListener('DOMContentLoaded', () => {
 					oneTimeButton.removeAttribute('aria-busy');
 				}, 2000);
 			} finally {
-				// Reset loading state
-				setTimeout(() => {
-					BuyBoxState.setState({ isLoading: false });
-				}, 2000); // Keep disabled during "Added!" message
+				// Only reset loading state if we're not redirecting to checkout
+				if (!BuyBoxState.data.isRedirectingToCheckout) {
+					setTimeout(() => {
+						BuyBoxState.setState({ isLoading: false });
+					}, 2000); // Keep disabled during "Added!" message
+				}
 			}
 		});
 	}
