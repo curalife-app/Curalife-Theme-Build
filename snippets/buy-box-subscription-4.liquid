@@ -540,6 +540,160 @@ document.addEventListener('DOMContentLoaded', () => {
 	// ~~~~~~~~~~~~~~~~~~~~~
 	//    Utility Methods
 	// ~~~~~~~~~~~~~~~~~~~~~
+
+	/**
+	 * Cart Cache - Reduces unnecessary network requests
+	 */
+	const CartCache = {
+		data: null,
+		lastFetched: 0,
+		maxAge: 2000, // 2 seconds
+
+		async getCart(forceRefresh = false) {
+			const now = Date.now();
+			if (!forceRefresh && this.data && (now - this.lastFetched < this.maxAge)) {
+				console.log('Using cached cart data');
+				return this.data;
+			}
+
+			try {
+				console.log('Fetching fresh cart data');
+				const res = await fetch('/cart.js');
+				if (!res.ok) throw new Error('Failed to fetch cart');
+				this.data = await res.json();
+				this.lastFetched = now;
+				return this.data;
+			} catch (err) {
+				console.error('Error fetching cart:', err);
+				throw err;
+			}
+		},
+
+		invalidate() {
+			console.log('Invalidating cart cache');
+			this.data = null;
+			this.lastFetched = 0;
+		}
+	};
+
+	/**
+	 * DOM Update utilities for efficient updates
+	 */
+	const DOMUtils = {
+		/**
+		 * Update a DOM element's property only if the value has changed
+		 * @param {Element} element - The DOM element to update
+		 * @param {string} property - The property to update (e.g., 'textContent', 'innerHTML')
+		 * @param {string} newValue - The new value to set
+		 * @return {boolean} Whether the element was updated
+		 */
+		updateProperty(element, property, newValue) {
+			if (!element) return false;
+
+			if (element[property] !== newValue) {
+				element[property] = newValue;
+				return true;
+			}
+			return false;
+		},
+
+		/**
+		 * Update an attribute only if the value has changed
+		 * @param {Element} element - The DOM element to update
+		 * @param {string} attribute - The attribute to update
+		 * @param {string} newValue - The new value to set
+		 * @return {boolean} Whether the element was updated
+		 */
+		updateAttribute(element, attribute, newValue) {
+			if (!element) return false;
+
+			const currentValue = element.getAttribute(attribute);
+			if (currentValue !== newValue) {
+				element.setAttribute(attribute, newValue);
+				return true;
+			}
+			return false;
+		},
+
+		/**
+		 * Toggle a class on an element
+		 * @param {Element} element - The DOM element to update
+		 * @param {string} className - The class to toggle
+		 * @param {boolean} shouldHave - Whether the element should have the class
+		 * @return {boolean} Whether the element was updated
+		 */
+		toggleClass(element, className, shouldHave) {
+			if (!element) return false;
+
+			const hasClass = element.classList.contains(className);
+			if (shouldHave && !hasClass) {
+				element.classList.add(className);
+				return true;
+			} else if (!shouldHave && hasClass) {
+				element.classList.remove(className);
+				return true;
+			}
+			return false;
+		},
+
+		/**
+		 * Update element style property only if changed
+		 * @param {Element} element - The DOM element to update
+		 * @param {string} property - The style property to update
+		 * @param {string} newValue - The new value to set
+		 * @return {boolean} Whether the element was updated
+		 */
+		updateStyle(element, property, newValue) {
+			if (!element) return false;
+
+			if (element.style[property] !== newValue) {
+				element.style[property] = newValue;
+				return true;
+			}
+			return false;
+		},
+
+		/**
+		 * Create an element with properties and append to parent
+		 * @param {string} tagName - The tag name of the element to create
+		 * @param {Object} properties - Properties to set on the element
+		 * @param {Element} parent - The parent element to append to
+		 * @return {Element} The created element
+		 */
+		createElement(tagName, properties = {}, parent = null) {
+			const element = document.createElement(tagName);
+
+			// Set properties
+			Object.entries(properties).forEach(([key, value]) => {
+				if (key === 'className') {
+					element.className = value;
+				} else if (key === 'innerHTML') {
+					element.innerHTML = value;
+				} else if (key === 'textContent') {
+					element.textContent = value;
+				} else if (key === 'style' && typeof value === 'object') {
+					Object.entries(value).forEach(([prop, val]) => {
+						element.style[prop] = val;
+					});
+				} else if (key.startsWith('data-')) {
+					element.setAttribute(key, value);
+				} else if (key.startsWith('on') && typeof value === 'function') {
+					const eventName = key.substring(2).toLowerCase();
+					element.addEventListener(eventName, value);
+				} else {
+					element[key] = value;
+				}
+			});
+
+			// Append to parent if provided
+			if (parent) {
+				parent.appendChild(element);
+			}
+
+			return element;
+		}
+	};
+
 	function showNotification(msg, type = 'error') {
 		const note = document.createElement('div');
 		note.className = `
@@ -632,17 +786,25 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	}
 
-	async function getCart() {
+	/**
+	 * Get the cart data, using cache when possible
+	 * @param {boolean} forceRefresh - Whether to force a fresh fetch
+	 * @return {Promise<Object>} The cart data
+	 */
+	async function getCart(forceRefresh = false) {
 		try {
-			const res = await fetch('/cart.js');
-			if (!res.ok) throw new Error('Failed to fetch cart');
-			return res.json();
+			return await CartCache.getCart(forceRefresh);
 		} catch (err) {
-			console.error('Error fetching cart:', err);
+			console.error('Error in getCart:', err);
 			throw new Error('Unable to access your cart');
 		}
 	}
 
+	/**
+	 * Remove an item from the cart
+	 * @param {string} key - The cart item key
+	 * @return {Promise<Object>} The updated cart
+	 */
 	async function removeCartItem(key) {
 		try {
 			const res = await fetch('/cart/update.js', {
@@ -656,6 +818,8 @@ document.addEventListener('DOMContentLoaded', () => {
 				throw Object.assign(new Error('Failed to remove item'), { response: errorData });
 			}
 
+			// Invalidate cart cache after modification
+			CartCache.invalidate();
 			return res.json();
 		} catch (err) {
 			console.error('Error removing cart item:', err);
@@ -663,6 +827,10 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	}
 
+	/**
+	 * Clear the cart
+	 * @return {Promise<Object>} The empty cart
+	 */
 	async function clearCart() {
 		try {
 			const res = await fetch('/cart/clear.js', { method: 'POST' });
@@ -670,6 +838,9 @@ document.addEventListener('DOMContentLoaded', () => {
 				const errorData = await res.json();
 				throw Object.assign(new Error('Failed to clear cart'), { response: errorData });
 			}
+
+			// Invalidate cart cache after modification
+			CartCache.invalidate();
 			return res.json();
 		} catch (err) {
 			console.error('Error clearing cart:', err);
@@ -689,6 +860,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			// Clear the cart
 			try {
 				await clearCart();
+				// Cart cache already invalidated by clearCart()
 			} catch (clearErr) {
 				console.error('Error clearing cart:', clearErr);
 				throw Object.assign(
@@ -713,6 +885,9 @@ document.addEventListener('DOMContentLoaded', () => {
 				);
 			}
 
+			// Invalidate cart cache after modification
+			CartCache.invalidate();
+
 			// If we get here, redirect to checkout
 			window.location.href = '/checkout';
 		} catch (err) {
@@ -724,19 +899,22 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Add items, remove any existing subscription for same product if needed
 	async function addValidItemsToCart(items) {
 		try {
-			let cart = await getCart();
+			let cart = await getCart(true); // Force a fresh cart fetch
 			const subItem = items.find(i => i.selling_plan);
+
 			if (subItem) {
 				const selectedBox = document.querySelector('.variant-box.selected');
-				const productId   = selectedBox?.dataset?.product;
+				const productId = selectedBox?.dataset?.product;
+
 				if (productId) {
 					const existingSub = cart.items.find(ci => (
 						ci.product_id === parseInt(productId, 10) &&
 						Boolean(ci.selling_plan_allocation)
 					));
+
 					if (existingSub) {
 						await removeCartItem(existingSub.key);
-						cart = await getCart();
+						// Don't need to refetch cart here as we'll add items anyway
 					}
 				}
 			}
@@ -751,6 +929,9 @@ document.addEventListener('DOMContentLoaded', () => {
 				const errorData = await addRes.json();
 				throw Object.assign(new Error('Failed to add items'), { response: errorData });
 			}
+
+			// Invalidate cart cache after modification
+			CartCache.invalidate();
 
 			showNotification(
 				subItem && items.includes(subItem)
@@ -770,126 +951,176 @@ document.addEventListener('DOMContentLoaded', () => {
 	//   Price Updates
 	// ~~~~~~~~~~~~~~~~~~~~~
 	function updatePriceDisplay(el) {
-			const priceEls = document.querySelectorAll('.price-display');
+		const priceEls = document.querySelectorAll('.price-display');
 
-			// Get base prices and convert from cents to dollars
-			const subItem = parseFloat(el.dataset.subscriptionItemPrice) / 100 || 0;
-			const subPrice = parseFloat(el.dataset.subscriptionPrice) / 100 || 0;
-			const origPerItem = parseFloat(el.dataset.originalItemCap) / 100 || 0;
-			const bottles = parseInt(el.dataset.bottleQuantity, 10) || 1;
+		// Get base prices and convert from cents to dollars
+		const subItem = parseFloat(el.dataset.subscriptionItemPrice) / 100 || 0;
+		const subPrice = parseFloat(el.dataset.subscriptionPrice) / 100 || 0;
+		const origPerItem = parseFloat(el.dataset.originalItemCap) / 100 || 0;
+		const bottles = parseInt(el.dataset.bottleQuantity, 10) || 1;
 
-			// Calculate original total price
-			const totalOrig = origPerItem * bottles;
+		// Calculate original total price
+		const totalOrig = origPerItem * bottles;
 
-			// Get subscription and first month discounts
-			const subscriptionDiscount = parseFloat(el.dataset.subscriptionDiscount) || 0;
-			const firstMonthDiscount = parseFloat(el.dataset.firstMonthDiscount) || 0;
+		// Get subscription and first month discounts
+		const subscriptionDiscount = parseFloat(el.dataset.subscriptionDiscount) || 0;
+		const firstMonthDiscount = parseFloat(el.dataset.firstMonthDiscount) || 0;
 
-			// Combine discounts for first month
-			const totalFirstMonthDiscount = subscriptionDiscount + firstMonthDiscount;
-			const firstMonthDiscountMultiplier = (100 - totalFirstMonthDiscount) / 100;
+		// Combine discounts for first month
+		const totalFirstMonthDiscount = subscriptionDiscount + firstMonthDiscount;
+		const firstMonthDiscountMultiplier = (100 - totalFirstMonthDiscount) / 100;
 
-			// Calculate first month prices
-			const firstMonthSubItem = origPerItem * firstMonthDiscountMultiplier;
-			const firstMonthSubPrice = totalOrig * firstMonthDiscountMultiplier;
+		// Calculate first month prices
+		const firstMonthSubItem = origPerItem * firstMonthDiscountMultiplier;
+		const firstMonthSubPrice = totalOrig * firstMonthDiscountMultiplier;
 
-			// Regular subscription price for future months uses only subscription discount
-			const regularDiscountMultiplier = (100 - subscriptionDiscount) / 100;
-			const regularPrice = (priceFormat === 'total' ? totalOrig : origPerItem) * regularDiscountMultiplier;
+		// Regular subscription price for future months uses only subscription discount
+		const regularDiscountMultiplier = (100 - subscriptionDiscount) / 100;
+		const regularPrice = (priceFormat === 'total' ? totalOrig : origPerItem) * regularDiscountMultiplier;
 
-			// Calculate savings amount based on price format
-			const saveAmt = priceFormat === 'total'
-					? (totalOrig - firstMonthSubPrice)
-					: ((origPerItem - firstMonthSubItem) * bottles);
+		// Calculate savings amount based on price format
+		const saveAmt = priceFormat === 'total'
+				? (totalOrig - firstMonthSubPrice)
+				: ((origPerItem - firstMonthSubItem) * bottles);
 
-			priceEls.forEach(display => {
-					const mainPrice = display.querySelector('.final-price');
-					const discount = display.querySelector('.discount-badge');
-					const totalLine = display.querySelector('.total-line');
-					const futurePrice = display.querySelector('.future-price-notice');
+		// Format values for display
+		const newMainPrice = `$${(priceFormat === 'total' ? firstMonthSubPrice : firstMonthSubItem).toFixed(2)}`;
+		const newComparePrice = `$${(priceFormat === 'total' ? totalOrig : origPerItem).toFixed(2)}`;
+		const regularPriceFormatted = `$${regularPrice.toFixed(2)}`;
+		const flooredSave = Math.floor(saveAmt);
+		const savingsText = flooredSave > 0 ? `SAVE $${flooredSave}` : '';
 
-					// Format price displays
-					const newMain = `$${(priceFormat === 'total' ? firstMonthSubPrice : firstMonthSubItem).toFixed(2)}`;
-					const newCompare = `$${(priceFormat === 'total' ? totalOrig : origPerItem).toFixed(2)}`;
-					const regularPriceFormatted = `$${regularPrice.toFixed(2)}`;
-					const flooredSave = Math.floor(saveAmt);
+		priceEls.forEach(display => {
+			const mainPrice = display.querySelector('.final-price');
+			const discount = display.querySelector('.discount-badge');
+			const totalLine = display.querySelector('.total-line');
+			const futurePrice = display.querySelector('.future-price-notice');
 
-					// Skip animation if it's the initial load
-					if (state.isInitialLoad) {
-							if (mainPrice) {
-									const pSpan = mainPrice.querySelector('.price');
-									const cSpan = mainPrice.querySelector('.cap');
-									if (pSpan) pSpan.textContent = newMain;
-									if (cSpan) cSpan.textContent = newCompare;
-							}
+			// Skip animation if it's the initial load
+			if (state.isInitialLoad) {
+				if (mainPrice) {
+					const pSpan = mainPrice.querySelector('.price');
+					const cSpan = mainPrice.querySelector('.cap');
+					if (pSpan) DOMUtils.updateProperty(pSpan, 'textContent', newMainPrice);
+					if (cSpan) DOMUtils.updateProperty(cSpan, 'textContent', newComparePrice);
+				}
 
-							if (discount && priceFormat === 'total') {
-									discount.textContent = flooredSave > 0 ? `SAVE $${flooredSave}` : '';
-							}
+				if (discount && priceFormat === 'total') {
+					DOMUtils.updateProperty(discount, 'textContent', savingsText);
+					DOMUtils.toggleClass(discount, 'hidden', flooredSave <= 0);
+				}
 
-							if (totalLine && priceFormat === 'per_bottle') {
-									if (flooredSave > 0 && firstMonthSubPrice != firstMonthSubItem) {
-											totalLine.innerHTML = `Total $${firstMonthSubPrice.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">$${totalOrig.toFixed(2)}</span>`;
-									} else {
-											totalLine.textContent = '';
-									}
-							}
-
-							// Update future price notice
-							if (futurePrice && firstMonthDiscount > 0) {
-									futurePrice.textContent = `Special price for first order. Refills for ${regularPriceFormatted}${priceFormat === 'per_bottle' ? '/bottle' : ''}. `;
-							}
-
-							state.isInitialLoad = false;
-							return;
+				if (totalLine && priceFormat === 'per_bottle') {
+					if (flooredSave > 0 && firstMonthSubPrice != firstMonthSubItem) {
+						DOMUtils.updateProperty(
+							totalLine,
+							'innerHTML',
+							`Total $${firstMonthSubPrice.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">$${totalOrig.toFixed(2)}</span>`
+						);
+					} else {
+						DOMUtils.updateProperty(totalLine, 'textContent', '');
 					}
+				}
 
-					// Animate price updates for subsequent changes
-					const animate = () => {
-							[mainPrice, discount, totalLine, futurePrice].forEach(el => {
-									if (el) {
-											el.style.transition = 'opacity 200ms ease-out';
-											el.style.opacity = '0';
-									}
-							});
+				// Update future price notice
+				if (futurePrice) {
+					const newFuturePriceText = firstMonthDiscount > 0
+						? `Special price for first order. Refills for ${regularPriceFormatted}${priceFormat === 'per_bottle' ? '/bottle' : ''}.`
+						: '';
 
-							setTimeout(() => {
-									if (mainPrice) {
-											const pSpan = mainPrice.querySelector('.price');
-											const cSpan = mainPrice.querySelector('.cap');
-											if (pSpan) pSpan.textContent = newMain;
-											if (cSpan) cSpan.textContent = newCompare;
-									}
+					DOMUtils.updateProperty(futurePrice, 'textContent', newFuturePriceText);
+				}
 
-									if (discount && priceFormat === 'total') {
-											discount.textContent = flooredSave > 0 ? `SAVE $${flooredSave}` : '';
-									}
+				return;
+			}
 
-									if (totalLine && priceFormat === 'per_bottle') {
-											if (flooredSave > 0 && firstMonthSubPrice != firstMonthSubItem) {
-													totalLine.innerHTML = `Total $${firstMonthSubPrice.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">$${totalOrig.toFixed(2)}</span>`;
-											} else {
-													totalLine.textContent = ' ';
-											}
-									}
+			// Track if any content changed to determine if animation is needed
+			let hasContentChanged = false;
 
-									// Update future price notice
-									if (futurePrice && firstMonthDiscount > 0) {
-											futurePrice.textContent = `Special price for first order. Refills for ${regularPriceFormatted}${priceFormat === 'per_bottle' ? '/bottle' : ''}. `;
-									} else if (futurePrice) {
-											futurePrice.textContent = '';
-									}
+			// Check if price content has changed before animating
+			if (mainPrice) {
+				const pSpan = mainPrice.querySelector('.price');
+				const cSpan = mainPrice.querySelector('.cap');
+				hasContentChanged =
+					(pSpan && pSpan.textContent !== newMainPrice) ||
+					(cSpan && cSpan.textContent !== newComparePrice);
+			}
 
-									// Fade elements back in with staggered timing
-									setTimeout(() => mainPrice && (mainPrice.style.opacity = '1'), 50);
-									setTimeout(() => discount && (discount.style.opacity = '1'), 100);
-									setTimeout(() => totalLine && (totalLine.style.opacity = '1'), 150);
-									setTimeout(() => futurePrice && (futurePrice.style.opacity = '1'), 200);
-							}, 200);
-					};
+			if (discount && priceFormat === 'total') {
+				hasContentChanged = hasContentChanged || discount.textContent !== savingsText;
+			}
 
-					requestAnimationFrame(animate);
-			});
+			if (totalLine && priceFormat === 'per_bottle') {
+				const newTotalLineHTML = flooredSave > 0 && firstMonthSubPrice != firstMonthSubItem
+					? `Total $${firstMonthSubPrice.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">$${totalOrig.toFixed(2)}</span>`
+					: '';
+				hasContentChanged = hasContentChanged || totalLine.innerHTML !== newTotalLineHTML;
+			}
+
+			if (futurePrice) {
+				const newFuturePriceText = firstMonthDiscount > 0
+					? `Special price for first order. Refills for ${regularPriceFormatted}${priceFormat === 'per_bottle' ? '/bottle' : ''}.`
+					: '';
+				hasContentChanged = hasContentChanged || futurePrice.textContent !== newFuturePriceText;
+			}
+
+			// Only animate if content actually changed
+			if (hasContentChanged) {
+				const animate = () => {
+					// Fade out elements that will change
+					[mainPrice, discount, totalLine, futurePrice].forEach(el => {
+						if (el) DOMUtils.updateStyle(el, 'opacity', '0');
+					});
+
+					setTimeout(() => {
+						// Update content while elements are invisible
+						if (mainPrice) {
+							const pSpan = mainPrice.querySelector('.price');
+							const cSpan = mainPrice.querySelector('.cap');
+							if (pSpan) DOMUtils.updateProperty(pSpan, 'textContent', newMainPrice);
+							if (cSpan) DOMUtils.updateProperty(cSpan, 'textContent', newComparePrice);
+						}
+
+						if (discount && priceFormat === 'total') {
+							DOMUtils.updateProperty(discount, 'textContent', savingsText);
+							DOMUtils.toggleClass(discount, 'hidden', flooredSave <= 0);
+						}
+
+						if (totalLine && priceFormat === 'per_bottle') {
+							if (flooredSave > 0 && firstMonthSubPrice != firstMonthSubItem) {
+								DOMUtils.updateProperty(
+									totalLine,
+									'innerHTML',
+									`Total $${firstMonthSubPrice.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">$${totalOrig.toFixed(2)}</span>`
+								);
+							} else {
+								DOMUtils.updateProperty(totalLine, 'textContent', ' ');
+							}
+						}
+
+						// Update future price notice
+						if (futurePrice && firstMonthDiscount > 0) {
+							DOMUtils.updateProperty(
+								futurePrice,
+								'textContent',
+								`Special price for first order. Refills for ${regularPriceFormatted}${priceFormat === 'per_bottle' ? '/bottle' : ''}.`
+							);
+						} else if (futurePrice) {
+							DOMUtils.updateProperty(futurePrice, 'textContent', '');
+						}
+
+						// Fade elements back in with staggered timing
+						setTimeout(() => mainPrice && DOMUtils.updateStyle(mainPrice, 'opacity', '1'), 50);
+						setTimeout(() => discount && DOMUtils.updateStyle(discount, 'opacity', '1'), 100);
+						setTimeout(() => totalLine && DOMUtils.updateStyle(totalLine, 'opacity', '1'), 150);
+						setTimeout(() => futurePrice && DOMUtils.updateStyle(futurePrice, 'opacity', '1'), 200);
+					}, 200);
+				};
+
+				// Use requestAnimationFrame for smoother animation
+				requestAnimationFrame(animate);
+			}
+		});
 	}
 
 	// ~~~~~~~~~~~~~~~~~~~~~
@@ -1305,29 +1536,78 @@ document.addEventListener('DOMContentLoaded', () => {
 			currentSellingPlanId
 		});
 
-		// Clear existing options
-		frequencyOptions.innerHTML = '';
-
+		// Early exit if no selling plans available
 		if (sellingPlans.length === 0) {
 			frequencyContainer.classList.add('hidden');
 			return;
 		}
 
+		// Get the currently displayed selling plan IDs for comparison
+		const currentPlanIds = new Set(
+			Array.from(frequencyOptions.querySelectorAll('.frequency-box'))
+				.map(box => box.getAttribute('data-selling-plan-id'))
+		);
+
+		// Process and filter selling plans
+		const { filteredPlans, hasChanged } = getFilteredSellingPlans(
+			sellingPlans,
+			currentPlanIds,
+			currentSellingPlanId
+		);
+
+		// If no plans match filtering criteria
+		if (filteredPlans.length === 0) {
+			handleNoMatchingPlans(frequencyOptions, currentSellingPlanId);
+			return;
+		}
+
+		// Only rebuild the options if the available plans have changed
+		if (hasChanged) {
+			rebuildFrequencyOptions(frequencyOptions, filteredPlans, currentSellingPlanId);
+		} else {
+			// Just update the selected state if plans haven't changed
+			updateSelectedFrequencyState(frequencyOptions, currentSellingPlanId);
+		}
+
+		// Update the description based on the selected option
+		updateFrequencyDescription();
+
+		// Make sure the container is visible with a smooth animation
+		if (frequencyContainer.classList.contains('hidden')) {
+			frequencyContainer.style.opacity = '0';
+			frequencyContainer.classList.remove('hidden');
+			setTimeout(() => {
+				frequencyContainer.style.opacity = '1';
+			}, 10);
+		}
+	}
+
+	/**
+	 * Get filtered and sorted selling plans
+	 * @param {Array} sellingPlans - Original selling plans
+	 * @param {Set} currentPlanIds - Currently displayed selling plan IDs
+	 * @param {string} currentSellingPlanId - Currently selected selling plan ID
+	 * @return {Object} Filtered plans and change status
+	 */
+	function getFilteredSellingPlans(sellingPlans, currentPlanIds, currentSellingPlanId) {
 		// Check for allowed selling plan IDs
 		const selectedBox = productActions.querySelector('.variant-box.selected');
+		let filteredPlans = [...sellingPlans];
+		let allowedPlans = [];
+
 		if (selectedBox && selectedBox.dataset.allowedSellingPlans) {
 			try {
 				// Parse the allowed selling plan IDs
-				const allowedPlans = selectedBox.dataset.allowedSellingPlans.split(',').map(id => id.trim());
+				allowedPlans = selectedBox.dataset.allowedSellingPlans.split(',').map(id => id.trim());
 				console.log('Filtering by allowed selling plans:', allowedPlans);
 
 				// Filter selling plans to only include allowed ones
 				if (allowedPlans.length > 0) {
-					sellingPlans = sellingPlans.filter(allocation =>
+					filteredPlans = filteredPlans.filter(allocation =>
 						allowedPlans.includes(allocation.selling_plan.id.toString())
 					);
 
-					console.log('Filtered to', sellingPlans.length, 'selling plans');
+					console.log('Filtered to', filteredPlans.length, 'selling plans');
 				}
 			} catch (err) {
 				console.error('Error filtering selling plans:', err);
@@ -1335,37 +1615,70 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 
 		// Sort selling plans by delivery interval
-		sellingPlans.sort((a, b) => {
+		filteredPlans.sort((a, b) => {
 			const freqA = extractFrequencyMonths(a.selling_plan.name);
 			const freqB = extractFrequencyMonths(b.selling_plan.name);
 			return freqA - freqB;
 		});
 
-		// Handle case where allowed plans are specified but none match
-		if (sellingPlans.length === 0) {
-			// If we have a current selling plan ID, use that as fallback
-			if (currentSellingPlanId) {
-				const fallbackBox = document.createElement('div');
-				fallbackBox.className = 'frequency-box flex flex-col items-center variant-tab-style text-center w-full selected';
-				fallbackBox.setAttribute('data-selling-plan-id', currentSellingPlanId);
-				fallbackBox.innerHTML = `
-					<div class="title p-1">
-						<span class="font-semibold">Current Plan</span>
-					</div>
-				`;
-				frequencyOptions.appendChild(fallbackBox);
-				fallbackBox.addEventListener('click', function() {
-					selectFrequencyOption(this);
-				});
-				frequencyContainer.classList.remove('hidden');
-			} else {
-				frequencyContainer.classList.add('hidden');
+		// Check if the plans have changed from what's currently displayed
+		const newPlanIds = new Set(filteredPlans.map(plan => plan.selling_plan.id.toString()));
+
+		// Plans have changed if count differs or any IDs are different
+		let hasChanged = currentPlanIds.size !== newPlanIds.size;
+
+		if (!hasChanged) {
+			// Check if every current ID exists in new IDs and vice versa
+			for (const id of currentPlanIds) {
+				if (!newPlanIds.has(id)) {
+					hasChanged = true;
+					break;
+				}
 			}
-			return;
 		}
 
-		// Populate the options with all available selling plans
-		sellingPlans.forEach(allocation => {
+		return { filteredPlans, hasChanged, allowedPlans };
+	}
+
+	/**
+	 * Handle the case where no selling plans match filtering criteria
+	 * @param {Element} frequencyOptions - The container for frequency options
+	 * @param {string} currentSellingPlanId - Currently selected selling plan ID
+	 */
+	function handleNoMatchingPlans(frequencyOptions, currentSellingPlanId) {
+		// If we have a current selling plan ID, use that as fallback
+		if (currentSellingPlanId) {
+			frequencyOptions.innerHTML = '';
+			const fallbackBox = document.createElement('div');
+			fallbackBox.className = 'frequency-box flex flex-col items-center variant-tab-style text-center w-full selected';
+			fallbackBox.setAttribute('data-selling-plan-id', currentSellingPlanId);
+			fallbackBox.innerHTML = `
+				<div class="title p-1">
+					<span class="font-semibold">Current Plan</span>
+				</div>
+			`;
+			frequencyOptions.appendChild(fallbackBox);
+			fallbackBox.addEventListener('click', function() {
+				selectFrequencyOption(this);
+			});
+			frequencyContainer.classList.remove('hidden');
+		} else {
+			frequencyContainer.classList.add('hidden');
+		}
+	}
+
+	/**
+	 * Rebuild all frequency options
+	 * @param {Element} frequencyOptions - The container for frequency options
+	 * @param {Array} filteredPlans - The filtered selling plans
+	 * @param {string} currentSellingPlanId - Currently selected selling plan ID
+	 */
+	function rebuildFrequencyOptions(frequencyOptions, filteredPlans, currentSellingPlanId) {
+		// Use DocumentFragment for performance
+		const fragment = document.createDocumentFragment();
+
+		// Create each frequency option
+		filteredPlans.forEach(allocation => {
 			const plan = allocation.selling_plan;
 			const months = extractFrequencyMonths(plan.name);
 
@@ -1394,26 +1707,39 @@ document.addEventListener('DOMContentLoaded', () => {
 				selectFrequencyOption(this);
 			});
 
-			frequencyOptions.appendChild(frequencyBox);
+			fragment.appendChild(frequencyBox);
 		});
 
-		// Update the description based on the selected option
-		updateFrequencyDescription();
-
-		// Make sure the container is visible with a smooth animation
-		if (frequencyContainer.classList.contains('hidden')) {
-			frequencyContainer.style.opacity = '0';
-			frequencyContainer.classList.remove('hidden');
-			setTimeout(() => {
-				frequencyContainer.style.opacity = '1';
-			}, 10);
-		}
+		// Clear and update the options container
+		frequencyOptions.innerHTML = '';
+		frequencyOptions.appendChild(fragment);
 	}
 
-	function extractFrequencyMonths(planName) {
-		// Extract number of months from plan name (e.g., "Deliver every 3 Months" -> 3)
-		const match = planName.match(/(\d+)\s*Month/i);
-		return match ? parseInt(match[1], 10) : 0;
+	/**
+	 * Update selected state without rebuilding options
+	 * @param {Element} frequencyOptions - The container for frequency options
+	 * @param {string} currentSellingPlanId - Currently selected selling plan ID
+	 */
+	function updateSelectedFrequencyState(frequencyOptions, currentSellingPlanId) {
+		// Just update selection state if needed
+		const options = frequencyOptions.querySelectorAll('.frequency-box');
+		let selectionChanged = false;
+
+		options.forEach(box => {
+			const isSelected = box.getAttribute('data-selling-plan-id') === currentSellingPlanId;
+			if (isSelected && !box.classList.contains('selected')) {
+				box.classList.add('selected');
+				selectionChanged = true;
+			} else if (!isSelected && box.classList.contains('selected')) {
+				box.classList.remove('selected');
+				selectionChanged = true;
+			}
+		});
+
+		// Only update description if selection changed
+		if (selectionChanged) {
+			updateFrequencyDescription();
+		}
 	}
 
 	// Add a new function to update the frequency description
@@ -1437,12 +1763,23 @@ document.addEventListener('DOMContentLoaded', () => {
 			description = `You'll receive ${bottleQuantity} bottle${bottleQuantity > 1 ? 's' : ''} every ${months} months.`;
 		}
 
-		// Animate the description update
-		descriptionEl.style.opacity = '0';
-		setTimeout(() => {
-			descriptionEl.textContent = description;
-			descriptionEl.style.opacity = '1';
-		}, 200);
+		// Check if the description has actually changed before animating
+		if (descriptionEl.textContent !== description) {
+			// Animate the description update with smooth transition
+			if (descriptionEl.style.opacity !== '0') {
+				// Only animate if already visible
+				DOMUtils.updateStyle(descriptionEl, 'opacity', '0');
+
+				setTimeout(() => {
+					DOMUtils.updateProperty(descriptionEl, 'textContent', description);
+					DOMUtils.updateStyle(descriptionEl, 'opacity', '1');
+				}, 200);
+			} else {
+				// If already invisible, just update content
+				DOMUtils.updateProperty(descriptionEl, 'textContent', description);
+				DOMUtils.updateStyle(descriptionEl, 'opacity', '1');
+			}
+		}
 	}
 
 	// ~~~~~~~~~~~~~~~~~~~~~
@@ -1450,6 +1787,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	// ~~~~~~~~~~~~~~~~~~~~~
 	function init() {
 		initPurchaseOptions();
+
 		BuyBoxState.init(); // Initialize state management
 		initSubmitButton();
 		initOneTimeButton();
