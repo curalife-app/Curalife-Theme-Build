@@ -158,13 +158,10 @@
 							<span class="font-bold mbl:text-[4vw]">{{ bottle_quantity }} Bottle{% if bottle_quantity > 1 %}s{% endif %}</span>
 						</div>
 
-						<style>
-							@media (max-width: 767px) {
-								.title .block {
-									font-size: 3.4vw;
-								}
-							}
-						</style>
+						<!-- Replace the inline style with Tailwind class -->
+						<div class="md:hidden">
+							<span class="title block mbl:text-[3.4vw]"></span>
+						</div>
 					</div>
 				{% endif %}
 			{% endfor %}
@@ -201,21 +198,21 @@
 	</div>
 
 	{% if variantsNotice != blank %}
-		<div class="notice text-primary flex gap-2 my-4" style="font-size:15px">
+		<div class="notice text-primary flex gap-2 my-4 text-[15px]">
 			<span>ⓘ</span>
 			<span>{{ variantsNotice }}</span>
 		</div>
 	{% endif %}
 
-	<!-- Subscription Frequency Selector -->
-	<div class="subscription-frequency-container hidden my-4">
+	<!-- Subscription Frequency Selector with direct Tailwind classes -->
+	<div class="hidden my-4 transition-all duration-300 ease-in-out">
 		<div class="mb-3 font-semibold">Choose Delivery Frequency</div>
 		<div class="subscription-frequency-selector">
-			<div id="frequency-options-{{ SID }}" class="frequency-options flex justify-around gap-2">
+			<div id="frequency-options-{{ SID }}" class="flex justify-center gap-2">
 				<!-- Options will be dynamically populated by JavaScript -->
 			</div>
 		</div>
-		<div class="frequency-description text-[14px] text-gray-600 mt-2"></div>
+		<div class="text-[14px] text-gray-600 mt-2 transition-opacity duration-300 ease-in-out leading-normal"><!-- Frequency description will be populated by JavaScript --></div>
 	</div>
 
 	{% render 'subscription-box-faq',
@@ -269,20 +266,16 @@
 		{% if blocks.size > 0 %}
 			{% for block in blocks %}
 				{% if block.type == 'text' %}
-					<div class="text-content text-[14px] text-primary" style="white-space: break-spaces;">{{ block.settings.content }}</div>
+					<div class="text-content text-[14px] text-primary whitespace-break-spaces">{{ block.settings.content }}</div>
 				{% endif %}
 			{% endfor %}
 		{% endif %}
 	</div>
 </div>
 
-<style>
-	.buy-box {
-		grid-template-columns: 45% 40% !important;
-		grid-column-gap: 5% !important;
-		justify-content: center;
-	}
-</style>
+<!-- Replace style with Tailwind classes added to parent div -->
+<div class="buy-box grid grid-cols-[45%_40%] gap-x-[5%] justify-center">
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -294,8 +287,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	const submitSellingPlanId  = productActions.querySelector('.submit-selling-plan-id');
 	const submitVariantId      = productActions.querySelector('.submit-variant-id');
 	const oneTimeButton        = productActions.querySelector('.one-time-add-to-cart');
-	const frequencySelector    = document.getElementById('frequency-selector-{{ SID }}');
-	const frequencyContainer   = productActions.querySelector('.subscription-frequency-container');
+	// Update selector to use direct Tailwind classes
+	const frequencySelector    = productActions.querySelector('.hidden.my-4.transition-all');
 	const SID         = '{{ SID }}';
 	const buyType     = '{{ buyType }}';
 	const priceFormat = '{{ priceFormat }}';
@@ -479,7 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (submitButton) {
 				if (isLoading) {
 					submitButton.disabled = true;
-					submitButton.innerHTML = `<div class="button-spinner"></div>`;
+					submitButton.innerHTML = `<div class="border-white/20 border-t-white animate-spin inline-block w-6 h-6 mx-auto border-2 rounded-full"></div>`;
 					submitButton.setAttribute('aria-busy', 'true');
 				} else {
 					submitButton.disabled = false;
@@ -1228,11 +1221,25 @@ document.addEventListener('DOMContentLoaded', () => {
 			sellingPlanId: newSellingPlanId
 		});
 
+		// Update styles for all options
+		Array.from(frequencyOptions.children).forEach(box => {
+			if (box === optionEl) {
+				box.style.backgroundColor = 'var(--primary-color)';
+				box.style.color = 'white';
+			} else {
+				box.style.backgroundColor = 'var(--bg-color)';
+				box.style.color = 'var(--primary-color)';
+			}
+		});
+
 		// Update the selected box with the new selling plan ID
 		const selectedBox = productActions.querySelector('.variant-box.selected');
 		if (selectedBox && selectedBox.dataset.purchaseType === 'subscribe') {
 			selectedBox.dataset.subscriptionSellingPlanId = newSellingPlanId;
 		}
+
+		// Update the description
+		updateFrequencyDescription();
 	}
 
 	function initSubmitButton() {
@@ -1315,7 +1322,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			// Set loading state
 			BuyBoxState.setState({ isLoading: true });
-			oneTimeButton.innerHTML = '<div class="button-spinner"></div> Adding...';
+			oneTimeButton.innerHTML = '<div class="border-primary/20 border-t-primary animate-spin inline-block w-4 h-4 mr-2 align-middle border-2 rounded-full"></div> Adding...';
 			oneTimeButton.setAttribute('aria-busy', 'true');
 
 			try {
@@ -1380,10 +1387,10 @@ document.addEventListener('DOMContentLoaded', () => {
 					}
 
 					oneTimeButton.innerHTML = '✓ Added!';
-					oneTimeButton.classList.add('success');
+					oneTimeButton.classList.add('text-green-700', 'border-green-700');
 					setTimeout(() => {
 						oneTimeButton.innerHTML = oneTimeButton.getAttribute('data-original-text');
-						oneTimeButton.classList.remove('success');
+						oneTimeButton.classList.remove('text-green-700', 'border-green-700');
 						oneTimeButton.removeAttribute('aria-busy');
 					}, 2000);
 				}
@@ -1397,11 +1404,11 @@ document.addEventListener('DOMContentLoaded', () => {
 				const errorMessage = parseErrorMessage(err, 'cart-add');
 				showNotification(errorMessage, 'error');
 				oneTimeButton.innerHTML = '⚠ Failed';
-				oneTimeButton.classList.add('error');
+				oneTimeButton.classList.add('text-red-600', 'border-red-600');
 
 				setTimeout(() => {
 					oneTimeButton.innerHTML = oneTimeButton.getAttribute('data-original-text');
-					oneTimeButton.classList.remove('error');
+					oneTimeButton.classList.remove('text-red-600', 'border-red-600');
 					oneTimeButton.removeAttribute('aria-busy');
 				}, 2000);
 			} finally {
@@ -1429,7 +1436,10 @@ document.addEventListener('DOMContentLoaded', () => {
 	// ~~~~~~~~~~~~~~~~~~~~~
 	function populateFrequencySelector(el) {
 		try {
+			// Find the frequency container - now using a different selector since we removed the custom class
+			const frequencyContainer = productActions.querySelector('div.hidden.my-4.transition-all');
 			if (!frequencyContainer) return;
+
 			const frequencyOptions = document.getElementById('frequency-options-{{ SID }}');
 			if (!frequencyOptions) return;
 
@@ -1485,10 +1495,12 @@ document.addEventListener('DOMContentLoaded', () => {
 				const currentSellingPlanId = el.dataset.subscriptionSellingPlanId;
 				if (currentSellingPlanId) {
 					const frequencyBox = document.createElement('div');
-					frequencyBox.className = 'frequency-box flex flex-col items-center variant-tab-style text-center w-full selected';
+					frequencyBox.className = 'rounded-md cursor-pointer py-2 min-w-[90px] text-center w-full selected transition-all duration-300 ease-in-out';
+					frequencyBox.style.backgroundColor = 'var(--primary-color)';
+					frequencyBox.style.color = 'white';
 					frequencyBox.setAttribute('data-selling-plan-id', currentSellingPlanId);
 					frequencyBox.innerHTML = `
-						<div class="title p-1">
+						<div class="p-1">
 							<span class="font-semibold">Current Plan</span>
 						</div>
 					`;
@@ -1510,15 +1522,20 @@ document.addEventListener('DOMContentLoaded', () => {
 			console.error('Error in populateFrequencySelector:', error);
 			// Ensure the frequency selector is at least visible with a default option
 			const frequencyOptions = document.getElementById('frequency-options-{{ SID }}');
+			// Find the frequency container with new selector
+			const frequencyContainer = productActions.querySelector('div.hidden.my-4.transition-all');
+
 			if (frequencyOptions && frequencyContainer && el.dataset.purchaseType === 'subscribe') {
 				const currentSellingPlanId = el.dataset.subscriptionSellingPlanId;
 				if (currentSellingPlanId) {
 					frequencyOptions.innerHTML = '';
 					const frequencyBox = document.createElement('div');
-					frequencyBox.className = 'frequency-box flex flex-col items-center variant-tab-style text-center w-full selected';
+					frequencyBox.className = 'rounded-md cursor-pointer py-2 min-w-[90px] text-center w-full transition-all duration-300 ease-in-out';
+					frequencyBox.style.backgroundColor = 'var(--primary-color)';
+					frequencyBox.style.color = 'white';
 					frequencyBox.setAttribute('data-selling-plan-id', currentSellingPlanId);
 					frequencyBox.innerHTML = `
-						<div class="title p-1">
+						<div class="p-1">
 							<span class="font-semibold">Current Plan</span>
 						</div>
 					`;
@@ -1529,10 +1546,160 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	}
 
+	/**
+	 * Rebuild all frequency options with direct Tailwind classes
+	 * @param {Element} frequencyOptions - The container for frequency options
+	 * @param {Array} filteredPlans - The filtered selling plans
+	 * @param {string} currentSellingPlanId - Currently selected selling plan ID
+	 */
+	function rebuildFrequencyOptions(frequencyOptions, filteredPlans, currentSellingPlanId) {
+		// Use DocumentFragment for performance
+		const fragment = document.createDocumentFragment();
+
+		// Create each frequency option
+		filteredPlans.forEach(allocation => {
+			const plan = allocation.selling_plan;
+			const months = extractFrequencyMonths(plan.name);
+
+			// Create a box for this frequency option with direct Tailwind classes
+			const frequencyBox = document.createElement('div');
+			frequencyBox.className = 'rounded-md cursor-pointer py-2 min-w-[90px] text-center w-full transition-all duration-300 ease-in-out';
+
+			// Set styles that depend on CSS variables
+			frequencyBox.style.backgroundColor = 'var(--bg-color)';
+			frequencyBox.style.color = 'var(--primary-color)';
+
+			frequencyBox.setAttribute('data-selling-plan-id', plan.id);
+			frequencyBox.setAttribute('data-months', months);
+
+			// Is this the selected plan?
+			if (plan.id.toString() === currentSellingPlanId) {
+				frequencyBox.style.backgroundColor = 'var(--primary-color)';
+				frequencyBox.style.color = 'white';
+			}
+
+			// Build the box content
+			let displayText = months === 1 ? 'Monthly' : `${months} Months`;
+
+			frequencyBox.innerHTML = `
+				<div class="p-1">
+					<span class="font-semibold">${displayText}</span>
+				</div>
+			`;
+
+			// Add click handler to select this frequency
+			frequencyBox.addEventListener('click', function() {
+				selectFrequencyOption(this);
+			});
+
+			fragment.appendChild(frequencyBox);
+		});
+
+		// Clear and update the options container
+		frequencyOptions.innerHTML = '';
+		frequencyOptions.appendChild(fragment);
+	}
+
+	/**
+	 * Update selected state without rebuilding options
+	 * @param {Element} frequencyOptions - The container for frequency options
+	 * @param {string} currentSellingPlanId - Currently selected selling plan ID
+	 */
+	function updateSelectedFrequencyState(frequencyOptions, currentSellingPlanId) {
+		// Just update selection state if needed
+		const options = frequencyOptions.querySelectorAll('div[data-selling-plan-id]');
+		let selectionChanged = false;
+
+		options.forEach(box => {
+			const isSelected = box.getAttribute('data-selling-plan-id') === currentSellingPlanId;
+			if (isSelected && box.style.backgroundColor !== 'var(--primary-color)') {
+				box.style.backgroundColor = 'var(--primary-color)';
+				box.style.color = 'white';
+				selectionChanged = true;
+			} else if (!isSelected && box.style.backgroundColor === 'var(--primary-color)') {
+				box.style.backgroundColor = 'var(--bg-color)';
+				box.style.color = 'var(--primary-color)';
+				selectionChanged = true;
+			}
+		});
+
+		// Only update description if selection changed
+		if (selectionChanged) {
+			updateFrequencyDescription();
+		}
+	}
+
+	// Add a new function to update the frequency description
+	function updateFrequencyDescription() {
+		// Find the description element using its Tailwind classes
+		const descriptionEl = productActions.querySelector('.text-gray-600.mt-2.transition-opacity');
+		if (!descriptionEl) return;
+
+		const frequencyOptions = document.getElementById('frequency-options-{{ SID }}');
+		if (!frequencyOptions) return;
+
+		// Find the selected option - now using style properties instead of class
+		const selectedOption = Array.from(frequencyOptions.children).find(el =>
+			el.style.backgroundColor === 'var(--primary-color)'
+		);
+		if (!selectedOption) return;
+
+		const months = selectedOption.getAttribute('data-months') || '1';
+		const bottleQuantity = state.selectedBox?.dataset.bottleQuantity || '1';
+
+		let description = '';
+		if (months === '1') {
+			description = `You'll receive ${bottleQuantity} bottle${bottleQuantity > 1 ? 's' : ''} every month.`;
+		} else {
+			description = `You'll receive ${bottleQuantity} bottle${bottleQuantity > 1 ? 's' : ''} every ${months} months.`;
+		}
+
+		// Check if the description has actually changed before animating
+		if (descriptionEl.textContent !== description) {
+			// Animate the description update with smooth transition
+			if (descriptionEl.style.opacity !== '0') {
+				// Only animate if already visible
+				DOMUtils.updateStyle(descriptionEl, 'opacity', '0');
+
+				setTimeout(() => {
+					DOMUtils.updateProperty(descriptionEl, 'textContent', description);
+					DOMUtils.updateStyle(descriptionEl, 'opacity', '1');
+				}, 200);
+			} else {
+				// If already invisible, just update content
+				DOMUtils.updateProperty(descriptionEl, 'textContent', description);
+				DOMUtils.updateStyle(descriptionEl, 'opacity', '1');
+			}
+		}
+	}
+
+	// ~~~~~~~~~~~~~~~~~~~~~
+	//      Initialize
+	// ~~~~~~~~~~~~~~~~~~~~~
+	function init() {
+		initPurchaseOptions();
+
+		BuyBoxState.init(); // Initialize state management
+		initSubmitButton();
+		initOneTimeButton();
+		hideMonthTextIfNeeded();
+	}
+	init();
+
+	// Add missing function
+	function extractFrequencyMonths(planName) {
+		const match = planName.match(/(\d+)\s*Month/i);
+		return match ? parseInt(match[1], 10) : 0;
+	}
+
 	function updateFrequencyOptionsFromVariant(variant, currentSellingPlanId) {
 		if (!variant) return;
 		const frequencyOptions = document.getElementById('frequency-options-{{ SID }}');
 		if (!frequencyOptions) return;
+
+		// Find frequency container with the new selector
+		const frequencyContainer = productActions.querySelector('div.hidden.my-4.transition-all');
+		if (!frequencyContainer) return;
 
 		// Get all selling plans for this variant
 		let sellingPlans = variant.selling_plan_allocations || [];
@@ -1551,7 +1718,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		// Get the currently displayed selling plan IDs for comparison
 		const currentPlanIds = new Set(
-			Array.from(frequencyOptions.querySelectorAll('.frequency-box'))
+			Array.from(frequencyOptions.querySelectorAll('div[data-selling-plan-id]'))
 				.map(box => box.getAttribute('data-selling-plan-id'))
 		);
 
@@ -1564,7 +1731,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		// If no plans match filtering criteria
 		if (filteredPlans.length === 0) {
-			handleNoMatchingPlans(frequencyOptions, currentSellingPlanId);
+			handleNoMatchingPlans(frequencyOptions, currentSellingPlanId, frequencyContainer);
 			return;
 		}
 
@@ -1648,29 +1815,22 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 	/**
-	 * Extract the frequency in months from a selling plan name
-	 * @param {string} planName - The name of the selling plan
-	 * @return {number} The number of months in the frequency
-	 */
-	function extractFrequencyMonths(planName) {
-		const match = planName.match(/(\d+)\s*Month/i);
-		return match ? parseInt(match[1], 10) : 0;
-	}
-
-	/**
 	 * Handle the case where no selling plans match filtering criteria
 	 * @param {Element} frequencyOptions - The container for frequency options
 	 * @param {string} currentSellingPlanId - Currently selected selling plan ID
+	 * @param {Element} frequencyContainer - The frequency container element
 	 */
-	function handleNoMatchingPlans(frequencyOptions, currentSellingPlanId) {
+	function handleNoMatchingPlans(frequencyOptions, currentSellingPlanId, frequencyContainer) {
 		// If we have a current selling plan ID, use that as fallback
 		if (currentSellingPlanId) {
 			frequencyOptions.innerHTML = '';
 			const fallbackBox = document.createElement('div');
-			fallbackBox.className = 'frequency-box flex flex-col items-center variant-tab-style text-center w-full selected';
+			fallbackBox.className = 'rounded-md cursor-pointer py-2 min-w-[90px] text-center w-full transition-all duration-300 ease-in-out';
+			fallbackBox.style.backgroundColor = 'var(--primary-color)';
+			fallbackBox.style.color = 'white';
 			fallbackBox.setAttribute('data-selling-plan-id', currentSellingPlanId);
 			fallbackBox.innerHTML = `
-				<div class="title p-1">
+				<div class="p-1">
 					<span class="font-semibold">Current Plan</span>
 				</div>
 			`;
@@ -1682,140 +1842,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		} else {
 			frequencyContainer.classList.add('hidden');
 		}
-	}
-
-	/**
-	 * Rebuild all frequency options
-	 * @param {Element} frequencyOptions - The container for frequency options
-	 * @param {Array} filteredPlans - The filtered selling plans
-	 * @param {string} currentSellingPlanId - Currently selected selling plan ID
-	 */
-	function rebuildFrequencyOptions(frequencyOptions, filteredPlans, currentSellingPlanId) {
-		// Use DocumentFragment for performance
-		const fragment = document.createDocumentFragment();
-
-		// Create each frequency option
-		filteredPlans.forEach(allocation => {
-			const plan = allocation.selling_plan;
-			const months = extractFrequencyMonths(plan.name);
-
-			// Create a box for this frequency option
-			const frequencyBox = document.createElement('div');
-			frequencyBox.className = 'frequency-box flex flex-col items-center variant-tab-style text-center w-full';
-			frequencyBox.setAttribute('data-selling-plan-id', plan.id);
-			frequencyBox.setAttribute('data-months', months);
-
-			// Is this the selected plan?
-			if (plan.id.toString() === currentSellingPlanId) {
-				frequencyBox.classList.add('selected');
-			}
-
-			// Build the box content
-			let displayText = months === 1 ? 'Monthly' : `${months} Months`;
-
-			frequencyBox.innerHTML = `
-				<div class="title p-1">
-					<span class="font-semibold">${displayText}</span>
-				</div>
-			`;
-
-			// Add click handler to select this frequency
-			frequencyBox.addEventListener('click', function() {
-				selectFrequencyOption(this);
-			});
-
-			fragment.appendChild(frequencyBox);
-		});
-
-		// Clear and update the options container
-		frequencyOptions.innerHTML = '';
-		frequencyOptions.appendChild(fragment);
-	}
-
-	/**
-	 * Update selected state without rebuilding options
-	 * @param {Element} frequencyOptions - The container for frequency options
-	 * @param {string} currentSellingPlanId - Currently selected selling plan ID
-	 */
-	function updateSelectedFrequencyState(frequencyOptions, currentSellingPlanId) {
-		// Just update selection state if needed
-		const options = frequencyOptions.querySelectorAll('.frequency-box');
-		let selectionChanged = false;
-
-		options.forEach(box => {
-			const isSelected = box.getAttribute('data-selling-plan-id') === currentSellingPlanId;
-			if (isSelected && !box.classList.contains('selected')) {
-				box.classList.add('selected');
-				selectionChanged = true;
-			} else if (!isSelected && box.classList.contains('selected')) {
-				box.classList.remove('selected');
-				selectionChanged = true;
-			}
-		});
-
-		// Only update description if selection changed
-		if (selectionChanged) {
-			updateFrequencyDescription();
-		}
-	}
-
-	// Add a new function to update the frequency description
-	function updateFrequencyDescription() {
-		const descriptionEl = productActions.querySelector('.frequency-description');
-		if (!descriptionEl) return;
-
-		const frequencyOptions = document.getElementById('frequency-options-{{ SID }}');
-		if (!frequencyOptions) return;
-
-		const selectedOption = frequencyOptions.querySelector('.frequency-box.selected');
-		if (!selectedOption) return;
-
-		const months = selectedOption.getAttribute('data-months') || '1';
-		const bottleQuantity = state.selectedBox?.dataset.bottleQuantity || '1';
-
-		let description = '';
-		if (months === '1') {
-			description = `You'll receive ${bottleQuantity} bottle${bottleQuantity > 1 ? 's' : ''} every month.`;
-		} else {
-			description = `You'll receive ${bottleQuantity} bottle${bottleQuantity > 1 ? 's' : ''} every ${months} months.`;
-		}
-
-		// Check if the description has actually changed before animating
-		if (descriptionEl.textContent !== description) {
-			// Animate the description update with smooth transition
-			if (descriptionEl.style.opacity !== '0') {
-				// Only animate if already visible
-				DOMUtils.updateStyle(descriptionEl, 'opacity', '0');
-
-				setTimeout(() => {
-					DOMUtils.updateProperty(descriptionEl, 'textContent', description);
-					DOMUtils.updateStyle(descriptionEl, 'opacity', '1');
-				}, 200);
-			} else {
-				// If already invisible, just update content
-				DOMUtils.updateProperty(descriptionEl, 'textContent', description);
-				DOMUtils.updateStyle(descriptionEl, 'opacity', '1');
-			}
-		}
-	}
-
-	// ~~~~~~~~~~~~~~~~~~~~~
-	//      Initialize
-	// ~~~~~~~~~~~~~~~~~~~~~
-	function init() {
-		initPurchaseOptions();
-
-		BuyBoxState.init(); // Initialize state management
-		initSubmitButton();
-		initOneTimeButton();
-		hideMonthTextIfNeeded();
-	}
-	init();
-
-	// Add missing function
-	function extractFrequencyMonths(planName) {
-		const match = planName.match(/(\d+)\s*Month/i);
-		return match ? parseInt(match[1], 10) : 0;
 	}
 });
 </script>
@@ -1838,19 +1864,22 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <style>
+	/* Core variables - keep these as CSS variables */
 	#cta-section-{{ SID }} {
-			/* Core variables */
 			--text-color: #4a5568;
 			--border-color: #cbcbcb;
 			--radio-size: 1em;
 			--radio-size-mobile: 1em;
 			--transition-speed: 0.2s;
+			--primary-color: #00468c;
+			--bg-color: #f2f7ff;
+			--orange: #ff9d1e;
 
 			/* Variant Tab Styles */
 			.variant-box.variant-tab-style {
 					border-width: 2px;
 					border-color: var(--primary-color);
-					border-radius: 5px;
+					border-radius: 0.375rem;
 					cursor: pointer;
 					align-content: center;
 					transition: all 0.3s ease;
@@ -1871,16 +1900,9 @@ document.addEventListener('DOMContentLoaded', () => {
 					}
 			}
 
-			/* Product Actions */
+			/* Product Actions - Keep these custom grid areas */
 			.product-actions {
 					grid-area: {% if isHideInfo %}1{% else %}2{% endif %}/2/3/3;
-			}
-
-			/* One Time Purchase Link */
-			.one-time-purchase-link {
-					a {
-							transition: color 0.3s ease;
-					}
 			}
 
 			/* Radio Input Styles */
@@ -1954,33 +1976,6 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 	}
 
-	.future-price-notice {
-			transition: opacity 200ms ease-out;
-			line-height: 1.4;
-	}
-
-	@media (max-width: 767px) {
-			.future-price-notice {
-					font-size: 12px;
-			}
-	}
-
-	.button-spinner {
-		display: inline-block;
-		width: 1.5rem;
-		height: 1.5rem;
-		border: 2px solid rgba(255, 255, 255, 0.2);
-		border-radius: 9999px;
-		border-top-color: #fff;
-		animation: button-spinner 0.6s linear infinite;
-		margin: 0 auto;
-	}
-
-	@keyframes button-spinner {
-		0%   { transform: rotate(0deg);   }
-		100% { transform: rotate(360deg); }
-	}
-
 	/* Loading state styles */
 	[aria-busy="true"] {
 		position: relative;
@@ -2012,85 +2007,10 @@ document.addEventListener('DOMContentLoaded', () => {
 		border-radius: inherit;
 	}
 
-	/* Subscription Frequency Selector Styles */
-	.subscription-frequency-container {
-		transition: all 0.3s ease;
-	}
-
-	.frequency-options {
-		display: flex;
-		justify-content: center;
-		gap: 8px;
-	}
-
-	.frequency-box {
-		background: var(--bg-color);
-		color: var(--primary-color);
-		border-radius: 5px;
-		cursor: pointer;
-		padding: 0.5rem 0;
-		min-width: 90px;
-		transition: all 0.3s ease;
-	}
-
-	.frequency-box.selected {
-		background-color: var(--primary-color);
-		color: white;
-	}
-
-	.frequency-box:hover:not(.selected) {
-		background-color: var(--primary-color-lighter);
-	}
-
-	.frequency-description {
-		transition: opacity 0.3s ease;
-		line-height: 1.4;
-	}
-
-	/* Success and error states */
-	.one-time-add-to-cart.success {
-		color: #2c7a2c !important;
-		border-color: #2c7a2c !important;
-	}
-
-	.one-time-add-to-cart.error {
-		color: #d9534f !important;
-		border-color: #d9534f !important;
-	}
-
-	/* For inline spinners, adjust size and margins */
-	button .button-spinner,
-	.one-time-add-to-cart .button-spinner {
-		width: 1rem;
-		height: 1rem;
-		margin-right: 0.5rem;
-		vertical-align: middle;
-		display: inline-block;
-	}
-
-	/* For one-time purchase link, adjust spinner color */
-	.one-time-add-to-cart .button-spinner {
-		border-color: rgba(var(--primary-color-rgb, 0, 70, 140, 0.2));
-		border-top-color: var(--primary-color, #00468c);
-	}
-
+	/* Mobile styles for frequency container */
 	@media (max-width: 767px) {
-		.subscription-frequency-container {
-			border-top: 1px solid #f0f0f0;
-			margin-top: 1rem;
-		}
-
-		.subscription-frequency-container .font-semibold {
+		.hidden.my-4.transition-all .font-semibold {
 			font-size: 15px;
-		}
-
-		.frequency-box {
-			min-width: 70px;
-			font-size: 14px;
-		}
-
-		.frequency-description {
-			font-size: 12px;
 		}
 	}
 </style>
