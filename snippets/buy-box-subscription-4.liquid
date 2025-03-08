@@ -677,6 +677,50 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	}
 
+	// ~~~~~~~~~~~~~~~~~~~~~
+	//   Cart/Checkout
+	// ~~~~~~~~~~~~~~~~~~~~~
+	async function handleBuyNowFlow(items) {
+		try {
+			// Remove cart popup if it exists
+			const cartPopup = document.getElementById('upCart');
+			if (cartPopup) cartPopup.remove();
+
+			// Clear the cart
+			try {
+				await clearCart();
+			} catch (clearErr) {
+				console.error('Error clearing cart:', clearErr);
+				throw Object.assign(
+					new Error('Failed to prepare checkout'),
+					{ cause: 'cart-clear', originalError: clearErr }
+				);
+			}
+
+			// Add items to cart
+			const addRes = await fetch('/cart/add.js', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ items })
+			});
+
+			if (!addRes.ok) {
+				const errorData = await addRes.json();
+				console.error('Cart add response:', errorData);
+				throw Object.assign(
+					new Error('Failed to add items'),
+					{ response: errorData }
+				);
+			}
+
+			// If we get here, redirect to checkout
+			window.location.href = '/checkout';
+		} catch (err) {
+			console.error('handleBuyNowFlow error details:', err);
+			throw err; // Re-throw to be handled by the caller
+		}
+	}
+
 	// Add items, remove any existing subscription for same product if needed
 	async function addValidItemsToCart(items) {
 		try {
