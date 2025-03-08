@@ -170,7 +170,7 @@
 		<div class="price-display">
 			<div class="gap-y-2 flex flex-wrap items-end gap-2">
 					<div class="final-price flex items-center gap-2">
-							<div class="main-price text-primary flex items-end">
+							<div class="main-price text-primary flex items-end transition-opacity duration-200 ease-in-out">
 									{% if priceFormat == 'total' %}
 											<span class="price font-bold leading-none text-[30px] mbl:text-[6vw]">{{ subscription_total_price | money }}</span>
 									{% else %}
@@ -179,22 +179,22 @@
 									{% endif %}
 							</div>
 
-							<span class="cap self-end text-gray-500 line-through">{{ original_item_cap | money }}</span>
+							<span class="cap self-end text-gray-500 line-through transition-opacity duration-200 ease-in-out">{{ original_item_cap | money }}</span>
 
 							{% if priceFormat == 'total' and subscription_total_price != subscription_item_price %}
-									<span class="discount-badge px-4 py-1 text-[16px] font-bold text-white bg-bronze rounded-full">SAVE {{ subscription_save_money | money }}</span>
+									<span class="discount-badge px-4 py-1 text-[16px] font-bold text-white bg-bronze rounded-full transition-opacity duration-200 ease-in-out">SAVE {{ subscription_save_money | money }}</span>
 							{% endif %}
 					</div>
 			</div>
 
 			{% if priceFormat == 'per_bottle' and subscription_total_price != subscription_item_price %}
-					<div class="total-line mt-1 text-[16px] h-4">
+					<div class="total-line mt-1 text-[16px] h-4 transition-opacity duration-200 ease-in-out">
 							Total {{ subscription_total_price | money }}
 							<span class="total-price-cap text-gray-500 line-through">{{ original_item_cap_total | money }}</span>
 					</div>
 			{% endif %}
 
-			<div class="future-price-notice mt-2 text-[14px] text-gray-600"></div>
+			<div class="future-price-notice mt-2 text-[14px] text-gray-600 transition-opacity duration-200 ease-in-out"></div>
 	</div>
 
 	{% if variantsNotice != blank %}
@@ -454,12 +454,14 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (!sellingPlanId) return;
 
 			// Update selected frequency option
-			frequencyOptions.querySelectorAll('.frequency-box').forEach(box => {
+			frequencyOptions.querySelectorAll('div[data-selling-plan-id]').forEach(box => {
 				const boxId = box.getAttribute('data-selling-plan-id');
 				if (boxId === sellingPlanId) {
-					box.classList.add('selected');
+					box.style.backgroundColor = 'var(--primary-color)';
+					box.style.color = 'white';
 				} else {
-					box.classList.remove('selected');
+					box.style.backgroundColor = 'var(--bg-color)';
+					box.style.color = 'var(--primary-color)';
 				}
 			});
 
@@ -492,7 +494,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 
 			// Disable all interactive elements during loading
-			document.querySelectorAll('.variant-box, .frequency-box, .gift-option-border').forEach(el => {
+			document.querySelectorAll('.variant-box, div[data-selling-plan-id], .gift-option-border').forEach(el => {
 				el.style.pointerEvents = isLoading ? 'none' : '';
 			});
 		},
@@ -782,109 +784,6 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 	// ~~~~~~~~~~~~~~~~~~~~~
-	//   Cart/Checkout
-	// ~~~~~~~~~~~~~~~~~~~~~
-	async function handleBuyNowFlow(items) {
-		try {
-			// Remove cart popup if it exists
-			const cartPopup = document.getElementById('upCart');
-			if (cartPopup) cartPopup.remove();
-
-			// Clear the cart
-			try {
-				await clearCart();
-				// Cart cache already invalidated by clearCart()
-			} catch (clearErr) {
-				console.error('Error clearing cart:', clearErr);
-				throw Object.assign(
-					new Error('Failed to prepare checkout'),
-					{ cause: 'cart-clear', originalError: clearErr }
-				);
-			}
-
-			// Add items to cart
-			const addRes = await fetch('/cart/add.js', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ items })
-			});
-
-			if (!addRes.ok) {
-				const errorData = await addRes.json();
-				console.error('Cart add response:', errorData);
-				throw Object.assign(
-					new Error('Failed to add items'),
-					{ response: errorData }
-				);
-			}
-
-			// Invalidate cart cache after modification
-			CartCache.invalidate();
-
-			// Set a flag to indicate we're redirecting to checkout
-			// This prevents the loading state from being reset in the finally block
-			BuyBoxState.setState({ isRedirectingToCheckout: true });
-
-			// If we get here, redirect to checkout
-			window.location.href = '/checkout';
-		} catch (err) {
-			console.error('handleBuyNowFlow error details:', err);
-			throw err; // Re-throw to be handled by the caller
-		}
-	}
-
-	// Add items, remove any existing subscription for same product if needed
-	async function addValidItemsToCart(items) {
-		try {
-			let cart = await getCart(true); // Force a fresh cart fetch
-			const subItem = items.find(i => i.selling_plan);
-
-			if (subItem) {
-				const selectedBox = document.querySelector('.variant-box.selected');
-				const productId = selectedBox?.dataset?.product;
-
-				if (productId) {
-					const existingSub = cart.items.find(ci => (
-						ci.product_id === parseInt(productId, 10) &&
-						Boolean(ci.selling_plan_allocation)
-					));
-
-					if (existingSub) {
-						await removeCartItem(existingSub.key);
-						// Don't need to refetch cart here as we'll add items anyway
-					}
-				}
-			}
-
-			const addRes = await fetch('/cart/add.js', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ items })
-			});
-
-			if (!addRes.ok) {
-				const errorData = await addRes.json();
-				throw Object.assign(new Error('Failed to add items'), { response: errorData });
-			}
-
-			// Invalidate cart cache after modification
-			CartCache.invalidate();
-
-			showNotification(
-				subItem && items.includes(subItem)
-					? 'Subscription updated in your cart'
-					: 'Items added to cart',
-				'success'
-			);
-			return { success: true, addedItems: items };
-		} catch (err) {
-			console.error('addValidItemsToCart error details:', err);
-			showNotification(parseErrorMessage(err, 'cart-add'), 'error');
-			return { success: false, addedItems: [], error: err };
-		}
-	}
-
-	// ~~~~~~~~~~~~~~~~~~~~~
 	//   Price Updates
 	// ~~~~~~~~~~~~~~~~~~~~~
 	function updatePriceDisplay(el) {
@@ -928,7 +827,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		const savingsText = flooredSave > 0 ? `SAVE $${flooredSave}` : '';
 
 		priceEls.forEach(display => {
-			const mainPrice = display.querySelector('.final-price');
+			const mainPrice = display.querySelector('.main-price');
+			const cap = display.querySelector('.cap');
 			const discount = display.querySelector('.discount-badge');
 			const totalLine = display.querySelector('.total-line');
 			const futurePrice = display.querySelector('.future-price-notice');
@@ -937,10 +837,10 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (state.isInitialLoad) {
 				if (mainPrice) {
 					const pSpan = mainPrice.querySelector('.price');
-					const cSpan = mainPrice.querySelector('.cap');
 					if (pSpan) DOMUtils.updateProperty(pSpan, 'textContent', newMainPrice);
-					if (cSpan) DOMUtils.updateProperty(cSpan, 'textContent', newComparePrice);
 				}
+
+				if (cap) DOMUtils.updateProperty(cap, 'textContent', newComparePrice);
 
 				if (discount && priceFormat === 'total') {
 					DOMUtils.updateProperty(discount, 'textContent', savingsText);
@@ -959,6 +859,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					}
 				}
 
+				// Update future price notice
 				if (futurePrice) {
 					const newFuturePriceText = firstMonthDiscount > 0
 						? `Special price for first order. Refills for ${regularPriceFormatted}${priceFormat === 'per_bottle' ? '/bottle' : ''}.`
@@ -970,14 +871,17 @@ document.addEventListener('DOMContentLoaded', () => {
 				return;
 			}
 
+			// Track if any content changed to determine if animation is needed
 			let hasContentChanged = false;
 
+			// Check if price content has changed before animating
 			if (mainPrice) {
 				const pSpan = mainPrice.querySelector('.price');
-				const cSpan = mainPrice.querySelector('.cap');
-				hasContentChanged =
-					(pSpan && pSpan.textContent !== newMainPrice) ||
-					(cSpan && cSpan.textContent !== newComparePrice);
+				hasContentChanged = (pSpan && pSpan.textContent !== newMainPrice);
+			}
+
+			if (cap) {
+				hasContentChanged = hasContentChanged || cap.textContent !== newComparePrice;
 			}
 
 			if (discount && priceFormat === 'total') {
@@ -998,19 +902,24 @@ document.addEventListener('DOMContentLoaded', () => {
 				hasContentChanged = hasContentChanged || futurePrice.textContent !== newFuturePriceText;
 			}
 
+			// Only animate if content actually changed
 			if (hasContentChanged) {
 				const animate = () => {
-					[mainPrice, discount, totalLine, futurePrice].forEach(el => {
-						if (el) DOMUtils.updateStyle(el, 'opacity', '0');
-					});
+					// Fade out elements that will change
+					if (mainPrice) mainPrice.style.opacity = '0';
+					if (cap) cap.style.opacity = '0';
+					if (discount) discount.style.opacity = '0';
+					if (totalLine) totalLine.style.opacity = '0';
+					if (futurePrice) futurePrice.style.opacity = '0';
 
 					setTimeout(() => {
+						// Update content while elements are invisible
 						if (mainPrice) {
 							const pSpan = mainPrice.querySelector('.price');
-							const cSpan = mainPrice.querySelector('.cap');
 							if (pSpan) DOMUtils.updateProperty(pSpan, 'textContent', newMainPrice);
-							if (cSpan) DOMUtils.updateProperty(cSpan, 'textContent', newComparePrice);
 						}
+
+						if (cap) DOMUtils.updateProperty(cap, 'textContent', newComparePrice);
 
 						if (discount && priceFormat === 'total') {
 							DOMUtils.updateProperty(discount, 'textContent', savingsText);
@@ -1029,6 +938,7 @@ document.addEventListener('DOMContentLoaded', () => {
 							}
 						}
 
+						// Update future price notice
 						if (futurePrice && firstMonthDiscount > 0) {
 							DOMUtils.updateProperty(
 								futurePrice,
@@ -1039,13 +949,16 @@ document.addEventListener('DOMContentLoaded', () => {
 							DOMUtils.updateProperty(futurePrice, 'textContent', '');
 						}
 
-						setTimeout(() => mainPrice && DOMUtils.updateStyle(mainPrice, 'opacity', '1'), 50);
-						setTimeout(() => discount && DOMUtils.updateStyle(discount, 'opacity', '1'), 100);
-						setTimeout(() => totalLine && DOMUtils.updateStyle(totalLine, 'opacity', '1'), 150);
-						setTimeout(() => futurePrice && DOMUtils.updateStyle(futurePrice, 'opacity', '1'), 200);
+						// Fade elements back in with staggered timing
+						setTimeout(() => { if (mainPrice) mainPrice.style.opacity = '1'; }, 50);
+						setTimeout(() => { if (cap) cap.style.opacity = '1'; }, 75);
+						setTimeout(() => { if (discount) discount.style.opacity = '1'; }, 100);
+						setTimeout(() => { if (totalLine) totalLine.style.opacity = '1'; }, 150);
+						setTimeout(() => { if (futurePrice) futurePrice.style.opacity = '1'; }, 200);
 					}, 200);
 				};
 
+				// Use requestAnimationFrame for smoother animation
 				requestAnimationFrame(animate);
 			}
 		});
