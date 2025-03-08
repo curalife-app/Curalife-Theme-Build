@@ -375,13 +375,6 @@ document.addEventListener('DOMContentLoaded', () => {
 			// Update state with new values
 			Object.assign(this.data, updates);
 
-			// Log state changes in debug mode
-			console.log('BuyBox state updated:', {
-				changes: Object.keys(updates),
-				from: previousState,
-				to: this.data
-			});
-
 			// React to specific state changes
 			this.updateUI(updates, previousState);
 		},
@@ -552,12 +545,12 @@ document.addEventListener('DOMContentLoaded', () => {
 		async getCart(forceRefresh = false) {
 			const now = Date.now();
 			if (!forceRefresh && this.data && (now - this.lastFetched < this.maxAge)) {
-				console.log('Using cached cart data');
+				// Using cached cart data
 				return this.data;
 			}
 
 			try {
-				console.log('Fetching fresh cart data');
+				// Fetching fresh cart data
 				const res = await fetch('/cart.js');
 				if (!res.ok) throw new Error('Failed to fetch cart');
 				this.data = await res.json();
@@ -570,7 +563,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		},
 
 		invalidate() {
-			console.log('Invalidating cart cache');
+			// Invalidating cart cache
 			this.data = null;
 			this.lastFetched = 0;
 		}
@@ -1641,6 +1634,16 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 	/**
+	 * Extract the frequency in months from a selling plan name
+	 * @param {string} planName - The name of the selling plan
+	 * @return {number} The number of months in the frequency
+	 */
+	function extractFrequencyMonths(planName) {
+		const match = planName.match(/(\d+)\s*Month/i);
+		return match ? parseInt(match[1], 10) : 0;
+	}
+
+	/**
 	 * Handle the case where no selling plans match filtering criteria
 	 * @param {Element} frequencyOptions - The container for frequency options
 	 * @param {string} currentSellingPlanId - Currently selected selling plan ID
@@ -1794,6 +1797,12 @@ document.addEventListener('DOMContentLoaded', () => {
 		hideMonthTextIfNeeded();
 	}
 	init();
+
+	// Add missing function
+	function extractFrequencyMonths(planName) {
+		const match = planName.match(/(\d+)\s*Month/i);
+		return match ? parseInt(match[1], 10) : 0;
+	}
 });
 </script>
 
