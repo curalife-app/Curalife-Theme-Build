@@ -205,14 +205,14 @@
 	{% endif %}
 
 	<!-- Subscription Frequency Selector with direct Tailwind classes -->
-	<div class="hidden my-4 transition-all duration-300 ease-in-out">
+	<div class="hidden my-4 transition-all duration-300 ease-in-out" data-frequency-container>
 		<div class="mb-3 font-semibold">Choose Delivery Frequency</div>
 		<div class="subscription-frequency-selector">
 			<div id="frequency-options-{{ SID }}" class="flex justify-center gap-2">
 				<!-- Options will be dynamically populated by JavaScript -->
 			</div>
 		</div>
-		<div class="text-[14px] text-gray-600 mt-2 transition-opacity duration-300 ease-in-out leading-normal"><!-- Frequency description will be populated by JavaScript --></div>
+		<div class="frequency-description text-[14px] text-gray-600 mt-2 transition-opacity duration-300 ease-in-out leading-normal"><!-- Frequency description will be populated by JavaScript --></div>
 	</div>
 
 	{% render 'subscription-box-faq',
@@ -287,8 +287,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	const submitSellingPlanId  = productActions.querySelector('.submit-selling-plan-id');
 	const submitVariantId      = productActions.querySelector('.submit-variant-id');
 	const oneTimeButton        = productActions.querySelector('.one-time-add-to-cart');
-	// Update selector to use direct Tailwind classes
-	const frequencySelector    = productActions.querySelector('.hidden.my-4.transition-all');
+	// Use data attribute for more specific selection
+	const frequencySelector    = productActions.querySelector('[data-frequency-container]');
 	const SID         = '{{ SID }}';
 	const buyType     = '{{ buyType }}';
 	const priceFormat = '{{ priceFormat }}';
@@ -1083,6 +1083,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			selectedBox.dataset.subscriptionSellingPlanId = newSellingPlanId;
 		}
 
+		// Make sure to update the frequency description text
 		updateFrequencyDescription();
 	}
 
@@ -1270,7 +1271,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	// ~~~~~~~~~~~~~~~~~~~~~
 	function populateFrequencySelector(el) {
 		try {
-			const frequencyContainer = productActions.querySelector('div.hidden.my-4.transition-all');
+			// Use the data attribute for more specific selection
+			const frequencyContainer = productActions.querySelector('[data-frequency-container]');
 			if (!frequencyContainer) return;
 
 			const frequencyOptions = document.getElementById('frequency-options-{{ SID }}');
@@ -1344,7 +1346,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		} catch (error) {
 			console.error('Error in populateFrequencySelector:', error);
 			const frequencyOptions = document.getElementById('frequency-options-{{ SID }}');
-			const frequencyContainer = productActions.querySelector('div.hidden.my-4.transition-all');
+			const frequencyContainer = productActions.querySelector('[data-frequency-container]');
 
 			if (frequencyOptions && frequencyContainer && el.dataset.purchaseType === 'subscribe') {
 				const currentSellingPlanId = el.dataset.subscriptionSellingPlanId;
@@ -1364,6 +1366,61 @@ document.addEventListener('DOMContentLoaded', () => {
 					frequencyContainer.classList.remove('hidden');
 				}
 			}
+		}
+	}
+
+	function updateFrequencyOptionsFromVariant(variant, currentSellingPlanId) {
+		if (!variant) return;
+		const frequencyOptions = document.getElementById('frequency-options-{{ SID }}');
+		if (!frequencyOptions) return;
+
+		// Use data attribute for more specific selection
+		const frequencyContainer = productActions.querySelector('[data-frequency-container]');
+		if (!frequencyContainer) return;
+
+		let sellingPlans = variant.selling_plan_allocations || [];
+
+		console.log('Updating frequency options:', {
+			variantId: variant.id,
+			plansCount: sellingPlans.length,
+			currentSellingPlanId
+		});
+
+		if (sellingPlans.length === 0) {
+			frequencyContainer.classList.add('hidden');
+			return;
+		}
+
+		const currentPlanIds = new Set(
+			Array.from(frequencyOptions.querySelectorAll('div[data-selling-plan-id]'))
+				.map(box => box.getAttribute('data-selling-plan-id'))
+		);
+
+		const { filteredPlans, hasChanged } = getFilteredSellingPlans(
+			sellingPlans,
+			currentPlanIds,
+			currentSellingPlanId
+		);
+
+		if (filteredPlans.length === 0) {
+			handleNoMatchingPlans(frequencyOptions, currentSellingPlanId, frequencyContainer);
+			return;
+		}
+
+		if (hasChanged) {
+			rebuildFrequencyOptions(frequencyOptions, filteredPlans, currentSellingPlanId);
+		} else {
+			updateSelectedFrequencyState(frequencyOptions, currentSellingPlanId);
+		}
+
+		updateFrequencyDescription();
+
+		if (frequencyContainer.classList.contains('hidden')) {
+			frequencyContainer.style.opacity = '0';
+			frequencyContainer.classList.remove('hidden');
+			setTimeout(() => {
+				frequencyContainer.style.opacity = '1';
+			}, 10);
 		}
 	}
 
@@ -1430,7 +1487,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 	function updateFrequencyDescription() {
-		const descriptionEl = productActions.querySelector('.text-gray-600.mt-2.transition-opacity');
+		const descriptionEl = productActions.querySelector('.frequency-description');
 		if (!descriptionEl) return;
 
 		const frequencyOptions = document.getElementById('frequency-options-{{ SID }}');
@@ -1482,60 +1539,6 @@ document.addEventListener('DOMContentLoaded', () => {
 	function extractFrequencyMonths(planName) {
 		const match = planName.match(/(\d+)\s*Month/i);
 		return match ? parseInt(match[1], 10) : 0;
-	}
-
-	function updateFrequencyOptionsFromVariant(variant, currentSellingPlanId) {
-		if (!variant) return;
-		const frequencyOptions = document.getElementById('frequency-options-{{ SID }}');
-		if (!frequencyOptions) return;
-
-		const frequencyContainer = productActions.querySelector('div.hidden.my-4.transition-all');
-		if (!frequencyContainer) return;
-
-		let sellingPlans = variant.selling_plan_allocations || [];
-
-		console.log('Updating frequency options:', {
-			variantId: variant.id,
-			plansCount: sellingPlans.length,
-			currentSellingPlanId
-		});
-
-		if (sellingPlans.length === 0) {
-			frequencyContainer.classList.add('hidden');
-			return;
-		}
-
-		const currentPlanIds = new Set(
-			Array.from(frequencyOptions.querySelectorAll('div[data-selling-plan-id]'))
-				.map(box => box.getAttribute('data-selling-plan-id'))
-		);
-
-		const { filteredPlans, hasChanged } = getFilteredSellingPlans(
-			sellingPlans,
-			currentPlanIds,
-			currentSellingPlanId
-		);
-
-		if (filteredPlans.length === 0) {
-			handleNoMatchingPlans(frequencyOptions, currentSellingPlanId, frequencyContainer);
-			return;
-		}
-
-		if (hasChanged) {
-			rebuildFrequencyOptions(frequencyOptions, filteredPlans, currentSellingPlanId);
-		} else {
-			updateSelectedFrequencyState(frequencyOptions, currentSellingPlanId);
-		}
-
-		updateFrequencyDescription();
-
-		if (frequencyContainer.classList.contains('hidden')) {
-			frequencyContainer.style.opacity = '0';
-			frequencyContainer.classList.remove('hidden');
-			setTimeout(() => {
-				frequencyContainer.style.opacity = '1';
-			}, 10);
-		}
 	}
 
 	function getFilteredSellingPlans(sellingPlans, currentPlanIds, currentSellingPlanId) {
@@ -1600,6 +1603,9 @@ document.addEventListener('DOMContentLoaded', () => {
 				selectFrequencyOption(this);
 			});
 			frequencyContainer.classList.remove('hidden');
+
+			// Make sure the frequency description is updated too
+			updateFrequencyDescription();
 		} else {
 			frequencyContainer.classList.add('hidden');
 		}
