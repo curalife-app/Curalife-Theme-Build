@@ -959,7 +959,6 @@ document.addEventListener('DOMContentLoaded', () => {
 					}
 				}
 
-				// Update future price notice
 				if (futurePrice) {
 					const newFuturePriceText = firstMonthDiscount > 0
 						? `Special price for first order. Refills for ${regularPriceFormatted}${priceFormat === 'per_bottle' ? '/bottle' : ''}.`
@@ -971,10 +970,8 @@ document.addEventListener('DOMContentLoaded', () => {
 				return;
 			}
 
-			// Track if any content changed to determine if animation is needed
 			let hasContentChanged = false;
 
-			// Check if price content has changed before animating
 			if (mainPrice) {
 				const pSpan = mainPrice.querySelector('.price');
 				const cSpan = mainPrice.querySelector('.cap');
@@ -1001,16 +998,13 @@ document.addEventListener('DOMContentLoaded', () => {
 				hasContentChanged = hasContentChanged || futurePrice.textContent !== newFuturePriceText;
 			}
 
-			// Only animate if content actually changed
 			if (hasContentChanged) {
 				const animate = () => {
-					// Fade out elements that will change
 					[mainPrice, discount, totalLine, futurePrice].forEach(el => {
 						if (el) DOMUtils.updateStyle(el, 'opacity', '0');
 					});
 
 					setTimeout(() => {
-						// Update content while elements are invisible
 						if (mainPrice) {
 							const pSpan = mainPrice.querySelector('.price');
 							const cSpan = mainPrice.querySelector('.cap');
@@ -1035,7 +1029,6 @@ document.addEventListener('DOMContentLoaded', () => {
 							}
 						}
 
-						// Update future price notice
 						if (futurePrice && firstMonthDiscount > 0) {
 							DOMUtils.updateProperty(
 								futurePrice,
@@ -1046,7 +1039,6 @@ document.addEventListener('DOMContentLoaded', () => {
 							DOMUtils.updateProperty(futurePrice, 'textContent', '');
 						}
 
-						// Fade elements back in with staggered timing
 						setTimeout(() => mainPrice && DOMUtils.updateStyle(mainPrice, 'opacity', '1'), 50);
 						setTimeout(() => discount && DOMUtils.updateStyle(discount, 'opacity', '1'), 100);
 						setTimeout(() => totalLine && DOMUtils.updateStyle(totalLine, 'opacity', '1'), 150);
@@ -1054,7 +1046,6 @@ document.addEventListener('DOMContentLoaded', () => {
 					}, 200);
 				};
 
-				// Use requestAnimationFrame for smoother animation
 				requestAnimationFrame(animate);
 			}
 		});
