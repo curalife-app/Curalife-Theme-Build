@@ -265,6 +265,14 @@
 				</div>
 			{% endif %}
 		</div>
+
+		{% if blocks.size > 0 %}
+			{% for block in blocks %}
+				{% if block.type == 'text' %}
+					<div class="text-content">{{ block.settings.content }}</div>
+				{% endif %}
+			{% endfor %}
+		{% endif %}
 	</div>
 </div>
 
@@ -288,23 +296,16 @@ document.addEventListener('DOMContentLoaded', () => {
 	const oneTimeButton        = productActions.querySelector('.one-time-add-to-cart');
 	const frequencySelector    = document.getElementById('frequency-selector-{{ SID }}');
 	const frequencyContainer   = productActions.querySelector('.subscription-frequency-container');
-
-	// Liquid Data
 	const SID         = '{{ SID }}';
 	const buyType     = '{{ buyType }}';
 	const priceFormat = '{{ priceFormat }}';
 
-	// Initialize product data cache
 	if (!window.productData) window.productData = {};
 
-	// Get initial product data from variant boxes
 	const firstVariantBox = purchaseOptionBoxes[0];
 	if (firstVariantBox) {
-		// Extract product ID from the first variant box
 		const productId = firstVariantBox.dataset.product;
 		if (productId && !window.productData[productId]) {
-			// If we don't have the product data already, create a basic structure
-			// that will be populated on-demand
 			window.productData[productId] = {
 				id: productId,
 				variants: [],
