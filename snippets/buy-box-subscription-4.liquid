@@ -3,6 +3,22 @@
 	{% assign isGlobal = true %}
 {% endif %}
 
+{% comment %}
+SUBSCRIPTION BUY-BOX 4.0
+-------------------------
+This snippet renders a subscription buybox with the following features:
+- Subscription variant selection
+- Frequency selection for subscriptions
+- Gift selection
+- Add to cart / Buy now functionality
+
+CONFIGURATION:
+- To filter selling plans for a variant, add the 'allowed_selling_plan_ids' setting to your variant block
+- Example: allowed_selling_plan_ids: "123456,789012" (comma separated list of selling plan IDs)
+- When specified, only the selling plans with IDs in this list will be shown for that variant
+- If no selling plans match, the default plan will be used
+{% endcomment %}
+
 {% if product.handle == 'curalin' or product.handle == 'curaslim' %}
 	{% assign shippingPrice = 790 %}
 {% else %}
@@ -142,6 +158,9 @@
 						data-bottle-quantity="{{ bottle_quantity }}"
 						data-purchase-type="{{ varPurchaseType }}"
 						data-buy-type="{{ buyType }}"
+						{% if block.settings.allowed_selling_plan_ids %}
+						data-allowed-selling-plans="{{ block.settings.allowed_selling_plan_ids | escape }}"
+						{% endif %}
 						name="track:variant-box|variant-sku:{{ var.sku }}|purchase-type:{{ varPurchaseType }}">
 						{% if product.handle == 'curalin' %}
 							{% assign subscription_save_percents = var.metafields.subscription.save_percents %}
@@ -934,7 +953,8 @@ document.addEventListener('DOMContentLoaded', () => {
 			console.log('Populating frequency selector:', {
 				productId,
 				variant,
-				hasProductData: window.productData && window.productData[productId] ? 'Yes' : 'No'
+				hasProductData: window.productData && window.productData[productId] ? 'Yes' : 'No',
+				allowedSellingPlans: el.dataset.allowedSellingPlans || 'None specified'
 			});
 
 			const variantId = parseInt(variant);
@@ -973,6 +993,9 @@ document.addEventListener('DOMContentLoaded', () => {
 						</div>
 					`;
 					frequencyOptions.appendChild(frequencyBox);
+					frequencyBox.addEventListener('click', function() {
+						selectFrequencyOption(this);
+					});
 					frequencyContainer.classList.remove('hidden');
 				} else {
 					frequencyContainer.classList.add('hidden');
@@ -1012,7 +1035,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (!frequencyOptions) return;
 
 		// Get all selling plans for this variant
-		const sellingPlans = variant.selling_plan_allocations || [];
+		let sellingPlans = variant.selling_plan_allocations || [];
 
 		console.log('Updating frequency options:', {
 			variantId: variant.id,
@@ -1028,12 +1051,56 @@ document.addEventListener('DOMContentLoaded', () => {
 			return;
 		}
 
+		// Check for allowed selling plan IDs
+		const selectedBox = productActions.querySelector('.variant-box.selected');
+		if (selectedBox && selectedBox.dataset.allowedSellingPlans) {
+			try {
+				// Parse the allowed selling plan IDs
+				const allowedPlans = selectedBox.dataset.allowedSellingPlans.split(',').map(id => id.trim());
+				console.log('Filtering by allowed selling plans:', allowedPlans);
+
+				// Filter selling plans to only include allowed ones
+				if (allowedPlans.length > 0) {
+					sellingPlans = sellingPlans.filter(allocation =>
+						allowedPlans.includes(allocation.selling_plan.id.toString())
+					);
+
+					console.log('Filtered to', sellingPlans.length, 'selling plans');
+				}
+			} catch (err) {
+				console.error('Error filtering selling plans:', err);
+			}
+		}
+
 		// Sort selling plans by delivery interval
 		sellingPlans.sort((a, b) => {
 			const freqA = extractFrequencyMonths(a.selling_plan.name);
 			const freqB = extractFrequencyMonths(b.selling_plan.name);
 			return freqA - freqB;
 		});
+
+		// Handle case where allowed plans are specified but none match
+		if (sellingPlans.length === 0) {
+			// If we have a current selling plan ID, use that as fallback
+			if (currentSellingPlanId) {
+				const fallbackBox = document.createElement('div');
+				fallbackBox.className = 'frequency-box flex flex-col items-center variant-tab-style text-center w-full selected';
+				fallbackBox.setAttribute('data-selling-plan-id', currentSellingPlanId);
+				fallbackBox.innerHTML = `
+					<div class="title p-1">
+						<span class="font-semibold">Current Plan</span>
+					</div>
+				`;
+				frequencyOptions.appendChild(fallbackBox);
+				fallbackBox.addEventListener('click', function() {
+					selectFrequencyOption(this);
+				});
+				frequencyContainer.classList.remove('hidden');
+			} else {
+				frequencyContainer.classList.add('hidden');
+			}
+			return;
+		}
 
 		// Populate the options with all available selling plans
 		sellingPlans.forEach(allocation => {
