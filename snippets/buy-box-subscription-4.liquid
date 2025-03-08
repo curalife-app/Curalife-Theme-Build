@@ -784,6 +784,109 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 	// ~~~~~~~~~~~~~~~~~~~~~
+	//   Cart/Checkout
+	// ~~~~~~~~~~~~~~~~~~~~~
+	async function handleBuyNowFlow(items) {
+		try {
+			// Remove cart popup if it exists
+			const cartPopup = document.getElementById('upCart');
+			if (cartPopup) cartPopup.remove();
+
+			// Clear the cart
+			try {
+				await clearCart();
+				// Cart cache already invalidated by clearCart()
+			} catch (clearErr) {
+				console.error('Error clearing cart:', clearErr);
+				throw Object.assign(
+					new Error('Failed to prepare checkout'),
+					{ cause: 'cart-clear', originalError: clearErr }
+				);
+			}
+
+			// Add items to cart
+			const addRes = await fetch('/cart/add.js', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ items })
+			});
+
+			if (!addRes.ok) {
+				const errorData = await addRes.json();
+				console.error('Cart add response:', errorData);
+				throw Object.assign(
+					new Error('Failed to add items'),
+					{ response: errorData }
+				);
+			}
+
+			// Invalidate cart cache after modification
+			CartCache.invalidate();
+
+			// Set a flag to indicate we're redirecting to checkout
+			// This prevents the loading state from being reset in the finally block
+			BuyBoxState.setState({ isRedirectingToCheckout: true });
+
+			// If we get here, redirect to checkout
+			window.location.href = '/checkout';
+		} catch (err) {
+			console.error('handleBuyNowFlow error details:', err);
+			throw err; // Re-throw to be handled by the caller
+		}
+	}
+
+	// Add items, remove any existing subscription for same product if needed
+	async function addValidItemsToCart(items) {
+		try {
+			let cart = await getCart(true); // Force a fresh cart fetch
+			const subItem = items.find(i => i.selling_plan);
+
+			if (subItem) {
+				const selectedBox = document.querySelector('.variant-box.selected');
+				const productId = selectedBox?.dataset?.product;
+
+				if (productId) {
+					const existingSub = cart.items.find(ci => (
+						ci.product_id === parseInt(productId, 10) &&
+						Boolean(ci.selling_plan_allocation)
+					));
+
+					if (existingSub) {
+						await removeCartItem(existingSub.key);
+						// Don't need to refetch cart here as we'll add items anyway
+					}
+				}
+			}
+
+			const addRes = await fetch('/cart/add.js', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ items })
+			});
+
+			if (!addRes.ok) {
+				const errorData = await addRes.json();
+				throw Object.assign(new Error('Failed to add items'), { response: errorData });
+			}
+
+			// Invalidate cart cache after modification
+			CartCache.invalidate();
+
+			showNotification(
+				subItem && items.includes(subItem)
+					? 'Subscription updated in your cart'
+					: 'Items added to cart',
+				'success'
+			);
+			return { success: true, addedItems: items };
+		} catch (err) {
+			console.error('addValidItemsToCart error details:', err);
+			showNotification(parseErrorMessage(err, 'cart-add'), 'error');
+			return { success: false, addedItems: [], error: err };
+		}
+	}
+
+	// ~~~~~~~~~~~~~~~~~~~~~
 	//   Price Updates
 	// ~~~~~~~~~~~~~~~~~~~~~
 	function updatePriceDisplay(el) {
@@ -1773,7 +1876,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	/* Mobile styles for frequency container */
 	@media (max-width: 767px) {
-		.hidden.my-4.transition-all .font-semibold {
+		[data-frequency-container] .font-semibold {
 			font-size: 15px;
 		}
 	}
