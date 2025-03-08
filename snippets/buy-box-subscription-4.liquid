@@ -469,17 +469,20 @@ document.addEventListener('DOMContentLoaded', () => {
 			updateFrequencyDescription();
 		},
 
-		// Update loading state UI
+		// Update loading state UI - optimized version
 		updateLoadingState(isLoading) {
 			if (submitButton) {
 				if (isLoading) {
 					submitButton.disabled = true;
+					// Pre-allocate the spinner HTML to avoid layout thrashing
 					submitButton.innerHTML = `<div class="border-white/20 border-t-white animate-spin inline-block w-6 h-6 mx-auto border-2 rounded-full"></div>`;
 					submitButton.setAttribute('aria-busy', 'true');
+					submitButton.classList.add('loading-active');
 				} else {
 					submitButton.disabled = false;
 					submitButton.innerHTML = submitButton.getAttribute('data-original-text') || 'Add To Cart';
 					submitButton.removeAttribute('aria-busy');
+					submitButton.classList.remove('loading-active');
 				}
 			}
 
@@ -488,15 +491,19 @@ document.addEventListener('DOMContentLoaded', () => {
 				oneTimeButton.disabled = isLoading;
 				if (isLoading) {
 					oneTimeButton.setAttribute('aria-busy', 'true');
+					oneTimeButton.classList.add('disabled');
 				} else {
 					oneTimeButton.removeAttribute('aria-busy');
+					oneTimeButton.classList.remove('disabled');
 				}
 			}
 
-			// Disable all interactive elements during loading
-			document.querySelectorAll('.variant-box, div[data-selling-plan-id], .gift-option-border').forEach(el => {
-				el.style.pointerEvents = isLoading ? 'none' : '';
-			});
+			// Use class-based disabling for better performance
+			if (isLoading) {
+				productActions.classList.add('processing-order');
+			} else {
+				productActions.classList.remove('processing-order');
+			}
 		},
 
 		// Initialize state with default values
@@ -547,8 +554,15 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 
 			try {
-				// Fetching fresh cart data
-				const res = await fetch('/cart.js');
+				// Fetching fresh cart data with cache-busting
+				const res = await fetch('/cart.js?t=' + now, {
+					cache: 'no-store',
+					headers: {
+						'Cache-Control': 'no-cache',
+						'Pragma': 'no-cache'
+					}
+				});
+
 				if (!res.ok) throw new Error('Failed to fetch cart');
 				this.data = await res.json();
 				this.lastFetched = now;
@@ -768,13 +782,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	async function clearCart() {
 		try {
-			const res = await fetch('/cart/clear.js', { method: 'POST' });
+			const res = await fetch('/cart/clear.js', {
+				method: 'POST',
+				cache: 'no-store',
+				headers: {
+					'Cache-Control': 'no-cache',
+					'Pragma': 'no-cache'
+				}
+			});
+
 			if (!res.ok) {
 				const errorData = await res.json();
 				throw Object.assign(new Error('Failed to clear cart'), { response: errorData });
 			}
 
-			// Invalidate cart cache after modification
+			// Invalidate cart cache
 			CartCache.invalidate();
 			return res.json();
 		} catch (err) {
@@ -788,27 +810,29 @@ document.addEventListener('DOMContentLoaded', () => {
 	// ~~~~~~~~~~~~~~~~~~~~~
 	async function handleBuyNowFlow(items) {
 		try {
-			// Remove cart popup if it exists
+			// Set loading state immediately and prevent multiple clicks
+			BuyBoxState.setState({
+				isLoading: true,
+				isRedirectingToCheckout: true
+			});
+
+			// Remove cart popup if it exists (do this early)
 			const cartPopup = document.getElementById('upCart');
 			if (cartPopup) cartPopup.remove();
 
-			// Clear the cart
-			try {
-				await clearCart();
-				// Cart cache already invalidated by clearCart()
-			} catch (clearErr) {
-				console.error('Error clearing cart:', clearErr);
-				throw Object.assign(
-					new Error('Failed to prepare checkout'),
-					{ cause: 'cart-clear', originalError: clearErr }
-				);
-			}
+			// Perform cart operations in parallel when possible
+			const clearCartPromise = clearCart();
 
-			// Add items to cart
+			// Wait for cart clearing to complete
+			await clearCartPromise;
+
+			// Add items to cart (with improved error handling)
 			const addRes = await fetch('/cart/add.js', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ items })
+				body: JSON.stringify({ items }),
+				// Add cache control to prevent browser caching
+				cache: 'no-store'
 			});
 
 			if (!addRes.ok) {
@@ -820,17 +844,17 @@ document.addEventListener('DOMContentLoaded', () => {
 				);
 			}
 
-			// Invalidate cart cache after modification
+			// Invalidate cart cache
 			CartCache.invalidate();
 
-			// Set a flag to indicate we're redirecting to checkout
-			// This prevents the loading state from being reset in the finally block
-			BuyBoxState.setState({ isRedirectingToCheckout: true });
-
-			// If we get here, redirect to checkout
+			// Redirect to checkout immediately
 			window.location.href = '/checkout';
 		} catch (err) {
 			console.error('handleBuyNowFlow error details:', err);
+			BuyBoxState.setState({
+				isRedirectingToCheckout: false,
+				isLoading: false
+			});
 			throw err; // Re-throw to be handled by the caller
 		}
 	}
@@ -838,51 +862,81 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Add items, remove any existing subscription for same product if needed
 	async function addValidItemsToCart(items) {
 		try {
+			// If this is a subscription item, we need to check for existing subscriptions
 			let cart = await getCart(true); // Force a fresh cart fetch
 			const subItem = items.find(i => i.selling_plan);
 
 			if (subItem) {
-				const selectedBox = document.querySelector('.variant-box.selected');
-				const productId = selectedBox?.dataset?.product;
+				// Extract product ID from the variant ID
+				const variantId = subItem.id;
+				let foundExistingSubscription = false;
+				let itemsToRemove = [];
 
-				if (productId) {
-					const existingSub = cart.items.find(ci => (
-						ci.product_id === parseInt(productId, 10) &&
-						Boolean(ci.selling_plan_allocation)
-					));
-
-					if (existingSub) {
-						await removeCartItem(existingSub.key);
-						// Don't need to refetch cart here as we'll add items anyway
+				// Identify any existing subscriptions for the same product
+				for (const item of cart.items) {
+					if (item.selling_plan_allocation && item.variant_id === variantId) {
+						// Found existing subscription for same variant
+						itemsToRemove.push(item.key);
+						foundExistingSubscription = true;
 					}
+				}
+
+				// If we found existing subscriptions, remove them first
+				if (foundExistingSubscription && itemsToRemove.length > 0) {
+					// Build updates object for cart update
+					const updates = {};
+					itemsToRemove.forEach(key => {
+						updates[key] = 0;
+					});
+
+					// Remove items in a single request
+					await fetch('/cart/update.js', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							'Cache-Control': 'no-cache'
+						},
+						cache: 'no-store',
+						body: JSON.stringify({ updates })
+					});
+
+					// Invalidate cart cache
+					CartCache.invalidate();
 				}
 			}
 
-			const addRes = await fetch('/cart/add.js', {
+			// Add items to cart
+			const res = await fetch('/cart/add.js', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				headers: {
+					'Content-Type': 'application/json',
+					'Cache-Control': 'no-cache'
+				},
+				cache: 'no-store',
 				body: JSON.stringify({ items })
 			});
 
-			if (!addRes.ok) {
-				const errorData = await addRes.json();
-				throw Object.assign(new Error('Failed to add items'), { response: errorData });
+			if (!res.ok) {
+				const errorData = await res.json();
+				console.error('Error adding items to cart:', errorData);
+				throw Object.assign(new Error('Failed to add items to cart'), { response: errorData });
 			}
 
 			// Invalidate cart cache after modification
 			CartCache.invalidate();
 
-			showNotification(
-				subItem && items.includes(subItem)
-					? 'Subscription updated in your cart'
-					: 'Items added to cart',
-				'success'
-			);
-			return { success: true, addedItems: items };
+			// Update cart UI if needed
+			if (typeof window.updateCart === 'function') {
+				window.updateCart();
+			}
+
+			// Show a success message
+			showNotification('Items added to cart!', 'success');
+
+			return res.json();
 		} catch (err) {
-			console.error('addValidItemsToCart error details:', err);
-			showNotification(parseErrorMessage(err, 'cart-add'), 'error');
-			return { success: false, addedItems: [], error: err };
+			console.error('Error in addValidItemsToCart:', err);
+			throw err;
 		}
 	}
 
@@ -1192,13 +1246,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	function initSubmitButton() {
 		if (!submitButton) return;
+
+		// Use a variable to track if a submission is in progress
+		let isSubmitting = false;
+
 		submitButton.addEventListener('click', async e => {
 			e.preventDefault();
+
+			// Prevent double-clicks or multiple submissions
+			if (isSubmitting || BuyBoxState.data.isLoading) {
+				return;
+			}
+
+			isSubmitting = true;
 			const box = productActions.querySelector('.variant-box.selected');
 			const giftsAmount = parseInt(productActions.dataset.giftsAmount || '0', 10);
 
 			if (!box) {
 				showNotification('Please select a purchase option');
+				isSubmitting = false;
 				return;
 			}
 
@@ -1218,12 +1284,10 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 
 				let items = [{
-					id: parseInt(variant, 10), // Ensure variant ID is a number
+					id: parseInt(variant, 10),
 					quantity: 1,
 					selling_plan: isSub ? sellingPlanId : undefined
 				}];
-
-				console.log('Items to add:', items); // Debug log
 
 				if (giftsAmount > 0) {
 					const giftEl = document.querySelector('.gift-box.selected');
@@ -1239,16 +1303,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				if (buyType === 'buy_now') {
 					await handleBuyNowFlow(items);
+					// Don't reset loading state if we're redirecting
 				} else {
 					await addValidItemsToCart(items);
+					// Only reset loading state if we're not redirecting
+					isSubmitting = false;
+					BuyBoxState.setState({ isLoading: false });
 				}
 			} catch (err) {
 				console.error('Submit error:', err);
 				showNotification(parseErrorMessage(err, 'checkout'), 'error');
-			} finally {
-				if (!BuyBoxState.data.isRedirectingToCheckout) {
-					BuyBoxState.setState({ isLoading: false });
-				}
+				isSubmitting = false;
+				BuyBoxState.setState({ isLoading: false });
 			}
 		});
 	}
@@ -1258,9 +1324,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		oneTimeButton.setAttribute('data-original-text', oneTimeButton.textContent);
 
+		// Track submission state
+		let isSubmittingOneTime = false;
+
 		oneTimeButton.addEventListener('click', async e => {
 			e.preventDefault();
 
+			// Prevent multiple submissions
+			if (isSubmittingOneTime || BuyBoxState.data.isLoading) {
+				return;
+			}
+
+			isSubmittingOneTime = true;
 			BuyBoxState.setState({ isLoading: true });
 			oneTimeButton.innerHTML = '<div class="border-primary/20 border-t-primary animate-spin inline-block w-4 h-4 mr-2 align-middle border-2 rounded-full"></div> Adding...';
 			oneTimeButton.setAttribute('aria-busy', 'true');
@@ -1281,21 +1356,35 @@ document.addEventListener('DOMContentLoaded', () => {
 					if (giftID) toAdd.push({ id: parseInt(giftID, 10), quantity: 1 });
 				{% endif %}
 
-				console.log('Adding to cart:', toAdd);
-
 				if (buyType === 'buy_now') {
+					// Optimize for buy now flow
+					BuyBoxState.setState({ isRedirectingToCheckout: true });
+
+					// Remove cart popup first
 					const cartPopup = document.getElementById('upCart');
 					if (cartPopup) cartPopup.remove();
-					await clearCart();
 
+					// Clear cart with optimized fetch
+					await fetch('/cart/clear.js', {
+						method: 'POST',
+						cache: 'no-store',
+						headers: {
+							'Cache-Control': 'no-cache'
+						}
+					});
+
+					// Add items with optimized fetch
 					const res = await fetch('/cart/add.js', {
 						method: 'POST',
-						headers: { 'Content-Type': 'application/json' },
+						headers: {
+							'Content-Type': 'application/json',
+							'Cache-Control': 'no-cache'
+						},
+						cache: 'no-store',
 						body: JSON.stringify({ items: toAdd })
 					});
 
 					const responseData = await res.json();
-					console.log('Cart response:', responseData);
 
 					if (!res.ok) {
 						const error = new Error(responseData.description || 'Failed to add items');
@@ -1303,17 +1392,21 @@ document.addEventListener('DOMContentLoaded', () => {
 						throw error;
 					}
 
-					BuyBoxState.setState({ isRedirectingToCheckout: true });
+					// Go to checkout immediately
 					window.location.href = '/checkout';
 				} else {
+					// Regular add to cart
 					const res = await fetch('/cart/add.js', {
 						method: 'POST',
-						headers: { 'Content-Type': 'application/json' },
+						headers: {
+							'Content-Type': 'application/json',
+							'Cache-Control': 'no-cache'
+						},
+						cache: 'no-store',
 						body: JSON.stringify({ items: toAdd })
 					});
 
 					const responseData = await res.json();
-					console.log('Cart response:', responseData);
 
 					if (!res.ok) {
 						const error = new Error(responseData.description || 'Failed to add items');
@@ -1321,16 +1414,24 @@ document.addEventListener('DOMContentLoaded', () => {
 						throw error;
 					}
 
+					// Invalidate cart cache
+					CartCache.invalidate();
+
+					// Update cart UI if needed
 					if (typeof window.updateCart === 'function') {
 						window.updateCart();
 					}
 
 					oneTimeButton.innerHTML = '✓ Added!';
 					oneTimeButton.classList.add('text-green-700', 'border-green-700');
+
+					// Reset state
 					setTimeout(() => {
 						oneTimeButton.innerHTML = oneTimeButton.getAttribute('data-original-text');
 						oneTimeButton.classList.remove('text-green-700', 'border-green-700');
 						oneTimeButton.removeAttribute('aria-busy');
+						isSubmittingOneTime = false;
+						BuyBoxState.setState({ isLoading: false });
 					}, 2000);
 				}
 			} catch (err) {
@@ -1345,17 +1446,14 @@ document.addEventListener('DOMContentLoaded', () => {
 				oneTimeButton.innerHTML = '⚠ Failed';
 				oneTimeButton.classList.add('text-red-600', 'border-red-600');
 
+				// Reset state
 				setTimeout(() => {
 					oneTimeButton.innerHTML = oneTimeButton.getAttribute('data-original-text');
 					oneTimeButton.classList.remove('text-red-600', 'border-red-600');
 					oneTimeButton.removeAttribute('aria-busy');
+					isSubmittingOneTime = false;
+					BuyBoxState.setState({ isLoading: false });
 				}, 2000);
-			} finally {
-				if (!BuyBoxState.data.isRedirectingToCheckout) {
-					setTimeout(() => {
-						BuyBoxState.setState({ isLoading: false });
-					}, 2000);
-				}
 			}
 		});
 	}
@@ -1455,17 +1553,17 @@ document.addEventListener('DOMContentLoaded', () => {
 				const currentSellingPlanId = el.dataset.subscriptionSellingPlanId;
 				if (currentSellingPlanId) {
 					frequencyOptions.innerHTML = '';
-					const frequencyBox = document.createElement('div');
-					frequencyBox.className = 'rounded-md cursor-pointer py-2 min-w-[90px] text-center w-full transition-all duration-300 ease-in-out';
-					frequencyBox.style.backgroundColor = 'var(--primary-color)';
-					frequencyBox.style.color = 'white';
-					frequencyBox.setAttribute('data-selling-plan-id', currentSellingPlanId);
-					frequencyBox.innerHTML = `
+					const fallbackBox = document.createElement('div');
+					fallbackBox.className = 'rounded-md cursor-pointer py-2 min-w-[90px] text-center w-full transition-all duration-300 ease-in-out';
+					fallbackBox.style.backgroundColor = 'var(--primary-color)';
+					fallbackBox.style.color = 'white';
+					fallbackBox.setAttribute('data-selling-plan-id', currentSellingPlanId);
+					fallbackBox.innerHTML = `
 						<div class="p-1">
 							<span class="font-semibold">Current Plan</span>
 						</div>
 					`;
-					frequencyOptions.appendChild(frequencyBox);
+					frequencyOptions.appendChild(fallbackBox);
 					frequencyContainer.classList.remove('hidden');
 				}
 			}
@@ -1702,6 +1800,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				</div>
 			`;
 			frequencyOptions.appendChild(fallbackBox);
+			// Add event listener to handle clicks
 			fallbackBox.addEventListener('click', function() {
 				selectFrequencyOption(this);
 			});
@@ -1841,12 +1940,49 @@ document.addEventListener('DOMContentLoaded', () => {
 							}
 					}
 			}
+
+			/* Processing state styles */
+			&.processing-order,
+			.processing-order {
+				position: relative;
+
+				&::after {
+					content: "";
+					position: absolute;
+					top: 0;
+					left: 0;
+					right: 0;
+					bottom: 0;
+					background: rgba(255, 255, 255, 0.6);
+					z-index: 5;
+					pointer-events: none;
+					transition: opacity 0.2s ease;
+				}
+
+				.variant-box,
+				div[data-selling-plan-id],
+				.gift-option-border {
+					pointer-events: none;
+				}
+			}
 	}
 
 	/* Loading state styles */
 	[aria-busy="true"] {
 		position: relative;
 		cursor: wait !important;
+	}
+
+	/* Button loading optimization */
+	button.loading-active {
+		background-color: var(--primary-color-darker, #004085) !important;
+		transition: none !important;
+	}
+
+	/* Performance optimized disabled styles */
+	.disabled {
+		opacity: 0.7;
+		pointer-events: none;
 	}
 
 	/* Transparent overlay for disabled items */
