@@ -10,6 +10,7 @@
 	- WebP format support
 	- Configurable breakpoints and sizes
 	- Link wrapper functionality
+	- Configurable max-width for CDN image delivery
 {%- endcomment -%}
 
 {%- liquid
@@ -27,6 +28,7 @@
 	assign sizes = sizes | default: '(min-width: 1200px) 1200px, (min-width: 768px) 768px, 100vw'
 	assign breakpoints = '375,640,768,1080,1200,1920,2560' | split: ','
 	assign is_log = is_log | default: false
+	assign max_width = max_width | default: nil
 
 	#######################################
 	# Process image source
@@ -58,7 +60,11 @@
 		endif
 
 		if desktop_image.src != blank and provided_images_in_files == false
-			assign desktop_variant_url = desktop_image | image_url | split: '?' | first
+			if max_width
+				assign desktop_variant_url = desktop_image | image_url: width: max_width | split: '?' | first
+			else
+				assign desktop_variant_url = desktop_image | image_url | split: '?' | first
+			endif
 		else
 			assign desktop_variant_url = filename | file_url
 		endif
@@ -70,10 +76,27 @@
 			# Try explicit URL construction with width parameter
 			assign desktop_1x_parts = desktop_variant_url | split: '?'
 			assign desktop_1x_base = desktop_1x_parts | first
+
+			if max_width
+				assign regular_width = max_width
+			endif
+
 			assign desktop_1x_url = desktop_1x_base | append: '?width=' | append: regular_width
+
+			# For 2x version, double the width if max_width is specified
+			if max_width
+				assign desktop_2x_url = desktop_1x_base | append: '?width=' | append: max_width | times: 2
+			else
+				assign desktop_2x_url = desktop_variant_url
+			endif
 		else
-			assign desktop_1x_url = desktop_variant_url
-			assign desktop_2x_url = desktop_variant_url
+			if max_width
+				assign desktop_1x_url = desktop_image | image_url: width: max_width
+				assign desktop_2x_url = desktop_image | image_url: width: max_width | times: 2
+			else
+				assign desktop_1x_url = desktop_variant_url
+				assign desktop_2x_url = desktop_variant_url
+			endif
 		endif
 
 		#######################################
@@ -85,11 +108,26 @@
 			if is_retina
 				assign mobile_original_width = mobile_image_provided.width
 				assign mobile_regular_width = mobile_original_width | divided_by: 2
+
+				if max_width and max_width < mobile_regular_width
+					assign mobile_regular_width = max_width
+				endif
+
 				assign mobile_1x_url = mobile_image_provided | image_url: width: mobile_regular_width
-				assign mobile_2x_url = mobile_image_provided | image_url
+
+				if max_width
+					assign mobile_2x_url = mobile_image_provided | image_url: width: mobile_regular_width | times: 2
+				else
+					assign mobile_2x_url = mobile_image_provided | image_url
+				endif
 			else
-				assign mobile_1x_url = mobile_image_provided | image_url
-				assign mobile_2x_url = mobile_image_provided | image_url
+				if max_width
+					assign mobile_1x_url = mobile_image_provided | image_url: width: max_width
+					assign mobile_2x_url = mobile_image_provided | image_url: width: max_width | times: 2
+				else
+					assign mobile_1x_url = mobile_image_provided | image_url
+					assign mobile_2x_url = mobile_image_provided | image_url
+				endif
 			endif
 		elsif load_mobile
 			assign mobile_variant_filename = image_name | append: '-mbl.' | append: image_ext
@@ -97,11 +135,25 @@
 			if mobile_variant_url contains '?v='
 				assign has_mobile_variant = true
 				if is_retina
+					if max_width
+						assign mobile_regular_width = max_width
+					endif
+
 					assign mobile_1x_url = mobile_variant_url | image_url: width: mobile_regular_width
-					assign mobile_2x_url = mobile_variant_url
+
+					if max_width
+						assign mobile_2x_url = mobile_variant_url | image_url: width: mobile_regular_width | times: 2
+					else
+						assign mobile_2x_url = mobile_variant_url
+					endif
 				else
-					assign mobile_1x_url = mobile_variant_url
-					assign mobile_2x_url = mobile_variant_url
+					if max_width
+						assign mobile_1x_url = mobile_variant_url | image_url: width: max_width
+						assign mobile_2x_url = mobile_variant_url | image_url: width: max_width | times: 2
+					else
+						assign mobile_1x_url = mobile_variant_url
+						assign mobile_2x_url = mobile_variant_url
+					endif
 				endif
 			else
 				assign mobile_variant_url = ''
@@ -135,11 +187,22 @@
 		assign display_height = desktop_image.height
 	endif
 
+	# Apply max-width constraint to display dimensions if specified
+	if max_width and display_width > max_width
+		assign aspect_ratio = display_height | divided_by: display_width | times: 1.0
+		assign display_width = max_width
+		assign display_height = max_width | times: aspect_ratio | round
+	endif
+
 	#######################################
 	# Generate unique IDs and URLs
 	#######################################
 	assign unique_id = 'img-' | append: desktop_image.id | append: '-' | append: now | date: '%N'
-	assign fallback_url = desktop_image | image_url: width: 1100
+	if max_width
+		assign fallback_url = desktop_image | image_url: width: max_width
+	else
+		assign fallback_url = desktop_image | image_url: width: 1200
+	endif
 -%}
 
 <!-- Image Component -->
