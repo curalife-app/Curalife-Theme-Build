@@ -60,11 +60,8 @@
 		endif
 
 		if desktop_image.src != blank and provided_images_in_files == false
-			if max_width
-				assign desktop_variant_url = desktop_image | image_url: width: max_width | split: '?' | first
-			else
-				assign desktop_variant_url = desktop_image | image_url | split: '?' | first
-			endif
+			# Base URL construction without width parameters
+			assign desktop_variant_url = desktop_image | image_url | split: '?' | first
 		else
 			assign desktop_variant_url = filename | file_url
 		endif
@@ -73,29 +70,50 @@
 		# Handle Retina Images
 		#######################################
 		if is_retina
-			# Try explicit URL construction with width parameter
+			# Base URL without parameters
 			assign desktop_1x_parts = desktop_variant_url | split: '?'
 			assign desktop_1x_base = desktop_1x_parts | first
 
+			# For retina images, use half the original width or max_width if specified
+			if desktop_image.width
+				assign original_width = desktop_image.width
+				assign regular_width = original_width | divided_by: 2
+
+				# Apply max_width constraint if specified and smaller than regular_width
+				if max_width and max_width < regular_width
+					assign regular_width = max_width
+				endif
+
+				# Calculate 2x width for retina, but don't exceed original
+				assign doubled_width = regular_width | times: 2
+				if doubled_width > original_width
+					assign doubled_width = original_width
+				endif
+			else
+				# Fallback if width unknown
+				if max_width
+					assign regular_width = max_width
+					assign doubled_width = max_width | times: 2
+				else
+					assign regular_width = 800  # Default width
+					assign doubled_width = 1600  # Default 2x width
+				endif
+			endif
+
+			# Construct URLs with width parameters
+			assign desktop_1x_url = desktop_image | image_url: width: regular_width
+			assign desktop_2x_url = desktop_image | image_url: width: doubled_width
+		else
+			# For non-retina, use original width or max_width if specified
 			if max_width
 				assign regular_width = max_width
-			endif
+				assign doubled_width = max_width | times: 2
 
-			assign desktop_1x_url = desktop_1x_base | append: '?width=' | append: regular_width
-
-			# For 2x version, double the width if max_width is specified
-			if max_width
-				assign desktop_2x_url = desktop_1x_base | append: '?width=' | append: max_width | times: 2
+				assign desktop_1x_url = desktop_image | image_url: width: regular_width
+				assign desktop_2x_url = desktop_image | image_url: width: doubled_width
 			else
-				assign desktop_2x_url = desktop_variant_url
-			endif
-		else
-			if max_width
-				assign desktop_1x_url = desktop_image | image_url: width: max_width
-				assign desktop_2x_url = desktop_image | image_url: width: max_width | times: 2
-			else
-				assign desktop_1x_url = desktop_variant_url
-				assign desktop_2x_url = desktop_variant_url
+				assign desktop_1x_url = desktop_image | image_url
+				assign desktop_2x_url = desktop_image | image_url
 			endif
 		endif
 
@@ -105,25 +123,33 @@
 		assign has_mobile_variant = false
 		if mobile_image_provided != blank
 			assign has_mobile_variant = true
+
 			if is_retina
 				assign mobile_original_width = mobile_image_provided.width
 				assign mobile_regular_width = mobile_original_width | divided_by: 2
 
+				# Apply max_width constraint if specified and smaller
 				if max_width and max_width < mobile_regular_width
 					assign mobile_regular_width = max_width
 				endif
 
-				assign mobile_1x_url = mobile_image_provided | image_url: width: mobile_regular_width
-
-				if max_width
-					assign mobile_2x_url = mobile_image_provided | image_url: width: mobile_regular_width | times: 2
-				else
-					assign mobile_2x_url = mobile_image_provided | image_url
+				# Calculate doubled width but don't exceed original
+				assign mobile_doubled_width = mobile_regular_width | times: 2
+				if mobile_doubled_width > mobile_original_width
+					assign mobile_doubled_width = mobile_original_width
 				endif
+
+				# Construct mobile URLs with width parameters
+				assign mobile_1x_url = mobile_image_provided | image_url: width: mobile_regular_width
+				assign mobile_2x_url = mobile_image_provided | image_url: width: mobile_doubled_width
 			else
+				# For non-retina mobile
 				if max_width
-					assign mobile_1x_url = mobile_image_provided | image_url: width: max_width
-					assign mobile_2x_url = mobile_image_provided | image_url: width: max_width | times: 2
+					assign mobile_regular_width = max_width
+					assign mobile_doubled_width = max_width | times: 2
+
+					assign mobile_1x_url = mobile_image_provided | image_url: width: mobile_regular_width
+					assign mobile_2x_url = mobile_image_provided | image_url: width: mobile_doubled_width
 				else
 					assign mobile_1x_url = mobile_image_provided | image_url
 					assign mobile_2x_url = mobile_image_provided | image_url
@@ -132,24 +158,32 @@
 		elsif load_mobile
 			assign mobile_variant_filename = image_name | append: '-mbl.' | append: image_ext
 			assign mobile_variant_url = mobile_variant_filename | file_url
+
 			if mobile_variant_url contains '?v='
 				assign has_mobile_variant = true
+
 				if is_retina
+					# For retina, determine appropriate widths
 					if max_width
 						assign mobile_regular_width = max_width
-					endif
-
-					assign mobile_1x_url = mobile_variant_url | image_url: width: mobile_regular_width
-
-					if max_width
-						assign mobile_2x_url = mobile_variant_url | image_url: width: mobile_regular_width | times: 2
+						assign mobile_doubled_width = max_width | times: 2
 					else
-						assign mobile_2x_url = mobile_variant_url
+						# Default values if no max_width specified
+						assign mobile_regular_width = 375  # Common mobile width
+						assign mobile_doubled_width = 750  # 2x mobile width
 					endif
+
+					# Construct mobile variant URLs
+					assign mobile_1x_url = mobile_variant_url | image_url: width: mobile_regular_width
+					assign mobile_2x_url = mobile_variant_url | image_url: width: mobile_doubled_width
 				else
+					# For non-retina mobile variants
 					if max_width
-						assign mobile_1x_url = mobile_variant_url | image_url: width: max_width
-						assign mobile_2x_url = mobile_variant_url | image_url: width: max_width | times: 2
+						assign mobile_regular_width = max_width
+						assign mobile_doubled_width = max_width | times: 2
+
+						assign mobile_1x_url = mobile_variant_url | image_url: width: mobile_regular_width
+						assign mobile_2x_url = mobile_variant_url | image_url: width: mobile_doubled_width
 					else
 						assign mobile_1x_url = mobile_variant_url
 						assign mobile_2x_url = mobile_variant_url
@@ -188,8 +222,13 @@
 	endif
 
 	# Apply max-width constraint to display dimensions if specified
-	if max_width and display_width > max_width
-		assign aspect_ratio = display_height | divided_by: display_width | times: 1.0
+	if max_width and display_width and display_width > max_width and display_height
+		# Calculate aspect ratio with better precision
+		assign ratio_width = display_width | times: 1.0
+		assign ratio_height = display_height | times: 1.0
+		assign aspect_ratio = ratio_height | divided_by: ratio_width
+
+		# Apply max-width while preserving aspect ratio
 		assign display_width = max_width
 		assign display_height = max_width | times: aspect_ratio | round
 	endif
@@ -198,6 +237,8 @@
 	# Generate unique IDs and URLs
 	#######################################
 	assign unique_id = 'img-' | append: desktop_image.id | append: '-' | append: now | date: '%N'
+
+	# Generate fallback URL with appropriate width
 	if max_width
 		assign fallback_url = desktop_image | image_url: width: max_width
 	else
