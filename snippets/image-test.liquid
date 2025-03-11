@@ -84,27 +84,20 @@
 					assign regular_width = max_width
 				endif
 
-				# Calculate 2x width for retina, but don't exceed original
 				assign doubled_width = regular_width | times: 2
 				if doubled_width > original_width
 					assign doubled_width = original_width
 				endif
 			else
-				# Fallback if width unknown
 				if max_width
 					assign regular_width = max_width
 					assign doubled_width = max_width | times: 2
-				else
-					assign regular_width = 800  # Default width
-					assign doubled_width = 1600  # Default 2x width
 				endif
 			endif
 
-			# Construct URLs with width parameters
 			assign desktop_1x_url = desktop_image | image_url: width: regular_width
 			assign desktop_2x_url = desktop_image | image_url: width: doubled_width
 		else
-			# For non-retina, use original width or max_width if specified
 			if max_width
 				assign regular_width = max_width
 				assign doubled_width = max_width | times: 2
