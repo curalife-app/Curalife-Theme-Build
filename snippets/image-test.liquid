@@ -72,10 +72,15 @@
 			assign desktop_1x_url = desktop_image | image_url: width: regular_width
 			assign desktop_2x_url = desktop_variant_url
 
-			echo '<script>console.log("DEBUG - Original Width: ' | append: original_width | append: '");</script>'
-			echo '<script>console.log("DEBUG - Regular Width: ' | append: regular_width | append: '");</script>'
-			echo '<script>console.log("DEBUG - 1x URL: ' | append: desktop_1x_url | append: '");</script>'
-			echo '<script>console.log("DEBUG - 2x URL: ' | append: desktop_2x_url | append: '");</script>'
+			assign debug_original_width = '<script>console.log("DEBUG - Original Width: ' | append: original_width | append: '");</script>'
+			assign debug_regular_width = '<script>console.log("DEBUG - Regular Width: ' | append: regular_width | append: '");</script>'
+			assign debug_1x_url = '<script>console.log("DEBUG - 1x URL: ' | append: desktop_1x_url | append: '");</script>'
+			assign debug_2x_url = '<script>console.log("DEBUG - 2x URL: ' | append: desktop_2x_url | append: '");</script>'
+
+			echo debug_original_width
+			echo debug_regular_width
+			echo debug_1x_url
+			echo debug_2x_url
 
 			# Check if 1x URL didn't get proper sizing, force it with width parameter
 			if desktop_1x_url == desktop_2x_url
@@ -83,7 +88,8 @@
 				assign desktop_1x_parts = desktop_variant_url | split: '?'
 				assign desktop_1x_base = desktop_1x_parts | first
 				assign desktop_1x_url = desktop_1x_base | append: '?width=' | append: regular_width
-				echo '<script>console.log("Fixed 1x URL: ' | append: desktop_1x_url | append: '");</script>'
+				assign log = '<script>console.log("Fixed 1x URL: ' | append: desktop_1x_url | append: '");</script>'
+				echo log
 			endif
 		else
 			assign desktop_1x_url = desktop_variant_url
