@@ -114,6 +114,15 @@
 			else
 				assign desktop_1x_url = desktop_image | image_url
 				assign desktop_2x_url = desktop_image | image_url
+
+				# Set default width values for debug purposes
+				if desktop_image.width
+					assign regular_width = desktop_image.width
+					assign doubled_width = desktop_image.width
+				else
+					assign regular_width = 'auto'
+					assign doubled_width = 'auto'
+				endif
 			endif
 		endif
 
@@ -153,6 +162,15 @@
 				else
 					assign mobile_1x_url = mobile_image_provided | image_url
 					assign mobile_2x_url = mobile_image_provided | image_url
+
+					# Set default width values for debug purposes
+					if mobile_image_provided.width
+						assign mobile_regular_width = mobile_image_provided.width
+						assign mobile_doubled_width = mobile_image_provided.width
+					else
+						assign mobile_regular_width = 'auto'
+						assign mobile_doubled_width = 'auto'
+					endif
 				endif
 			endif
 		elsif load_mobile
@@ -187,6 +205,10 @@
 					else
 						assign mobile_1x_url = mobile_variant_url
 						assign mobile_2x_url = mobile_variant_url
+
+						# Set default widths for debugging
+						assign mobile_regular_width = 'auto'
+						assign mobile_doubled_width = 'auto'
 					endif
 				endif
 			else
@@ -282,6 +304,9 @@
 		data-original-url="{{ fallback_url }}"
 		{% if is_retina %}
 			data-is-retina="true"
+		{% endif %}
+		{% if max_width %}
+			data-max-width="{{ max_width }}"
 		{% endif %}>
 </picture>
 
@@ -303,6 +328,10 @@
 		  force_original: {{ force_original | json }},
 		  is_retina: {{ is_retina | json }},
 		  max_width: {{ max_width | json }},
+		  regular_width: {{ regular_width | json }},
+		  doubled_width: {{ doubled_width | json }},
+		  desktop_1x_url: {{ desktop_1x_url | json }},
+		  desktop_2x_url: {{ desktop_2x_url | json }},
 		  desktop_image: {
 		    src: {{ desktop_image.src | json }},
 		    alt: {{ desktop_image.alt | json }},
@@ -317,7 +346,11 @@
 		  load_mobile: {{ load_mobile | json }},
 		  alt: {{ alt | json }},
 		  mobile_breakpoint: {{ mobile_breakpoint | json }},
-		  sizes: {{ sizes | json }}
+		  sizes: {{ sizes | json }},
+		  display_dimensions: {
+		    width: {{ display_width | json }},
+		    height: {{ display_height | json }}
+		  }
 		});
 
 		if (!window.debouncedDisplayImageDebugLogs) {
