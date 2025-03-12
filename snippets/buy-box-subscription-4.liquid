@@ -36,7 +36,7 @@
 
 <div class="product-actions" data-default-variant-index="{{ defaultSelectionIndex }}" data-gifts-amount="{{ giftsAmount }}">
 	<div class="purchase-options flex flex-col gap-3 mb-3">
-		<div class="font-semibold text-[18px]">Select your pack</div>
+		<div class="font-semibold text-[18px]">Choose your package</div>
 
 		<div class="variant-boxes flex justify-around gap-2">
 			{% for block in blocks %}
@@ -401,7 +401,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			// Extract data from the box
 			const isSub = boxElement.dataset.purchaseType === 'subscribe';
-			const planId = isSub ? boxElement.dataset.subscriptionSellingPlanId : '';
+			const bottleQuantity = parseInt(boxElement.dataset.bottleQuantity || '1', 10);
+			let planId = isSub ? boxElement.dataset.subscriptionSellingPlanId : '';
 			const variantId = boxElement.dataset.variant;
 
 			// Update submit button settings
@@ -1484,6 +1485,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			const variant = el.dataset.originalVariant || el.dataset.variant;
 			const isSub = el.dataset.purchaseType === 'subscribe';
 			const allowedSellingPlans = el.dataset.allowedSellingPlans ? el.dataset.allowedSellingPlans.trim() : '';
+			const bottleQuantity = parseInt(el.dataset.bottleQuantity || '1', 10);
 
 			// For debugging allowed selling plans
 			if (allowedSellingPlans) {
@@ -1501,7 +1503,8 @@ document.addEventListener('DOMContentLoaded', () => {
 				productId,
 				variant,
 				hasProductData: window.productData && window.productData[productId] ? 'Yes' : 'No',
-				allowedSellingPlans: allowedSellingPlans || 'None specified'
+				allowedSellingPlans: allowedSellingPlans || 'None specified',
+				recommendedFrequency: bottleQuantity
 			});
 
 			const variantId = parseInt(variant);
@@ -1542,6 +1545,23 @@ document.addEventListener('DOMContentLoaded', () => {
 				return;
 			}
 
+			// Find selling plan that matches the bottle quantity (recommended frequency)
+			let recommendedSellingPlanId = '';
+			if (selectedVariant.selling_plan_allocations) {
+				for (const allocation of selectedVariant.selling_plan_allocations) {
+					const months = extractFrequencyMonths(allocation.selling_plan.name);
+					if (months === bottleQuantity) {
+						recommendedSellingPlanId = allocation.selling_plan.id.toString();
+						break;
+					}
+				}
+			}
+
+			// If we found a recommended selling plan, set it as the current
+			if (recommendedSellingPlanId && !el.dataset.subscriptionSellingPlanId) {
+				el.dataset.subscriptionSellingPlanId = recommendedSellingPlanId;
+			}
+
 			updateFrequencyOptionsFromVariant(selectedVariant, el.dataset.subscriptionSellingPlanId);
 		} catch (error) {
 			console.error('Error in populateFrequencySelector:', error);
@@ -1554,7 +1574,9 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (!frequencyOptions || !frequencyContainer) return;
 
 		if (el.dataset.purchaseType === 'subscribe') {
+			const bottleQuantity = parseInt(el.dataset.bottleQuantity || '1', 10);
 			const currentSellingPlanId = el.dataset.subscriptionSellingPlanId;
+
 			if (currentSellingPlanId) {
 				frequencyOptions.innerHTML = '';
 				const fallbackBox = document.createElement('div');
@@ -1562,10 +1584,10 @@ document.addEventListener('DOMContentLoaded', () => {
 				fallbackBox.style.backgroundColor = 'var(--primary-color)';
 				fallbackBox.style.color = 'white';
 				fallbackBox.setAttribute('data-selling-plan-id', currentSellingPlanId);
-				fallbackBox.setAttribute('data-months', '1'); // Default to monthly for description
+				fallbackBox.setAttribute('data-months', bottleQuantity.toString()); // Use bottle quantity as default recommended frequency
 				fallbackBox.innerHTML = `
 					<div class="p-1">
-						<span class="font-semibold">Default Plan</span>
+						<span class="font-semibold">Every ${bottleQuantity} Month${bottleQuantity > 1 ? 's' : ''}</span>
 					</div>
 				`;
 				frequencyOptions.appendChild(fallbackBox);
@@ -1643,6 +1665,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	function rebuildFrequencyOptions(frequencyOptions, filteredPlans, currentSellingPlanId) {
 		const fragment = document.createDocumentFragment();
+		const selectedBox = productActions.querySelector('.variant-box.selected');
+		const recommendedMonths = parseInt(selectedBox?.dataset.bottleQuantity || '1', 10);
 
 		filteredPlans.forEach(allocation => {
 			const plan = allocation.selling_plan;
@@ -1657,12 +1681,29 @@ document.addEventListener('DOMContentLoaded', () => {
 			frequencyBox.setAttribute('data-selling-plan-id', plan.id);
 			frequencyBox.setAttribute('data-months', months);
 
-			if (plan.id.toString() === currentSellingPlanId) {
+			// Set the current selling plan ID to recommended months if it's a new selection
+			// or keep existing selection if it was already set
+			const shouldSelectRecommended = !currentSellingPlanId || (months === recommendedMonths);
+
+			if ((plan.id.toString() === currentSellingPlanId) ||
+				(shouldSelectRecommended && months === recommendedMonths)) {
 				frequencyBox.style.backgroundColor = 'var(--primary-color)';
 				frequencyBox.style.color = 'white';
+
+				// Update the current box with the recommended selling plan ID
+				if (shouldSelectRecommended && months === recommendedMonths) {
+					currentSellingPlanId = plan.id.toString();
+
+					// Update the selected box with the new selling plan ID
+					if (selectedBox) {
+						selectedBox.dataset.subscriptionSellingPlanId = currentSellingPlanId;
+						if (submitSellingPlanId) submitSellingPlanId.value = currentSellingPlanId;
+					}
+				}
 			}
 
-			let displayText = months === 1 ? 'Monthly' : `${months} Months`;
+			// Change label format to "Every X Month/s"
+			let displayText = months === 1 ? 'Every Month' : `Every ${months} Months`;
 
 			frequencyBox.innerHTML = `
 				<div class="p-1">
@@ -1715,26 +1756,26 @@ document.addEventListener('DOMContentLoaded', () => {
 		);
 		if (!selectedOption) return;
 
-		const months = selectedOption.getAttribute('data-months') || '1';
-		const bottleQuantity = state.selectedBox?.dataset.bottleQuantity || '1';
+		const months = parseInt(selectedOption.getAttribute('data-months') || '1', 10);
+		const bottleQuantity = parseInt(state.selectedBox?.dataset.bottleQuantity || '1', 10);
 
-		let description = '';
-		if (months === '1') {
-			description = `You'll receive ${bottleQuantity} bottle${bottleQuantity > 1 ? 's' : ''} every month.`;
-		} else {
-			description = `You'll receive ${bottleQuantity} bottle${bottleQuantity > 1 ? 's' : ''} every ${months} months.`;
+		let description = `You'll receive ${bottleQuantity} bottle${bottleQuantity > 1 ? 's' : ''} every ${months} month${months > 1 ? 's' : ''}.`;
+
+		// Show recommendation message if selected frequency doesn't match recommended frequency
+		if (months !== bottleQuantity) {
+			description += ` <span class="text-primary font-medium">Recommended - every ${bottleQuantity} month${bottleQuantity > 1 ? 's' : ''}</span>`;
 		}
 
-		if (descriptionEl.textContent !== description) {
+		if (descriptionEl.textContent !== description && descriptionEl.innerHTML !== description) {
 			if (descriptionEl.style.opacity !== '0') {
 				DOMUtils.updateStyle(descriptionEl, 'opacity', '0');
 
 				setTimeout(() => {
-					DOMUtils.updateProperty(descriptionEl, 'textContent', description);
+					DOMUtils.updateProperty(descriptionEl, 'innerHTML', description);
 					DOMUtils.updateStyle(descriptionEl, 'opacity', '1');
 				}, 200);
 			} else {
-				DOMUtils.updateProperty(descriptionEl, 'textContent', description);
+				DOMUtils.updateProperty(descriptionEl, 'innerHTML', description);
 				DOMUtils.updateStyle(descriptionEl, 'opacity', '1');
 			}
 		}
