@@ -121,30 +121,30 @@
 					{% assign firstMonthDiscount = block.settings.first_month_discount_percentage %}
 
 					<div
-						id="variant-box-{{ SID }}-{{ forloop.index }}"
-						class="variant-box flex flex-col items-center variant-tab-style text-center w-full {% if forloop.index == 1 %}selected{% endif %} {{ varPurchaseType }}"
-						data-variant="{{ blockVarID }}"
-						data-product="{{ prod.id }}"
-						data-original-variant="{{ var.id }}"
-						data-subscription-selling-plan-id="{{ selling_plan_id }}"
-						data-price="{{ var.price | money_without_currency | replace: ".00", "" }}"
-						data-sku="{{ var.sku }}"
-						data-index="{{ forloop.index }}"
-						data-item-price="{{ item_price }}"
-						data-subscription-price="{{ subscription_total_price }}"
-						data-subscription-item-price="{{ subscription_item_price }}"
-						data-original-item-cap="{{ original_item_cap }}"
-						data-dc="{{ var.metafields.custom.discount_code | base64_encode }}"
-						data-buy-once-discount="{{ var.metafields.custom.save_percents }}"
-						data-subscription-discount="{{ subscription_save_percents }}"
-						data-first-month-discount="{{ firstMonthDiscount }}"
-						data-price-per="{{ pricePer }}"
-						data-bottle-quantity="{{ bottle_quantity }}"
-						data-purchase-type="{{ varPurchaseType }}"
-						data-buy-type="{{ buyType }}"
-						{% if block.settings.allowed_selling_plan_ids %}
-						data-allowed-selling-plans="{{ block.settings.allowed_selling_plan_ids | escape }}"
-						{% endif %}
+					id="variant-box-{{ SID }}-{{ forloop.index }}"
+				class="variant-box flex flex-col items-center variant-tab-style text-center w-full {% if forloop.index == 1 %}selected{% endif %} {{ varPurchaseType }}"
+				data-variant="{{ blockVarID }}"
+				data-product="{{ prod.id }}"
+				data-original-variant="{{ var.id }}"
+				data-subscription-selling-plan-id="{{ selling_plan_id }}"
+				data-price="{{ var.price | money_without_currency | replace: ".00", "" }}"
+				data-sku="{{ var.sku }}"
+				data-index="{{ forloop.index }}"
+				data-item-price="{{ item_price }}"
+				data-subscription-price="{{ subscription_total_price }}"
+				data-subscription-item-price="{{ subscription_item_price }}"
+				data-original-item-cap="{{ original_item_cap }}"
+				data-dc="{{ var.metafields.custom.discount_code | base64_encode }}"
+				data-buy-once-discount="{{ var.metafields.custom.save_percents }}"
+				data-subscription-discount="{{ subscription_save_percents }}"
+				data-first-month-discount="{{ firstMonthDiscount }}"
+				data-price-per="{{ pricePer }}"
+				data-bottle-quantity="{{ bottle_quantity }}"
+				data-purchase-type="{{ varPurchaseType }}"
+				data-buy-type="{{ buyType }}"
+				{% if block.settings.allowed_selling_plan_ids != blank %}
+				data-allowed-selling-plans="{{ block.settings.allowed_selling_plan_ids | strip | escape }}"
+				{% endif %}
 						name="track:variant-box|variant-sku:{{ var.sku }}|purchase-type:{{ varPurchaseType }}">
 						{% if product.handle == 'curalin' %}
 							{% assign subscription_save_percents = var.metafields.subscription.save_percents %}
