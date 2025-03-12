@@ -1483,6 +1483,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			const variant = el.dataset.originalVariant || el.dataset.variant;
 			const isSub = el.dataset.purchaseType === 'subscribe';
+			const allowedSellingPlans = el.dataset.allowedSellingPlans ? el.dataset.allowedSellingPlans.trim() : '';
+
+			// For debugging allowed selling plans
+			if (allowedSellingPlans) {
+				console.log('Variant has allowed selling plans:', allowedSellingPlans);
+			}
 
 			if (!isSub) {
 				frequencyContainer.classList.add('hidden');
@@ -1495,7 +1501,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				productId,
 				variant,
 				hasProductData: window.productData && window.productData[productId] ? 'Yes' : 'No',
-				allowedSellingPlans: el.dataset.allowedSellingPlans || 'None specified'
+				allowedSellingPlans: allowedSellingPlans || 'None specified'
 			});
 
 			const variantId = parseInt(variant);
@@ -1504,69 +1510,79 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (window.productData && window.productData[productId]) {
 				const product = window.productData[productId];
 				if (product.variants) {
+					// First try exact match
 					selectedVariant = product.variants.find(v => v.id === variantId);
 
 					if (!selectedVariant) {
 						console.log('Variant not found in product data. Available variants:', product.variants.map(v => v.id));
 
+						// Try original variant as fallback
 						const originalVariantId = parseInt(el.dataset.originalVariant || '0');
 						if (originalVariantId > 0) {
 							selectedVariant = product.variants.find(v => v.id === originalVariantId);
+
+							if (selectedVariant) {
+								console.log('Found variant using original variant ID fallback');
+							}
 						}
 					}
 				}
 			}
 
 			if (!selectedVariant) {
-				console.log('Using fallback for subscription plan options');
-				const currentSellingPlanId = el.dataset.subscriptionSellingPlanId;
-				if (currentSellingPlanId) {
-					const frequencyBox = document.createElement('div');
-					frequencyBox.className = 'rounded-md cursor-pointer py-2 min-w-[90px] text-center w-full selected transition-all duration-300 ease-in-out';
-					frequencyBox.style.backgroundColor = 'var(--primary-color)';
-					frequencyBox.style.color = 'white';
-					frequencyBox.setAttribute('data-selling-plan-id', currentSellingPlanId);
-					frequencyBox.innerHTML = `
-						<div class="p-1">
-							<span class="font-semibold">Current Plan</span>
-						</div>
-					`;
-					frequencyOptions.appendChild(frequencyBox);
-					frequencyBox.addEventListener('click', function() {
-						selectFrequencyOption(this);
-					});
-					frequencyContainer.classList.remove('hidden');
-				} else {
-					frequencyContainer.classList.add('hidden');
-				}
+				console.log('Using fallback for subscription plan options - variant not found in product data');
+				handleFallbackFrequencyOptions(el, frequencyOptions, frequencyContainer);
+				return;
+			}
 
+			// Check if variant has selling plan allocations
+			if (!selectedVariant.selling_plan_allocations || selectedVariant.selling_plan_allocations.length === 0) {
+				console.warn('Selected variant has no selling plan allocations:', selectedVariant.id);
+				handleFallbackFrequencyOptions(el, frequencyOptions, frequencyContainer);
 				return;
 			}
 
 			updateFrequencyOptionsFromVariant(selectedVariant, el.dataset.subscriptionSellingPlanId);
 		} catch (error) {
 			console.error('Error in populateFrequencySelector:', error);
-			const frequencyOptions = document.getElementById('frequency-options-{{ SID }}');
-			const frequencyContainer = productActions.querySelector('[data-frequency-container]');
+			handleFallbackFrequencyOptions(el, document.getElementById('frequency-options-{{ SID }}'), productActions.querySelector('[data-frequency-container]'));
+		}
+	}
 
-			if (frequencyOptions && frequencyContainer && el.dataset.purchaseType === 'subscribe') {
-				const currentSellingPlanId = el.dataset.subscriptionSellingPlanId;
-				if (currentSellingPlanId) {
-					frequencyOptions.innerHTML = '';
-					const fallbackBox = document.createElement('div');
-					fallbackBox.className = 'rounded-md cursor-pointer py-2 min-w-[90px] text-center w-full transition-all duration-300 ease-in-out';
-					fallbackBox.style.backgroundColor = 'var(--primary-color)';
-					fallbackBox.style.color = 'white';
-					fallbackBox.setAttribute('data-selling-plan-id', currentSellingPlanId);
-					fallbackBox.innerHTML = `
-						<div class="p-1">
-							<span class="font-semibold">Current Plan</span>
-						</div>
-					`;
-					frequencyOptions.appendChild(fallbackBox);
-					frequencyContainer.classList.remove('hidden');
-				}
+	// Helper function for fallback frequency option handling
+	function handleFallbackFrequencyOptions(el, frequencyOptions, frequencyContainer) {
+		if (!frequencyOptions || !frequencyContainer) return;
+
+		if (el.dataset.purchaseType === 'subscribe') {
+			const currentSellingPlanId = el.dataset.subscriptionSellingPlanId;
+			if (currentSellingPlanId) {
+				frequencyOptions.innerHTML = '';
+				const fallbackBox = document.createElement('div');
+				fallbackBox.className = 'rounded-md cursor-pointer py-2 min-w-[90px] text-center w-full transition-all duration-300 ease-in-out';
+				fallbackBox.style.backgroundColor = 'var(--primary-color)';
+				fallbackBox.style.color = 'white';
+				fallbackBox.setAttribute('data-selling-plan-id', currentSellingPlanId);
+				fallbackBox.setAttribute('data-months', '1'); // Default to monthly for description
+				fallbackBox.innerHTML = `
+					<div class="p-1">
+						<span class="font-semibold">Default Plan</span>
+					</div>
+				`;
+				frequencyOptions.appendChild(fallbackBox);
+				frequencyContainer.classList.remove('hidden');
+
+				// Make sure fallback box has click handler
+				fallbackBox.addEventListener('click', function() {
+					selectFrequencyOption(this);
+				});
+
+				// Update description
+				setTimeout(updateFrequencyDescription, 100);
+			} else {
+				frequencyContainer.classList.add('hidden');
 			}
+		} else {
+			frequencyContainer.classList.add('hidden');
 		}
 	}
 
