@@ -1769,19 +1769,39 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Store original length for comparison
                     const originalLength = filteredPlans.length;
 
-                    // Create a Set for faster lookups
-                    const allowedPlansSet = new Set(allowedPlans);
+                    // Create a Set of normalized strings for consistent comparison
+                    const allowedPlansSet = new Set(allowedPlans.map(id => id.toString()));
+
+                    // Check if we have any valid selling plans
+                    let validPlanFound = false;
 
                     // Log each selling plan for debugging
                     sellingPlans.forEach(plan => {
                         const id = plan.selling_plan.id.toString();
-                        console.log(`Plan ID: ${id}, Allowed: ${allowedPlansSet.has(id)}`);
+                        const isAllowed = allowedPlansSet.has(id);
+                        console.log(`Plan ID: ${id}, Allowed: ${isAllowed}`);
+                        if (isAllowed) validPlanFound = true;
                     });
 
-                    // Filter plans - convert to string for consistent comparison
+                    // Early warning if no plans will match
+                    if (!validPlanFound) {
+                        console.warn('None of the specified allowed selling plans match any actual plans!', {
+                            allowedPlans: [...allowedPlansSet],
+                            availablePlans: sellingPlans.map(p => p.selling_plan.id.toString())
+                        });
+                    }
+
+                    // Filter plans with consistent string comparison
                     filteredPlans = filteredPlans.filter(allocation => {
                         const planId = allocation.selling_plan.id.toString();
-                        return allowedPlansSet.has(planId);
+                        const isAllowed = allowedPlansSet.has(planId);
+
+                        // Additional debug info to identify any mismatches
+                        if (!isAllowed) {
+                            console.log(`Plan ${planId} not in allowed set:`, [...allowedPlansSet]);
+                        }
+
+                        return isAllowed;
                     });
 
                     console.log('Filtered to', filteredPlans.length, 'selling plans from', originalLength);
@@ -1796,8 +1816,22 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (err) {
             console.error('Error filtering selling plans:', err, 'Raw value:', selectedBox.dataset.allowedSellingPlans);
+
+            // More informative error reporting
+            if (window.Shopify && window.Shopify.designMode) {
+                console.warn('Allowed selling plans format issue detected in theme editor mode. Check the format of your selling plan IDs.');
+            }
+
             // Don't filter if there's an error - keep all plans
+            filteredPlans = [...sellingPlans];
         }
+    }
+
+    // Always ensure we have at least one plan if available
+    if (filteredPlans.length === 0 && sellingPlans.length > 0) {
+        console.warn('Filtering removed all selling plans! Restoring first available plan as fallback.');
+        filteredPlans = [sellingPlans[0]];
+        hasChanged = true;
     }
 
     // Sort by frequency in months
@@ -1810,14 +1844,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handle case when current selling plan ID is not in the filtered list
     if (currentSellingPlanId && filteredPlans.length > 0) {
         const currentPlanExists = filteredPlans.some(
-            plan => plan.selling_plan.id.toString() === currentSellingPlanId
+            plan => plan.selling_plan.id.toString() === currentSellingPlanId.toString()
         );
 
         if (!currentPlanExists) {
             // Add current selling plan back if it was filtered out
             console.log('Current selling plan not in filtered list, adding it back');
             const originalPlan = sellingPlans.find(
-                plan => plan.selling_plan.id.toString() === currentSellingPlanId
+                plan => plan.selling_plan.id.toString() === currentSellingPlanId.toString()
             );
 
             if (originalPlan) {
@@ -1854,29 +1888,51 @@ document.addEventListener('DOMContentLoaded', () => {
 }
 
 	function handleNoMatchingPlans(frequencyOptions, currentSellingPlanId, frequencyContainer) {
+		// Clear existing options
+		frequencyOptions.innerHTML = '';
+
 		if (currentSellingPlanId) {
-			frequencyOptions.innerHTML = '';
+			// If we have a current plan, create a fallback option
+			console.log('Creating fallback option for current selling plan:', currentSellingPlanId);
+
 			const fallbackBox = document.createElement('div');
 			fallbackBox.className = 'rounded-md cursor-pointer py-2 min-w-[90px] text-center w-full transition-all duration-300 ease-in-out';
 			fallbackBox.style.backgroundColor = 'var(--primary-color)';
 			fallbackBox.style.color = 'white';
 			fallbackBox.setAttribute('data-selling-plan-id', currentSellingPlanId);
+			fallbackBox.setAttribute('data-months', '1'); // Default to monthly for description
 			fallbackBox.innerHTML = `
 				<div class="p-1">
 					<span class="font-semibold">Current Plan</span>
 				</div>
 			`;
-			frequencyOptions.appendChild(fallbackBox);
+
 			// Add event listener to handle clicks
 			fallbackBox.addEventListener('click', function() {
 				selectFrequencyOption(this);
 			});
+
+			frequencyOptions.appendChild(fallbackBox);
 			frequencyContainer.classList.remove('hidden');
+
+			// Log details about what happened
+			console.log('No matching filtered plans found, using fallback with current selling plan ID:', currentSellingPlanId);
 
 			// Make sure the frequency description is updated too
 			updateFrequencyDescription();
 		} else {
+			// If no current plan either, hide the container
+			console.warn('No current or filtered plans available, hiding frequency selector');
 			frequencyContainer.classList.add('hidden');
+
+			// If in theme editor, add a visible notice
+			if (window.Shopify && window.Shopify.designMode) {
+				const notice = document.createElement('div');
+				notice.className = 'text-red-500 text-sm mt-2 p-2 border border-red-300 rounded';
+				notice.textContent = 'No valid subscription frequencies available. Check your allowed selling plan IDs configuration.';
+				frequencyContainer.appendChild(notice);
+				frequencyContainer.classList.remove('hidden');
+			}
 		}
 	}
 });
