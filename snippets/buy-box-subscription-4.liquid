@@ -1743,48 +1743,115 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 	function getFilteredSellingPlans(sellingPlans, currentPlanIds, currentSellingPlanId) {
-		const selectedBox = productActions.querySelector('.variant-box.selected');
-		let filteredPlans = [...sellingPlans];
-		let allowedPlans = [];
+    const selectedBox = productActions.querySelector('.variant-box.selected');
+    let filteredPlans = [...sellingPlans];
+    let allowedPlans = [];
+    let hasChanged = false;
 
-		if (selectedBox && selectedBox.dataset.allowedSellingPlans) {
-			try {
-				allowedPlans = selectedBox.dataset.allowedSellingPlans.split(',').map(id => id.trim());
-				console.log('Filtering by allowed selling plans:', allowedPlans);
+    if (selectedBox && selectedBox.dataset.allowedSellingPlans) {
+        try {
+            // More robust parsing - handle malformed inputs
+            const allowedSellingPlansStr = selectedBox.dataset.allowedSellingPlans.trim();
 
-				if (allowedPlans.length > 0) {
-					filteredPlans = filteredPlans.filter(allocation =>
-						allowedPlans.includes(allocation.selling_plan.id.toString())
-					);
+            // Log the raw value for debugging
+            console.log('Raw allowed selling plans attribute:', allowedSellingPlansStr);
 
-					console.log('Filtered to', filteredPlans.length, 'selling plans');
-				}
-			} catch (err) {
-				console.error('Error filtering selling plans:', err);
-			}
-		}
+            // Better parsing with validation
+            if (allowedSellingPlansStr) {
+                allowedPlans = allowedSellingPlansStr
+                    .split(',')
+                    .map(id => id.trim())
+                    .filter(id => id && !isNaN(parseInt(id, 10))); // Ensure numeric values only
 
-		filteredPlans.sort((a, b) => {
-			const freqA = extractFrequencyMonths(a.selling_plan.name);
-			const freqB = extractFrequencyMonths(b.selling_plan.name);
-			return freqA - freqB;
-		});
+                console.log('Parsed allowed selling plans:', allowedPlans);
 
-		const newPlanIds = new Set(filteredPlans.map(plan => plan.selling_plan.id.toString()));
+                if (allowedPlans.length > 0) {
+                    // Store original length for comparison
+                    const originalLength = filteredPlans.length;
 
-		let hasChanged = currentPlanIds.size !== newPlanIds.size;
+                    // Create a Set for faster lookups
+                    const allowedPlansSet = new Set(allowedPlans);
 
-		if (!hasChanged) {
-			for (const id of currentPlanIds) {
-				if (!newPlanIds.has(id)) {
-					hasChanged = true;
-					break;
-				}
-			}
-		}
+                    // Log each selling plan for debugging
+                    sellingPlans.forEach(plan => {
+                        const id = plan.selling_plan.id.toString();
+                        console.log(`Plan ID: ${id}, Allowed: ${allowedPlansSet.has(id)}`);
+                    });
 
-		return { filteredPlans, hasChanged, allowedPlans };
-	}
+                    // Filter plans - convert to string for consistent comparison
+                    filteredPlans = filteredPlans.filter(allocation => {
+                        const planId = allocation.selling_plan.id.toString();
+                        return allowedPlansSet.has(planId);
+                    });
+
+                    console.log('Filtered to', filteredPlans.length, 'selling plans from', originalLength);
+
+                    // Set hasChanged if the filtering actually changed something
+                    if (filteredPlans.length !== originalLength) {
+                        hasChanged = true;
+                    }
+                }
+            } else {
+                console.log('Empty allowed selling plans attribute, not filtering');
+            }
+        } catch (err) {
+            console.error('Error filtering selling plans:', err, 'Raw value:', selectedBox.dataset.allowedSellingPlans);
+            // Don't filter if there's an error - keep all plans
+        }
+    }
+
+    // Sort by frequency in months
+    filteredPlans.sort((a, b) => {
+        const freqA = extractFrequencyMonths(a.selling_plan.name);
+        const freqB = extractFrequencyMonths(b.selling_plan.name);
+        return freqA - freqB;
+    });
+
+    // Handle case when current selling plan ID is not in the filtered list
+    if (currentSellingPlanId && filteredPlans.length > 0) {
+        const currentPlanExists = filteredPlans.some(
+            plan => plan.selling_plan.id.toString() === currentSellingPlanId
+        );
+
+        if (!currentPlanExists) {
+            // Add current selling plan back if it was filtered out
+            console.log('Current selling plan not in filtered list, adding it back');
+            const originalPlan = sellingPlans.find(
+                plan => plan.selling_plan.id.toString() === currentSellingPlanId
+            );
+
+            if (originalPlan) {
+                filteredPlans.push(originalPlan);
+                hasChanged = true;
+
+                // Re-sort after adding
+                filteredPlans.sort((a, b) => {
+                    const freqA = extractFrequencyMonths(a.selling_plan.name);
+                    const freqB = extractFrequencyMonths(b.selling_plan.name);
+                    return freqA - freqB;
+                });
+            }
+        }
+    }
+
+    const newPlanIds = new Set(filteredPlans.map(plan => plan.selling_plan.id.toString()));
+
+    // Check if the plans have changed beyond what we already determined
+    if (!hasChanged) {
+        if (currentPlanIds.size !== newPlanIds.size) {
+            hasChanged = true;
+        } else {
+            for (const id of currentPlanIds) {
+                if (!newPlanIds.has(id)) {
+                    hasChanged = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    return { filteredPlans, hasChanged, allowedPlans };
+}
 
 	function handleNoMatchingPlans(frequencyOptions, currentSellingPlanId, frequencyContainer) {
 		if (currentSellingPlanId) {
