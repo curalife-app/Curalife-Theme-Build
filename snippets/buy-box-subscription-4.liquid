@@ -1644,8 +1644,10 @@ document.addEventListener('DOMContentLoaded', () => {
 			let recommendedSellingPlanId = '';
 			if (selectedVariant.selling_plan_allocations) {
 				for (const allocation of selectedVariant.selling_plan_allocations) {
-					const months = extractFrequencyMonths(allocation.selling_plan.name);
-					if (months === bottleQuantity) {
+					const { value, unit } = extractFrequency(allocation.selling_plan.name);
+
+                    // If unit is months and matches bottle quantity
+					if (unit === 'month' && value === bottleQuantity) {
 						recommendedSellingPlanId = allocation.selling_plan.id.toString();
 						break;
 					}
@@ -1679,7 +1681,8 @@ document.addEventListener('DOMContentLoaded', () => {
 				fallbackBox.style.backgroundColor = 'var(--primary-color)';
 				fallbackBox.style.color = 'white';
 				fallbackBox.setAttribute('data-selling-plan-id', currentSellingPlanId);
-				fallbackBox.setAttribute('data-months', bottleQuantity.toString()); // Use bottle quantity as default recommended frequency
+				fallbackBox.setAttribute('data-frequency-value', bottleQuantity.toString()); // Use bottle quantity as default recommended frequency
+				fallbackBox.setAttribute('data-frequency-unit', 'month'); // Default to months
 				fallbackBox.innerHTML = `
 					<div class="p-1">
 						<span class="font-semibold">Every ${bottleQuantity} Month${bottleQuantity > 1 ? 's' : ''}</span>
@@ -1765,7 +1768,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		filteredPlans.forEach(allocation => {
 			const plan = allocation.selling_plan;
-			const months = extractFrequencyMonths(plan.name);
+			const { value, unit } = extractFrequency(plan.selling_plan.name);
 
 			const frequencyBox = document.createElement('div');
 			frequencyBox.className = 'rounded-md cursor-pointer py-2 min-w-[90px] max-w-[168px] text-center w-full transition-all duration-300 ease-in-out';
@@ -1774,19 +1777,21 @@ document.addEventListener('DOMContentLoaded', () => {
 			frequencyBox.style.color = 'var(--primary-color)';
 
 			frequencyBox.setAttribute('data-selling-plan-id', plan.id);
-			frequencyBox.setAttribute('data-months', months);
+			frequencyBox.setAttribute('data-frequency-value', value);
+			frequencyBox.setAttribute('data-frequency-unit', unit);
 
 			// Set the current selling plan ID to recommended months if it's a new selection
 			// or keep existing selection if it was already set
-			const shouldSelectRecommended = !currentSellingPlanId || (months === recommendedMonths);
+			const isRecommendedMonthPlan = (unit === 'month' && value === recommendedMonths);
+			const shouldSelectRecommended = !currentSellingPlanId || isRecommendedMonthPlan;
 
 			if ((plan.id.toString() === currentSellingPlanId) ||
-				(shouldSelectRecommended && months === recommendedMonths)) {
+				(shouldSelectRecommended && isRecommendedMonthPlan)) {
 				frequencyBox.style.backgroundColor = 'var(--primary-color)';
 				frequencyBox.style.color = 'white';
 
 				// Update the current box with the recommended selling plan ID
-				if (shouldSelectRecommended && months === recommendedMonths) {
+				if (shouldSelectRecommended && isRecommendedMonthPlan) {
 					currentSellingPlanId = plan.id.toString();
 
 					// Update the selected box with the new selling plan ID
@@ -1797,8 +1802,13 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 			}
 
-			// Change label format to "Every X Month/s"
-			let displayText = months === 1 ? 'Every Month' : `Every ${months} Months`;
+			// Change label format based on the frequency unit
+            let displayText = '';
+            if (unit === 'day') {
+                displayText = value === 1 ? 'Every Day' : `Every ${value} Days`;
+            } else { // month
+                displayText = value === 1 ? 'Every Month' : `Every ${value} Months`;
+            }
 
 			frequencyBox.innerHTML = `
 				<div class="p-1">
@@ -1851,16 +1861,17 @@ document.addEventListener('DOMContentLoaded', () => {
 		);
 		if (!selectedOption) return;
 
-		const months = parseInt(selectedOption.getAttribute('data-months') || '1', 10);
+		const selectedFrequencyValue = parseInt(selectedOption.getAttribute('data-frequency-value') || '1', 10);
+		const selectedFrequencyUnit = selectedOption.getAttribute('data-frequency-unit') || 'month';
 		const bottleQuantity = parseInt(state.selectedBox?.dataset.bottleQuantity || '1', 10);
 
 		let description = '';
 
-		// If selected frequency matches recommended frequency, show nothing
-		if (months === bottleQuantity) {
+		// If selected frequency matches recommended frequency (only for months)
+		if (selectedFrequencyUnit === 'month' && selectedFrequencyValue === bottleQuantity) {
 			description = ''; // No text when on recommended frequency
 		} else {
-			// Otherwise only show the recommendation
+			// Otherwise show the recommendation
 			description = `Recommended - every ${bottleQuantity} month${bottleQuantity > 1 ? 's' : ''}`;
 		}
 
@@ -1892,10 +1903,29 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 	init();
 
-	function extractFrequencyMonths(planName) {
-		const match = planName.match(/(\d+)\s*Month/i);
-		return match ? parseInt(match[1], 10) : 0;
-	}
+	// Updated to extract both value and unit (days or months)
+    function extractFrequency(planName) {
+        // Try matching days pattern first
+        let daysMatch = planName.match(/(\d+)\s*Day/i);
+        if (daysMatch) {
+            return {
+                value: parseInt(daysMatch[1], 10),
+                unit: 'day'
+            };
+        }
+
+        // Try matching months pattern
+        let monthsMatch = planName.match(/(\d+)\s*Month/i);
+        if (monthsMatch) {
+            return {
+                value: parseInt(monthsMatch[1], 10),
+                unit: 'month'
+            };
+        }
+
+        // Default fallback
+        return { value: 1, unit: 'month' };
+    }
 
 	function getFilteredSellingPlans(sellingPlans, currentPlanIds, currentSellingPlanId) {
     const selectedBox = productActions.querySelector('.variant-box.selected');
@@ -1989,11 +2019,18 @@ document.addEventListener('DOMContentLoaded', () => {
         hasChanged = true;
     }
 
-    // Sort by frequency in months
+    // Sort by frequency, first by unit (days before months), then by value
     filteredPlans.sort((a, b) => {
-        const freqA = extractFrequencyMonths(a.selling_plan.name);
-        const freqB = extractFrequencyMonths(b.selling_plan.name);
-        return freqA - freqB;
+        const freqA = extractFrequency(a.selling_plan.name);
+        const freqB = extractFrequency(b.selling_plan.name);
+
+        // First compare units (days come before months)
+        if (freqA.unit !== freqB.unit) {
+            return freqA.unit === 'day' ? -1 : 1;
+        }
+
+        // Then compare values
+        return freqA.value - freqB.value;
     });
 
     // Handle case when current selling plan ID is not in the filtered list
@@ -2015,9 +2052,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Re-sort after adding
                 filteredPlans.sort((a, b) => {
-                    const freqA = extractFrequencyMonths(a.selling_plan.name);
-                    const freqB = extractFrequencyMonths(b.selling_plan.name);
-                    return freqA - freqB;
+                    const freqA = extractFrequency(a.selling_plan.name);
+                    const freqB = extractFrequency(b.selling_plan.name);
+
+                    // First compare units (days come before months)
+                    if (freqA.unit !== freqB.unit) {
+                        return freqA.unit === 'day' ? -1 : 1;
+                    }
+
+                    // Then compare values
+                    return freqA.value - freqB.value;
                 });
             }
         }
@@ -2055,7 +2099,8 @@ document.addEventListener('DOMContentLoaded', () => {
 			fallbackBox.style.backgroundColor = 'var(--primary-color)';
 			fallbackBox.style.color = 'white';
 			fallbackBox.setAttribute('data-selling-plan-id', currentSellingPlanId);
-			fallbackBox.setAttribute('data-months', '1'); // Default to monthly for description
+			fallbackBox.setAttribute('data-frequency-value', '1'); // Default to 1 for description
+			fallbackBox.setAttribute('data-frequency-unit', 'month'); // Default to monthly for description
 			fallbackBox.innerHTML = `
 				<div class="p-1">
 					<span class="font-semibold">Current Plan</span>
