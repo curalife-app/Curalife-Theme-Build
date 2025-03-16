@@ -1767,8 +1767,30 @@ document.addEventListener('DOMContentLoaded', () => {
 		const recommendedMonths = parseInt(selectedBox?.dataset.bottleQuantity || '1', 10);
 
 		filteredPlans.forEach(allocation => {
+			// Defensive check to ensure allocation exists
+			if (!allocation || !allocation.selling_plan) {
+				console.warn('Invalid selling plan allocation detected:', allocation);
+				return; // Skip this iteration
+			}
+
 			const plan = allocation.selling_plan;
-			const { value, unit } = extractFrequency(plan.name);
+
+			// Defensive check to ensure plan and plan.name exist
+			if (!plan || typeof plan.name === 'undefined') {
+				console.warn('Selling plan missing name property:', plan);
+				return; // Skip this iteration
+			}
+
+			let value, unit;
+			try {
+				const result = extractFrequency(plan.name);
+				value = result.value;
+				unit = result.unit;
+			} catch (error) {
+				console.warn('Error extracting frequency from plan name:', plan.name, error);
+				value = 1;
+				unit = 'month';
+			}
 
 			const frequencyBox = document.createElement('div');
 			frequencyBox.className = 'rounded-md cursor-pointer py-2 min-w-[90px] max-w-[168px] text-center w-full transition-all duration-300 ease-in-out';
@@ -1785,7 +1807,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			const isRecommendedMonthPlan = (unit === 'month' && value === recommendedMonths);
 			const shouldSelectRecommended = !currentSellingPlanId || isRecommendedMonthPlan;
 
-			if ((plan.id.toString() === currentSellingPlanId) ||
+			if ((plan.id && plan.id.toString() === currentSellingPlanId) ||
 				(shouldSelectRecommended && isRecommendedMonthPlan)) {
 				frequencyBox.style.backgroundColor = 'var(--primary-color)';
 				frequencyBox.style.color = 'white';
