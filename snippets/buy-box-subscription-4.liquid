@@ -2041,18 +2041,34 @@ document.addEventListener('DOMContentLoaded', () => {
         hasChanged = true;
     }
 
-    // Sort by frequency, first by unit (days before months), then by value
-    filteredPlans.sort((a, b) => {
-        const freqA = extractFrequency(a.selling_plan.name);
-        const freqB = extractFrequency(b.selling_plan.name);
+    // Helper function to convert frequency to approximate days for sorting
+    function getDaysFromFrequency(plan) {
+        try {
+            if (!plan || !plan.selling_plan || !plan.selling_plan.name) {
+                return Number.MAX_SAFE_INTEGER; // Force unknown plans to the end
+            }
 
-        // First compare units (days come before months)
-        if (freqA.unit !== freqB.unit) {
-            return freqA.unit === 'day' ? -1 : 1;
+            const { value, unit } = extractFrequency(plan.selling_plan.name);
+
+            // Convert to days for comparison
+            if (unit === 'day') {
+                return value;
+            } else if (unit === 'month') {
+                return value * 30; // Approximate 30 days per month
+            }
+
+            return Number.MAX_SAFE_INTEGER; // Force unknown units to the end
+        } catch (error) {
+            console.warn('Error calculating days for plan:', plan, error);
+            return Number.MAX_SAFE_INTEGER;
         }
+    }
 
-        // Then compare values
-        return freqA.value - freqB.value;
+    // Sort by the actual duration in approximate days
+    filteredPlans.sort((a, b) => {
+        const daysA = getDaysFromFrequency(a);
+        const daysB = getDaysFromFrequency(b);
+        return daysA - daysB;
     });
 
     // Handle case when current selling plan ID is not in the filtered list
@@ -2074,16 +2090,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Re-sort after adding
                 filteredPlans.sort((a, b) => {
-                    const freqA = extractFrequency(a.selling_plan.name);
-                    const freqB = extractFrequency(b.selling_plan.name);
-
-                    // First compare units (days come before months)
-                    if (freqA.unit !== freqB.unit) {
-                        return freqA.unit === 'day' ? -1 : 1;
-                    }
-
-                    // Then compare values
-                    return freqA.value - freqB.value;
+                    const daysA = getDaysFromFrequency(a);
+                    const daysB = getDaysFromFrequency(b);
+                    return daysA - daysB;
                 });
             }
         }
