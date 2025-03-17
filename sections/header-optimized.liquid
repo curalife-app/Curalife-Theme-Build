@@ -196,9 +196,19 @@
     transform: translateX(0);
   }
 
-  .mobile-menu.is-active + .header-wrapper {
+  /* Fix for header when mobile menu is active */
+  body.mobile-menu-open {
+    overflow: hidden;
     position: fixed;
     width: 100%;
+  }
+
+  body.mobile-menu-open .header-wrapper {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
   }
 
   .mobile-menu__item {
@@ -526,7 +536,18 @@
         this.mobileToggle.setAttribute('aria-expanded', isOpen);
         this.mobileMenu.classList.toggle('is-active', isOpen);
         this.mobileOverlay.classList.toggle('is-active', isOpen);
-        document.body.style.overflow = isOpen ? 'hidden' : '';
+        document.body.classList.toggle('mobile-menu-open', isOpen);
+
+        if (!isOpen) {
+          // When closing menu, restore scroll position
+          const scrollY = document.body.style.top;
+          document.body.style.position = '';
+          document.body.style.top = '';
+          window.scrollTo(0, parseInt(scrollY || '0') * -1);
+        } else {
+          // When opening menu, store scroll position
+          document.body.style.top = `-${window.scrollY}px`;
+        }
       };
 
       this.mobileToggle.addEventListener('click', () => {
