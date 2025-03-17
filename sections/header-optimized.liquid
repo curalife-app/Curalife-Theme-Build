@@ -2,6 +2,7 @@
   :root {
     --header-height-mobile: 60px;
     --transition-speed: 0.3s;
+    --header-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   }
 
   .header-wrapper {
@@ -9,7 +10,9 @@
     position: sticky;
     top: 0;
     z-index: 100;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--header-shadow);
+    will-change: transform;
+    transform: translateZ(0);
   }
 
   .header {
@@ -32,6 +35,7 @@
     max-width: {{ settings.logo_width | default: 140 }}px;
     width: 100%;
     height: auto;
+    loading: eager;
   }
 
   /* Navigation */
@@ -58,6 +62,7 @@
     align-items: center;
     gap: 0.5rem;
     position: relative;
+    padding: 0.5rem 0;
   }
 
   .header__menu-link::after {
@@ -91,6 +96,7 @@
     transform: translateY(-0.5rem);
     transition: all var(--transition-speed) ease;
     z-index: 10;
+    will-change: transform, opacity;
   }
 
   .header__menu-item:hover .header__submenu {
@@ -157,6 +163,7 @@
     padding: 0.5rem;
     cursor: pointer;
     margin-right: 0.5rem;
+    color: inherit;
   }
 
   .mobile-menu {
@@ -171,6 +178,7 @@
     transition: transform var(--transition-speed) ease;
     overflow-y: auto;
     z-index: 99;
+    will-change: transform;
   }
 
   .mobile-menu.is-active {
@@ -212,6 +220,7 @@
     visibility: hidden;
     transition: all var(--transition-speed) ease;
     z-index: 98;
+    will-change: opacity, visibility;
   }
 
   .mobile-menu__overlay.is-active {
@@ -325,7 +334,8 @@
         {{ settings.logo | image_url: width: 500 | image_tag:
           class: 'header__logo-image',
           widths: '50, 100, 150, 200, 250, 300, 400, 500',
-          alt: settings.logo.alt | default: shop.name
+          alt: settings.logo.alt | default: shop.name,
+          loading: 'eager'
         }}
       {%- else -%}
         <span class="h4">{{ shop.name }}</span>
@@ -451,14 +461,39 @@
       this.mobileOverlay = document.querySelector('.mobile-menu__overlay');
       this.header = document.querySelector('.header-wrapper');
       this.menuItems = document.querySelectorAll('.header__menu-item');
+      this.lastScrollY = window.scrollY;
+      this.ticking = false;
 
       this.init();
+      this.setupScrollHandler();
     }
 
     init() {
       this.setupMobileMenu();
       this.setupB2BHandling();
       this.setupChatbot();
+    }
+
+    setupScrollHandler() {
+      window.addEventListener('scroll', () => {
+        this.lastScrollY = window.scrollY;
+
+        if (!this.ticking) {
+          window.requestAnimationFrame(() => {
+            this.handleScroll();
+            this.ticking = false;
+          });
+          this.ticking = true;
+        }
+      }, { passive: true });
+    }
+
+    handleScroll() {
+      if (this.lastScrollY > 100) {
+        this.header.classList.add('header--scrolled');
+      } else {
+        this.header.classList.remove('header--scrolled');
+      }
     }
 
     setupMobileMenu() {
@@ -611,10 +646,10 @@
       "default": "#333333"
     }
   ],
-	"presets": [
-		{
-			"name": "Header Section"
-		}
-	]
+  "presets": [
+    {
+      "name": "Header Section"
+    }
+  ]
 }
 {% endschema %}
