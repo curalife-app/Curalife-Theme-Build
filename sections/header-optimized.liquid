@@ -3,13 +3,325 @@
     --header-height-mobile: 60px;
     --transition-speed: 0.3s;
   }
+
+  .header-wrapper {
+    background: white;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    padding: 0 2rem;
+    max-width: 1440px;
+    margin: 0 auto;
+    height: 100%;
+    gap: 2rem;
+  }
+
+  /* Logo */
+  .header__logo {
+    flex-shrink: 0;
+  }
+
+  .header__logo-image {
+    display: block;
+    max-width: {{ settings.logo_width | default: 140 }}px;
+    width: 100%;
+    height: auto;
+  }
+
+  /* Navigation */
+  .header__nav {
+    flex-grow: 1;
+  }
+
+  .header__menu {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 2rem;
+  }
+
+  .header__menu-item {
+    position: relative;
+  }
+
+  .header__menu-link {
+    color: #333;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    position: relative;
+  }
+
+  .header__menu-link::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    transform: scaleX(0);
+    height: 3px;
+    bottom: -2px;
+    left: 0;
+    background-color: var(--blue);
+    transform-origin: bottom right;
+    transition: transform var(--transition-speed) ease-out;
+  }
+
+  .header__menu-link:hover::after {
+    transform: scaleX(1);
+    transform-origin: bottom left;
+  }
+
+  /* Dropdown */
+  .header__submenu {
+    position: absolute;
+    top: 100%;
+    left: -1rem;
+    background: white;
+    min-width: 200px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-0.5rem);
+    transition: all var(--transition-speed) ease;
+    z-index: 10;
+  }
+
+  .header__menu-item:hover .header__submenu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  .header__submenu-link {
+    color: #333;
+    text-decoration: none;
+    padding: 0.75rem 1.25rem;
+    display: block;
+    transition: background-color var(--transition-speed) ease;
+  }
+
+  .header__submenu-link:hover {
+    background-color: #F8F8F8;
+  }
+
+  /* Actions */
+  .header__actions {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-left: auto;
+  }
+
+  .header__buy-now {
+    background: var(--primary-color);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 100px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background-color var(--transition-speed) ease;
+  }
+
+  .header__buy-now:hover {
+    background: var(--primary-hover);
+  }
+
+  .header__cart {
+    position: relative;
+    color: #333;
+    text-decoration: none;
+    display: flex;
+  }
+
+  .header__cart-count {
+    position: absolute;
+    top: -0.5rem;
+    right: -0.5rem;
+    background: var(--primary-color);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 0.625rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.375rem;
+  }
+
+  /* Mobile Menu */
+  .header__mobile-toggle {
+    display: none;
+    background: none;
+    border: none;
+    padding: 0.5rem;
+    cursor: pointer;
+    margin-right: 0.5rem;
+  }
+
+  .mobile-menu {
+    position: fixed;
+    top: var(--header-height-mobile);
+    left: 0;
+    width: 100%;
+    height: calc(100vh - var(--header-height-mobile));
+    background: white;
+    padding: 1.25rem;
+    transform: translateX(-100%);
+    transition: transform var(--transition-speed) ease;
+    overflow-y: auto;
+    z-index: 99;
+  }
+
+  .mobile-menu.is-active {
+    transform: translateX(0);
+  }
+
+  .mobile-menu__item {
+    border-bottom: 1px solid #E5E5E5;
+  }
+
+  .mobile-menu__link {
+    color: #333;
+    text-decoration: none;
+    padding: 1rem 0;
+    display: block;
+    font-weight: 500;
+  }
+
+  .mobile-menu__button {
+    width: 100%;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 1rem;
+    border-radius: 100px;
+    margin-top: 1.25rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .mobile-menu__overlay {
+    position: fixed;
+    top: var(--header-height-mobile);
+    left: 0;
+    width: 100%;
+    height: calc(100vh - var(--header-height-mobile));
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    visibility: hidden;
+    transition: all var(--transition-speed) ease;
+    z-index: 98;
+  }
+
+  .mobile-menu__overlay.is-active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .mobile-menu__details {
+    width: 100%;
+  }
+
+  .mobile-menu__details summary {
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 1rem 0;
+    font-weight: 500;
+  }
+
+  .mobile-menu__details summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .mobile-menu__details[open] summary svg {
+    transform: rotate(180deg);
+  }
+
+  .mobile-menu__submenu {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    padding-left: 1.25rem;
+  }
+
+  .mobile-menu__submenu-link {
+    color: #333;
+    text-decoration: none;
+    padding: 0.75rem 0;
+    display: block;
+    transition: color var(--transition-speed) ease;
+  }
+
+  .mobile-menu__submenu-link:hover {
+    color: var(--primary-color);
+  }
+
+  .mobile-menu__utility-links {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid #E5E5E5;
+  }
+
+  .chatbot-link.mobile {
+    width: 90%;
+    background: var(--primary-color);
+    color: white;
+    padding: 1rem;
+    border-radius: 1rem;
+    margin: 1.25rem auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    font-weight: 600;
+  }
+
+  @media screen and (max-width: 1023px) {
+    .header-wrapper {
+      height: var(--header-height-mobile);
+    }
+
+    .header {
+      padding: 0 1.25rem;
+    }
+
+    .header__nav,
+    .header__buy-now {
+      display: none;
+    }
+
+    .header__mobile-toggle {
+      display: block;
+    }
+
+    .header__logo-image {
+      max-width: 120px;
+    }
+  }
 {%- endstyle -%}
+
 
 {% render 'top-header', announcement: section.settings.announcement, announcement_link: section.settings.announcement_link, is_announcement_new_tab: section.settings.is_announcement_new_tab, is_hide_announcement_on_global: section.settings.is_hide_announcement_on_global %}
 
-<div class="sticky top-0 z-50 bg-white shadow-md">
-  <header class="flex items-center px-8 max-w-[1440px] mx-auto h-full gap-8">
-    <button class="md:block hidden p-2 mr-2 bg-transparent border-none cursor-pointer" aria-label="Menu" aria-expanded="false" aria-controls="mobile-menu">
+<div class="header-wrapper">
+  <header class="header container">
+    <button class="header__mobile-toggle" aria-label="Menu" aria-expanded="false" aria-controls="mobile-menu">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <path d="M3 12H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         <path d="M3 6H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -17,10 +329,10 @@
       </svg>
     </button>
 
-    <a href="{{ routes.root_url }}" class="flex-shrink-0" aria-label="{{ shop.name }}">
+    <a href="{{ routes.root_url }}" class="header__logo" aria-label="{{ shop.name }}">
       {%- if settings.logo != blank -%}
         {{ settings.logo | image_url: width: 500 | image_tag:
-          class: 'block max-w-[140px] w-full h-auto',
+          class: 'header__logo-image',
           widths: '50, 100, 150, 200, 250, 300, 400, 500',
           alt: settings.logo.alt | default: shop.name
         }}
@@ -29,34 +341,34 @@
       {%- endif -%}
     </a>
 
-    <nav class="md:block flex-grow hidden" role="navigation" aria-label="Main navigation">
+    <nav class="header__nav" role="navigation" aria-label="Main navigation">
       {%- if section.settings.menu != blank -%}
-        <ul class="flex gap-8 p-0 m-0 list-none">
+        <ul class="header__menu">
           {%- for link in section.settings.menu.links -%}
             {% if forloop.first %}
-              <li class="relative">
+              <li class="header__menu-item">
                 {% render 'header-collections-menu', selected_collections: section.settings.collections_menu %}
               </li>
             {% else %}
-              <li class="group relative">
+              <li class="header__menu-item">
                 {%- if link.links != blank -%}
-                  <a href="{{ link.url }}" class="group-hover:text-primary relative flex items-center gap-2 text-gray-700 no-underline" aria-haspopup="true" aria-expanded="false">
+                  <a href="{{ link.url }}" class="header__menu-link" aria-haspopup="true" aria-expanded="false">
                     {{ link.title | escape }}
                     <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                       <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                   </a>
-                  <ul class="absolute top-full -left-4 bg-white min-w-[200px] shadow-lg opacity-0 invisible -translate-y-2 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 z-10" role="menu" aria-label="{{ link.title | escape }} submenu">
+                  <ul class="header__submenu" role="menu" aria-label="{{ link.title | escape }} submenu">
                     {%- for childlink in link.links -%}
                       <li role="none">
-                        <a href="{{ childlink.url }}" class="text-gray-700 no-underline px-5 py-3 block transition-colors duration-300 hover:bg-gray-50{% if childlink.current %} text-primary{% endif %}" role="menuitem"{% if childlink.current %} aria-current="page"{% endif %}>
+                        <a href="{{ childlink.url }}" class="header__submenu-link{% if childlink.current %} header__submenu-link--active{% endif %}" role="menuitem"{% if childlink.current %} aria-current="page"{% endif %}>
                           {{ childlink.title | escape }}
                         </a>
                       </li>
                     {%- endfor -%}
                   </ul>
                 {%- else -%}
-                  <a href="{{ link.url }}" class="text-gray-700 no-underline flex items-center gap-2 relative group-hover:text-primary{% if link.current %} text-primary{% endif %}"{% if link.current %} aria-current="page"{% endif %}>
+                  <a href="{{ link.url }}" class="header__menu-link{% if link.current %} header__menu-link--active{% endif %}"{% if link.current %} aria-current="page"{% endif %}>
                     {{ link.title | escape }}
                   </a>
                 {%- endif -%}
@@ -67,40 +379,40 @@
       {%- endif -%}
     </nav>
 
-    <div class="flex items-center gap-6 ml-auto">
-      <a href="/products/curalin" class="md:inline-block bg-primary hover:bg-primary-hover hidden px-6 py-3 font-semibold text-white transition-colors duration-300 rounded-full">Buy Now</a>
-      <a href="{{ routes.cart_url }}" class="relative flex text-gray-700 no-underline" aria-label="Cart">
+    <div class="header__actions">
+      <a href="/products/curalin" class="header__buy-now desktop">Buy Now</a>
+      <a href="{{ routes.cart_url }}" class="header__cart" aria-label="Cart">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <path d="M9 22C9.55228 22 10 21.5523 10 21C10 20.4477 9.55228 20 9 20C8.44772 20 8 20.4477 8 21C8 21.5523 8.44772 22 9 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           <path d="M20 22C20.5523 22 21 21.5523 21 21C21 20.4477 20.5523 20 20 20C19.4477 20 19 20.4477 19 21C19 21.5523 19.4477 22 20 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           <path d="M1 1H5L7.68 14.39C7.77144 14.8504 8.02191 15.264 8.38755 15.5583C8.75318 15.8526 9.2107 16.009 9.68 16H19.4C19.8693 16.009 20.3268 15.8526 20.6925 15.5583C21.0581 15.264 21.3086 14.8504 21.4 14.39L23 6H6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         {%- if cart != empty -%}
-          <span class="absolute -top-2 -right-2 bg-primary text-white text-xs font-semibold min-w-[20px] h-5 rounded-full flex items-center justify-center px-1.5" aria-hidden="true">{{ cart.item_count }}</span>
-          <span class="sr-only">{{ 'sections.header.cart_count' | t: count: cart.item_count }}</span>
+          <span class="header__cart-count" aria-hidden="true">{{ cart.item_count }}</span>
+          <span class="visually-hidden">{{ 'sections.header.cart_count' | t: count: cart.item_count }}</span>
         {%- endif -%}
       </a>
     </div>
   </header>
 </div>
 
-<div id="mobile-menu" class="fixed top-[60px] left-0 w-full h-[calc(100vh-60px)] bg-white p-5 -translate-x-full transition-transform duration-300 ease-out overflow-y-auto z-40" role="dialog" aria-modal="true" aria-label="Mobile menu">
+<div id="mobile-menu" class="mobile-menu" role="dialog" aria-modal="true" aria-label="Mobile menu">
   <nav>
     {%- if section.settings.menu != blank -%}
       {%- for link in section.settings.menu.links -%}
-        <div class="border-b border-gray-200">
+        <div class="mobile-menu__item">
           {%- if link.links != blank -%}
-            <details class="w-full">
-              <summary class="flex items-center justify-between py-4 font-medium list-none cursor-pointer">
+            <details class="mobile-menu__details">
+              <summary class="mobile-menu__link">
                 {{ link.title | escape }}
                 <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </summary>
-              <ul class="p-0 pl-5 m-0 list-none">
+              <ul class="mobile-menu__submenu">
                 {%- for childlink in link.links -%}
                   <li>
-                    <a href="{{ childlink.url }}" class="text-gray-700 no-underline py-3 block transition-colors duration-300 hover:text-primary{% if childlink.current %} text-primary{% endif %}"{% if childlink.current %} aria-current="page"{% endif %}>
+                    <a href="{{ childlink.url }}" class="mobile-menu__submenu-link{% if childlink.current %} mobile-menu__submenu-link--active{% endif %}"{% if childlink.current %} aria-current="page"{% endif %}>
                       {{ childlink.title | escape }}
                     </a>
                   </li>
@@ -108,21 +420,21 @@
               </ul>
             </details>
           {%- else -%}
-            <a href="{{ link.url }}" class="text-gray-700 no-underline py-4 block font-medium{% if link.current %} text-primary{% endif %}"{% if link.current %} aria-current="page"{% endif %}>
+            <a href="{{ link.url }}" class="mobile-menu__link{% if link.current %} mobile-menu__link--active{% endif %}"{% if link.current %} aria-current="page"{% endif %}>
               {{ link.title | escape }}
             </a>
           {%- endif -%}
         </div>
       {%- endfor -%}
     {%- endif -%}
-    <a href="/products/curalin" class="bg-primary w-full px-4 py-4 mt-5 font-semibold text-white border-none rounded-full cursor-pointer">Buy Now</a>
+    <a href="/products/curalin" class="mobile-menu__button">Buy Now</a>
 
-    <button class="w-[90%] bg-primary text-white p-4 rounded-xl mx-auto mt-5 flex items-center justify-center gap-4 font-semibold" aria-label="Chat with Expert">
+    <button class="chatbot-link mobile" aria-label="Chat with Expert">
       <i class="fa-duotone fa-headset" aria-hidden="true"></i>
       Chat with Expert
     </button>
 
-    <div class="flex items-center justify-center gap-4 pt-5 mt-5 border-t border-gray-200">
+    <div class="mobile-menu__utility-links">
       {% if customer %}
         <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512" aria-hidden="true">
           <path d="M399 384.2C376.9 345.8 335.4 320 288 320H224c-47.4 0-88.9 25.8-111 64.2c35.2 39.2 86.2 63.8 143 63.8s107.8-24.7 143-63.8zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256zm256 16a72 72 0 1 0 0-144 72 72 0 1 0 0 144z"/>
@@ -138,7 +450,7 @@
   </nav>
 </div>
 
-<div class="fixed top-[60px] left-0 w-full h-[calc(100vh-60px)] bg-black/50 opacity-0 invisible transition-all duration-300 ease-out z-30"></div>
+<div class="mobile-menu__overlay"></div>
 
 <script>
   class Header {
