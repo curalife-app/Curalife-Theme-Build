@@ -166,7 +166,7 @@
     padding: 0 0.375rem;
   }
 
-  /* Mobile Menu */
+  /* Mobile Menu Enhancements */
   .header__mobile-toggle {
     display: none;
     background: none;
@@ -175,6 +175,11 @@
     cursor: pointer;
     margin-right: 0.5rem;
     color: inherit;
+    transition: transform 0.3s ease;
+  }
+
+  .header__mobile-toggle[aria-expanded="true"] {
+    transform: rotate(90deg);
   }
 
   .mobile-menu {
@@ -184,16 +189,142 @@
     width: 100%;
     height: calc(100vh - var(--header-height-mobile));
     background: white;
-    padding: 1.25rem;
+    padding: 2rem 1.5rem;
     transform: translateX(-100%);
-    transition: transform var(--transition-speed) ease;
+    transition: all var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
     overflow-y: auto;
     z-index: 99;
     will-change: transform;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
   }
 
   .mobile-menu.is-active {
     transform: translateX(0);
+  }
+
+  .mobile-menu__item {
+    border-bottom: 1px solid rgba(229, 229, 229, 0.5);
+    margin-bottom: 0.5rem;
+  }
+
+  .mobile-menu__link {
+    color: #333;
+    text-decoration: none;
+    padding: 1rem 0;
+    display: block;
+    font-weight: 500;
+    transition: color 0.2s ease;
+  }
+
+  .mobile-menu__link:hover {
+    color: var(--primary-color);
+  }
+
+  .mobile-menu__details {
+    width: 100%;
+  }
+
+  .mobile-menu__details summary {
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 1rem 0;
+    font-weight: 500;
+    transition: color 0.2s ease;
+  }
+
+  .mobile-menu__details summary:hover {
+    color: var(--primary-color);
+  }
+
+  .mobile-menu__details summary svg {
+    transition: transform 0.3s ease;
+  }
+
+  .mobile-menu__details[open] summary svg {
+    transform: rotate(180deg);
+  }
+
+  .mobile-menu__submenu {
+    list-style: none;
+    margin: 0;
+    padding: 0.5rem 0 0.5rem 1.25rem;
+    border-left: 2px solid var(--primary-color);
+    margin-left: 0.5rem;
+    opacity: 0;
+    transform: translateY(-10px);
+    animation: slideDown 0.3s ease forwards;
+  }
+
+  @keyframes slideDown {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .mobile-menu__submenu-link {
+    color: #333;
+    text-decoration: none;
+    padding: 0.75rem 0;
+    display: block;
+    transition: all 0.2s ease;
+    opacity: 0.8;
+  }
+
+  .mobile-menu__submenu-link:hover {
+    color: var(--primary-color);
+    opacity: 1;
+    padding-left: 0.5rem;
+  }
+
+  .mobile-menu__utility-links {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 1.5rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(229, 229, 229, 0.5);
+  }
+
+  .mobile-menu__utility-links svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    opacity: 0.8;
+  }
+
+  .mobile-menu__utility-links a {
+    color: #333;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+  }
+
+  .mobile-menu__utility-links a:hover {
+    color: var(--primary-color);
+  }
+
+  .mobile-menu__overlay {
+    position: fixed;
+    top: var(--header-height-mobile);
+    left: 0;
+    width: 100%;
+    height: calc(100vh - var(--header-height-mobile));
+    background: rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    visibility: hidden;
+    transition: all var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 98;
+    will-change: opacity, visibility;
+    backdrop-filter: blur(4px);
+  }
+
+  .mobile-menu__overlay.is-active {
+    opacity: 1;
+    visibility: visible;
   }
 
   /* Fix for header when mobile menu is active */
@@ -211,112 +342,25 @@
     z-index: 100;
   }
 
-  .mobile-menu__item {
-    border-bottom: 1px solid #E5E5E5;
-  }
-
-  .mobile-menu__link {
-    color: #333;
-    text-decoration: none;
-    padding: 1rem 0;
-    display: block;
-    font-weight: 500;
-  }
-
-  .mobile-menu__button {
-    width: 100%;
-    background: var(--primary-color);
-    color: white;
-    border: none;
-    padding: 1rem;
-    border-radius: 100px;
-    margin-top: 1.25rem;
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  .mobile-menu__overlay {
-    position: fixed;
-    top: var(--header-height-mobile);
-    left: 0;
-    width: 100%;
-    height: calc(100vh - var(--header-height-mobile));
-    background: rgba(0, 0, 0, 0.5);
-    opacity: 0;
-    visibility: hidden;
-    transition: all var(--transition-speed) ease;
-    z-index: 98;
-    will-change: opacity, visibility;
-  }
-
-  .mobile-menu__overlay.is-active {
-    opacity: 1;
-    visibility: visible;
-  }
-
-  .mobile-menu__details {
-    width: 100%;
-  }
-
-  .mobile-menu__details summary {
-    list-style: none;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: pointer;
-    padding: 1rem 0;
-    font-weight: 500;
-  }
-
-  .mobile-menu__details summary::-webkit-details-marker {
-    display: none;
-  }
-
-  .mobile-menu__details[open] summary svg {
-    transform: rotate(180deg);
-  }
-
-  .mobile-menu__submenu {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    padding-left: 1.25rem;
-  }
-
-  .mobile-menu__submenu-link {
-    color: #333;
-    text-decoration: none;
-    padding: 0.75rem 0;
-    display: block;
-    transition: color var(--transition-speed) ease;
-  }
-
-  .mobile-menu__submenu-link:hover {
-    color: var(--primary-color);
-  }
-
-  .mobile-menu__utility-links {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-    margin-top: 1.25rem;
-    padding-top: 1.25rem;
-    border-top: 1px solid #E5E5E5;
-  }
-
   .chatbot-link.mobile {
     width: 90%;
     background: var(--primary-color);
     color: white;
     padding: 1rem;
     border-radius: 1rem;
-    margin: 1.25rem auto;
+    margin: 2rem auto;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 1rem;
     font-weight: 600;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .chatbot-link.mobile:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
 
   @media screen and (max-width: 1023px) {
