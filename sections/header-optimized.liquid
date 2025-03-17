@@ -1,0 +1,316 @@
+{%- style -%}
+  .header-wrapper {
+    position: relative;
+    z-index: 99999;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 0;
+  }
+
+  .header__heading-logo {
+    max-width: {{ settings.logo_width }}px;
+  }
+
+  .header__inline-menu {
+    display: none;
+  }
+
+  @media screen and (min-width: 768px) {
+    .header__inline-menu {
+      display: block;
+    }
+  }
+
+  .list-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: min(3vw, 50px);
+  }
+
+  .list-menu__item {
+    position: relative;
+  }
+
+  .list-menu__item--link {
+    text-decoration: none;
+    padding: 0.5rem 0;
+    position: relative;
+  }
+
+  .list-menu__item--link:after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    transform: scaleX(0);
+    height: 3px;
+    bottom: -3px;
+    left: 0;
+    background-color: var(--blue);
+    transform-origin: bottom right;
+    transition: transform 0.25s ease-out;
+  }
+
+  .list-menu__item--link:hover:after {
+    transform: scaleX(1);
+    transform-origin: bottom left;
+  }
+
+  .header__icons {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .header__icon {
+    position: relative;
+    padding: 0.5rem;
+  }
+
+  .cart-count-bubble {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 50%;
+    min-width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+  }
+
+  .header__submenu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    min-width: 200px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+  }
+
+  details:hover > .header__submenu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  .header__submenu .list-menu {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .header__submenu .list-menu__item--link {
+    padding: 0.75rem 1rem;
+    display: block;
+  }
+
+  .quiz-button {
+    background: var(--primary-color);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 30px;
+    font-weight: bold;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .chatbot-link {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+  }
+
+  .chatbot-link i {
+    font-size: 24px;
+  }
+
+  @media screen and (max-width: 767px) {
+    .header__inline-menu {
+      display: none;
+    }
+
+    .quiz-button {
+      display: none;
+    }
+  }
+{%- endstyle -%}
+
+<header class="header-wrapper gradient{% if section.settings.show_line_separator %} header-wrapper--border-bottom{% endif %}">
+  <div class="header container">
+    {%- if section.settings.menu != blank -%}
+      <button class="header__icon header__icon--menu" aria-label="{{ 'sections.header.menu' | t }}" data-menu-toggle>
+        <span>
+          {% render 'icon-hamburger' %}
+          {% render 'icon-close' %}
+        </span>
+      </button>
+    {%- endif -%}
+
+    <div class="header__heading">
+      <a href="{{ routes.root_url }}" class="header__heading-link">
+        {%- if settings.logo != blank -%}
+          {%- assign logo_alt = settings.logo.alt | default: shop.name | escape -%}
+          {%- assign logo_height = settings.logo_width | divided_by: settings.logo.aspect_ratio -%}
+          {{ settings.logo | image_url: width: 500 | image_tag:
+            class: 'header__heading-logo',
+            widths: '50, 100, 150, 200, 250, 300, 400, 500',
+            height: logo_height,
+            width: settings.logo_width,
+            alt: logo_alt
+          }}
+        {%- else -%}
+          <span class="h2">{{ shop.name }}</span>
+        {%- endif -%}
+      </a>
+    </div>
+
+    {%- if section.settings.menu != blank -%}
+      <nav class="header__inline-menu">
+        <ul class="list-menu" role="list">
+          {%- for link in section.settings.menu.links -%}
+            <li>
+              {%- if link.links != blank -%}
+                <details class="header-menu-item">
+                  <summary class="list-menu__item--link">
+                    {{ link.title | escape }}
+                    {% render 'icon-caret' %}
+                  </summary>
+                  <ul class="header__submenu list-menu" role="list">
+                    {%- for childlink in link.links -%}
+                      <li>
+                        <a href="{{ childlink.url }}" class="list-menu__item--link{% if childlink.current %} list-menu__item--active{% endif %}">
+                          {{ childlink.title | escape }}
+                        </a>
+                      </li>
+                    {%- endfor -%}
+                  </ul>
+                </details>
+              {%- else -%}
+                <a href="{{ link.url }}" class="list-menu__item--link{% if link.current %} list-menu__item--active{% endif %}">
+                  {{ link.title | escape }}
+                </a>
+              {%- endif -%}
+            </li>
+          {%- endfor -%}
+        </ul>
+      </nav>
+    {%- endif -%}
+
+    {% if section.settings.btn_link %}
+      <a href="{{ section.settings.btn_link }}" class="quiz-button desktop">
+        {{ section.settings.btn_title }}
+      </a>
+    {% endif %}
+
+    <div class="header__icons">
+      <button class="chatbot-link desktop">
+        <i class="fa-light fa-messages-question"></i>
+      </button>
+
+      <a href="{{ routes.cart_url }}" class="header__icon header__icon--cart" id="cart-icon-bubble">
+        {%- liquid
+          if cart == empty
+            render 'icon-cart-empty'
+          else
+            render 'icon-cart'
+          endif
+        -%}
+        <span class="visually-hidden">{{ 'templates.cart.cart' | t }}</span>
+        {%- if cart != empty -%}
+          <div class="cart-count-bubble">
+            {%- if cart.item_count < 100 -%}
+              <span aria-hidden="true">{{ cart.item_count }}</span>
+            {%- endif -%}
+            <span class="visually-hidden">{{ 'sections.header.cart_count' | t: count: cart.item_count }}</span>
+          </div>
+        {%- endif -%}
+      </a>
+    </div>
+  </div>
+</header>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Mobile menu toggle
+    const menuToggle = document.querySelector('[data-menu-toggle]');
+    const header = document.querySelector('.header');
+
+    if (menuToggle) {
+      menuToggle.addEventListener('click', () => {
+        header.classList.toggle('menu-open');
+      });
+    }
+
+    // Chatbot functionality
+    const chatButtons = document.querySelectorAll('.chatbot-link');
+    if (chatButtons.length > 0 && window.Webchat?.startSession) {
+      chatButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          window.Webchat.startSession('expert', 'Navigation bar');
+        });
+      });
+    }
+
+    // B2B customer menu items
+    const customer = document.querySelector('[data-customer-tags]');
+    if (customer?.dataset.customerTags.includes('B2B')) {
+      const menuItems = document.querySelectorAll('.header__inline-menu .list-menu li');
+      if (menuItems.length >= 2) {
+        menuItems[0].style.display = 'none';
+        menuItems[1].style.display = 'none';
+      }
+    }
+  });
+</script>
+
+{% schema %}
+{
+  "name": "Header",
+  "class": "section-header",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Menu Options"
+    },
+    {
+      "type": "link_list",
+      "id": "menu",
+      "default": "main-menu",
+      "label": "Menu"
+    },
+    {
+      "type": "header",
+      "content": "Button"
+    },
+    {
+      "type": "text",
+      "id": "btn_title",
+      "label": "Button Title"
+    },
+    {
+      "type": "url",
+      "id": "btn_link",
+      "label": "Button Link"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_line_separator",
+      "default": true,
+      "label": "Show line separator"
+    }
+  ]
+}
+{% endschema %}
