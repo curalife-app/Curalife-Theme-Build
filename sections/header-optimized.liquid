@@ -351,17 +351,7 @@
   }
 {%- endstyle -%}
 
-<div class="announcement-bar">
-  <div class="announcement-bar__content">
-    <a href="{{ routes.account_url }}" class="announcement-bar__link">My Account</a>
-    <span class="announcement-bar__separator">|</span>
-    <a href="{{ section.settings.wholesale_link | default: '/pages/wholesale' }}" class="announcement-bar__link">Wholesale Customers</a>
-    <span class="announcement-bar__separator">|</span>
-    <a href="{{ section.settings.store_locator_link | default: '/pages/store-locator' }}" class="announcement-bar__link">Find a Store</a>
-    <span class="announcement-bar__separator">|</span>
-    <a href="{{ section.settings.help_link | default: '/pages/help' }}" class="announcement-bar__link">Help</a>
-  </div>
-</div>
+{% render 'top-header', announcement: section.settings.announcement, announcement_link: section.settings.announcement_link, is_announcement_new_tab: section.settings.is_announcement_new_tab, is_hide_announcement_on_global: section.settings.is_hide_announcement_on_global %}
 
 <div class="header-wrapper">
   <header class="header">
@@ -518,6 +508,30 @@
   "name": "Header",
   "class": "section-header",
   "settings": [
+    {
+      "type": "header",
+      "content": "Announcement"
+    },
+    {
+      "type": "text",
+      "id": "announcement",
+      "label": "Announcement Title"
+    },
+    {
+      "type": "url",
+      "id": "announcement_link",
+      "label": "Announcement Link"
+    },
+    {
+      "type": "checkbox",
+      "id": "is_announcement_new_tab",
+      "label": "Open Announcement Link in New Tab"
+    },
+    {
+      "type": "checkbox",
+      "id": "is_hide_announcement_on_global",
+      "label": "Hide Announcement on Global"
+    },
     {
       "type": "image_picker",
       "id": "logo",
