@@ -7,8 +7,12 @@
 
   .header-wrapper {
     background: white;
+    {% if section.settings.sticky_header_desktop %}
     position: sticky;
     top: 0;
+    {% else %}
+    position: relative;
+    {% endif %}
     z-index: 100;
     box-shadow: var(--header-shadow);
     will-change: transform;
@@ -16,8 +20,10 @@
   }
 
   .header-wrapper.header--scrolled {
+    {% if section.settings.sticky_header_desktop %}
     position: fixed;
     width: 100%;
+    {% endif %}
   }
 
   .header {
@@ -305,7 +311,20 @@
 
   @media screen and (max-width: 1023px) {
     .header-wrapper {
+      {% if section.settings.sticky_header_mobile %}
+      position: sticky;
+      top: 0;
+      {% else %}
+      position: relative;
+      {% endif %}
       height: var(--header-height-mobile);
+    }
+
+    .header-wrapper.header--scrolled {
+      {% if section.settings.sticky_header_mobile %}
+      position: fixed;
+      width: 100%;
+      {% endif %}
     }
 
     .header {
@@ -648,6 +667,20 @@
       "id": "text_color",
       "label": "Text Color",
       "default": "#333333"
+    },
+    {
+      "type": "header",
+      "content": "Header Behavior"
+    },
+    {
+      "type": "checkbox",
+      "id": "sticky_header_desktop",
+      "label": "Sticky header on desktop"
+    },
+    {
+      "type": "checkbox",
+      "id": "sticky_header_mobile",
+      "label": "Sticky header on mobile"
     }
   ],
   "presets": [
