@@ -304,6 +304,51 @@
     opacity: 1;
     visibility: visible;
   }
+
+  .mobile-menu__details {
+    width: 100%;
+  }
+
+  .mobile-menu__details summary {
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .mobile-menu__details summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .mobile-menu__details[open] summary svg {
+    transform: rotate(180deg);
+  }
+
+  .mobile-menu__submenu {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    padding-left: 20px;
+  }
+
+  .mobile-menu__submenu-link {
+    color: #333;
+    text-decoration: none;
+    padding: 12px 0;
+    display: block;
+    font-size: 14px;
+    transition: color 0.2s ease;
+  }
+
+  .mobile-menu__submenu-link:hover,
+  .mobile-menu__submenu-link--active {
+    color: var(--primary-color);
+  }
+
+  .mobile-menu__details summary svg {
+    transition: transform 0.2s ease;
+  }
 {%- endstyle -%}
 
 <div class="announcement-bar">
@@ -341,53 +386,41 @@
     </a>
 
     <nav class="header__nav" role="navigation">
-      <ul class="header__menu">
-        <li class="header__menu-item">
-          <a href="/collections/all" class="header__menu-link">Shop</a>
-        </li>
-        <li class="header__menu-item">
-          <a href="/pages/clinical-research" class="header__menu-link">Clinical Research</a>
-        </li>
-        <li class="header__menu-item">
-          <a href="/pages/results" class="header__menu-link">Results</a>
-        </li>
-        <li class="header__menu-item">
-          <a href="#" class="header__menu-link">
-            Rewards
-            <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </a>
-          <ul class="header__submenu">
-            <li><a href="/pages/rewards" class="header__submenu-link">My Rewards</a></li>
-            <li><a href="/pages/earn-points" class="header__submenu-link">Earn Points</a></li>
-          </ul>
-        </li>
-        <li class="header__menu-item">
-          <a href="#" class="header__menu-link">
-            Blog
-            <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </a>
-          <ul class="header__submenu">
-            <li><a href="/blogs/news" class="header__submenu-link">News</a></li>
-            <li><a href="/blogs/articles" class="header__submenu-link">Articles</a></li>
-          </ul>
-        </li>
-        <li class="header__menu-item">
-          <a href="#" class="header__menu-link">
-            About
-            <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </a>
-          <ul class="header__submenu">
-            <li><a href="/pages/about-us" class="header__submenu-link">About Us</a></li>
-            <li><a href="/pages/contact" class="header__submenu-link">Contact</a></li>
-          </ul>
-        </li>
-      </ul>
+      {%- if section.settings.menu != blank -%}
+        <ul class="header__menu">
+          {%- for link in section.settings.menu.links -%}
+            {% if forloop.first %}
+              <li class="header__menu-item">
+                {% render 'header-collections-menu', selected_collections: section.settings.collections_menu %}
+              </li>
+            {% else %}
+              <li class="header__menu-item">
+                {%- if link.links != blank -%}
+                  <a href="{{ link.url }}" class="header__menu-link">
+                    {{ link.title | escape }}
+                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </a>
+                  <ul class="header__submenu">
+                    {%- for childlink in link.links -%}
+                      <li>
+                        <a href="{{ childlink.url }}" class="header__submenu-link{% if childlink.current %} header__submenu-link--active{% endif %}">
+                          {{ childlink.title | escape }}
+                        </a>
+                      </li>
+                    {%- endfor -%}
+                  </ul>
+                {%- else -%}
+                  <a href="{{ link.url }}" class="header__menu-link{% if link.current %} header__menu-link--active{% endif %}">
+                    {{ link.title | escape }}
+                  </a>
+                {%- endif -%}
+              </li>
+            {% endif %}
+          {%- endfor -%}
+        </ul>
+      {%- endif -%}
     </nav>
 
     <div class="header__actions">
@@ -408,24 +441,35 @@
 
 <div class="mobile-menu">
   <nav>
-    <div class="mobile-menu__item">
-      <a href="/collections/all" class="mobile-menu__link">Shop</a>
-    </div>
-    <div class="mobile-menu__item">
-      <a href="/pages/clinical-research" class="mobile-menu__link">Clinical Research</a>
-    </div>
-    <div class="mobile-menu__item">
-      <a href="/pages/results" class="mobile-menu__link">Results</a>
-    </div>
-    <div class="mobile-menu__item">
-      <a href="/pages/rewards" class="mobile-menu__link">Rewards</a>
-    </div>
-    <div class="mobile-menu__item">
-      <a href="/blogs/news" class="mobile-menu__link">Blog</a>
-    </div>
-    <div class="mobile-menu__item">
-      <a href="/pages/about-us" class="mobile-menu__link">About</a>
-    </div>
+    {%- if section.settings.menu != blank -%}
+      {%- for link in section.settings.menu.links -%}
+        <div class="mobile-menu__item">
+          {%- if link.links != blank -%}
+            <details class="mobile-menu__details">
+              <summary class="mobile-menu__link">
+                {{ link.title | escape }}
+                <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </summary>
+              <ul class="mobile-menu__submenu">
+                {%- for childlink in link.links -%}
+                  <li>
+                    <a href="{{ childlink.url }}" class="mobile-menu__submenu-link{% if childlink.current %} mobile-menu__submenu-link--active{% endif %}">
+                      {{ childlink.title | escape }}
+                    </a>
+                  </li>
+                {%- endfor -%}
+              </ul>
+            </details>
+          {%- else -%}
+            <a href="{{ link.url }}" class="mobile-menu__link{% if link.current %} mobile-menu__link--active{% endif %}">
+              {{ link.title | escape }}
+            </a>
+          {%- endif -%}
+        </div>
+      {%- endfor -%}
+    {%- endif -%}
     <a href="/products/curalin" class="mobile-menu__button">Buy Now</a>
   </nav>
 </div>
@@ -498,6 +542,28 @@
       "id": "menu",
       "default": "main-menu",
       "label": "Menu"
+    },
+    {
+      "type": "select",
+      "id": "menu_type_desktop",
+      "options": [
+        {
+          "value": "dropdown",
+          "label": "Dropdown"
+        },
+        {
+          "value": "mega",
+          "label": "Mega menu"
+        }
+      ],
+      "default": "dropdown",
+      "label": "Desktop menu type"
+    },
+    {
+      "type": "collection_list",
+      "id": "collections_menu",
+      "label": "Collections Menu",
+      "max_collections": 12
     },
     {
       "type": "header",
