@@ -9,7 +9,10 @@
 			{{ 'old.css' | asset_url | stylesheet_tag }}
 			{{ 'style-guide.css' | asset_url | stylesheet_tag }}
 		{% endif %}
-		{{ 'base.css' | asset_url | stylesheet_tag }}
+
+		{% unless customer.email contains 'yotam' %}
+			{{ 'base.css' | asset_url | stylesheet_tag }}
+		{% endunless %}
 
 		{% unless request.design_mode %}
 			{% render 'layout.head.geo-redirect-script', isDebug: false %}
