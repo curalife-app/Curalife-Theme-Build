@@ -9,8 +9,8 @@
   <div class="container">
     {% comment %} Password Recovery Form {% endcomment %}
     <div class="recover-form" id="recover">
-      <h2 tabindex="-1">{{ 'customer.recover_password.title' | t }}</h2>
-      <p>{{ 'customer.recover_password.subtext' | t }}</p>
+      <h2 tabindex="-1">Reset Password</h2>
+      <p>We'll send you an email to reset your password.</p>
 
       {%- form 'recover_customer_password' -%}
         {% assign recover_success = form.posted_successfully? %}
@@ -27,9 +27,9 @@
               aria-describedby="RecoverEmail-email-error"
               autofocus
             {% endif %}
-            placeholder="{{ 'customer.login_page.email' | t }}"
+            placeholder="Email"
           >
-          <label for="RecoverEmail">{{ 'customer.login_page.email' | t }}</label>
+          <label for="RecoverEmail">Email</label>
         </div>
 
         {%- if form.errors -%}
@@ -41,10 +41,10 @@
 
         <div class="button-group">
           <button type="submit" class="button button--primary">
-            {{ 'customer.login_page.submit' | t }}
+            Submit
           </button>
           <a href="#login" class="button button--secondary">
-            {{ 'customer.login_page.cancel' | t }}
+            Cancel
           </a>
         </div>
       {%- endform -%}
@@ -52,12 +52,15 @@
 
     {% comment %} Login Form {% endcomment %}
     <div class="login-form" id="login">
-      <h1 tabindex="-1">{{ 'customer.login_page.title' | t }}</h1>
+      <div class="logo">
+        <img src="{{ 'logo.png' | asset_url }}" alt="CuraLife" width="180">
+      </div>
+      <h1 tabindex="-1">Welcome Back</h1>
 
       {%- if recover_success == true -%}
         <div class="form__message form__message--success" tabindex="-1" autofocus>
           {% render 'icon-success' %}
-          {{ 'customer.recover_password.success' | t }}
+          Check your email for a password reset link
         </div>
       {%- endif -%}
 
@@ -80,9 +83,9 @@
             {% if form.errors contains 'form' %}
               aria-invalid="true"
             {% endif %}
-            placeholder="{{ 'customer.login_page.email' | t }}"
+            placeholder="Email"
           >
-          <label for="CustomerEmail">{{ 'customer.login_page.email' | t }}</label>
+          <label for="CustomerEmail">Email</label>
         </div>
 
         {%- if form.password_needed -%}
@@ -95,22 +98,26 @@
               {% if form.errors contains 'form' %}
                 aria-invalid="true"
               {% endif %}
-              placeholder="{{ 'customer.login_page.password' | t }}"
+              placeholder="Password"
             >
-            <label for="CustomerPassword">{{ 'customer.login_page.password' | t }}</label>
+            <label for="CustomerPassword">Password</label>
+            <button type="button" class="password-toggle" aria-label="Toggle password visibility">
+              <svg class="show-password" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              <svg class="hide-password" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+            </button>
           </div>
         {%- endif -%}
 
         <button type="submit" class="button button--primary">
-          {{ 'customer.login_page.sign_in' | t }}
+          Sign In
         </button>
 
         <div class="link-group">
-          <a href="#recover">{{ 'customer.login_page.forgot_password' | t }}</a>
-          <a href="{{ routes.account_register_url }}">{{ 'customer.login_page.create_account' | t }}</a>
+          <a href="#recover">Forgot your password?</a>
+          <a href="{{ routes.account_register_url }}">Create account</a>
           {% if shop.name == 'CuraLife' %}
             <a href="https://b2b.curalife.com" class="wholesale-link">
-              {{ 'customer.login_page.wholesale_login' | t }}
+              Wholesale Customer? Login here
             </a>
           {% endif %}
         </div>
@@ -119,13 +126,12 @@
       {% comment %} Guest Checkout {% endcomment %}
       {%- if shop.checkout.guest_login -%}
         <div class="guest-login">
-          <hr>
-          <h2>{{ 'customer.login_page.guest_title' | t }}</h2>
-          {%- form 'guest_login' -%}
-            <button type="submit" class="button button--secondary">
-              {{ 'customer.login_page.guest_continue' | t }}
-            </button>
-          {%- endform -%}
+          <div class="divider">
+            <span>or</span>
+          </div>
+          <button type="submit" class="button button--secondary">
+            Continue as Guest
+          </button>
         </div>
       {%- endif -%}
     </div>
@@ -138,24 +144,30 @@
     --form-max-width: 450px;
     --form-padding: clamp(20px, 5vw, 40px);
     --input-height: 48px;
-    --border-radius: 6px;
+    --border-radius: 8px;
 
     /* Colors - Using CSS variables for theming */
     --color-primary: var(--primary-color, #4a7c7d);
     --color-primary-dark: var(--primary-color-dark, #3a6162);
+    --color-primary-light: rgba(74, 124, 125, 0.1);
     --color-text: var(--heading-color, #2c3338);
     --color-text-light: #666;
-    --color-border: #ddd;
-    --color-error: #d63301;
-    --color-success: #2e7d32;
+    --color-border: #e0e0e0;
+    --color-error: #dc3545;
+    --color-success: #28a745;
+    --color-background: white;
 
     /* Shadows */
-    --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.1);
-    --shadow-focus: 0 0 0 2px rgba(74, 124, 125, 0.1);
+    --shadow-card: 0 10px 40px rgba(0, 0, 0, 0.08);
+    --shadow-focus: 0 0 0 3px var(--color-primary-light);
   }
 
   main {
-    background-color: var(--beige);
+    background: linear-gradient(135deg, var(--beige) 0%, #f5f5f5 100%);
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 2rem;
   }
 
   .customer.login {
@@ -163,41 +175,66 @@
     margin: 0 auto;
 
     .container {
-      background: white;
+      background: var(--color-background);
       border-radius: var(--border-radius);
       padding: var(--form-padding);
       box-shadow: var(--shadow-card);
+      position: relative;
+      overflow: hidden;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(to right, var(--color-primary), var(--color-primary-dark));
+      }
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 2rem;
+
+      img {
+        max-width: 180px;
+        height: auto;
+      }
     }
 
     /* Typography */
     h1, h2 {
       color: var(--color-text);
       text-align: center;
-      margin-bottom: 1.5em;
-      font-size: clamp(24px, 5vw, 28px);
+      margin-bottom: 1rem;
+      font-size: clamp(24px, 5vw, 32px);
+      font-weight: 700;
+      letter-spacing: -0.5px;
     }
 
     p {
       color: var(--color-text-light);
       text-align: center;
-      margin-bottom: 1.5em;
+      margin-bottom: 2rem;
+      font-size: 1rem;
+      line-height: 1.5;
     }
 
     /* Form Fields */
     .field {
       position: relative;
-      margin-bottom: 1.25em;
+      margin-bottom: 1.5rem;
 
       input {
         width: 100%;
         height: var(--input-height);
-        padding: 0.75em 1em;
-        border: 1px solid var(--color-border);
+        padding: 0.75rem 1rem;
+        border: 2px solid var(--color-border);
         border-radius: var(--border-radius);
         font-size: 1rem;
         background: var(--color-background);
-        transition: 0.2s ease-in-out;
-        transition-property: border-color, box-shadow;
+        transition: all 0.2s ease-in-out;
 
         &:focus {
           outline: none;
@@ -211,24 +248,56 @@
 
         &:focus + label,
         &:not(:placeholder-shown) + label {
-          top: 0;
-          transform: translateY(-50%);
+          top: -8px;
+          left: 12px;
+          transform: translateY(0);
           font-size: 0.875rem;
           color: var(--color-primary);
+          background: var(--color-background);
+          padding: 0 6px;
         }
       }
 
       label {
         position: absolute;
-        left: 1em;
+        left: 1rem;
         top: 50%;
         transform: translateY(-50%);
         font-size: 1rem;
         color: var(--color-text-light);
-        background: var(--color-background);
-        padding: 0 0.25em;
-        transition: 0.2s ease-in-out;
-        transition-property: top, transform, font-size, color;
+        background: transparent;
+        padding: 0 0.25rem;
+        transition: all 0.2s ease-in-out;
+        pointer-events: none;
+      }
+
+      .password-toggle {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        padding: 0;
+        color: var(--color-text-light);
+        cursor: pointer;
+        transition: color 0.2s ease;
+
+        &:hover {
+          color: var(--color-primary);
+        }
+
+        .hide-password {
+          display: none;
+        }
+
+        &.show .show-password {
+          display: none;
+        }
+
+        &.show .hide-password {
+          display: block;
+        }
       }
     }
 
@@ -236,52 +305,59 @@
     .button {
       display: inline-block;
       width: 100%;
-      padding: 0.875em;
+      padding: 0.875rem;
       border: none;
       border-radius: var(--border-radius);
       font-size: 1rem;
       font-weight: 600;
       text-align: center;
       cursor: pointer;
-      transition: background-color 0.2s ease-in-out;
+      transition: all 0.2s ease-in-out;
 
       &--primary {
-        background: var(--color-primary);
+        background: linear-gradient(to right, var(--color-primary), var(--color-primary-dark));
         color: white;
 
         &:hover {
-          background: var(--color-primary-dark);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(74, 124, 125, 0.2);
         }
       }
 
       &--secondary {
         background: transparent;
         color: var(--color-primary);
-        text-decoration: none;
+        border: 2px solid var(--color-primary);
 
         &:hover {
-          text-decoration: underline;
+          background: var(--color-primary-light);
         }
       }
     }
 
     /* Links */
     .link-group {
-      margin-top: 1.25em;
+      margin-top: 1.5rem;
+      text-align: center;
 
       a {
-        display: block;
+        display: inline-block;
         color: var(--color-primary);
         text-decoration: none;
-        text-align: center;
         font-size: 0.875rem;
-        margin: 0.75em 0;
-        transition: color 0.2s ease-in-out;
+        margin: 0.5rem 1rem;
+        transition: all 0.2s ease-in-out;
 
         &:hover {
           color: var(--color-primary-dark);
-          text-decoration: underline;
+          transform: translateY(-1px);
         }
+      }
+
+      .wholesale-link {
+        display: block;
+        margin-top: 1rem;
+        font-weight: 500;
       }
     }
 
@@ -289,59 +365,78 @@
     .form__message {
       display: flex;
       align-items: center;
-      gap: 0.5em;
-      margin-bottom: 1.25em;
-      padding: 0.75em;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      padding: 1rem;
       border-radius: var(--border-radius);
       font-size: 0.875rem;
+      animation: slideIn 0.3s ease-out;
 
       svg {
-        width: 1em;
-        height: 1em;
+        width: 1.25rem;
+        height: 1.25rem;
         flex-shrink: 0;
       }
 
       &--success {
         background: #e8f5e9;
         color: var(--color-success);
+        border: 1px solid #c8e6c9;
       }
 
       &--error {
-        background: var(--light-peach, #fff3f3);
+        background: #ffebee;
         color: var(--color-error);
+        border: 1px solid #ffcdd2;
       }
-    }
-
-    /* Form Switching */
-    #recover,
-    #recover + .recover-form {
-      display: none;
-    }
-
-    #recover:target,
-    #recover:target + .recover-form {
-      display: block;
-    }
-
-    #recover:target ~ .login-form {
-      display: none;
     }
 
     /* Guest Login */
     .guest-login {
-      margin-top: 2em;
+      margin-top: 2rem;
     }
 
-    hr {
-      border: none;
-      border-top: 1px solid var(--color-border);
-      margin: 2em 0;
-    }
+    .divider {
+      position: relative;
+      text-align: center;
+      margin: 1.5rem 0;
 
-    /* Button Groups */
-    .button-group {
-      display: grid;
-      gap: 0.75em;
+      &::before,
+      &::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        width: calc(50% - 30px);
+        height: 1px;
+        background: var(--color-border);
+      }
+
+      &::before {
+        left: 0;
+      }
+
+      &::after {
+        right: 0;
+      }
+
+      span {
+        background: var(--color-background);
+        padding: 0 1rem;
+        color: var(--color-text-light);
+        font-size: 0.875rem;
+      }
+    }
+  }
+
+  /* Animations */
+  @keyframes slideIn {
+    from {
+      transform: translateY(-10px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
     }
   }
 
@@ -360,19 +455,41 @@
 
   /* Responsive */
   @media (max-width: 768px) {
-    .customer.login .container {
-      padding: var(--form-padding);
+    main {
+      padding: 1rem;
+    }
+
+    .customer.login {
+      .container {
+        padding: 1.5rem;
+      }
+
+      .link-group a {
+        display: block;
+        margin: 0.75rem 0;
+      }
     }
   }
 </style>
 
+<script>
+  document.querySelectorAll('.password-toggle').forEach(button => {
+    button.addEventListener('click', () => {
+      const input = button.previousElementSibling;
+      const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+      input.setAttribute('type', type);
+      button.classList.toggle('show');
+    });
+  });
+</script>
+
 {% schema %}
 {
-  "name": "t:sections.main-login.name",
+  "name": "Login",
   "settings": [
     {
       "type": "header",
-      "content": "t:sections.all.padding.section_padding_heading"
+      "content": "Padding"
     },
     {
       "type": "range",
@@ -381,7 +498,7 @@
       "max": 100,
       "step": 4,
       "unit": "px",
-      "label": "t:sections.all.padding.padding_top",
+      "label": "Top padding",
       "default": 36
     },
     {
@@ -391,7 +508,7 @@
       "max": 100,
       "step": 4,
       "unit": "px",
-      "label": "t:sections.all.padding.padding_bottom",
+      "label": "Bottom padding",
       "default": 36
     }
   ]
