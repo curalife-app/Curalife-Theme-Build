@@ -35,7 +35,7 @@
 				</div>
 
 				<div class="account-menu-mobile-dropdown mobile w-full">
-					<select id="mobile-dropdown" onchange="changeContent()">
+					<select id="mobile-dropdown">
 						{% if show_curalifer_tab %}
 							<option value="#curalifer"><i class="fa-thin fa-user-crown"></i>Curalifer</option>
 						{% endif %}
@@ -147,18 +147,11 @@
 <script>
 	document.addEventListener("DOMContentLoaded", function () {
 		const accountData = document.querySelector('.account-data');
+		const mobileDropdown = document.getElementById('mobile-dropdown');
 
 		if (!accountData) {
 			console.error("accountData element is not found");
 			return;
-		}
-
-		function changeContent() {
-			let selectedTab = document.querySelector('#mobile-dropdown').value;
-			let tabLink = document.querySelector(`.tabs .tab a[href="${selectedTab}"]`);
-			if (tabLink) {
-				tabLink.click();
-			}
 		}
 
 		function setActiveTab(targetLink) {
@@ -176,7 +169,7 @@
 
 			tabLinks.forEach(link => link.parentElement.classList.remove("active"));
 
-			if (tabPane && accountData) { // Check if accountData is available
+			if (tabPane && accountData) {
 				tabPane.classList.add("active");
 				tabPane.style.pointerEvents = "auto";
 				const tabPaneWrap = tabPane.querySelector('.data-wrap');
@@ -211,16 +204,20 @@
 			});
 		});
 
-		const mobileDropdown = document.querySelector('#mobile-dropdown');
-		mobileDropdown.addEventListener('change', function() {
-			if (this.value.charAt(0) != '#') {
-				window.location.href = this.value;
-				return;
-			}
-			else {
-				changeContent()
-			}
-		});
+		// Handle mobile dropdown navigation
+		if (mobileDropdown) {
+			mobileDropdown.addEventListener('change', function() {
+				const selectedValue = this.value;
+				if (selectedValue.charAt(0) === '#') {
+					const targetLink = document.querySelector(`.tabs .tab a[href="${selectedValue}"]`);
+					if (targetLink) {
+						setActiveTab(targetLink);
+					}
+				} else {
+					window.location.href = selectedValue;
+				}
+			});
+		}
 	});
 </script>
 
