@@ -73,7 +73,7 @@
 
 				{% if is_variant_split and prod.variants.size > 0 %}
 					{% for variant in prod.variants %}
-						<div class="{% if is_slider_on_mobile %}swiper-slide{% endif %}">
+						{% if is_slider_on_mobile %}<div class="swiper-slide">{% endif %}
 							{% render 'variant-card',
 								variant: variant,
 								product: prod,
@@ -82,7 +82,7 @@
 								isAddToCart: isAddToCart,
 								isAddToCartQuantity: isAddToCartQuantity
 							%}
-						</div>
+						{% if is_slider_on_mobile %}</div>{% endif %}
 					{% endfor %}
 				{% else %}
 					{% if is_slider_on_mobile %}<div class="swiper-slide">{% endif %}
@@ -96,7 +96,7 @@
 				{% if product != blank %}
 					{% if is_variant_split and product.variants.size > 0 %}
 						{% for variant in product.variants %}
-							<div class="{% if is_slider_on_mobile %}swiper-slide{% endif %}">
+							{% if is_slider_on_mobile %}<div class="swiper-slide">{% endif %}
 								{% render 'variant-card',
 									variant: variant,
 									product: product,
@@ -106,12 +106,12 @@
 									isAddToCart: isAddToCart,
 									isAddToCartQuantity: isAddToCartQuantity
 								%}
-							</div>
+							{% if is_slider_on_mobile %}</div>{% endif %}
 						{% endfor %}
 					{% else %}
-						<div class="{% if is_slider_on_mobile %}swiper-slide{% endif %}">
+						{% if is_slider_on_mobile %}<div class="swiper-slide">{% endif %}
 							{% render 'product-card', product: product, isNoPrices: isNoPrices, isAddToCart: isAddToCart, isAddToCartQuantity: isAddToCartQuantity %}
-						</div>
+						{% if is_slider_on_mobile %}</div>{% endif %}
 					{% endif %}
 				{% endif %}
 			{% endfor %}
