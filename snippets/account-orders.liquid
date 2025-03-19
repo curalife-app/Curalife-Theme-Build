@@ -48,13 +48,13 @@
 
                 <div class="status done">
                   <p>
-                    {% if order.fulfillment_status != "fulfilled" %}
-                      <style>
-                        #{{ order.name }} { color: #d8ae13; }
-                        #{{ order.name }}:before { background: #d8ae13; }
-                      </style>
+                    {% if order.fulfillment_status == "fulfilled" %}
+                      <span data-status="fulfilled">{{ order.fulfillment_status }}</span>
+                    {% elsif order.fulfillment_status == "partial" %}
+                      <span data-status="partial">{{ order.fulfillment_status }}</span>
+                    {% else %}
+                      <span data-status="unfulfilled">{{ order.fulfillment_status | default: "unfulfilled" }}</span>
                     {% endif %}
-                    <span id="{{ order.name }}">{{ order.fulfillment_status }}</span>
                   </p>
                 </div>
               </div>
