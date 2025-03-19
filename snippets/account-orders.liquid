@@ -41,8 +41,10 @@
                 <p>{{ order.created_at | date: format: 'abbreviated_date' }}</p>
               </div>
               <div class="more">
-                <p><a href="{{ shop.secured_url }}/apps/download?ids={{ order.id }}&t=invoice&public_key={{ invoice_id }}&source=shopify_notification_email" target="_blank" aria-label="Download invoice">
-                  <svg style="width:20px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g data-name="93.Download"><path d="M12 24a12 12 0 1 1 12-12 12.013 12.013 0 0 1-12 12zm0-22a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2z"/><path d="M7 17h10v2H7zM12 15.414l-4.707-4.707 1.414-1.414L12 12.586l3.293-3.293 1.414 1.414L12 15.414z"/><path d="M11 5h2v9h-2z"/></g></svg></a></p>
+                <a href="{{ shop.secured_url }}/apps/download?ids={{ order.id }}&t=invoice&public_key={{ invoice_id }}&source=shopify_notification_email" target="_blank" aria-label="Download invoice" class="download-link">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                  <span>Download Invoice</span>
+                </a>
               </div>
             </div>
 
@@ -168,7 +170,8 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-				padding: 20px;
+        padding: 0 20px;
+        margin-bottom: 24px;
         gap: 16px;
       }
 
@@ -301,23 +304,35 @@
       }
 
       .data-list ul li .order-head .date {
-        width: 40%;
+        width: 30%;
         padding: 0 20px;
         text-align: center;
       }
 
       .data-list ul li .order-head .more {
-        width: 30%;
+        width: 40%;
         text-align: right;
       }
 
-      .data-list ul li .order-head .more svg {
-        fill: white;
+      .data-list ul li .order-head .more .download-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: white;
+        text-decoration: none;
         transition: all 0.3s ease;
+        font-weight: 500;
+        font-size: 14px;
       }
 
-      .data-list ul li .order-head .more svg:hover {
-        transform: scale(1.1);
+      .data-list ul li .order-head .more .download-link:hover {
+        transform: translateY(-2px);
+        opacity: 0.9;
+      }
+
+      .data-list ul li .order-head .more svg {
+        stroke: white;
+        transition: all 0.3s ease;
       }
 
       .data-list ul li .order-item {
@@ -327,10 +342,11 @@
         padding: 24px;
         background: white;
         transition: all 0.3s ease;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
       }
 
-      .data-list ul li .order-item:hover {
-        background: rgba(var(--blue-rgb), 0.02);
+      .data-list ul li .order-item:last-child {
+        border-bottom: none;
       }
 
       .data-list ul li .order-item .rows-wrap {
@@ -383,6 +399,7 @@
         display: flex;
         gap: 24px;
         align-items: center;
+        flex-wrap: nowrap;
       }
 
       .data-list ul li .order-item .item-quantity {
@@ -428,6 +445,7 @@
         font-size: 13px;
         font-weight: 600;
         gap: 5px;
+        white-space: nowrap;
       }
 
       .data-list ul li .order-item .status p span svg {
@@ -461,8 +479,6 @@
         stroke: #e74c3c;
       }
 
-
-
       .data-list ul li .view-details .more-btn {
         display: flex;
         justify-content: center;
@@ -486,11 +502,18 @@
         color: var(--dark);
       }
 
+      @media (max-width: 1024px) {
+        .data-list ul li .order-item .order-details {
+          gap: 16px;
+        }
+      }
+
       @media (max-width: 767px) {
         .orders-filter-bar {
           flex-direction: column;
           align-items: flex-start;
           gap: 12px;
+          padding: 0 16px;
         }
 
         .filter-group {
@@ -561,6 +584,35 @@
 
         .data-list ul li .view-details.d-mobile {
           display: block;
+        }
+
+        .data-list ul li .order-head .number {
+          width: 35%;
+        }
+
+        .data-list ul li .order-head .date {
+          width: 25%;
+          padding: 0 10px;
+        }
+
+        .data-list ul li .order-head .more {
+          width: 40%;
+        }
+
+        .data-list ul li .order-head .more .download-link span {
+          display: none;
+        }
+
+        .data-list ul li .order-item .order-details {
+          width: 100%;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 12px;
+        }
+
+        .data-list ul li .order-item .status {
+          width: 100%;
+          text-align: right;
         }
       }
     </style>
