@@ -11,7 +11,7 @@
 
 {% if customer.orders %}
   <div class="data-list">
-    <ul class="no-style">
+    <ul class="no-style"></ul>
       {% for order in customer.orders %}
         <li>
           <div class="order-head">
@@ -31,7 +31,13 @@
               <div class="order-item">
                 <div class="rows-wrap">
                   <div class="img-wrap">
-                    <span><img src={% if a.product.featured_image %}{{ a.product.featured_image | image_url }}{% else %}"{{ 'favicon-96x96.png' | asset_url }}"{% endif %} alt=""></span>
+                    <span>
+                      {% if a.product.featured_image %}
+                        <img src="{{ a.product.featured_image | image_url }}" alt="{{ a.product.title }}">
+                      {% else %}
+                        <img src="{{ 'product-placeholder.svg' | asset_url }}" alt="Product placeholder">
+                      {% endif %}
+                    </span>
                   </div>
 
                   <div class="name"><p>{{ a.product.title }}</p></div>
