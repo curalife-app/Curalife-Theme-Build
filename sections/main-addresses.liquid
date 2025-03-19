@@ -42,13 +42,14 @@
       </div>
 
       <div class="account-menu-mobile mobile">
-        <select id="mobile-dropdown" onchange="window.location.href=this.value">
-          <option value="/account">My Profile</option>
-          <option value="/account#b">Orders</option>
-          <option value="/account#e">Loyalty</option>
-          <option value="/account#f">Change password</option>
-          <option value="{{ manage_subscription_url }}">Subscriptions</option>
-          <option value="/account/logout/">Logout</option>
+        <select id="mobile-dropdown">
+          <option value="profile">My Profile</option>
+          <option value="orders">Orders</option>
+          <option value="loyalty">Loyalty</option>
+          <option value="password">Change password</option>
+          <option value="addresses" selected>Addresses</option>
+          <option value="subscriptions">Subscriptions</option>
+          <option value="logout">Logout</option>
         </select>
       </div>
 
@@ -862,12 +863,40 @@
   document.addEventListener('DOMContentLoaded', function() {
     const addressToggle = document.querySelector('[data-address-toggle]');
     const addAddressForm = document.getElementById('AddAddress');
-    const addressCards = document.querySelectorAll('.address-card');
+    const mobileDropdown = document.getElementById('mobile-dropdown');
 
     // Handle Add New Address form toggle
     if (addressToggle && addAddressForm) {
       addressToggle.addEventListener('click', function() {
         addAddressForm.style.display = addAddressForm.style.display === 'none' ? 'block' : 'none';
+      });
+    }
+
+    // Handle mobile navigation
+    if (mobileDropdown) {
+      mobileDropdown.addEventListener('change', function() {
+        const selectedValue = this.value;
+        switch(selectedValue) {
+          case 'profile':
+            window.location.href = '/account';
+            break;
+          case 'orders':
+            window.location.href = '/account#b';
+            break;
+          case 'loyalty':
+            window.location.href = '/account#e';
+            break;
+          case 'password':
+            window.location.href = '/account#f';
+            break;
+          case 'subscriptions':
+            window.location.href = '{{ manage_subscription_url }}';
+            break;
+          case 'logout':
+            window.location.href = '/account/logout';
+            break;
+          // Stay on current page for addresses
+        }
       });
     }
 
@@ -880,10 +909,11 @@
         const addressContent = addressCard.querySelector('.address-content');
         const addressActions = addressCard.querySelector('.address-actions');
 
-        // Hide content and actions, show edit form
-        addressContent.style.display = 'none';
-        addressActions.style.display = 'none';
-        editForm.style.display = 'block';
+        if (editForm && addressContent && addressActions) {
+          addressContent.style.display = 'none';
+          addressActions.style.display = 'none';
+          editForm.style.display = 'block';
+        }
       });
     });
 
@@ -896,10 +926,11 @@
         const addressContent = addressCard.querySelector('.address-content');
         const addressActions = addressCard.querySelector('.address-actions');
 
-        // Show content and actions, hide edit form
-        addressContent.style.display = 'block';
-        addressActions.style.display = 'flex';
-        editForm.style.display = 'none';
+        if (editForm && addressContent && addressActions) {
+          addressContent.style.display = 'block';
+          addressActions.style.display = 'flex';
+          editForm.style.display = 'none';
+        }
       });
     });
 
