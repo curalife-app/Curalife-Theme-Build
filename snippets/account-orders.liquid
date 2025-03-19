@@ -63,19 +63,30 @@
                     <div class="name"><p>{{ a.product.title }}</p></div>
                   </div>
 
-                  <div class="item-quantity"><p>Quantity: {{ a.quantity }}</p></div>
-                  <div class="item-price"><p>{{ order.total_price | money_with_currency }}</p></div>
+                  <div class="order-details">
+                    <div class="item-quantity"><p>Quantity: {{ a.quantity }}</p></div>
+                    <div class="item-price"><p>{{ order.total_price | money_with_currency }}</p></div>
 
-                  <div class="status done">
-                    <p>
-                      {% if order.fulfillment_status == "fulfilled" %}
-                        <span data-status="fulfilled">{{ order.fulfillment_status }}</span>
-                      {% elsif order.fulfillment_status == "partial" %}
-                        <span data-status="partial">{{ order.fulfillment_status }}</span>
-                      {% else %}
-                        <span data-status="unfulfilled">{{ order.fulfillment_status | default: "unfulfilled" }}</span>
-                      {% endif %}
-                    </p>
+                    <div class="status done">
+                      <p>
+                        {% if order.fulfillment_status == "fulfilled" %}
+                          <span data-status="fulfilled">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                            Fulfilled
+                          </span>
+                        {% elsif order.fulfillment_status == "partial" %}
+                          <span data-status="partial">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                            Partial
+                          </span>
+                        {% else %}
+                          <span data-status="unfulfilled">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line></svg>
+                            {{ order.fulfillment_status | default: "Unfulfilled" }}
+                          </span>
+                        {% endif %}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -89,13 +100,11 @@
             {% endfor %}
           </li>
         {% endfor %}
-
-        <li id="no-orders-message" class="hidden">
-          <div class="empty-message">
-            <p>No orders match your filter criteria.</p>
-          </div>
-        </li>
       </ul>
+
+      <div id="no-orders-message" class="empty-message hidden">
+        <p>No orders match your filter criteria.</p>
+      </div>
     </div>
 
     <script>
@@ -127,15 +136,24 @@
             }
           });
 
+          // Only show the no orders message if there are no visible items
           if (visibleCount === 0) {
             noOrdersMessage.classList.remove('hidden');
+            ordersList.classList.add('hidden');
           } else {
             noOrdersMessage.classList.add('hidden');
+            ordersList.classList.remove('hidden');
           }
         }
 
+        // Run initial filter to ensure proper display state
+        setTimeout(filterOrders, 100);
+
         statusFilter.addEventListener('change', filterOrders);
-        searchBtn.addEventListener('click', filterOrders);
+        searchBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          filterOrders();
+        });
         searchInput.addEventListener('keyup', function(e) {
           if (e.key === 'Enter') {
             filterOrders();
@@ -146,7 +164,7 @@
 
     <style>
       .hidden {
-        display: none;
+        display: none !important;
       }
 
       .orders-container {
@@ -159,7 +177,6 @@
         align-items: center;
         margin-bottom: 20px;
         gap: 16px;
-        flex-wrap: wrap;
       }
 
       .filter-group {
@@ -171,6 +188,7 @@
       .filter-group label {
         font-weight: 500;
         color: var(--dark);
+        white-space: nowrap;
       }
 
       .filter-group select {
@@ -183,6 +201,7 @@
         color: var(--dark);
         cursor: pointer;
         transition: all 0.3s ease;
+        min-width: 140px;
       }
 
       .filter-group select:hover {
@@ -192,10 +211,11 @@
       .search-group {
         display: flex;
         position: relative;
+        max-width: 240px;
       }
 
       .search-group input {
-        width: 220px;
+        width: 100%;
         padding: 8px 40px 8px 12px;
         border-radius: 8px;
         border: 1px solid rgba(0,0,0,0.1);
@@ -232,6 +252,9 @@
         padding: 40px 20px;
         color: var(--dark);
         font-weight: 500;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
       }
 
       .data-list {
@@ -363,8 +386,13 @@
         color: var(--dark);
       }
 
+      .data-list ul li .order-item .order-details {
+        display: flex;
+        gap: 24px;
+        align-items: center;
+      }
+
       .data-list ul li .order-item .item-quantity {
-        padding: 0 20px;
         text-align: center;
       }
 
@@ -373,10 +401,10 @@
         font-weight: 500;
         font-size: 15px;
         color: var(--dark);
+        white-space: nowrap;
       }
 
       .data-list ul li .order-item .item-price {
-        padding: 0 20px;
         text-align: right;
       }
 
@@ -385,10 +413,11 @@
         font-weight: 600;
         font-size: 16px;
         color: var(--blue);
+        white-space: nowrap;
       }
 
       .data-list ul li .order-item .status {
-        padding-left: 20px;
+        padding-left: 10px;
       }
 
       .data-list ul li .order-item .status p {
@@ -405,15 +434,11 @@
         border-radius: 20px;
         font-size: 13px;
         font-weight: 600;
+        gap: 5px;
       }
 
-      .data-list ul li .order-item .status p span:before {
-        content: "";
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        margin-right: 8px;
+      .data-list ul li .order-item .status p span svg {
+        stroke-width: 2.5;
       }
 
       .data-list ul li .order-item .status p span[data-status="fulfilled"] {
@@ -421,8 +446,8 @@
         color: #2ecc71;
       }
 
-      .data-list ul li .order-item .status p span[data-status="fulfilled"]:before {
-        background: #2ecc71;
+      .data-list ul li .order-item .status p span[data-status="fulfilled"] svg {
+        stroke: #2ecc71;
       }
 
       .data-list ul li .order-item .status p span[data-status="partial"] {
@@ -430,8 +455,8 @@
         color: #f1c40f;
       }
 
-      .data-list ul li .order-item .status p span[data-status="partial"]:before {
-        background: #f1c40f;
+      .data-list ul li .order-item .status p span[data-status="partial"] svg {
+        stroke: #f1c40f;
       }
 
       .data-list ul li .order-item .status p span[data-status="unfulfilled"] {
@@ -439,8 +464,8 @@
         color: #e74c3c;
       }
 
-      .data-list ul li .order-item .status p span[data-status="unfulfilled"]:before {
-        background: #e74c3c;
+      .data-list ul li .order-item .status p span[data-status="unfulfilled"] svg {
+        stroke: #e74c3c;
       }
 
       .data-list ul li .view-details.d-mobile {
@@ -487,6 +512,7 @@
 
         .search-group {
           width: 100%;
+          max-width: none;
         }
 
         .search-group input {
@@ -531,16 +557,15 @@
           font-size: 15px;
         }
 
+        .data-list ul li .order-item .order-details {
+          width: 100%;
+          justify-content: space-between;
+        }
+
         .data-list ul li .order-item .item-quantity,
         .data-list ul li .order-item .item-price,
         .data-list ul li .order-item .status {
-          width: 100%;
           padding: 8px 0;
-          text-align: right;
-        }
-
-        .data-list ul li .order-item .status {
-          padding-left: 0;
         }
 
         .data-list ul li .view-details.d-mobile {
