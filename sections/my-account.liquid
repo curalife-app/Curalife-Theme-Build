@@ -173,7 +173,9 @@
 				tabPane.classList.add("active");
 				tabPane.style.pointerEvents = "auto";
 				const tabPaneWrap = tabPane.querySelector('.data-wrap');
-				accountData.style.height = `${tabPaneWrap.offsetHeight}px`;
+				if (tabPaneWrap) {
+					accountData.style.minHeight = `${tabPaneWrap.offsetHeight}px`;
+				}
 			}
 
 			targetLink.parentElement.classList.add("active");
@@ -199,7 +201,10 @@
 			pane.addEventListener('transitionend', function () {
 				const activeTabPane = tabs.querySelector('.account-data .data-row.active');
 				if (activeTabPane) {
-					accountData.style.height = `${activeTabPane.clientHeight}px`;
+					const activeWrap = activeTabPane.querySelector('.data-wrap');
+					if (activeWrap) {
+						accountData.style.minHeight = `${activeWrap.offsetHeight}px`;
+					}
 				}
 			});
 		});
@@ -275,7 +280,8 @@
 	.account-data {
 		flex: 1;
 		position: relative;
-		transition: height 0.3s ease;
+		transition: min-height 0.3s ease;
+		min-height: 500px;
 	}
 
 	.data-row {
@@ -289,6 +295,7 @@
 	.data-row.active {
 		opacity: 1;
 		visibility: visible;
+		position: relative;
 	}
 
 	.account-data .data-row {
@@ -442,6 +449,7 @@
 
 		.account-data {
 			width: 100%;
+			min-height: 400px;
 		}
 
 		.account-data .data-row .data-wrap {
