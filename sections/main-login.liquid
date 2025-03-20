@@ -5,7 +5,7 @@
   - Maintains accessibility standards
 {% endcomment %}
 
-<section class="customer login">
+<section class="customer login main-login-section">
   <div class="container">
     {% comment %} Password Recovery Form {% endcomment %}
     <div class="recover-form" id="recover">
@@ -98,6 +98,9 @@
               placeholder="Password"
             >
             <label for="CustomerPassword">Password</label>
+            <button type="button" class="password-toggle" aria-label="Toggle password visibility">
+              <span class="icon-eye"></span>
+            </button>
           </div>
         {%- endif -%}
 
@@ -158,8 +161,15 @@
     --shadow-card: 0 10px 40px rgba(0, 0, 0, 0.08);
     --shadow-focus: 0 0 0 3px var(--color-primary-light);
 
+    background: linear-gradient(135deg, var(--beige, #f8f5f1) 0%, #f5f5f5 100%);
+    padding: 2rem 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80vh;
+
     main {
-      background: linear-gradient(135deg, var(--beige) 0%, #f5f5f5 100%);
+      background: linear-gradient(135deg, var(--beige, #f8f5f1) 0%, #f5f5f5 100%);
       display: grid;
       place-items: center;
       padding: 2rem;
@@ -239,10 +249,11 @@
       h2 {
         color: var(--color-text);
         text-align: center;
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
         font-size: clamp(24px, 5vw, 32px);
         font-weight: 700;
         letter-spacing: -0.5px;
+        font-family: var(--heading-font-family, sans-serif);
       }
 
       p {
@@ -256,7 +267,7 @@
       /* Form Fields */
       .field {
         position: relative;
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
 
         input {
           width: 100%;
@@ -280,10 +291,10 @@
 
           &:focus + label,
           &:not(:placeholder-shown) + label {
-            top: -8px;
+            top: -0.5rem;
             left: 12px;
             transform: translateY(0);
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             color: var(--color-primary);
             background: var(--color-background);
             padding: 0 6px;
@@ -301,6 +312,37 @@
           padding: 0 0.25rem;
           transition: all 0.2s ease-in-out;
           pointer-events: none;
+        }
+
+        .password-toggle {
+          position: absolute;
+          right: 1rem;
+          top: 50%;
+          transform: translateY(-50%);
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          padding: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--color-text-light);
+
+          .icon-eye {
+            display: block;
+            width: 20px;
+            height: 20px;
+            position: relative;
+
+            &::before {
+              content: "👁";
+              font-size: 16px;
+            }
+          }
+
+          &.show .icon-eye::before {
+            content: "👁‍🗨";
+          }
         }
       }
 
@@ -338,6 +380,16 @@
         }
       }
 
+      .button-group {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+
+        .button {
+          flex: 1;
+        }
+      }
+
       /* Links */
       .link-group {
         margin-top: 1.5rem;
@@ -356,13 +408,27 @@
             transform: translateY(-1px);
           }
         }
+      }
+
+      .wholesale-box {
+        margin-top: 2rem;
+        text-align: center;
 
         .wholesale-link {
-          display: block;
-          margin-top: 1rem;
+          display: inline-block;
+          color: var(--color-primary);
+          text-decoration: none;
+          font-size: 0.875rem;
           font-weight: 500;
           background: var(--color-primary-light);
           padding: 1rem;
+          border-radius: var(--border-radius);
+          transition: all 0.2s ease-in-out;
+
+          &:hover {
+            color: var(--color-primary-dark);
+            transform: translateY(-1px);
+          }
         }
       }
 
