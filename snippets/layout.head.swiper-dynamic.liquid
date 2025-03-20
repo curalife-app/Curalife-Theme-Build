@@ -9,7 +9,8 @@
   document.addEventListener('DOMContentLoaded', function() {
     // Check if the section using this swiper is visible
     // Ensure selector is properly interpolated in Liquid before sending to JS
-    const selectorString = '{{ selector | replace: "{{", "" | replace: "}}", "" | escape }}';
+    {% assign clean_selector = selector | replace: "{", "" | replace: "}", "" %}
+    const selectorString = '{{ clean_selector | escape }}';
     const swiperElements = document.querySelectorAll(selectorString);
 
     if (swiperElements.length > 0) {
