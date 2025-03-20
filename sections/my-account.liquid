@@ -13,30 +13,50 @@
 
 <section class="account-page">
 	<div class="container">
-		<h1 class="hidden text-center mb-[30px]">My Account</h1>
-		<div id="tabs">
-			<div class="account-content">
-				<div class="account-menu desktop">
-					<div class="menu-list">
-						<div class="tabs">
+		<h1 class="page-title">My Account</h1>
+		<div class="account-dashboard" id="tabs">
+			<div class="dashboard-container">
+				<aside class="sidebar desktop">
+					<nav class="sidebar-menu">
+						<ul class="menu-items">
 							{% if show_curalifer_tab %}
-								<div class="tab"><a href="#curalifer"><span>Curalifer</a></div>
+								<li class="menu-item"><a href="#curalifer" class="menu-link">
+									<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+									<span>Curalifer</span>
+								</a></li>
 							{% endif %}
-							<div class="tab"><a href="#a" class="tab">My Account</a></div>
-							<div class="tab"><a href="#b" class="tab">Orders</a></div>
-							{% comment %} <li><a href="#c"><span class="icon-payment"></span>Manage Payments</a></li> {% endcomment %}
-							{% comment %} <li style="display:none;"><a href="#d"><span class="icon-refer-friend"></span>Refer a Friend</a></li> {% endcomment %}
-							<div class="tab"><a href="#e" class="tab">My Rewards</a></div>
-							<a id="subscription-tab" href="{{ manage_subscription_url }}"><div class="tab">Subscriptions</div></a>
-							<a class="logout lgoutlnk" href="/account/logout/"><div class="tab">Logout</div></a>
-						</div>
-					</div>
-				</div>
+							<li class="menu-item"><a href="#a" class="menu-link">
+								<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+								<span>My Account</span>
+							</a></li>
+							<li class="menu-item"><a href="#b" class="menu-link">
+								<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+								<span>Orders</span>
+							</a></li>
+							<li class="menu-item"><a href="#e" class="menu-link">
+								<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+								<span>My Rewards</span>
+							</a></li>
+							<li class="menu-item">
+								<a href="{{ manage_subscription_url }}" class="menu-link">
+									<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+									<span>Subscriptions</span>
+								</a>
+							</li>
+							<li class="menu-item">
+								<a href="/account/logout/" class="menu-link logout">
+									<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+									<span>Logout</span>
+								</a>
+							</li>
+						</ul>
+					</nav>
+				</aside>
 
-				<div class="account-menu-mobile-dropdown mobile w-full">
-					<select id="mobile-dropdown">
+				<div class="mobile-menu-wrapper">
+					<select id="mobile-dropdown" class="mobile-menu">
 						{% if show_curalifer_tab %}
-							<option value="#curalifer"><i class="fa-thin fa-user-crown"></i>Curalifer</option>
+							<option value="#curalifer">Curalifer</option>
 						{% endif %}
 						<option value="#a">My Profile</option>
 						<option value="#b">Orders</option>
@@ -46,52 +66,53 @@
 					</select>
 				</div>
 
-				<div class="account-data">
+				<main class="main-content">
 					{% if show_curalifer_tab %}
-						<div class="data-row" id="curalifer">
-							<div class="titles w-full">
+						<div class="content-panel" id="curalifer">
+							<div class="panel-header">
 								<h2>My Curalife</h2>
-								<p>Your exclusive access to our recipies and workouts to help you live a healthier life.</p>
+								<p>Your exclusive access to our recipes and workouts to help you live a healthier life.</p>
 							</div>
-
-							<div class="data-wrap with-border p-[10px]">
-								<a href="/blogs/recipes">
-									<img src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/curalifer_recipies.png" alt="Curalife Recipes">
-									<h5 class="data-title m-0">Recipes</h5>
+							<div class="curalifer-features">
+								<a href="/blogs/recipes" class="feature-card">
+									<div class="feature-image">
+										<img src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/curalifer_recipies.png" alt="Curalife Recipes">
+									</div>
+									<h3 class="feature-title">Recipes</h3>
 								</a>
-							</div>
-
-							<div class="data-wrap with-border p-[10px]">
-								<a href="/blogs/workouts">
-									<img src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/curalifer_exercise.png" alt="Curalife Workouts">
-									<h5 class="data-title m-0">Workouts</h5>
+								<a href="/blogs/workouts" class="feature-card">
+									<div class="feature-image">
+										<img src="https://cdn.shopify.com/s/files/1/0452/2459/1511/files/curalifer_exercise.png" alt="Curalife Workouts">
+									</div>
+									<h3 class="feature-title">Workouts</h3>
 								</a>
 							</div>
 						</div>
 					{% endif %}
 
-					<div class="data-row" id="a">
-						<div class="data-wrap with-border single-card">
-							<h5 class="data-title m-0">My Information</h5>
-
-							<div class="data-content">
+					<div class="content-panel" id="a">
+						<div class="panel-card">
+							<div class="panel-header">
+								<h2>My Information</h2>
+							</div>
+							<div class="panel-body">
 								{% render 'account-info' %}
 							</div>
 						</div>
 					</div>
 
-					<div class="data-row w-full" id="b">
-						<div class="data-wrap w-full">
+					<div class="content-panel" id="b">
+						<div class="panel-card">
 							{% render 'account-orders' %}
 						</div>
 					</div>
 
-				<div class="data-row" id="e">
-					<div class="data-wrap">
-						{% render 'account-rewards' %}
+					<div class="content-panel" id="e">
+						<div class="panel-card">
+							{% render 'account-rewards' %}
+						</div>
 					</div>
-				</div>
-				</div>
+				</main>
 			</div>
 		</div>
 	</div>
@@ -99,50 +120,48 @@
 
 <script>
 	document.addEventListener("DOMContentLoaded", function () {
-		const accountData = document.querySelector('.account-data');
+		const mainContent = document.querySelector('.main-content');
 		const mobileDropdown = document.getElementById('mobile-dropdown');
 
-		if (!accountData) {
-			console.error("accountData element is not found");
+		if (!mainContent) {
+			console.error("mainContent element is not found");
 			return;
 		}
 
 		function setActiveTab(targetLink) {
 			const tabs = document.querySelector('#tabs');
-			const tabLinks = Array.from(tabs.querySelectorAll('.tabs .tab a'));
-			const allTabPanes = Array.from(tabs.querySelectorAll('.account-data .data-row'));
+			const tabLinks = Array.from(tabs.querySelectorAll('.menu-items .menu-item a'));
+			const allPanels = Array.from(tabs.querySelectorAll('.main-content .content-panel'));
 
 			const href = (targetLink && targetLink.getAttribute('href')) ? targetLink.getAttribute('href').substr(1) : null;
 			const tabPane = href ? document.getElementById(href) : null;
 
-			allTabPanes.forEach(pane => {
-				pane.classList.remove("active");
-				pane.style.pointerEvents = "none";
+			allPanels.forEach(panel => {
+				panel.classList.remove("active");
 			});
 
-			tabLinks.forEach(link => link.parentElement.classList.remove("active"));
+			tabLinks.forEach(link => {
+				link.classList.remove("active");
+				link.parentElement.classList.remove("active");
+			});
 
-			if (tabPane && accountData) {
+			if (tabPane) {
 				tabPane.classList.add("active");
-				tabPane.style.pointerEvents = "auto";
-				const tabPaneWrap = tabPane.querySelector('.data-wrap');
-				if (tabPaneWrap) {
-					accountData.style.minHeight = `${tabPaneWrap.offsetHeight}px`;
-				}
+				targetLink.classList.add("active");
+				targetLink.parentElement.classList.add("active");
 			}
-
-			targetLink.parentElement.classList.add("active");
 		}
 
 		const tabs = document.querySelector('#tabs');
-		const tabLinks = Array.from(tabs.querySelectorAll('.tabs .tab a'));
+		const tabLinks = Array.from(tabs.querySelectorAll('.menu-items .menu-item a'));
 
 		// Check for query parameter indicating tab activation
 		const urlParams = new URLSearchParams(window.location.search);
 		const contactUpdated = urlParams.get('contact-updated') === 'true';
+		const passwordUpdated = urlParams.get('password-updated') === 'true';
 
 		// Check if we need to activate the My Information tab
-		if (contactUpdated) {
+		if (contactUpdated || passwordUpdated) {
 			// Find the My Information tab and activate it
 			const infoTab = tabLinks.find(link => link.getAttribute('href') === '#a');
 			if (infoTab) {
@@ -151,39 +170,27 @@
 
 			// Force a page reload when coming back from a successful form submission
 			// This ensures the customer data displayed is refreshed
-			if (!sessionStorage.getItem('contact_info_refreshed')) {
-				sessionStorage.setItem('contact_info_refreshed', 'true');
+			if (!sessionStorage.getItem('account_info_refreshed')) {
+				sessionStorage.setItem('account_info_refreshed', 'true');
 				// Reload the page once to refresh customer data
 				window.location.reload();
 				return;
 			}
 
 			// Clear the flag on subsequent page views
-			sessionStorage.removeItem('contact_info_refreshed');
+			sessionStorage.removeItem('account_info_refreshed');
 		} else if (tabLinks.length > 0) {
 			// Default behavior - activate first tab
 			setActiveTab(tabLinks[0]);
 		}
 
 		tabLinks.forEach(link => {
-			link.addEventListener('click', function (e) {
-				e.preventDefault();
-				setActiveTab(e.target);
-			});
-		});
-
-		const allTabPanes = Array.from(tabs.querySelectorAll('.account-data .data-row'));
-
-		allTabPanes.forEach(pane => {
-			pane.addEventListener('transitionend', function () {
-				const activeTabPane = tabs.querySelector('.account-data .data-row.active');
-				if (activeTabPane) {
-					const activeWrap = activeTabPane.querySelector('.data-wrap');
-					if (activeWrap) {
-						accountData.style.minHeight = `${activeWrap.offsetHeight}px`;
-					}
-				}
-			});
+			if (link.getAttribute('href').startsWith('#')) {
+				link.addEventListener('click', function (e) {
+					e.preventDefault();
+					setActiveTab(this);
+				});
+			}
 		});
 
 		// Handle mobile dropdown navigation
@@ -191,7 +198,7 @@
 			mobileDropdown.addEventListener('change', function() {
 				const selectedValue = this.value;
 				if (selectedValue.charAt(0) === '#') {
-					const targetLink = document.querySelector(`.tabs .tab a[href="${selectedValue}"]`);
+					const targetLink = document.querySelector(`.menu-items .menu-item a[href="${selectedValue}"]`);
 					if (targetLink) {
 						setActiveTab(targetLink);
 					}
@@ -204,480 +211,316 @@
 </script>
 
 <style>
-	main {
-		background: var(--beige);
-		min-height: 100vh;
-		padding: 60px 0;
-	}
-
+	/* Modern Account Dashboard Styles */
 	.account-page {
 		max-width: 1400px;
 		margin: 0 auto;
-		padding: 0 20px;
+		padding: 60px 20px;
 	}
 
-	.account-content {
+	.page-title {
+		font-size: 32px;
+		font-weight: 700;
+		text-align: center;
+		margin-bottom: 40px;
+		color: var(--dark);
+	}
+
+	.dashboard-container {
 		display: flex;
 		gap: 40px;
 	}
 
-	.account-menu {
+	/* Sidebar Styles */
+	.sidebar {
 		width: 320px;
 		flex-shrink: 0;
 	}
 
-	.account-menu .menu-list .tabs {
-		display: flex;
-		flex-direction: column;
-		gap: 12px;
+	.sidebar-menu {
+		position: sticky;
+		top: 30px;
 	}
 
-	.account-menu .menu-list .tabs .tab a,
-	.account-menu .menu-list .tabs .tab:last-child {
+	.menu-items {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+	}
+
+	.menu-item {
+		margin: 0;
+	}
+
+	.menu-link {
 		display: flex;
 		align-items: center;
-		color: var(--dark);
-		transition: all 0.3s ease;
 		gap: 12px;
-		background: white;
 		padding: 16px 20px;
-		border-radius: 12px;
-		box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-		border: 1px solid rgba(0,0,0,0.1);
-		font-weight: 500;
-	}
-
-	.account-menu .menu-list .tabs .tab a:hover,
-	.account-menu .menu-list .tabs .tab.active a {
-		background: var(--blue);
-		color: white;
-		transform: translateX(5px);
-	}
-
-	.account-data {
-		flex: 1;
-		position: relative;
-		transition: min-height 0.3s ease;
-		min-height: 500px;
-	}
-
-	.data-row {
-		position: absolute;
-		opacity: 0;
-		visibility: hidden;
-		transition: all 0.4s ease;
-		width: 100%;
-	}
-
-	.data-row.active {
-		opacity: 1;
-		visibility: visible;
-		position: relative;
-	}
-
-	.account-data .data-row {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 24px;
-	}
-
-	.account-data .data-row .data-wrap.card {
-		max-width: 100%;
-		flex: 1;
-	}
-
-	.account-data .data-row .data-wrap.w-full {
-		max-width: 100%;
-		width: 100%;
-	}
-
-	.account-data .data-row .data-wrap.single-card {
-		width: 100%;
-		max-width: 100%;
-		flex: 1;
-	}
-
-	.account-data .data-row .data-wrap {
-		display: flex;
-		flex-direction: column;
-		min-width: auto;
+		background-color: white;
+		color: var(--dark);
 		border-radius: 16px;
-		background: white;
-		box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-		border: 1px solid rgba(0,0,0,0.1);
+		box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+		border: 1px solid rgba(0,0,0,0.05);
+		text-decoration: none;
+		font-weight: 600;
 		transition: all 0.3s ease;
 	}
 
-	.account-data .data-row .data-wrap:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+	.menu-link svg {
+		color: var(--blue);
+		transition: all 0.3s ease;
 	}
 
-	.account-data .data-title {
-		padding: 20px;
-		text-align: center;
+	.menu-link:hover, .menu-link.active {
+		background-color: var(--blue);
+		color: white;
+		transform: translateY(-4px);
+		box-shadow: 0 8px 30px rgba(var(--blue-rgb), 0.25);
+	}
+
+	.menu-link:hover svg, .menu-link.active svg {
+		color: white;
+	}
+
+	.menu-link.logout {
+		background-color: rgba(var(--blue-rgb), 0.05);
+		border-color: rgba(var(--blue-rgb), 0.1);
+	}
+
+	.menu-link.logout:hover {
+		background-color: var(--blue);
+	}
+
+	/* Mobile Menu */
+	.mobile-menu-wrapper {
+		display: none;
+		margin-bottom: 30px;
+	}
+
+	.mobile-menu {
+		width: 100%;
+		padding: 16px;
+		background-color: white;
+		border: 1px solid rgba(0,0,0,0.1);
+		border-radius: 12px;
+		font-size: 16px;
 		font-weight: 600;
-		font-size: 22px;
 		color: var(--dark);
-		border-bottom: 1px solid rgba(0,0,0,0.1);
+		box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+		appearance: none;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+		background-repeat: no-repeat;
+		background-position: right 15px center;
+		background-size: 16px;
+		padding-right: 40px;
 	}
 
-	.account-data .data-content {
-		display: flex;
-		flex-direction: column;
-		justify-content: space-between;
+	/* Main Content */
+	.main-content {
 		flex: 1;
-		padding: 30px;
+		position: relative;
 	}
 
-	.contact-info ul li {
+	.content-panel {
+		display: none;
+		animation: fadeIn 0.4s ease;
+	}
+
+	.content-panel.active {
 		display: block;
-		padding: 16px 0;
-		min-width: 300px;
+	}
+
+	@keyframes fadeIn {
+		from { opacity: 0; transform: translateY(10px); }
+		to { opacity: 1; transform: translateY(0); }
+	}
+
+	.panel-card {
+		background-color: white;
+		border-radius: 20px;
+		box-shadow: 0 4px 30px rgba(0,0,0,0.08);
+		overflow: hidden;
+		transition: transform 0.3s ease, box-shadow 0.3s ease;
+	}
+
+	.panel-card:hover {
+		transform: translateY(-5px);
+		box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+	}
+
+	.panel-header {
+		padding: 25px 30px;
 		border-bottom: 1px solid rgba(0,0,0,0.08);
 	}
 
-	.contact-info ul li:last-child {
-		border-bottom: none;
-	}
-
-	.contact-info ul li p {
-		display: flex;
-		flex-wrap: wrap;
-		justify-content: space-between;
-		margin: 0;
-		font-weight: 400;
-		font-size: 15px;
-		line-height: 1.5;
+	.panel-header h2 {
+		font-size: 24px;
+		font-weight: 700;
+		margin: 0 0 5px;
 		color: var(--dark);
 	}
 
-	.contact-info ul li p span {
-		display: block;
-		padding-left: 15px;
-		font-weight: 600;
+	.panel-header p {
+		color: var(--gray);
+		margin: 5px 0 0;
 		font-size: 16px;
-		text-transform: uppercase;
-		color: var(--blue);
+		line-height: 1.5;
 	}
 
-	.main-btn {
-		display: inline-flex;
-		justify-content: center;
-		align-items: center;
-		letter-spacing: 1px;
-		text-transform: uppercase;
-		color: #fff;
-		background: var(--blue);
-		border-radius: 8px;
-		min-height: 50px;
-		width: 100%;
-		font-weight: 600;
-		transition: all 0.3s ease;
+	.panel-body {
+		padding: 30px;
 	}
 
-	.main-btn:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-	}
-
-	.main-btn.blank {
-		background: transparent;
-		color: var(--blue);
-		border: 2px solid var(--blue);
-	}
-
-	.main-btn.blank:hover {
-		background: var(--blue);
-		color: white;
-	}
-
-	.main-btn.btn-sm {
-		min-height: 40px;
-		font-size: 14px;
-	}
-
-	.mt-4 {
+	/* Curalifer Features */
+	.curalifer-features {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+		gap: 30px;
 		margin-top: 20px;
 	}
 
-	#mobile-dropdown {
-		width: 100%;
-		background: white;
-		padding: 15px;
-		font-weight: 600;
-		box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-		border-radius: 8px;
-		border: 1px solid rgba(0,0,0,0.1);
-		margin-bottom: 20px;
+	.feature-card {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-decoration: none;
+		background-color: white;
+		border-radius: 16px;
+		padding: 30px;
+		box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+		transition: all 0.3s ease;
+		border: 1px solid rgba(0,0,0,0.05);
 	}
 
-	@media screen and (max-width: 1200px) {
-		.account-content {
+	.feature-card:hover {
+		transform: translateY(-8px);
+		box-shadow: 0 12px 30px rgba(var(--blue-rgb), 0.15);
+		border-color: rgba(var(--blue-rgb), 0.2);
+	}
+
+	.feature-image {
+		width: 100%;
+		max-width: 200px;
+		margin-bottom: 20px;
+		transition: transform 0.3s ease;
+	}
+
+	.feature-card:hover .feature-image {
+		transform: scale(1.05);
+	}
+
+	.feature-image img {
+		width: 100%;
+		height: auto;
+		border-radius: 12px;
+	}
+
+	.feature-title {
+		color: var(--dark);
+		font-size: 20px;
+		font-weight: 600;
+		margin: 0;
+		text-align: center;
+	}
+
+	/* Responsive Styles */
+	@media (max-width: 1200px) {
+		.dashboard-container {
 			gap: 30px;
 		}
 
-		.account-menu {
+		.sidebar {
 			width: 280px;
 		}
 
-		.account-data .data-row .data-wrap {
-			min-width: 340px;
+		.panel-header {
+			padding: 20px 25px;
+		}
+
+		.panel-body {
+			padding: 25px;
 		}
 	}
 
-	@media screen and (max-width: 768px) {
-		main {
-			padding: 15vw 0;
-		}
-
-		.account-content {
+	@media (max-width: 992px) {
+		.dashboard-container {
 			flex-direction: column;
 		}
 
-		.account-menu {
-			width: 100%;
+		.sidebar {
+			display: none;
 		}
 
-		.account-menu .menu-list .tabs .tab a,
-		.account-menu .menu-list .tabs .tab:last-child {
-			padding: 14px 16px;
-			font-size: 15px;
+		.mobile-menu-wrapper {
+			display: block;
 		}
 
-		.account-data {
-			width: 100%;
-			min-height: 400px;
+		.account-page {
+			padding: 40px 20px;
 		}
 
-		.account-data .data-row .data-wrap {
-			min-width: 100%;
+		.page-title {
+			font-size: 28px;
+			margin-bottom: 30px;
+		}
+	}
+
+	@media (max-width: 768px) {
+		.account-page {
+			padding: 30px 16px;
 		}
 
-		.account-data .data-content {
+		.page-title {
+			font-size: 24px;
+			margin-bottom: 25px;
+		}
+
+		.panel-header {
 			padding: 20px;
 		}
 
-		.contact-info ul li {
-			min-width: 100%;
-			padding: 14px 0;
+		.panel-header h2 {
+			font-size: 20px;
 		}
 
-		.contact-info ul li p {
-			font-size: 14px;
+		.panel-body {
+			padding: 20px;
 		}
 
-		.contact-info ul li p span {
-			font-size: 15px;
-		}
-
-		.profile-info-wrapper {
-			flex-direction: column;
-			gap: 30px;
+		.feature-card {
+			padding: 20px;
 		}
 	}
 
-	.profile-info-wrapper {
-		display: flex;
-		gap: 40px;
-		margin-bottom: 30px;
-		width: 100%;
-	}
-
-	.profile-info-wrapper .contact-info,
-	.profile-info-wrapper .shipping-info {
-		flex: 1;
-	}
-
-	.info-subtitle {
-		font-size: 18px;
-		margin-bottom: 16px;
-		color: var(--dark);
-		border-bottom: 1px solid rgba(0,0,0,0.1);
-		padding-bottom: 10px;
-		font-weight: 600;
-	}
-
-	.shipping-info .view_address p {
-		line-height: 1.6;
-		margin: 0;
-		color: var(--dark);
-		font-size: 16px;
-	}
-
-	.empty-text p {
-		color: #999;
-		font-style: italic;
-	}
-
-	@media screen and (max-width: 992px) {
-		.profile-info-wrapper {
-			flex-direction: column;
-			gap: 30px;
-		}
-
-		.account-data .data-row .data-wrap.card {
-			max-width: 100%;
-			width: 100%;
+	@media (max-width: 480px) {
+		.curalifer-features {
+			grid-template-columns: 1fr;
 		}
 	}
 
-	/* Modal styles */
-	.modal-overlay {
+	.mobile {
 		display: none;
-		position: fixed;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background: rgba(0,0,0,0.5);
-		z-index: 999;
-		align-items: center;
-		justify-content: center;
 	}
 
-	.modal-overlay.active {
-		display: flex;
-	}
+	@media (max-width: 992px) {
+		.desktop {
+			display: none;
+		}
 
-	.modal-container {
-		background: white;
-		width: 90%;
-		max-width: 500px;
-		border-radius: 12px;
-		box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-		max-height: 90vh;
-		overflow-y: auto;
-	}
-
-	.modal-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: 20px 25px;
-		border-bottom: 1px solid rgba(0,0,0,0.1);
-	}
-
-	.modal-header h3 {
-		margin: 0;
-		font-size: 22px;
-		color: var(--dark);
-	}
-
-	.close-modal {
-		background: none;
-		border: none;
-		font-size: 28px;
-		cursor: pointer;
-		color: #999;
-		transition: color 0.3s;
-	}
-
-	.close-modal:hover {
-		color: var(--blue);
-	}
-
-	.modal-content {
-		padding: 25px;
-	}
-
-	.form-group {
-		margin-bottom: 20px;
-	}
-
-	.form-group label {
-		display: block;
-		margin-bottom: 8px;
-		font-weight: 500;
-		color: var(--dark);
-	}
-
-	.form-group input {
-		width: 100%;
-		padding: 12px 15px;
-		border: 1px solid rgba(0,0,0,0.15);
-		border-radius: 8px;
-		font-size: 16px;
-	}
-
-	.form-actions {
-		display: flex;
-		gap: 15px;
-		margin-top: 25px;
-	}
-
-	.form-actions button {
-		flex: 1;
-	}
-
-	.success-message {
-		background-color: #e8f7e8;
-		border: 1px solid #c6e6c6;
-		border-radius: 8px;
-		padding: 12px 16px;
-		margin-bottom: 20px;
-		display: flex;
-		align-items: center;
-	}
-
-	.success-message p {
-		color: #2c7b2c;
-		margin: 0;
-		font-weight: 500;
-	}
-
-	.error-message {
-		background-color: #f7e8e8;
-		border: 1px solid #e6c6c6;
-		border-radius: 8px;
-		padding: 12px 16px;
-		margin-bottom: 20px;
-		display: flex;
-		flex-direction: column;
-		align-items: flex-start;
-	}
-
-	.error-message p {
-		color: #7b2c2c;
-		margin: 0 0 10px 0;
-		font-weight: 500;
-	}
-
-	.error-message ul {
-		margin: 0;
-		padding-left: 20px;
-		color: #7b2c2c;
-	}
-
-	.error-message li {
-		margin-bottom: 5px;
+		.mobile {
+			display: block;
+		}
 	}
 </style>
 
-
 {% schema %}
 {
-	"name": "My Account",
-	"settings": [
-		{
-			"type": "text",
-			"id": "acnt_titl",
-			"label": "Title",
-			"default": "Enter Title"
-		}, {
-			"type": "header",
-			"content": "Order Section Start"
-		}, {
-			"id": "ord_btnlink",
-			"type": "url",
-			"label": "Button Link"
-		}
-	],
-	"presets": [
-		{
-			"name": "My Account",
-			"category": "Account"
-		}
-	]
+	"name": "Account Page",
+	"tag": "section",
+	"settings": []
 }
 {% endschema %}
