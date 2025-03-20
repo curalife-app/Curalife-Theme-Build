@@ -15,60 +15,61 @@
 {% endcomment %}
 
 <div class="account-info-container">
-  <div class="info-section contact-section">
+  <div class="info-section contact-address-section">
     <div class="section-header">
-      <h3 class="section-title">Contact Information</h3>
-      <a href="/account/addresses?edit_contact=true" class="action-button contact-edit-link" title="Edit Contact Information">
-        <span class="action-text">Edit</span>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-      </a>
-    </div>
-    <div class="section-content">
-      <div class="contact-info">
-        <ul class="info-list no-style">
-          <li class="info-item">
-            <span class="info-label">First Name</span>
-            <span class="info-value">{{ customer.first_name }}</span>
-          </li>
-          <li class="info-item">
-            <span class="info-label">Last Name</span>
-            <span class="info-value">{{ customer.last_name }}</span>
-          </li>
-          <li class="info-item">
-            <span class="info-label">Email</span>
-            <span class="info-value">{{ customer.email }}</span>
-          </li>
-        </ul>
+      <h3 class="section-title">Personal Information</h3>
+      <div class="action-buttons">
+        <a href="/account/addresses?edit_contact=true" class="action-button contact-edit-link" title="Edit Contact Information">
+          <span class="action-text">Edit Contact</span>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+        </a>
+        <a href="/account/addresses" class="action-button address-edit-link" title="Manage Addresses">
+          <span class="action-text">Manage Addresses</span>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+        </a>
       </div>
     </div>
-  </div>
-
-  <div class="info-section address-section">
-    <div class="section-header">
-      <h3 class="section-title">Shipping Address</h3>
-      <a href="/account/addresses" class="action-button address-edit-link" title="Manage Addresses">
-        <span class="action-text">Manage</span>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-      </a>
-    </div>
     <div class="section-content">
-      {% assign address = customer.default_address %}
-      {% if address %}
-        <div class="address-display">
-          <p>
-            {{ address.first_name }} {{address.last_name }}
-            {% if address.company != blank %}<br />{{ address.company }}{% endif %}
-            {% if address.street != blank %}<br />{{ address.street }}{% endif %}
-            <br />{{ address.city }} {% if address.province_code != blank %}, {{ address.province_code }}{% endif %}
-            <br />{{ address.country }} {{ address.zip }}
-            {% if address.phone != blank %}<br />{{ address.phone }}{% endif %}
-          </p>
+      <div class="contact-address-grid">
+        <div class="contact-info">
+          <h4 class="subsection-title">Contact Details</h4>
+          <ul class="info-list no-style">
+            <li class="info-item">
+              <span class="info-label">First Name</span>
+              <span class="info-value">{{ customer.first_name }}</span>
+            </li>
+            <li class="info-item">
+              <span class="info-label">Last Name</span>
+              <span class="info-value">{{ customer.last_name }}</span>
+            </li>
+            <li class="info-item">
+              <span class="info-label">Email</span>
+              <span class="info-value">{{ customer.email }}</span>
+            </li>
+          </ul>
         </div>
-      {% else %}
-        <div class="empty-address">
-          <p>You don't have a shipping address yet. <a href="/account/addresses" class="add-address-link">Add one now</a></p>
+
+        <div class="address-info">
+          <h4 class="subsection-title">Default Shipping Address</h4>
+          {% assign address = customer.default_address %}
+          {% if address %}
+            <div class="address-display">
+              <p>
+                {{ address.first_name }} {{ address.last_name }}
+                {% if address.company != blank %}<br />{{ address.company }}{% endif %}
+                {% if address.street != blank %}<br />{{ address.street }}{% endif %}
+                <br />{{ address.city }} {% if address.province_code != blank %}, {{ address.province_code }}{% endif %}
+                <br />{{ address.country }} {{ address.zip }}
+                {% if address.phone != blank %}<br />{{ address.phone }}{% endif %}
+              </p>
+            </div>
+          {% else %}
+            <div class="empty-address">
+              <p>You don't have a shipping address yet. <a href="/account/addresses" class="add-address-link">Add one now</a></p>
+            </div>
+          {% endif %}
         </div>
-      {% endif %}
+      </div>
     </div>
   </div>
 
@@ -233,12 +234,12 @@
     // Contact info update message
     if (urlParams.get('contact-updated') === 'true') {
       // Show success message if not already displayed
-      const contactSection = document.querySelector('.contact-section');
+      const contactSection = document.querySelector('.contact-address-section');
       if (contactSection && !contactSection.querySelector('.success-message')) {
         const successDiv = document.createElement('div');
         successDiv.className = 'success-message';
         successDiv.innerHTML = '<p>Your contact information has been updated successfully!</p>';
-        contactSection.querySelector('.section-content').insertBefore(successDiv, contactSection.querySelector('.contact-info'));
+        contactSection.querySelector('.section-content').insertBefore(successDiv, contactSection.querySelector('.contact-address-grid'));
 
         // Auto remove after 5 seconds
         setTimeout(() => {
@@ -398,6 +399,45 @@
 </script>
 
 <style>
+  /* Merged contact and address styles */
+  .action-buttons {
+    display: flex;
+    gap: 10px;
+  }
+
+  .contact-address-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-top: 15px;
+  }
+
+  .subsection-title {
+    font-size: 16px;
+    font-weight: 500;
+    margin: 0 0 15px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--color-border-light);
+  }
+
+  .contact-info, .address-info {
+    background-color: #f9f9f9;
+    border-radius: 6px;
+    padding: 20px;
+  }
+
+  @media screen and (max-width: 767px) {
+    .contact-address-grid {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    .action-buttons {
+      flex-direction: column;
+      gap: 5px;
+    }
+  }
+
   /* Subscription styles */
   .subscriptions-table {
     width: 100%;
