@@ -22,6 +22,28 @@
 
 		<link rel="preload" href="{{ 'global.js' | asset_url }}" as="script">
 		<script src="{{ 'global.js' | asset_url }}" defer></script>
+
+		<script>
+			document.addEventListener('DOMContentLoaded', function() {
+				const urlParams = new URLSearchParams(window.location.search);
+				if (urlParams.get('cart') === 'true') {
+					setTimeout(function() {
+						const cartDrawer = document.querySelector('cart-drawer');
+						if (cartDrawer) {
+							console.log('cart-drawer exists');
+							cartDrawer.open();
+						} else {
+							console.log('cart-drawer does not exist');
+							const cartIcon = document.querySelector('#cart-icon-bubble');
+							if (cartIcon) {
+								cartIcon.click();
+							}
+						}
+					}, 500);
+				}
+			});
+		</script>
+
 		<link rel="preconnect" href="https://cdn.shopify.com">
 		<link rel="dns-prefetch" href="https://cdn.shopify.com">
 		<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
