@@ -135,7 +135,7 @@
     </div>
   </div>
 
-  <div class="info-section subscriptions-section">
+  <div class="info-section subscriptions-section" data-lazy-load="true">
     <div class="section-header">
       <h3 class="section-title">Active Subscriptions</h3>
       <a href="/account/orders" class="action-button view-orders-link" title="View All Orders">
@@ -144,82 +144,17 @@
       </a>
     </div>
     <div class="section-content">
-      {% assign has_subscriptions = false %}
-      {% for order in customer.orders %}
-        {% for line_item in order.line_items %}
-          {% if line_item.selling_plan_allocation %}
-            {% assign has_subscriptions = true %}
-            {% break %}
-          {% endif %}
-        {% endfor %}
-        {% if has_subscriptions %}
-          {% break %}
-        {% endif %}
-      {% endfor %}
-
-      {% if has_subscriptions %}
-        <div class="subscriptions-list">
-          <table class="subscriptions-table">
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>Subscription</th>
-                <th>Next Delivery</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for order in customer.orders %}
-                {% if order.tags contains 'Subscription' or order.attributes['Subscription'] %}
-                  {% for line_item in order.line_items %}
-                    {% if line_item.selling_plan_allocation %}
-                      <tr class="subscription-item">
-                        <td class="product-info">
-                          <div class="product-image">
-                            {% if line_item.image %}
-                              <img src="{{ line_item.image | img_url: '60x60', crop: 'center' }}" alt="{{ line_item.title | escape }}">
-                            {% else %}
-                              <div class="placeholder-image">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                              </div>
-                            {% endif %}
-                          </div>
-                          <div class="product-details">
-                            <p class="product-title">{{ line_item.title }}</p>
-                            <p class="product-variant">{{ line_item.variant.title }}</p>
-                          </div>
-                        </td>
-                        <td class="subscription-plan">
-                          {{ line_item.selling_plan_allocation.selling_plan.name }}
-                        </td>
-                        <td class="next-delivery">
-                          {% assign next_date = order.attributes['next_billing_date'] %}
-                          {% if next_date %}
-                            {{ next_date | date: "%b %d, %Y" }}
-                          {% else %}
-                            Not available
-                          {% endif %}
-                        </td>
-                        <td class="subscription-status">
-                          <span class="status-indicator active">Active</span>
-                        </td>
-                        <td class="subscription-actions">
-                          <a href="/account/orders/{{ order.id }}" class="action-link">Manage</a>
-                        </td>
-                      </tr>
-                    {% endif %}
-                  {% endfor %}
-                {% endif %}
-              {% endfor %}
-            </tbody>
-          </table>
+      <div class="subscriptions-placeholder">
+        <div class="loading-indicator">
+          <svg class="spinner" viewBox="0 0 50 50">
+            <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
+          </svg>
+          <p>Loading your subscriptions...</p>
         </div>
-      {% else %}
-        <div class="empty-subscriptions">
-          <p>You don't have any active subscriptions. <a href="/collections/all" class="browse-link">Browse products</a></p>
-        </div>
-      {% endif %}
+      </div>
+      <div class="subscriptions-content" style="display: none;">
+        <!-- Content will be loaded via JavaScript -->
+      </div>
     </div>
   </div>
 </div>
@@ -393,34 +328,254 @@
         });
       }
     }
+
+    // Lazy load subscriptions
+    const lazyLoadSubscriptions = () => {
+      const subscriptionsSection = document.querySelector('.subscriptions-section');
+      const subscriptionsContent = document.querySelector('.subscriptions-content');
+      const placeholder = document.querySelector('.subscriptions-placeholder');
+
+      if (!subscriptionsSection || !subscriptionsContent) return;
+
+      // Function to check if element is in viewport
+      const isInViewport = (el) => {
+        const rect = el.getBoundingClientRect();
+        return (
+          rect.top <= (window.innerHeight || document.documentElement.clientHeight) + 300 &&
+          rect.bottom >= 0
+        );
+      };
+
+      // Observer for intersection detection
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            loadSubscriptionData();
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { rootMargin: '300px' });
+
+      // Start observing the subscriptions section
+      observer.observe(subscriptionsSection);
+
+      // Load subscription data
+      const loadSubscriptionData = async () => {
+        try {
+          // Generate the subscriptions HTML - in a real implementation,
+          // this could be an AJAX request to a specific endpoint
+          // For this example, we'll use inline Liquid rendering
+
+          const subscriptionsHTML = `
+            {% assign subscription_items = '' | split: '' %}
+            {% assign subscription_count = 0 %}
+            {% assign max_visible = 5 %}
+
+            {% for order in customer.orders %}
+              {% if order.tags contains 'Subscription' or order.attributes['Subscription'] %}
+                {% for line_item in order.line_items %}
+                  {% if line_item.selling_plan_allocation %}
+                    {% assign subscription_items = subscription_items | concat: line_item %}
+                    {% assign subscription_count = subscription_count | plus: 1 %}
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            {% endfor %}
+
+            {% if subscription_count > 0 %}
+              <div class="subscriptions-list">
+                <ul class="subscription-items">
+                  {% for i in (1..subscription_count) %}
+                    {% if forloop.index <= max_visible %}
+                      {% assign line_item = subscription_items[forloop.index0] %}
+                      {% assign order = line_item.order %}
+                      <li class="subscription-item">
+                        <div class="subscription-item-inner">
+                          <div class="subscription-product">
+                            <div class="product-image" data-src="{{ line_item.image | img_url: '60x60', crop: 'center' }}">
+                              <!-- Image will be loaded via JavaScript -->
+                            </div>
+                            <div class="product-details">
+                              <p class="product-title">{{ line_item.title }}</p>
+                              <p class="product-variant">{{ line_item.variant.title }}</p>
+                            </div>
+                          </div>
+                          <div class="subscription-info">
+                            <div class="subscription-detail">
+                              <span class="detail-label">Plan:</span>
+                              <span class="detail-value">{{ line_item.selling_plan_allocation.selling_plan.name }}</span>
+                            </div>
+                            <div class="subscription-detail">
+                              <span class="detail-label">Next:</span>
+                              <span class="detail-value">
+                                {% assign next_date = order.attributes['next_billing_date'] %}
+                                {{ next_date | default: 'Not available' | date: "%b %d, %Y" }}
+                              </span>
+                            </div>
+                            <div class="subscription-detail">
+                              <span class="status-indicator active">Active</span>
+                              <a href="/account/orders/{{ order.id }}" class="action-link">Manage</a>
+                            </div>
+                          </div>
+                        </div>
+                      </li>
+                    {% endif %}
+                  {% endfor %}
+                </ul>
+
+                {% if subscription_count > max_visible %}
+                  <div class="subscription-footer">
+                    <a href="/account/orders" class="view-all-link">View all {{ subscription_count }} subscriptions</a>
+                  </div>
+                {% endif %}
+              </div>
+            {% else %}
+              <div class="empty-subscriptions">
+                <p>You don't have any active subscriptions. <a href="/collections/all" class="browse-link">Browse products</a></p>
+              </div>
+            {% endif %}
+          `;
+
+          // Set the HTML content
+          subscriptionsContent.innerHTML = subscriptionsHTML;
+
+          // Show content, hide placeholder
+          subscriptionsContent.style.display = 'block';
+          placeholder.style.display = 'none';
+
+          // Lazy load images
+          const lazyImages = subscriptionsContent.querySelectorAll('.product-image[data-src]');
+          lazyImages.forEach(imgContainer => {
+            const imgSrc = imgContainer.getAttribute('data-src');
+            if (imgSrc) {
+              const img = new Image();
+              img.src = imgSrc;
+              img.alt = 'Product image';
+              img.onload = () => {
+                imgContainer.appendChild(img);
+                imgContainer.removeAttribute('data-src');
+              };
+
+              // Add placeholder until image loads
+              imgContainer.innerHTML = `
+                <div class="placeholder-image">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                </div>
+              `;
+            }
+          });
+
+        } catch (error) {
+          console.error('Error loading subscriptions:', error);
+          subscriptionsContent.innerHTML = `
+            <div class="error-message">
+              <p>Unable to load your subscriptions. Please try again later.</p>
+            </div>
+          `;
+          subscriptionsContent.style.display = 'block';
+          placeholder.style.display = 'none';
+        }
+      };
+
+      // If IntersectionObserver is not supported, fallback to scroll events
+      if (!('IntersectionObserver' in window)) {
+        const checkScroll = () => {
+          if (isInViewport(subscriptionsSection)) {
+            loadSubscriptionData();
+            window.removeEventListener('scroll', checkScroll);
+          }
+        };
+
+        window.addEventListener('scroll', checkScroll);
+        // Check once on load
+        checkScroll();
+      }
+    };
+
+    // Initialize lazy loading
+    lazyLoadSubscriptions();
   });
 </script>
 
 <style>
-  /* Subscription styles */
-  .subscriptions-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-  }
-
-  .subscriptions-table th {
-    text-align: left;
-    padding: 10px;
-    border-bottom: 1px solid var(--color-border);
-    font-weight: 500;
-    font-size: 14px;
-  }
-
-  .subscriptions-table td {
-    padding: 15px 10px;
-    border-bottom: 1px solid var(--color-border-light);
-    font-size: 14px;
-  }
-
-  .product-info {
+  /* Optimized subscription styles */
+  .subscriptions-placeholder {
+    min-height: 200px;
     display: flex;
     align-items: center;
+    justify-content: center;
+  }
+
+  .loading-indicator {
+    text-align: center;
+  }
+
+  .spinner {
+    animation: rotate 2s linear infinite;
+    width: 30px;
+    height: 30px;
+    margin-bottom: 10px;
+  }
+
+  .spinner .path {
+    stroke: var(--color-primary, #555);
+    stroke-linecap: round;
+    animation: dash 1.5s ease-in-out infinite;
+  }
+
+  @keyframes rotate {
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes dash {
+    0% {
+      stroke-dasharray: 1, 150;
+      stroke-dashoffset: 0;
+    }
+    50% {
+      stroke-dasharray: 90, 150;
+      stroke-dashoffset: -35;
+    }
+    100% {
+      stroke-dasharray: 90, 150;
+      stroke-dashoffset: -124;
+    }
+  }
+
+  .subscription-items {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .subscription-item {
+    margin-bottom: 15px;
+    border-bottom: 1px solid var(--color-border-light, #eee);
+    padding-bottom: 15px;
+  }
+
+  .subscription-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .subscription-item-inner {
+    display: flex;
+    flex-direction: row;
+    gap: 15px;
+  }
+
+  @media (max-width: 767px) {
+    .subscription-item-inner {
+      flex-direction: column;
+    }
+  }
+
+  .subscription-product {
+    display: flex;
+    align-items: flex-start;
+    flex: 0 0 240px;
   }
 
   .product-image {
@@ -430,6 +585,7 @@
     border-radius: 4px;
     overflow: hidden;
     background-color: #f5f5f5;
+    flex-shrink: 0;
   }
 
   .product-image img {
@@ -447,9 +603,26 @@
     background-color: #f5f5f5;
   }
 
-  .product-details {
+  .subscription-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+    flex: 1;
+  }
+
+  .subscription-detail {
     display: flex;
     flex-direction: column;
+  }
+
+  .detail-label {
+    font-size: 12px;
+    color: var(--color-text-light, #777);
+    margin-bottom: 4px;
+  }
+
+  .detail-value {
+    font-weight: 500;
   }
 
   .product-title {
@@ -458,13 +631,9 @@
   }
 
   .product-variant {
-    color: var(--color-text-light);
+    color: var(--color-text-light, #777);
     font-size: 12px;
     margin: 0;
-  }
-
-  .subscription-plan {
-    font-weight: 500;
   }
 
   .status-indicator {
@@ -473,6 +642,7 @@
     border-radius: 12px;
     font-size: 12px;
     font-weight: 500;
+    margin-bottom: 5px;
   }
 
   .status-indicator.active {
@@ -480,21 +650,12 @@
     color: #2ecc71;
   }
 
-  .status-indicator.paused {
-    background-color: #fff8e6;
-    color: #f39c12;
-  }
-
-  .status-indicator.cancelled {
-    background-color: #ffeaea;
-    color: #e74c3c;
-  }
-
   .action-link {
-    color: var(--color-primary);
+    color: var(--color-primary, #555);
     text-decoration: none;
     font-weight: 500;
     transition: opacity 0.2s ease;
+    font-size: 14px;
   }
 
   .action-link:hover {
@@ -508,21 +669,33 @@
     text-align: center;
   }
 
-  .browse-link {
-    color: var(--color-primary);
-    text-decoration: none;
-    font-weight: 500;
+  .subscription-footer {
+    margin-top: 15px;
+    text-align: center;
+    padding-top: 10px;
+    border-top: 1px solid var(--color-border-light, #eee);
   }
 
-  @media screen and (max-width: 767px) {
-    .subscriptions-table {
-      display: block;
-      overflow-x: auto;
-    }
+  .view-all-link {
+    color: var(--color-primary, #555);
+    text-decoration: none;
+    font-weight: 500;
+    display: inline-block;
+    padding: 8px 16px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+  }
 
-    .product-image {
-      width: 40px;
-      height: 40px;
-    }
+  .view-all-link:hover {
+    background-color: #e9e9e9;
+  }
+
+  .error-message {
+    padding: 15px;
+    background-color: #fff1f0;
+    border-radius: 4px;
+    color: #e74c3c;
+    text-align: center;
   }
 </style>
