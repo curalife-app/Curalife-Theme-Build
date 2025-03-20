@@ -92,19 +92,26 @@
 	  justify-content: center;
 	}
 
-	#customer-reviews-{{ section.id }} .swiper-wrapper {
-		display: flex;
+	/* Force visibility regardless of swiper state */
+	#customer-reviews-{{ section.id }} .swiper {
+		background-color: transparent !important;
+	}
+
+	#customer-reviews-{{ section.id }} .swiper .swiper-wrapper {
+		display: flex !important;
 		visibility: visible !important;
 	}
 
-	#customer-reviews-{{ section.id }} .swiper:not(.swiper-initialized) .swiper-wrapper {
-		display: flex;
+	/* Override any Swiper CSS that might hide the wrapper */
+	#customer-reviews-{{ section.id }} .swiper:not([data-swiper-initialized="true"]) .swiper-wrapper {
+		display: flex !important;
+		visibility: visible !important;
 		overflow-x: auto;
 		scroll-snap-type: x mandatory;
 		-webkit-overflow-scrolling: touch;
 	}
 
-	#customer-reviews-{{ section.id }} .swiper:not(.swiper-initialized) .swiper-slide {
+	#customer-reviews-{{ section.id }} .swiper:not([data-swiper-initialized="true"]) .swiper-slide {
 		scroll-snap-align: start;
 		flex-shrink: 0;
 		width: 300px;
@@ -134,7 +141,7 @@
 	    font-size: 20px;
 	  }
 
-	  #customer-reviews-{{ section.id }} .swiper:not(.swiper-initialized) .swiper-slide {
+	  #customer-reviews-{{ section.id }} .swiper:not([data-swiper-initialized="true"]) .swiper-slide {
 		width: 90%;
 	  }
 	}
@@ -149,7 +156,15 @@
 		// Ensure content is visible even before initialization
 		const swiperElement = document.querySelector(swiperSelector);
 		if (swiperElement) {
+			// Force visible immediately
 			swiperElement.style.backgroundColor = 'transparent';
+			swiperElement.setAttribute('data-swiper-initialized', 'true');
+
+			const swiperWrapper = swiperElement.querySelector('.swiper-wrapper');
+			if (swiperWrapper) {
+				swiperWrapper.style.visibility = 'visible';
+				swiperWrapper.style.display = 'flex';
+			}
 
 			// Make slides visible with a fallback layout
 			const slideElements = swiperElement.querySelectorAll('.swiper-slide');
@@ -171,6 +186,13 @@
 					return;
 				}
 
+				// Explicitly mark as initialized before Swiper does
+				elements[0].setAttribute('data-swiper-initialized', 'true');
+				const swiperWrapper = elements[0].querySelector('.swiper-wrapper');
+				if (swiperWrapper) {
+					swiperWrapper.style.visibility = 'visible';
+				}
+
 				const swiper = new Swiper(swiperSelector, {
 					grabCursor: true,
 					slidesPerView: 3,
@@ -188,8 +210,11 @@
 						init: function() {
 							// Hide loader after initialization
 							hideLoader();
-							// Add initialized data attribute
-							elements[0].dataset.swiperInitialized = 'true';
+							// Double check the initialized attribute
+							elements[0].setAttribute('data-swiper-initialized', 'true');
+
+							// Log to confirm attribute is set
+							console.log('Swiper initialized attribute set:', elements[0].getAttribute('data-swiper-initialized'));
 						}
 					}
 				});
@@ -223,8 +248,11 @@
 			if (swiperElement) {
 				// Make sure the content is visible
 				swiperElement.style.backgroundColor = 'transparent';
+				swiperElement.setAttribute('data-swiper-initialized', 'true');
+
 				const swiperWrapper = swiperElement.querySelector('.swiper-wrapper');
 				if (swiperWrapper) {
+					swiperWrapper.style.visibility = 'visible';
 					swiperWrapper.style.display = 'flex';
 					swiperWrapper.style.overflow = 'auto';
 
