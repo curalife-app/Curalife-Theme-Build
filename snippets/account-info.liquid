@@ -586,9 +586,67 @@
     // Handle Delete Address - adding back
     document.querySelectorAll('.delete-address-form').forEach(form => {
       form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
         if (!confirm('Are you sure you want to delete this address?')) {
-          e.preventDefault();
+          return;
         }
+
+        const addressId = this.querySelector('button').dataset.addressId;
+        const addressCard = this.closest('.address-card');
+
+        // Add visual feedback
+        addressCard.style.opacity = '0.5';
+
+        // Create form data with the hidden _method=delete input
+        const formData = new FormData(this);
+
+        // Use Shopify's built-in authenticity tokens by fetching the form action URL
+        fetch(this.action, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        })
+        .then(response => {
+          if (response.ok) {
+            // Remove the card with animation
+            addressCard.style.height = addressCard.offsetHeight + 'px';
+            setTimeout(() => {
+              addressCard.style.height = '0';
+              addressCard.style.padding = '0';
+              addressCard.style.margin = '0';
+              addressCard.style.overflow = 'hidden';
+            }, 10);
+            setTimeout(() => {
+              addressCard.remove();
+              showAddressMessage('Address deleted successfully!', 'success');
+
+              // Check if this was the default address and reload if needed
+              if (addressCard.querySelector('.default-badge')) {
+                setTimeout(() => {
+                  window.location.reload();
+                }, 1000);
+              }
+
+              // If no addresses left, show empty state
+              const remainingAddresses = document.querySelectorAll('.addresses-grid .address-card');
+              if (remainingAddresses.length <= 1) {
+                setTimeout(() => {
+                  window.location.reload();
+                }, 1000);
+              }
+            }, 300);
+          } else {
+            throw new Error('Error deleting address');
+          }
+        })
+        .catch(error => {
+          addressCard.style.opacity = '1';
+          showAddressMessage('Error deleting address. Please try again.', 'error');
+          console.error('Address error:', error);
+        });
       });
     });
 
@@ -626,7 +684,7 @@
           submitBtn.innerHTML = 'Adding...';
           submitBtn.disabled = true;
 
-          fetch('/account/addresses', {
+          fetch(this.action, {
             method: 'POST',
             body: formData,
             headers: {
@@ -635,10 +693,19 @@
           })
           .then(response => {
             if (response.ok) {
-              // Success - reload only the addresses section
+              // Success message
               showAddressMessage('Address added successfully!', 'success');
-              // Refresh the address list without page reload
-              location.reload(); // In a production environment, replace with a partial reload method
+
+              // Close the form
+              addAddressForm.style.display = 'none';
+
+              // Reset the form
+              this.reset();
+
+              // Reload page to show new address
+              setTimeout(() => {
+                window.location.reload();
+              }, 1000);
             } else {
               throw new Error('Error adding address');
             }
@@ -668,7 +735,7 @@
           submitBtn.innerHTML = 'Saving...';
           submitBtn.disabled = true;
 
-          fetch(`/account/addresses/${addressId}`, {
+          fetch(this.action, {
             method: 'POST',
             body: formData,
             headers: {
@@ -678,8 +745,21 @@
           .then(response => {
             if (response.ok) {
               showAddressMessage('Address updated successfully!', 'success');
-              // Refresh the address list without page reload
-              location.reload(); // In a production environment, replace with a partial reload method
+
+              // Check if this form contains a "set as default" checked box
+              const setDefaultCheckbox = this.querySelector('input[name="address[default]"]');
+
+              if (setDefaultCheckbox && setDefaultCheckbox.checked) {
+                // If setting as default, reload the page to update the default address display
+                setTimeout(() => {
+                  window.location.reload();
+                }, 1000);
+              } else {
+                // Otherwise, reload to show the updated address
+                setTimeout(() => {
+                  window.location.reload();
+                }, 1000);
+              }
             } else {
               throw new Error('Error updating address');
             }
@@ -711,9 +791,13 @@
           // Add visual feedback
           addressCard.style.opacity = '0.5';
 
-          fetch(`/account/addresses/${addressId}`, {
+          // Create form data with the hidden _method=delete input
+          const formData = new FormData(this);
+
+          // Use Shopify's built-in authenticity tokens by fetching the form action URL
+          fetch(this.action, {
             method: 'POST',
-            body: new FormData(this),
+            body: formData,
             headers: {
               'X-Requested-With': 'XMLHttpRequest'
             }
@@ -731,6 +815,21 @@
               setTimeout(() => {
                 addressCard.remove();
                 showAddressMessage('Address deleted successfully!', 'success');
+
+                // Check if this was the default address and reload if needed
+                if (addressCard.querySelector('.default-badge')) {
+                  setTimeout(() => {
+                    window.location.reload();
+                  }, 1000);
+                }
+
+                // If no addresses left, show empty state
+                const remainingAddresses = document.querySelectorAll('.addresses-grid .address-card');
+                if (remainingAddresses.length <= 1) {
+                  setTimeout(() => {
+                    window.location.reload();
+                  }, 1000);
+                }
               }, 300);
             } else {
               throw new Error('Error deleting address');
