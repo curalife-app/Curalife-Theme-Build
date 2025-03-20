@@ -147,24 +147,43 @@
 			<button class="close-modal">&times;</button>
 		</div>
 		<div class="modal-content">
+			{% comment %} Check if redirected after successful update {% endcomment %}
+			{% if request.posted_successfully? %}
+				<div class="success-message">
+					<p>Your contact information has been updated successfully!</p>
+				</div>
+			{% endif %}
+
 			<form id="edit-contact-form" method="post" action="/account">
-				<input type="hidden" name="form_type" value="customer_address" />
-				<input type="hidden" name="return_to" value="/account" />
+				{% comment %} Shopify required form inputs {% endcomment %}
+				<input type="hidden" name="form_type" value="customer" />
+				<input type="hidden" name="_method" value="put" />
+				<input type="hidden" name="return_to" value="/account?contact-updated=true" />
+				{% if form.errors %}
+					<div class="error-message">
+						{{ form.errors | default_errors }}
+					</div>
+				{% endif %}
 
 				<div class="form-group">
-					<label for="first_name">First Name</label>
-					<input type="text" id="first_name" name="customer[first_name]" value="{{ customer.first_name }}" />
+					<label for="customer_first_name">First Name</label>
+					<input type="text" id="customer_first_name" name="customer[first_name]" value="{{ customer.first_name }}" required />
 				</div>
 
 				<div class="form-group">
-					<label for="last_name">Last Name</label>
-					<input type="text" id="last_name" name="customer[last_name]" value="{{ customer.last_name }}" />
+					<label for="customer_last_name">Last Name</label>
+					<input type="text" id="customer_last_name" name="customer[last_name]" value="{{ customer.last_name }}" required />
 				</div>
 
 				<div class="form-group">
-					<label for="email">Email</label>
-					<input type="email" id="email" name="customer[email]" value="{{ customer.email }}" />
+					<label for="customer_email">Email</label>
+					<input type="email" id="customer_email" name="customer[email]" value="{{ customer.email }}" required />
 				</div>
+
+                <div class="form-group">
+                    <label for="customer_password">Current Password (required to save changes)</label>
+                    <input type="password" id="customer_password" name="customer[password]" required />
+                </div>
 
 				<div class="form-actions">
 					<button type="submit" class="main-btn">Save Changes</button>
@@ -290,6 +309,74 @@
 				}
 			});
 		});
+
+		// Handle contact form submission
+		const editContactForm = document.getElementById('edit-contact-form');
+		if (editContactForm) {
+			editContactForm.addEventListener('submit', function(e) {
+				const passwordField = document.getElementById('customer_password');
+				if (!passwordField.value) {
+					e.preventDefault();
+					// Create error message if no password
+					const errorDiv = document.createElement('div');
+					errorDiv.className = 'error-message';
+					errorDiv.innerHTML = '<p>Please enter your current password to update your information.</p>';
+
+					// Remove any existing error messages
+					const existingError = editContactForm.querySelector('.error-message');
+					if (existingError) {
+						existingError.remove();
+					}
+
+					editContactForm.insertBefore(errorDiv, editContactForm.firstChild);
+					passwordField.focus();
+				}
+			});
+		}
+
+		// Check for query parameter indicating successful update
+		const urlParams = new URLSearchParams(window.location.search);
+		if (urlParams.get('contact-updated') === 'true') {
+			// Show success message
+			const successDiv = document.createElement('div');
+			successDiv.className = 'success-message';
+			successDiv.innerHTML = '<p>Your contact information has been updated successfully!</p>';
+
+			// Find the contact info section and insert the message
+			const contactInfo = document.querySelector('.contact-info');
+			if (contactInfo) {
+				// Check if success message already exists
+				if (!contactInfo.querySelector('.success-message')) {
+					contactInfo.insertBefore(successDiv, contactInfo.firstChild);
+
+					// Auto remove after 5 seconds
+					setTimeout(() => {
+						successDiv.remove();
+						// Remove the query parameter
+						const url = new URL(window.location);
+						url.searchParams.delete('contact-updated');
+						window.history.replaceState({}, '', url);
+					}, 5000);
+				}
+			}
+		}
+
+		// Check for hash fragment in URL to open modal
+		const hash = window.location.hash;
+		if (hash === '#contact-updated') {
+			const modalEl = document.querySelector('#edit-contact-modal');
+			if (modalEl) {
+				modalEl.classList.add('active');
+				document.body.style.overflow = 'hidden';
+
+				// Auto close after 3 seconds
+				setTimeout(() => {
+					closeModals();
+					// Remove the hash
+					history.replaceState(null, '', '/account#a');
+				}, 3000);
+			}
+		}
 	});
 </script>
 
@@ -698,6 +785,38 @@
 
 	.form-actions button {
 		flex: 1;
+	}
+
+	.success-message {
+		background-color: #e8f7e8;
+		border: 1px solid #c6e6c6;
+		border-radius: 8px;
+		padding: 12px 16px;
+		margin-bottom: 20px;
+		display: flex;
+		align-items: center;
+	}
+
+	.success-message p {
+		color: #2c7b2c;
+		margin: 0;
+		font-weight: 500;
+	}
+
+	.error-message {
+		background-color: #f7e8e8;
+		border: 1px solid #e6c6c6;
+		border-radius: 8px;
+		padding: 12px 16px;
+		margin-bottom: 20px;
+		display: flex;
+		align-items: center;
+	}
+
+	.error-message p {
+		color: #7b2c2c;
+		margin: 0;
+		font-weight: 500;
 	}
 </style>
 
