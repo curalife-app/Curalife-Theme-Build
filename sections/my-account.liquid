@@ -233,13 +233,52 @@
 		const tabs = document.querySelector('#tabs');
 		const tabLinks = Array.from(tabs.querySelectorAll('.tabs .tab a'));
 
-		// Check if we need to activate the My Information tab (after form submission)
+		// Check for query parameter indicating successful update and/or tab activation
 		const urlParams = new URLSearchParams(window.location.search);
-		if (urlParams.get('contact-updated') === 'true') {
+		const contactUpdated = urlParams.get('contact-updated') === 'true';
+
+		// Check if we need to activate the My Information tab (after form submission)
+		if (contactUpdated) {
 			// Find the My Information tab and activate it
 			const infoTab = tabLinks.find(link => link.getAttribute('href') === '#a');
 			if (infoTab) {
 				setActiveTab(infoTab);
+			}
+
+			// Process contact info update (moved from duplicate code below)
+			// Force a page reload when coming back from a successful form submission
+			// This ensures the customer data displayed is refreshed
+			if (!sessionStorage.getItem('contact_info_refreshed')) {
+				sessionStorage.setItem('contact_info_refreshed', 'true');
+				// Reload the page once to refresh customer data
+				window.location.reload();
+				return;
+			}
+
+			// Clear the flag on subsequent page views
+			sessionStorage.removeItem('contact_info_refreshed');
+
+			// Show success message
+			const successDiv = document.createElement('div');
+			successDiv.className = 'success-message';
+			successDiv.innerHTML = '<p>Your contact information has been updated successfully!</p>';
+
+			// Find the contact info section and insert the message
+			const contactInfo = document.querySelector('.contact-info');
+			if (contactInfo) {
+				// Check if success message already exists
+				if (!contactInfo.querySelector('.success-message')) {
+					contactInfo.insertBefore(successDiv, contactInfo.firstChild);
+
+					// Auto remove after 5 seconds
+					setTimeout(() => {
+						successDiv.remove();
+						// Remove the query parameter
+						const url = new URL(window.location);
+						url.searchParams.delete('contact-updated');
+						window.history.replaceState({}, '', url);
+					}, 5000);
+				}
 			}
 		} else if (tabLinks.length > 0) {
 			// Default behavior - activate first tab
@@ -373,45 +412,6 @@
 					editContactForm.insertBefore(errorDiv, editContactForm.firstChild);
 				}
 			});
-		}
-
-		// Check for query parameter indicating successful update
-		const urlParams = new URLSearchParams(window.location.search);
-		if (urlParams.get('contact-updated') === 'true') {
-			// Force a page reload when coming back from a successful form submission
-			// This ensures the customer data displayed is refreshed
-			if (!sessionStorage.getItem('contact_info_refreshed')) {
-				sessionStorage.setItem('contact_info_refreshed', 'true');
-				// Reload the page once to refresh customer data
-				window.location.reload();
-				return;
-			}
-
-			// Clear the flag on subsequent page views
-			sessionStorage.removeItem('contact_info_refreshed');
-
-			// Show success message
-			const successDiv = document.createElement('div');
-			successDiv.className = 'success-message';
-			successDiv.innerHTML = '<p>Your contact information has been updated successfully!</p>';
-
-			// Find the contact info section and insert the message
-			const contactInfo = document.querySelector('.contact-info');
-			if (contactInfo) {
-				// Check if success message already exists
-				if (!contactInfo.querySelector('.success-message')) {
-					contactInfo.insertBefore(successDiv, contactInfo.firstChild);
-
-					// Auto remove after 5 seconds
-					setTimeout(() => {
-						successDiv.remove();
-						// Remove the query parameter
-						const url = new URL(window.location);
-						url.searchParams.delete('contact-updated');
-						window.history.replaceState({}, '', url);
-					}, 5000);
-				}
-			}
 		}
 
 		// Check for hash fragment in URL to open modal
