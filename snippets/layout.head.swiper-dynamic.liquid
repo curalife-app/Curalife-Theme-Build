@@ -1,0 +1,65 @@
+{% comment %}
+  Include this snippet in sections that use Swiper
+  Usage: {% render 'layout.head.swiper-dynamic', selector: '.my-slider-class' %}
+{% endcomment %}
+
+{% assign selector = selector | default: '.swiper' %}
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Check if the section using this swiper is visible
+    const swiperElements = document.querySelectorAll('{{ selector }}');
+
+    if (swiperElements.length > 0) {
+      // Check if any swiper element is in viewport or close to it
+      let isVisible = false;
+
+      swiperElements.forEach(function(element) {
+        const rect = element.getBoundingClientRect();
+        // Consider visible if within 500px of viewport
+        if (
+          rect.top <= (window.innerHeight || document.documentElement.clientHeight) + 500 &&
+          rect.bottom >= -500
+        ) {
+          isVisible = true;
+        }
+      });
+
+      // If a swiper element is visible, load swiper or initialize it
+      if (isVisible) {
+        if (window.loadSwiper) {
+          window.loadSwiper();
+        } else if (!window.isSwiperLoaded && !window.isSwiperLoading) {
+          // Swiper observer not loaded, load swiper directly
+          const link = document.createElement("link");
+          link.rel = "stylesheet";
+          link.href = "https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css";
+          document.head.appendChild(link);
+
+          const script = document.createElement("script");
+          script.src = "https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js";
+          document.body.appendChild(script);
+
+          window.isSwiperLoaded = false;
+          window.isSwiperLoading = true;
+
+          script.onload = function() {
+            window.isSwiperLoaded = true;
+            window.isSwiperLoading = false;
+            console.log('Swiper loaded dynamically for: {{ selector }}');
+          };
+        }
+      } else {
+        // Add to observer if swiper observer is available
+        if (window.swiperObserver) {
+          swiperElements.forEach(function(element) {
+            if (!element.dataset.swiperObserved) {
+              window.swiperObserver.observe(element);
+              element.dataset.swiperObserved = 'true';
+            }
+          });
+        }
+      }
+    }
+  });
+</script>

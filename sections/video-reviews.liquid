@@ -116,19 +116,30 @@
   }
 </style>
 
+{% comment %}
+  Add lazy loading support
+{% endcomment %}
+{% render 'layout.head.swiper-dynamic', selector: '.video-reviews-section .swiper' %}
+
 <script>
-  videoReviewsSliderAllInOne = new Swiper('.video-reviews-section .swiper', {
-      slidesPerView: 'auto',
-      spaceBetween: 8,
-      centeredSlides: true,
-      grabCursor: true,
-      slideToClickedSlide: true,
-      loop: false,
-      navigation: {
-          nextEl: '.video-reviews-section .swiper-button-next',
-          prevEl: '.video-reviews-section .swiper-button-prev',
-          disabledClass: 'disabled'
-      }
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.loadSwiper) {
+      window.loadSwiper(() => {
+        const videoReviewsSliderAllInOne = new Swiper('.video-reviews-section .swiper', {
+          slidesPerView: 'auto',
+          spaceBetween: 8,
+          centeredSlides: true,
+          grabCursor: true,
+          slideToClickedSlide: true,
+          loop: false,
+          navigation: {
+            nextEl: '.video-reviews-section .swiper-button-next',
+            prevEl: '.video-reviews-section .swiper-button-prev',
+            disabledClass: 'disabled'
+          }
+        });
+      });
+    }
   });
 </script>
 

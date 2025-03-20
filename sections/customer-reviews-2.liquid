@@ -78,42 +78,48 @@
 	}
 </style>
 
+{% render 'layout.head.swiper-dynamic', selector: '#customer-reviews-{{ section.id }} .swiper' %}
+
 <script>
-	loadSwiper();
+	document.addEventListener('DOMContentLoaded', () => {
+		if (window.loadSwiper) {
+			window.loadSwiper(() => {
+				const swiper = new Swiper('#customer-reviews-{{ section.id }} .swiper', {
+					grabCursor: true,
+					centeredSlides: true,
+					slidesPerView: 1,
+					reverseDirection: true,
+					loop: true,
+					spaceBetween: 30,
+					effect: 'coverflow',
+					coverflowEffect: {
+						rotate: 0,
+						depth: 400,
+						slideShadows: true
+					},
+					navigation: {
+						nextEl: '#customer-reviews-{{ section.id }} .swiper-button-next',
+						prevEl: '#customer-reviews-{{ section.id }} .swiper-button-prev'
+					},
+					pagination: {
+						el: '#customer-reviews-{{ section.id }} .swiper-pagination',
+						clickable: true
+					},
+					autoplay: { delay: 5000 }
+				});
 
-	const swiper = new Swiper('#customer-reviews-{{ section.id }} .swiper', {
-		grabCursor: true,
-		centeredSlides: true,
-		slidesPerView: 1,
-		reverseDirection: true,
-		loop: true,
-		spaceBetween: 30,
-		effect: 'coverflow',
-		coverflowEffect: {
-			rotate: 0,
-			depth: 400,
-			slideShadows: true
-		},
-		navigation: {
-			nextEl: '#customer-reviews-{{ section.id }} .swiper-button-next',
-			prevEl: '#customer-reviews-{{ section.id }} .swiper-button-prev'
-		},
-		pagination: {
-			el: '#customer-reviews-{{ section.id }} .swiper-pagination',
-			clickable: true
-		},
-		autoplay: { delay: 5000 }
+				window.onresize = queryResizer;
+				queryResizer();
+				function queryResizer() {
+					if (window.innerWidth < 724) swiper.params.slidesPerView = 2;
+					if (window.innerWidth > 501) swiper.params.slidesPerView = 2;
+					if (window.innerWidth > 724) swiper.params.slidesPerView = 2.3;
+					if (window.innerWidth < 501) swiper.params.slidesPerView = 1;
+					swiper.update();
+				}
+			});
+		}
 	});
-
-	window.onresize = queryResizer;
-	queryResizer();
-	function queryResizer() {
-		if (window.innerWidth < 724) swiper.params.slidesPerView = 2;
-		if (window.innerWidth > 501) swiper.params.slidesPerView = 2;
-		if (window.innerWidth > 724) swiper.params.slidesPerView = 2.3;
-		if (window.innerWidth < 501) swiper.params.slidesPerView = 1;
-		swiper.update();
-	}
 </script>
 
 {% schema %}
