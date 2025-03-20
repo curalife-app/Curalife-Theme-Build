@@ -610,6 +610,169 @@
         });
       }
     });
+
+    // Handle address operations with AJAX
+    function setupAddressAjax() {
+      // Add new address form AJAX
+      const newAddressForm = document.querySelector('#AddAddress form');
+      if (newAddressForm) {
+        newAddressForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          const formData = new FormData(this);
+
+          // Add a loading state
+          const submitBtn = this.querySelector('button[type="submit"]');
+          const originalBtnText = submitBtn.innerHTML;
+          submitBtn.innerHTML = 'Adding...';
+          submitBtn.disabled = true;
+
+          fetch('/account/addresses', {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          })
+          .then(response => {
+            if (response.ok) {
+              // Success - reload only the addresses section
+              showAddressMessage('Address added successfully!', 'success');
+              // Refresh the address list without page reload
+              location.reload(); // In a production environment, replace with a partial reload method
+            } else {
+              throw new Error('Error adding address');
+            }
+          })
+          .catch(error => {
+            showAddressMessage('Error adding address. Please try again.', 'error');
+            console.error('Address error:', error);
+          })
+          .finally(() => {
+            // Reset button state
+            submitBtn.innerHTML = originalBtnText;
+            submitBtn.disabled = false;
+          });
+        });
+      }
+
+      // Edit address forms AJAX
+      document.querySelectorAll('[id^="EditAddress_"] form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          const formData = new FormData(this);
+          const addressId = this.closest('[id^="EditAddress_"]').id.replace('EditAddress_', '');
+
+          // Add a loading state
+          const submitBtn = this.querySelector('button[type="submit"]');
+          const originalBtnText = submitBtn.innerHTML;
+          submitBtn.innerHTML = 'Saving...';
+          submitBtn.disabled = true;
+
+          fetch(`/account/addresses/${addressId}`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          })
+          .then(response => {
+            if (response.ok) {
+              showAddressMessage('Address updated successfully!', 'success');
+              // Refresh the address list without page reload
+              location.reload(); // In a production environment, replace with a partial reload method
+            } else {
+              throw new Error('Error updating address');
+            }
+          })
+          .catch(error => {
+            showAddressMessage('Error updating address. Please try again.', 'error');
+            console.error('Address error:', error);
+          })
+          .finally(() => {
+            // Reset button state
+            submitBtn.innerHTML = originalBtnText;
+            submitBtn.disabled = false;
+          });
+        });
+      });
+
+      // Delete address AJAX
+      document.querySelectorAll('.delete-address-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+
+          if (!confirm('Are you sure you want to delete this address?')) {
+            return;
+          }
+
+          const addressId = this.querySelector('button').dataset.addressId;
+          const addressCard = this.closest('.address-card');
+
+          // Add visual feedback
+          addressCard.style.opacity = '0.5';
+
+          fetch(`/account/addresses/${addressId}`, {
+            method: 'POST',
+            body: new FormData(this),
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          })
+          .then(response => {
+            if (response.ok) {
+              // Remove the card with animation
+              addressCard.style.height = addressCard.offsetHeight + 'px';
+              setTimeout(() => {
+                addressCard.style.height = '0';
+                addressCard.style.padding = '0';
+                addressCard.style.margin = '0';
+                addressCard.style.overflow = 'hidden';
+              }, 10);
+              setTimeout(() => {
+                addressCard.remove();
+                showAddressMessage('Address deleted successfully!', 'success');
+              }, 300);
+            } else {
+              throw new Error('Error deleting address');
+            }
+          })
+          .catch(error => {
+            addressCard.style.opacity = '1';
+            showAddressMessage('Error deleting address. Please try again.', 'error');
+            console.error('Address error:', error);
+          });
+        });
+      });
+    }
+
+    // Helper function to show address-related messages
+    function showAddressMessage(message, type = 'success') {
+      const addressSection = document.querySelector('.address-info');
+
+      // Remove any existing messages
+      const existingMessage = addressSection.querySelector('.ajax-message');
+      if (existingMessage) existingMessage.remove();
+
+      // Create new message
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `ajax-message ${type}`;
+      messageDiv.innerHTML = `<p>${message}</p>`;
+
+      // Insert message at the top of the addresses list
+      const addressesList = addressSection.querySelector('.addresses-list');
+      addressesList.insertBefore(messageDiv, addressesList.firstChild);
+
+      // Auto remove after 4 seconds
+      setTimeout(() => {
+        messageDiv.classList.add('fade-out');
+        setTimeout(() => {
+          messageDiv.remove();
+        }, 500);
+      }, 4000);
+    }
+
+    // Initialize AJAX for address forms
+    setupAddressAjax();
   });
 </script>
 
@@ -956,5 +1119,37 @@
   .manage-addresses-btn:hover {
     background-color: rgba(0, 102, 204, 0.05);
     border-color: var(--blue, #0066cc);
+  }
+
+  /* AJAX message styles */
+  .ajax-message {
+    padding: 10px 16px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: opacity 0.5s ease;
+  }
+
+  .ajax-message.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+  }
+
+  .ajax-message.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+  }
+
+  .ajax-message.fade-out {
+    opacity: 0;
+  }
+
+  /* Address card transition styles */
+  .address-card {
+    transition: opacity 0.3s ease, height 0.3s ease, padding 0.3s ease, margin 0.3s ease;
   }
 </style>
