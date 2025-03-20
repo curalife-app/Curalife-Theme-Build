@@ -271,7 +271,28 @@
       </div>
     </div>
 
-    {% render 'layout.head.swiper-dynamic', selector: '#collection-container-' | append: section.id | append: ' .swiper' %}
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        loadSwiper(() => {
+          console.log('Initializing collection items swiper for section', '{{ section.id }}');
+          const itemsSwiper = initializeSwiper('#collection-container-{{ section.id }} .swiper', {
+            slidesPerView: 'auto',
+            spaceBetween: 20,
+            grabCursor: true,
+            navigation: {
+              nextEl: '#collection-container-{{ section.id }} .swiper-button-next',
+              prevEl: '#collection-container-{{ section.id }} .swiper-button-prev'
+            },
+            breakpoints: {
+              320: { slidesPerView: 1, spaceBetween: 10 },
+              560: { slidesPerView: 2, spaceBetween: 20 },
+              768: { slidesPerView: 3, spaceBetween: 20 },
+              1024: { slidesPerView: 4, spaceBetween: 20 }
+            }
+          });
+        });
+      });
+    </script>
   {% endif %}
 </div>
 
