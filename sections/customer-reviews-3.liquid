@@ -4,29 +4,28 @@
 			<div class="swiper-wrapper">
 				{% for review in section.blocks %}
 					<div class="review swiper-slide {% unless review.settings.image %}no-image{% endunless %}">
-						<div class="review-wrapper flex flex-col items-center text-center p-6 bg-light-blue !h-[600px] mbl:!h-[160vw] rounded-xl md:m-auto md:w-[90%]">
+						<div class="review-wrapper flex flex-col items-center text-center p-6 bg-light-blue rounded-xl md:m-auto md:w-[90%]" style="height: auto; min-height: 400px;">
 							{% if review.settings.image %}
 								<img class="my-4" src="{{ review.settings.image | img_url: 'master' }}" alt="{{ review.settings.name }}">
 							{% endif %}
 
 							<div class="name text-[26px] text-[#3A7684] mb-4">{{ review.settings.name }}</div>
 							<div class="title font-italic mb-4 font-bold text-black">{{ review.settings.title }}</div>
+							<blockquote class="quote p-0 text-black border-0">{{ review.settings.quote }}</blockquote>
 
 							{% if section.settings.is_show_stars %}
-								<div class="stars w-fill absolute bottom-0 pb-6 text-center">
+								<div class="stars w-fill text-center mt-auto pt-4 pb-2">
 									{% render 'rating-stars', rating: '5' %}
 								</div>
 							{%- endif %}
-
-							<blockquote class="quote p-0 text-black border-0">{{ review.settings.quote }}</blockquote>
 						</div>
 					</div>
 				{% endfor %}
 			</div>
 		</div>
 
-		<div class="swiper-nav swiper-button-prev desktop"></div>
-		<div class="swiper-nav swiper-button-next desktop"></div>
+		<div class="swiper-nav swiper-button-prev"></div>
+		<div class="swiper-nav swiper-button-next"></div>
 	</div>
 </section>
 
@@ -41,21 +40,25 @@
 	  --swiper-nav-size-mobile: 10vw;
 	}
 
+	#customer-reviews-{{ section.id }} .review-wrapper {
+		height: auto;
+		min-height: 400px;
+		display: flex;
+		flex-direction: column;
+	}
+
 	#customer-reviews-{{ section.id }} .review.no-image .name {
 	  margin-top: 60px;
 	  font-size: 26px;
 	}
 
-
 	#customer-reviews-{{ section.id }} .review.no-image .quote {
 	  font-size: 24px;
 	}
 
-	#customer-reviews-{{ section.id }} .review:not(.no-image) .stars {
-	  position: absolute;
-	  bottom: 0;
-	  left: 0;
-	  width: -webkit-fill-available;
+	#customer-reviews-{{ section.id }} .stars {
+		margin-top: auto;
+		padding-bottom: 1rem;
 	}
 
 	#customer-reviews-{{ section.id }} .swiper-nav::after {
@@ -84,16 +87,51 @@
 	}
 </style>
 
-{% render 'layout.head.swiper-dynamic', selector: '#customer-reviews-' | append: section.id | append: ' .swiper' %}
-
 <script>
 	document.addEventListener('DOMContentLoaded', () => {
 		const sectionId = '{{ section.id }}';
 		const swiperSelector = '#customer-reviews-' + sectionId + ' .swiper';
 
-		if (window.loadSwiper) {
-			window.loadSwiper(() => {
-				let swiper = new Swiper(swiperSelector, {
+		// Include direct Swiper loading for this specific section
+		if (!window.isSwiperLoaded && !window.isSwiperLoading) {
+			// Load CSS
+			const linkExists = document.querySelector('link[href*="swiper-bundle.min.css"]');
+			if (!linkExists) {
+				const link = document.createElement("link");
+				link.rel = "stylesheet";
+				link.href = "https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css";
+				document.head.appendChild(link);
+				console.log('Swiper CSS loaded directly by customer reviews section');
+			}
+
+			// Load JS
+			const scriptExists = document.querySelector('script[src*="swiper-bundle.min.js"]');
+			if (!scriptExists) {
+				const script = document.createElement("script");
+				script.src = "https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js";
+				script.onload = () => {
+					console.log('Swiper JS loaded directly by customer reviews section');
+					initSwiper();
+				};
+				document.body.appendChild(script);
+			}
+		} else if (window.loadSwiper) {
+			window.loadSwiper(initSwiper);
+		} else if (typeof Swiper !== 'undefined') {
+			initSwiper();
+		}
+
+		function initSwiper() {
+			try {
+				const elements = document.querySelectorAll(swiperSelector);
+				console.log('Customer reviews section found swiper elements:', elements.length);
+
+				if (elements.length === 0) {
+					console.error('No swiper elements found for selector', swiperSelector);
+					return;
+				}
+
+				const swiper = new Swiper(swiperSelector, {
 					grabCursor: true,
 					slidesPerView: 3,
 					spaceBetween: 30,
@@ -107,7 +145,10 @@
 						768: { slidesPerView: 3, spaceBetween: 30 }
 					}
 				});
-			});
+				console.log('Customer reviews Swiper initialized:', swiper);
+			} catch (error) {
+				console.error('Error initializing customer reviews Swiper:', error);
+			}
 		}
 	});
 </script>

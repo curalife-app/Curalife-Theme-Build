@@ -11,7 +11,10 @@
     // Ensure selector is properly interpolated in Liquid before sending to JS
     {% assign clean_selector = selector | replace: "{", "" | replace: "}", "" %}
     const selectorString = '{{ clean_selector | escape }}';
+    console.log('[Swiper Dynamic] Looking for elements with selector:', selectorString);
+
     const swiperElements = document.querySelectorAll(selectorString);
+    console.log('[Swiper Dynamic] Found elements:', swiperElements.length);
 
     if (swiperElements.length > 0) {
       // Check if any swiper element is in viewport or close to it
@@ -19,20 +22,25 @@
 
       swiperElements.forEach(function(element) {
         const rect = element.getBoundingClientRect();
-        // Consider visible if within 500px of viewport
-        if (
+        const inViewport = (
           rect.top <= (window.innerHeight || document.documentElement.clientHeight) + 500 &&
           rect.bottom >= -500
-        ) {
+        );
+        console.log('[Swiper Dynamic] Element visibility check:', inViewport, rect);
+        if (inViewport) {
           isVisible = true;
         }
       });
 
+      console.log('[Swiper Dynamic] Is visible in viewport:', isVisible);
+
       // If a swiper element is visible, load swiper or initialize it
       if (isVisible) {
         if (window.loadSwiper) {
+          console.log('[Swiper Dynamic] Calling loadSwiper function');
           window.loadSwiper();
         } else if (!window.isSwiperLoaded && !window.isSwiperLoading) {
+          console.log('[Swiper Dynamic] loadSwiper not available, loading Swiper directly');
           // Swiper observer not loaded, load swiper directly
           const link = document.createElement("link");
           link.rel = "stylesheet";
@@ -49,18 +57,21 @@
           script.onload = function() {
             window.isSwiperLoaded = true;
             window.isSwiperLoading = false;
-            console.log('Swiper loaded dynamically for: ' + selectorString);
+            console.log('[Swiper Dynamic] Swiper loaded directly for: ' + selectorString);
           };
         }
       } else {
         // Add to observer if swiper observer is available
         if (window.swiperObserver) {
+          console.log('[Swiper Dynamic] Adding elements to observer');
           swiperElements.forEach(function(element) {
             if (!element.dataset.swiperObserved) {
               window.swiperObserver.observe(element);
               element.dataset.swiperObserved = 'true';
             }
           });
+        } else {
+          console.log('[Swiper Dynamic] swiperObserver not available');
         }
       }
     }
