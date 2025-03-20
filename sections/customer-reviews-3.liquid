@@ -23,7 +23,7 @@
 							<blockquote class="quote p-0 text-black border-0">{{ review.settings.quote }}</blockquote>
 
 							{% if section.settings.is_show_stars %}
-								<div class="stars w-fill text-center mt-auto pt-4 pb-2">
+								<div class="stars w-fill pt-4 pb-2 mt-auto text-center">
 									{% render 'rating-stars', rating: '5' %}
 								</div>
 							{%- endif %}
@@ -92,29 +92,14 @@
 	  justify-content: center;
 	}
 
-	/* Force visibility regardless of swiper state */
-	#customer-reviews-{{ section.id }} .swiper {
-		background-color: transparent !important;
-	}
-
-	#customer-reviews-{{ section.id }} .swiper .swiper-wrapper {
-		display: flex !important;
-		visibility: visible !important;
-	}
-
-	/* Override any Swiper CSS that might hide the wrapper */
-	#customer-reviews-{{ section.id }} .swiper:not([data-swiper-initialized="true"]) .swiper-wrapper {
-		display: flex !important;
-		visibility: visible !important;
+	/* Basic fallback styles for no-js environments */
+	.no-js #customer-reviews-{{ section.id }} .swiper-wrapper {
+		display: flex;
 		overflow-x: auto;
-		scroll-snap-type: x mandatory;
-		-webkit-overflow-scrolling: touch;
 	}
 
-	#customer-reviews-{{ section.id }} .swiper:not([data-swiper-initialized="true"]) .swiper-slide {
-		scroll-snap-align: start;
-		flex-shrink: 0;
-		width: 300px;
+	.no-js #customer-reviews-{{ section.id }} .swiper-slide {
+		flex: 0 0 300px;
 		margin-right: 20px;
 	}
 
@@ -141,192 +126,55 @@
 	    font-size: 20px;
 	  }
 
-	  #customer-reviews-{{ section.id }} .swiper:not([data-swiper-initialized="true"]) .swiper-slide {
-		width: 90%;
+	  .no-js #customer-reviews-{{ section.id }} .swiper-slide {
+		flex: 0 0 90%;
 	  }
 	}
 </style>
 
 <script>
-	document.addEventListener('DOMContentLoaded', () => {
+	document.addEventListener('DOMContentLoaded', function() {
 		const sectionId = '{{ section.id }}';
 		const swiperSelector = '#customer-reviews-' + sectionId + ' .swiper';
 		const loaderElement = document.getElementById('customer-reviews-' + sectionId + '-loader');
 
-		// Ensure content is visible even before initialization
-		const swiperElement = document.querySelector(swiperSelector);
-		if (swiperElement) {
-			// Force visible immediately
-			swiperElement.style.backgroundColor = 'transparent';
-			swiperElement.setAttribute('data-swiper-initialized', 'true');
-
-			const swiperWrapper = swiperElement.querySelector('.swiper-wrapper');
-			if (swiperWrapper) {
-				swiperWrapper.style.visibility = 'visible';
-				swiperWrapper.style.display = 'flex';
-			}
-
-			// Make slides visible with a fallback layout
-			const slideElements = swiperElement.querySelectorAll('.swiper-slide');
-			slideElements.forEach(slide => {
-				slide.style.minWidth = '300px';
-				slide.style.marginRight = '20px';
-			});
-		}
-
-		// Function to initialize swiper
-		function initSwiper() {
-			try {
-				const elements = document.querySelectorAll(swiperSelector);
-				console.log('Customer reviews section found swiper elements:', elements.length);
-
-				if (elements.length === 0) {
-					console.error('No swiper elements found for selector', swiperSelector);
-					hideLoader();
-					return;
-				}
-
-				// Explicitly mark as initialized before Swiper does
-				elements[0].setAttribute('data-swiper-initialized', 'true');
-				const swiperWrapper = elements[0].querySelector('.swiper-wrapper');
-				if (swiperWrapper) {
-					swiperWrapper.style.visibility = 'visible';
-				}
-
-				const swiper = new Swiper(swiperSelector, {
-					grabCursor: true,
-					slidesPerView: 3,
-					spaceBetween: 30,
-					navigation: {
-						nextEl: '#customer-reviews-' + sectionId + ' .swiper-button-next',
-						prevEl: '#customer-reviews-' + sectionId + ' .swiper-button-prev'
-					},
-					breakpoints: {
-						320: { slidesPerView: 1, spaceBetween: 10, autoHeight: true },
-						501: { slidesPerView: 2, spaceBetween: 20 },
-						768: { slidesPerView: 3, spaceBetween: 30 }
-					},
-					on: {
-						init: function() {
-							// Hide loader after initialization
-							hideLoader();
-							// Double check the initialized attribute
-							elements[0].setAttribute('data-swiper-initialized', 'true');
-
-							// Log to confirm attribute is set
-							console.log('Swiper initialized attribute set:', elements[0].getAttribute('data-swiper-initialized'));
-						}
-					}
-				});
-				console.log('Customer reviews Swiper initialized:', swiper);
-
-				// Ensure navigation is visible
-				const navButtons = document.querySelectorAll('#customer-reviews-' + sectionId + ' .swiper-nav');
-				navButtons.forEach(button => {
-					button.style.display = 'flex';
-				});
-
-				return swiper;
-			} catch (error) {
-				console.error('Error initializing customer reviews Swiper:', error);
-				hideLoader();
-				// Make content visible anyway as fallback
-				showFallbackLayout();
-			}
-		}
-
-		// Function to hide loader
+		// Hide loader when Swiper is initialized or after timeout
 		function hideLoader() {
 			if (loaderElement) {
 				loaderElement.style.display = 'none';
 			}
 		}
 
-		// Function to show fallback layout if Swiper fails
-		function showFallbackLayout() {
-			const swiperElement = document.querySelector(swiperSelector);
-			if (swiperElement) {
-				// Make sure the content is visible
-				swiperElement.style.backgroundColor = 'transparent';
-				swiperElement.setAttribute('data-swiper-initialized', 'true');
+		// Set a timeout to hide loader even if Swiper fails to initialize
+		setTimeout(hideLoader, 3000);
 
-				const swiperWrapper = swiperElement.querySelector('.swiper-wrapper');
-				if (swiperWrapper) {
-					swiperWrapper.style.visibility = 'visible';
-					swiperWrapper.style.display = 'flex';
-					swiperWrapper.style.overflow = 'auto';
+		// Use the simple callback pattern for Swiper initialization
+		loadSwiper(() => {
+			console.log('Initializing customer reviews swiper');
 
-					// Make slides show in a horizontal scrollable layout
-					const slideElements = swiperElement.querySelectorAll('.swiper-slide');
-					slideElements.forEach(slide => {
-						slide.style.minWidth = '300px';
-						slide.style.marginRight = '20px';
-					});
-				}
-			}
-
-			// Hide navigation arrows since they won't work
-			const navButtons = document.querySelectorAll('#customer-reviews-' + sectionId + ' .swiper-nav');
-			navButtons.forEach(button => {
-				button.style.display = 'none';
-			});
-		}
-
-		// Include direct Swiper loading for this specific section
-		if (!window.isSwiperLoaded && !window.isSwiperLoading) {
-			// Load CSS
-			const linkExists = document.querySelector('link[href*="swiper-bundle.min.css"]');
-			if (!linkExists) {
-				const link = document.createElement("link");
-				link.rel = "stylesheet";
-				link.href = "https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css";
-				document.head.appendChild(link);
-				console.log('Swiper CSS loaded directly by customer reviews section');
-			}
-
-			// Load JS
-			const scriptExists = document.querySelector('script[src*="swiper-bundle.min.js"]');
-			if (!scriptExists) {
-				const script = document.createElement("script");
-				script.src = "https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js";
-				script.onload = () => {
-					console.log('Swiper JS loaded directly by customer reviews section');
-					initSwiper();
-				};
-				document.body.appendChild(script);
-			} else {
-				// Script already exists but may not be loaded
-				setTimeout(() => {
-					if (typeof Swiper !== 'undefined') {
-						initSwiper();
-					} else {
-						// Wait a bit more and try again
-						setTimeout(() => {
-							if (typeof Swiper !== 'undefined') {
-								initSwiper();
-							} else {
-								console.error('Swiper not available after waiting');
-								showFallbackLayout();
-							}
-						}, 1000);
+			// Initialize the Swiper with the appropriate configuration
+			const swiper = initializeSwiper(swiperSelector, {
+				grabCursor: true,
+				slidesPerView: 3,
+				spaceBetween: 30,
+				navigation: {
+					nextEl: '#customer-reviews-' + sectionId + ' .swiper-button-next',
+					prevEl: '#customer-reviews-' + sectionId + ' .swiper-button-prev'
+				},
+				breakpoints: {
+					320: { slidesPerView: 1, spaceBetween: 10, autoHeight: true },
+					501: { slidesPerView: 2, spaceBetween: 20 },
+					768: { slidesPerView: 3, spaceBetween: 30 }
+				},
+				on: {
+					init: function() {
+						// Hide loader after initialization
+						hideLoader();
+						console.log('Customer reviews Swiper initialized successfully');
 					}
-				}, 300);
-			}
-		} else if (window.loadSwiper) {
-			window.loadSwiper(initSwiper);
-		} else if (typeof Swiper !== 'undefined') {
-			initSwiper();
-		} else {
-			// Swiper not available, show fallback
-			setTimeout(() => {
-				if (typeof Swiper !== 'undefined') {
-					initSwiper();
-				} else {
-					console.error('Swiper not available, showing fallback');
-					showFallbackLayout();
 				}
-			}, 500);
-		}
+			});
+		});
 	});
 </script>
 
