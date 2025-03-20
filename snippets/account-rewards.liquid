@@ -56,144 +56,144 @@
 <style>
   .rewards-container {
     height: 100%;
-  }
+		.rewards-table-wrapper {
+			padding: 0 30px 30px;
+			overflow-x: auto;
+		}
 
-  .rewards-table-wrapper {
-    padding: 0 30px 30px;
-    overflow-x: auto;
-  }
+		.rewards-table {
+			width: 100%;
+			border-collapse: separate;
+			border-spacing: 0;
+			margin: 0;
+			background-color: white;
+			border-radius: 12px;
+			overflow: hidden;
+			box-shadow: 0 5px 20px rgba(0,0,0,0.06);
 
-  .rewards-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    margin: 0;
-    background-color: white;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.06);
-  }
+			thead tr {
+				background-color: var(--blue);
+				color: white;
+			}
 
-  .rewards-table thead tr {
-    background-color: var(--blue);
-    color: white;
-  }
+			th {
+				padding: 18px 20px;
+				font-size: 15px;
+				font-weight: 600;
+				text-align: left;
+				border: none;
+				letter-spacing: 0.5px;
+				position: relative;
 
-  .rewards-table th {
-    padding: 18px 20px;
-    font-size: 15px;
-    font-weight: 600;
-    text-align: left;
-    border: none;
-    letter-spacing: 0.5px;
-    position: relative;
-  }
+				&:not(:last-child)::after {
+					content: '';
+					position: absolute;
+					top: 30%;
+					right: 0;
+					height: 40%;
+					width: 1px;
+					background-color: rgba(255,255,255,0.2);
+				}
+			}
 
-  .rewards-table th:not(:last-child)::after {
-    content: '';
-    position: absolute;
-    top: 30%;
-    right: 0;
-    height: 40%;
-    width:: 1px;
-    background-color: rgba(255,255,255,0.2);
-  }
+			tbody tr {
+				transition: all 0.3s ease;
+				border-bottom: 1px solid rgba(0,0,0,0.06);
 
-  .rewards-table tbody tr {
-    transition: all 0.3s ease;
-    border-bottom: 1px solid rgba(0,0,0,0.06);
-  }
+				&:last-child {
+					border-bottom: none;
+				}
 
-  .rewards-table tbody tr:last-child {
-    border-bottom: none;
-  }
+				&:hover {
+					background-color: rgba(var(--blue-rgb), 0.05);
+				}
+			}
 
-  .rewards-table tbody tr:hover {
-    background-color: rgba(var(--blue-rgb), 0.05);
-  }
+			td {
+				padding: 16px 20px;
+				font-size: 15px;
+				color: var(--dark);
+				vertical-align: middle;
 
-  .rewards-table td {
-    padding: 16px 20px;
-    font-size: 15px;
-    color: var(--dark);
-    vertical-align: middle;
-  }
+				&:nth-child(3) {
+					font-weight: 700;
+					color: var(--blue);
+				}
 
-  .rewards-table td:nth-child(3) {
-    font-weight: 700;
-    color: var(--blue);
-  }
+				&:last-child {
+					text-transform: capitalize;
+					font-weight: 600;
+				}
 
-  .rewards-table td:last-child {
-    text-transform: capitalize;
-    font-weight: 600;
-  }
+				&[data-status="completed"] {
+					color: #2ecc71;
+				}
 
-  .rewards-table td[data-status="completed"] {
-    color: #2ecc71;
-  }
+				&[data-status="pending"] {
+					color: #f1c40f;
+				}
 
-  .rewards-table td[data-status="pending"] {
-    color: #f1c40f;
-  }
+				&[data-status="cancelled"] {
+					color: #e74c3c;
+				}
+			}
+		}
 
-  .rewards-table td[data-status="cancelled"] {
-    color: #e74c3c;
-  }
+		/* No rewards state */
+		.no-rewards {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			padding: 60px 30px;
+			text-align: center;
 
-  /* No rewards state */
-  .no-rewards {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 60px 30px;
-    text-align: center;
-  }
+			&-icon {
+				color: var(--gray);
+				margin-bottom: 20px;
+			}
 
-  .no-rewards-icon {
-    color: var(--gray);
-    margin-bottom: 20px;
-  }
+			&-title {
+				font-size: 24px;
+				font-weight: 700;
+				color: var(--dark);
+				margin: 0 0 10px;
+			}
 
-  .no-rewards-title {
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--dark);
-    margin: 0 0 10px;
-  }
+			&-text {
+				font-size: 16px;
+				color: var(--gray);
+				margin: 0 0 25px;
+				max-width: 400px;
+			}
+		}
 
-  .no-rewards-text {
-    font-size: 16px;
-    color: var(--gray);
-    margin: 0 0 25px;
-    max-width: 400px;
-  }
+		@media (max-width: 992px) {
+			.rewards-table-wrapper {
+				padding: 0 20px 20px;
+			}
+		}
 
-  @media (max-width: 992px) {
-    .rewards-table-wrapper {
-      padding: 0 20px 20px;
-    }
-  }
+		@media (max-width: 768px) {
+			.rewards-table {
+				th, td {
+					padding: 14px 15px;
+				}
 
-  @media (max-width: 768px) {
-    .rewards-table th,
-    .rewards-table td {
-      padding: 14px 15px;
-    }
+				th {
+					font-size: 14px;
+				}
 
-    .rewards-table th {
-      font-size: 14px;
-    }
+				td {
+					font-size: 14px;
+				}
+			}
+		}
 
-    .rewards-table td {
-      font-size: 14px;
-    }
-  }
-
-  @media (max-width: 576px) {
-    .rewards-table {
-      min-width: 500px;
-    }
+		@media (max-width: 576px) {
+			.rewards-table {
+				min-width: 500px;
+			}
+		}
   }
 </style>
