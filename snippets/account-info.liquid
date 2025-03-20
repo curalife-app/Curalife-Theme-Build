@@ -119,7 +119,38 @@
               {%- endform -%}
             </div>
 
-            <div class="addresses-grid">
+            <div class="default-address-container">
+              {%- if customer.default_address -%}
+                <div class="address-card default-only">
+                  <div class="address-header">
+                    <div class="address-title">
+                      <h5>{{ customer.default_address.first_name }} {{ customer.default_address.last_name }}</h5>
+                      <span class="default-badge">Default</span>
+                    </div>
+                  </div>
+                  <div class="address-content">
+                    {%- if customer.default_address.company -%}
+                      <p class="company">{{ customer.default_address.company }}</p>
+                    {%- endif -%}
+                    <p class="street">{{ customer.default_address.address1 }}</p>
+                    {%- if customer.default_address.address2 -%}
+                      <p class="street">{{ customer.default_address.address2 }}</p>
+                    {%- endif -%}
+                    <p class="location">{{ customer.default_address.city }}{% if customer.default_address.province_code %}, {{ customer.default_address.province_code }}{% endif %} {{ customer.default_address.zip }}</p>
+                    <p class="country">{{ customer.default_address.country }}</p>
+                    {%- if customer.default_address.phone -%}
+                      <p class="phone">{{ customer.default_address.phone }}</p>
+                    {%- endif -%}
+                  </div>
+                </div>
+              {%- else -%}
+                <div class="empty-address">
+                  <p>You don't have any addresses saved yet.</p>
+                </div>
+              {%- endif -%}
+            </div>
+
+            <div class="addresses-grid" style="display: none;">
               {%- if customer.addresses.size > 0 -%}
                 {%- for address in customer.addresses -%}
                   <div class="address-card" data-address-id="{{ address.id }}">
@@ -548,6 +579,19 @@
         });
       }
     });
+
+    // Toggle addresses visibility when Manage Addresses is clicked
+    const addressEditLink = document.querySelector('.address-edit-link');
+    const addressesGrid = document.querySelector('.addresses-grid');
+    const defaultAddressContainer = document.querySelector('.default-address-container');
+
+    if (addressEditLink && addressesGrid && defaultAddressContainer) {
+      addressEditLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        addressesGrid.style.display = addressesGrid.style.display === 'none' ? 'block' : 'none';
+        defaultAddressContainer.style.display = addressesGrid.style.display === 'none' ? 'block' : 'none';
+      });
+    }
   });
 </script>
 
