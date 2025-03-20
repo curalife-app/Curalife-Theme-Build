@@ -1,5 +1,14 @@
 <section id="customer-reviews-{{ section.id }}" class="customer-reviews">
 	<div class="container relative">
+		<!-- Add loading indicator -->
+		<div class="swiper-loader" id="customer-reviews-{{ section.id }}-loader">
+			<div class="swiper-loader-spinner">
+				<div class="swiper-loader-bounce1"></div>
+				<div class="swiper-loader-bounce2"></div>
+				<div class="swiper-loader-bounce3"></div>
+			</div>
+		</div>
+
 		<div class="reviews swiper overflow-visible">
 			<div class="swiper-wrapper">
 				{% for review in section.blocks %}
@@ -40,6 +49,15 @@
 	  --swiper-nav-size-mobile: 10vw;
 	}
 
+	#customer-reviews-{{ section.id }} {
+		position: relative;
+		margin: 2rem 0;
+	}
+
+	#customer-reviews-{{ section.id }} .container {
+		overflow: visible;
+	}
+
 	#customer-reviews-{{ section.id }} .review-wrapper {
 		height: auto;
 		min-height: 400px;
@@ -74,6 +92,37 @@
 	  justify-content: center;
 	}
 
+	#customer-reviews-{{ section.id }} .swiper-wrapper {
+		display: flex;
+		visibility: visible !important;
+	}
+
+	#customer-reviews-{{ section.id }} .swiper:not(.swiper-initialized) .swiper-wrapper {
+		display: flex;
+		overflow-x: auto;
+		scroll-snap-type: x mandatory;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	#customer-reviews-{{ section.id }} .swiper:not(.swiper-initialized) .swiper-slide {
+		scroll-snap-align: start;
+		flex-shrink: 0;
+		width: 300px;
+		margin-right: 20px;
+	}
+
+	/* Loading indicator positioning */
+	#customer-reviews-{{ section.id }}-loader {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		z-index: 10;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+
 	@media screen and (max-width: 768px) {
 	  :root {
 	    --swiper-navigation-sides-offset: var(--swiper-navigation-sides-offset-mobile);
@@ -84,6 +133,10 @@
 	    height: var(--swiper-nav-size-mobile);
 	    font-size: 20px;
 	  }
+
+	  #customer-reviews-{{ section.id }} .swiper:not(.swiper-initialized) .swiper-slide {
+		width: 90%;
+	  }
 	}
 </style>
 
@@ -91,6 +144,105 @@
 	document.addEventListener('DOMContentLoaded', () => {
 		const sectionId = '{{ section.id }}';
 		const swiperSelector = '#customer-reviews-' + sectionId + ' .swiper';
+		const loaderElement = document.getElementById('customer-reviews-' + sectionId + '-loader');
+
+		// Ensure content is visible even before initialization
+		const swiperElement = document.querySelector(swiperSelector);
+		if (swiperElement) {
+			swiperElement.style.backgroundColor = 'transparent';
+
+			// Make slides visible with a fallback layout
+			const slideElements = swiperElement.querySelectorAll('.swiper-slide');
+			slideElements.forEach(slide => {
+				slide.style.minWidth = '300px';
+				slide.style.marginRight = '20px';
+			});
+		}
+
+		// Function to initialize swiper
+		function initSwiper() {
+			try {
+				const elements = document.querySelectorAll(swiperSelector);
+				console.log('Customer reviews section found swiper elements:', elements.length);
+
+				if (elements.length === 0) {
+					console.error('No swiper elements found for selector', swiperSelector);
+					hideLoader();
+					return;
+				}
+
+				const swiper = new Swiper(swiperSelector, {
+					grabCursor: true,
+					slidesPerView: 3,
+					spaceBetween: 30,
+					navigation: {
+						nextEl: '#customer-reviews-' + sectionId + ' .swiper-button-next',
+						prevEl: '#customer-reviews-' + sectionId + ' .swiper-button-prev'
+					},
+					breakpoints: {
+						320: { slidesPerView: 1, spaceBetween: 10, autoHeight: true },
+						501: { slidesPerView: 2, spaceBetween: 20 },
+						768: { slidesPerView: 3, spaceBetween: 30 }
+					},
+					on: {
+						init: function() {
+							// Hide loader after initialization
+							hideLoader();
+							// Add initialized data attribute
+							elements[0].dataset.swiperInitialized = 'true';
+						}
+					}
+				});
+				console.log('Customer reviews Swiper initialized:', swiper);
+
+				// Ensure navigation is visible
+				const navButtons = document.querySelectorAll('#customer-reviews-' + sectionId + ' .swiper-nav');
+				navButtons.forEach(button => {
+					button.style.display = 'flex';
+				});
+
+				return swiper;
+			} catch (error) {
+				console.error('Error initializing customer reviews Swiper:', error);
+				hideLoader();
+				// Make content visible anyway as fallback
+				showFallbackLayout();
+			}
+		}
+
+		// Function to hide loader
+		function hideLoader() {
+			if (loaderElement) {
+				loaderElement.style.display = 'none';
+			}
+		}
+
+		// Function to show fallback layout if Swiper fails
+		function showFallbackLayout() {
+			const swiperElement = document.querySelector(swiperSelector);
+			if (swiperElement) {
+				// Make sure the content is visible
+				swiperElement.style.backgroundColor = 'transparent';
+				const swiperWrapper = swiperElement.querySelector('.swiper-wrapper');
+				if (swiperWrapper) {
+					swiperWrapper.style.display = 'flex';
+					swiperWrapper.style.overflow = 'auto';
+
+					// Make slides show in a horizontal scrollable layout
+					const slideElements = swiperElement.querySelectorAll('.swiper-slide');
+					slideElements.forEach(slide => {
+						slide.style.minWidth = '300px';
+						slide.style.marginRight = '20px';
+					});
+				}
+			}
+
+			// Hide navigation arrows since they won't work
+			const navButtons = document.querySelectorAll('#customer-reviews-' + sectionId + ' .swiper-nav');
+			navButtons.forEach(button => {
+				button.style.display = 'none';
+			});
+		}
 
 		// Include direct Swiper loading for this specific section
 		if (!window.isSwiperLoaded && !window.isSwiperLoading) {
@@ -114,41 +266,38 @@
 					initSwiper();
 				};
 				document.body.appendChild(script);
+			} else {
+				// Script already exists but may not be loaded
+				setTimeout(() => {
+					if (typeof Swiper !== 'undefined') {
+						initSwiper();
+					} else {
+						// Wait a bit more and try again
+						setTimeout(() => {
+							if (typeof Swiper !== 'undefined') {
+								initSwiper();
+							} else {
+								console.error('Swiper not available after waiting');
+								showFallbackLayout();
+							}
+						}, 1000);
+					}
+				}, 300);
 			}
 		} else if (window.loadSwiper) {
 			window.loadSwiper(initSwiper);
 		} else if (typeof Swiper !== 'undefined') {
 			initSwiper();
-		}
-
-		function initSwiper() {
-			try {
-				const elements = document.querySelectorAll(swiperSelector);
-				console.log('Customer reviews section found swiper elements:', elements.length);
-
-				if (elements.length === 0) {
-					console.error('No swiper elements found for selector', swiperSelector);
-					return;
+		} else {
+			// Swiper not available, show fallback
+			setTimeout(() => {
+				if (typeof Swiper !== 'undefined') {
+					initSwiper();
+				} else {
+					console.error('Swiper not available, showing fallback');
+					showFallbackLayout();
 				}
-
-				const swiper = new Swiper(swiperSelector, {
-					grabCursor: true,
-					slidesPerView: 3,
-					spaceBetween: 30,
-					navigation: {
-						nextEl: '#customer-reviews-' + sectionId + ' .swiper-button-next',
-						prevEl: '#customer-reviews-' + sectionId + ' .swiper-button-prev'
-					},
-					breakpoints: {
-						320: { slidesPerView: 1, spaceBetween: 10, autoHeight: true },
-						501: { slidesPerView: 2, spaceBetween: 20 },
-						768: { slidesPerView: 3, spaceBetween: 30 }
-					}
-				});
-				console.log('Customer reviews Swiper initialized:', swiper);
-			} catch (error) {
-				console.error('Error initializing customer reviews Swiper:', error);
-			}
+			}, 500);
 		}
 	});
 </script>
