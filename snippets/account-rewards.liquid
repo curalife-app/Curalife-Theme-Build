@@ -66,10 +66,10 @@
             const pointSign = pointsValue < 0 ? '' : '+';
 
             row.innerHTML = `
-              <td><span class="date-cell">${item.date || ''}</span></td>
-              <td><span class="action-cell">${item.action || ''}</span></td>
-              <td><span class="points-cell ${pointClass}">${pointSign}${pointsValue}</span></td>
-              <td><span class="status-cell ${statusClass}">${statusIcon} ${item.status || ''}</span></td>
+              <td data-label="Date"><span class="date-cell">${item.date || ''}</span></td>
+              <td data-label="Action"><span class="action-cell">${item.action || ''}</span></td>
+              <td data-label="Points"><span class="points-cell ${pointClass}">${pointSign}${pointsValue}</span></td>
+              <td data-label="Status"><span class="status-cell ${statusClass}">${statusIcon} ${item.status || ''}</span></td>
             `;
             fragment.appendChild(row);
           });
@@ -309,6 +309,14 @@
     border-color: #10b981;
   }
 
+  .copy-btn svg {
+    transition: transform 0.2s ease;
+  }
+
+  .copy-btn:active svg {
+    transform: scale(0.9);
+  }
+
   .rewards-history-section {
     background: white;
     border-radius: 20px;
@@ -453,6 +461,9 @@
     .referral-link-display {
       margin-right: 0;
       margin-bottom: 46px;
+      white-space: normal;
+      word-break: break-all;
+      font-size: 13px;
     }
 
     .copy-btn {
@@ -504,6 +515,11 @@
       text-align: right;
       padding: 10px 0;
       position: relative;
+      border-bottom: 1px dashed rgba(229, 231, 235, 0.8);
+    }
+
+    .rewards-table td:last-child {
+      border-bottom: none;
     }
 
     .rewards-table td::before {
@@ -517,6 +533,10 @@
     .rewards-table .status-pending,
     .rewards-table .status-refunded {
       justify-content: flex-end;
+    }
+
+    .rewards-history-section {
+      margin-top: 8px;
     }
   }
 
@@ -544,6 +564,24 @@
 
     .points-display {
       font-size: 28px;
+    }
+
+    .history-info {
+      font-size: 12px;
+    }
+
+    .rewards-table td {
+      padding: 8px 0;
+      font-size: 13px;
+    }
+
+    .rewards-table td::before {
+      font-size: 13px;
+    }
+
+    .no-history {
+      font-size: 14px;
+      padding: 24px 0;
     }
   }
 </style>
