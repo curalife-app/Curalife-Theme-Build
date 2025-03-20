@@ -1,38 +1,65 @@
 <div class="rewards-container">
     <script>
       document.addEventListener("swell:setup", function() {
-      const customerDetails = swellAPI.getCustomerDetails(); // Assuming this returns a plain object
+        try {
+          const customerDetails = swellAPI.getCustomerDetails();
+          if (!customerDetails) {
+            console.error('Failed to retrieve customer details');
+            return;
+          }
 
-      // Update point balance
-      const pointBalanceElement = document.getElementById("custom-point-balance-ui");
-      if (pointBalanceElement) {
-        pointBalanceElement.textContent = customerDetails.pointsBalance;
-      }
+          // Update point balance
+          const pointBalanceElement = document.getElementById("custom-point-balance-ui");
+          if (pointBalanceElement) {
+            pointBalanceElement.textContent = customerDetails.pointsBalance || 0;
+          }
 
-      // Update referral link
-      const referralLinkElement = document.getElementById("custom-referral-link-ui");
-      if (referralLinkElement) {
-        referralLinkElement.textContent = customerDetails.referralLink;
-      }
+          // Update referral link
+          const referralLinkElement = document.getElementById("custom-referral-link-ui");
+          if (referralLinkElement) {
+            referralLinkElement.textContent = customerDetails.referralLink || '';
+          }
 
-      // Populate action history
-      const historyContainer = document.getElementById("custom-history-container");
-      if (historyContainer) {
-        customerDetails.actionHistoryItems.forEach(function(item) {
-          const row = document.createElement("tr");
-          row.innerHTML = `
-            <td>${item.date}</td>
-            <td>${item.action}</td>
-            <td>${item.points}</td>
-            <td>${item.status}</td>
-          `;
-          historyContainer.appendChild(row);
-        });
-      }
-    });
+          // Populate action history with document fragment for better performance
+          const historyContainer = document.getElementById("custom-history-container");
+          if (historyContainer && customerDetails.actionHistoryItems && customerDetails.actionHistoryItems.length) {
+            const fragment = document.createDocumentFragment();
+            customerDetails.actionHistoryItems.forEach(function(item) {
+              const row = document.createElement("tr");
+              row.innerHTML = `
+                <td>${item.date || ''}</td>
+                <td>${item.action || ''}</td>
+                <td>${item.points || 0}</td>
+                <td>${item.status || ''}</td>
+              `;
+              fragment.appendChild(row);
+            });
+            historyContainer.appendChild(fragment);
+          } else if (historyContainer) {
+            const row = document.createElement("tr");
+            row.innerHTML = '<td colspan="4" class="no-history">No reward history available</td>';
+            historyContainer.appendChild(row);
+          }
+        } catch (error) {
+          console.error('Error in rewards component:', error);
+        }
+      });
     </script>
 
+    <div class="rewards-info">
+      <div class="rewards-balance">
+        <h3>Your Points Balance</h3>
+        <p>You have <span id="custom-point-balance-ui">0</span> points</p>
+      </div>
+
+      <div class="rewards-referral">
+        <h3>Your Referral Link</h3>
+        <p>Share this link: <span id="custom-referral-link-ui"></span></p>
+      </div>
+    </div>
+
     <div class="rewards-table-wrapper">
+      <h3>Rewards History</h3>
       <table class="rewards-table">
         <thead>
           <tr>
