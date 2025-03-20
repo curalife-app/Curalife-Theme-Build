@@ -57,13 +57,9 @@
     </button>
   </h6>
 
-  <div class="password-status">
-    <p>Your password is securely stored. For security reasons, we recommend changing your password regularly.</p>
-  </div>
-
   <div class="password-form-wrapper" style="display: none;">
     {% form 'customer' %}
-      <div class="form-row">
+      <div class="form-fields">
         <div class="form-group">
           <label for="CustomerCurrentPassword">Current Password</label>
           <div class="password-input-wrapper">
@@ -74,9 +70,7 @@
             </button>
           </div>
         </div>
-      </div>
 
-      <div class="form-row">
         <div class="form-group">
           <label for="CustomerNewPassword">New Password</label>
           <div class="password-input-wrapper">
@@ -87,13 +81,10 @@
             </button>
           </div>
           <div class="password-strength-meter">
-            <div class="meter-bar"><span class="strength-value"></span></div>
-            <span class="strength-text">Password Strength</span>
+            <span class="strength-value"></span>
           </div>
         </div>
-      </div>
 
-      <div class="form-row">
         <div class="form-group">
           <label for="CustomerPasswordConfirmation">Confirm New Password</label>
           <div class="password-input-wrapper">
@@ -109,7 +100,7 @@
       <input type="hidden" name="return_to" value="/account?password-updated=true#a">
 
       <div class="form-actions">
-        <button type="submit" class="save-password-btn">Update Password</button>
+        <button type="submit" class="save-password-btn">Update</button>
         <button type="button" class="cancel-password-btn">Cancel</button>
       </div>
     {% endform %}
@@ -155,16 +146,6 @@
   padding-top: 30px;
 }
 
-.password-status {
-  margin-bottom: 20px;
-}
-
-.password-status p {
-  color: var(--dark);
-  font-size: 15px;
-  margin: 0;
-}
-
 .password-form-wrapper {
   background-color: rgba(0,0,0,0.02);
   border-radius: 8px;
@@ -173,8 +154,9 @@
   margin-top: 15px;
 }
 
-.form-row {
-  margin-bottom: 15px;
+.form-fields {
+  display: grid;
+  gap: 15px;
 }
 
 .form-group {
@@ -218,15 +200,10 @@
 }
 
 .password-strength-meter {
-  margin-top: 8px;
-  font-size: 12px;
-}
-
-.meter-bar {
-  height: 4px;
-  background-color: #e0e0e0;
+  margin-top: 6px;
+  height: 3px;
+  background-color: #eaeaea;
   border-radius: 2px;
-  margin-bottom: 4px;
   overflow: hidden;
 }
 
@@ -234,13 +211,7 @@
   display: block;
   height: 100%;
   width: 0;
-  background-color: #ff4d4d;
   transition: width 0.3s ease, background-color 0.3s ease;
-}
-
-.strength-text {
-  color: #999;
-  font-size: 12px;
 }
 
 .form-actions {
@@ -282,6 +253,23 @@
   background-color: var(--blue);
   color: white;
 }
+
+.success-message {
+  background-color: #e8f7e8;
+  border: 1px solid #c6e6c6;
+  border-radius: 8px;
+  padding: 10px 16px;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+}
+
+.success-message p {
+  color: #2c7b2c;
+  margin: 0;
+  font-weight: 500;
+  font-size: 14px;
+}
 </style>
 
 {% comment %}
@@ -321,7 +309,7 @@
         const successDiv = document.createElement('div');
         successDiv.className = 'success-message';
         successDiv.innerHTML = '<p>Your password has been updated successfully!</p>';
-        passwordSection.insertBefore(successDiv, passwordSection.querySelector('.password-status'));
+        passwordSection.insertBefore(successDiv, passwordSection.querySelector('.password-form-wrapper'));
 
         // Auto remove after 5 seconds
         setTimeout(() => {
@@ -379,13 +367,11 @@
     // Password strength meter
     const newPasswordInput = document.getElementById('CustomerNewPassword');
     const strengthBar = document.querySelector('.strength-value');
-    const strengthText = document.querySelector('.strength-text');
 
-    if (newPasswordInput && strengthBar && strengthText) {
+    if (newPasswordInput && strengthBar) {
       newPasswordInput.addEventListener('input', function() {
         const password = this.value;
         let strength = 0;
-        let color = '#ff4d4d'; // Red (weak)
 
         if (password.length >= 8) strength += 1;
         if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength += 1;
@@ -395,27 +381,22 @@
         switch (strength) {
           case 0:
             strengthBar.style.width = '0%';
-            strengthText.textContent = 'Password Strength';
             break;
           case 1:
             strengthBar.style.width = '25%';
             strengthBar.style.backgroundColor = '#ff4d4d'; // Red
-            strengthText.textContent = 'Weak';
             break;
           case 2:
             strengthBar.style.width = '50%';
             strengthBar.style.backgroundColor = '#ffa64d'; // Orange
-            strengthText.textContent = 'Fair';
             break;
           case 3:
             strengthBar.style.width = '75%';
             strengthBar.style.backgroundColor = '#99cc00'; // Light Green
-            strengthText.textContent = 'Good';
             break;
           case 4:
             strengthBar.style.width = '100%';
             strengthBar.style.backgroundColor = '#00cc44'; // Green
-            strengthText.textContent = 'Strong';
             break;
         }
       });
