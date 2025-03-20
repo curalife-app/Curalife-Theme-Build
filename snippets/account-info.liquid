@@ -141,21 +141,20 @@
       </a>
     </div>
     <div class="section-content">
-      {% assign has_subscriptions = false %}
+      {% assign has_active_subscriptions = false %}
+      {% assign active_subscription_count = 0 %}
+
       {% for order in customer.orders %}
-        {% for line_item in order.line_items %}
-          {% if line_item.selling_plan_allocation %}
-            {% assign has_subscriptions = true %}
-            {% break %}
+        {% if order.tags contains 'Subscription' or order.attributes['Subscription'] %}
+          {% assign subscription_status = order.attributes['subscription_status'] | default: 'active' | downcase %}
+          {% if subscription_status == 'active' %}
+            {% assign has_active_subscriptions = true %}
+            {% assign active_subscription_count = active_subscription_count | plus: 1 %}
           {% endif %}
-        {% endfor %}
-        {% if has_subscriptions %}
-          {% break %}
         {% endif %}
       {% endfor %}
 
-
-      {% if has_subscriptions %}
+      {% if has_active_subscriptions %}
         <div class="subscriptions-list">
           <table class="subscriptions-table">
             <thead>
@@ -170,44 +169,47 @@
             <tbody>
               {% for order in customer.orders %}
                 {% if order.tags contains 'Subscription' or order.attributes['Subscription'] %}
-                  {% for line_item in order.line_items %}
-                    {% if line_item.selling_plan_allocation %}
-                      <tr class="subscription-item">
-                        <td class="product-info">
-                          <div class="product-image">
-                            {% if line_item.image %}
-                              <img src="{{ line_item.image | img_url: '60x60', crop: 'center' }}" alt="{{ line_item.title | escape }}">
+                  {% assign subscription_status = order.attributes['subscription_status'] | default: 'active' | downcase %}
+                  {% if subscription_status == 'active' %}
+                    {% for line_item in order.line_items %}
+                      {% if line_item.selling_plan_allocation %}
+                        <tr class="subscription-item">
+                          <td class="product-info">
+                            <div class="product-image">
+                              {% if line_item.image %}
+                                <img src="{{ line_item.image | img_url: '60x60', crop: 'center' }}" alt="{{ line_item.title | escape }}">
+                              {% else %}
+                                <div class="placeholder-image">
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                                </div>
+                              {% endif %}
+                            </div>
+                            <div class="product-details">
+                              <p class="product-title">{{ line_item.title }}</p>
+                              <p class="product-variant">{{ line_item.variant.title }}</p>
+                            </div>
+                          </td>
+                          <td class="subscription-plan">
+                            {{ line_item.selling_plan_allocation.selling_plan.name }}
+                          </td>
+                          <td class="next-delivery">
+                            {% assign next_date = order.attributes['next_billing_date'] %}
+                            {% if next_date %}
+                              {{ next_date | date: "%b %d, %Y" }}
                             {% else %}
-                              <div class="placeholder-image">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                              </div>
+                              Not available
                             {% endif %}
-                          </div>
-                          <div class="product-details">
-                            <p class="product-title">{{ line_item.title }}</p>
-                            <p class="product-variant">{{ line_item.variant.title }}</p>
-                          </div>
-                        </td>
-                        <td class="subscription-plan">
-                          {{ line_item.selling_plan_allocation.selling_plan.name }}
-                        </td>
-                        <td class="next-delivery">
-                          {% assign next_date = order.attributes['next_billing_date'] %}
-                          {% if next_date %}
-                            {{ next_date | date: "%b %d, %Y" }}
-                          {% else %}
-                            Not available
-                          {% endif %}
-                        </td>
-                        <td class="subscription-status">
-                          <span class="status-indicator active">Active</span>
-                        </td>
-                        <td class="subscription-actions">
-                          <a href="/account/orders/{{ order.id }}" class="action-link">Manage</a>
-                        </td>
-                      </tr>
-                    {% endif %}
-                  {% endfor %}
+                          </td>
+                          <td class="subscription-status">
+                            <span class="status-indicator active">Active</span>
+                          </td>
+                          <td class="subscription-actions">
+                            <a href="/account/orders/{{ order.id }}" class="action-link">Manage</a>
+                          </td>
+                        </tr>
+                      {% endif %}
+                    {% endfor %}
+                  {% endif %}
                 {% endif %}
               {% endfor %}
             </tbody>
@@ -215,7 +217,7 @@
         </div>
       {% else %}
         <div class="empty-subscriptions">
-          <p>You don't have any active subscriptions. <a href="/collections/all" class="browse-link">Browse products</a></p>
+          <p>There are currently no active subscriptions. <a href="/collections/all" class="browse-link">Browse products</a></p>
         </div>
       {% endif %}
     </div>
