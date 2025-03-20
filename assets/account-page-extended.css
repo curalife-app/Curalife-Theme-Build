@@ -1,0 +1,333 @@
+/* ========== ACCOUNT PAGE EXTENDED STYLES ========== */
+
+/* Additional Variables */
+:root {
+	--accent: var(--orange);
+	--accent-rgb: 245, 158, 11;
+	--dark: #111827;
+	--dark-rgb: 17, 24, 39;
+	--success: #10b981;
+	--success-light: rgba(16, 185, 129, 0.1);
+	--warning: #f59e0b;
+	--warning-light: rgba(245, 158, 11, 0.1);
+	--danger: #ef4444;
+	--danger-light: rgba(239, 68, 68, 0.1);
+
+	/* Borders & Radius */
+	--radius-sm: 4px;
+	--radius-md: 8px;
+	--radius-lg: 12px;
+	--radius-xl: 16px;
+	--radius-2xl: 24px;
+	--radius-full: 9999px;
+	--border-thin: 1px;
+	--border-base: 2px;
+	--border-thick: 3px;
+
+	/* Shadows */
+	--shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+	--shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+	--shadow-md: 0 4px 8px rgba(0, 0, 0, 0.08);
+	--shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.1);
+	--shadow-xl: 0 16px 32px rgba(0, 0, 0, 0.12);
+	--shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+	--shadow-primary: 0 8px 16px rgba(var(--primary-rgb), 0.25);
+}
+
+/* Cards & Buttons */
+.account-page .panel-card {
+	background-color: white;
+	border-radius: var(--radius-xl);
+	box-shadow: var(--shadow-lg);
+	overflow: hidden;
+	transition: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+	position: relative;
+	backface-visibility: hidden;
+	border: var(--border-thin) solid var(--gray-200);
+}
+
+.account-page .panel-header::after {
+	content: "";
+	position: absolute;
+	bottom: -1px;
+	left: 32px;
+	width: 40px;
+	height: var(--border-thick);
+	background: var(--primary);
+	border-radius: var(--radius-full);
+}
+
+/* Additional Sidebar Styles */
+.account-page .sidebar .menu-item {
+	position: relative;
+}
+
+.account-page .sidebar .menu-link::before {
+	content: "";
+	position: absolute;
+	left: 0;
+	top: 0;
+	height: 100%;
+	width: var(--border-thick);
+	background: var(--primary);
+	opacity: 0;
+	transition: opacity 250ms cubic-bezier(0.4, 0, 0.2, 1);
+	border-radius: var(--radius-full);
+}
+
+.account-page .sidebar .menu-link svg {
+	color: var(--gray-500);
+	transition: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.account-page .sidebar .menu-link:hover {
+	background-color: var(--gray-100);
+	color: var(--gray-900);
+}
+
+.account-page .sidebar .menu-link:hover svg {
+	color: var(--primary);
+}
+
+.account-page .sidebar .menu-link:hover::before {
+	opacity: 1;
+}
+
+.account-page .sidebar .menu-link.active::before {
+	opacity: 0;
+}
+
+.account-page .sidebar .menu-link.active {
+	transform: translateX(4px);
+}
+
+.account-page .sidebar .menu-link.logout {
+	margin-top: 12px;
+	background-color: var(--gray-100);
+	color: var(--gray-700);
+	border: var(--border-thin) solid var(--gray-300);
+}
+
+.account-page .sidebar .menu-link.logout:hover {
+	background-color: var(--danger-light);
+	color: var(--danger);
+	border-color: var(--danger);
+}
+
+.account-page .sidebar .menu-link.logout:hover svg {
+	color: var(--danger);
+}
+
+.account-page .mobile-menu-wrapper .mobile-menu:focus {
+	border-color: var(--primary);
+	box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.15);
+	outline: none;
+}
+
+/* Curalifer Features */
+.account-page .curalifer-features {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: 24px;
+	margin-top: 24px;
+}
+
+.account-page .curalifer-features .feature-card {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-decoration: none;
+	background-color: white;
+	border-radius: var(--radius-xl);
+	padding: 32px;
+	box-shadow: var(--shadow-md);
+	transition: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+	border: var(--border-thin) solid var(--gray-200);
+	overflow: hidden;
+	position: relative;
+}
+
+.account-page .curalifer-features .feature-card::after {
+	content: "";
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 100%;
+	height: var(--border-thick);
+	background: linear-gradient(to right, var(--primary), var(--primary-light));
+	transform: scaleX(0);
+	transition: transform 0.4s ease;
+	transform-origin: left;
+}
+
+.account-page .curalifer-features .feature-card:hover::after {
+	transform: scaleX(1);
+}
+
+.account-page .curalifer-features .feature-card:hover {
+	transform: translateY(-5px);
+	box-shadow: var(--shadow-lg);
+}
+
+.account-page .curalifer-features .feature-card .feature-image {
+	width: 100%;
+	max-width: 220px;
+	margin-bottom: 24px;
+	transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+	border-radius: var(--radius-lg);
+	overflow: hidden;
+}
+
+.account-page .curalifer-features .feature-card:hover .feature-image {
+	transform: scale(1.05);
+}
+
+.account-page .curalifer-features .feature-card .feature-image img {
+	width: 100%;
+	height: auto;
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-md);
+	transition: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.account-page .curalifer-features .feature-card .feature-title {
+	color: var(--gray-900);
+	font-size: 20px;
+	font-weight: 600;
+	margin: 0;
+	text-align: center;
+}
+
+/* Rewards Styles */
+.account-page .rewards-container .rewards-table-wrapper {
+	overflow-x: auto;
+}
+
+.account-page .rewards-container .rewards-table {
+	width: 100%;
+	border-collapse: separate;
+	border-spacing: 0;
+	margin: 0;
+	background-color: white;
+	border-radius: var(--radius-xl);
+	overflow: hidden;
+	box-shadow: var(--shadow-md);
+}
+
+.account-page .rewards-container .rewards-table thead tr {
+	background: linear-gradient(to right, var(--primary), var(--primary-light));
+	color: white;
+}
+
+.account-page .rewards-container .rewards-table th {
+	padding: 16px 20px;
+	font-size: 14px;
+	font-weight: 600;
+	text-align: left;
+	border: none;
+	letter-spacing: 0.01em;
+	position: relative;
+}
+
+.account-page .rewards-container .rewards-table th:not(:last-child)::after {
+	content: "";
+	position: absolute;
+	top: 30%;
+	right: 0;
+	height: 40%;
+	width: 1px;
+	background-color: rgba(255, 255, 255, 0.2);
+}
+
+.account-page .rewards-container .rewards-table tbody tr {
+	transition: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+	border-bottom: var(--border-thin) solid var(--gray-200);
+}
+
+.account-page .rewards-container .rewards-table tbody tr:last-child {
+	border-bottom: none;
+}
+
+.account-page .rewards-container .rewards-table tbody tr:hover {
+	background-color: rgba(var(--primary-rgb), 0.05);
+}
+
+.account-page .rewards-container .rewards-table td {
+	padding: 16px 20px;
+	font-size: 14px;
+	color: var(--gray-800);
+	vertical-align: middle;
+}
+
+.account-page .rewards-container .rewards-table td:nth-child(3) {
+	font-weight: 700;
+	color: var(--primary);
+}
+
+.account-page .rewards-container .rewards-table td:last-child {
+	text-transform: capitalize;
+	font-weight: 600;
+}
+
+.account-page .rewards-container .rewards-table td[data-status="completed"] {
+	color: var(--success);
+}
+
+.account-page .rewards-container .rewards-table td[data-status="pending"] {
+	color: var(--warning);
+}
+
+.account-page .rewards-container .rewards-table td[data-status="cancelled"] {
+	color: var(--danger);
+}
+
+/* Additional Responsive Styles */
+@media (max-width: 1200px) {
+	.account-page .sidebar {
+		width: 280px;
+	}
+
+	.account-page .panel-header {
+		padding: 24px;
+	}
+}
+
+@media (max-width: 992px) {
+	.account-page .page-title {
+		font-size: 24px;
+		margin-bottom: 32px;
+	}
+}
+
+@media (max-width: 768px) {
+	.account-page .page-title {
+		font-size: 20px;
+		margin-bottom: 24px;
+	}
+
+	.account-page .panel-header {
+		padding: 20px;
+	}
+
+	.account-page .panel-header h2 {
+		font-size: 20px;
+	}
+
+	.account-page .panel-body {
+		padding: 20px;
+	}
+
+	.account-page .curalifer-features .feature-card {
+		padding: 20px;
+	}
+}
+
+@media (max-width: 576px) {
+	.account-page .curalifer-features {
+		grid-template-columns: 1fr;
+	}
+
+	.account-page .rewards-container .rewards-table {
+		min-width: 500px;
+	}
+}

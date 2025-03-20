@@ -108,18 +108,34 @@
 </section>
 
 <script>
-	// Defer script execution until DOM is ready and after critical content loads
+	// Use requestIdleCallback to defer non-critical initialization
 	document.addEventListener("DOMContentLoaded", function() {
-		const accountPageInit = () => {
+		// Use a DOM-ready polyfill for requestIdleCallback
+		const requestIdleCallback = window.requestIdleCallback ||
+			function(cb) {
+				const start = Date.now();
+				return setTimeout(function() {
+					cb({
+						didTimeout: false,
+						timeRemaining: function() {
+							return Math.max(0, 50 - (Date.now() - start));
+						}
+					});
+				}, 1);
+			};
+
+		requestIdleCallback(() => {
 			const tabsContainer = document.getElementById('tabs');
 			if (!tabsContainer) return;
 
-			const tabLinks = tabsContainer.querySelectorAll('.menu-items .menu-link[data-tab]');
-			const allPanels = tabsContainer.querySelectorAll('.main-content .content-panel');
+			// Cache DOM elements for better performance
+			const tabLinks = tabsContainer.querySelectorAll('.menu-link[data-tab]');
+			const allPanels = tabsContainer.querySelectorAll('.content-panel');
 			const mobileDropdown = document.getElementById('mobile-dropdown');
 
+			// Efficiently set active tab with minimal DOM operations
 			function setActiveTab(tabId) {
-				// Hide all panels first
+				// Hide all panels
 				allPanels.forEach(panel => panel.classList.remove("active"));
 
 				// Remove active state from all links
@@ -138,6 +154,9 @@
 					targetLink.classList.add("active");
 					targetLink.parentElement.classList.add("active");
 				}
+
+				// Update URL hash without scrolling
+				history.replaceState(null, null, `#${tabId}`);
 			}
 
 			// Check URL parameters for state
@@ -160,14 +179,19 @@
 				// Clear flag on subsequent page views
 				sessionStorage.removeItem('account_info_refreshed');
 			} else {
-				// Default: activate first tab
-				const firstTab = tabLinks.length > 0 ? tabLinks[0].getAttribute('data-tab') : null;
-				if (firstTab) setActiveTab(firstTab);
+				// Check URL hash first
+				const hashTab = window.location.hash.substring(1);
+				if (hashTab && document.getElementById(hashTab)) {
+					setActiveTab(hashTab);
+				} else {
+					// Default: activate first tab
+					const firstTab = tabLinks.length > 0 ? tabLinks[0].getAttribute('data-tab') : null;
+					if (firstTab) setActiveTab(firstTab);
+				}
 			}
 
-			// Use event delegation for all tab clicks
+			// Use event delegation for all tab clicks - most efficient
 			tabsContainer.addEventListener('click', function(e) {
-				// Find closest menu-link if clicked on a child element
 				const tabLink = e.target.closest('.menu-link[data-tab]');
 				if (tabLink && tabLink.getAttribute('href').startsWith('#')) {
 					e.preventDefault();
@@ -188,24 +212,17 @@
 					}
 				});
 			}
-		};
-
-		// Execute the initialization with a small delay to prioritize rendering
-		setTimeout(accountPageInit, 0);
+		}, { timeout: 2000 }); // Set a timeout for requestIdleCallback
 	});
 </script>
 
 <style>
-	/* ========== ACCOUNT PAGE STYLES ========== */
+	/* ========== CRITICAL ACCOUNT PAGE STYLES ========== */
 	:root {
 		--primary: var(--curalin);
 		--primary-dark: #32646f;
 		--primary-light: #7599a1;
 		--primary-rgb: 37, 99, 235;
-		--accent: var(--orange);
-		--accent-rgb: 245, 158, 11;
-		--dark: #111827;
-		--dark-rgb: 17, 24, 39;
 		--gray-900: #1f2937;
 		--gray-800: #374151;
 		--gray-700: #4b5563;
@@ -215,136 +232,36 @@
 		--gray-300: #e5e7eb;
 		--gray-200: #f3f4f6;
 		--gray-100: #f9fafb;
-		--success: #10b981;
-		--success-light: rgba(16, 185, 129, 0.1);
-		--warning: #f59e0b;
-		--warning-light: rgba(245, 158, 11, 0.1);
-		--danger: #ef4444;
-		--danger-light: rgba(239, 68, 68, 0.1);
-
-		/* Spacing */
-		--sp-1: 4px;
-		--sp-2: 8px;
-		--sp-3: 12px;
-		--sp-4: 16px;
-		--sp-5: 20px;
-		--sp-6: 24px;
-		--sp-8: 32px;
-		--sp-10: 40px;
-		--sp-12: 48px;
-		--sp-16: 64px;
-		--sp-20: 80px;
-
-		/* Typography */
-		--fs-xs: 12px;
-		--fs-sm: 14px;
-		--fs-base: 16px;
-		--fs-lg: 18px;
-		--fs-xl: 20px;
-		--fs-2xl: 24px;
-		--fs-3xl: 30px;
-		--fs-4xl: 36px;
-
-		/* Borders & Radius */
-		--radius-sm: 4px;
-		--radius-md: 8px;
-		--radius-lg: 12px;
-		--radius-xl: 16px;
-		--radius-2xl: 24px;
-		--radius-full: 9999px;
-		--border-thin: 1px;
-		--border-base: 2px;
-		--border-thick: 3px;
-
-		/* Shadows */
-		--shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
-		--shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
-		--shadow-md: 0 4px 8px rgba(0, 0, 0, 0.08);
-		--shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.1);
-		--shadow-xl: 0 16px 32px rgba(0, 0, 0, 0.12);
-		--shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.05);
-		--shadow-primary: 0 8px 16px rgba(var(--primary-rgb), 0.25);
-
-		/* Transitions */
-		--transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-		--transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-		--transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
-		--transition-bounce: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
 	}
 
+	/* Base Layout - Critical */
 	main {
 		background-color: var(--beige);
 	}
 
-	/* Base Layout */
 	.account-page {
 		max-width: 1400px;
 		margin: 0 auto;
-		padding: var(--sp-16) var(--sp-6);
+		padding: 64px 24px;
 		color: var(--gray-800);
 		min-height: 100vh;
 	}
 
 	.account-page .page-title {
-		font-size: var(--fs-3xl);
+		font-size: 30px;
 		font-weight: 800;
 		text-align: center;
-		margin-bottom: var(--sp-10);
-		color: var(--dark);
+		margin-bottom: 40px;
+		color: var(--gray-900);
 		letter-spacing: -0.025em;
 	}
 
 	.account-page .dashboard-container {
 		display: flex;
-		gap: var(--sp-10);
+		gap: 40px;
 	}
 
-	/* ------- Panels & Cards ------- */
-	.account-page .panel-card {
-		background-color: white;
-		border-radius: var(--radius-xl);
-		box-shadow: var(--shadow-lg);
-		overflow: hidden;
-		transition: var(--transition-base);
-		position: relative;
-		backface-visibility: hidden;
-		border: var(--border-thin) solid var(--gray-200);
-	}
-
-	.account-page .panel-header {
-		padding: var(--sp-8) var(--sp-8) var(--sp-6);
-		border-bottom: var(--border-thin) solid var(--gray-200);
-		position: relative;
-		background: linear-gradient(to right, var(--gray-100), white);
-	}
-
-	.account-page .panel-header::after {
-		content: '';
-		position: absolute;
-		bottom: -1px;
-		left: var(--sp-8);
-		width: 40px;
-		height: var(--border-thick);
-		background: var(--primary);
-		border-radius: var(--radius-full);
-	}
-
-	.account-page .panel-header h2 {
-		font-size: var(--fs-2xl);
-		font-weight: 700;
-		margin: 0 0 var(--sp-2);
-		color: var(--gray-900);
-		letter-spacing: -0.01em;
-	}
-
-	.account-page .panel-header p {
-		color: var(--gray-600);
-		margin: var(--sp-2) 0 0;
-		font-size: var(--fs-base);
-		line-height: 1.6;
-	}
-
-	/* ------- Sidebar Navigation ------- */
+	/* Sidebar - Critical */
 	.account-page .sidebar {
 		width: 300px;
 		flex-shrink: 0;
@@ -352,138 +269,76 @@
 
 	.account-page .sidebar .sidebar-menu {
 		position: sticky;
-		top: var(--sp-8);
+		top: 32px;
 	}
 
 	.account-page .sidebar .menu-items {
 		display: flex;
 		flex-direction: column;
-		gap: var(--sp-3);
+		gap: 12px;
 		background: white;
-		padding: var(--sp-5);
-		border-radius: var(--radius-xl);
-		box-shadow: var(--shadow-lg);
-	}
-
-	.account-page .sidebar .menu-item {
-		position: relative;
+		padding: 20px;
+		border-radius: 16px;
+		box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
 	}
 
 	.account-page .sidebar .menu-link {
 		display: flex;
 		align-items: center;
-		gap: var(--sp-3);
-		padding: var(--sp-4) var(--sp-5);
+		gap: 12px;
+		padding: 16px 20px;
 		background-color: white;
 		color: var(--gray-700);
-		border-radius: var(--radius-lg);
+		border-radius: 12px;
 		text-decoration: none;
 		font-weight: 500;
-		transition: var(--transition-base);
+		transition: 250ms cubic-bezier(0.4, 0, 0.2, 1);
 		position: relative;
 		overflow: hidden;
-		font-size: var(--fs-base);
-		letter-spacing: 0.01em;
-	}
-
-	.account-page .sidebar .menu-link::before {
-		content: '';
-		position: absolute;
-		left: 0;
-		top: 0;
-		height: 100%;
-		width: var(--border-thick);
-		background: var(--primary);
-		opacity: 0;
-		transition: opacity var(--transition-base);
-		border-radius: var(--radius-full);
+		font-size: 16px;
 	}
 
 	.account-page .sidebar .menu-link svg {
-		color: var(--gray-500);
-		transition: var(--transition-base);
 		width: 20px;
 		height: 20px;
-	}
-
-	.account-page .sidebar .menu-link:hover {
-		background-color: var(--gray-100);
-		color: var(--gray-900);
-	}
-
-	.account-page .sidebar .menu-link:hover svg {
-		color: var(--primary);
-	}
-
-	.account-page .sidebar .menu-link:hover::before {
-		opacity: 1;
 	}
 
 	.account-page .sidebar .menu-link.active {
 		background-color: var(--primary);
 		color: white;
 		font-weight: 600;
-		box-shadow: var(--shadow-primary);
-		transform: translateX(var(--sp-1));
-	}
-
-	.account-page .sidebar .menu-link.active::before {
-		opacity: 0;
+		box-shadow: 0 8px 16px rgba(var(--primary-rgb), 0.25);
 	}
 
 	.account-page .sidebar .menu-link.active svg {
 		color: white;
 	}
 
-	.account-page .sidebar .menu-link.logout {
-		margin-top: var(--sp-3);
-		background-color: var(--gray-100);
-		color: var(--gray-700);
-		border: var(--border-thin) solid var(--gray-300);
-	}
-
-	.account-page .sidebar .menu-link.logout:hover {
-		background-color: var(--danger-light);
-		color: var(--danger);
-		border-color: var(--danger);
-	}
-
-	.account-page .sidebar .menu-link.logout:hover svg {
-		color: var(--danger);
-	}
-
-	/* ------- Mobile Menu ------- */
+	/* Mobile Menu - Critical */
 	.account-page .mobile-menu-wrapper {
 		display: none;
-		margin-bottom: var(--sp-8);
+		margin-bottom: 32px;
 	}
 
 	.account-page .mobile-menu-wrapper .mobile-menu {
 		width: 100%;
-		padding: var(--sp-4) var(--sp-5);
+		padding: 16px 20px;
 		background-color: white;
-		border: var(--border-thin) solid var(--gray-300);
-		border-radius: var(--radius-lg);
-		font-size: var(--fs-base);
+		border: 1px solid var(--gray-300);
+		border-radius: 12px;
+		font-size: 16px;
 		font-weight: 500;
 		color: var(--gray-800);
-		box-shadow: var(--shadow-sm);
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 		appearance: none;
 		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
 		background-repeat: no-repeat;
 		background-position: right 12px center;
 		background-size: 18px;
-		padding-right: var(--sp-12);
-		transition: var(--transition-base);
+		padding-right: 48px;
 	}
 
-	.account-page .mobile-menu-wrapper .mobile-menu:focus {
-		border-color: var(--primary);
-		box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.15);
-		outline: none;
-	}
-
-	/* ------- Main Content ------- */
+	/* Main Content - Critical */
 	.account-page .main-content {
 		flex: 1;
 		position: relative;
@@ -491,100 +346,41 @@
 
 	.account-page .main-content .content-panel {
 		display: none;
-		animation: fadeIn var(--transition-base);
 	}
 
 	.account-page .main-content .content-panel.active {
 		display: block;
+		animation: fadeIn 250ms cubic-bezier(0.4, 0, 0.2, 1);
 	}
 
 	@keyframes fadeIn {
-		from { opacity: 0; transform: translateY(var(--sp-5)); }
+		from { opacity: 0; transform: translateY(20px); }
 		to { opacity: 1; transform: translateY(0); }
 	}
 
-	/* ------- Curalifer Features ------- */
-	.account-page .curalifer-features {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-		gap: var(--sp-6);
-		margin-top: var(--sp-6);
-	}
-
-	.account-page .curalifer-features .feature-card {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		text-decoration: none;
-		background-color: white;
-		border-radius: var(--radius-xl);
-		padding: var(--sp-8);
-		box-shadow: var(--shadow-md);
-		transition: var(--transition-bounce);
-		border: var(--border-thin) solid var(--gray-200);
-		overflow: hidden;
+	/* Panel Headers - Critical */
+	.account-page .panel-header {
+		padding: 32px 32px 24px;
+		border-bottom: 1px solid var(--gray-200);
 		position: relative;
+		background: linear-gradient(to right, var(--gray-100), white);
 	}
 
-	.account-page .curalifer-features .feature-card::after {
-		content: '';
-		position: absolute;
-		bottom: 0;
-		left: 0;
-		width: 100%;
-		height: var(--border-thick);
-		background: linear-gradient(to right, var(--primary), var(--primary-light));
-		transform: scaleX(0);
-		transition: transform 0.4s ease;
-		transform-origin: left;
-	}
-
-	.account-page .curalifer-features .feature-card .feature-image {
-		width: 100%;
-		max-width: 220px;
-		margin-bottom: var(--sp-6);
-		transition: transform 0.6s var(--transition-bounce);
-		border-radius: var(--radius-lg);
-		overflow: hidden;
-	}
-
-	.account-page .curalifer-features .feature-card .feature-image img {
-		width: 100%;
-		height: auto;
-		border-radius: var(--radius-lg);
-		box-shadow: var(--shadow-md);
-		transition: var(--transition-base);
-	}
-
-	.account-page .curalifer-features .feature-card .feature-title {
+	.account-page .panel-header h2 {
+		font-size: 24px;
+		font-weight: 700;
+		margin: 0 0 8px;
 		color: var(--gray-900);
-		font-size: var(--fs-xl);
-		font-weight: 600;
-		margin: 0;
-		text-align: center;
 	}
 
-	/* ------- Responsive Styles ------- */
-	@media (max-width: 1200px) {
-		.account-page .dashboard-container {
-			gap: var(--sp-8);
-		}
-
-		.account-page .sidebar {
-			width: 280px;
-		}
-
-		.account-page .panel-header {
-			padding: var(--sp-6) var(--sp-6);
-		}
-
-		.account-page .rewards-container .rewards-table-wrapper,
-		.account-page .orders-container .orders-filter-bar,
-		.account-page .orders-container .orders-list-wrapper {
-			padding: var(--sp-5);
-		}
+	.account-page .panel-header p {
+		color: var(--gray-600);
+		margin: 8px 0 0;
+		font-size: 16px;
+		line-height: 1.6;
 	}
 
+	/* Basic Responsive - Critical */
 	@media (max-width: 992px) {
 		.account-page .dashboard-container {
 			flex-direction: column;
@@ -599,12 +395,7 @@
 		}
 
 		.account-page {
-			padding: var(--sp-10) var(--sp-5);
-		}
-
-		.account-page .page-title {
-			font-size: var(--fs-2xl);
-			margin-bottom: var(--sp-8);
+			padding: 40px 20px;
 		}
 
 		.desktop {
@@ -618,61 +409,14 @@
 
 	@media (max-width: 768px) {
 		.account-page {
-			padding: var(--sp-8) var(--sp-4);
+			padding: 32px 16px;
 			background-color: white;
 		}
-
-		.account-page .page-title {
-			font-size: var(--fs-xl);
-			margin-bottom: var(--sp-6);
-		}
-
-		.account-page .panel-header {
-			padding: var(--sp-5);
-		}
-
-		.account-page .panel-header h2 {
-			font-size: var(--fs-xl);
-		}
-
-		.account-page .panel-body {
-			padding: var(--sp-5);
-		}
-
-		.account-page .feature-card {
-			padding: var(--sp-5);
-		}
-	}
-
-	@media (max-width: 576px) {
-		.account-page .curalifer-features {
-			grid-template-columns: 1fr;
-		}
-
-		.account-page .rewards-container .rewards-table {
-			min-width: 500px;
-		}
-	}
-
-	/* Include only the most essential rewards table styles and load the rest separately */
-	.account-page .rewards-container .rewards-table-wrapper {
-		overflow-x: auto;
-	}
-
-	.account-page .rewards-container .rewards-table {
-		width: 100%;
-		border-collapse: separate;
-		border-spacing: 0;
-		margin: 0;
-		background-color: white;
-		border-radius: var(--radius-xl);
-		overflow: hidden;
-		box-shadow: var(--shadow-md);
 	}
 </style>
 
-<!-- Load non-critical CSS separately to improve page load time -->
-<link rel="stylesheet" href="{{ 'account-page-extended.css' | asset_url }}" media="print" onload="this.media='all'">
+<!-- Load non-critical CSS with efficient loading patterns -->
+<link rel="preload" href="{{ 'account-page-extended.css' | asset_url }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
 <noscript>
   <link rel="stylesheet" href="{{ 'account-page-extended.css' | asset_url }}">
 </noscript>
