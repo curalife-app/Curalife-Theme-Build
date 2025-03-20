@@ -154,9 +154,9 @@
 				</div>
 			{% endif %}
 
-			{% form 'customer' %}
+			{% form 'customer_account_update' %}
 				{% comment %} Shopify required form inputs - using proper Liquid form tag {% endcomment %}
-				<input type="hidden" name="return_to" value="/account?contact-updated=true" />
+				<input type="hidden" name="return_to" value="/account?contact-updated=true#a" />
 
                 {% if form.errors %}
                 <div class="error-message">
@@ -233,7 +233,16 @@
 		const tabs = document.querySelector('#tabs');
 		const tabLinks = Array.from(tabs.querySelectorAll('.tabs .tab a'));
 
-		if (tabLinks.length > 0) {
+		// Check if we need to activate the My Information tab (after form submission)
+		const urlParams = new URLSearchParams(window.location.search);
+		if (urlParams.get('contact-updated') === 'true') {
+			// Find the My Information tab and activate it
+			const infoTab = tabLinks.find(link => link.getAttribute('href') === '#a');
+			if (infoTab) {
+				setActiveTab(infoTab);
+			}
+		} else if (tabLinks.length > 0) {
+			// Default behavior - activate first tab
 			setActiveTab(tabLinks[0]);
 		}
 
@@ -369,6 +378,18 @@
 		// Check for query parameter indicating successful update
 		const urlParams = new URLSearchParams(window.location.search);
 		if (urlParams.get('contact-updated') === 'true') {
+			// Force a page reload when coming back from a successful form submission
+			// This ensures the customer data displayed is refreshed
+			if (!sessionStorage.getItem('contact_info_refreshed')) {
+				sessionStorage.setItem('contact_info_refreshed', 'true');
+				// Reload the page once to refresh customer data
+				window.location.reload();
+				return;
+			}
+
+			// Clear the flag on subsequent page views
+			sessionStorage.removeItem('contact_info_refreshed');
+
 			// Show success message
 			const successDiv = document.createElement('div');
 			successDiv.className = 'success-message';
@@ -391,9 +412,6 @@
 					}, 5000);
 				}
 			}
-
-			// We could also reload the page to get updated info, but that's not necessary
-			// if Shopify already updated the customer object in liquid
 		}
 
 		// Check for hash fragment in URL to open modal
