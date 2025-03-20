@@ -105,60 +105,6 @@
 	</div>
 </section>
 
-<!-- Edit Contact Information Modal -->
-<div id="edit-contact-modal" class="modal-overlay">
-	<div class="modal-container">
-		<div class="modal-header">
-			<h3>Edit Contact Information</h3>
-			<button class="close-modal">&times;</button>
-		</div>
-		<div class="modal-content">
-			{% comment %} Check if redirected after successful update {% endcomment %}
-			{% if request.posted_successfully? %}
-				<div class="success-message">
-					<p>Your contact information has been updated successfully!</p>
-				</div>
-			{% endif %}
-
-			{% form 'customer' %}
-				{% comment %} Shopify required form inputs - using proper Liquid form tag {% endcomment %}
-				<input type="hidden" name="return_to" value="/account?contact-updated=true#a" />
-
-                {% if form.errors %}
-                <div class="error-message">
-                    <p>There was an error updating your information. Please try again.</p>
-                    <ul>
-                        {% for error in form.errors %}
-                            <li>{{ error }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-                {% endif %}
-
-				<div class="form-group">
-					<label for="CustomerFirstName">First Name</label>
-					<input type="text" id="CustomerFirstName" name="customer[first_name]" value="{{ customer.first_name }}" required />
-				</div>
-
-				<div class="form-group">
-					<label for="CustomerLastName">Last Name</label>
-					<input type="text" id="CustomerLastName" name="customer[last_name]" value="{{ customer.last_name }}" required />
-				</div>
-
-				<div class="form-group">
-					<label for="CustomerEmail">Email</label>
-					<input type="email" id="CustomerEmail" name="customer[email]" value="{{ customer.email }}" required />
-				</div>
-
-				<div class="form-actions">
-					<button type="submit" class="main-btn">Save Changes</button>
-					<button type="button" class="main-btn blank close-modal">Cancel</button>
-				</div>
-			{% endform %}
-		</div>
-	</div>
-</div>
-
 <script>
 	document.addEventListener("DOMContentLoaded", function () {
 		const accountData = document.querySelector('.account-data');
@@ -199,11 +145,11 @@
 		const tabs = document.querySelector('#tabs');
 		const tabLinks = Array.from(tabs.querySelectorAll('.tabs .tab a'));
 
-		// Check for query parameter indicating successful update and/or tab activation
+		// Check for query parameter indicating tab activation
 		const urlParams = new URLSearchParams(window.location.search);
 		const contactUpdated = urlParams.get('contact-updated') === 'true';
 
-		// Check if we need to activate the My Information tab (after form submission)
+		// Check if we need to activate the My Information tab
 		if (contactUpdated) {
 			// Find the My Information tab and activate it
 			const infoTab = tabLinks.find(link => link.getAttribute('href') === '#a');
@@ -261,116 +207,6 @@
 					window.location.href = selectedValue;
 				}
 			});
-		}
-
-		// Modal functionality
-		const openModalBtns = document.querySelectorAll('.open-modal');
-		const closeModalBtns = document.querySelectorAll('.close-modal');
-		const modalOverlays = document.querySelectorAll('.modal-overlay');
-
-		openModalBtns.forEach(btn => {
-			btn.addEventListener('click', function(e) {
-				e.preventDefault();
-				const modalId = this.getAttribute('href');
-				const modal = document.querySelector(modalId);
-				if (modal) {
-					modal.classList.add('active');
-					document.body.style.overflow = 'hidden';
-				}
-			});
-		});
-
-		function closeModals() {
-			modalOverlays.forEach(modal => {
-				modal.classList.remove('active');
-			});
-			document.body.style.overflow = '';
-		}
-
-		closeModalBtns.forEach(btn => {
-			btn.addEventListener('click', closeModals);
-		});
-
-		modalOverlays.forEach(modal => {
-			modal.addEventListener('click', function(e) {
-				if (e.target === this) {
-					closeModals();
-				}
-			});
-		});
-
-		// Handle contact form submission with basic validation
-		const editContactForm = document.querySelector('.modal-content form');
-		if (editContactForm) {
-			editContactForm.addEventListener('submit', function(e) {
-				let hasErrors = false;
-				const errorMessages = [];
-
-				// Get form fields
-				const firstNameField = document.getElementById('CustomerFirstName');
-				const lastNameField = document.getElementById('CustomerLastName');
-				const emailField = document.getElementById('CustomerEmail');
-
-				// Basic validation
-				if (!firstNameField.value.trim()) {
-					errorMessages.push('First name is required');
-					hasErrors = true;
-				}
-
-				if (!lastNameField.value.trim()) {
-					errorMessages.push('Last name is required');
-					hasErrors = true;
-				}
-
-				if (!emailField.value.trim()) {
-					errorMessages.push('Email is required');
-					hasErrors = true;
-				} else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailField.value.trim())) {
-					errorMessages.push('Please enter a valid email address');
-					hasErrors = true;
-				}
-
-				// If validation fails, prevent submission and show errors
-				if (hasErrors) {
-					e.preventDefault();
-
-					// Create error message
-					const errorDiv = document.createElement('div');
-					errorDiv.className = 'error-message';
-					let errorHtml = '<p>Please fix the following errors:</p><ul>';
-					errorMessages.forEach(msg => {
-						errorHtml += `<li>${msg}</li>`;
-					});
-					errorHtml += '</ul>';
-					errorDiv.innerHTML = errorHtml;
-
-					// Remove any existing error messages
-					const existingError = editContactForm.querySelector('.error-message');
-					if (existingError) {
-						existingError.remove();
-					}
-
-					// Add the error message to the form
-					editContactForm.insertBefore(errorDiv, editContactForm.firstChild);
-				}
-			});
-		}
-
-		// Check for hash fragment in URL to open modal
-		const hash = window.location.hash;
-		if (hash === '#contact-updated') {
-			const modalEl = document.querySelector('#edit-contact-modal');
-			if (modalEl) {
-				modalEl.classList.add('active');
-				document.body.style.overflow = 'hidden';
-
-				// Auto close after 3 seconds
-				setTimeout(() => {
-					closeModals();
-					// Remove the hash
-					history.replaceState(null, '', '/account#a');
-				}, 3000);
-			}
 		}
 	});
 </script>
