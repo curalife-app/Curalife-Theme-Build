@@ -4,6 +4,7 @@
   window.isSwiperLoading = window.isSwiperLoading || false;
   window.swiperInstances = window.swiperInstances || new Map();
   window.pendingSwiperInitializations = window.pendingSwiperInitializations || [];
+  window.swiperVersion = "11"; // Version control for easier updates
 
   console.log('[Swiper Observer] Initializing observer');
 
@@ -39,6 +40,7 @@
     swiperContainers.forEach(container => {
       if (!container.dataset.swiperObserved) {
         window.swiperObserver.observe(container);
+        container.dataset.swiperObserved = 'pending';
       }
     });
   }
@@ -82,10 +84,13 @@
   // Function to load Swiper library when needed
   function loadSwiper(initializeCallback) {
     // If swiper is already loaded, just run the callback
-    if (window.isSwiperLoaded) {
-      console.log('[Swiper Observer] Swiper already loaded, running callback');
+    if (window.isSwiperLoaded && typeof Swiper !== 'undefined') {
       if (typeof initializeCallback === "function") {
-        initializeCallback();
+        try {
+          initializeCallback();
+        } catch (error) {
+          console.error("[Swiper] Callback execution error:", error);
+        }
       }
       return;
     }
@@ -112,13 +117,13 @@
       // Load CSS first
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css";
+      link.href = `https://cdn.jsdelivr.net/npm/swiper@${window.swiperVersion}/swiper-bundle.min.css`;
       document.head.appendChild(link);
       console.log('[Swiper Observer] Swiper CSS loaded');
 
       // Then load JS
       const script = document.createElement("script");
-      script.src = "https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js";
+      script.src = `https://cdn.jsdelivr.net/npm/swiper@${window.swiperVersion}/swiper-bundle.min.js`;
 
       // Set loading timeout (10 seconds)
       const timeout = setTimeout(() => {
@@ -148,20 +153,66 @@
       window.isSwiperLoading = false;
       console.log('[Swiper Observer] Swiper loaded successfully, executing pending callbacks:', window.pendingSwiperInitializations.length);
 
+      // Check if Swiper is actually defined
+      if (typeof Swiper === 'undefined') {
+        console.error("[Swiper] Library loaded but Swiper constructor is undefined");
+        return;
+      }
+
       // Execute all pending callbacks
       while (window.pendingSwiperInitializations.length > 0) {
         const callback = window.pendingSwiperInitializations.shift();
         try {
           callback();
         } catch (error) {
-          console.error("[Swiper Observer] Error during swiper initialization:", error);
+          console.error("[Swiper] Initialization error:", error);
         }
       }
+
+      // Initialize any swipers that were marked as observed but not yet initialized
+      document.querySelectorAll('.swiper[data-swiper-observed="true"]:not([data-swiper-initialized="true"])').forEach(element => {
+        // Find if this element has a custom selector and options via data attributes
+        const selectorId = element.id ? `#${element.id}` : null;
+        if (selectorId && !window.swiperInstances.has(selectorId)) {
+          // Check if there's a data-swiper-options attribute
+          try {
+            const optionsString = element.dataset.swiperOptions;
+            if (optionsString) {
+              const options = JSON.parse(optionsString);
+              window.initializeSwiper(selectorId, options);
+            }
+          } catch (error) {
+            console.error(`[Swiper] Error initializing auto-detected swiper ${selectorId}:`, error);
+          }
+        }
+      });
     }).catch(error => {
       // Handle loading errors
-      console.error("[Swiper Observer] Swiper loading error:", error);
+      console.error("[Swiper] Loading error:", error);
       window.isSwiperLoading = false;
+
+      // Clear pending callbacks
       window.pendingSwiperInitializations = [];
+
+      // Show error messages in swiper placeholders
+      document.querySelectorAll('.swiper:not([data-swiper-initialized="true"])').forEach(element => {
+        element.classList.add('swiper-error');
+        const errorMsg = document.createElement('div');
+        errorMsg.className = 'swiper-loader-error';
+        errorMsg.innerText = 'Failed to load slider component';
+
+        // Check if loader already exists
+        const existingLoader = element.querySelector('.swiper-loader');
+        if (existingLoader) {
+          existingLoader.innerHTML = '';
+          existingLoader.appendChild(errorMsg);
+        } else {
+          const loader = document.createElement('div');
+          loader.className = 'swiper-loader';
+          loader.appendChild(errorMsg);
+          element.appendChild(loader);
+        }
+      });
     });
   }
 
@@ -169,34 +220,76 @@
   window.loadSwiper = loadSwiper;
 
   // Add initializeSwiper function to fix reference errors
-  window.initializeSwiper = function(swiperElementSelector, swiperOptions) {
-    if (typeof Swiper !== 'undefined') {
-      console.log('Attempting to initialize Swiper for selector:', swiperElementSelector);
-      const swiperElement = document.querySelector(swiperElementSelector);
-      if (swiperElement) {
-        console.log('Found swiper element for', swiperElementSelector);
-        // Create and store new instance
-        try {
-          const swiperInstance = new Swiper(swiperElementSelector, swiperOptions);
-          window.swiperInstances.set(swiperElementSelector, swiperInstance);
-
-          // Add data attribute for tracking
-          swiperElement.dataset.swiperInitialized = 'true';
-          console.log('Successfully initialized Swiper for', swiperElementSelector);
-
-          return swiperInstance;
-        } catch (error) {
-          console.error(`Error initializing swiper at ${swiperElementSelector}:`, error);
-          return null;
-        }
-      } else {
-        console.warn(`Swiper element not found: ${swiperElementSelector}`);
-        return null;
-      }
-    } else {
-      console.warn("Swiper is not loaded yet");
+  window.initializeSwiper = function(swiperElementSelector, swiperOptions = {}) {
+    if (typeof Swiper === 'undefined') {
+      // If Swiper not loaded yet, load it and then try again
+      loadSwiper(() => window.initializeSwiper(swiperElementSelector, swiperOptions));
       return null;
     }
+
+    try {
+      const swiperElement = document.querySelector(swiperElementSelector);
+      if (!swiperElement) {
+        throw new Error(`Swiper element not found: ${swiperElementSelector}`);
+      }
+
+      // Don't initialize twice
+      if (swiperElement.dataset.swiperInitialized === 'true' && window.swiperInstances.has(swiperElementSelector)) {
+        return window.swiperInstances.get(swiperElementSelector);
+      }
+
+      // Create and store new instance with default options merged with provided options
+      const defaultOptions = {
+        a11y: true,
+        breakpoints: {
+          // Default mobile-first responsive breakpoints
+          320: { slidesPerView: 1 },
+          768: { slidesPerView: 2 },
+          1024: { slidesPerView: 3 }
+        }
+      };
+
+      const mergedOptions = {...defaultOptions, ...swiperOptions};
+      const swiperInstance = new Swiper(swiperElementSelector, mergedOptions);
+      window.swiperInstances.set(swiperElementSelector, swiperInstance);
+
+      // Add data attribute for tracking
+      swiperElement.dataset.swiperInitialized = 'true';
+
+      // Remove loading indicators
+      const loader = swiperElement.querySelector('.swiper-loader');
+      if (loader) {
+        loader.remove();
+      }
+      swiperElement.classList.remove('swiper-loading');
+
+      return swiperInstance;
+    } catch (error) {
+      console.error(`[Swiper] Error initializing ${swiperElementSelector}:`, error);
+      return null;
+    }
+  };
+
+  // Add destroy function to properly clean up
+  window.destroySwiper = function(swiperElementSelector) {
+    if (window.swiperInstances.has(swiperElementSelector)) {
+      try {
+        const instance = window.swiperInstances.get(swiperElementSelector);
+        instance.destroy(true, true); // true, true = Delete instance and DOM elements
+        window.swiperInstances.delete(swiperElementSelector);
+
+        const element = document.querySelector(swiperElementSelector);
+        if (element) {
+          element.dataset.swiperInitialized = 'false';
+          element.dataset.swiperObserved = 'false';
+        }
+        return true;
+      } catch (error) {
+        console.error(`[Swiper] Error destroying ${swiperElementSelector}:`, error);
+        return false;
+      }
+    }
+    return false;
   };
 </script>
 

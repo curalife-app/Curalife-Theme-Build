@@ -7,72 +7,99 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    // Check if the section using this swiper is visible
     // Ensure selector is properly interpolated in Liquid before sending to JS
     {% assign clean_selector = selector | replace: "{", "" | replace: "}", "" %}
     const selectorString = '{{ clean_selector | escape }}';
-    console.log('[Swiper Dynamic] Looking for elements with selector:', selectorString);
 
+    // Find all elements matching the selector
     const swiperElements = document.querySelectorAll(selectorString);
-    console.log('[Swiper Dynamic] Found elements:', swiperElements.length);
+    if (swiperElements.length === 0) return;
 
-    if (swiperElements.length > 0) {
-      // Check if any swiper element is in viewport or close to it
-      let isVisible = false;
+    // Check if any element is in viewport or close to it
+    let needsImmediateLoading = false;
 
-      swiperElements.forEach(function(element) {
-        const rect = element.getBoundingClientRect();
-        const inViewport = (
-          rect.top <= (window.innerHeight || document.documentElement.clientHeight) + 500 &&
-          rect.bottom >= -500
-        );
-        console.log('[Swiper Dynamic] Element visibility check:', inViewport, rect);
-        if (inViewport) {
-          isVisible = true;
-        }
-      });
+    swiperElements.forEach(function(element) {
+      if (element.dataset.swiperObserved === 'true' || element.dataset.swiperInitialized === 'true') {
+        return; // Skip already observed or initialized elements
+      }
 
-      console.log('[Swiper Dynamic] Is visible in viewport:', isVisible);
+      // Mark as loading - will be used for styling
+      element.classList.add('swiper-loading');
 
-      // If a swiper element is visible, load swiper or initialize it
-      if (isVisible) {
-        if (window.loadSwiper) {
-          console.log('[Swiper Dynamic] Calling loadSwiper function');
-          window.loadSwiper();
-        } else if (!window.isSwiperLoaded && !window.isSwiperLoading) {
-          console.log('[Swiper Dynamic] loadSwiper not available, loading Swiper directly');
-          // Swiper observer not loaded, load swiper directly
-          const link = document.createElement("link");
-          link.rel = "stylesheet";
-          link.href = "https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css";
-          document.head.appendChild(link);
+      // Add loader indicator
+      if (!element.querySelector('.swiper-loader')) {
+        const loader = document.createElement('div');
+        loader.className = 'swiper-loader';
+        loader.innerHTML = `
+          <div class="swiper-loader-spinner">
+            <div class="swiper-loader-bounce1"></div>
+            <div class="swiper-loader-bounce2"></div>
+            <div class="swiper-loader-bounce3"></div>
+          </div>
+        `;
+        element.appendChild(loader);
+      }
 
-          const script = document.createElement("script");
-          script.src = "https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js";
-          document.body.appendChild(script);
+      // Check if element is in viewport or close to it
+      const rect = element.getBoundingClientRect();
+      const inViewport = (
+        rect.top <= (window.innerHeight || document.documentElement.clientHeight) + 500 &&
+        rect.bottom >= -500
+      );
 
-          window.isSwiperLoaded = false;
-          window.isSwiperLoading = true;
+      if (inViewport) {
+        needsImmediateLoading = true;
+      } else if (window.swiperObserver) {
+        // Add to intersection observer if not in viewport
+        window.swiperObserver.observe(element);
+        element.dataset.swiperObserved = 'pending';
+      }
+    });
 
-          script.onload = function() {
-            window.isSwiperLoaded = true;
-            window.isSwiperLoading = false;
-            console.log('[Swiper Dynamic] Swiper loaded directly for: ' + selectorString);
-          };
-        }
-      } else {
-        // Add to observer if swiper observer is available
-        if (window.swiperObserver) {
-          console.log('[Swiper Dynamic] Adding elements to observer');
+    // If any element needs immediate loading, load Swiper now
+    if (needsImmediateLoading) {
+      // If the global loadSwiper function is available, use it
+      if (window.loadSwiper) {
+        window.loadSwiper(function() {
+          // Initialize visible swipers after loading
           swiperElements.forEach(function(element) {
-            if (!element.dataset.swiperObserved) {
-              window.swiperObserver.observe(element);
-              element.dataset.swiperObserved = 'true';
+            // Only initialize swipers that are in viewport and not already initialized
+            if (!element.dataset.swiperInitialized) {
+              const rect = element.getBoundingClientRect();
+              const inViewport = (
+                rect.top <= (window.innerHeight || document.documentElement.clientHeight) + 500 &&
+                rect.bottom >= -500
+              );
+
+              if (inViewport) {
+                // Get a unique identifier for this swiper
+                const id = element.id || `swiper-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+                // If element doesn't have an ID, assign one
+                if (!element.id) {
+                  element.id = id;
+                }
+
+                // Check for options in data attributes
+                let options = {};
+                try {
+                  if (element.dataset.swiperOptions) {
+                    options = JSON.parse(element.dataset.swiperOptions);
+                  }
+                } catch (error) {
+                  console.error(`[Swiper Dynamic] Error parsing swiper options:`, error);
+                }
+
+                // Initialize this swiper
+                window.initializeSwiper(`#${element.id}`, options);
+              }
             }
           });
-        } else {
-          console.log('[Swiper Dynamic] swiperObserver not available');
-        }
+        });
+      } else {
+        // Fallback if the global function is not available
+        // This shouldn't happen if swiper-observer is included
+        console.error('[Swiper Dynamic] Global loadSwiper function not available');
       }
     }
   });
