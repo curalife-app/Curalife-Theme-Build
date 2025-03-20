@@ -156,6 +156,34 @@
 
   // Export the function for external use
   window.loadSwiper = loadSwiper;
+
+  // Add initializeSwiper function to fix reference errors
+  window.initializeSwiper = function(swiperElementSelector, swiperOptions) {
+    if (typeof Swiper !== 'undefined') {
+      const swiperElement = document.querySelector(swiperElementSelector);
+      if (swiperElement) {
+        // Create and store new instance
+        try {
+          const swiperInstance = new Swiper(swiperElementSelector, swiperOptions);
+          window.swiperInstances.set(swiperElementSelector, swiperInstance);
+
+          // Add data attribute for tracking
+          swiperElement.dataset.swiperInitialized = 'true';
+
+          return swiperInstance;
+        } catch (error) {
+          console.error(`Error initializing swiper at ${swiperElementSelector}:`, error);
+          return null;
+        }
+      } else {
+        console.warn(`Swiper element not found: ${swiperElementSelector}`);
+        return null;
+      }
+    } else {
+      console.warn("Swiper is not loaded yet");
+      return null;
+    }
+  };
 </script>
 
 <style>

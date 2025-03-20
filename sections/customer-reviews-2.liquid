@@ -78,13 +78,16 @@
 	}
 </style>
 
-{% render 'layout.head.swiper-dynamic', selector: '#customer-reviews-{{ section.id }} .swiper' %}
+{% render 'layout.head.swiper-dynamic', selector: '#customer-reviews-' | append: section.id | append: ' .swiper' %}
 
 <script>
 	document.addEventListener('DOMContentLoaded', () => {
+		const sectionId = '{{ section.id }}';
+		const swiperSelector = '#customer-reviews-' + sectionId + ' .swiper';
+
 		if (window.loadSwiper) {
 			window.loadSwiper(() => {
-				const swiper = new Swiper('#customer-reviews-{{ section.id }} .swiper', {
+				const swiper = new Swiper(swiperSelector, {
 					grabCursor: true,
 					centeredSlides: true,
 					slidesPerView: 1,
@@ -98,11 +101,11 @@
 						slideShadows: true
 					},
 					navigation: {
-						nextEl: '#customer-reviews-{{ section.id }} .swiper-button-next',
-						prevEl: '#customer-reviews-{{ section.id }} .swiper-button-prev'
+						nextEl: '#customer-reviews-' + sectionId + ' .swiper-button-next',
+						prevEl: '#customer-reviews-' + sectionId + ' .swiper-button-prev'
 					},
 					pagination: {
-						el: '#customer-reviews-{{ section.id }} .swiper-pagination',
+						el: '#customer-reviews-' + sectionId + ' .swiper-pagination',
 						clickable: true
 					},
 					autoplay: { delay: 5000 }

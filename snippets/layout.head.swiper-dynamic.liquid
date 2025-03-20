@@ -8,7 +8,9 @@
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     // Check if the section using this swiper is visible
-    const swiperElements = document.querySelectorAll('{{ selector }}');
+    // Ensure selector is properly interpolated in Liquid before sending to JS
+    const selectorString = '{{ selector | replace: "{{", "" | replace: "}}", "" | escape }}';
+    const swiperElements = document.querySelectorAll(selectorString);
 
     if (swiperElements.length > 0) {
       // Check if any swiper element is in viewport or close to it
@@ -46,7 +48,7 @@
           script.onload = function() {
             window.isSwiperLoaded = true;
             window.isSwiperLoading = false;
-            console.log('Swiper loaded dynamically for: {{ selector }}');
+            console.log('Swiper loaded dynamically for: ' + selectorString);
           };
         }
       } else {
