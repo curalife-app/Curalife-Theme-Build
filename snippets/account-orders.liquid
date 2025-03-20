@@ -51,7 +51,14 @@
 									<div class="product-info">
 										<div class="product-image">
 											{% if a.product.featured_image %}
-												<img src="{{ a.product.featured_image | image_url }}" alt="{{ a.product.title }}">
+												{% assign img = a.product.featured_image | image_url: width: 80 %}
+												{% render 'image-test',
+													image: img,
+													lazy: lazyLoad,
+													preload: false,
+													alt: a.product.title,
+													class: 'w-full h-full object-contain m-0 justify-self-center'
+												%}
 											{% else %}
 												<img src="{{ 'product-placeholder.svg' | asset_url }}" alt="Product placeholder">
 											{% endif %}
