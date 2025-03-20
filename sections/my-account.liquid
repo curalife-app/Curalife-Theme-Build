@@ -154,18 +154,15 @@
 				</div>
 			{% endif %}
 
-			<form id="edit-contact-form" method="post" action="/account">
-				{% comment %} Shopify required form inputs {% endcomment %}
-				<input type="hidden" name="form_type" value="customer" />
-				<input type="hidden" name="_method" value="put" />
+			{% form 'customer' %}
+				{% comment %} Shopify required form inputs - using proper Liquid form tag {% endcomment %}
 				<input type="hidden" name="return_to" value="/account?contact-updated=true" />
 
-                {% comment %} Show any form errors {% endcomment %}
-                {% if customer.errors %}
+                {% if form.errors %}
                 <div class="error-message">
                     <p>There was an error updating your information. Please try again.</p>
                     <ul>
-                        {% for error in customer.errors %}
+                        {% for error in form.errors %}
                             <li>{{ error }}</li>
                         {% endfor %}
                     </ul>
@@ -173,25 +170,25 @@
                 {% endif %}
 
 				<div class="form-group">
-					<label for="customer_first_name">First Name</label>
-					<input type="text" id="customer_first_name" name="customer[first_name]" value="{{ customer.first_name }}" required />
+					<label for="CustomerFirstName">First Name</label>
+					<input type="text" id="CustomerFirstName" name="customer[first_name]" value="{{ customer.first_name }}" required />
 				</div>
 
 				<div class="form-group">
-					<label for="customer_last_name">Last Name</label>
-					<input type="text" id="customer_last_name" name="customer[last_name]" value="{{ customer.last_name }}" required />
+					<label for="CustomerLastName">Last Name</label>
+					<input type="text" id="CustomerLastName" name="customer[last_name]" value="{{ customer.last_name }}" required />
 				</div>
 
 				<div class="form-group">
-					<label for="customer_email">Email</label>
-					<input type="email" id="customer_email" name="customer[email]" value="{{ customer.email }}" required />
+					<label for="CustomerEmail">Email</label>
+					<input type="email" id="CustomerEmail" name="customer[email]" value="{{ customer.email }}" required />
 				</div>
 
 				<div class="form-actions">
 					<button type="submit" class="main-btn">Save Changes</button>
 					<button type="button" class="main-btn blank close-modal">Cancel</button>
 				</div>
-			</form>
+			{% endform %}
 		</div>
 	</div>
 </div>
@@ -313,16 +310,16 @@
 		});
 
 		// Handle contact form submission with basic validation
-		const editContactForm = document.getElementById('edit-contact-form');
+		const editContactForm = document.querySelector('.modal-content form');
 		if (editContactForm) {
 			editContactForm.addEventListener('submit', function(e) {
 				let hasErrors = false;
 				const errorMessages = [];
 
 				// Get form fields
-				const firstNameField = document.getElementById('customer_first_name');
-				const lastNameField = document.getElementById('customer_last_name');
-				const emailField = document.getElementById('customer_email');
+				const firstNameField = document.getElementById('CustomerFirstName');
+				const lastNameField = document.getElementById('CustomerLastName');
+				const emailField = document.getElementById('CustomerEmail');
 
 				// Basic validation
 				if (!firstNameField.value.trim()) {
