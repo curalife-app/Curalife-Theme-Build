@@ -257,14 +257,24 @@
 			mainEl.dataset.swiperOptions = JSON.stringify(mainOptions);
 		}
 
+		// Check if elements are in viewport
+		const isInViewport = (element) => {
+			const rect = element.getBoundingClientRect();
+			return (
+				rect.top <= (window.innerHeight || document.documentElement.clientHeight) + 500 &&
+				rect.bottom >= -500
+			);
+		};
+
 		// Initialize function - makes actual Swiper instances
 		const initGallery = () => {
 			{% unless thumbs == 'none' %}
 			// Initialize thumbs first if it exists
 			if (thumbsEl && !thumbsEl.dataset.swiperInitialized && document.body.contains(thumbsEl)) {
 				loadSwiper(() => {
-					const thumbsSelector = '#' + thumbsEl.id;
-					window.productThumbsSlider{{ SID }} = initializeSwiper(thumbsSelector);
+					// Use the element's actual ID to avoid template prefix issues
+					const thumbsId = thumbsEl.id;
+					window.productThumbsSlider{{ SID }} = initializeSwiper('#' + thumbsId);
 				});
 			}
 			{% endunless %}
@@ -272,8 +282,9 @@
 			// Initialize main slider if it exists
 			if (mainEl && !mainEl.dataset.swiperInitialized && document.body.contains(mainEl)) {
 				loadSwiper(() => {
-					const mainSelector = '#' + mainEl.id;
-					window.productSliderAllInOne{{ SID }} = initializeSwiper(mainSelector);
+					// Use the element's actual ID to avoid template prefix issues
+					const mainId = mainEl.id;
+					window.productSliderAllInOne{{ SID }} = initializeSwiper('#' + mainId);
 
 					// Add event listeners after initialization if the instance was created
 					if (window.productSliderAllInOne{{ SID }}) {
@@ -304,30 +315,46 @@
 			}
 		};
 
-		// Use observer if available, otherwise initialize immediately
-		let useObserver = window.swiperObserver && typeof IntersectionObserver !== 'undefined';
-
+		// Check if we need to load immediately
+		let needsImmediateLoading = false;
+		if (mainEl && isInViewport(mainEl)) {
+			needsImmediateLoading = true;
+		}
 		{% unless thumbs == 'none' %}
-		if (useObserver && thumbsEl && !thumbsEl.dataset.swiperObserved && document.body.contains(thumbsEl)) {
-			window.swiperObserver.observe(thumbsEl);
-			thumbsEl.dataset.swiperObserved = 'pending';
+		if (thumbsEl && isInViewport(thumbsEl)) {
+			needsImmediateLoading = true;
 		}
 		{% endunless %}
 
-		if (useObserver && mainEl && !mainEl.dataset.swiperObserved && document.body.contains(mainEl)) {
-			window.swiperObserver.observe(mainEl);
-			mainEl.dataset.swiperObserved = 'pending';
+		// Use observer if available, otherwise initialize immediately
+		let useObserver = window.swiperObserver && typeof IntersectionObserver !== 'undefined' && !needsImmediateLoading;
+
+		if (useObserver) {
+			{% unless thumbs == 'none' %}
+			if (thumbsEl && !thumbsEl.dataset.swiperObserved && document.body.contains(thumbsEl)) {
+				window.swiperObserver.observe(thumbsEl);
+				thumbsEl.dataset.swiperObserved = 'pending';
+			}
+			{% endunless %}
+
+			if (mainEl && !mainEl.dataset.swiperObserved && document.body.contains(mainEl)) {
+				window.swiperObserver.observe(mainEl);
+				mainEl.dataset.swiperObserved = 'pending';
+			}
 		} else {
-			// Fallback to immediate initialization if observer not available
+			// Fallback to immediate initialization
 			initGallery();
 		}
 	});
 </script>
 
+{% comment %}
+Dynamic loaders removed to prevent selector issues:
 {% if thumbs != 'none' %}
 {% render 'layout.head.swiper-dynamic', selector: '#thumbs-slider-' | append: SID %}
 {% endif %}
 {% render 'layout.head.swiper-dynamic', selector: '#product-main-slider-sc-' | append: SID %}
+{% endcomment %}
 
 <style>
 	#cta-section-{{ SID }} {
