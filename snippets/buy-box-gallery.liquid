@@ -185,9 +185,18 @@
 
 <script>
 	document.addEventListener('DOMContentLoaded', function() {
+		// Get actual DOM elements instead of just selectors
+		const thumbsEl = document.querySelector('#thumbs-slider-{{ SID }}');
+		const mainEl = document.querySelector('#product-main-slider-sc-{{ SID }}');
+
+		// Early exit if elements don't exist
+		if (!mainEl) {
+			console.warn(`[Swiper Gallery] Main slider element not found: #product-main-slider-sc-{{ SID }}`);
+			return;
+		}
+
 		{% unless thumbs == 'none' %}
-			// Store thumbs slider configuration in data attribute for observer
-			const thumbsEl = document.querySelector('#thumbs-slider-{{ SID }}');
+			// Only proceed with thumbs if the element exists
 			if (thumbsEl) {
 				thumbsEl.dataset.swiperOptions = JSON.stringify({
 					{% if thumbs == 'vertical' %}direction: 'vertical',{% endif %}
@@ -203,18 +212,26 @@
 						disabledClass: 'disabled'
 					}
 				});
+			} else {
+				console.warn(`[Swiper Gallery] Thumbs slider element not found: #thumbs-slider-{{ SID }}`);
 			}
 		{% endunless %}
 
 		// Store main slider configuration in data attribute for observer
-		const mainEl = document.querySelector('#product-main-slider-sc-{{ SID }}');
 		if (mainEl) {
-			mainEl.dataset.swiperOptions = JSON.stringify({
+			const mainOptions = {
 				{% unless thumbs == 'none' %}
+				{% if thumbs != 'none' and thumbsEl %}
 				thumbs: {
-					swiper: '#thumbs-slider-{{ SID }}',
+					// Use a callback to get the thumbs instance after it's initialized
+					swiper: function() {
+						// Try to get the thumbs instance from the global map
+						const thumbsSelector = '#thumbs-slider-{{ SID }}';
+						return window.swiperInstances ? window.swiperInstances.get(thumbsSelector) : null;
+					},
 					multipleActiveThumbs: false
 				},
+				{% endif %}
 				{% endunless %}
 				slidesPerView: 1,
 				spaceBetween: 15,
@@ -235,24 +252,30 @@
 						navigation: {}
 					}
 				}
-			});
+			};
+
+			mainEl.dataset.swiperOptions = JSON.stringify(mainOptions);
 		}
 
-		// Check if elements are in viewport and initialize
+		// Initialize function - makes actual Swiper instances
 		const initGallery = () => {
 			{% unless thumbs == 'none' %}
-			if (thumbsEl && !thumbsEl.dataset.swiperInitialized) {
+			// Initialize thumbs first if it exists
+			if (thumbsEl && !thumbsEl.dataset.swiperInitialized && document.body.contains(thumbsEl)) {
 				loadSwiper(() => {
-					window.productThumbsSlider{{ SID }} = initializeSwiper('#thumbs-slider-{{ SID }}');
+					const thumbsSelector = '#' + thumbsEl.id;
+					window.productThumbsSlider{{ SID }} = initializeSwiper(thumbsSelector);
 				});
 			}
 			{% endunless %}
 
-			if (mainEl && !mainEl.dataset.swiperInitialized) {
+			// Initialize main slider if it exists
+			if (mainEl && !mainEl.dataset.swiperInitialized && document.body.contains(mainEl)) {
 				loadSwiper(() => {
-					window.productSliderAllInOne{{ SID }} = initializeSwiper('#product-main-slider-sc-{{ SID }}');
+					const mainSelector = '#' + mainEl.id;
+					window.productSliderAllInOne{{ SID }} = initializeSwiper(mainSelector);
 
-					// Add slide change event listener
+					// Add event listeners after initialization if the instance was created
 					if (window.productSliderAllInOne{{ SID }}) {
 						window.productSliderAllInOne{{ SID }}.on('slideChange', function() {
 							{% unless thumbs == 'none' %}
@@ -281,24 +304,29 @@
 			}
 		};
 
-		// Let the observer handle initialization if element is not in viewport
+		// Use observer if available, otherwise initialize immediately
+		let useObserver = window.swiperObserver && typeof IntersectionObserver !== 'undefined';
+
 		{% unless thumbs == 'none' %}
-		if (window.swiperObserver && thumbsEl && !thumbsEl.dataset.swiperObserved) {
+		if (useObserver && thumbsEl && !thumbsEl.dataset.swiperObserved && document.body.contains(thumbsEl)) {
 			window.swiperObserver.observe(thumbsEl);
 			thumbsEl.dataset.swiperObserved = 'pending';
 		}
 		{% endunless %}
 
-		if (window.swiperObserver && mainEl && !mainEl.dataset.swiperObserved) {
+		if (useObserver && mainEl && !mainEl.dataset.swiperObserved && document.body.contains(mainEl)) {
 			window.swiperObserver.observe(mainEl);
 			mainEl.dataset.swiperObserved = 'pending';
 		} else {
-			// Fallback to immediate initialization
+			// Fallback to immediate initialization if observer not available
 			initGallery();
 		}
 	});
 </script>
 
+{% if thumbs != 'none' %}
+{% render 'layout.head.swiper-dynamic', selector: '#thumbs-slider-' | append: SID %}
+{% endif %}
 {% render 'layout.head.swiper-dynamic', selector: '#product-main-slider-sc-' | append: SID %}
 
 <style>
