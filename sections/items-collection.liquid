@@ -48,10 +48,20 @@
 						{% assign imageLink = block.settings.image_global | default: block.settings.image %}
 						{% assign imageMobileLink = block.settings.image_mobile_global | default: block.settings.image_mobile %}
 						{% assign linkUrl = block.settings.link_url_global | default: block.settings.link_url %}
+						{% assign variantId = block.settings.variant_id_global | default: block.settings.variant_id %}
+						{% assign sellingPlanId = block.settings.selling_plan_id_global | default: block.settings.selling_plan_id %}
+						{% assign giftVariantId = block.settings.gift_variant_id_global | default: block.settings.gift_variant_id %}
 					{% else %}
 						{% assign imageLink = block.settings.image %}
 						{% assign imageMobileLink = block.settings.image_mobile %}
 						{% assign linkUrl = block.settings.link_url %}
+						{% assign variantId = block.settings.variant_id %}
+						{% assign sellingPlanId = block.settings.selling_plan_id %}
+						{% assign giftVariantId = block.settings.gift_variant_id %}
+					{% endif %}
+
+					{% if variantId != blank %}
+						{% capture linkUrl %}https://curalife.com/cart/clear?return_to=%2Fcart%2Fadd%3Fitems%5B%5D%5Bid%5D%3D{{ variantId }}{% if sellingPlanId != blank %}%26items%5B%5D%5Bselling_plan%5D%3D{{ sellingPlanId }}{% endif %}{% if giftVariantId != blank %}%26items%5B%5D%5Bid%5D%3D{{ giftVariantId }}{% endif %}%26return_to%3D%2Fcheckout{% endcapture %}
 					{% endif %}
 
 					{% if linkUrl and section.settings.link_style == 'item' %}<a class="contents">{% endif %}
@@ -1319,6 +1329,26 @@
 				},
 				{
 					"type": "header",
+					"content": "Cart URL Builder"
+				},
+				{
+					"type": "text",
+					"id": "variant_id",
+					"label": "Variant ID",
+					"info": "Enter variant ID to generate a cart URL automatically (overrides Link URL)"
+				},
+				{
+					"type": "text",
+					"id": "selling_plan_id",
+					"label": "Selling Plan ID (optional)"
+				},
+				{
+					"type": "text",
+					"id": "gift_variant_id",
+					"label": "Gift Variant ID (optional)"
+				},
+				{
+					"type": "header",
 					"content": "Global Store Settings"
 				},
 				{
@@ -1337,6 +1367,22 @@
 					"type": "url",
 					"id": "link_url_global",
 					"label": "Link URL - Global"
+				},
+				{
+					"type": "text",
+					"id": "variant_id_global",
+					"label": "Variant ID - Global",
+					"info": "Enter variant ID to generate a cart URL automatically for global stores (overrides Link URL Global)"
+				},
+				{
+					"type": "text",
+					"id": "selling_plan_id_global",
+					"label": "Selling Plan ID - Global (optional)"
+				},
+				{
+					"type": "text",
+					"id": "gift_variant_id_global",
+					"label": "Gift Variant ID - Global (optional)"
 				}
 			]
 		},
