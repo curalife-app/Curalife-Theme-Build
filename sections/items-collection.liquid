@@ -61,24 +61,26 @@
 					{% endif %}
 
 					{% if variantId != blank %}
-						{% assign baseUrl = "https://curalife.com/cart/clear?return_to=%2Fcart%2Fadd%3Fitems%5B%5D%5Bid%5D%3D" | append: variantId %}
+						{% assign baseUrl = "#" %}
+						{% assign cartAddFunction = "addToCartAndRedirect('" | append: variantId | append: "'" %}
 
-						{% assign sellingPlanParam = "" %}
 						{% if sellingPlanId != blank %}
-							{% assign sellingPlanParam = "%26items%5B%5D%5Bselling_plan%5D%3D" | append: sellingPlanId %}
+							{% assign cartAddFunction = cartAddFunction | append: ", '" | append: sellingPlanId | append: "'" %}
+						{% else %}
+							{% assign cartAddFunction = cartAddFunction | append: ", null" %}
 						{% endif %}
 
-						{% assign giftParam = "" %}
 						{% if giftVariantId != blank %}
-							{% assign giftParam = "%26items%5B%5D%5Bid%5D%3D" | append: giftVariantId %}
+							{% assign cartAddFunction = cartAddFunction | append: ", '" | append: giftVariantId | append: "'" %}
+						{% else %}
+							{% assign cartAddFunction = cartAddFunction | append: ", null" %}
 						{% endif %}
 
-						{% assign returnParam = "%26return_to%3D%2Fcheckout" %}
-
-						{% assign linkUrl = baseUrl | append: sellingPlanParam | append: giftParam | append: returnParam %}
+						{% assign cartAddFunction = cartAddFunction | append: "); return false;" %}
+						{% assign linkUrl = baseUrl %}
 					{% endif %}
 
-					{% if linkUrl and section.settings.link_style == 'item' %}<a class="contents">{% endif %}
+					{% if linkUrl and section.settings.link_style == 'item' %}<a class="contents" {% if variantId != blank %}onclick="{{ cartAddFunction }}"{% else %}href="{{ linkUrl }}"{% endif %}>{% endif %}
 					{% assign itemID = 'item-' | append: section.id | append: forloop.index %}
 
 					<div class="{% if section.settings.is_slider %}swiper-slide{% endif %} item relative !h-auto" id="{{ itemID }}">
@@ -136,9 +138,9 @@
 										{% if section.settings.is_reviews %}{% render 'rating-stars', rating: '5' %}{% endif %}
 										{% if block.settings.description != blank %}<div class="description">{{ block.settings.description }}</div>{% endif %}
 										{% if section.settings.link_style == 'a' %}
-											<a class="underline" href="{{ linkUrl }}">{{ block.settings.link_title }}</a>
+											<a class="underline" {% if variantId != blank %}onclick="{{ cartAddFunction }}"{% else %}href="{{ linkUrl }}"{% endif %}>{{ block.settings.link_title }}</a>
 										{% elsif section.settings.link_style == 'button' %}
-											<a class="w-max m-auto" href="{{ linkUrl }}"><button>{{ block.settings.link_title }}</button></a>
+											<a class="w-max m-auto" {% if variantId != blank %}onclick="{{ cartAddFunction }}"{% else %}href="{{ linkUrl }}"{% endif %}><button>{{ block.settings.link_title }}</button></a>
 										{% endif %}
 									</div>
 								{% endif %}
@@ -1514,3 +1516,59 @@
 	]
 }
 {% endschema %}
+
+<script>
+  function addToCartAndRedirect(variantId, sellingPlanId, giftVariantId) {
+    // Prepare the items array for the cart
+    let items = [{ id: variantId, quantity: 1 }];
+
+    // Add selling plan if provided
+    if (sellingPlanId) {
+      items[0].selling_plan = sellingPlanId;
+    }
+
+    // Add gift variant if provided
+    if (giftVariantId) {
+      items.push({ id: giftVariantId, quantity: 1 });
+    }
+
+    // Clear cart first and then add the items
+    fetch('/cart/clear.js', { method: 'POST' })
+      .then(() => {
+        return fetch('/cart/add.js', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ items: items })
+        });
+      })
+      .then(response => response.json())
+      .then(data => {
+        // Trigger add_to_cart event if needed
+        if (typeof window.dataLayer !== 'undefined') {
+          window.dataLayer.push({
+            'event': 'add_to_cart',
+            'ecommerce': {
+              'items': items.map(item => ({
+                'item_id': item.id,
+                'quantity': item.quantity
+              }))
+            }
+          });
+        }
+
+        // Slight delay to ensure event tracking completes
+        setTimeout(() => {
+          window.location.href = '/checkout';
+        }, 300);
+      })
+      .catch(error => {
+        console.error('Error adding items to cart:', error);
+        // Fallback to direct checkout if API fails
+        window.location.href = "/checkout";
+      });
+
+    return false;
+  }
+</script>
