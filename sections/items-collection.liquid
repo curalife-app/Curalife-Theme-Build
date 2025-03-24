@@ -212,6 +212,55 @@
 		</div>
 	</section>
 
+	<script>
+		function addToCartAndRedirect(variantId, sellingPlanId, giftVariantId) {
+			let items = [{ id: variantId, quantity: 1 }];
+
+			if (sellingPlanId) {
+				items[0].selling_plan = sellingPlanId;
+			}
+
+			if (giftVariantId) {
+				items.push({ id: giftVariantId, quantity: 1 });
+			}
+
+			fetch('/cart/clear.js', { method: 'POST' })
+				.then(() => {
+					return fetch('/cart/add.js', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json'
+						},
+						body: JSON.stringify({ items: items })
+					});
+				})
+				.then(response => response.json())
+				.then(data => {
+					if (typeof window.dataLayer !== 'undefined') {
+						window.dataLayer.push({
+							'event': 'add_to_cart',
+							'ecommerce': {
+								'items': items.map(item => ({
+									'item_id': item.id,
+									'quantity': item.quantity
+								}))
+							}
+						});
+					}
+
+					setTimeout(() => {
+						window.location.href = '/checkout';
+					}, 300);
+				})
+				.catch(error => {
+					console.error('Error adding items to cart:', error);
+					window.location.href = "/checkout";
+				});
+
+			return false;
+		}
+	</script>
+
 	{% if section.settings.is_slider %}
 		<script>
 			document.addEventListener('DOMContentLoaded', function() {
@@ -1516,59 +1565,3 @@
 	]
 }
 {% endschema %}
-
-<script>
-  function addToCartAndRedirect(variantId, sellingPlanId, giftVariantId) {
-    // Prepare the items array for the cart
-    let items = [{ id: variantId, quantity: 1 }];
-
-    // Add selling plan if provided
-    if (sellingPlanId) {
-      items[0].selling_plan = sellingPlanId;
-    }
-
-    // Add gift variant if provided
-    if (giftVariantId) {
-      items.push({ id: giftVariantId, quantity: 1 });
-    }
-
-    // Clear cart first and then add the items
-    fetch('/cart/clear.js', { method: 'POST' })
-      .then(() => {
-        return fetch('/cart/add.js', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ items: items })
-        });
-      })
-      .then(response => response.json())
-      .then(data => {
-        // Trigger add_to_cart event if needed
-        if (typeof window.dataLayer !== 'undefined') {
-          window.dataLayer.push({
-            'event': 'add_to_cart',
-            'ecommerce': {
-              'items': items.map(item => ({
-                'item_id': item.id,
-                'quantity': item.quantity
-              }))
-            }
-          });
-        }
-
-        // Slight delay to ensure event tracking completes
-        setTimeout(() => {
-          window.location.href = '/checkout';
-        }, 300);
-      })
-      .catch(error => {
-        console.error('Error adding items to cart:', error);
-        // Fallback to direct checkout if API fails
-        window.location.href = "/checkout";
-      });
-
-    return false;
-  }
-</script>
