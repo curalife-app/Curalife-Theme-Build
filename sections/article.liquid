@@ -96,7 +96,7 @@
       </div>
     </div>
 
-    <div id="stickySidebar" class="sidebar w-[33%] md:w-full md:pt-8 absolute md:!static top-[150px] right-0">
+    <div id="stickySidebar" class="sidebar w-[33%] md:w-full md:pt-8 sticky-sidebar">
       {% render 'related-articles' %}
     </div>
   </div>
@@ -106,62 +106,91 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
+    const stickySidebar = document.getElementById('stickySidebar');
+
+    // Only apply sticky behavior on desktop
     if (window.innerWidth > 768) {
-      var stickySidebar = document.getElementById('stickySidebar');
-      var initialSidebarTop = stickySidebar.offsetTop;
-      var tagsSection = document.querySelector('.tag-section');
-      var tagsSectionBottom = tagsSection.offsetTop + tagsSection.offsetHeight;
-      var sidebarHeight = stickySidebar.offsetHeight;
-      var offsetTop = 100;
-      var translateY = 0;
-      var ticking = false;
+      // Calculate the stop point (where the sidebar should stop)
+      const container = document.querySelector('.container');
+      const tagsSection = document.querySelector('.tag-section');
+      const articleContent = document.querySelector('.content');
 
-      function updateSidebar() {
-        var scrollPosition = window.pageYOffset;
-        var maxTranslate = tagsSectionBottom - sidebarHeight - initialSidebarTop;
+      // Initial sidebar dimensions
+      let sidebarHeight;
+      let containerBottom;
+      let stopPoint;
 
-        if (scrollPosition >= initialSidebarTop - offsetTop) {
-          translateY = Math.min(scrollPosition - initialSidebarTop + offsetTop, maxTranslate);
-        } else {
-          translateY = 0;
-        }
+      // Initialize and calculate dimensions
+      function initSidebar() {
+        sidebarHeight = stickySidebar.offsetHeight;
+        containerBottom = container.offsetTop + container.offsetHeight;
 
-        stickySidebar.style.transform = 'translateY(' + translateY + 'px)';
-        ticking = false;
+        // Define how far from the bottom of container to stop
+        const bottomOffset = Math.max(200, tagsSection ? tagsSection.offsetHeight + 50 : 200);
+        stopPoint = containerBottom - sidebarHeight - bottomOffset;
+
+        // Set the initial position
+        stickySidebar.style.top = `${articleContent.offsetTop}px`;
+
+        // Update CSS custom property for the stop point
+        document.documentElement.style.setProperty('--sidebar-stop-point', `${stopPoint}px`);
       }
 
-      window.addEventListener('scroll', function() {
-        if (!ticking) {
-          window.requestAnimationFrame(updateSidebar);
-          ticking = true;
-        }
+      // Initialize on load
+      initSidebar();
+
+      // Recalculate on resize (debounced)
+      let resizeTimer;
+      window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function() {
+          // Only reinitialize if still desktop view
+          if (window.innerWidth > 768) {
+            initSidebar();
+          } else {
+            // Reset styles when switching to mobile
+            stickySidebar.style.top = '';
+            document.documentElement.style.removeProperty('--sidebar-stop-point');
+          }
+        }, 250);
       });
     }
   });
 </script>
 
 <style>
-  #stickySidebar {
-    transition: transform 0 ease-in-out;
+  .sticky-sidebar {
+    position: sticky;
+    /* Will be set by JS */
+    top: 100px;
+    height: max-content;
+    transition: transform 0.2s ease-out;
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    right: 0;
   }
-</style>
 
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('copy-link-button').addEventListener('click', function(e) {
-      e.preventDefault();
-      navigator.clipboard.writeText(window.location.href)
-        .then(function() {
-          alert('Link copied to clipboard.');
-        })
-        .catch(function(err) {
-          console.error('Could not copy text: ', err);
-        });
-    });
-  });
-</script>
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .sticky-sidebar::-webkit-scrollbar {
+    width: 4px;
+  }
 
-<style>
+  .sticky-sidebar::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+  }
+
+  @media screen and (max-width: 768px) {
+    .sticky-sidebar {
+      position: static;
+      max-height: none;
+      overflow: visible;
+      width: 100%;
+    }
+  }
+
+  /* Rest of CSS remains the same */
   .article-wrap h3 {
     font-size: 26px;
     color: black;
@@ -196,6 +225,58 @@
     }
   }
 </style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('copy-link-button').addEventListener('click', function(e) {
+      e.preventDefault();
+      navigator.clipboard.writeText(window.location.href)
+        .then(function() {
+          showToast('Link copied to clipboard!');
+        })
+        .catch(function(err) {
+          console.error('Could not copy text: ', err);
+          showToast('Failed to copy link', true);
+        });
+    });
+
+    // Toast notification function
+    function showToast(message, isError = false) {
+      // Create toast element if it doesn't exist
+      let toast = document.getElementById('clipboard-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'clipboard-toast';
+        toast.style.cssText = `
+          position: fixed;
+          bottom: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          padding: 12px 24px;
+          border-radius: 4px;
+          color: white;
+          font-size: 16px;
+          z-index: 1000;
+          opacity: 0;
+          transition: opacity 0.3s ease-in-out;
+        `;
+        document.body.appendChild(toast);
+      }
+
+      // Set toast style based on type
+      toast.style.backgroundColor = isError ? '#e74c3c' : '#2ecc71';
+      toast.textContent = message;
+
+      // Show toast
+      toast.style.opacity = '1';
+
+      // Hide toast after 3 seconds
+      setTimeout(function() {
+        toast.style.opacity = '0';
+      }, 3000);
+    }
+  });
+</script>
 
 {% schema %}
 {
