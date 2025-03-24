@@ -48,13 +48,39 @@
 						{% assign imageLink = block.settings.image_global | default: block.settings.image %}
 						{% assign imageMobileLink = block.settings.image_mobile_global | default: block.settings.image_mobile %}
 						{% assign linkUrl = block.settings.link_url_global | default: block.settings.link_url %}
+						{% assign variantId = block.settings.variant_id_global | default: block.settings.variant_id %}
+						{% assign sellingPlanId = block.settings.selling_plan_id_global | default: block.settings.selling_plan_id %}
+						{% assign giftVariantId = block.settings.gift_variant_id_global | default: block.settings.gift_variant_id %}
 					{% else %}
 						{% assign imageLink = block.settings.image %}
 						{% assign imageMobileLink = block.settings.image_mobile %}
 						{% assign linkUrl = block.settings.link_url %}
+						{% assign variantId = block.settings.variant_id %}
+						{% assign sellingPlanId = block.settings.selling_plan_id %}
+						{% assign giftVariantId = block.settings.gift_variant_id %}
 					{% endif %}
 
-					{% if linkUrl and section.settings.link_style == 'item' %}<a class="contents">{% endif %}
+					{% if variantId != blank %}
+						{% assign baseUrl = "#" %}
+						{% assign cartAddFunction = "addToCartAndRedirect('" | append: variantId | append: "'" %}
+
+						{% if sellingPlanId != blank %}
+							{% assign cartAddFunction = cartAddFunction | append: ", '" | append: sellingPlanId | append: "'" %}
+						{% else %}
+							{% assign cartAddFunction = cartAddFunction | append: ", null" %}
+						{% endif %}
+
+						{% if giftVariantId != blank %}
+							{% assign cartAddFunction = cartAddFunction | append: ", '" | append: giftVariantId | append: "'" %}
+						{% else %}
+							{% assign cartAddFunction = cartAddFunction | append: ", null" %}
+						{% endif %}
+
+						{% assign cartAddFunction = cartAddFunction | append: "); return false;" %}
+						{% assign linkUrl = baseUrl %}
+					{% endif %}
+
+					{% if linkUrl and section.settings.link_style == 'item' %}<a class="contents" {% if variantId != blank %}onclick="{{ cartAddFunction }}"{% else %}href="{{ linkUrl }}"{% endif %}>{% endif %}
 					{% assign itemID = 'item-' | append: section.id | append: forloop.index %}
 
 					<div class="{% if section.settings.is_slider %}swiper-slide{% endif %} item relative !h-auto" id="{{ itemID }}">
@@ -112,9 +138,9 @@
 										{% if section.settings.is_reviews %}{% render 'rating-stars', rating: '5' %}{% endif %}
 										{% if block.settings.description != blank %}<div class="description">{{ block.settings.description }}</div>{% endif %}
 										{% if section.settings.link_style == 'a' %}
-											<a class="underline" href="{{ linkUrl }}">{{ block.settings.link_title }}</a>
+											<a class="underline" {% if variantId != blank %}onclick="{{ cartAddFunction }}"{% else %}href="{{ linkUrl }}"{% endif %}>{{ block.settings.link_title }}</a>
 										{% elsif section.settings.link_style == 'button' %}
-											<a class="w-max m-auto" href="{{ linkUrl }}"><button>{{ block.settings.link_title }}</button></a>
+											<a class="w-max m-auto" {% if variantId != blank %}onclick="{{ cartAddFunction }}"{% else %}href="{{ linkUrl }}"{% endif %}><button>{{ block.settings.link_title }}</button></a>
 										{% endif %}
 									</div>
 								{% endif %}
@@ -193,6 +219,55 @@
 			{% endfor %}
 		</div>
 	</section>
+
+	<script>
+		function addToCartAndRedirect(variantId, sellingPlanId, giftVariantId) {
+			let items = [{ id: variantId, quantity: 1 }];
+
+			if (sellingPlanId) {
+				items[0].selling_plan = sellingPlanId;
+			}
+
+			if (giftVariantId) {
+				items.push({ id: giftVariantId, quantity: 1 });
+			}
+
+			fetch('/cart/clear.js', { method: 'POST' })
+				.then(() => {
+					return fetch('/cart/add.js', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json'
+						},
+						body: JSON.stringify({ items: items })
+					});
+				})
+				.then(response => response.json())
+				.then(data => {
+					if (typeof window.dataLayer !== 'undefined') {
+						window.dataLayer.push({
+							'event': 'add_to_cart',
+							'ecommerce': {
+								'items': items.map(item => ({
+									'item_id': item.id,
+									'quantity': item.quantity
+								}))
+							}
+						});
+					}
+
+					setTimeout(() => {
+						window.location.href = '/checkout';
+					}, 300);
+				})
+				.catch(error => {
+					console.error('Error adding items to cart:', error);
+					window.location.href = "/checkout";
+				});
+
+			return false;
+		}
+	</script>
 
 	{% if section.settings.is_slider %}
 		{% render 'layout.head.swiper-dynamic', selector: '#items-container-' | append: section.id %}
@@ -388,7 +463,7 @@
 		}
 
 		#section-{{ section.id }} .item-content .text-wrapper strong {
-			background: var(--blue);
+			background: var(--primary-color);
 			color: white;
 			border-radius: 5px;
 			padding: 0 5px;
@@ -407,7 +482,7 @@
 
 		#section-{{ section.id }} .item-content .description ul li::before {
 			content: "✔";
-			background-color: var(--blue);
+			background-color: var(--primary-color);
 			border-radius: 50%;
 			color: white;
 			font-size: 16px;
@@ -1197,6 +1272,26 @@
 				},
 				{
 					"type": "header",
+					"content": "Cart URL Builder"
+				},
+				{
+					"type": "text",
+					"id": "variant_id",
+					"label": "Variant ID",
+					"info": "Enter variant ID to generate a cart URL automatically (overrides Link URL)"
+				},
+				{
+					"type": "text",
+					"id": "selling_plan_id",
+					"label": "Selling Plan ID (optional)"
+				},
+				{
+					"type": "text",
+					"id": "gift_variant_id",
+					"label": "Gift Variant ID (optional)"
+				},
+				{
+					"type": "header",
 					"content": "Global Store Settings"
 				},
 				{
@@ -1215,6 +1310,22 @@
 					"type": "url",
 					"id": "link_url_global",
 					"label": "Link URL - Global"
+				},
+				{
+					"type": "text",
+					"id": "variant_id_global",
+					"label": "Variant ID - Global",
+					"info": "Enter variant ID to generate a cart URL automatically for global stores (overrides Link URL Global)"
+				},
+				{
+					"type": "text",
+					"id": "selling_plan_id_global",
+					"label": "Selling Plan ID - Global (optional)"
+				},
+				{
+					"type": "text",
+					"id": "gift_variant_id_global",
+					"label": "Gift Variant ID - Global (optional)"
 				}
 			]
 		},

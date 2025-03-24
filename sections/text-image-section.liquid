@@ -181,7 +181,7 @@
 		}
 
 		.text-image .content a {
-		  color: var(--blue);
+		  color: var(--primary-color);
 		  text-decoration: underline;
 		}
 
@@ -209,11 +209,14 @@
 		}
 
 		#section-{{ section.id }} .container.main-container {
-		  {% if section.settings.bg_width == 'container' %}
+			@media (width < 768px) {
+				width: unset;
+			}
+
+			{% if section.settings.bg_width == 'container' %}
 		    {% unless section.settings.bg_color contains 'rgba(0,0,0,0)' %}background-color: {{ section.settings.bg_color }};{% endunless %}
 		    padding: 30px;
 		    border-radius: 5px;
-		    width: unset;
 		  {% endif %}
 
 		  {% if section.settings.container_bg_color != blank %}
@@ -387,7 +390,7 @@
 				"info": "Deprecated! please upload '-mbl' image instead."
 			},
 			{
-				"type": "text",
+				"type": "number",
 				"id": "image_width",
 				"label": "Limit Image Width (px)",
 				"info": "Limit the image size rendered from shopify cdn (optional)"
