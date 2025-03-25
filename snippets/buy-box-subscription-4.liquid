@@ -400,6 +400,12 @@ document.addEventListener('DOMContentLoaded', () => {
 		updateSelectedBox(boxElement) {
 			if (!boxElement) return;
 
+			console.log('Updating selected box:', {
+				variantId: boxElement.dataset.variant,
+				purchaseType: boxElement.dataset.purchaseType,
+				sellingPlanId: boxElement.dataset.subscriptionSellingPlanId
+			});
+
 			// Extract data from the box
 			const isSub = boxElement.dataset.purchaseType === 'subscribe';
 			const bottleQuantity = parseInt(boxElement.dataset.bottleQuantity || '1', 10);
@@ -435,7 +441,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			// Update price display
 			updatePriceDisplay(boxElement);
 
-			// Update frequency selector
+			// Update frequency selector - ensure this happens even during initialization
 			populateFrequencySelector(boxElement);
 
 			{% if isSlideVariant %}
@@ -445,6 +451,14 @@ document.addEventListener('DOMContentLoaded', () => {
 					window.hasInitialImageUpdateHappened = true;
 				}
 			{% endif %}
+
+			// Add extra debug info
+			console.log('Selected box updated successfully:', {
+				variantId: variantId,
+				purchaseType: boxElement.dataset.purchaseType,
+				bottleQuantity: bottleQuantity,
+				planId: planId
+			});
 		},
 
 		// Update frequency UI based on state
