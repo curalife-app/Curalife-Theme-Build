@@ -110,7 +110,12 @@
 										<div class="flex items-center justify-between">
 											<div class="flex items-center gap-4">
 												<div class="gift-image w-16 h-16 flex-shrink-0 bg-white rounded-md overflow-hidden flex items-center justify-center border border-gray-100">
-													<img src="{{ block.settings.gift_thumbnail | img_url: '100x100' }}" alt="{{ block.settings.gift_product.title }}" class="w-full h-full object-contain">
+													{% assign giftImg = block.settings.gift_thumbnail | default: block.settings.gift_product.image | img_url: '100x100' %}
+														<img src="{{ giftImg }}" alt="{{ block.settings.gift_product.title }}" class="w-full h-full object-contain">
+														<div class="w-full h-full flex items-center justify-center text-gray-400">
+															<span class="text-sm">No image available</span>
+														</div>
+													{% endif %}
 												</div>
 												<div class="gift-details">
 													<div class="text-[16px] font-medium">
