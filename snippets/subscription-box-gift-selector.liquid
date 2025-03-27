@@ -1,6 +1,12 @@
 {% if giftsAmount > 0 %}
 	<div class="gift-selector-wrap flex flex-col gap-3">
-		<div class="gift-selector-title text-[18px] font-medium">Pick your free gift</div>
+		<div class="gift-selector-title text-[18px] font-medium">
+			{% if giftsAmount == 1 %}
+				Your Free Gift
+			{% else %}
+				Pick your free gift
+			{% endif %}
+		</div>
 
 		<div class="gift-options flex flex-col gap-2">
 			{% for block in blocks %}
@@ -43,11 +49,13 @@
 											<div class="text-gray-600" style="font-size: 14px">{{ block.settings.variant_description | default: giftProd.metafields.custom.short_description }}</div>
 										</div>
 
-										<div class="check-indicator w-8 h-8 rounded-full border-2 border-[--primary-color] flex items-center justify-center">
-											<svg class="check-mark text-primary w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
-												<path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-											</svg>
-										</div>
+										{% if giftsAmount > 1 %}
+											<div class="check-indicator w-8 h-8 rounded-full border-2 border-[--primary-color] flex items-center justify-center">
+												<svg class="check-mark text-primary w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+													<path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+												</svg>
+											</div>
+										{% endif %}
 									</div>
 								</div>
 							</div>
@@ -63,18 +71,18 @@
 		  .gift-box {
 		    .gift-option-border {
 		      position: relative;
-		      cursor: pointer;
+		      cursor: {% if giftsAmount > 1 %}pointer{% else %}default{% endif %};
 		      background-color: white;
 		      border: 1px solid var(--primary-color-light);
 		      transition: all 0.3s ease;
 
 		      &:hover {
-		        background-color: var(--primary-color-lighter);
+		        background-color: {% if giftsAmount > 1 %}var(--primary-color-lighter){% else %}white{% endif %};
 		      }
 
 		      /* Gift Option Layout */
 		      & > div.flex.items-center.gap-4 {
-		        padding-left: 3rem;
+		        padding-left: {% if giftsAmount > 1 %}3rem{% else %}1rem{% endif %};
 		      }
 
 		      .gift-image-container {
@@ -122,7 +130,7 @@
 		    /* Selected State */
 		    &.selected {
 		      .gift-option-border {
-		        background-color: var(--primary-color-lighter) !important;
+		        background-color: {% if giftsAmount > 1 %}var(--primary-color-lighter){% else %}white{% endif %} !important;
 
 		        .check-indicator {
 		          background-color: var(--primary-color);
@@ -137,7 +145,7 @@
 
 		    &:hover {
 		      .gift-option-border {
-		        background-color: var(--primary-color-lightest);
+		        background-color: {% if giftsAmount > 1 %}var(--primary-color-lightest){% else %}white{% endif %};
 		      }
 		    }
 		  }
@@ -165,15 +173,21 @@
 
 			// Function to update the selected gift visually
 			function updateGiftSelection(container) {
-				giftOptionContainers.forEach(c => {
-					const mark = c.querySelector('.check-mark');
-					const sel = c === container;
-					c.classList.toggle('selected', sel);
-					if (mark) {
-						mark.style.display = 'block';
-						mark.style.opacity = sel ? '1' : '0';
-					}
-				});
+				// Only update selection visually if there's more than one gift
+				if (giftOptionContainers.length > 1) {
+					giftOptionContainers.forEach(c => {
+						const mark = c.querySelector('.check-mark');
+						const sel = c === container;
+						c.classList.toggle('selected', sel);
+						if (mark) {
+							mark.style.display = 'block';
+							mark.style.opacity = sel ? '1' : '0';
+						}
+					});
+				} else {
+					// For a single gift, always mark it as selected but don't show visual indicator
+					container.classList.add('selected');
+				}
 			}
 
 			// Function to get the currently selected gift
@@ -200,9 +214,12 @@
 				updateGiftSelection(giftOptionContainers[0]);
 			}
 
-			giftOptionContainers.forEach(c => {
-				c.addEventListener('click', () => updateGiftSelection(c));
-			});
+			// Only add click handlers if there's more than one gift
+			if (giftOptionContainers.length > 1) {
+				giftOptionContainers.forEach(c => {
+					c.addEventListener('click', () => updateGiftSelection(c));
+				});
+			}
 		});
 	</script>
 {% endif %}
