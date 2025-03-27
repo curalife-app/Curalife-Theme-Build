@@ -15,9 +15,11 @@
 {% endcomment %}
 
 {% if shop.name == 'CuraLife' %}
-	{% assign recharge_payment_url = '/tools/recurring/customer/payment_methods' %}
+	{% assign recharge_portal_url = '/tools/recurring/login' %}
+	{% assign recharge_payment_url = '/tools/recurring/portal/payment_methods' %}
 {% elsif shop.name == 'CuraLife Global' %}
-	{% assign recharge_payment_url = '/a/customers/payment_methods' %}
+	{% assign recharge_portal_url = '/pages/manage-my-subscriptions' %}
+	{% assign recharge_payment_url = '/pages/manage-my-subscriptions' %}
 {% endif %}
 
 <div class="payment-methods-container">
@@ -39,15 +41,15 @@
 								</div>
 								<div class="card-details">
 									<p class="card-title">Default Payment Method</p>
-									<p class="card-description">Update your payment details through our secure checkout system</p>
+									<p class="card-description">Update your payment details through our subscription portal</p>
 								</div>
 							</div>
 						</div>
 
 						<div class="payment-actions">
 							{% if customer.has_account %}
-								<a href="{{ recharge_payment_url }}" class="action-button payment-button" aria-label="Update payment method">
-									<span class="action-text">Update Payment Method</span>
+								<a href="{{ recharge_portal_url }}" class="action-button payment-button" aria-label="Update payment method">
+									<span class="action-text">Access Subscription Portal</span>
 									<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 										<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
 										<path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
@@ -66,9 +68,14 @@
 								</svg>
 							</div>
 							<div class="subscription-content">
-								<p>Your subscription payment methods can be managed through our subscription portal.</p>
-								<a href="{{ recharge_payment_url }}" class="subscription-link">
-									Manage Subscription Payment Methods
+								<p>To update your payment method for subscriptions, please follow these steps:</p>
+								<ol class="subscription-steps">
+									<li>Access your subscription portal</li>
+									<li>Go to the Payment Methods section</li>
+									<li>Update your card details or add a new payment method</li>
+								</ol>
+								<a href="{{ recharge_portal_url }}" class="subscription-link">
+									Go to Subscription Portal
 									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 										<line x1="5" y1="12" x2="19" y2="12"></line>
 										<polyline points="12 5 19 12 12 19"></polyline>
@@ -251,6 +258,17 @@
 		margin: 0 0 12px 0;
 		color: var(--gray-700);
 		line-height: 1.5;
+	}
+
+	.subscription-steps {
+		margin: 0 0 16px 20px;
+		padding: 0;
+		color: var(--gray-700);
+	}
+
+	.subscription-steps li {
+		margin-bottom: 8px;
+		line-height: 1.4;
 	}
 
 	.subscription-link {
