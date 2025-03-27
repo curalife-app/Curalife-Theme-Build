@@ -34,7 +34,14 @@
 	{% endcase %}
 {% endfor %}
 
-<div class="product-actions" data-default-variant-index="{{ defaultSelectionIndex }}" data-gifts-amount="{{ giftsAmount }}">
+<div class="product-actions figma-styled-box rounded-md border-[1.5px] border-[#C4D6DA] p-5" data-default-variant-index="{{ defaultSelectionIndex }}" data-gifts-amount="{{ giftsAmount }}">
+	<!-- New "Try Before You Buy" header -->
+	<div class="try-before-you-buy-badge mb-4 flex justify-center">
+		<div class="inline-block bg-[#FFB12C] text-black font-bold px-4 py-2 rounded-full text-lg">
+			Try Before You Buy
+		</div>
+	</div>
+
 	<div class="purchase-options flex flex-col gap-3 mb-3">
 		<div class="font-semibold text-[18px]">Choose your package</div>
 
@@ -122,7 +129,7 @@
 
 					<div
 					id="variant-box-{{ SID }}-{{ forloop.index }}"
-				class="variant-box flex flex-col items-center variant-tab-style text-center w-full {% if forloop.index == 1 %}selected{% endif %} {{ varPurchaseType }}"
+				class="variant-box flex flex-col items-center variant-tab-style text-center w-full {% if forloop.index == 1 %}selected{% endif %} {{ varPurchaseType }} shadow-sm"
 				data-variant="{{ blockVarID }}"
 				data-product="{{ prod.id }}"
 				data-original-variant="{{ var.id }}"
@@ -150,7 +157,7 @@
 							{% assign subscription_save_percents = var.metafields.subscription.save_percents %}
 						{% endif %}
 						{% if subscription_save_percents > 0 %}
-							<div class="discount mbl:text-[3.5vw] text-white bg-primary font-bold w-full text-[13px] p-1">{{ subscription_save_percents | plus: firstMonthDiscount }}% OFF</div>
+							<div class="discount mbl:text-[3.5vw] text-black bg-[#FFB12C] font-bold w-full text-[13px] p-1 rounded-t-md">{{ subscription_save_percents | plus: firstMonthDiscount }}% OFF</div>
 						{% endif %}
 
 						<!-- prettier-ignore -->
@@ -252,13 +259,13 @@
 				{% assign firstVariant = prod.selected_or_first_available_variant %}
 				<div
 					id="one-time-add-to-cart"
-					class="one-time-add-to-cart variant-box text-primary mb-2 underline cursor-pointer"
+					class="one-time-add-to-cart variant-box text-[#3A7684] mb-2 cursor-pointer font-medium text-base tracking-tight"
 					name="track:link-submit|buybox-type:{{ buyboxType }}|buybox-name:{{ buyboxName }}|variant-sku:{{ firstVariant.sku }}|purchase-type:buyonce"
 					data-variant-id="{{ firstVariant.id }}"
 					data-bottle-quantity="1"
 					data-sku="{{ firstVariant.sku }}"
 					data-purchase-type="buyonce">
-					Buy Once for {{ firstVariant.price | money }} + {{ shippingPrice | money | replace: '.00', '' }} Shipping
+					Buy Once for {{ firstVariant.price | money }} + Shipping {{ shippingPrice | money | replace: '.00', '' }}
 				</div>
 			{% endif %}
 		</div>
@@ -2228,34 +2235,53 @@ function findVariantInProductData(variantId) {
 <style>
 	/* Core variables - keep these as CSS variables */
 	#cta-section-{{ SID }} {
+			/* Apply DM Sans font family to match Figma */
+			font-family: 'DM Sans', sans-serif;
 			--text-color: #4a5568;
-			--border-color: #cbcbcb;
+			--border-color: #C4D6DA;  /* Updated to match Figma border color */
 			--radio-size: 1em;
 			--radio-size-mobile: 1em;
 			--transition-speed: 0.2s;
+			--primary-color: #3A7684; /* Updated to match Figma teal color */
+			--bg-color: #FFF1E8; /* Updated to match Figma background */
+			--accent-color: #FFB12C; /* Golden yellow accent color */
 
 			/* Variant Tab Styles */
 			.variant-box.variant-tab-style {
-					border-width: 2px;
-					border-color: var(--primary-color);
-					border-radius: 0.375rem;
+					border-width: 1.5px;
+					border-color: var(--border-color);
+					border-radius: 5px;
 					cursor: pointer;
 					align-content: center;
 					transition: all 0.3s ease;
+					padding-bottom: 8px;
 
 					&.selected {
-							background-color: var(--primary-color);
-							color: white;
+							background-color: white;
+							color: var(--primary-color);
+							border-color: var(--primary-color);
+							box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 
 							.discount {
-									background-color: var(--orange);
-									color: var(--primary-color);
+									background-color: var(--accent-color);
+									color: black;
 									transition: all 0.3s ease;
+							}
+
+							.title {
+								font-weight: 700;
+								color: var(--primary-color);
 							}
 					}
 
 					&:not(.selected):hover {
-						background-color: var(--bg-color);
+						background-color: #f9f9f9;
+						box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+					}
+
+					.title {
+						font-weight: 600;
+						color: #555;
 					}
 			}
 
@@ -2300,6 +2326,17 @@ function findVariantInProductData(variantId) {
 							transition: opacity 200ms ease-in-out;
 							will-change: opacity;
 							opacity: 1;
+					}
+
+					/* Update text color to match Figma */
+					.main-price {
+						color: var(--primary-color);
+					}
+
+					/* Make discount badge match Figma golden color */
+					.discount-badge {
+						background-color: var(--accent-color);
+						color: black;
 					}
 			}
 
@@ -2358,6 +2395,76 @@ function findVariantInProductData(variantId) {
 					pointer-events: none;
 				}
 			}
+
+			/* Figma-styled box */
+			.figma-styled-box {
+					background-color: white;
+					box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+			}
+
+			/* Try Before You Buy Badge */
+			.try-before-you-buy-badge {
+					font-weight: 700;
+					letter-spacing: -0.02em;
+			}
+
+			/* Custom button styles to match Figma */
+			.checkout-button button {
+					background-color: var(--bg-color) !important;
+					color: var(--primary-color) !important;
+					font-weight: 600;
+					padding: 12px 24px;
+					border-radius: 5px;
+					transition: all 0.3s ease;
+					letter-spacing: 0.01em;
+					border: none;
+					width: 100%;
+					font-size: 16px;
+			}
+
+			.checkout-button button:hover {
+					background-color: #ffe6d5 !important;
+			}
+
+			/* One time purchase link styling */
+			.one-time-add-to-cart {
+				letter-spacing: -0.011em;
+				font-weight: 500;
+				position: relative;
+				padding: 10px 0;
+				font-size: 15px;
+				text-decoration: underline;
+				text-underline-offset: 2px;
+				text-decoration-thickness: 1px;
+				text-decoration-color: rgba(58, 118, 132, 0.6);
+				transition: all 0.2s ease;
+			}
+
+			.one-time-add-to-cart:hover {
+				text-decoration-color: rgba(58, 118, 132, 1);
+			}
+
+			/* Special emphasis for price and shipping in one-time purchase */
+			.one-time-add-to-cart:before {
+				display: none;
+			}
+
+			/* Improved frequency selector styling */
+			.subscription-frequency-selector {
+				margin-top: 10px;
+
+				#frequency-options-{{ SID }} > div {
+					background-color: var(--bg-color) !important;
+					color: var(--primary-color) !important;
+					border-radius: 5px;
+					font-weight: 500;
+
+					&[style*="var(--primary-color)"] {
+						background-color: var(--primary-color) !important;
+						color: white !important;
+					}
+				}
+			}
 	}
 
 	/* Loading state styles */
@@ -2368,7 +2475,7 @@ function findVariantInProductData(variantId) {
 
 	/* Button loading optimization */
 	button.loading-active {
-		background-color: var(--primary-color-darker, #004085) !important;
+		background-color: #ffe6d5 !important;
 		transition: none !important;
 	}
 
@@ -2388,7 +2495,8 @@ function findVariantInProductData(variantId) {
 
 	/* Improved button loading states */
 	button[aria-busy="true"] {
-		background-color: var(--primary-color-darker, #004085) !important;
+		background-color: #ffe6d5 !important;
+		color: var(--primary-color) !important;
 		position: relative;
 	}
 
@@ -2399,7 +2507,7 @@ function findVariantInProductData(variantId) {
 		left: 0;
 		right: 0;
 		bottom: 0;
-		background-color: rgba(0, 0, 0, 0.15);
+		background-color: rgba(0, 0, 0, 0.05);
 		border-radius: inherit;
 	}
 </style>
