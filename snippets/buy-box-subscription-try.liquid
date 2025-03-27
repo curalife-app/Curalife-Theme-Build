@@ -78,10 +78,58 @@
 					<span>Free health consultation</span>
 				</li>
 			</ul>
+		</div>
 
+		{% if giftsAmount > 0 %}
+		<div class="gift-selector mb-3">
+			<div class="gift-header text-[16px] font-semibold mb-2">Select Your Free Gift</div>
+			<div class="gift-options">
+				{% for block in blocks %}
+					{% if block.type == 'gift' %}
+						{% assign show_gift = false %}
+						{% if block.settings.show_on == 'both' %}
+							{% assign show_gift = true %}
+						{% elsif block.settings.show_on == 'global' and isGlobal %}
+							{% assign show_gift = true %}
+						{% elsif block.settings.show_on == 'us' and isGlobal == false %}
+							{% assign show_gift = true %}
+						{% endif %}
 
-			<!-- Gift box -->
-			<div class="gift-box border border-gray-200 rounded-md p-3 bg-gray-50 mt-2">
+						{% if show_gift %}
+							{% if isGlobal %}
+								{% assign giftID = block.settings.gift_id_global | plus: 0 %}
+								{% assign giftIDSub = block.settings.gift_id_subscription_global | plus: 0 %}
+							{% else %}
+								{% assign giftID = block.settings.gift_id | plus: 0 %}
+								{% assign giftIDSub = block.settings.gift_id_subscription | plus: 0 %}
+							{% endif %}
+
+							<div class="gift-box border border-gray-200 rounded-md p-3 {% if forloop.first %}bg-gray-50{% endif %} cursor-pointer transition-all duration-300 hover:shadow-md mb-2 {% if forloop.first %}selected{% endif %}" data-gift-id="{{ giftID }}" data-gift-id-subscription="{{ giftIDSub }}">
+								<div class="flex items-center justify-between">
+									<div class="flex items-center gap-3">
+										<div class="gift-image w-16 h-16 flex-shrink-0">
+											<img src="{{ block.settings.image | img_url: '100x100' }}" alt="{{ block.settings.title }}" class="w-full h-full object-contain">
+										</div>
+										<div class="gift-details">
+											<p class="text-[16px] font-medium">
+												<span class="text-[#E86C4F]">Free gift:</span> {{ block.settings.title }} <span class="font-bold">${{ 0 }}</span> <span class="line-through text-gray-500">${{ block.settings.retail_value | divided_by: 100.00 }}</span>
+											</p>
+											<p class="text-[14px] text-gray-600">{{ block.settings.description }}</p>
+										</div>
+									</div>
+									<div class="gift-option-border w-6 h-6 rounded-full border-2 border-primary ml-2 flex-shrink-0 relative">
+										<div class="absolute inset-1 bg-primary rounded-full {% if forloop.first %}opacity-100{% else %}opacity-0{% endif %} transition-opacity duration-300"></div>
+									</div>
+								</div>
+							</div>
+						{% endif %}
+					{% endif %}
+				{% endfor %}
+			</div>
+		</div>
+		{% else %}
+			<!-- Fallback static gift box when no gifts are configured -->
+			<div class="gift-box border border-gray-200 rounded-md p-3 bg-gray-50 mt-2 mb-3">
 				<div class="flex items-center gap-3">
 					<div class="gift-image w-16 h-16 flex-shrink-0">
 						<img src="{{ 'pill-organizer.png' | asset_url }}" alt="Pill Organizer" class="w-full h-full object-contain">
@@ -93,7 +141,7 @@
 					</div>
 				</div>
 			</div>
-		</div>
+		{% endif %}
 
 		<!-- Info box with Try Before You Buy explanation -->
 		<div class="info-box flex items-center justify-between p-3 bg-[#FDF5EA] rounded-md border border-[#FFEACF] mb-3">
@@ -425,19 +473,42 @@ document.addEventListener('DOMContentLoaded', () => {
 				// Debug log to check what's being sent to cart
 				console.log('Adding to cart with items:', JSON.stringify(items));
 
-				// Add gift if available
+				// Add selected gift if available
 				{% if giftsAmount > 0 %}
-				// Get first available gift
+				const selectedGiftBox = document.querySelector('.gift-box.selected');
+				if (selectedGiftBox) {
+					const giftIDSub = selectedGiftBox.dataset.giftIdSubscription;
+					const giftID = selectedGiftBox.dataset.giftId;
+
+					// Use subscription gift ID for subscription purchase, otherwise use regular gift ID
+					const giftIDToUse = isSub && giftIDSub ? giftIDSub : giftID;
+
+					if (giftIDToUse) {
+						items.push({ id: parseInt(giftIDToUse, 10), quantity: 1 });
+						console.log('Adding gift to cart:', giftIDToUse);
+					}
+				}
+				{% else %}
+				// Get first available gift when no gift selection UI is shown
 				{% for block in blocks %}
 					{% if block.type == 'gift' and block.settings.show_on != 'none' %}
 						{% if isGlobal %}
 							{% assign giftID = block.settings.gift_id_global | plus: 0 %}
+							{% assign giftIDSub = block.settings.gift_id_subscription_global | plus: 0 %}
 						{% else %}
 							{% assign giftID = block.settings.gift_id | plus: 0 %}
+							{% assign giftIDSub = block.settings.gift_id_subscription | plus: 0 %}
 						{% endif %}
 
-						{% if giftID > 0 %}
-						items.push({ id: {{ giftID }}, quantity: 1 });
+						{% if giftID > 0 or giftIDSub > 0 %}
+						const giftID = {{ giftID }};
+						const giftIDSub = {{ giftIDSub }};
+						const giftIDToUse = isSub && giftIDSub ? giftIDSub : giftID;
+
+						if (giftIDToUse) {
+							items.push({ id: giftIDToUse, quantity: 1 });
+							console.log('Adding default gift to cart:', giftIDToUse);
+						}
 						{% break %}
 						{% endif %}
 					{% endif %}
@@ -607,8 +678,31 @@ document.addEventListener('DOMContentLoaded', () => {
 		BuyBoxState.init();
 		initSubmitButton();
 		initOneTimeButton();
+		initGiftBoxes();
 	}
 	init();
+
+	// Initialize gift boxes to make them selectable
+	function initGiftBoxes() {
+		const giftBoxes = document.querySelectorAll('.gift-box');
+		if (giftBoxes.length === 0) return;
+
+		giftBoxes.forEach(box => {
+			box.addEventListener('click', function() {
+				// Remove selected class from all gift boxes
+				giftBoxes.forEach(b => {
+					b.classList.remove('selected', 'bg-gray-50');
+					const indicator = b.querySelector('.gift-option-border div');
+					if (indicator) indicator.classList.add('opacity-0');
+				});
+
+				// Add selected class to clicked gift box
+				this.classList.add('selected', 'bg-gray-50');
+				const indicator = this.querySelector('.gift-option-border div');
+				if (indicator) indicator.classList.remove('opacity-0');
+			});
+		});
+	}
 });
 </script>
 
