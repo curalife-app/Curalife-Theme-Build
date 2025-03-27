@@ -82,64 +82,57 @@
 					<span>Free health consultation</span>
 				</li>
 			</ul>
-		</div>
 
-		{% if giftsAmount > 0 %}
-		<div class="gift-selector mb-3">
-			<div class="gift-header text-[16px] font-semibold mb-2">
-				{% if giftsAmount == 1 %}
-					Your Free Gift
-				{% else %}
-					Select Your Free Gift
-				{% endif %}
-			</div>
-			<div class="gift-options">
-				{% for block in blocks %}
-					{% if block.type == 'gift' %}
-						{% assign show_gift = false %}
-						{% if block.settings.show_on == 'both' %}
-							{% assign show_gift = true %}
-						{% elsif block.settings.show_on == 'global' and isGlobal %}
-							{% assign show_gift = true %}
-						{% elsif block.settings.show_on == 'us' and isGlobal == false %}
-							{% assign show_gift = true %}
-						{% endif %}
+			{% if giftsAmount > 0 %}
+				<div class="gift-selector mb-3">
+					<div class="gift-options">
+						{% for block in blocks %}
+							{% if block.type == 'gift' %}
+								{% assign show_gift = false %}
+								{% if block.settings.show_on == 'both' %}
+									{% assign show_gift = true %}
+								{% elsif block.settings.show_on == 'global' and isGlobal %}
+									{% assign show_gift = true %}
+								{% elsif block.settings.show_on == 'us' and isGlobal == false %}
+									{% assign show_gift = true %}
+								{% endif %}
 
-						{% if show_gift %}
-							{% if isGlobal %}
-								{% assign giftID = block.settings.gift_id_global | plus: 0 %}
-								{% assign giftIDSub = block.settings.gift_id_subscription_global | plus: 0 %}
-							{% else %}
-								{% assign giftID = block.settings.gift_id | plus: 0 %}
-								{% assign giftIDSub = block.settings.gift_id_subscription | plus: 0 %}
-							{% endif %}
-
-							<div class="gift-box border border-gray-200 rounded-md p-4 {% if forloop.first %}bg-gray-50{% endif %} {% if giftsAmount > 1 %}cursor-pointer{% endif %} transition-all duration-300 hover:shadow-md mb-2 {% if forloop.first %}selected{% endif %}" data-gift-id="{{ giftID }}" data-gift-id-subscription="{{ giftIDSub }}">
-								<div class="flex items-center justify-between">
-									<div class="flex items-center gap-4">
-										<div class="gift-image w-16 h-16 flex-shrink-0 bg-white rounded-md overflow-hidden flex items-center justify-center border border-gray-100">
-											<img src="{{ block.settings.image | img_url: '100x100' }}" alt="{{ block.settings.title }}" class="w-full h-full object-contain">
-										</div>
-										<div class="gift-details">
-											<p class="text-[16px] font-medium">
-												<span class="text-[#E86C4F]">Free gift:</span> {{ block.settings.title }} <span class="font-bold">${{ 0 }}</span> <span class="line-through text-gray-500">${{ block.settings.retail_value | divided_by: 100.00 }}</span>
-											</p>
-											<p class="text-[14px] text-gray-600">{{ block.settings.description }}</p>
-										</div>
-									</div>
-									{% if giftsAmount > 1 %}
-									<div class="gift-option-border w-6 h-6 rounded-full border-2 border-primary ml-2 flex-shrink-0 relative">
-										<div class="absolute inset-1 bg-primary rounded-full {% if forloop.first %}opacity-100{% else %}opacity-0{% endif %} transition-opacity duration-300"></div>
-									</div>
+								{% if show_gift %}
+									{% if isGlobal %}
+										{% assign giftID = block.settings.gift_id_global | plus: 0 %}
+										{% assign giftIDSub = block.settings.gift_id_subscription_global | plus: 0 %}
+									{% else %}
+										{% assign giftID = block.settings.gift_id | plus: 0 %}
+										{% assign giftIDSub = block.settings.gift_id_subscription | plus: 0 %}
 									{% endif %}
-								</div>
-							</div>
-						{% endif %}
-					{% endif %}
-				{% endfor %}
-			</div>
+
+									<div class="gift-box border border-gray-200 rounded-md p-4 {% if forloop.first %}bg-gray-50{% endif %} {% if giftsAmount > 1 %}cursor-pointer{% endif %} transition-all duration-300 hover:shadow-md mb-2 {% if forloop.first %}selected{% endif %}" data-gift-id="{{ giftID }}" data-gift-id-subscription="{{ giftIDSub }}">
+										<div class="flex items-center justify-between">
+											<div class="flex items-center gap-4">
+												<div class="gift-image w-16 h-16 flex-shrink-0 bg-white rounded-md overflow-hidden flex items-center justify-center border border-gray-100">
+													<img src="{{ block.settings.image | img_url: '100x100' }}" alt="{{ block.settings.title }}" class="w-full h-full object-contain">
+												</div>
+												<div class="gift-details">
+													<p class="text-[16px] font-medium">
+														<span class="text-[#E86C4F]">Free gift:</span> {{ block.settings.title }} <span class="font-bold">${{ 0 }}</span> <span class="line-through text-gray-500">${{ block.settings.retail_value | divided_by: 100.00 }}</span>
+													</p>
+													<p class="text-[14px] text-gray-600">{{ block.settings.description }}</p>
+												</div>
+											</div>
+											{% if giftsAmount > 1 %}
+											<div class="gift-option-border w-6 h-6 rounded-full border-2 border-primary ml-2 flex-shrink-0 relative">
+												<div class="absolute inset-1 bg-primary rounded-full {% if forloop.first %}opacity-100{% else %}opacity-0{% endif %} transition-opacity duration-300"></div>
+											</div>
+											{% endif %}
+										</div>
+									</div>
+								{% endif %}
+							{% endif %}
+						{% endfor %}
+					</div>
+				</div>
+				{% endif %}
 		</div>
-		{% endif %}
 
 		<!-- Info box with Try Before You Buy explanation -->
 		<div class="info-box flex items-center justify-between p-3 bg-[#FDF5EA] rounded-md border border-[#FFEACF] mb-3">
