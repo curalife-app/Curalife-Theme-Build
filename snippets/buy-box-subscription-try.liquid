@@ -564,21 +564,33 @@ document.addEventListener('DOMContentLoaded', () => {
 				const toAdd = [{ id: parseInt(variant1, 10), quantity: 1 }];
 
 				{% if giftsAmount > 0 %}
-				// Get first available gift for one-time purchase
-				{% for block in blocks %}
-					{% if block.type == 'gift' and block.settings.show_on != 'none' %}
-						{% if isGlobal %}
-							{% assign giftID = block.settings.gift_id_global | plus: 0 %}
-						{% else %}
-							{% assign giftID = block.settings.gift_id | plus: 0 %}
-						{% endif %}
+				// Add selected gift to one-time purchase
+				const selectedGiftBox = document.querySelector('.gift-box.selected');
+				if (selectedGiftBox) {
+					const giftID = selectedGiftBox.dataset.giftId;
 
-						{% if giftID > 0 %}
-						toAdd.push({ id: {{ giftID }}, quantity: 1 });
-						{% break %}
+					if (giftID) {
+						toAdd.push({ id: parseInt(giftID, 10), quantity: 1 });
+						console.log('Adding gift to one-time purchase:', giftID);
+					}
+				} else {
+					// Fallback to first available gift
+					{% for block in blocks %}
+						{% if block.type == 'gift' and block.settings.show_on != 'none' %}
+							{% if isGlobal %}
+								{% assign giftID = block.settings.gift_id_global | plus: 0 %}
+							{% else %}
+								{% assign giftID = block.settings.gift_id | plus: 0 %}
+							{% endif %}
+
+							{% if giftID > 0 %}
+							toAdd.push({ id: {{ giftID }}, quantity: 1 });
+							console.log('Adding default gift to one-time purchase:', {{ giftID }});
+							{% break %}
+							{% endif %}
 						{% endif %}
-					{% endif %}
-				{% endfor %}
+					{% endfor %}
+				}
 				{% endif %}
 
 				if (BuyBoxState.data.buyType === 'buy_now') {
@@ -858,5 +870,23 @@ document.addEventListener('DOMContentLoaded', () => {
 		bottom: 0;
 		background-color: rgba(0, 0, 0, 0.15);
 		border-radius: inherit;
+	}
+
+	/* Gift box styles */
+	.gift-box {
+		transition: all 0.2s ease;
+	}
+
+	.gift-box.selected {
+		border-color: var(--primary-color);
+		background-color: var(--bg-color);
+	}
+
+	.gift-box:hover {
+		border-color: var(--primary-color);
+	}
+
+	.gift-option-border div {
+		transition: opacity 0.2s ease;
 	}
 </style>
