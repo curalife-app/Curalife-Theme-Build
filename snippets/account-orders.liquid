@@ -7,6 +7,37 @@
 
 <div class="orders-container">
 	{% if customer.orders %}
+		<!-- Returns Widget Section -->
+		<div class="returns-widget-section">
+			<div class="returns-section-header">
+				<h2 class="returns-title">Need to Return a Product?</h2>
+				<p class="returns-description">
+					If you're not completely satisfied with your purchase, you can initiate a return process using our self-service return portal. Follow the simple steps below to get started.
+				</p>
+			</div>
+
+			<button id="returns-toggle-btn" class="returns-toggle-btn">
+				<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+					<polyline points="16 16 12 12 8 16"></polyline>
+					<line x1="12" y1="12" x2="12" y2="21"></line>
+					<path d="M20 12v-2a2 2 0 0 0-2-2h-2"></path>
+					<path d="M13.5 9.5L17 6"></path>
+					<path d="M4 12v-2a2 2 0 0 1 2-2h2"></path>
+					<path d="M10.5 9.5L7 6"></path>
+				</svg>
+				Start Return Process
+			</button>
+
+			<div id="returns-widget-container" class="returns-widget-container" style="display: none;">
+				<script
+					src="https://returns.shiphero.com/widget"
+					onLoad="ShipHeroReturnsWidget.ReturnsWidget.render({ id: 'Q29ubmVjdGVkU2hvcDpjdXJhbGlmZS1jb21tZXJjZS5teXNob3BpZnkuY29t' }, '#sh-returns');"></script>
+				<div id="sh-returns" style="height:500px;width:100%;max-width:500px;margin:0 auto;"></div>
+			</div>
+		</div>
+		<!-- End Returns Widget Section -->
+
 		<div class="orders-filter-bar">
 			<div class="filter-group">
 				<label for="order-status-filter">Filter by status:</label>
@@ -27,24 +58,6 @@
 				</button>
 			</div>
 		</div>
-
-		<!-- Returns Widget Section -->
-		<div class="returns-widget-section">
-			<button id="returns-toggle-btn" class="returns-toggle-btn">
-				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<path d="M21 8v4a2 2 0 0 1-2 2H8"></path><path d="M17 4l4 4-4 4"></path><path d="M3 16v-4a2 2 0 0 1 2-2h11"></path><path d="M7 20l-4-4 4-4"></path>
-				</svg>
-				Return an Item
-			</button>
-
-			<div id="returns-widget-container" class="returns-widget-container" style="display: none;">
-				<script
-					src="https://returns.shiphero.com/widget"
-					onLoad="ShipHeroReturnsWidget.ReturnsWidget.render({ id: 'Q29ubmVjdGVkU2hvcDpjdXJhbGlmZS1jb21tZXJjZS5teXNob3BpZnkuY29t' }, '#sh-returns');"></script>
-				<div id="sh-returns" style="height:500px;width:100%;max-width:500px;margin:0 auto;"></div>
-			</div>
-		</div>
-		<!-- End Returns Widget Section -->
 
 		<div class="orders-list-wrapper">
 			<ul class="orders-list no-style" id="orders-list">
@@ -284,35 +297,75 @@
 <style>
 	/* Returns Widget Styles */
 	.returns-widget-section {
-		margin: 24px 0;
+		margin: 0 0 30px 0;
+		background-color: white;
+		border-radius: var(--radius-xl);
+		padding: 30px;
+		box-shadow: var(--shadow-md);
+		border: 1px solid var(--gray-200);
+		position: relative;
+		overflow: hidden;
+	}
+
+	.returns-widget-section::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 6px;
+		height: 100%;
+		background: linear-gradient(to bottom, var(--primary), rgba(var(--primary-rgb), 0.7));
+		border-radius: var(--radius-full) 0 0 var(--radius-full);
+	}
+
+	.returns-section-header {
+		margin-bottom: 24px;
+		padding-left: 16px;
+	}
+
+	.returns-title {
+		font-size: 24px;
+		font-weight: 700;
+		color: var(--gray-900);
+		margin: 0 0 12px 0;
+	}
+
+	.returns-description {
+		color: var(--gray-600);
+		font-size: 16px;
+		line-height: 1.6;
+		margin: 0;
+		max-width: 800px;
 	}
 
 	.returns-toggle-btn {
 		display: flex;
 		align-items: center;
-		gap: 10px;
-		background-color: white;
-		color: var(--primary);
-		border: 1px solid var(--primary);
+		justify-content: center;
+		gap: 12px;
+		background-color: var(--primary);
+		color: white;
+		border: none;
 		border-radius: var(--radius-md);
-		padding: 12px 20px;
+		padding: 16px 28px;
 		font-weight: 600;
 		font-size: 16px;
 		cursor: pointer;
 		transition: all 0.3s ease;
 		margin: 0 auto;
-		box-shadow: var(--shadow-sm);
+		box-shadow: var(--shadow-md);
+		width: 100%;
+		max-width: 400px;
 	}
 
 	.returns-toggle-btn:hover {
-		background-color: rgba(var(--primary-rgb), 0.08);
+		background-color: var(--primary-dark);
 		transform: translateY(-2px);
-		box-shadow: var(--shadow-md);
+		box-shadow: var(--shadow-lg);
 	}
 
 	.returns-toggle-btn.active {
-		background-color: var(--primary);
-		color: white;
+		background-color: var(--gray-800);
 	}
 
 	.returns-toggle-btn svg {
@@ -320,14 +373,14 @@
 	}
 
 	.returns-toggle-btn:hover svg {
-		transform: translateX(2px);
+		transform: translateY(-2px);
 	}
 
 	.returns-widget-container {
 		background-color: white;
 		border-radius: var(--radius-xl);
 		padding: 30px;
-		margin-top: 16px;
+		margin-top: 24px;
 		box-shadow: var(--shadow-md);
 		border: 1px solid var(--gray-200);
 		animation: fadeIn 0.3s ease;
