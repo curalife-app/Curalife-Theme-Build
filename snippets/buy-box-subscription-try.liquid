@@ -429,6 +429,19 @@ document.addEventListener('DOMContentLoaded', () => {
 		// Use a variable to track if a submission is in progress
 		let isSubmitting = false;
 
+		// Add click event for the variant box itself
+		const variantBox = document.querySelector('.single-variant-box');
+		if (variantBox) {
+			variantBox.addEventListener('click', function(e) {
+				// Only trigger if the click is on the box itself, not on any buttons inside
+				if (e.target.closest('button') || e.target.closest('.one-time-add-to-cart')) {
+					return;
+				}
+				// Trigger the submit button click
+				submitButton.click();
+			});
+		}
+
 		submitButton.addEventListener('click', async e => {
 			e.preventDefault();
 
@@ -450,6 +463,10 @@ document.addEventListener('DOMContentLoaded', () => {
 					throw new Error('No valid variant ID found');
 				}
 
+				if (isSub && !sellingPlanId) {
+					console.error('Warning: No selling plan ID found for subscription purchase');
+				}
+
 				let items = [{
 					id: parseInt(variant, 10),
 					quantity: 1,
@@ -457,48 +474,55 @@ document.addEventListener('DOMContentLoaded', () => {
 				}];
 
 				// Debug log to check what's being sent to cart
-				console.log('Adding to cart with items:', JSON.stringify(items));
+				console.log('Adding to cart with items:', JSON.stringify(items), 'isSub:', isSub, 'sellingPlanId:', sellingPlanId);
 
 				// Add selected gift if available
 				{% if giftsAmount > 0 %}
 				const selectedGiftBox = document.querySelector('.gift-box.selected');
 				if (selectedGiftBox) {
-					const giftIDSub = selectedGiftBox.dataset.giftIdSubscription;
-					const giftID = selectedGiftBox.dataset.giftId;
+					const giftBorder = selectedGiftBox.querySelector('.gift-option-border');
+					if (!giftBorder) {
+						console.error('Gift border element not found in selected gift box');
+					} else {
+						const giftIDSub = giftBorder.dataset.giftIdSubscription;
+						const giftID = giftBorder.dataset.giftId;
 
-					// Use subscription gift ID for subscription purchase, otherwise use regular gift ID
-					const giftIDToUse = isSub && giftIDSub ? giftIDSub : giftID;
-
-					if (giftIDToUse) {
-						items.push({ id: parseInt(giftIDToUse, 10), quantity: 1 });
-						console.log('Adding gift to cart:', giftIDToUse);
-					}
-				}
-				{% else %}
-				// Get first available gift when no gift selection UI is shown
-				{% for block in blocks %}
-					{% if block.type == 'gift' and block.settings.show_on != 'none' %}
-						{% if isGlobal %}
-							{% assign giftID = block.settings.gift_id_global | plus: 0 %}
-							{% assign giftIDSub = block.settings.gift_id_subscription_global | plus: 0 %}
-						{% else %}
-							{% assign giftID = block.settings.gift_id | plus: 0 %}
-							{% assign giftIDSub = block.settings.gift_id_subscription | plus: 0 %}
-						{% endif %}
-
-						{% if giftID > 0 or giftIDSub > 0 %}
-						const giftID = {{ giftID }};
-						const giftIDSub = {{ giftIDSub }};
+						// Use subscription gift ID for subscription purchase, otherwise use regular gift ID
 						const giftIDToUse = isSub && giftIDSub ? giftIDSub : giftID;
 
 						if (giftIDToUse) {
-							items.push({ id: giftIDToUse, quantity: 1 });
-							console.log('Adding default gift to cart:', giftIDToUse);
+							items.push({ id: parseInt(giftIDToUse, 10), quantity: 1 });
+							console.log('Adding gift to cart:', giftIDToUse);
+						} else {
+							console.error('No gift ID found for selection. Sub:', giftIDSub, 'Regular:', giftID);
 						}
-						{% break %}
+					}
+				} else {
+					console.log('No gift selected, looking for default gift');
+					// Get first available gift when no gift selection UI is shown
+					{% for block in blocks %}
+						{% if block.type == 'gift' and block.settings.show_on != 'none' %}
+							{% if isGlobal %}
+								{% assign giftID = block.settings.gift_id_global | plus: 0 %}
+								{% assign giftIDSub = block.settings.gift_id_subscription_global | plus: 0 %}
+							{% else %}
+								{% assign giftID = block.settings.gift_id | plus: 0 %}
+								{% assign giftIDSub = block.settings.gift_id_subscription | plus: 0 %}
+							{% endif %}
+
+							{% if giftID > 0 or giftIDSub > 0 %}
+							const giftID = {{ giftID }};
+							const giftIDSub = {{ giftIDSub }};
+							const giftIDToUse = isSub && giftIDSub ? giftIDSub : giftID;
+
+							if (giftIDToUse) {
+								items.push({ id: giftIDToUse, quantity: 1 });
+								console.log('Adding default gift to cart:', giftIDToUse);
+							}
+							{% break %}
+							{% endif %}
 						{% endif %}
-					{% endif %}
-				{% endfor %}
+					{% endfor %}
 				{% endif %}
 
 				if (BuyBoxState.data.buyType === 'buy_now') {
@@ -554,13 +578,21 @@ document.addEventListener('DOMContentLoaded', () => {
 				// Add selected gift to one-time purchase
 				const selectedGiftBox = document.querySelector('.gift-box.selected');
 				if (selectedGiftBox) {
-					const giftID = selectedGiftBox.dataset.giftId;
+					const giftBorder = selectedGiftBox.querySelector('.gift-option-border');
+					if (giftBorder) {
+						const giftID = giftBorder.dataset.giftId;
 
-					if (giftID) {
-						toAdd.push({ id: parseInt(giftID, 10), quantity: 1 });
-						console.log('Adding gift to one-time purchase:', giftID);
+						if (giftID) {
+							toAdd.push({ id: parseInt(giftID, 10), quantity: 1 });
+							console.log('Adding gift to one-time purchase:', giftID);
+						} else {
+							console.error('No gift ID found for one-time purchase in selected gift');
+						}
+					} else {
+						console.error('Gift border element not found in selected gift box for one-time');
 					}
 				} else {
+					console.log('No gift selected for one-time, looking for default gift');
 					// Fallback to first available gift
 					{% for block in blocks %}
 						{% if block.type == 'gift' and block.settings.show_on != 'none' %}
