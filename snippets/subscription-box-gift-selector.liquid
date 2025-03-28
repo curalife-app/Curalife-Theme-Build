@@ -30,7 +30,15 @@
 							{% assign giftVariantSubscription = giftProdSubscription.selected_or_first_available_variant | default: giftVariant %}
 							{% assign giftThumb = block.settings.gift_thumbnail | default: giftProdSubscription.featured_image | default: giftProd.featured_image %}
 
-							<div class="gift-box {% if giftsAmount > 1 %}clickable{% endif %} block" name="track:gift|variant-sku:{{ giftVariant.sku }}">
+							<div
+								class="gift-box {% if giftsAmount > 1 %}clickable{% endif %} block"
+								{% if giftsAmount > 1 %}
+									name="track:gift|variant-sku:{{ giftVariant.sku }}"
+									tabindex="0"
+								{% else %}
+									aria-disabled="true"
+									tabindex="-1"
+								{% endif %}>
 								<div
 									class="gift-option-border p-2 rounded-lg"
 									data-gift-id="{{ giftVariant.id }}"
@@ -75,7 +83,7 @@
 		      position: relative;
 		      cursor: {% if giftsAmount > 1 %}pointer{% else %}default{% endif %};
 		      background-color: white;
-		      border: 1px solid var(--primary-color-light);
+		      border: 1px solid {% if giftsAmount > 1 %}var(--primary-color-light){% else %}#e5e5e5{% endif %};
 		      transition: all 0.3s ease;
 
 		      &:hover {
@@ -221,6 +229,17 @@
 				giftOptionContainers.forEach(c => {
 					c.addEventListener('click', () => updateGiftSelection(c));
 				});
+			} else if (giftOptionContainers.length === 1) {
+				// For a single gift, prevent any click events from bubbling up or triggering form submissions
+				giftOptionContainers[0].addEventListener(
+					'click',
+					e => {
+						e.preventDefault();
+						e.stopPropagation();
+						return false;
+					},
+					true
+				);
 			}
 		});
 	</script>
