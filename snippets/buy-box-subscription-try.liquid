@@ -42,7 +42,14 @@
 	{% if block.type == 'variant' %}
 		{% assign firstVariantBlock = block %}
 
+		<script>
+			console.log('referenced_variant_product: ', {{ referenced_variant_product | json }});
+		</script>
+
 		{% for var in referenced_variant_product.variants %}
+			<script>
+				console.log('var: ', {{ var | json }});
+			</script>
 			{% assign currVarID = var.id | plus: 0 %}
 
 			{% if currVarID == firstVariantBlock.settings.variant_id %}
