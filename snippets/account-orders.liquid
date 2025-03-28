@@ -28,6 +28,24 @@
 			</div>
 		</div>
 
+		<!-- Returns Widget Section -->
+		<div class="returns-widget-section">
+			<button id="returns-toggle-btn" class="returns-toggle-btn">
+				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M21 8v4a2 2 0 0 1-2 2H8"></path><path d="M17 4l4 4-4 4"></path><path d="M3 16v-4a2 2 0 0 1 2-2h11"></path><path d="M7 20l-4-4 4-4"></path>
+				</svg>
+				Return an Item
+			</button>
+
+			<div id="returns-widget-container" class="returns-widget-container" style="display: none;">
+				<script
+					src="https://returns.shiphero.com/widget"
+					onLoad="ShipHeroReturnsWidget.ReturnsWidget.render({ id: 'Q29ubmVjdGVkU2hvcDpjdXJhbGlmZS1jb21tZXJjZS5teXNob3BpZnkuY29t' }, '#sh-returns');"></script>
+				<div id="sh-returns" style="height:500px;width:100%;max-width:500px;margin:0 auto;"></div>
+			</div>
+		</div>
+		<!-- End Returns Widget Section -->
+
 		<div class="orders-list-wrapper">
 			<ul class="orders-list no-style" id="orders-list">
 				{% for order in customer.orders %}
@@ -160,6 +178,22 @@
 				const orderItems = ordersList.querySelectorAll('.order-item');
 				const noOrdersMessage = document.getElementById('no-orders-message');
 
+				// Returns widget toggle functionality
+				const returnsToggleBtn = document.getElementById('returns-toggle-btn');
+				const returnsWidgetContainer = document.getElementById('returns-widget-container');
+
+				if (returnsToggleBtn) {
+					returnsToggleBtn.addEventListener('click', function () {
+						if (returnsWidgetContainer.style.display === 'none') {
+							returnsWidgetContainer.style.display = 'block';
+							returnsToggleBtn.classList.add('active');
+						} else {
+							returnsWidgetContainer.style.display = 'none';
+							returnsToggleBtn.classList.remove('active');
+						}
+					});
+				}
+
 				function filterOrders() {
 					const statusValue = statusFilter.value;
 					const searchValue = searchInput.value.toLowerCase();
@@ -220,3 +254,77 @@
 		</div>
 	{% endif %}
 </div>
+
+<style>
+	/* Returns Widget Styles */
+	.returns-widget-section {
+		margin: 24px 0;
+	}
+
+	.returns-toggle-btn {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		background-color: white;
+		color: var(--primary);
+		border: 1px solid var(--primary);
+		border-radius: var(--radius-md);
+		padding: 12px 20px;
+		font-weight: 600;
+		font-size: 16px;
+		cursor: pointer;
+		transition: all 0.3s ease;
+		margin: 0 auto;
+		box-shadow: var(--shadow-sm);
+	}
+
+	.returns-toggle-btn:hover {
+		background-color: rgba(var(--primary-rgb), 0.08);
+		transform: translateY(-2px);
+		box-shadow: var(--shadow-md);
+	}
+
+	.returns-toggle-btn.active {
+		background-color: var(--primary);
+		color: white;
+	}
+
+	.returns-toggle-btn svg {
+		transition: transform 0.3s ease;
+	}
+
+	.returns-toggle-btn:hover svg {
+		transform: translateX(2px);
+	}
+
+	.returns-widget-container {
+		background-color: white;
+		border-radius: var(--radius-xl);
+		padding: 30px;
+		margin-top: 16px;
+		box-shadow: var(--shadow-md);
+		border: 1px solid var(--gray-200);
+		animation: fadeIn 0.3s ease;
+	}
+
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+			transform: translateY(-10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@media (max-width: 768px) {
+		.returns-widget-container {
+			padding: 20px;
+		}
+
+		#sh-returns {
+			max-width: 100% !important;
+		}
+	}
+</style>
