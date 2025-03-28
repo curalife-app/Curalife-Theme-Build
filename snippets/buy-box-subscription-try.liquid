@@ -44,18 +44,6 @@
 	{% if block.type == 'variant' %}
 		{% assign firstVariantBlock = block %}
 
-		<!-- Debug logs -->
-		<script>
-			console.log('firstVariantBlock: ', {{ firstVariantBlock | json }});
-			console.log('variant_id from settings: ', {{ firstVariantBlock.settings.variant_id | json }});
-			console.log('selling_plan_id from settings: ', {{ firstVariantBlock.settings.selling_plan_id | json }});
-		</script>
-
-		<!-- First try to get selling_plan_id from block settings -->
-		{% if firstVariantBlock.settings.selling_plan_id %}
-			{% assign variant_selling_plan_id = firstVariantBlock.settings.selling_plan_id %}
-		{% endif %}
-
 		<!-- Try to find the matching variant in the product -->
 		{% if referenced_variant_product and referenced_variant_product.variants.size > 0 %}
 			{% for var in referenced_variant_product.variants %}
@@ -64,15 +52,10 @@
 
 				{% if currVarID == settingsVarID %}
 					{% assign referenced_variant = var %}
-					<script>
-						console.log('Found matching variant: ', {{ var | json }});
-					</script>
 
+					<!-- If variant has subscription metafields, use those -->
 					{% if var.metafields.subscription and var.metafields.subscription.selling_plan_id %}
 						{% assign variant_selling_plan_id = var.metafields.subscription.selling_plan_id %}
-						<script>
-							console.log('Using selling_plan_id from variant metafields: ', {{ variant_selling_plan_id | json }});
-						</script>
 					{% endif %}
 
 					{% break %}
@@ -80,22 +63,15 @@
 			{% endfor %}
 		{% endif %}
 
+		<!-- If we still don't have a selling_plan_id, use the one from settings or fallback -->
 		{% unless variant_selling_plan_id %}
 			{% if firstVariantBlock.settings.selling_plan_id %}
 				{% assign variant_selling_plan_id = firstVariantBlock.settings.selling_plan_id %}
-				<script>
-					console.log('Using selling_plan_id from block settings: ', {{ variant_selling_plan_id | json }});
-				</script>
 			{% elsif selling_plan_id %}
 				{% assign variant_selling_plan_id = selling_plan_id %}
-				<script>
-					console.log('Using selling_plan_id from parent context: ', {{ variant_selling_plan_id | json }});
-				</script>
 			{% else %}
-				{% assign variant_selling_plan_id = '1159217313' %}
-				<script>
-					console.log('Using hardcoded fallback selling_plan_id: ', {{ variant_selling_plan_id | json }});
-				</script>
+				{% comment %}Fallback to hardcoded ID if all else fails{% endcomment %}
+				{% assign variant_selling_plan_id = '11675271319' %}
 			{% endif %}
 		{% endunless %}
 
@@ -545,17 +521,9 @@ document.addEventListener('DOMContentLoaded', () => {
 		// Add click event for the variant box itself
 		const variantBox = document.querySelector('.single-variant-box');
 		if (variantBox) {
-			// Log available data attributes on the variant box
-			console.log('Variant box data attributes:', {
-				variantId: variantBox.dataset.variantId,
-				sellingPlanId: variantBox.dataset.sellingPlanId,
-				bottleQuantity: variantBox.dataset.bottleQuantity,
-				savePercentage: variantBox.dataset.savePercentage,
-				price: variantBox.dataset.price,
-				comparePrice: variantBox.dataset.comparePrice,
-				productTitle: variantBox.dataset.productTitle,
-				variantTitle: variantBox.dataset.variantTitle
-			});
+			// Log the selling plan ID we'll be using
+			const sellingPlanId = variantBox.dataset.sellingPlanId;
+			console.log('Using selling plan ID:', sellingPlanId);
 
 			variantBox.addEventListener('click', function(e) {
 				// Only trigger if the click is on the box itself, not on any buttons inside
@@ -603,7 +571,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				const isSub = true; // Always subscription in this simplified version
 				const variantBox = document.querySelector('.single-variant-box');
 				const variant = variantBox?.dataset.variantId;
-				const sellingPlanId = variantBox?.dataset.sellingPlanId || '{{ selling_plan_id }}';
+				const sellingPlanId = variantBox?.dataset.sellingPlanId;
 
 				if (!variant) {
 					throw new Error('No valid variant ID found');
