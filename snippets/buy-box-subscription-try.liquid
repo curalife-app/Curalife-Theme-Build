@@ -349,34 +349,53 @@ document.addEventListener('DOMContentLoaded', () => {
 				isRedirectingToCheckout: true
 			});
 
+			console.log('Starting buy now flow with items:', JSON.stringify(items));
+
 			// Remove cart popup if it exists (do this early)
 			const cartPopup = document.getElementById('upCart');
 			if (cartPopup) cartPopup.remove();
 
 			// Perform cart operations in parallel when possible
+			console.log('Clearing cart...');
 			const clearCartPromise = clearCart();
 
 			// Wait for cart clearing to complete
 			await clearCartPromise;
+			console.log('Cart cleared successfully');
 
 			// Add items to cart (with improved error handling)
+			console.log('Adding items to cart: ', JSON.stringify(items));
 			const addRes = await fetch('/cart/add.js', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				headers: {
+					'Content-Type': 'application/json',
+					'Cache-Control': 'no-cache'
+				},
 				body: JSON.stringify({ items }),
 				// Add cache control to prevent browser caching
 				cache: 'no-store'
 			});
 
+			console.log('Cart add response status:', addRes.status);
+			const responseText = await addRes.text();
+			console.log('Cart add response text:', responseText);
+
+			let responseData;
+			try {
+				responseData = JSON.parse(responseText);
+				console.log('Cart add parsed response:', responseData);
+			} catch (e) {
+				console.error('Failed to parse response as JSON:', e);
+			}
+
 			if (!addRes.ok) {
-				const errorData = await addRes.json();
-				console.error('Cart add response:', errorData);
 				throw Object.assign(
 					new Error('Failed to add items'),
-					{ response: errorData }
+					{ response: responseData || responseText }
 				);
 			}
 
+			console.log('Items added successfully, redirecting to checkout');
 			// Redirect to checkout immediately
 			window.location.href = '/checkout';
 		} catch (err) {
@@ -391,6 +410,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	async function addValidItemsToCart(items) {
 		try {
+			console.log('Adding items to cart:', JSON.stringify(items));
+
 			// Add items to cart
 			const res = await fetch('/cart/add.js', {
 				method: 'POST',
@@ -402,21 +423,35 @@ document.addEventListener('DOMContentLoaded', () => {
 				body: JSON.stringify({ items })
 			});
 
+			console.log('Cart add response status:', res.status);
+			const responseText = await res.text();
+			console.log('Cart add response text:', responseText);
+
+			let responseData;
+			try {
+				responseData = JSON.parse(responseText);
+				console.log('Cart add parsed response:', responseData);
+			} catch (e) {
+				console.error('Failed to parse response as JSON:', e);
+			}
+
 			if (!res.ok) {
-				const errorData = await res.json();
-				console.error('Error adding items to cart:', errorData);
-				throw Object.assign(new Error('Failed to add items to cart'), { response: errorData });
+				throw Object.assign(
+					new Error('Failed to add items to cart'),
+					{ response: responseData || responseText }
+				);
 			}
 
 			// Update cart UI if needed
 			if (typeof window.updateCart === 'function') {
+				console.log('Updating cart UI');
 				window.updateCart();
 			}
 
 			// Show a success message
 			showNotification('Items added to cart!', 'success');
 
-			return res.json();
+			return responseData;
 		} catch (err) {
 			console.error('Error in addValidItemsToCart:', err);
 			throw err;
@@ -442,16 +477,37 @@ document.addEventListener('DOMContentLoaded', () => {
 			});
 		}
 
+		// First make sure we override the default form submission from buy-buttons-new-4
+		const form = productActions.querySelector('form[data-type="add-to-cart-form"]');
+		if (form) {
+			form.addEventListener('submit', function(e) {
+				e.preventDefault();
+				console.log('Form submit intercepted');
+				// The actual submission logic is handled by the button click handler
+			});
+		}
+
 		submitButton.addEventListener('click', async e => {
 			e.preventDefault();
+			console.log('Submit button clicked');
 
 			// Prevent double-clicks or multiple submissions
 			if (isSubmitting || BuyBoxState.data.isLoading) {
+				console.log('Submission already in progress, ignoring click');
 				return;
 			}
 
 			isSubmitting = true;
 			BuyBoxState.setState({ isLoading: true });
+
+			// Track the event in dataLayer - this is happening but not followed by cart action
+			if (window.dataLayer) {
+				window.dataLayer.push({
+					'event': 'submit-clicked',
+					'buybox_type': BuyBoxState.data.buyType,
+					'buybox_name': 'subscription-try'
+				});
+			}
 
 			try {
 				const isSub = true; // Always subscription in this simplified version
@@ -466,6 +522,13 @@ document.addEventListener('DOMContentLoaded', () => {
 				if (isSub && !sellingPlanId) {
 					console.error('Warning: No selling plan ID found for subscription purchase');
 				}
+
+				// Set values in the form if it exists
+				const variantIdInput = productActions.querySelector('.submit-variant-id');
+				const sellingPlanIdInput = productActions.querySelector('.submit-selling-plan-id');
+
+				if (variantIdInput) variantIdInput.value = variant;
+				if (sellingPlanIdInput) sellingPlanIdInput.value = sellingPlanId;
 
 				let items = [{
 					id: parseInt(variant, 10),
@@ -525,10 +588,13 @@ document.addEventListener('DOMContentLoaded', () => {
 					{% endfor %}
 				{% endif %}
 
-				if (BuyBoxState.data.buyType === 'buy_now') {
-					await handleBuyNowFlow(items);
-					// Don't reset loading state if we're redirecting
-				} else {
+				// For "Try Before You Buy", always use buy_now flow to go directly to checkout
+				console.log("Starting checkout process with buyType:", BuyBoxState.data.buyType);
+				await handleBuyNowFlow(items);
+
+				// The following code won't execute if handleBuyNowFlow is successful since it redirects
+				// But let's keep it as a fallback
+				if (BuyBoxState.data.buyType !== 'buy_now') {
 					await addValidItemsToCart(items);
 					// Only reset loading state if we're not redirecting
 					isSubmitting = false;
