@@ -41,6 +41,14 @@
 {% for block in blocks %}
 	{% if block.type == 'variant' %}
 		{% assign defaultVariant = block %}
+
+		{% for vari in referenced_variant_product.variants %}
+			{% assign currVarID = vari.id | plus: 0 %}
+
+			{% if currVarID == defaultVariant.settings.variant_id %}
+				{% assign referenced_variant = vari %}
+			{% endif %}
+		{% endfor %}
 		{% break %}
 	{% endif %}
 {% endfor %}
