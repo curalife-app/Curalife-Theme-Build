@@ -95,15 +95,7 @@
 
 						<!-- Status Bar -->
 						<div class="order-status-bar">
-							<div class="status-indicator-wrapper">
-								<div class="status-indicator {{ order.financial_status }} {{ order.fulfillment_status | default: 'unfulfilled' }}"></div>
-							</div>
 							<div class="status-details">
-								<div class="financial-status">
-									<span class="payment-status-badge {{ order.financial_status }}">
-										{{ order.financial_status | capitalize }}
-									</span>
-								</div>
 								{% if order.fulfillment_status %}
 									<div class="shipping-status">
 										<span class="status-badge {{ order.fulfillment_status }}">
@@ -153,6 +145,12 @@
 										</span>
 									</div>
 								{% endif %}
+
+								<div class="financial-status">
+									<span class="payment-status-badge {{ order.financial_status }}">
+										{{ order.financial_status | capitalize }}
+									</span>
+								</div>
 							</div>
 							<div class="order-total-panel">
 								<div class="total-amount">{{ order.total_price | money_with_currency }}</div>
@@ -564,51 +562,10 @@
 		border-bottom: 1px solid var(--gray-200);
 	}
 
-	.status-indicator-wrapper {
-		width: 12px;
-		height: 12px;
-		display: flex;
-		align-items: center;
-	}
-
-	.status-indicator {
-		width: 12px;
-		height: 12px;
-		border-radius: 50%;
-	}
-
-	.status-indicator.paid {
-		background-color: var(--success);
-	}
-
-	.status-indicator.refunded,
-	.status-indicator.voided {
-		background-color: var(--danger);
-	}
-
-	.status-indicator.pending,
-	.status-indicator.partially_paid,
-	.status-indicator.partially_refunded {
-		background-color: var(--warning);
-	}
-
-	.status-indicator.fulfilled {
-		background-color: var(--success);
-	}
-
-	.status-indicator.partial {
-		background-color: var(--warning);
-	}
-
-	.status-indicator.unfulfilled {
-		background-color: var(--danger);
-	}
-
 	.status-details {
 		display: flex;
 		align-items: center;
 		gap: 12px;
-		margin-left: 12px;
 	}
 
 	.order-total-panel {
