@@ -704,41 +704,8 @@ document.addEventListener('DOMContentLoaded', () => {
 				const toAdd = [{ id: parseInt(variant1, 10), quantity: 1 }];
 
 				{% if giftsAmount > 0 %}
-				// Add selected gift to one-time purchase
-				const selectedGiftBox = document.querySelector('.gift-box.selected');
-				if (selectedGiftBox) {
-					const giftBorder = selectedGiftBox.querySelector('.gift-option-border');
-					if (giftBorder) {
-						const giftID = giftBorder.dataset.giftId;
-
-						if (giftID) {
-							toAdd.push({ id: parseInt(giftID, 10), quantity: 1 });
-							console.log('Adding gift to one-time purchase:', giftID);
-						} else {
-							console.error('No gift ID found for one-time purchase in selected gift');
-						}
-					} else {
-						console.error('Gift border element not found in selected gift box for one-time');
-					}
-				} else {
-					console.log('No gift selected for one-time, looking for default gift');
-					// Fallback to first available gift
-					{% for block in blocks %}
-						{% if block.type == 'gift' and block.settings.show_on != 'none' %}
-							{% if isGlobal %}
-								{% assign giftID = block.settings.gift_id_global | plus: 0 %}
-							{% else %}
-								{% assign giftID = block.settings.gift_id | plus: 0 %}
-							{% endif %}
-
-							{% if giftID > 0 %}
-							toAdd.push({ id: {{ giftID }}, quantity: 1 });
-							console.log('Adding default gift to one-time purchase:', {{ giftID }});
-							{% break %}
-							{% endif %}
-						{% endif %}
-					{% endfor %}
-				}
+				// For one-time purchase, we don't add any gifts
+				// Removed gift adding logic for one-time purchases
 				{% endif %}
 
 				if (BuyBoxState.data.buyType === 'buy_now') {
