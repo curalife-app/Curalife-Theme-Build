@@ -10,6 +10,7 @@
 {% endif %}
 
 {% assign referenced_variant_product = prod %}
+{% assign referenced_variant = null %}
 
 {% assign giftsAmount = 0 %}
 {% assign faqsAmount = value %}
@@ -36,31 +37,71 @@
 
 {% assign defaultSelectionIndex = 0 %}
 {% assign firstVariantBlock = null %}
+{% assign variant_selling_plan_id = null %}
 
 <!-- Find first variant block to use for properties -->
 {% for block in blocks %}
 	{% if block.type == 'variant' %}
 		{% assign firstVariantBlock = block %}
 
-		{% for var in referenced_variant_product.variants %}
-			{% assign currVarID = var.id | plus: 0 %}
+		<!-- Debug logs -->
+		<script>
+			console.log('firstVariantBlock: ', {{ firstVariantBlock | json }});
+			console.log('variant_id from settings: ', {{ firstVariantBlock.settings.variant_id | json }});
+			console.log('selling_plan_id from settings: ', {{ firstVariantBlock.settings.selling_plan_id | json }});
+		</script>
 
-			<script>
-					console.log('referenced_variant: ', {{ var | json }});
-					console.log('firstVariantBlock.settings.variant_id: ', {{ firstVariantBlock.settings.variant_id | json }});
-					console.log('currVarID: ', {{ currVarID | json }});
-					console.log('currVarID == firstVariantBlock.settings.variant_id: ', {{ currVarID | json }} == {{ firstVariantBlock.settings.variant_id | json }});
-					console.log('var: ', {{ var | json }});
-					console.log('referenced_variant_product: ', {{ referenced_variant_product | json }});
-					console.log('blocks: ', {{ blocks | json }});
-					console.log('block: ', {{ block | json }});
-					console.log('firstVariantBlock: ', {{ firstVariantBlock | json }});
+		<!-- First try to get selling_plan_id from block settings -->
+		{% if firstVariantBlock.settings.selling_plan_id %}
+			{% assign variant_selling_plan_id = firstVariantBlock.settings.selling_plan_id %}
+		{% endif %}
+
+		<!-- Try to find the matching variant in the product -->
+		{% if referenced_variant_product and referenced_variant_product.variants.size > 0 %}
+			{% for var in referenced_variant_product.variants %}
+				{% assign currVarID = var.id | plus: 0 %}
+				{% assign settingsVarID = firstVariantBlock.settings.variant_id | plus: 0 %}
+
+				{% if currVarID == settingsVarID %}
+					{% assign referenced_variant = var %}
+					<script>
+						console.log('Found matching variant: ', {{ var | json }});
+					</script>
+
+					<!-- If variant has subscription metafields, use those -->
+					{% if var.metafields.subscription and var.metafields.subscription.selling_plan_id %}
+						{% assign variant_selling_plan_id = var.metafields.subscription.selling_plan_id %}
+						<script>
+							console.log('Using selling_plan_id from variant metafields: ', {{ variant_selling_plan_id | json }});
+						</script>
+					{% endif %}
+
+					{% break %}
+				{% endif %}
+			{% endfor %}
+		{% endif %}
+
+		<!-- If we still don't have a selling_plan_id, use the one from settings or fallback to the one passed in -->
+		{% unless variant_selling_plan_id %}
+			{% if firstVariantBlock.settings.selling_plan_id %}
+				{% assign variant_selling_plan_id = firstVariantBlock.settings.selling_plan_id %}
+				<script>
+					console.log('Using selling_plan_id from block settings: ', {{ variant_selling_plan_id | json }});
 				</script>
-			{% if currVarID == firstVariantBlock.settings.variant_id %}
-
-				{% assign referenced_variant = var %}
+			{% elsif selling_plan_id %}
+				{% assign variant_selling_plan_id = selling_plan_id %}
+				<script>
+					console.log('Using selling_plan_id from parent context: ', {{ variant_selling_plan_id | json }});
+				</script>
+			{% else %}
+				{% comment %}Fallback to hardcoded ID if all else fails{% endcomment %}
+				{% assign variant_selling_plan_id = '1159217313' %}
+				<script>
+					console.log('Using hardcoded fallback selling_plan_id: ', {{ variant_selling_plan_id | json }});
+				</script>
 			{% endif %}
-		{% endfor %}
+		{% endunless %}
+
 		{% break %}
 	{% endif %}
 {% endfor %}
@@ -69,9 +110,9 @@
 	<div class="purchase-options flex flex-col gap-3 mb-3">
 		<div class="single-variant-box border-primary p-4 border-2 rounded-md"
 			data-variant-id="{{ firstVariantBlock.settings.variant_id }}"
-			data-selling-plan-id="{{ referenced_variant.metafields.subscription.selling_plan_id }}"
-			data-compare-price="{{ referenced_variant.compare_at_price }}"
-			data-price="{{ referenced_variant.price }}">
+			data-selling-plan-id="{{ variant_selling_plan_id }}"
+			data-compare-price="{% if referenced_variant %}{{ referenced_variant.compare_at_price }}{% else %}{{ firstVariantBlock.settings.compare_price }}{% endif %}"
+			data-price="{% if referenced_variant %}{{ referenced_variant.price }}{% else %}{{ firstVariantBlock.settings.price }}{% endif %}">
 			<!-- Header -->
 			<div class="variant-header text-primary font-bold text-[22px] mb-3">
 				<svg class="inline-block" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
