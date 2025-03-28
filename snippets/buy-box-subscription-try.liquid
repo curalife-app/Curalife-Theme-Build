@@ -363,16 +363,29 @@ document.addEventListener('DOMContentLoaded', () => {
 			await clearCartPromise;
 			console.log('Cart cleared successfully');
 
+			// Validate each item to ensure selling_plan is properly formatted
+			items.forEach(item => {
+				if (item.selling_plan !== undefined) {
+					// Ensure selling_plan is a number
+					item.selling_plan = parseInt(item.selling_plan, 10);
+					if (isNaN(item.selling_plan)) {
+						console.error(`Invalid selling_plan value: ${item.selling_plan}`);
+						delete item.selling_plan;
+					}
+				}
+			});
+
 			// Add items to cart (with improved error handling)
-			console.log('Adding items to cart: ', JSON.stringify(items));
+			const requestBody = JSON.stringify({ items });
+			console.log('Adding items to cart with request body:', requestBody);
+
 			const addRes = await fetch('/cart/add.js', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
 					'Cache-Control': 'no-cache'
 				},
-				body: JSON.stringify({ items }),
-				// Add cache control to prevent browser caching
+				body: requestBody,
 				cache: 'no-store'
 			});
 
@@ -393,6 +406,18 @@ document.addEventListener('DOMContentLoaded', () => {
 					new Error('Failed to add items'),
 					{ response: responseData || responseText }
 				);
+			}
+
+			// Verify items were added with subscription
+			try {
+				const cart = await fetch('/cart.js').then(res => res.json());
+				console.log('Cart contents after adding items:', cart);
+				const hasSubscription = cart.items.some(item => item.selling_plan_allocation);
+				if (!hasSubscription) {
+					console.warn('No subscription items found in cart after adding. Check selling plan ID.');
+				}
+			} catch (e) {
+				console.error('Failed to verify cart contents:', e);
 			}
 
 			console.log('Items added successfully, redirecting to checkout');
@@ -467,6 +492,18 @@ document.addEventListener('DOMContentLoaded', () => {
 		// Add click event for the variant box itself
 		const variantBox = document.querySelector('.single-variant-box');
 		if (variantBox) {
+			// Log available data attributes on the variant box
+			console.log('Variant box data attributes:', {
+				variantId: variantBox.dataset.variantId,
+				sellingPlanId: variantBox.dataset.sellingPlanId,
+				bottleQuantity: variantBox.dataset.bottleQuantity,
+				savePercentage: variantBox.dataset.savePercentage,
+				price: variantBox.dataset.price,
+				comparePrice: variantBox.dataset.comparePrice,
+				productTitle: variantBox.dataset.productTitle,
+				variantTitle: variantBox.dataset.variantTitle
+			});
+
 			variantBox.addEventListener('click', function(e) {
 				// Only trigger if the click is on the box itself, not on any buttons inside
 				if (e.target.closest('button') || e.target.closest('.one-time-add-to-cart')) {
@@ -520,7 +557,13 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 
 				if (isSub && !sellingPlanId) {
-					console.error('Warning: No selling plan ID found for subscription purchase');
+					throw new Error('No selling plan ID found for subscription purchase');
+				}
+
+				// Ensure selling plan ID is a number (Shopify requires this)
+				const numericSellingPlanId = parseInt(sellingPlanId, 10);
+				if (isNaN(numericSellingPlanId)) {
+					throw new Error(`Invalid selling plan ID: ${sellingPlanId}`);
 				}
 
 				// Set values in the form if it exists
@@ -528,16 +571,16 @@ document.addEventListener('DOMContentLoaded', () => {
 				const sellingPlanIdInput = productActions.querySelector('.submit-selling-plan-id');
 
 				if (variantIdInput) variantIdInput.value = variant;
-				if (sellingPlanIdInput) sellingPlanIdInput.value = sellingPlanId;
+				if (sellingPlanIdInput) sellingPlanIdInput.value = numericSellingPlanId;
 
 				let items = [{
 					id: parseInt(variant, 10),
 					quantity: 1,
-					selling_plan: isSub ? sellingPlanId : undefined
+					selling_plan: numericSellingPlanId
 				}];
 
 				// Debug log to check what's being sent to cart
-				console.log('Adding to cart with items:', JSON.stringify(items), 'isSub:', isSub, 'sellingPlanId:', sellingPlanId);
+				console.log('Adding to cart with items:', JSON.stringify(items), 'isSub:', isSub, 'sellingPlanId:', numericSellingPlanId);
 
 				// Add selected gift if available
 				{% if giftsAmount > 0 %}
