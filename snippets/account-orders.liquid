@@ -156,7 +156,7 @@
 							</div>
 							<div class="order-total-panel">
 								<div class="total-amount">{{ order.total_price | money_with_currency }}</div>
-								{% if order.fulfillment_status != 'fulfilled' and order.fulfillment_status != 'shipped' %}
+								{% if order.fulfillment_status == 'partial' or order.fulfillment_status == 'shipped' %}
 									<a href="https://curalife.com/apps/parcelpanel" class="track-order-button" target="_blank">
 										<svg
 											xmlns="http://www.w3.org/2000/svg"
@@ -501,30 +501,29 @@
 	.order-item {
 		background-color: white;
 		border-radius: var(--radius-xl);
-		margin-bottom: 32px;
-		box-shadow: var(--shadow-md);
+		margin-bottom: 24px;
+		box-shadow: var(--shadow-sm);
 		border: 1px solid var(--gray-200);
-		transition: box-shadow 0.3s ease, transform 0.3s ease;
+		transition: box-shadow 0.3s ease;
 		overflow: hidden;
 	}
 
 	.order-item:hover {
-		box-shadow: var(--shadow-lg);
-		transform: translateY(-2px);
+		box-shadow: var(--shadow-md);
 	}
 
 	.order-header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 18px 24px;
+		padding: 16px 24px;
 		background-color: var(--gray-50);
 		border-bottom: 1px solid var(--gray-200);
 	}
 
 	.order-number p {
 		font-weight: 700;
-		font-size: 18px;
+		font-size: 16px;
 		color: var(--gray-900);
 		margin: 0;
 	}
@@ -538,12 +537,12 @@
 	.download-link {
 		display: inline-flex;
 		align-items: center;
-		gap: 8px;
-		background-color: white;
+		gap: 6px;
+		background-color: var(--gray-50);
 		color: var(--gray-700);
 		font-size: 14px;
-		font-weight: 600;
-		padding: 8px 16px;
+		font-weight: 500;
+		padding: 6px 12px;
 		border-radius: var(--radius-md);
 		text-decoration: none;
 		border: 1px solid var(--gray-300);
@@ -553,7 +552,6 @@
 	.download-link:hover {
 		background-color: var(--gray-100);
 		color: var(--gray-900);
-		border-color: var(--gray-400);
 	}
 
 	/* Status Bar */
@@ -567,6 +565,8 @@
 	}
 
 	.status-indicator-wrapper {
+		width: 12px;
+		height: 12px;
 		display: flex;
 		align-items: center;
 	}
@@ -575,25 +575,21 @@
 		width: 12px;
 		height: 12px;
 		border-radius: 50%;
-		margin-right: 12px;
 	}
 
 	.status-indicator.paid {
 		background-color: var(--success);
-		box-shadow: 0 0 0 4px rgba(var(--success-rgb), 0.2);
 	}
 
 	.status-indicator.refunded,
 	.status-indicator.voided {
 		background-color: var(--danger);
-		box-shadow: 0 0 0 4px rgba(var(--danger-rgb), 0.2);
 	}
 
 	.status-indicator.pending,
 	.status-indicator.partially_paid,
 	.status-indicator.partially_refunded {
 		background-color: var(--warning);
-		box-shadow: 0 0 0 4px rgba(var(--warning-rgb), 0.2);
 	}
 
 	.status-indicator.fulfilled {
@@ -605,20 +601,21 @@
 	}
 
 	.status-indicator.unfulfilled {
-		background-color: var(--gray-400);
+		background-color: var(--danger);
 	}
 
 	.status-details {
 		display: flex;
 		align-items: center;
 		gap: 12px;
+		margin-left: 12px;
 	}
 
 	.order-total-panel {
 		display: flex;
 		flex-direction: column;
 		align-items: flex-end;
-		gap: 10px;
+		gap: 8px;
 	}
 
 	.total-amount {
@@ -631,28 +628,28 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 6px;
-		background-color: rgba(var(--primary-rgb), 0.1);
+		background-color: var(--gray-100);
 		color: var(--primary);
 		font-size: 14px;
-		font-weight: 600;
-		padding: 8px 14px;
+		font-weight: 500;
+		padding: 6px 12px;
 		border-radius: var(--radius-md);
 		text-decoration: none;
+		border: 1px solid var(--gray-200);
 		transition: all 0.2s ease;
 	}
 
 	.track-order-button:hover {
-		background-color: rgba(var(--primary-rgb), 0.15);
-		transform: translateY(-2px);
+		background-color: var(--gray-200);
 	}
 
 	/* Shipping Info Panel */
 	.order-info-panel {
 		display: flex;
-		padding: 20px 24px;
+		padding: 16px 24px;
 		background-color: white;
 		border-bottom: 1px solid var(--gray-200);
-		gap: 30px;
+		gap: 24px;
 	}
 
 	.info-panel-half {
@@ -660,7 +657,7 @@
 	}
 
 	.info-panel-title {
-		font-size: 14px;
+		font-size: 12px;
 		font-weight: 600;
 		color: var(--gray-600);
 		margin: 0 0 12px 0;
@@ -670,7 +667,7 @@
 
 	.address-content p,
 	.order-note {
-		margin: 0 0 6px 0;
+		margin: 0 0 4px 0;
 		font-size: 14px;
 		color: var(--gray-800);
 		line-height: 1.5;
@@ -682,49 +679,47 @@
 
 	/* Order Items Container */
 	.order-items-container {
-		padding: 24px;
+		padding: 16px 24px;
 		background-color: white;
 	}
 
 	.order-items-title {
 		font-size: 16px;
-		font-weight: 700;
+		font-weight: 600;
 		color: var(--gray-800);
 		margin: 0 0 16px 0;
-		padding-bottom: 12px;
-		border-bottom: 1px solid var(--gray-200);
 	}
 
 	.items-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-		gap: 20px;
+		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+		gap: 16px;
 	}
 
 	.order-content {
 		background-color: var(--gray-50);
-		border-radius: var(--radius-lg);
+		border-radius: var(--radius-md);
 		overflow: hidden;
 		border: 1px solid var(--gray-200);
 	}
 
 	.order-product {
-		padding: 16px;
+		padding: 12px;
 	}
 
 	.product-info {
 		display: flex;
-		gap: 16px;
-		margin-bottom: 16px;
+		gap: 12px;
+		margin-bottom: 12px;
 	}
 
 	.product-image {
-		width: 80px;
-		height: 80px;
+		width: 64px;
+		height: 64px;
 		background-color: white;
 		border-radius: var(--radius-md);
 		border: 1px solid var(--gray-200);
-		padding: 8px;
+		padding: 6px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -735,134 +730,59 @@
 		flex: 1;
 		display: flex;
 		flex-direction: column;
+		justify-content: center;
 	}
 
 	.product-title {
 		font-weight: 600;
 		color: var(--gray-900);
-		margin: 0 0 6px 0;
-		font-size: 16px;
+		margin: 0 0 4px 0;
+		font-size: 14px;
 	}
 
 	.variant-title {
-		font-size: 14px;
+		font-size: 12px;
 		color: var(--gray-600);
-		margin: 0 0 6px 0;
+		margin: 0;
 	}
 
 	.order-details {
 		display: flex;
 		justify-content: space-between;
 		padding-top: 12px;
-		border-top: 1px dashed var(--gray-300);
+		border-top: 1px solid var(--gray-200);
 	}
 
 	.order-quantity,
 	.line-total {
 		display: flex;
 		flex-direction: column;
-		gap: 4px;
+		gap: 2px;
 	}
 
 	.detail-label {
-		font-size: 12px;
+		font-size: 11px;
 		color: var(--gray-600);
 	}
 
 	.detail-value {
 		font-weight: 600;
 		color: var(--gray-800);
+		font-size: 13px;
 	}
 
 	.line-total .detail-value {
 		color: var(--primary);
 	}
 
-	/* Order Tracking Section */
-	.order-tracking-section {
-		margin: 0;
-		padding: 24px;
-		background-color: white;
-		border-top: 1px solid var(--gray-200);
-	}
-
-	.tracking-title {
-		display: flex;
-		align-items: center;
-		gap: 10px;
-		font-size: 16px;
-		font-weight: 700;
-		color: var(--gray-800);
-		margin: 0 0 16px 0;
-	}
-
-	.tracking-info {
-		background-color: var(--gray-50);
-		border-radius: var(--radius-lg);
-		padding: 16px;
-		margin-bottom: 16px;
-		border: 1px solid var(--gray-200);
-	}
-
-	.tracking-info:last-child {
-		margin-bottom: 0;
-	}
-
-	.tracking-label {
-		font-weight: 600;
-		color: var(--gray-700);
-		margin: 0 0 12px 0;
-		font-size: 14px;
-	}
-
-	.tracking-number-container {
-		display: flex;
-		align-items: center;
-		background-color: white;
-		border-radius: var(--radius-md);
-		padding: 10px 14px;
-		border: 1px solid var(--gray-200);
-		margin-bottom: 8px;
-	}
-
-	.tracking-number-container:last-child {
-		margin-bottom: 0;
-	}
-
-	.tracking-prefix {
-		font-size: 14px;
-		color: var(--gray-600);
-		margin-right: 8px;
-	}
-
-	.tracking-link {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		color: var(--primary);
-		text-decoration: none;
-		font-weight: 600;
-		transition: color 0.2s ease;
-		border-bottom: none;
-	}
-
-	.tracking-link:hover {
-		color: var(--primary-dark);
-	}
-
-	.tracking-number-text {
-		font-weight: 600;
-		color: var(--gray-800);
-	}
-
 	/* Payment Status Badge */
 	.payment-status-badge {
 		display: inline-flex;
 		align-items: center;
-		gap: 6px;
-		font-size: 13px;
-		font-weight: 600;
-		padding: 6px 10px;
+		gap: 4px;
+		font-size: 12px;
+		font-weight: 500;
+		padding: 3px 8px;
 		border-radius: var(--radius-full);
 	}
 
@@ -888,12 +808,42 @@
 		color: var(--warning);
 	}
 
+	.status-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		font-size: 12px;
+		font-weight: 500;
+		padding: 3px 8px;
+		border-radius: var(--radius-full);
+	}
+
+	.status-badge.fulfilled {
+		background-color: var(--success-light);
+		color: var(--success);
+	}
+
+	.status-badge.partial {
+		background-color: var(--warning-light);
+		color: var(--warning);
+	}
+
+	.status-badge.unfulfilled {
+		background-color: var(--danger-light);
+		color: var(--danger);
+	}
+
 	/* Responsive Improvements */
 	@media (max-width: 768px) {
 		.order-status-bar {
 			flex-direction: column;
 			align-items: flex-start;
 			gap: 16px;
+		}
+
+		.status-details {
+			margin-left: 0;
+			margin-top: 8px;
 		}
 
 		.order-total-panel {
@@ -911,10 +861,6 @@
 			gap: 24px;
 		}
 
-		.status-details {
-			margin-top: 10px;
-		}
-
 		.download-link .desktop {
 			display: none;
 		}
@@ -924,36 +870,7 @@
 		.order-info-panel,
 		.order-items-container,
 		.order-tracking-section {
-			padding: 16px;
-		}
-	}
-
-	@media (max-width: 480px) {
-		.order-number p {
-			font-size: 16px;
-		}
-
-		.order-product {
-			padding: 12px;
-		}
-
-		.product-image {
-			width: 60px;
-			height: 60px;
-		}
-
-		.product-title {
-			font-size: 14px;
-		}
-
-		.tracking-number-container {
-			flex-direction: column;
-			align-items: flex-start;
-			gap: 6px;
-		}
-
-		.order-item {
-			margin-bottom: 24px;
+			padding: 12px 16px;
 		}
 	}
 </style>
