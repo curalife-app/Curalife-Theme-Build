@@ -3,8 +3,12 @@
 	{% assign isGlobal = true %}
 {% endif %}
 
-{% if request.path contains 'products/curalin' or request.path contains 'products/curaslim' %}
-	{% assign shippingPrice = 790 %}
+{% if product.handle == 'curalin' or product.handle == 'curaslim' or product.handle == 'curalin-tm' %}
+	{% if isGlobal %}
+		{% assign shippingPrice = 690 %}
+	{% else %}
+		{% assign shippingPrice = 790 %}
+	{% endif %}
 {% else %}
 	{% assign shippingPrice = 1000 %}
 {% endif %}
