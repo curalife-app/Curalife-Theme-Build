@@ -1,9 +1,10 @@
 {% assign pageProduct = page.metafields.custom.product.value %}
+{% assign pagesWithStickyButton = '/,/products/curalin,/products/curaslim' | split: ',' %}
 
 <style>
-	@view-transition {
+	/* @view-transition {
 		navigation: auto;
-	}
+	} */
 
 	:root {
 		--primary: {{ pageProduct.metafields.custom.primary_color | default: page.metafields.custom.primary_color | default: product.metafields.custom.primary_color | default: "var(--curalin)" }};
@@ -27,9 +28,14 @@
 		padding-top: 50px;
 	}
 
-	#app0-webchat button {@media(width<768px){bottom: 90px}}
 	#upCart #UpcartPopup p {font-size: 16px;}
 	.upcart-item-property:not(.upcart-item-property-subscription) {
 		display: none;
 	}
+
+	{% if pagesWithStickyButton contains request.path %}
+		.home #chat-button {
+			bottom: 20vw;
+		}
+	{% endif %}
 </style>
