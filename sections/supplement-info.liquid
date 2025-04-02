@@ -36,9 +36,15 @@
 
 					<div class="notice pt-4 border-t border-[--blue]">Take on each day with confidence, powered by Curalin’s natural blend designed for those who demand excellence from their supplements.</div>
 				</div>
-				{% render 'image',
-					image: section.settings.overview_image,
-					load_global: true,
+				{% if isGlobal %}
+					{% assign imgSrc = section.settings.overview_image_global %}
+				{% else %}
+					{% assign imgSrc = section.settings.overview_image %}
+				{% endif %}
+
+				{% render 'image-test',
+					image: imgSrc,
+					is_retina: true,
 					lazy: lazyLoad,
 					alt: section.settings.overview_image.alt,
 					class: 'overview-image dsk:absolute dsk:top-[10px] dsk:right-[-100px] mbl:relative mbl:top-[50px]'
@@ -46,7 +52,7 @@
 			</div>
 
 			<div class="content ingredients">
-				{% render 'responsive-image', img: section.settings.ingredients_image, img_mobile: section.settings.ingredients_image_mobile, classes: 'mbl:w-full' %}
+				{% render 'image-test', image: section.settings.ingredients_image, is_retina: true, lazy: lazyLoad, alt: section.settings.ingredients_image.alt, class: 'mbl:w-full' %}
 			</div>
 
 			{% comment %}
@@ -171,6 +177,11 @@
 				"type": "image_picker",
 				"id": "overview_image",
 				"label": "Overview Image"
+			},
+			{
+				"type": "image_picker",
+				"id": "overview_image_global",
+				"label": "Overview Image Global"
 			},
 			{
 				"type": "image_picker",
