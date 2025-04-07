@@ -120,6 +120,31 @@
 		{% endif %}
 	</section>
 
+	{% if customer.email contains 'curalin.com' %}
+		<script>
+			if (!window.is_buybox_loaded) {
+				window.is_buybox_loaded = true;
+				document.addEventListener('DOMContentLoaded', function() {
+					document.body.classList.add('buy-box-loaded');
+					fetch('{{ 'buy-box.json' | asset_url }}')
+						.then(response => {
+							if (!response.ok) {
+								throw new Error('Network response was not ok');
+							}
+							return response.json();
+						})
+						.then(data => {
+							console.log('Buy box data loaded:', data);
+							window.buyBoxData = data;
+						})
+						.catch(error => {
+							console.error('Error loading buy-box.json:', error);
+						});
+				});
+			}
+		</script>
+	{% endif %}
+
 	<script>
 		(() => {
 			const section = document.getElementById('cta-section-{{ SID }}');
