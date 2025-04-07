@@ -880,6 +880,58 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 
 		this.initialized = true;
 		console.log("All buy boxes initialized");
+
+		// Add styles for buy box UI elements
+		this.addStyles();
+	},
+
+	/**
+	 * Add required styles to the document
+	 */
+	addStyles() {
+		// Check if styles are already added
+		if (document.getElementById("curalife-buy-box-styles")) return;
+
+		const styleElement = document.createElement("style");
+		styleElement.id = "curalife-buy-box-styles";
+		styleElement.textContent = `
+			.button-spinner {
+				display: inline-block;
+				width: 1.5rem;
+				height: 1.5rem;
+				border: 2px solid rgba(255, 255, 255, 0.2);
+				border-radius: 9999px;
+				border-top-color: #fff;
+				animation: button-spinner 0.6s linear infinite;
+			}
+
+			@keyframes button-spinner {
+				0%   { transform: rotate(0deg);   }
+				100% { transform: rotate(360deg); }
+			}
+
+			.processing-order {
+				position: relative;
+			}
+
+			.processing-order::after {
+				content: "";
+				position: absolute;
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				background: rgba(255, 255, 255, 0.6);
+				z-index: 5;
+				pointer-events: none;
+			}
+
+			.disabled {
+				opacity: 0.7;
+				pointer-events: none;
+			}
+		`;
+		document.head.appendChild(styleElement);
 	}
 };
 
@@ -887,44 +939,3 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 document.addEventListener("DOMContentLoaded", () => {
 	window.CuralifeBoxes.initAll();
 });
-
-// Add some global CSS for loading states
-const style = document.createElement("style");
-style.textContent = `
-  .button-spinner {
-    display: inline-block;
-    width: 1.5rem;
-    height: 1.5rem;
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    border-radius: 9999px;
-    border-top-color: #fff;
-    animation: button-spinner 0.6s linear infinite;
-  }
-
-  @keyframes button-spinner {
-    0%   { transform: rotate(0deg);   }
-    100% { transform: rotate(360deg); }
-  }
-
-  .processing-order {
-    position: relative;
-  }
-
-  .processing-order::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 255, 255, 0.6);
-    z-index: 5;
-    pointer-events: none;
-  }
-
-  .disabled {
-    opacity: 0.7;
-    pointer-events: none;
-  }
-`;
-document.head.appendChild(style);
