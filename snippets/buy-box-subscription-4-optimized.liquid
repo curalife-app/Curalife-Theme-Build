@@ -1170,17 +1170,28 @@
 					return; // Already loaded
 				}
 
+				// ADDED: Log before attempting to find the JSON element
+				console.log(`[Optimized] Attempting to find product JSON for ID: ${productId}`);
+
 				// Try to load product data directly from the JSON script tag
 				const productJSONElement = document.getElementById(`ProductJson-${productId}`);
+
+				// ADDED: Log whether the element was found
+				if (productJSONElement) {
+					console.log(`[Optimized] Found element #ProductJson-${productId}. Content length: ${productJSONElement.textContent?.length || 0}`);
+				} else {
+					console.warn(`[Optimized] Element #ProductJson-${productId} NOT FOUND.`);
+				}
+
 				if (productJSONElement && productJSONElement.textContent) {
 					try {
 						window.productData[productId] = JSON.parse(productJSONElement.textContent);
-						console.log(`[Optimized] Successfully loaded product data for ${productId} directly from JSON tag.`);
+						console.log(`[Optimized] Successfully loaded and parsed product data for ${productId} directly from JSON tag.`);
 					} catch (parseError) {
 						console.error(`[Optimized] Error parsing ProductJson-${productId}:`, parseError, productJSONElement.textContent);
 					}
 				} else {
-					console.warn(`[Optimized] ProductJson-${productId} script tag not found or empty.`);
+					console.warn(`[Optimized] ProductJson-${productId} script tag not found or content is empty.`);
 					// Optionally, attempt to fetch if critical and not found?
 				}
 
