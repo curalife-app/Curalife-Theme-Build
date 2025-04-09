@@ -1146,18 +1146,46 @@
 			// Ensure we have a global productData object
 			window.productData = window.productData || {};
 
-			// Try to load product data from Shopify's product JSON
 			try {
-				const productId = document.querySelector(`#cta-section-${SID}`)?.querySelector('.variant-box')?.dataset.product;
-				if (productId && !window.productData[productId]) {
-					const productJSON = document.getElementById(`ProductJson-${productId}`);
-					if (productJSON) {
-						window.productData[productId] = JSON.parse(productJSON.textContent);
-						console.log(`[Optimized] Loaded product data for ${productId}`);
-					}
+				const section = getElement(`#cta-section-${SID}`);
+				if (!section) {
+					console.error('[Optimized] Cannot find section element for SID:', SID);
+					return;
 				}
+				const variantBox = section.querySelector('.variant-box');
+				if (!variantBox) {
+					console.error('[Optimized] Cannot find variant box within section:', SID);
+					return;
+				}
+				const productId = variantBox.dataset.product;
+
+				if (!productId) {
+					console.error('[Optimized] Product ID not found on variant box for SID:', SID);
+					return;
+				}
+
+				// Check if data already exists
+				if (window.productData[productId]) {
+					console.log(`[Optimized] Product data for ${productId} already exists.`);
+					return; // Already loaded
+				}
+
+				// Try to load product data directly from the JSON script tag
+				const productJSONElement = document.getElementById(`ProductJson-${productId}`);
+				if (productJSONElement && productJSONElement.textContent) {
+					try {
+						window.productData[productId] = JSON.parse(productJSONElement.textContent);
+						console.log(`[Optimized] Successfully loaded product data for ${productId} directly from JSON tag.`);
+					} catch (parseError) {
+						console.error(`[Optimized] Error parsing ProductJson-${productId}:`, parseError, productJSONElement.textContent);
+					}
+				} else {
+					console.warn(`[Optimized] ProductJson-${productId} script tag not found or empty.`);
+					// Optionally, attempt to fetch if critical and not found?
+				}
+
 			} catch (error) {
-				console.error('[Optimized] Error initializing product data:', error);
+				console.error('[Optimized] Error in initializeProductData:', error);
 			}
 		}
 
