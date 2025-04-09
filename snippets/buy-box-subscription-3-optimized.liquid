@@ -822,6 +822,17 @@
 					mainPriceElement.setAttribute('data-custom-price', formattedPrice);
 				}
 
+				// Update the compare-at price based on format
+				const capElement = priceDisplay.querySelector('.cap');
+				if (capElement) {
+					const compareAtPrice = priceFormat === 'total'
+						? `${currencySymbol}${totalOrig.toFixed(2)}`
+						: `${currencySymbol}${origPerItem.toFixed(2)}`;
+
+					console.log(`Buy box ${SID}: Setting compare-at price to ${compareAtPrice} (format: ${priceFormat})`);
+					capElement.textContent = compareAtPrice;
+				}
+
 				// 2. Update badge with correct savings amount
 				if (discountBadge && priceFormat === "total" && savingsAmount > 0) {
 					const badgeText = `SAVE ${currencySymbol}${savingsFormatted}`;
@@ -887,7 +898,11 @@
 							}
 
 							if (cap) {
-								cap.textContent = `${currencySymbol}${originalItemCap.toFixed(2)}`;
+								if (priceFormat === 'total') {
+									cap.textContent = `${currencySymbol}${(originalItemCap * bottles).toFixed(2)}`;
+								} else {
+									cap.textContent = `${currencySymbol}${originalItemCap.toFixed(2)}`;
+								}
 							}
 
 							const saveAmt = (originalItemCap - subscriptionItemPrice) * bottles;
