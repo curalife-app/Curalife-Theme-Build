@@ -614,6 +614,12 @@
 			// Add a function to populate the frequency selector based on selected variant
 			section.querySelectorAll('.variant-box').forEach(box => {
 				box.addEventListener('click', function() {
+					console.log('Variant box clicked, updating frequency options');
+					// Clear the frequency options first to ensure a fresh start
+					const frequencyOptions = section.querySelector('#frequency-options-' + SID);
+					if (frequencyOptions) frequencyOptions.innerHTML = '';
+
+					// Force a slight delay to ensure DOM has time to update
 					setTimeout(() => populateFrequencySelector(this, SID), 50);
 				});
 			});
@@ -731,6 +737,9 @@
 
 				const frequencyOptions = section.querySelector('#frequency-options-' + SID);
 				if (!frequencyOptions) return;
+
+				// Always start with a clean slate
+				frequencyOptions.innerHTML = '';
 
 				const variant = el.dataset.originalVariant || el.dataset.variant;
 				const isSub = el.dataset.purchaseType === 'subscribe';
@@ -910,15 +919,12 @@
 					// - For 2+ months, use months format
 					let displayText = '';
 
-					// Special case to match original: convert 1 month to 30 days
 					if (unit === 'month' && value === 1) {
 						displayText = 'Every 30 Days';
 					}
-					// For days or specific month values, keep the original format
 					else if (unit === 'day') {
 						displayText = value === 1 ? 'Every Day' : `Every ${value} Days`;
 					}
-					// For months, keep as months
 					else {
 						displayText = value === 1 ? 'Every Month' : `Every ${value} Months`;
 					}
