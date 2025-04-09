@@ -651,6 +651,14 @@
 					const frequencyOptions = getElement('#frequency-options-' + SID, section);
 					if (frequencyOptions) frequencyOptions.innerHTML = '';
 
+					// Clear frequency-related data to ensure clean state
+					// This is important to prevent data from previous variant affecting new variant
+					if (variantBox.dataset.purchaseType === 'subscribe') {
+						console.log('Clearing frequency data for variant change');
+						// Clear cached frequencies to ensure we extract fresh values for new variant
+						memoizedFrequencies = {};
+					}
+
 					// Force a slight delay to ensure DOM has time to update
 					setTimeout(() => populateFrequencySelector(variantBox, SID), 50);
 				}
@@ -730,7 +738,7 @@
 		}
 
 		// Function to extract frequency value and unit from plan name - memoized for performance
-		const memoizedFrequencies = {};
+		let memoizedFrequencies = {};
 
 		function extractFrequency(planName) {
 			// Check memo cache first
@@ -760,6 +768,9 @@
 					result = { value: 1, unit: 'month' };
 				}
 			}
+
+			// Log extracted values for debugging
+			console.log(`Extracted frequency from "${planName}":`, result);
 
 			// Save to cache
 			memoizedFrequencies[planName] = result;
@@ -795,6 +806,8 @@
 				const variantId = parseInt(variant);
 				const allowedSellingPlansStr = el.dataset.allowedSellingPlans ? el.dataset.allowedSellingPlans.trim() : '';
 				const hasAllowedSellingPlans = allowedSellingPlansStr !== '';
+
+				console.log(`Populating frequency selector for variant ${variantId}, bottle quantity: ${bottleQuantity}`);
 
 				// Try to find the variant in product data
 				const productData = window.productData?.[productId];
@@ -904,6 +917,8 @@
 					frequencyBox.dataset.sellingPlanId = plan.id;
 					frequencyBox.dataset.frequencyValue = value;
 					frequencyBox.dataset.frequencyUnit = unit;
+
+					console.log(`Creating frequency option with value: ${value}, unit: ${unit}, plan: ${plan.name}`);
 
 					// Determine if this option should be selected
 					const shouldSelect =
