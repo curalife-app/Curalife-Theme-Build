@@ -164,6 +164,65 @@
 			{% endfor %}
 		</div>
 
+		<!-- Frequency Selector -->
+		<div class="frequency-selector mb-3">
+			<div class="font-semibold text-[16px] mb-2">Delivery Frequency</div>
+			<div class="frequency-options flex flex-col gap-2">
+				{% assign selectedVariant = false %}
+				{% for block in blocks %}
+					{% if block.type == 'variant' and block.settings.purchase_type == 'subscribe' %}
+						{% if isGlobal %}
+							{% assign blockVarID = block.settings.variant_id_global | plus: 0 %}
+						{% else %}
+							{% assign blockVarID = block.settings.variant_id | plus: 0 %}
+						{% endif %}
+
+						{% for vari in referenced_variant_product.variants %}
+							{% assign currVarID = vari.id | plus: 0 %}
+							{% if currVarID == blockVarID %}
+								{% assign selectedVariant = vari %}
+								{% break %}
+							{% endif %}
+						{% endfor %}
+
+						{% if selectedVariant %}
+							{% break %}
+						{% endif %}
+					{% endif %}
+				{% endfor %}
+
+				{% if selectedVariant and selectedVariant.selling_plan_allocations.size > 0 %}
+					<div class="frequency-select-wrapper border border-[--primary-color-light] rounded-md overflow-hidden">
+						<select class="frequency-select w-full p-3 outline-none border-none bg-white cursor-pointer" data-variant-id="{{ selectedVariant.id }}">
+							{% for allocation in selectedVariant.selling_plan_allocations %}
+								{% assign plan = allocation.selling_plan %}
+								<option
+									value="{{ plan.id }}"
+									{% if plan.id == selling_plan_id %}
+										selected
+									{% endif %}
+									data-selling-plan-id="{{ plan.id }}"
+									data-price="{{ allocation.price | money_without_currency }}"
+									data-compare-at-price="{{ allocation.compare_at_price | money_without_currency }}">
+									{% if plan.name contains 'day' %}
+										Every {{ plan.name | remove: 'Subscribe and save (' | remove: ' day)' | strip }} days
+									{% elsif plan.name contains 'week' %}
+										Every {{ plan.name | remove: 'Subscribe and save (' | remove: ' week)' | strip }} week
+										{% if plan.name contains '2 week' or plan.name contains '3 week' or plan.name contains '4 week' %}s{% endif %}
+									{% elsif plan.name contains 'month' %}
+										Every {{ plan.name | remove: 'Subscribe and save (' | remove: ' month)' | strip }} month
+										{% if plan.name contains '2 month' or plan.name contains '3 month' or plan.name contains '4 month' %}s{% endif %}
+									{% else %}
+										{{ plan.name | remove: 'Subscribe and save ' }}
+									{% endif %}
+								</option>
+							{% endfor %}
+						</select>
+					</div>
+				{% endif %}
+			</div>
+		</div>
+
 		<div class="price-display">
 			<div class="gap-y-2 flex flex-wrap items-end gap-2">
 				<div class="final-price flex items-center gap-2">
@@ -448,6 +507,20 @@
 				}
 		}
 
+		/* Frequency Selector Styles */
+		.frequency-select {
+			appearance: none;
+			background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='currentColor' viewBox='0 0 16 16'%3E%3Cpath d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+			background-repeat: no-repeat;
+			background-position: right 1rem center;
+			background-size: 1rem;
+			padding-right: 2.5rem;
+		}
+
+		.frequency-select-wrapper {
+			position: relative;
+		}
+
 		/* Responsive Styles */
 		@media (max-width: 1269px) {
 				.variant-box {
@@ -553,6 +626,38 @@
 
 		if (window.innerWidth < 768 && ctaText) {
 			productActions.insertAdjacentElement('afterbegin', ctaText);
+		}
+
+		// Handle frequency selector change
+		const frequencySelect = ctasection.querySelector('.frequency-select');
+		if (frequencySelect) {
+			frequencySelect.addEventListener('change', function () {
+				const selectedOption = this.options[this.selectedIndex];
+				const sellingPlanId = selectedOption.dataset.sellingPlanId;
+				const variantId = this.dataset.variantId;
+
+				// Update the active variant box with the new selling plan ID
+				const activeVariantBox = productActions.querySelector('.variant-box.selected');
+				if (activeVariantBox) {
+					activeVariantBox.dataset.subscriptionSellingPlanId = sellingPlanId;
+				}
+
+				// Update the hidden input for selling plan ID if it exists
+				const sellingPlanInput = productActions.querySelector('.submit-selling-plan-id');
+				if (sellingPlanInput) {
+					sellingPlanInput.value = sellingPlanId;
+				}
+
+				// If using buy-box.js, trigger price updates
+				// This works because the buy-box.js updates based on the active variant box
+				if (window.CuralifeBoxes) {
+					const SID = ctasection.id.replace('cta-section-', '');
+					const instance = window.CuralifeBoxes.instances[SID];
+					if (instance) {
+						instance.updatePriceDisplay(activeVariantBox);
+					}
+				}
+			});
 		}
 	});
 </script>
