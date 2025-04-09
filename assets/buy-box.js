@@ -428,7 +428,7 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 				if (!this.elements.priceDisplay || !el) return;
 
 				const priceDisplay = this.elements.priceDisplay;
-				const priceFormat = el.dataset.pricePer || "dont_split";
+				const priceFormat = el.dataset.priceFormat || this.elements.productActions.dataset.priceFormat || "per_bottle";
 
 				const subItem = parseFloat(el.dataset.subscriptionItemPrice) / 100 || 0;
 				const subPrice = parseFloat(el.dataset.subscriptionPrice) / 100 || 0;
@@ -476,6 +476,7 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 
 				// Animate subsequent updates
 				const animate = () => {
+					// Fade elements out
 					[mainPrice, discount, totalLine].forEach(el => {
 						if (el) {
 							el.style.transition = "opacity 200ms ease-out";
@@ -484,6 +485,7 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 					});
 
 					setTimeout(() => {
+						// Update element content while they're faded out
 						if (mainPrice) {
 							const pSpan = mainPrice.querySelector(".price");
 							const cSpan = mainPrice.querySelector(".cap");
@@ -503,6 +505,7 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 							}
 						}
 
+						// Fade elements back in, staggered for visual effect
 						setTimeout(() => mainPrice && (mainPrice.style.opacity = "1"), 50);
 						setTimeout(() => discount && (discount.style.opacity = "1"), 100);
 						setTimeout(() => totalLine && (totalLine.style.opacity = "1"), 150);
