@@ -755,10 +755,9 @@
 				const allowedSellingPlansStr = el.dataset.allowedSellingPlans ? el.dataset.allowedSellingPlans.trim() : '';
 				const hasAllowedSellingPlans = allowedSellingPlansStr !== '';
 
-				console.log('Populating frequency selector:', {
+				console.log('Populating frequency selector for bottle quantity:', bottleQuantity, {
 					productId,
 					variant,
-					bottleQuantity,
 					hasAllowedSellingPlans,
 					allowedSellingPlans: allowedSellingPlansStr
 				});
@@ -914,19 +913,75 @@
 						frequencyBox.classList.add('selected');
 					}
 
-					// Match the original formatting style:
-					// - For months less than 2, use days (30, 45, 60, 90 days)
-					// - For 2+ months, use months format
+					// Format display text based on variant's bottle quantity:
+					// - For 1-bottle variants: use days (30, 45, 60 days)
+					// - For 3+ bottle variants: use months (3, 4, 6 months)
 					let displayText = '';
 
-					if (unit === 'month' && value === 1) {
-						displayText = 'Every 30 Days';
+					// Determine the format based on bottle quantity
+					if (bottleQuantity <= 1) {
+						// For 1-bottle variants, display in days
+						if (unit === 'month') {
+							// Convert months to days
+							if (value === 1) {
+								displayText = 'Every 30 Days';
+							} else if (value === 1.5) {
+								displayText = 'Every 45 Days';
+							} else if (value === 2) {
+								displayText = 'Every 60 Days';
+							} else if (value === 3) {
+								displayText = 'Every 90 Days';
+							} else {
+								displayText = `Every ${value * 30} Days`;
+							}
+						} else {
+							// Already in days
+							displayText = value === 1 ? 'Every Day' : `Every ${value} Days`;
+						}
+					} else {
+						// For 3+ bottle variants, display in months
+						if (unit === 'day') {
+							// Convert days to months if possible
+							if (value === 30) {
+								displayText = 'Every Month';
+							} else if (value === 60) {
+								displayText = 'Every 2 Months';
+							} else if (value === 90) {
+								displayText = 'Every 3 Months';
+							} else {
+								displayText = `Every ${value} Days`;
+							}
+						} else {
+							// Already in months
+							displayText = value === 1 ? 'Every Month' : `Every ${value} Months`;
+						}
 					}
-					else if (unit === 'day') {
-						displayText = value === 1 ? 'Every Day' : `Every ${value} Days`;
-					}
-					else {
-						displayText = value === 1 ? 'Every Month' : `Every ${value} Months`;
+
+					// For specific allowed selling plans, we need to hard-code certain display text
+					// to match the original exactly
+					if (hasAllowedSellingPlans) {
+						// For 1-bottle variants with allowed plans
+						if (bottleQuantity <= 1) {
+							// Exact matches from the original
+							if (allocation === sellingPlanAllocations[0]) {
+								displayText = 'Every 30 Days';
+							} else if (allocation === sellingPlanAllocations[1]) {
+								displayText = 'Every 45 Days';
+							} else if (allocation === sellingPlanAllocations[2]) {
+								displayText = 'Every 60 Days';
+							}
+						}
+						// For 3-bottle variants with allowed plans
+						else if (bottleQuantity >= 3) {
+							// Exact matches from the original
+							if (allocation === sellingPlanAllocations[0]) {
+								displayText = 'Every 3 Months';
+							} else if (allocation === sellingPlanAllocations[1]) {
+								displayText = 'Every 4 Months';
+							} else if (allocation === sellingPlanAllocations[2]) {
+								displayText = 'Every 6 Months';
+							}
+						}
 					}
 
 					frequencyBox.innerHTML = `<span class="font-semibold">${displayText}</span>`;
