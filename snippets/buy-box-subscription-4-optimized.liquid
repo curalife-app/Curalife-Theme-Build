@@ -412,11 +412,49 @@
 <!-- Load buy-box.js script if not already loaded -->
 <script>
 	document.addEventListener('DOMContentLoaded', function() {
+		// Load the buy-box.js script if not already loaded
 		if (!window.CuralifeBoxes || !window.CuralifeBoxes.initialized) {
 			const script = document.createElement('script');
 			script.src = "{{ 'buy-box.js' | asset_url }}";
 			script.async = true;
 			document.head.appendChild(script);
+
+			// Initialize buy boxes after script loads
+			script.onload = function() {
+				if (window.CuralifeBoxes) {
+					window.CuralifeBoxes.initAll();
+				}
+			};
 		}
+
+		// Initialize frequency options when a variant is selected
+		// This ensures frequency options are populated properly
+		const SID = '{{ SID }}';
+		const frequencyContainer = document.querySelector(`#cta-section-${SID} [data-frequency-container]`);
+		const frequencyOptions = document.getElementById(`frequency-options-${SID}`);
+
+		// Watch for changes to the variant selection
+		const observeVariantChanges = function() {
+			if (!window.CuralifeBoxes || !window.CuralifeBoxes.instances || !window.CuralifeBoxes.instances[SID]) {
+				// If CuralifeBoxes isn't initialized yet, try again in a moment
+				setTimeout(observeVariantChanges, 100);
+				return;
+			}
+
+			// The buy box instance for this section
+			const buyBox = window.CuralifeBoxes.instances[SID];
+
+			// If the frequency container exists but is empty, ensure it gets populated
+			if (frequencyContainer && frequencyOptions && frequencyOptions.children.length === 0) {
+				const selectedBox = document.querySelector(`#cta-section-${SID} .variant-box.selected`);
+				if (selectedBox && selectedBox.dataset.purchaseType === 'subscribe') {
+					// Make the frequency container visible
+					frequencyContainer.classList.remove('hidden');
+				}
+			}
+		};
+
+		// Start observing
+		setTimeout(observeVariantChanges, 500);
 	});
 </script>
