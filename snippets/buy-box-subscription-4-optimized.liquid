@@ -445,6 +445,7 @@
 
 		// Cache DOM elements to avoid repeated queries
 		const domCache = {};
+        const SID = '{{ SID }}';
         const section = document.querySelector(`#cta-section-${SID}`);
         const productActions = section ? section.querySelector('.product-actions') : null;
         const frequencyContainer = section ? section.querySelector('[data-frequency-container]') : null;
@@ -534,7 +535,7 @@
                 boxElement.classList.add('selected');
 
                 // Update frequency selector - ensure this happens even during initialization
-                populateFrequencySelector(boxElement, '{{ SID }}');
+                populateFrequencySelector(boxElement, SID);
             },
 
             // Update frequency UI based on state
@@ -556,7 +557,7 @@
                 });
 
                 // Update frequency description
-                updateFrequencyDescription('{{ SID }}');
+                updateFrequencyDescription(SID);
             },
 
             // Initialize state with default values
@@ -910,7 +911,7 @@
 					return;
 				}
 
-				rebuildFrequencyOptions(filteredPlans, el);
+				rebuildFrequencyOptions(filteredPlans, el, SID);
 
 				// Show the frequency container if hidden
 				if (frequencyContainer && frequencyContainer.classList.contains('hidden')) {
@@ -1025,7 +1026,7 @@
 		}
 
 		// Rebuild all frequency options based on filtered plans
-		function rebuildFrequencyOptions(filteredPlans, boxElement) {
+		function rebuildFrequencyOptions(filteredPlans, boxElement, SID) {
 			const frequencyOptions = document.getElementById(`frequency-options-${SID}`);
 			if (!frequencyOptions) {
 				console.error('[Optimized] Frequency options container not found!');
