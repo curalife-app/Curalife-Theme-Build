@@ -719,40 +719,61 @@
 				const priceDisplayEl = section.querySelector('.price-display');
 				if (!priceDisplayEl || !futureNotice) return;
 
-				// Get price values
+				// Get price values - parse all values carefully from data attributes
 				const subscriptionDiscount = parseFloat(selectedBox.dataset.subscriptionDiscount) || 0;
 				const priceFormat = selectedBox.dataset.pricePer || 'dont_split';
 				const origPerItem = parseFloat(selectedBox.dataset.originalItemCap) / 100 || 0;
+				const subItemPrice = parseFloat(selectedBox.dataset.subscriptionItemPrice) / 100 || 0;
 				const bottles = parseInt(selectedBox.dataset.bottleQuantity, 10) || 1;
 				const totalOrig = origPerItem * bottles;
 
+				// Log inputs for debugging
+				console.log('Price calculation inputs:', {
+					variant: selectedBox.id,
+					subscriptionDiscount,
+					firstMonthDiscount,
+					origPerItem,
+					subItemPrice,
+					bottles,
+					priceFormat
+				});
+
 				// 1. Calculate regular subscription price (future months) - with subscription discount only
-				const regularDiscountMultiplier = (100 - subscriptionDiscount) / 100;
-				const regularPerItem = origPerItem * regularDiscountMultiplier;
+				const regularPerItem = subItemPrice; // Use the subscription price directly from the data attribute
 				const regularTotalPrice = regularPerItem * bottles;
 
-				// 2. Calculate first month price - with both discounts
+				// 2. Calculate first month price - with both discounts combined
+				// First calculate what percentage of the original price we are paying after both discounts
 				const firstMonthDiscountMultiplier = (100 - (subscriptionDiscount + firstMonthDiscount)) / 100;
+				// Then apply that to the original price
 				const firstMonthPerItem = origPerItem * firstMonthDiscountMultiplier;
 				const firstMonthTotalPrice = firstMonthPerItem * bottles;
 
-				// Calculate savings - this is the difference between original price and first month price
-				// For per_bottle format, it's the savings per bottle
-				// For total format, it's the savings on the total price
-				const savingsAmount = priceFormat === 'total'
-					? totalOrig - firstMonthTotalPrice
-					: origPerItem - firstMonthPerItem;
+				// Calculate savings as the difference between original price and first month price
+				const savingsPerItem = origPerItem - firstMonthPerItem;
+				const totalSavings = totalOrig - firstMonthTotalPrice;
 
-				const totalSavingsAmount = priceFormat === 'total'
-					? savingsAmount
-					: savingsAmount * bottles;
+				// For display, we use either the per-item savings or total savings depending on format
+				const displaySavings = priceFormat === 'total' ? totalSavings : savingsPerItem;
 
-				// Format prices for display
+				// Log calculated values for debugging
+				console.log('Price calculations:', {
+					regularPerItem,
+					regularTotalPrice,
+					firstMonthPerItem,
+					firstMonthTotalPrice,
+					savingsPerItem,
+					totalSavings,
+					displaySavings
+				});
+
+				// Format prices for display - ensure proper rounding
 				const currencySymbol = window.Shopify?.currency?.symbol || "$";
 				const regularPriceFormatted = `${currencySymbol}${(priceFormat === 'total' ? regularTotalPrice : regularPerItem).toFixed(2)}`;
 				const firstMonthPriceFormatted = `${currencySymbol}${(priceFormat === 'total' ? firstMonthTotalPrice : firstMonthPerItem).toFixed(2)}`;
-				const flooredSave = Math.floor(savingsAmount);
-				const flooredTotalSave = Math.floor(totalSavingsAmount);
+
+				// Use Math.round to avoid floating point issues in display
+				const savingsAmountDisplay = Math.round(displaySavings);
 
 				// Update price display with first month discount
 				const mainPriceEl = priceDisplayEl.querySelector('.price');
@@ -763,11 +784,12 @@
 					mainPriceEl.textContent = firstMonthPriceFormatted;
 				}
 
-				if (discountBadgeEl && priceFormat === 'total' && flooredSave > 0) {
-					discountBadgeEl.textContent = `SAVE ${currencySymbol}${flooredSave}`;
+				if (discountBadgeEl && priceFormat === 'total' && savingsAmountDisplay > 0) {
+					discountBadgeEl.textContent = `SAVE ${currencySymbol}${savingsAmountDisplay}`;
+					console.log(`Setting discount badge: SAVE ${currencySymbol}${savingsAmountDisplay}`);
 				}
 
-				if (totalLineEl && priceFormat === 'per_bottle' && flooredTotalSave > 0) {
+				if (totalLineEl && priceFormat === 'per_bottle' && totalSavings > 0) {
 					totalLineEl.innerHTML = `Total ${currencySymbol}${firstMonthTotalPrice.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">${currencySymbol}${totalOrig.toFixed(2)}</span>`;
 				}
 
