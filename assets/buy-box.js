@@ -596,7 +596,7 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 				const origPerItem = parseFloat(el.dataset.originalItemCap) / 100 || 0;
 				const bottles = parseInt(el.dataset.bottleQuantity, 10) || 1;
 
-				const currencySymbol = window.Shopify?.currency?.symbol || "$";
+				const currencySymbol = window.Shopify?.currency?.active === "GBP" ? "£" : window.Shopify?.currency?.active === "USD" ? "$" : window.Shopify?.currency?.symbol || "$";
 
 				const totalOrig = origPerItem * bottles;
 				const saveAmt = priceFormat === "total" ? totalOrig - subPrice : (origPerItem - subItem) * bottles;
