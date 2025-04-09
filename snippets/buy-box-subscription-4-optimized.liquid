@@ -225,10 +225,10 @@
 		{% endif %}
 
 		<!-- Subscription Frequency Selector with direct Tailwind classes -->
-		<div class="mbl:my-0 hidden my-2 transition-all duration-300 ease-in-out" data-frequency-container>
-			<div class="mb-3 font-semibold">Choose delivery frequency</div>
+		<div class="subscription-frequency-container hidden my-4 transition-all duration-300 ease-in-out" data-frequency-container>
+			<div class="mb-3 font-semibold text-[18px]">Choose delivery frequency</div>
 			<div class="subscription-frequency-selector">
-				<div id="frequency-options-{{ SID }}" class="flex justify-start gap-2">
+				<div id="frequency-options-{{ SID }}" class="flex justify-start gap-2 flex-wrap">
 					<!-- Options will be dynamically populated by JavaScript -->
 				</div>
 			</div>
@@ -308,7 +308,8 @@
 			--transition-speed: 0.2s;
 
 			/* Variant Tab Styles */
-			.variant-box.variant-tab-style {
+			.variant-box.variant-tab-style,
+			.frequency-option.variant-tab-style {
 					border-width: 2px;
 					border-color: var(--primary-color);
 					border-radius: 0.375rem;
@@ -330,6 +331,18 @@
 					&:not(.selected):hover {
 						background-color: var(--bg-color);
 					}
+			}
+
+			/* Frequency selector styles */
+			.subscription-frequency-container {
+				margin-top: 16px;
+				margin-bottom: 16px;
+			}
+
+			.frequency-option {
+				min-width: 100px;
+				background-color: var(--bg-color);
+				color: var(--primary-color);
 			}
 
 			/* Product Actions - Keep these custom grid areas */
@@ -588,7 +601,7 @@
 			}
 		}
 
-		// Setup frequency options functionality (copied from original)
+		// Setup frequency options functionality
 		function setupFrequencyOptions(SID) {
 			const section = document.getElementById(`cta-section-${SID}`);
 			if (!section) return;
@@ -625,14 +638,10 @@
 
 			// Update the visual state of all options
 			allOptions.forEach(opt => {
-				if (opt === option) {
-					opt.style.backgroundColor = 'var(--primary-color)';
-					opt.style.color = 'white';
-				} else {
-					opt.style.backgroundColor = 'var(--bg-color)';
-					opt.style.color = 'var(--primary-color)';
-				}
+				opt.classList.remove('selected');
 			});
+
+			option.classList.add('selected');
 
 			// Update the form field and selected box with new selling plan ID
 			const sellingPlanId = option.dataset.sellingPlanId;
@@ -662,9 +671,7 @@
 			const frequencyOptions = section.querySelector('#frequency-options-' + SID);
 			if (!frequencyOptions) return;
 
-			const selectedOption = Array.from(frequencyOptions.children).find(el =>
-				el.style.backgroundColor === 'var(--primary-color)'
-			);
+			const selectedOption = frequencyOptions.querySelector('.selected');
 
 			if (!selectedOption) return;
 
@@ -816,11 +823,7 @@
 					const { value, unit } = extractFrequency(plan.name);
 
 					const frequencyBox = document.createElement('div');
-					frequencyBox.className = 'rounded-md cursor-pointer py-2 min-w-[90px] max-w-[168px] text-center w-full transition-all duration-300 ease-in-out';
-
-					// Default state
-					frequencyBox.style.backgroundColor = 'var(--bg-color)';
-					frequencyBox.style.color = 'var(--primary-color)';
+					frequencyBox.className = 'frequency-option variant-tab-style rounded-md cursor-pointer py-2 px-4 min-w-[90px] text-center transition-all duration-300 ease-in-out';
 
 					// Set data attributes
 					frequencyBox.dataset.sellingPlanId = plan.id;
@@ -834,8 +837,7 @@
 
 					if ((plan.id && plan.id.toString() === currentSellingPlanId) ||
 						(shouldSelectRecommended && isRecommendedMonthPlan)) {
-						frequencyBox.style.backgroundColor = 'var(--primary-color)';
-						frequencyBox.style.color = 'white';
+						frequencyBox.classList.add('selected');
 
 						// Update the current box with the recommended selling plan ID
 						if (shouldSelectRecommended && isRecommendedMonthPlan) {
@@ -885,9 +887,7 @@
 				if (currentSellingPlanId) {
 					frequencyOptions.innerHTML = '';
 					const fallbackBox = document.createElement('div');
-					fallbackBox.className = 'rounded-md cursor-pointer py-2 min-w-[90px] max-w-[168px] text-center w-full transition-all duration-300 ease-in-out';
-					fallbackBox.style.backgroundColor = 'var(--primary-color)';
-					fallbackBox.style.color = 'white';
+					fallbackBox.className = 'frequency-option variant-tab-style selected rounded-md cursor-pointer py-2 px-4 min-w-[90px] text-center transition-all duration-300 ease-in-out';
 					fallbackBox.dataset.sellingPlanId = currentSellingPlanId;
 					fallbackBox.dataset.frequencyValue = bottleQuantity.toString();
 					fallbackBox.dataset.frequencyUnit = 'month'; // Default to months
