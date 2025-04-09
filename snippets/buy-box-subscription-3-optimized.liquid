@@ -737,6 +737,7 @@
 				const futureNotice = section?.querySelector('.future-price-notice');
 				const mainPriceElement = priceDisplay?.querySelector('.price');
 				const totalLineElement = priceDisplay?.querySelector('.total-line');
+				const perTextElement = priceDisplay?.querySelector('.per-text');
 
 				if (!priceDisplay || !futureNotice || !mainPriceElement) {
 					console.error(`Buy box ${SID}: Required elements not found`);
@@ -749,7 +750,12 @@
 				const origPerItem = parseFloat(variantBox.dataset.originalItemCap || 0) / 100;
 				const bottles = parseInt(variantBox.dataset.bottleQuantity || 1, 10);
 				const totalOrig = origPerItem * bottles;
-				const priceFormat = variantBox.dataset.pricePer || "dont_split";
+
+				// Important: Get the price format from the productActions, not the variant box
+				// This ensures we're using the component-level setting
+				const priceFormat = '{{ priceFormat }}';
+
+				console.log(`Buy box ${SID}: Price format from liquid: "${priceFormat}"`);
 
 				// Skip if no first month discount
 				if (firstMonthDiscount <= 0) {
@@ -798,10 +804,18 @@
 				// 1. Update the main price display with first month price
 				if (mainPriceElement) {
 					// Format with proper currency representation
-					const formattedPrice = priceFormat === "total"
-						? `${currencySymbol}${firstMonthTotal.toFixed(2)}`
-						: `${currencySymbol}${firstMonthPerItem.toFixed(2)}`;
+					let formattedPrice;
+					if (priceFormat === 'total') {
+						formattedPrice = `${currencySymbol}${firstMonthTotal.toFixed(2)}`;
+						// Hide per-bottle text if showing total price
+						if (perTextElement) perTextElement.style.display = 'none';
+					} else {
+						formattedPrice = `${currencySymbol}${firstMonthPerItem.toFixed(2)}`;
+						// Show per-bottle text if showing per-bottle price
+						if (perTextElement) perTextElement.style.display = 'inline';
+					}
 
+					console.log(`Buy box ${SID}: Setting price to ${formattedPrice} (format: ${priceFormat})`);
 					mainPriceElement.textContent = formattedPrice;
 				}
 
@@ -823,6 +837,8 @@
 				if (priceFormat === "per_bottle" && totalLineElement && savingsAmount > 0) {
 					totalLineElement.innerHTML = `Total ${currencySymbol}${firstMonthTotal.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">${currencySymbol}${totalOrig.toFixed(2)}</span>`;
 					totalLineElement.style.opacity = '1';
+				} else if (totalLineElement) {
+					totalLineElement.style.opacity = '0';
 				}
 
 				console.log(`Buy box ${SID}: Price display updated with first month pricing`);
