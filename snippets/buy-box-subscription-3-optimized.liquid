@@ -728,19 +728,31 @@
 
 				// 1. Calculate regular subscription price (future months) - with subscription discount only
 				const regularDiscountMultiplier = (100 - subscriptionDiscount) / 100;
-				const regularPrice = (priceFormat === 'total' ? totalOrig : origPerItem) * regularDiscountMultiplier;
-				const regularTotalPrice = regularPrice * (priceFormat === 'total' ? 1 : bottles);
+				const regularPerItem = origPerItem * regularDiscountMultiplier;
+				const regularTotalPrice = regularPerItem * bottles;
 
 				// 2. Calculate first month price - with both discounts
 				const firstMonthDiscountMultiplier = (100 - (subscriptionDiscount + firstMonthDiscount)) / 100;
-				const firstMonthPrice = (priceFormat === 'total' ? totalOrig : origPerItem) * firstMonthDiscountMultiplier;
-				const firstMonthTotalPrice = firstMonthPrice * (priceFormat === 'total' ? 1 : bottles);
+				const firstMonthPerItem = origPerItem * firstMonthDiscountMultiplier;
+				const firstMonthTotalPrice = firstMonthPerItem * bottles;
+
+				// Calculate savings - this is the difference between original price and first month price
+				// For per_bottle format, it's the savings per bottle
+				// For total format, it's the savings on the total price
+				const savingsAmount = priceFormat === 'total'
+					? totalOrig - firstMonthTotalPrice
+					: origPerItem - firstMonthPerItem;
+
+				const totalSavingsAmount = priceFormat === 'total'
+					? savingsAmount
+					: savingsAmount * bottles;
 
 				// Format prices for display
 				const currencySymbol = window.Shopify?.currency?.symbol || "$";
-				const regularPriceFormatted = `${currencySymbol}${regularPrice.toFixed(2)}`;
-				const firstMonthPriceFormatted = `${currencySymbol}${firstMonthPrice.toFixed(2)}`;
-				const savedAmount = Math.floor(totalOrig - firstMonthTotalPrice);
+				const regularPriceFormatted = `${currencySymbol}${(priceFormat === 'total' ? regularTotalPrice : regularPerItem).toFixed(2)}`;
+				const firstMonthPriceFormatted = `${currencySymbol}${(priceFormat === 'total' ? firstMonthTotalPrice : firstMonthPerItem).toFixed(2)}`;
+				const flooredSave = Math.floor(savingsAmount);
+				const flooredTotalSave = Math.floor(totalSavingsAmount);
 
 				// Update price display with first month discount
 				const mainPriceEl = priceDisplayEl.querySelector('.price');
@@ -751,18 +763,24 @@
 					mainPriceEl.textContent = firstMonthPriceFormatted;
 				}
 
-				if (discountBadgeEl && priceFormat === 'total' && savedAmount > 0) {
-					discountBadgeEl.textContent = `SAVE ${currencySymbol}${savedAmount}`;
+				if (discountBadgeEl && priceFormat === 'total' && flooredSave > 0) {
+					discountBadgeEl.textContent = `SAVE ${currencySymbol}${flooredSave}`;
 				}
 
-				if (totalLineEl && priceFormat === 'per_bottle') {
-					if (savedAmount > 0) {
-						totalLineEl.innerHTML = `Total ${currencySymbol}${firstMonthTotalPrice.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">${currencySymbol}${totalOrig.toFixed(2)}</span>`;
-					}
+				if (totalLineEl && priceFormat === 'per_bottle' && flooredTotalSave > 0) {
+					totalLineEl.innerHTML = `Total ${currencySymbol}${firstMonthTotalPrice.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">${currencySymbol}${totalOrig.toFixed(2)}</span>`;
 				}
 
 				// Update future price notice
 				futureNotice.textContent = `Special price for first order. Refills for ${regularPriceFormatted}${priceFormat === 'per_bottle' ? '/bottle' : ''}.`;
+
+				// Force the discount badge to be visible
+				if (discountBadgeEl) {
+					discountBadgeEl.style.opacity = '1';
+				}
+				if (totalLineEl) {
+					totalLineEl.style.opacity = '1';
+				}
 			};
 
 			// Create a MutationObserver to watch for class changes on the variant boxes
