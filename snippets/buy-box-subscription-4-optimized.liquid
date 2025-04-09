@@ -470,21 +470,28 @@
 				};
 			}
 
+			// Get all variant boxes for this product
 			const allVariantBoxes = section.querySelectorAll('.variant-box');
 
+			// Extract variant information from available boxes
 			allVariantBoxes.forEach(box => {
 				const boxVariantId = parseInt(box.dataset.variant);
 				const boxProductId = box.dataset.product;
 
+				// Skip if not matching our product
 				if (boxProductId !== productId) return;
 
+				// Skip if variant already exists
 				if (window.productData[productId].variants.some(v => v.id === boxVariantId)) return;
 
+				// Extract selling plan if available
 				const sellingPlanId = box.dataset.purchaseType === 'subscribe' ?
 					box.dataset.subscriptionSellingPlanId : null;
 
+				// Extract bottle quantity for frequency recommendation
 				const bottleQuantity = parseInt(box.dataset.bottleQuantity || '1');
 
+				// Create a basic variant structure
 				const variantData = {
 					id: boxVariantId,
 					title: `${bottleQuantity} Bottle${bottleQuantity > 1 ? 's' : ''}`,
@@ -493,6 +500,7 @@
 					selling_plan_allocations: []
 				};
 
+				// If this is a subscription variant with a selling plan, add it
 				if (sellingPlanId) {
 					variantData.selling_plan_allocations.push({
 						selling_plan: {
@@ -504,23 +512,89 @@
 					});
 				}
 
+				// Add to product data
 				window.productData[productId].variants.push(variantData);
 			});
 
+			// Mark as initialized
 			window.productData[productId].initialized = true;
 
 			console.log('Product data initialized for SID:', SID);
 
+			// Custom code to manage frequency container visibility
+			function manageFrequencyContainer() {
+				// Get the frequency container
+				const frequencyContainer = section.querySelector('[data-frequency-container]');
+				if (!frequencyContainer) return;
+
+				// Get the selected box (may have changed since function start)
+				const currentSelected = section.querySelector('.variant-box.selected') || selectedBox;
+
+				// Show frequency container if subscription box is selected
+				if (currentSelected.dataset.purchaseType === 'subscribe') {
+					console.log('Showing frequency container for subscription product');
+					frequencyContainer.classList.remove('hidden');
+
+					// Populate the frequency options if not already done
+					const frequencyOptions = section.querySelector('#frequency-options-' + SID);
+					if (frequencyOptions && frequencyOptions.children.length === 0) {
+						// If empty, we need to create at least a default option
+						const bottleQuantity = parseInt(currentSelected.dataset.bottleQuantity || '1');
+						const sellingPlanId = currentSelected.dataset.subscriptionSellingPlanId;
+
+						if (sellingPlanId) {
+							const option = document.createElement('div');
+							option.className = 'rounded-md cursor-pointer py-2 min-w-[90px] max-w-[168px] text-center w-full';
+							option.style.backgroundColor = 'var(--primary-color)';
+							option.style.color = 'white';
+							option.dataset.sellingPlanId = sellingPlanId;
+							option.dataset.frequencyValue = bottleQuantity;
+							option.dataset.frequencyUnit = 'month';
+							option.innerHTML = `
+								<div class="p-1">
+									<span class="font-semibold">Every ${bottleQuantity} Month${bottleQuantity > 1 ? 's' : ''}</span>
+								</div>
+							`;
+							frequencyOptions.appendChild(option);
+						}
+					}
+				} else {
+					// Hide frequency container for non-subscription products
+					frequencyContainer.classList.add('hidden');
+				}
+			}
+
+			// If CuralifeBoxes is initialized, re-select the variant box to trigger frequency options
 			if (window.CuralifeBoxes && window.CuralifeBoxes.instances && window.CuralifeBoxes.instances[SID]) {
+				// Trigger selection of the appropriate box
 				const boxInstance = window.CuralifeBoxes.instances[SID];
 				if (boxInstance.togglePurchaseBox && selectedBox) {
 					console.log('Triggering box selection to initialize frequency options');
 
+					// Give the system time to process
 					setTimeout(() => {
 						boxInstance.togglePurchaseBox(selectedBox);
+
+						// Ensure frequency container visibility after toggle
+						setTimeout(manageFrequencyContainer, 50);
 					}, 100);
+				} else {
+					// If togglePurchaseBox isn't available, use our direct management
+					manageFrequencyContainer();
 				}
+			} else {
+				// If CuralifeBoxes isn't available, use our direct management
+				manageFrequencyContainer();
 			}
+
+			// Add click listeners to all variant boxes to manage frequency container visibility
+			allVariantBoxes.forEach(box => {
+				// Using capture phase to ensure we get the event first
+				box.addEventListener('click', function() {
+					// Short delay to allow CuralifeBoxes to do its work first
+					setTimeout(manageFrequencyContainer, 50);
+				}, true);
+			});
 		}
 	});
 </script>
