@@ -1,19 +1,11 @@
 {% if shop.name == 'CuraLife Global' %}{% assign isGlobal = true %}{% endif %}
 
-
-
 {% if buyType == 'buy_now' %}
 	<div class="submit-button">
 		<input class="submit-variant-id" type="hidden" name="id" value="{{ variant | default: product.selected_or_first_available_variant.id }}">
 		<input class="submit-selling-plan-id" type="hidden" name="selling_plan" value="{{ selling_plan_id }}">
 
-		<button
-			name="track:add|buybox-type:{{ buyboxType }}|buybox-name:{{ buyboxName }}|variant-sku:|purchase-type:"
-			data-purchase-type=""
-			class="buy-button clickable main-btn w-full p-0 text-black bg-orange min-h-[50px] relative {{ buttonClass }}"
-			{% if useCustomHandler %}type="button"{% endif %}
-			data-buybox-submit
-			{% if useCustomHandler %}data-js-controlled="true"{% endif %}>
+		<button name="track:add|buybox-type:{{ buyboxType }}|buybox-name:{{ buyboxName }}|variant-sku:|purchase-type:" data-sku="" data-purchase-type="" class="buy-button clickable main-btn w-full p-0 text-black bg-orange min-h-[50px] relative {{ buttonClass }}" data-buybox-submit>
 			<span class="button-text flex justify-center md:text-[5vw]">{{ buttonText | default: 'Shop Now' }}</span>
 
 			<div class="loading-overlay__spinner absolute inset-0 flex items-center justify-center m-auto" style="display: none;">
@@ -50,16 +42,15 @@
 					{% endif %}
 
 					<button
-						{% if useCustomHandler %}type="button"{% else %}type="submit"{% endif %}
+						type="submit"
 						name="add"
 						data-sku=""
 						data-purchase-type=""
 						data-buy-box="{{ ctaTemaplate }}"
 						data-variant-id="{{ variant.id | default: product.selected_or_first_available_variant.id }}"
 						class="buy-button clickable text-black product-form__submit button--full-width justify-center button--primary text-[20px] p-0 min-h-[50px] items-center bg-orange {{ buttonClass }}"
-						{% if useCustomHandler %}data-js-controlled="true"{% endif %}
 						data-buybox-submit>
-						<span class="submit-title">{{ buttonText | default: 'Add To Cart' }}</span>
+						<span class="submit-title">Add To Cart</span>
 						<div class="loading-overlay__spinner hidden">
 							<svg aria-hidden="true" focusable="false" class="spinner" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
 								<circle class="path !stroke-white" fill="none" stroke-width="6" cx="33" cy="33" r="30"></circle>
@@ -89,6 +80,16 @@
 		</product-form>
 	</div>
 {% endif %}
+
+{% comment %} {% if isBuyWithPrime and isGlobal != true %}
+	<div class="bwp-button">
+		{% render 'buy-with-prime-button' %}
+	</div>
+{% endif %} {% endcomment %}
+
+{% comment %} {% if customer %}
+	{% render 'yotpo-product-points-widget' %}
+{% endif %} {% endcomment %}
 
 {% if isBuyQuantity %}
 	<style>
@@ -198,21 +199,4 @@
 			}
 		});
 	</script>
-{% endif %}
-
-{% if useCustomHandler %}
-<script>
-	document.addEventListener('DOMContentLoaded', function() {
-		const form = document.querySelector('form[data-type="add-to-cart-form"]');
-		if (form) {
-			// Prevent the default form submission to avoid duplicates
-			form.addEventListener('submit', function(e) {
-				e.preventDefault();
-				e.stopPropagation();
-				console.log('Form submission prevented - using JS handler');
-				return false;
-			}, true);
-		}
-	});
-</script>
 {% endif %}

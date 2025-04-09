@@ -296,11 +296,34 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 				// Find the form element if it exists
 				if (this.elements.submitButton) {
 					this.elements.buyForm = this.elements.submitButton.closest("form");
+
+					// Completely disable the default form submission mechanism
+					if (this.elements.buyForm) {
+						// Prevent normal form submission
+						this.elements.buyForm.addEventListener("submit", this.handleFormSubmit.bind(this), true);
+
+						// Mark the form as handled by our custom handler
+						this.elements.buyForm.setAttribute("data-handled-by-buybox-js", "true");
+
+						// Remove any existing event listeners by cloning the form
+						const oldForm = this.elements.buyForm;
+						const newForm = oldForm.cloneNode(true);
+						oldForm.parentNode.replaceChild(newForm, oldForm);
+						this.elements.buyForm = newForm;
+
+						// Re-find the button inside the cloned form
+						this.elements.submitButton = this.elements.buyForm.querySelector("button");
+					}
 				}
 
 				// Save original button text
 				if (this.elements.submitButton) {
 					this.elements.submitButton.setAttribute("data-original-text", this.elements.submitButton.textContent);
+
+					// Remove default form behavior from button
+					if (this.elements.submitButton.type === "submit") {
+						this.elements.submitButton.type = "button";
+					}
 				}
 
 				if (this.elements.oneTimeButton) {
@@ -318,32 +341,25 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 				this.initPurchaseOptions();
 				this.initSubmitButton();
 				this.initOneTimeButton();
-				this.disableDefaultFormSubmission();
 
-				console.log(`Buy box ${this.SID} initialized`);
+				console.log(`Buy box ${this.SID} initialized with custom checkout handling`);
 			},
 
 			/**
-			 * Disable default form submission to prevent conflicts with our checkout flow
+			 * Handle form submission and prevent default behavior
+			 * @param {Event} e - The form submit event
 			 */
-			disableDefaultFormSubmission() {
-				if (this.elements.buyForm) {
-					console.log(`Disabling default form submission for buybox ${this.SID}`);
-					this.elements.buyForm.setAttribute("data-handled-by-buybox-js", "true");
+			handleFormSubmit(e) {
+				console.log("Intercepted form submission, using custom handler");
+				e.preventDefault();
+				e.stopPropagation();
+				e.stopImmediatePropagation();
 
-					this.elements.buyForm.addEventListener("submit", e => {
-						e.preventDefault();
-						e.stopPropagation();
-						console.log("Default form submission prevented - using buy-box.js checkout flow");
-
-						// Our click handler on the button will handle the checkout process
-						if (!this.state.isLoading && this.elements.submitButton) {
-							// Simulate a click on the submit button to trigger our handler
-							this.elements.submitButton.click();
-						}
-						return false;
-					});
+				// Trigger our custom click handler
+				if (!this.state.isLoading && this.elements.submitButton) {
+					this.elements.submitButton.click();
 				}
+				return false;
 			},
 
 			/**
@@ -655,7 +671,18 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 
 					// Always clear the cart first - this is critical to prevent duplicated items
 					console.log("Clearing cart before checkout...");
-					await CuralifeBoxes.utils.clearCart();
+					try {
+						await CuralifeBoxes.utils.clearCart();
+						// Verify cart is empty
+						const emptyCart = await CuralifeBoxes.utils.getCart();
+						if (emptyCart && emptyCart.items && emptyCart.items.length > 0) {
+							console.warn("Cart was not properly cleared! Still has items:", emptyCart.items.length);
+							// Try once more to ensure it's cleared
+							await CuralifeBoxes.utils.clearCart();
+						}
+					} catch (clearErr) {
+						console.error("Error clearing cart:", clearErr);
+					}
 
 					// Process selling plan IDs
 					items.forEach(item => {
@@ -670,7 +697,13 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 
 					// Add items to cart
 					console.log("Adding items to cleared cart:", JSON.stringify(items));
-					const addRes = await CuralifeBoxes.utils.addToCart(items);
+					try {
+						const addRes = await CuralifeBoxes.utils.addToCart(items);
+						console.log("Add to cart response:", addRes);
+					} catch (addErr) {
+						console.error("Error adding items to cart:", addErr);
+						throw addErr;
+					}
 
 					// Verify cart contents
 					try {
@@ -767,15 +800,24 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 
 				let isSubmitting = false;
 
-				// Clear any existing event listeners to prevent duplicates
+				// Clear any existing event listeners by replacing with a clone
 				const oldButton = this.elements.submitButton;
 				const newButton = oldButton.cloneNode(true);
 				oldButton.parentNode.replaceChild(newButton, oldButton);
 				this.elements.submitButton = newButton;
 
+				// Make sure the button is not of type=submit
+				if (this.elements.submitButton.type === "submit") {
+					this.elements.submitButton.type = "button";
+				}
+
+				// Add data attribute to mark as using custom handler
+				this.elements.submitButton.setAttribute("data-using-custom-handler", "true");
+
 				this.elements.submitButton.addEventListener("click", async e => {
 					e.preventDefault();
 					e.stopPropagation();
+					e.stopImmediatePropagation();
 
 					// Prevent double-clicks or multiple submissions
 					if (isSubmitting || this.state.isLoading || this.state.isRedirectingToCheckout) {
