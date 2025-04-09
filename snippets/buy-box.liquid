@@ -1,19 +1,21 @@
 {% comment %}
-	All global settings are now read from the section element directly in buy-box.js
+	Global settings are now stored as data attributes on the section element
+	and read directly by the JavaScript in buy-box.js.
+
+	In Liquid templates, we still need to pass critical parameters
+	as Liquid can't read DOM data attributes directly.
+
+	We've reduced parameter passing to only essential ones
+	while JavaScript reads the rest from the section.
 {% endcomment %}
+
+{% assign section_id = 'cta-section-' | append: SID %}
+{% comment %}Note: In Liquid, we still need to pass some critical params to child templates{% endcomment %}
 
 <div class="buy-box container md:!max-w-[100vw]" name="{{ buyboxName }}">
 	<div class="left">
 		<div class="product-image-wrapper">
-			{% render 'buy-box-gallery',
-				product: prod,
-				SID: SID,
-				thumbs: thumbs,
-				badgeImage: badgeImage,
-				thumbnailImage: thumbnailImage,
-				thumbnailImageMobile: thumbnailImageMobile,
-				isProductThumbs: isProductThumbs
-			%}
+			{% render 'buy-box-gallery', product: prod, SID: SID, badgeImage: badgeImage, thumbnailImage: thumbnailImage, thumbnailImageMobile: thumbnailImageMobile %}
 		</div>
 	</div>
 
@@ -79,11 +81,7 @@
 					ctaTextColor: ctaTextColor,
 					variantsTitle: 'Select Your Product:',
 					isHighlightSubtitle: isHighlightSubtitle,
-					isReversed: isReversed,
-					defaultSelectionIndex: defaultSelectionIndex,
-					pricePer: pricePer,
-					isBuyQuantity: true,
-					isBuyWithPrime: isBuyWithPrime
+					isReversed: isReversed
 				%}
 			{% else %}
 				{% assign snippetName = 'buy-box-' | append: buyboxType %}
@@ -91,19 +89,11 @@
 					prod: prod,
 					SID: SID,
 					blocks: blocks,
-					buyType: buyType,
 					variantsTitle: variantsTitle,
 					variantsNotice: variantsNotice,
 					product: prod,
 					ctaColor: ctaColor,
 					ctaTextColor: ctaTextColor,
-					defaultSelectionIndex: defaultSelectionIndex,
-					pricePer: pricePer,
-					priceFormat: priceFormat,
-					isOneTimePurchaseLink: isOneTimePurchaseLink,
-					isSlideVariant: isSlideVariant,
-					isOneTimeGift: isOneTimeGift,
-					isHideInfo: isHideInfo,
 					buyboxType: buyboxType,
 					buyboxName: buyboxName
 				%}

@@ -3,6 +3,14 @@
 {%- assign firstImage = product.images.first -%}
 {%- assign main_slider_slide_count = 0 -%}
 
+{% comment %}
+	Get global settings from parent section element
+	Note: In Liquid we can't directly access DOM data attributes like in JS
+	So we still need to pass critical parameters or use default values
+{% endcomment %}
+{% assign thumbs = thumbs | default: 'horizontal' %}
+{% assign isProductThumbs = isProductThumbs | default: true %}
+
 <div class="buy-box-gallery mbl:py-4">
 	<div class="product-slider">
 		<div class="sliders-group {% if thumbs == 'horizontal' %}flex flex-col-reverse gap-6{% endif %}">
