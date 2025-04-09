@@ -302,7 +302,6 @@
 	/* Core variables - keep these as CSS variables */
 	#cta-section-{{ SID }} {
 			--text-color: #4a5568;
-			--border-color: #cbcbcb;
 			--radio-size: 1em;
 			--radio-size-mobile: 1em;
 			--transition-speed: 0.2s;
@@ -540,16 +539,13 @@
 							const isDefault = planId === defaultSellingPlanId;
 							let planName;
 
-							// For the default one, use the bottle quantity as months
-							if (isDefault) {
-								planName = `${bottleQuantity} Month${bottleQuantity > 1 ? 's' : ''}`;
-							} else {
-								// For others, create alternative frequencies
-								// This is an estimation - in a real scenario, you'd know the actual frequencies
-								const frequencies = [30, 60, 90]; // days
-								const frequency = frequencies[index % frequencies.length];
-								planName = `${frequency} Days`;
-							}
+							// For standardized naming across versions
+							// Use fixed frequencies to match original version: 30, 45, 60 days
+							const frequencies = [30, 45, 60]; // days
+							const frequency = frequencies[index % frequencies.length];
+
+							// Always use days format for consistency
+							planName = `${frequency} Days`;
 
 							variantData.selling_plan_allocations.push({
 								selling_plan: {
@@ -562,10 +558,11 @@
 						});
 					} else if (defaultSellingPlanId) {
 						// If no allowed plans specified but we have a default one
+						// Use "30 Days" instead of "X Month(s)" for consistency
 						variantData.selling_plan_allocations.push({
 							selling_plan: {
 								id: defaultSellingPlanId,
-								name: `${bottleQuantity} Month${bottleQuantity > 1 ? 's' : ''}`
+								name: '30 Days'
 							},
 							price: parseFloat(box.dataset.subscriptionPrice || '0') * 100,
 							compare_at_price: parseFloat(box.dataset.originalItemCap || '0') * 100 * bottleQuantity
@@ -685,9 +682,12 @@
 			// If selected frequency matches recommended frequency (only for months)
 			if (selectedFrequencyUnit === 'month' && selectedFrequencyValue === bottleQuantity) {
 				description = ''; // No text when on recommended frequency
+			} else if (selectedFrequencyUnit === 'day' && selectedFrequencyValue === bottleQuantity * 30) {
+				// Also treat "30 days" as equivalent to "1 month" for description purposes
+				description = '';
 			} else {
 				// Otherwise show the recommendation
-				description = `Recommended - every ${bottleQuantity} month${bottleQuantity > 1 ? 's' : ''}`;
+				description = `Recommended - every ${bottleQuantity * 30} days`;
 			}
 
 			// Animate the description update
@@ -712,14 +712,16 @@
 			// Try matching months pattern
 			let monthsMatch = planName.match(/(\d+)\s*Month/i);
 			if (monthsMatch) {
+				const months = parseInt(monthsMatch[1], 10);
+				// Convert months to days for consistency with the original version
 				return {
-					value: parseInt(monthsMatch[1], 10),
-					unit: 'month'
+					value: months * 30,
+					unit: 'day'
 				};
 			}
 
-			// Default fallback
-			return { value: 1, unit: 'month' };
+			// Default fallback - use days for consistency
+			return { value: 30, unit: 'day' };
 		}
 
 		// Function to populate frequency options based on the selected variant
@@ -901,8 +903,9 @@
 					let displayText = '';
 					if (unit === 'day') {
 						displayText = value === 1 ? 'Every Day' : `Every ${value} Days`;
-					} else { // month
-						displayText = value === 1 ? 'Every Month' : `Every ${value} Months`;
+					} else { // month - convert to days for consistency
+						const days = value * 30;
+						displayText = `Every ${days} Days`;
 					}
 
 					frequencyBox.innerHTML = `
@@ -951,11 +954,11 @@
 					const fallbackBox = document.createElement('div');
 					fallbackBox.className = 'frequency-option variant-tab-style selected rounded-md cursor-pointer py-2 px-4 min-w-[90px] text-center transition-all duration-300 ease-in-out';
 					fallbackBox.dataset.sellingPlanId = currentSellingPlanId;
-					fallbackBox.dataset.frequencyValue = bottleQuantity.toString();
-					fallbackBox.dataset.frequencyUnit = 'month'; // Default to months
+					fallbackBox.dataset.frequencyValue = bottleQuantity * 30; // Convert to days for consistency
+					fallbackBox.dataset.frequencyUnit = 'day'; // Use days instead of months
 					fallbackBox.innerHTML = `
 						<div class="p-1">
-							<span class="font-semibold">Every ${bottleQuantity} Month${bottleQuantity > 1 ? 's' : ''}</span>
+							<span class="font-semibold">Every ${bottleQuantity * 30} Days</span>
 						</div>
 					`;
 					frequencyOptions.appendChild(fallbackBox);
