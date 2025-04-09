@@ -759,6 +759,15 @@
 					return;
 				}
 
+				console.log(`Buy box ${SID}: Price calculation inputs`, {
+					firstMonthDiscount,
+					subscriptionDiscount,
+					origPerItem,
+					bottles,
+					totalOrig,
+					priceFormat
+				});
+
 				// Calculate first month price (with both discounts)
 				const combinedDiscountPercent = subscriptionDiscount + firstMonthDiscount;
 				const combinedDiscountMultiplier = (100 - combinedDiscountPercent) / 100;
@@ -777,20 +786,40 @@
 				const currencySymbol = window.Shopify?.currency?.symbol || "$";
 				const savingsFormatted = Math.floor(savingsAmount);
 
-				// 1. Update badge with correct savings
+				console.log(`Buy box ${SID}: Calculated prices`, {
+					firstMonthPerItem,
+					firstMonthTotal,
+					regPerItem,
+					regTotal,
+					savingsAmount,
+					savingsFormatted
+				});
+
+				// 1. Update the main price display with first month price
+				if (mainPriceElement) {
+					// Format with proper currency representation
+					const formattedPrice = priceFormat === "total"
+						? `${currencySymbol}${firstMonthTotal.toFixed(2)}`
+						: `${currencySymbol}${firstMonthPerItem.toFixed(2)}`;
+
+					mainPriceElement.textContent = formattedPrice;
+				}
+
+				// 2. Update badge with correct savings amount
 				if (discountBadge && priceFormat === "total" && savingsAmount > 0) {
 					const badgeText = `SAVE ${currencySymbol}${savingsFormatted}`;
+					console.log(`Buy box ${SID}: Setting badge text to: "${badgeText}"`);
 					discountBadge.textContent = badgeText;
 					discountBadge.style.display = 'inline-flex';
 					discountBadge.style.opacity = '1';
 				}
 
-				// 2. Add future price notice
+				// 3. Add future price notice
 				const regText = priceFormat === "total" ? regTotal.toFixed(2) : regPerItem.toFixed(2);
 				futureNotice.textContent = `Special price for first order. Refills for ${currencySymbol}${regText}${priceFormat === 'per_bottle' ? '/bottle' : ''}.`;
 				futureNotice.style.opacity = '1';
 
-				// 3. Update total line for per-bottle format
+				// 4. Update total line for per-bottle format
 				if (priceFormat === "per_bottle" && totalLineElement && savingsAmount > 0) {
 					totalLineElement.innerHTML = `Total ${currencySymbol}${firstMonthTotal.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">${currencySymbol}${totalOrig.toFixed(2)}</span>`;
 					totalLineElement.style.opacity = '1';
