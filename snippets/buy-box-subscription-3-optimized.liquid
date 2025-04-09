@@ -708,18 +708,38 @@
 			const section = document.getElementById(`cta-section-{{ SID }}`);
 			if (!section) return;
 
-			// Function to update price display
+			// Direct references to the DOM elements we need to control
+			const priceDisplayEl = section.querySelector('.price-display');
+			const discountBadgeEl = priceDisplayEl?.querySelector('.discount-badge');
+			const futureNotice = section.querySelector('.future-price-notice');
+
+			if (!priceDisplayEl || !discountBadgeEl || !futureNotice) {
+				console.warn('Could not find essential elements for price updates');
+				return;
+			}
+
+			// The key trick: replace the real discount badge with our controlled version
+			// This completely bypasses the shared script's updates
+			const originalBadge = discountBadgeEl;
+			const badgeParent = originalBadge.parentNode;
+
+			// Create a replacement badge that the shared script won't modify
+			const replacementBadge = document.createElement('span');
+			replacementBadge.className = originalBadge.className;
+			replacementBadge.id = 'controlled-discount-badge-{{ SID }}';
+			replacementBadge.style.display = 'inline-flex';
+
+			// Replace the original badge with our controlled version
+			badgeParent.replaceChild(replacementBadge, originalBadge);
+
+			// Function to calculate and update the display with correct first month discount
 			const updatePriceWithFirstMonthDiscount = (selectedBox) => {
 				if (!selectedBox) return;
 
 				const firstMonthDiscount = parseFloat(selectedBox.dataset.firstMonthDiscount) || 0;
 				if (firstMonthDiscount <= 0) return;
 
-				const futureNotice = section.querySelector('.future-price-notice');
-				const priceDisplayEl = section.querySelector('.price-display');
-				if (!priceDisplayEl || !futureNotice) return;
-
-				// Get price values - parse all values carefully from data attributes
+				// Get price values from data attributes
 				const subscriptionDiscount = parseFloat(selectedBox.dataset.subscriptionDiscount) || 0;
 				const priceFormat = selectedBox.dataset.pricePer || 'dont_split';
 				const origPerItem = parseFloat(selectedBox.dataset.originalItemCap) / 100 || 0;
@@ -727,162 +747,86 @@
 				const bottles = parseInt(selectedBox.dataset.bottleQuantity, 10) || 1;
 				const totalOrig = origPerItem * bottles;
 
-				console.log('Price calculation inputs:', {
-					variant: selectedBox.id,
-					subscriptionDiscount,
+				console.log('Price inputs:', {
+					box: selectedBox.id,
 					firstMonthDiscount,
+					subscriptionDiscount,
 					origPerItem,
-					subItemPrice,
-					bottles,
-					priceFormat
+					bottles
 				});
 
-				// 1. Calculate regular subscription price (future months) - with subscription discount only
-				const regularPerItem = subItemPrice; // Use the subscription price directly from the data attribute
+				// Calculate regular subscription price (with subscription discount only)
+				const regularPerItem = subItemPrice;
 				const regularTotalPrice = regularPerItem * bottles;
 
-				// 2. Calculate first month price - with both discounts combined
-				// First calculate what percentage of the original price we are paying after both discounts
+				// Calculate first month price (with both discounts)
 				const firstMonthDiscountMultiplier = (100 - (subscriptionDiscount + firstMonthDiscount)) / 100;
-				// Then apply that to the original price
 				const firstMonthPerItem = origPerItem * firstMonthDiscountMultiplier;
 				const firstMonthTotalPrice = firstMonthPerItem * bottles;
 
-				// Calculate savings as the difference between original price and first month price
+				// Calculate savings amount
 				const savingsPerItem = origPerItem - firstMonthPerItem;
 				const totalSavings = totalOrig - firstMonthTotalPrice;
 
-				// For display, we use either the per-item savings or total savings depending on format
-				const displaySavings = priceFormat === 'total' ? totalSavings : savingsPerItem;
-
-				console.log('Price calculations:', {
-					regularPerItem,
-					regularTotalPrice,
-					firstMonthPerItem,
-					firstMonthTotalPrice,
-					savingsPerItem,
-					totalSavings,
-					displaySavings
-				});
-
-				// Format prices for display - ensure proper rounding
+				// For display formatting
 				const currencySymbol = window.Shopify?.currency?.symbol || "$";
 				const regularPriceFormatted = `${currencySymbol}${(priceFormat === 'total' ? regularTotalPrice : regularPerItem).toFixed(2)}`;
-				const firstMonthPriceFormatted = `${currencySymbol}${(priceFormat === 'total' ? firstMonthTotalPrice : firstMonthPerItem).toFixed(2)}`;
 
-				// Use Math.round to avoid floating point issues in display
-				const savingsAmountDisplay = Math.round(displaySavings);
-
-				// Find elements
-				const mainPriceEl = priceDisplayEl.querySelector('.price');
-				const discountBadgeEl = priceDisplayEl.querySelector('.discount-badge');
-				const totalLineEl = priceDisplayEl.querySelector('.total-line');
-
-				// Update main price immediately with first month price
-				if (mainPriceEl) {
-					mainPriceEl.textContent = firstMonthPriceFormatted;
-				}
-
-				// Create a function to force-update the discount badge
-				const forceSavingsUpdate = () => {
-					if (discountBadgeEl && priceFormat === 'total' && savingsAmountDisplay > 0) {
-						// Force the update by replacing the element's entire content
-						const savingsText = `SAVE ${currencySymbol}${savingsAmountDisplay}`;
-						console.log(`Forcing discount badge update: ${savingsText}`, discountBadgeEl);
-
-						// Set text content and make sure it's visible
-						discountBadgeEl.textContent = savingsText;
-						discountBadgeEl.style.opacity = '1';
-						discountBadgeEl.style.display = 'inline-flex';
-					}
-
-					if (totalLineEl && priceFormat === 'per_bottle' && totalSavings > 0) {
-						// For per-bottle pricing, update the total line
-						totalLineEl.innerHTML = `Total ${currencySymbol}${firstMonthTotalPrice.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">${currencySymbol}${totalOrig.toFixed(2)}</span>`;
-						totalLineEl.style.opacity = '1';
-					}
-				};
-
-				// Call immediately and also with a delay
-				forceSavingsUpdate();
-
-				// Then call it again after a short delay to ensure our value takes precedence
-				setTimeout(forceSavingsUpdate, 10);
-				setTimeout(forceSavingsUpdate, 100);
-
-				// Set up an observer on the discount badge element to react if it changes
-				if (discountBadgeEl && priceFormat === 'total') {
-					const badgeObserver = new MutationObserver((mutations) => {
-						mutations.forEach((mutation) => {
-							if (mutation.type === 'childList' || mutation.type === 'characterData') {
-								const currentText = discountBadgeEl.textContent;
-								const expectedText = `SAVE ${currencySymbol}${savingsAmountDisplay}`;
-
-								if (currentText !== expectedText) {
-									console.log(`Badge changed to "${currentText}", forcing back to "${expectedText}"`);
-									discountBadgeEl.textContent = expectedText;
-								}
-							}
-						});
-					});
-
-					// Observe both text content changes and child changes
-					badgeObserver.observe(discountBadgeEl, {
-						characterData: true,
-						childList: true,
-						subtree: true
-					});
+				// Display savings in our controlled badge
+				if (priceFormat === 'total' && totalSavings > 0) {
+					const savingsAmountDisplay = Math.round(totalSavings);
+					replacementBadge.textContent = `SAVE ${currencySymbol}${savingsAmountDisplay}`;
+					replacementBadge.style.opacity = '1';
+					console.log(`Updated badge to: SAVE ${currencySymbol}${savingsAmountDisplay}`);
 				}
 
 				// Update future price notice
 				futureNotice.textContent = `Special price for first order. Refills for ${regularPriceFormatted}${priceFormat === 'per_bottle' ? '/bottle' : ''}.`;
+				futureNotice.style.opacity = '1';
 			};
 
-			// Create a MutationObserver to watch for class changes on the variant boxes
-			// This ensures we run after the shared script makes its changes
-			const observer = new MutationObserver((mutations) => {
-				for (const mutation of mutations) {
-					if (mutation.type === 'attributes' &&
-						mutation.attributeName === 'class' &&
-						mutation.target.classList.contains('selected')) {
+			// Create a more aggressive interval to repeatedly update our badge
+			// This runs every 50ms to ensure the badge stays correct
+			let activeVariantBox = null;
 
-						// Wait a bit to ensure all CuralifeBoxes price updates are complete
-						setTimeout(() => {
-							updatePriceWithFirstMonthDiscount(mutation.target);
-						}, 150);
-					}
+			const updateLoop = setInterval(() => {
+				const currentSelected = section.querySelector('.variant-box.selected');
+				if (currentSelected && currentSelected !== activeVariantBox) {
+					activeVariantBox = currentSelected;
+					updatePriceWithFirstMonthDiscount(activeVariantBox);
+				} else if (activeVariantBox) {
+					// Periodically refresh the badge to ensure it stays correct
+					updatePriceWithFirstMonthDiscount(activeVariantBox);
 				}
-			});
+			}, 50);
 
-			// Observe all variant boxes for class changes (which happen on selection)
-			const variantBoxes = section.querySelectorAll('.variant-box');
-			variantBoxes.forEach(box => {
-				observer.observe(box, { attributes: true });
-			});
-
-			// Also add a click handler to the entire section as a backup
-			section.addEventListener('click', event => {
-				// Use setTimeout to ensure it runs after the CuralifeBoxes handler
+			// Also respond to click events as a fallback
+			section.addEventListener('click', () => {
 				setTimeout(() => {
 					const selectedBox = section.querySelector('.variant-box.selected');
-					updatePriceWithFirstMonthDiscount(selectedBox);
-				}, 250);
+					if (selectedBox) {
+						activeVariantBox = selectedBox;
+						updatePriceWithFirstMonthDiscount(selectedBox);
+					}
+				}, 100);
 			});
 
 			// Initial update for default selection
 			setTimeout(() => {
 				const selectedBox = section.querySelector('.variant-box.selected');
 				if (selectedBox) {
+					activeVariantBox = selectedBox;
 					updatePriceWithFirstMonthDiscount(selectedBox);
 				}
 			}, 300);
+
+			// Cleanup function to clear interval when navigating away
+			window.addEventListener('beforeunload', () => {
+				clearInterval(updateLoop);
+			});
 		};
 
-		// Run after CuralifeBoxes has had a chance to initialize
-		if (window.CuralifeBoxes) {
-			setTimeout(handleFirstMonthDiscount, 100);
-		} else {
-			window.addEventListener('load', () => setTimeout(handleFirstMonthDiscount, 100));
-		}
+		// Run after a delay to ensure the DOM is ready
+		setTimeout(handleFirstMonthDiscount, 300);
 	});
 </script>
