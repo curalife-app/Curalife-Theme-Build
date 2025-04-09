@@ -746,11 +746,13 @@
 
 				const productId = el.dataset.product;
 				const variantId = parseInt(variant);
+				const hasAllowedSellingPlans = el.dataset.allowedSellingPlans && el.dataset.allowedSellingPlans.trim() !== '';
 
 				console.log('Populating frequency selector:', {
 					productId,
 					variant,
-					bottleQuantity
+					bottleQuantity,
+					hasAllowedSellingPlans
 				});
 
 				// Try to find the variant in product data
@@ -790,8 +792,12 @@
 					return;
 				}
 
+				// If we have allowed selling plans, filter to only use those
+				let sellingPlanAllocations = [...selectedVariant.selling_plan_allocations];
+
 				// Find selling plan that matches the bottle quantity (recommended frequency)
 				let recommendedSellingPlanId = '';
+
 				if (selectedVariant.selling_plan_allocations) {
 					for (const allocation of selectedVariant.selling_plan_allocations) {
 						const { value, unit } = extractFrequency(allocation.selling_plan.name);
@@ -814,7 +820,30 @@
 				const currentSellingPlanId = el.dataset.subscriptionSellingPlanId;
 				const fragment = document.createDocumentFragment();
 
-				selectedVariant.selling_plan_allocations.forEach(allocation => {
+				// Convert frequency to days for sorting
+				const getAllocationDays = (allocation) => {
+					if (!allocation || !allocation.selling_plan) return 30; // default
+					const { value, unit } = extractFrequency(allocation.selling_plan.name);
+					return unit === 'day' ? value : value * 30; // approximate month as 30 days
+				};
+
+				// Sort allocations by frequency in days (ascending)
+				sellingPlanAllocations.sort((a, b) => {
+					return getAllocationDays(a) - getAllocationDays(b);
+				});
+
+				// Filter out original plan if using allowed selling plans
+				if (hasAllowedSellingPlans) {
+					const allowedPlans = el.dataset.allowedSellingPlans
+						.split(',')
+						.map(id => id.trim())
+						.filter(id => id && !isNaN(parseInt(id)));
+
+					sellingPlanAllocations = sellingPlanAllocations.filter(allocation =>
+						allowedPlans.includes(allocation.selling_plan.id.toString()));
+				}
+
+				sellingPlanAllocations.forEach(allocation => {
 					if (!allocation || !allocation.selling_plan) return;
 
 					const plan = allocation.selling_plan;
@@ -836,11 +865,11 @@
 					const shouldSelectRecommended = !currentSellingPlanId || isRecommendedMonthPlan;
 
 					if ((plan.id && plan.id.toString() === currentSellingPlanId) ||
-						(shouldSelectRecommended && isRecommendedMonthPlan)) {
+						(shouldSelectRecommended && isRecommendedMonthPlan && !hasAllowedSellingPlans)) {
 						frequencyBox.classList.add('selected');
 
 						// Update the current box with the recommended selling plan ID
-						if (shouldSelectRecommended && isRecommendedMonthPlan) {
+						if (shouldSelectRecommended && isRecommendedMonthPlan && !hasAllowedSellingPlans) {
 							el.dataset.subscriptionSellingPlanId = plan.id.toString();
 							const submitSellingPlanId = section.querySelector('.submit-selling-plan-id');
 							if (submitSellingPlanId) {
@@ -865,6 +894,19 @@
 
 					fragment.appendChild(frequencyBox);
 				});
+
+				// Make sure we select the first option if no option is selected
+				if (fragment.children.length > 0 && !fragment.querySelector('.selected')) {
+					const firstOption = fragment.children[0];
+					firstOption.classList.add('selected');
+
+					// Update the selected selling plan
+					el.dataset.subscriptionSellingPlanId = firstOption.dataset.sellingPlanId;
+					const submitSellingPlanId = section.querySelector('.submit-selling-plan-id');
+					if (submitSellingPlanId) {
+						submitSellingPlanId.value = firstOption.dataset.sellingPlanId;
+					}
+				}
 
 				frequencyOptions.appendChild(fragment);
 				frequencyContainer.classList.remove('hidden');
