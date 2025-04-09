@@ -419,6 +419,7 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 			initGlobalSettings() {
 				const section = this.elements.section;
 
+				// Check for debug mode
 				if (section.hasAttribute("data-is-debug")) {
 					this.state.isDebug = true;
 					CuralifeBoxes.utils.setDebugMode(true);
