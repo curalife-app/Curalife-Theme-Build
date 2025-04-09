@@ -765,27 +765,51 @@
 				futureNotice.textContent = `Special price for first order. Refills for ${regularPriceFormatted}${priceFormat === 'per_bottle' ? '/bottle' : ''}.`;
 			};
 
-			// Watch for selection changes
+			// Create a MutationObserver to watch for class changes on the variant boxes
+			// This ensures we run after the shared script makes its changes
+			const observer = new MutationObserver((mutations) => {
+				for (const mutation of mutations) {
+					if (mutation.type === 'attributes' &&
+						mutation.attributeName === 'class' &&
+						mutation.target.classList.contains('selected')) {
+
+						// Wait a bit to ensure all CuralifeBoxes price updates are complete
+						setTimeout(() => {
+							updatePriceWithFirstMonthDiscount(mutation.target);
+						}, 150);
+					}
+				}
+			});
+
+			// Observe all variant boxes for class changes (which happen on selection)
+			const variantBoxes = section.querySelectorAll('.variant-box');
+			variantBoxes.forEach(box => {
+				observer.observe(box, { attributes: true });
+			});
+
+			// Also add a click handler to the entire section as a backup
 			section.addEventListener('click', event => {
-				// Wait a moment for CuralifeBoxes to process the selection
+				// Use setTimeout to ensure it runs after the CuralifeBoxes handler
 				setTimeout(() => {
 					const selectedBox = section.querySelector('.variant-box.selected');
 					updatePriceWithFirstMonthDiscount(selectedBox);
-				}, 100);
+				}, 250);
 			});
 
 			// Initial update for default selection
 			setTimeout(() => {
 				const selectedBox = section.querySelector('.variant-box.selected');
-				updatePriceWithFirstMonthDiscount(selectedBox);
-			}, 200);
+				if (selectedBox) {
+					updatePriceWithFirstMonthDiscount(selectedBox);
+				}
+			}, 300);
 		};
 
 		// Run after CuralifeBoxes has had a chance to initialize
 		if (window.CuralifeBoxes) {
-			handleFirstMonthDiscount();
+			setTimeout(handleFirstMonthDiscount, 100);
 		} else {
-			window.addEventListener('load', handleFirstMonthDiscount);
+			window.addEventListener('load', () => setTimeout(handleFirstMonthDiscount, 100));
 		}
 	});
 </script>
