@@ -15,9 +15,17 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 		/**
 		 * Display a notification message to the user
 		 * @param {string} msg - The message to display
-		 * @param {string} type - The notification type ('error' or 'success')
+		 * @param {string} type - The notification type ('error', 'success', or 'debug')
+		 * @param {boolean} forceShow - Whether to show the notification regardless of debug mode
 		 */
-		showNotification(msg, type = "error") {
+		showNotification(msg, type = "error", forceShow = false) {
+			// Check if this is a debug message and debug mode is not enabled
+			if (type === "debug" && !this.isDebugMode && !forceShow) {
+				// Only log to console if debug message is suppressed
+				console.log("[Debug]", msg);
+				return;
+			}
+
 			const note = document.createElement("div");
 			note.className = `
         cart-notification ${type}
@@ -28,13 +36,15 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 
 			if (type === "error") {
 				note.classList.add("bg-red-100", "border", "border-red-400", "text-red-700");
+			} else if (type === "debug") {
+				note.classList.add("bg-blue-100", "border", "border-blue-400", "text-blue-700");
 			} else {
 				note.classList.add("bg-green-100", "border", "border-green-400", "text-green-700");
 			}
 
 			note.innerHTML = `
         <div class="flex items-center">
-          <div class="mr-3">${type === "error" ? "⚠️" : "✅"}</div>
+          <div class="mr-3">${type === "error" ? "⚠️" : type === "debug" ? "🔍" : "✅"}</div>
           <div class="text-sm font-medium">${msg}</div>
           <button
             class="hover:text-gray-500 ml-auto text-gray-400"
@@ -50,6 +60,17 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 				setTimeout(() => note.remove(), 300);
 			}, 5000);
 		},
+
+		/**
+		 * Set debug mode
+		 * @param {boolean} isDebug - Whether debug mode is enabled
+		 */
+		setDebugMode(isDebug) {
+			this.isDebugMode = !!isDebug;
+		},
+
+		// Initialize debug mode to false by default
+		isDebugMode: false,
 
 		/**
 		 * Fetch the current cart state
@@ -208,7 +229,8 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 				isInitialLoad: true,
 				purchaseType: "subscribe",
 				buyType: "add_to_cart",
-				isRedirectingToCheckout: false
+				isRedirectingToCheckout: false,
+				isDebug: false
 			},
 
 			// Elements
@@ -281,6 +303,12 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 			init() {
 				// Find all required elements
 				if (!this.elements.section) return;
+
+				// Check for debug mode on the section element
+				if (this.elements.section.hasAttribute("data-is-debug")) {
+					this.state.isDebug = true;
+					CuralifeBoxes.utils.setDebugMode(true);
+				}
 
 				this.elements.productActions = this.elements.section.querySelector(".product-actions");
 				if (!this.elements.productActions) return;
@@ -674,6 +702,9 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 					});
 
 					console.log("Starting buy now flow with items:", JSON.stringify(items));
+					if (this.state.isDebug) {
+						CuralifeBoxes.utils.showNotification("Starting buy now flow", "debug");
+					}
 
 					// Remove cart popup if it exists
 					const cartPopup = document.getElementById("upCart");
@@ -687,11 +718,17 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 						const emptyCart = await CuralifeBoxes.utils.getCart();
 						if (emptyCart && emptyCart.items && emptyCart.items.length > 0) {
 							console.warn("Cart was not properly cleared! Still has items:", emptyCart.items.length);
+							if (this.state.isDebug) {
+								CuralifeBoxes.utils.showNotification(`Cart was not cleared properly! ${emptyCart.items.length} items remain`, "debug");
+							}
 							// Try once more to ensure it's cleared
 							await CuralifeBoxes.utils.clearCart();
 						}
 					} catch (clearErr) {
 						console.error("Error clearing cart:", clearErr);
+						if (this.state.isDebug) {
+							CuralifeBoxes.utils.showNotification(`Error clearing cart: ${clearErr.message}`, "debug");
+						}
 					}
 
 					// Process selling plan IDs
@@ -700,6 +737,9 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 							item.selling_plan = parseInt(item.selling_plan, 10);
 							if (isNaN(item.selling_plan)) {
 								console.error(`Invalid selling_plan value: ${item.selling_plan}`);
+								if (this.state.isDebug) {
+									CuralifeBoxes.utils.showNotification(`Invalid selling_plan value: ${item.selling_plan}`, "debug");
+								}
 								delete item.selling_plan;
 							}
 						}
@@ -710,8 +750,14 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 					try {
 						const addRes = await CuralifeBoxes.utils.addToCart(items);
 						console.log("Add to cart response:", addRes);
+						if (this.state.isDebug) {
+							CuralifeBoxes.utils.showNotification("Items added to cart successfully", "debug");
+						}
 					} catch (addErr) {
 						console.error("Error adding items to cart:", addErr);
+						if (this.state.isDebug) {
+							CuralifeBoxes.utils.showNotification(`Error adding items to cart: ${addErr.message}`, "debug");
+						}
 						throw addErr;
 					}
 
@@ -721,17 +767,29 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 						console.log("Cart contents after adding items:", cart);
 						if (cart.items.length !== items.length) {
 							console.warn(`Expected ${items.length} items in cart, found ${cart.items.length}`);
+							if (this.state.isDebug) {
+								CuralifeBoxes.utils.showNotification(`Expected ${items.length} items in cart, found ${cart.items.length}`, "debug");
+							}
 						}
 						const hasSubscription = cart.items.some(item => item.selling_plan_allocation);
 						if (!hasSubscription && items.some(i => i.selling_plan)) {
 							console.warn("No subscription items found in cart after adding. Check selling plan ID.");
+							if (this.state.isDebug) {
+								CuralifeBoxes.utils.showNotification("No subscription items found in cart after adding", "debug");
+							}
 						}
 					} catch (e) {
 						console.error("Failed to verify cart contents:", e);
+						if (this.state.isDebug) {
+							CuralifeBoxes.utils.showNotification(`Failed to verify cart contents: ${e.message}`, "debug");
+						}
 					}
 
 					// Redirect to checkout
 					console.log("Redirecting to checkout...");
+					if (this.state.isDebug) {
+						CuralifeBoxes.utils.showNotification("Redirecting to checkout...", "debug");
+					}
 					window.location.href = "/checkout";
 				} catch (err) {
 					console.error("Buy now flow error:", err);
@@ -754,11 +812,17 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 					// Check if we should be redirecting to checkout instead (buy_now mode)
 					if (this.state.buyType === "buy_now") {
 						console.log("Detected buy_now mode, redirecting to checkout instead of adding to cart");
+						if (this.state.isDebug) {
+							CuralifeBoxes.utils.showNotification("Detected buy_now mode, redirecting to checkout", "debug");
+						}
 						return await this.handleBuyNowFlow(items);
 					}
 
 					// Get current cart
 					let cart = await CuralifeBoxes.utils.getCart();
+					if (this.state.isDebug) {
+						CuralifeBoxes.utils.showNotification(`Current cart has ${cart.items.length} items`, "debug");
+					}
 
 					// First check if we already have these items in cart
 					const hasExactItems = items.every(newItem => {
@@ -772,6 +836,9 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 
 					// If we already have the exact items, clear cart to prevent duplication
 					if (hasExactItems) {
+						if (this.state.isDebug) {
+							CuralifeBoxes.utils.showNotification("Exact items already in cart, clearing to prevent duplication", "debug");
+						}
 						await CuralifeBoxes.utils.clearCart();
 						cart = { items: [] };
 					}
@@ -788,6 +855,9 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 							const existingSub = cart.items.find(ci => ci.product_id === parseInt(productId, 10) && Boolean(ci.selling_plan_allocation));
 
 							if (existingSub) {
+								if (this.state.isDebug) {
+									CuralifeBoxes.utils.showNotification(`Removing existing subscription for product ${productId}`, "debug");
+								}
 								await CuralifeBoxes.utils.removeCartItem(existingSub.key);
 								cart = await CuralifeBoxes.utils.getCart();
 								updatedExistingSub = true;
@@ -795,6 +865,9 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 						}
 					}
 
+					if (this.state.isDebug) {
+						CuralifeBoxes.utils.showNotification(`Adding ${items.length} items to cart`, "debug");
+					}
 					const addRes = await CuralifeBoxes.utils.addToCart(items);
 
 					// Only show "subscription updated" if we actually updated an existing subscription
