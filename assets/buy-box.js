@@ -762,6 +762,8 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 
 					// Handle subscription conflicts
 					const subItem = items.find(i => i.selling_plan);
+					let updatedExistingSub = false;
+
 					if (subItem) {
 						const selectedBox = this.elements.productActions.querySelector(".variant-box.selected");
 						const productId = selectedBox?.dataset?.product;
@@ -772,13 +774,16 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 							if (existingSub) {
 								await CuralifeBoxes.utils.removeCartItem(existingSub.key);
 								cart = await CuralifeBoxes.utils.getCart();
+								updatedExistingSub = true;
 							}
 						}
 					}
 
 					const addRes = await CuralifeBoxes.utils.addToCart(items);
 
-					CuralifeBoxes.utils.showNotification(subItem && items.includes(subItem) ? "Subscription updated in your cart" : "Items added to cart", "success");
+					// Only show "subscription updated" if we actually updated an existing subscription
+					const successMessage = updatedExistingSub ? "Subscription updated in your cart" : "Items added to cart";
+					CuralifeBoxes.utils.showNotification(successMessage, "success");
 
 					if (typeof window.updateCart === "function") {
 						window.updateCart();
