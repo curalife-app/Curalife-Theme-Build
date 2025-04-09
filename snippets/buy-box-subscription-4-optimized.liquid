@@ -432,6 +432,163 @@
 	document.addEventListener('DOMContentLoaded', function() {
 		console.log('Initializing buy-box-subscription-4-optimized-2, SID: {{ SID }}');
 
+		// Cache DOM elements to avoid repeated queries
+		const domCache = {};
+        const section = document.querySelector(`#cta-section-${SID}`);
+        const productActions = section ? section.querySelector('.product-actions') : null;
+        const frequencyContainer = section ? section.querySelector('[data-frequency-container]') : null;
+        const purchaseOptionBoxes = section ? section.querySelectorAll('.variant-box') : [];
+        const submitButton = section ? section.querySelector('.checkout-button button') : null;
+        const submitSellingPlanId = section ? section.querySelector('.submit-selling-plan-id') : null;
+        const oneTimeButton = section ? section.querySelector('.one-time-add-to-cart') : null;
+
+        // BuyBoxState - Centralized state management like in the original file
+        const BuyBoxState = {
+            // State properties
+            data: {
+                selectedBox: null,
+                selectedFrequency: null,
+                isInitialLoad: true,
+                isLoading: false,
+                isRedirectingToCheckout: false,
+                selectedGift: null,
+                productId: null,
+                variantId: null,
+                sellingPlanId: null,
+                purchaseType: null,
+                priceFormat: '{{ priceFormat }}',
+                buyType: '{{ buyType }}',
+                SID: '{{ SID }}'
+            },
+
+            // Set state and trigger UI updates
+            setState(updates) {
+                // Store previous state for comparison
+                const previousState = {...this.data};
+
+                // Update state with new values
+                Object.assign(this.data, updates);
+
+                // React to specific state changes
+                this.updateUI(updates, previousState);
+            },
+
+            // Update UI based on state changes
+            updateUI(changes, previousState) {
+                // If selected box changed
+                if ('selectedBox' in changes) {
+                    // Only trigger if it's a different box
+                    if (this.data.selectedBox !== previousState.selectedBox) {
+                        this.updateSelectedBox(this.data.selectedBox);
+                    }
+                }
+
+                // If selected frequency changed
+                if ('selectedFrequency' in changes || 'sellingPlanId' in changes) {
+                    this.updateFrequencyUI();
+                }
+            },
+
+            // Update UI elements when box selection changes
+            updateSelectedBox(boxElement) {
+                if (!boxElement) return;
+
+                console.log('Updating selected box:', {
+                    variantId: boxElement.dataset.variant,
+                    purchaseType: boxElement.dataset.purchaseType,
+                    sellingPlanId: boxElement.dataset.subscriptionSellingPlanId
+                });
+
+                // Extract data from the box
+                const isSub = boxElement.dataset.purchaseType === 'subscribe';
+                let planId = isSub ? boxElement.dataset.subscriptionSellingPlanId : '';
+                const variantId = boxElement.dataset.variant;
+
+                // Update submit button settings
+                if (submitSellingPlanId) submitSellingPlanId.value = planId;
+
+                // Update selling plan and variant IDs in state
+                this.setState({
+                    sellingPlanId: planId,
+                    variantId: variantId,
+                    purchaseType: boxElement.dataset.purchaseType,
+                    productId: boxElement.dataset.product
+                });
+
+                // Visually update the UI
+                purchaseOptionBoxes.forEach(box => {
+                    box.classList.remove('selected');
+                });
+
+                boxElement.classList.add('selected');
+
+                // Update frequency selector - ensure this happens even during initialization
+                populateFrequencySelector(boxElement, '{{ SID }}');
+            },
+
+            // Update frequency UI based on state
+            updateFrequencyUI() {
+                const freqOptions = document.getElementById('frequency-options-{{ SID }}');
+                if (!freqOptions) return;
+
+                const sellingPlanId = this.data.sellingPlanId;
+                if (!sellingPlanId) return;
+
+                // Update selected frequency option
+                const options = freqOptions.querySelectorAll('div[data-selling-plan-id]');
+                options.forEach(option => {
+                    if (option.dataset.sellingPlanId === sellingPlanId) {
+                        option.classList.add('selected');
+                    } else {
+                        option.classList.remove('selected');
+                    }
+                });
+
+                // Update frequency description
+                updateFrequencyDescription('{{ SID }}');
+            },
+
+            // Initialize state with default values
+            init() {
+                // Use the data attribute to determine default selection index
+                const defaultIdx = parseInt(productActions.dataset.defaultVariantIndex, 10) || 0;
+
+                // Find the default box
+                let defaultBox = null;
+
+                // First try to use the specified default index if it exists
+                if (defaultIdx > 0 && purchaseOptionBoxes.length >= defaultIdx) {
+                    defaultBox = purchaseOptionBoxes[defaultIdx - 1]; // 1-indexed to 0-indexed conversion
+                    console.log('Using specified default variant index:', defaultIdx);
+                } else if (purchaseOptionBoxes.length > 0) {
+                    // Fallback to first box
+                    defaultBox = purchaseOptionBoxes[0];
+                    console.log('Using first available box as default');
+                }
+
+                // Set initial state if a default box exists
+                if (defaultBox) {
+                    this.setState({
+                        selectedBox: defaultBox,
+                        isInitialLoad: true,
+                        purchaseType: defaultBox.dataset.purchaseType || null,
+                        sellingPlanId: defaultBox.dataset.subscriptionSellingPlanId || null
+                    });
+
+                    // Make sure the UI is updated to reflect this selection
+                    defaultBox.classList.add('selected');
+
+                    // Ensure variant is fully selected and UI updated
+                    this.updateSelectedBox(defaultBox);
+                }
+
+                // Mark initialization as complete
+                setTimeout(() => {
+                    this.setState({ isInitialLoad: false });
+                }, 100);
+            }
+        };
+
 		// Load the buy-box.js script if not already loaded
 		if (!window.CuralifeBoxes || !window.CuralifeBoxes.initialized) {
 			const script = document.createElement('script');
@@ -448,16 +605,17 @@
 					// Give some time for initialization then ensure the product variant data is available
 					setTimeout(function() {
 						initializeProductData('{{ SID }}');
+                        // Initialize BuyBoxState after product data is available
+                        BuyBoxState.init();
 					}, 300);
 				}
 			};
 		} else {
 			// Script already loaded, just ensure product data is available
 			initializeProductData('{{ SID }}');
+            // Initialize BuyBoxState after product data is available
+            BuyBoxState.init();
 		}
-
-		// Cache DOM elements to avoid repeated queries
-		const domCache = {};
 
 		/**
 		 * Get a DOM element with caching
@@ -490,228 +648,54 @@
 			}
 		}
 
-		/**
-		 * Ensures the product data is available for variants
-		 * This is critical for frequency options to work properly
-		 */
-		function initializeProductData(SID) {
-			const section = getElement(`#cta-section-${SID}`);
-			if (!section) return;
+        // Function to handle variant box clicks - delegated event handler
+        function handleVariantBoxClick(e) {
+            const variantBox = e.target.closest('.variant-box');
+            if (variantBox) {
+                console.log('Variant box clicked:', variantBox);
 
-			// Get selected variant box
-			const selectedBox = section.querySelector('.variant-box.selected') || section.querySelector('.variant-box');
-			if (!selectedBox) return;
+                // Update BuyBoxState with selected box
+                BuyBoxState.setState({
+                    selectedBox: variantBox,
+                    purchaseType: variantBox.dataset.purchaseType,
+                    sellingPlanId: variantBox.dataset.subscriptionSellingPlanId || null,
+                    variantId: variantBox.dataset.variant
+                });
 
-			const productId = selectedBox.dataset.product;
-			const variantId = selectedBox.dataset.variant;
+                // Clear cache to ensure we get fresh elements
+                clearCache();
 
-			// Only initialize if we have both IDs
-			if (!productId || !variantId) return;
+                // For subscription variants, handle frequency options
+                if (variantBox.dataset.purchaseType === 'subscribe') {
+                    // Clear frequency options first
+                    const frequencyOptions = getElement('#frequency-options-' + SID, section);
+                    if (frequencyOptions) frequencyOptions.innerHTML = '';
 
-			// Create product data structure if it doesn't exist
-			if (!window.productData) window.productData = {};
+                    // Clear cached frequencies
+                    memoizedFrequencies = {};
 
-            // Initialize with product structure from Liquid template
-			{% if prod and prod.id %}
-            console.log('Using Liquid template data for initialization');
-            window.productData['{{ prod.id }}'] = {
-                id: {{ prod.id | json }},
-                handle: {{ prod.handle | json }},
-                title: {{ prod.title | json }},
-                variants: [
-                    {% for variant in prod.variants %}
-                    {
-                        id: {{ variant.id | json }},
-                        title: {{ variant.title | json }},
-                        price: {{ variant.price | json }},
-                        sku: {{ variant.sku | json }},
-                        {% if variant.selling_plan_allocations.size > 0 %}
-                        selling_plan_allocations: [
-                            {% for allocation in variant.selling_plan_allocations %}
-                            {
-                                selling_plan: {
-                                    id: {{ allocation.selling_plan.id | json }},
-                                    name: {{ allocation.selling_plan.name | json }}
-                                },
-                                price: {{ allocation.price | json }},
-                                compare_at_price: {{ allocation.compare_at_price | json }}
-                            }{% unless forloop.last %},{% endunless %}
-                            {% endfor %}
-                        ]
-                        {% else %}
-                        selling_plan_allocations: []
-                        {% endif %}
-                    }{% unless forloop.last %},{% endunless %}
-                    {% endfor %}
-                ],
-                initialized: true
-            };
-            {% endif %}
+                    // Populate frequency selector with short delay to ensure DOM updates
+                    setTimeout(() => populateFrequencySelector(variantBox, SID), 50);
+                }
+            }
+        }
 
-			// Key step: Make the product data available to buy-box.js
-			// This is crucial for frequency options to render correctly
-			if (!window.productData[productId]) {
-				// Initialize with basic structure that buy-box.js expects
-				window.productData[productId] = {
-					id: productId,
-					variants: [],
-					initialized: false
-				};
-			}
+        // Function to handle frequency option selection - delegated event handler
+        function handleFrequencyOptionClick(e) {
+            const frequencyOption = e.target.closest('#frequency-options-' + SID + ' > div');
+            if (frequencyOption) {
+                console.log('Frequency option clicked:', frequencyOption);
+                selectFrequencyOption(frequencyOption, SID);
+            }
+        }
 
-			// Get all variant boxes for this product
-			const allVariantBoxes = section.querySelectorAll('.variant-box');
-
-			// Only process if we haven't already initialized this product
-			if (!window.productData[productId].initialized) {
-				// Extract variant information from available boxes
-				allVariantBoxes.forEach(box => {
-					const boxVariantId = parseInt(box.dataset.variant);
-					const boxProductId = box.dataset.product;
-
-					// Skip if not matching our product
-					if (boxProductId !== productId) return;
-
-					// Skip if variant already exists
-					if (window.productData[productId].variants.some(v => v.id === boxVariantId)) return;
-
-					// Extract bottle quantity for frequency recommendation
-					const bottleQuantity = parseInt(box.dataset.bottleQuantity || '1');
-
-					// Create a basic variant structure
-					const variantData = {
-						id: boxVariantId,
-						title: `${bottleQuantity} Bottle${bottleQuantity > 1 ? 's' : ''}`,
-						price: parseFloat(box.dataset.price || '0') * 100, // convert to cents
-						sku: box.dataset.sku || '',
-						selling_plan_allocations: []
-					};
-
-					// Check if this is a subscription variant
-					if (box.dataset.purchaseType === 'subscribe') {
-						// Check if the box has allowed selling plans
-						const allowedSellingPlansStr = box.dataset.allowedSellingPlans;
-
-						// IMPORTANT: Directly read and parse the allowed selling plans from the DOM attribute
-						let allowedPlans = [];
-						if (allowedSellingPlansStr && allowedSellingPlansStr.trim()) {
-							console.log('Reading allowed selling plans from DOM attribute:', allowedSellingPlansStr);
-							allowedPlans = allowedSellingPlansStr
-								.split(',')
-								.map(id => id.trim())
-								.filter(id => id && !isNaN(parseInt(id)));
-							console.log('Parsed allowed selling plans:', allowedPlans);
-						}
-
-						// Default selling plan from the box
-						const defaultSellingPlanId = box.dataset.subscriptionSellingPlanId;
-
-						// Create dummy selling plan allocations for this variant
-						// This ensures they'll be available to the frequency selector
-						if (allowedPlans.length > 0) {
-							allowedPlans.forEach((planId, index) => {
-								// Create descriptive name based on bottle quantity
-								let planName;
-								if (bottleQuantity <= 1) {
-									planName = `30 Days`;  // For 1-bottle variants, use days
-								} else {
-									planName = `${bottleQuantity} Months`;  // For multi-bottle variants, use months
-								}
-
-								// Add allocation to variant
-								variantData.selling_plan_allocations.push({
-									selling_plan: {
-										id: planId,
-										name: planName
-									},
-									price: parseFloat(box.dataset.subscriptionPrice || '0') * 100,
-									compare_at_price: parseFloat(box.dataset.originalItemCap || '0') * 100 * bottleQuantity
-								});
-
-								console.log(`Added selling plan allocation: ID=${planId}, name=${planName}`);
-							});
-						} else if (defaultSellingPlanId) {
-							// If no allowed plans specified but we have a default one
-							variantData.selling_plan_allocations.push({
-								selling_plan: {
-									id: defaultSellingPlanId,
-									name: `${bottleQuantity} Month${bottleQuantity > 1 ? 's' : ''}`
-								},
-								price: parseFloat(box.dataset.subscriptionPrice || '0') * 100,
-								compare_at_price: parseFloat(box.dataset.originalItemCap || '0') * 100 * bottleQuantity
-							});
-							console.log(`Added default selling plan allocation: ID=${defaultSellingPlanId}`);
-						}
-					}
-
-					// Add to product data
-					window.productData[productId].variants.push(variantData);
-					console.log(`Added variant to product data: ${variantData.id}`);
-				});
-
-				// Mark as initialized
-				window.productData[productId].initialized = true;
-				console.log(`Product data initialized for product ${productId}`);
-			}
-
-			// Set up frequency options functionality
-			setupFrequencyOptions(SID);
-
-			// If CuralifeBoxes is initialized, re-select the variant box to trigger frequency options
-			if (window.CuralifeBoxes && window.CuralifeBoxes.instances && window.CuralifeBoxes.instances[SID]) {
-				// Trigger selection of the appropriate box
-				const boxInstance = window.CuralifeBoxes.instances[SID];
-				if (boxInstance.togglePurchaseBox && selectedBox) {
-					setTimeout(() => {
-						boxInstance.togglePurchaseBox(selectedBox);
-					}, 100);
-				}
-			}
-		}
-
-		// Setup frequency options functionality
-		function setupFrequencyOptions(SID) {
-			const section = getElement(`#cta-section-${SID}`);
-			if (!section) return;
-
-			// Add the frequency selection functionality - use event delegation for better performance
-			section.addEventListener('click', function(e) {
-				const frequencyOption = e.target.closest('#frequency-options-' + SID + ' > div');
-				if (frequencyOption) {
-					selectFrequencyOption(frequencyOption, SID);
-				}
-			});
-
-			// Use event delegation for variant boxes too
-			section.addEventListener('click', function(e) {
-				const variantBox = e.target.closest('.variant-box');
-				if (variantBox) {
-					// Clear cache to ensure we get fresh elements after variant change
-					clearCache();
-
-					// Clear the frequency options first to ensure a fresh start
-					const frequencyOptions = getElement('#frequency-options-' + SID, section);
-					if (frequencyOptions) frequencyOptions.innerHTML = '';
-
-					// Clear frequency-related data to ensure clean state
-					// This is important to prevent data from previous variant affecting new variant
-					if (variantBox.dataset.purchaseType === 'subscribe') {
-						console.log('Clearing frequency data for variant change');
-						// Clear cached frequencies to ensure we extract fresh values for new variant
-						memoizedFrequencies = {};
-					}
-
-					// Force a slight delay to ensure DOM has time to update
-					setTimeout(() => populateFrequencySelector(variantBox, SID), 50);
-				}
-			});
-
-			// Initial population for selected box
-			const selectedBox = section.querySelector('.variant-box.selected') || section.querySelector('.variant-box');
-			if (selectedBox) {
-				populateFrequencySelector(selectedBox, SID);
-			}
-		}
+        // Add event delegation for better performance
+        if (section) {
+            section.addEventListener('click', function(e) {
+                handleVariantBoxClick(e);
+                handleFrequencyOptionClick(e);
+            });
+        }
 
 		// Function to handle frequency option selection
 		function selectFrequencyOption(option, SID) {
@@ -740,6 +724,14 @@
 			if (selectedBox) {
 				selectedBox.dataset.subscriptionSellingPlanId = sellingPlanId;
 			}
+
+            // Update BuyBoxState when frequency changes
+            if (BuyBoxState) {
+                BuyBoxState.setState({
+                    selectedFrequency: option,
+                    sellingPlanId: sellingPlanId
+                });
+            }
 
 			// Update the frequency description
 			updateFrequencyDescription(SID);
