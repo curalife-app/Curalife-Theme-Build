@@ -708,7 +708,7 @@
 			const section = document.getElementById(`cta-section-{{ SID }}`);
 			if (!section) return;
 
-			// Direct references to the DOM elements we need to control
+			// Get references to key elements
 			const priceDisplayEl = section.querySelector('.price-display');
 			const discountBadgeEl = priceDisplayEl?.querySelector('.discount-badge');
 			const futureNotice = section.querySelector('.future-price-notice');
@@ -718,26 +718,19 @@
 				return;
 			}
 
-			// The key trick: replace the real discount badge with our controlled version
-			// This completely bypasses the shared script's updates
-			const originalBadge = discountBadgeEl;
-			const badgeParent = originalBadge.parentNode;
-
-			// Create a replacement badge that the shared script won't modify
-			const replacementBadge = document.createElement('span');
-			replacementBadge.className = originalBadge.className;
-			replacementBadge.id = 'controlled-discount-badge-{{ SID }}';
-			replacementBadge.style.display = 'inline-flex';
-
-			// Replace the original badge with our controlled version
-			badgeParent.replaceChild(replacementBadge, originalBadge);
+			// Store the original content of the badge for reference
+			const originalBadgeContent = discountBadgeEl.textContent;
+			console.log('Original badge content:', originalBadgeContent);
 
 			// Function to calculate and update the display with correct first month discount
 			const updatePriceWithFirstMonthDiscount = (selectedBox) => {
 				if (!selectedBox) return;
 
 				const firstMonthDiscount = parseFloat(selectedBox.dataset.firstMonthDiscount) || 0;
-				if (firstMonthDiscount <= 0) return;
+				if (firstMonthDiscount <= 0) {
+					console.log('No first month discount found');
+					return;
+				}
 
 				// Get price values from data attributes
 				const subscriptionDiscount = parseFloat(selectedBox.dataset.subscriptionDiscount) || 0;
@@ -752,17 +745,18 @@
 					firstMonthDiscount,
 					subscriptionDiscount,
 					origPerItem,
-					bottles
+					bottles,
+					priceFormat
 				});
-
-				// Calculate regular subscription price (with subscription discount only)
-				const regularPerItem = subItemPrice;
-				const regularTotalPrice = regularPerItem * bottles;
 
 				// Calculate first month price (with both discounts)
 				const firstMonthDiscountMultiplier = (100 - (subscriptionDiscount + firstMonthDiscount)) / 100;
 				const firstMonthPerItem = origPerItem * firstMonthDiscountMultiplier;
 				const firstMonthTotalPrice = firstMonthPerItem * bottles;
+
+				// Calculate regular subscription price (with subscription discount only)
+				const regularPerItem = subItemPrice;
+				const regularTotalPrice = regularPerItem * bottles;
 
 				// Calculate savings amount
 				const savingsPerItem = origPerItem - firstMonthPerItem;
@@ -772,58 +766,75 @@
 				const currencySymbol = window.Shopify?.currency?.symbol || "$";
 				const regularPriceFormatted = `${currencySymbol}${(priceFormat === 'total' ? regularTotalPrice : regularPerItem).toFixed(2)}`;
 
-				// Display savings in our controlled badge
+				// Update price display with first month discount
+				const mainPriceEl = priceDisplayEl.querySelector('.price');
+				const totalLineEl = priceDisplayEl.querySelector('.total-line');
+
+				// Only update the badge display if it's a total format and there are savings
 				if (priceFormat === 'total' && totalSavings > 0) {
-					const savingsAmountDisplay = Math.round(totalSavings);
-					replacementBadge.textContent = `SAVE ${currencySymbol}${savingsAmountDisplay}`;
-					replacementBadge.style.opacity = '1';
+					const savingsAmountDisplay = Math.floor(totalSavings);
+
+					// Directly set the content of the discount badge
+					discountBadgeEl.textContent = `SAVE ${currencySymbol}${savingsAmountDisplay}`;
+					discountBadgeEl.style.display = 'inline-flex';
+					discountBadgeEl.style.opacity = '1';
 					console.log(`Updated badge to: SAVE ${currencySymbol}${savingsAmountDisplay}`);
 				}
 
-				// Update future price notice
+				// Always update the future price notice
 				futureNotice.textContent = `Special price for first order. Refills for ${regularPriceFormatted}${priceFormat === 'per_bottle' ? '/bottle' : ''}.`;
 				futureNotice.style.opacity = '1';
 			};
 
-			// Create a more aggressive interval to repeatedly update our badge
-			// This runs every 50ms to ensure the badge stays correct
-			let activeVariantBox = null;
+			// Set up a special handler to update immediately after the shared script
+			const monkeyPatchOriginalBuyBox = () => {
+				// Get the instance for this section
+				const SID = section.id.replace('cta-section-', '');
 
-			const updateLoop = setInterval(() => {
-				const currentSelected = section.querySelector('.variant-box.selected');
-				if (currentSelected && currentSelected !== activeVariantBox) {
-					activeVariantBox = currentSelected;
-					updatePriceWithFirstMonthDiscount(activeVariantBox);
-				} else if (activeVariantBox) {
-					// Periodically refresh the badge to ensure it stays correct
-					updatePriceWithFirstMonthDiscount(activeVariantBox);
+				// Find the original update function
+				if (!window.CuralifeBoxes?.instances?.[SID]?.updatePriceDisplay) {
+					// If we can't find it, try again later
+					setTimeout(monkeyPatchOriginalBuyBox, 100);
+					return;
 				}
-			}, 50);
 
-			// Also respond to click events as a fallback
+				// Store the original function
+				const originalUpdatePriceDisplay = window.CuralifeBoxes.instances[SID].updatePriceDisplay;
+
+				// Replace it with our own function that calls both
+				window.CuralifeBoxes.instances[SID].updatePriceDisplay = function(el) {
+					// First call the original function
+					originalUpdatePriceDisplay.call(this, el);
+
+					// Then apply our own updates
+					setTimeout(() => {
+						updatePriceWithFirstMonthDiscount(el);
+					}, 20);
+				};
+
+				console.log('Successfully patched original buy box code');
+			};
+
+			// Try to patch the original buy box code
+			monkeyPatchOriginalBuyBox();
+
+			// Also handle clicks directly as a fallback
 			section.addEventListener('click', () => {
 				setTimeout(() => {
 					const selectedBox = section.querySelector('.variant-box.selected');
 					if (selectedBox) {
-						activeVariantBox = selectedBox;
 						updatePriceWithFirstMonthDiscount(selectedBox);
 					}
-				}, 100);
+				}, 250);
 			});
 
 			// Initial update for default selection
 			setTimeout(() => {
 				const selectedBox = section.querySelector('.variant-box.selected');
 				if (selectedBox) {
-					activeVariantBox = selectedBox;
 					updatePriceWithFirstMonthDiscount(selectedBox);
 				}
-			}, 300);
-
-			// Cleanup function to clear interval when navigating away
-			window.addEventListener('beforeunload', () => {
-				clearInterval(updateLoop);
-			});
+			}, 500);
 		};
 
 		// Run after a delay to ensure the DOM is ready
