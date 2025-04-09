@@ -817,6 +817,9 @@
 
 					console.log(`Buy box ${SID}: Setting price to ${formattedPrice} (format: ${priceFormat})`);
 					mainPriceElement.textContent = formattedPrice;
+
+					// Store the current price in a data attribute to check if it gets changed
+					mainPriceElement.setAttribute('data-custom-price', formattedPrice);
 				}
 
 				// 2. Update badge with correct savings amount
@@ -844,21 +847,97 @@
 				console.log(`Buy box ${SID}: Price display updated with first month pricing`);
 			}
 
-			// Extend the CuralifeBoxes instance to handle first month pricing
-			if (instance && instance.updatePriceDisplay) {
-				// Store original method
-				const originalUpdatePriceDisplay = instance.updatePriceDisplay;
-
-				// Override with our implementation that runs after the original
+			// Completely override the updatePriceDisplay method instead of extending it
+			if (instance) {
 				instance.updatePriceDisplay = function(el) {
-					// Call original implementation first
-					originalUpdatePriceDisplay.call(this, el);
+					console.log(`Buy box ${SID}: Custom price update called`);
 
-					// Then our custom implementation
-					setTimeout(() => updateFirstMonthPricing(el), 50);
+					// If there's a first month discount, use our custom implementation
+					const firstMonthDiscount = parseFloat(el?.dataset?.firstMonthDiscount || 0);
+					if (firstMonthDiscount > 0) {
+						updateFirstMonthPricing(el);
+					} else {
+						// Call the original CuralifeBoxes method using a generic implementation
+						// since we can't access the original
+						const section = document.getElementById(`cta-section-${SID}`);
+						const priceDisplay = section?.querySelector('.price-display');
+
+						if (priceDisplay) {
+							const mainPrice = priceDisplay.querySelector('.price');
+							const cap = priceDisplay.querySelector('.cap');
+							const totalLine = priceDisplay.querySelector('.total-line');
+							const discount = priceDisplay.querySelector('.discount-badge');
+
+							// Format based on price format
+							const priceFormat = '{{ priceFormat }}';
+							const itemPrice = parseFloat(el.dataset.itemPrice || 0) / 100;
+							const subscriptionPrice = parseFloat(el.dataset.subscriptionPrice || 0) / 100;
+							const subscriptionItemPrice = parseFloat(el.dataset.subscriptionItemPrice || 0) / 100;
+							const originalItemCap = parseFloat(el.dataset.originalItemCap || 0) / 100;
+							const bottles = parseInt(el.dataset.bottleQuantity || 1, 10);
+
+							const currencySymbol = window.Shopify?.currency?.symbol || "$";
+
+							if (mainPrice) {
+								if (priceFormat === 'total') {
+									mainPrice.textContent = `${currencySymbol}${subscriptionPrice.toFixed(2)}`;
+								} else {
+									mainPrice.textContent = `${currencySymbol}${subscriptionItemPrice.toFixed(2)}`;
+								}
+							}
+
+							if (cap) {
+								cap.textContent = `${currencySymbol}${originalItemCap.toFixed(2)}`;
+							}
+
+							const saveAmt = (originalItemCap - subscriptionItemPrice) * bottles;
+							if (discount && priceFormat === 'total' && saveAmt > 0) {
+								discount.textContent = `SAVE ${currencySymbol}${Math.floor(saveAmt)}`;
+							}
+
+							if (totalLine && priceFormat === 'per_bottle') {
+								totalLine.innerHTML = `Total ${currencySymbol}${subscriptionPrice.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">${currencySymbol}${(originalItemCap * bottles).toFixed(2)}</span>`;
+							}
+						}
+					}
 				};
 
-				console.log(`Buy box ${SID}: Successfully extended price display method`);
+				console.log(`Buy box ${SID}: Price display method completely overridden`);
+
+				// Setup a MutationObserver to ensure our price updates persist
+				const section = document.getElementById(`cta-section-${SID}`);
+				if (section) {
+					const priceDisplay = section.querySelector('.price-display');
+					if (priceDisplay) {
+						// Create a new observer
+						const observer = new MutationObserver((mutations) => {
+							const selectedBox = section.querySelector('.variant-box.selected');
+							if (selectedBox) {
+								const firstMonthDiscount = parseFloat(selectedBox.dataset.firstMonthDiscount || 0);
+								if (firstMonthDiscount > 0) {
+									// Check if price display has changed from our custom value
+									const mainPrice = priceDisplay.querySelector('.price');
+									const customPrice = mainPrice?.getAttribute('data-custom-price');
+
+									if (customPrice && mainPrice && mainPrice.textContent !== customPrice) {
+										console.log(`Buy box ${SID}: Price was changed, re-applying our custom price`);
+										// Re-apply our custom price update
+										updateFirstMonthPricing(selectedBox);
+									}
+								}
+							}
+						});
+
+						// Start observing price display for changes
+						observer.observe(priceDisplay, {
+							childList: true,
+							subtree: true,
+							characterData: true
+						});
+
+						console.log(`Buy box ${SID}: Mutation observer setup for price display`);
+					}
+				}
 
 				// Trigger update for currently selected variant
 				const selectedBox = document.querySelector(`#cta-section-${SID} .variant-box.selected`);
