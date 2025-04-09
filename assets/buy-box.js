@@ -222,7 +222,8 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 				submitVariantId: null,
 				oneTimeButton: null,
 				giftOptionContainers: null,
-				priceDisplay: null
+				priceDisplay: null,
+				buyForm: null
 			},
 
 			/**
@@ -293,6 +294,11 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 				this.elements.giftOptionContainers = this.elements.productActions.querySelectorAll(".gift-box");
 				this.elements.priceDisplay = this.elements.productActions.querySelector(".price-display");
 
+				// Find the form element if it exists
+				if (this.elements.submitButton) {
+					this.elements.buyForm = this.elements.submitButton.closest("form");
+				}
+
 				// Save original button text
 				if (this.elements.submitButton) {
 					this.elements.submitButton.setAttribute("data-original-text", this.elements.submitButton.textContent);
@@ -313,8 +319,32 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 				this.initPurchaseOptions();
 				this.initSubmitButton();
 				this.initOneTimeButton();
+				this.disableDefaultFormSubmission();
 
 				console.log(`Buy box ${this.SID} initialized`);
+			},
+
+			/**
+			 * Disable default form submission to prevent conflicts with our checkout flow
+			 */
+			disableDefaultFormSubmission() {
+				if (this.elements.buyForm) {
+					console.log(`Disabling default form submission for buybox ${this.SID}`);
+					this.elements.buyForm.setAttribute("data-handled-by-buybox-js", "true");
+
+					this.elements.buyForm.addEventListener("submit", e => {
+						e.preventDefault();
+						e.stopPropagation();
+						console.log("Default form submission prevented - using buy-box.js checkout flow");
+
+						// Our click handler on the button will handle the checkout process
+						if (!this.state.isLoading && this.elements.submitButton) {
+							// Simulate a click on the submit button to trigger our handler
+							this.elements.submitButton.click();
+						}
+						return false;
+					});
+				}
 			},
 
 			/**
@@ -607,6 +637,12 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 			 */
 			async handleBuyNowFlow(items) {
 				try {
+					// Prevent multiple checkout attempts
+					if (this.state.isRedirectingToCheckout) {
+						console.log("Checkout already in progress, ignoring duplicate request");
+						return;
+					}
+
 					this.setState({
 						isLoading: true,
 						isRedirectingToCheckout: true
@@ -732,11 +768,19 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 
 				let isSubmitting = false;
 
+				// Clear any existing event listeners to prevent duplicates
+				const oldButton = this.elements.submitButton;
+				const newButton = oldButton.cloneNode(true);
+				oldButton.parentNode.replaceChild(newButton, oldButton);
+				this.elements.submitButton = newButton;
+
 				this.elements.submitButton.addEventListener("click", async e => {
 					e.preventDefault();
+					e.stopPropagation();
 
 					// Prevent double-clicks or multiple submissions
-					if (isSubmitting || this.state.isLoading) {
+					if (isSubmitting || this.state.isLoading || this.state.isRedirectingToCheckout) {
+						console.log("Submission already in progress, ignoring duplicate click");
 						return;
 					}
 
