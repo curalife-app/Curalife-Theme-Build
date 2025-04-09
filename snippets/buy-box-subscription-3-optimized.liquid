@@ -708,67 +708,76 @@
 			const section = document.getElementById(`cta-section-{{ SID }}`);
 			if (!section) return;
 
+			// Function to update price display
+			const updatePriceWithFirstMonthDiscount = (selectedBox) => {
+				if (!selectedBox) return;
+
+				const firstMonthDiscount = parseFloat(selectedBox.dataset.firstMonthDiscount) || 0;
+				if (firstMonthDiscount <= 0) return;
+
+				const futureNotice = section.querySelector('.future-price-notice');
+				const priceDisplayEl = section.querySelector('.price-display');
+				if (!priceDisplayEl || !futureNotice) return;
+
+				// Get price values
+				const subscriptionDiscount = parseFloat(selectedBox.dataset.subscriptionDiscount) || 0;
+				const priceFormat = selectedBox.dataset.pricePer || 'dont_split';
+				const origPerItem = parseFloat(selectedBox.dataset.originalItemCap) / 100 || 0;
+				const bottles = parseInt(selectedBox.dataset.bottleQuantity, 10) || 1;
+				const totalOrig = origPerItem * bottles;
+
+				// 1. Calculate regular subscription price (future months) - with subscription discount only
+				const regularDiscountMultiplier = (100 - subscriptionDiscount) / 100;
+				const regularPrice = (priceFormat === 'total' ? totalOrig : origPerItem) * regularDiscountMultiplier;
+				const regularTotalPrice = regularPrice * (priceFormat === 'total' ? 1 : bottles);
+
+				// 2. Calculate first month price - with both discounts
+				const firstMonthDiscountMultiplier = (100 - (subscriptionDiscount + firstMonthDiscount)) / 100;
+				const firstMonthPrice = (priceFormat === 'total' ? totalOrig : origPerItem) * firstMonthDiscountMultiplier;
+				const firstMonthTotalPrice = firstMonthPrice * (priceFormat === 'total' ? 1 : bottles);
+
+				// Format prices for display
+				const currencySymbol = window.Shopify?.currency?.symbol || "$";
+				const regularPriceFormatted = `${currencySymbol}${regularPrice.toFixed(2)}`;
+				const firstMonthPriceFormatted = `${currencySymbol}${firstMonthPrice.toFixed(2)}`;
+				const savedAmount = Math.floor(totalOrig - firstMonthTotalPrice);
+
+				// Update price display with first month discount
+				const mainPriceEl = priceDisplayEl.querySelector('.price');
+				const discountBadgeEl = priceDisplayEl.querySelector('.discount-badge');
+				const totalLineEl = priceDisplayEl.querySelector('.total-line');
+
+				if (mainPriceEl) {
+					mainPriceEl.textContent = firstMonthPriceFormatted;
+				}
+
+				if (discountBadgeEl && priceFormat === 'total' && savedAmount > 0) {
+					discountBadgeEl.textContent = `SAVE ${currencySymbol}${savedAmount}`;
+				}
+
+				if (totalLineEl && priceFormat === 'per_bottle') {
+					if (savedAmount > 0) {
+						totalLineEl.innerHTML = `Total ${currencySymbol}${firstMonthTotalPrice.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">${currencySymbol}${totalOrig.toFixed(2)}</span>`;
+					}
+				}
+
+				// Update future price notice
+				futureNotice.textContent = `Special price for first order. Refills for ${regularPriceFormatted}${priceFormat === 'per_bottle' ? '/bottle' : ''}.`;
+			};
+
 			// Watch for selection changes
 			section.addEventListener('click', event => {
 				// Wait a moment for CuralifeBoxes to process the selection
 				setTimeout(() => {
 					const selectedBox = section.querySelector('.variant-box.selected');
-					if (!selectedBox) return;
-
-					const firstMonthDiscount = parseFloat(selectedBox.dataset.firstMonthDiscount) || 0;
-					if (firstMonthDiscount <= 0) return;
-
-					const futureNotice = section.querySelector('.future-price-notice');
-					if (!futureNotice) return;
-
-					// Get price values
-					const subscriptionDiscount = parseFloat(selectedBox.dataset.subscriptionDiscount) || 0;
-					const priceFormat = selectedBox.dataset.pricePer || 'dont_split';
-					const origPerItem = parseFloat(selectedBox.dataset.originalItemCap) / 100 || 0;
-					const bottles = parseInt(selectedBox.dataset.bottleQuantity, 10) || 1;
-					const totalOrig = origPerItem * bottles;
-
-					// Calculate regular subscription price (future months)
-					const regularDiscountMultiplier = (100 - subscriptionDiscount) / 100;
-					const regularPrice = (priceFormat === 'total' ? totalOrig : origPerItem) * regularDiscountMultiplier;
-
-					// Format price for display
-					const currencySymbol = window.Shopify?.currency?.symbol || "$";
-					const regularPriceFormatted = `${currencySymbol}${regularPrice.toFixed(2)}`;
-
-					// Update future price notice
-					futureNotice.textContent = `Special price for first order. Refills for ${regularPriceFormatted}${priceFormat === 'per_bottle' ? '/bottle' : ''}.`;
+					updatePriceWithFirstMonthDiscount(selectedBox);
 				}, 100);
 			});
 
 			// Initial update for default selection
 			setTimeout(() => {
 				const selectedBox = section.querySelector('.variant-box.selected');
-				if (selectedBox) {
-					const firstMonthDiscount = parseFloat(selectedBox.dataset.firstMonthDiscount) || 0;
-					if (firstMonthDiscount <= 0) return;
-
-					const futureNotice = section.querySelector('.future-price-notice');
-					if (!futureNotice) return;
-
-					// Get price values
-					const subscriptionDiscount = parseFloat(selectedBox.dataset.subscriptionDiscount) || 0;
-					const priceFormat = selectedBox.dataset.pricePer || 'dont_split';
-					const origPerItem = parseFloat(selectedBox.dataset.originalItemCap) / 100 || 0;
-					const bottles = parseInt(selectedBox.dataset.bottleQuantity, 10) || 1;
-					const totalOrig = origPerItem * bottles;
-
-					// Calculate regular subscription price (future months)
-					const regularDiscountMultiplier = (100 - subscriptionDiscount) / 100;
-					const regularPrice = (priceFormat === 'total' ? totalOrig : origPerItem) * regularDiscountMultiplier;
-
-					// Format price for display
-					const currencySymbol = window.Shopify?.currency?.symbol || "$";
-					const regularPriceFormatted = `${currencySymbol}${regularPrice.toFixed(2)}`;
-
-					// Update future price notice
-					futureNotice.textContent = `Special price for first order. Refills for ${regularPriceFormatted}${priceFormat === 'per_bottle' ? '/bottle' : ''}.`;
-				}
+				updatePriceWithFirstMonthDiscount(selectedBox);
 			}, 200);
 		};
 
