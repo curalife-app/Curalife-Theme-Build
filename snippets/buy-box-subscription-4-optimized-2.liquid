@@ -412,425 +412,128 @@
 <!-- Load buy-box.js script if not already loaded -->
 <script>
 	document.addEventListener('DOMContentLoaded', function() {
-		console.log('[DEBUG] DOM loaded for buy-box-subscription-4-optimized-2, SID: {{ SID }}');
+		console.log('Initializing buy-box-subscription-4-optimized-2, SID: {{ SID }}');
 
-		// Set up click monitoring for variant boxes
-		setupVariantClickMonitoring('{{ SID }}');
-
-		// Select the first variant automatically on page load
-		setTimeout(function() {
-			const SID = '{{ SID }}';
-			const firstVariantBox = document.querySelector(`#cta-section-${SID} .variant-box`);
-			if (firstVariantBox && !document.querySelector(`#cta-section-${SID} .variant-box.selected`)) {
-				console.log('[DEBUG] Auto-selecting first variant box');
-				// Trigger click on the first variant box to initialize everything
-				firstVariantBox.click();
-			}
-		}, 100);
-
-		// Determine if we need to load the script or if it's already loaded
+		// Load the buy-box.js script if not already loaded
 		if (!window.CuralifeBoxes || !window.CuralifeBoxes.initialized) {
-			console.log('[DEBUG] CuralifeBoxes not initialized, loading script...');
 			const script = document.createElement('script');
 			script.src = "{{ 'buy-box.js' | asset_url }}";
 			script.async = true;
 			document.head.appendChild(script);
 
-			// Debug progress
-			console.log('[DEBUG] Script tag added to head:', script.src);
-
-			// Initialize buy boxes after script loads
+			// Initialize after script loads
 			script.onload = function() {
-				console.log('[DEBUG] buy-box.js script loaded successfully');
 				if (window.CuralifeBoxes) {
-					console.log('[DEBUG] Running CuralifeBoxes.initAll()');
+					// Initialize all buy boxes on the page
 					window.CuralifeBoxes.initAll();
 
-					// Get available instances
-					console.log('[DEBUG] Available CuralifeBoxes instances:', Object.keys(window.CuralifeBoxes.instances));
-
-					// After initialization, force-check frequency options
-					console.log('[DEBUG] Setting timeout to activate frequency options');
+					// Give some time for initialization then ensure the product variant data is available
 					setTimeout(function() {
-						console.log('[DEBUG] Calling activateFrequencyOptions with SID:', '{{ SID }}');
-						activateFrequencyOptions('{{ SID }}');
-					}, 500); // Extended timeout for better debugging
-
-					// Re-setup click monitoring after initialization
-					setupVariantClickMonitoring('{{ SID }}');
-				} else {
-					console.error('[DEBUG] CuralifeBoxes not available after script load!');
+						initializeProductData('{{ SID }}');
+					}, 300);
 				}
-			};
-
-			// Add error handler
-			script.onerror = function() {
-				console.error('[DEBUG] Failed to load buy-box.js script!');
 			};
 		} else {
-			console.log('[DEBUG] CuralifeBoxes already initialized, activating frequency options directly');
-			console.log('[DEBUG] Available CuralifeBoxes instances:', Object.keys(window.CuralifeBoxes.instances));
-
-			// If already loaded, activate frequency options
-			setTimeout(function() {
-				console.log('[DEBUG] Calling activateFrequencyOptions with SID:', '{{ SID }}');
-				activateFrequencyOptions('{{ SID }}');
-			}, 500);
+			// Script already loaded, just ensure product data is available
+			initializeProductData('{{ SID }}');
 		}
 
-		// Function to monitor variant clicks
-		function setupVariantClickMonitoring(SID) {
-			console.log('[DEBUG] Setting up variant click monitoring for SID:', SID);
+		/**
+		 * Ensures the product data is available for variants
+		 * This is critical for frequency options to work properly
+		 */
+		function initializeProductData(SID) {
+			const section = document.getElementById(`cta-section-${SID}`);
+			if (!section) return;
 
-			// Get all variant boxes for this section
-			const variantBoxes = document.querySelectorAll(`#cta-section-${SID} .variant-box`);
-			console.log('[DEBUG] Found variant boxes:', variantBoxes.length);
+			// Get selected variant box
+			const selectedBox = section.querySelector('.variant-box.selected') || section.querySelector('.variant-box');
+			if (!selectedBox) return;
 
-			// Add our own click event listeners to bypass any potential issues
-			variantBoxes.forEach((box, index) => {
-				// Remove any existing listeners we've added
-				box.removeEventListener('click', variantClickHandler);
+			const productId = selectedBox.dataset.product;
+			const variantId = selectedBox.dataset.variant;
 
-				// Add fresh click listener
-				box.addEventListener('click', variantClickHandler);
-				console.log(`[DEBUG] Added click listener to variant box ${index+1}:`, box.id);
-			});
-		}
+			// Only initialize if we have both IDs
+			if (!productId || !variantId) return;
 
-		// Click handler for variant boxes
-		function variantClickHandler(event) {
-			const box = event.currentTarget;
-			const SID = '{{ SID }}';
+			// Create product data structure if it doesn't exist
+			if (!window.productData) window.productData = {};
 
-			console.log('[DEBUG] *** VARIANT BOX CLICKED ***', box.id);
-			console.log('[DEBUG] Variant box data:', {
-				id: box.id,
-				purchaseType: box.dataset.purchaseType,
-				variant: box.dataset.variant,
-				product: box.dataset.product,
-				sellingPlanId: box.dataset.subscriptionSellingPlanId,
-				bottleQuantity: box.dataset.bottleQuantity,
-				isSelected: box.classList.contains('selected')
-			});
-
-			// Check if CuralifeBoxes is properly handling this
-			if (window.CuralifeBoxes && window.CuralifeBoxes.instances[SID]) {
-				console.log('[DEBUG] CuralifeBoxes instance exists for this section');
-
-				// We'll manually call togglePurchaseBox if not already selected
-				if (!box.classList.contains('selected')) {
-					console.log('[DEBUG] Box not selected, manually toggling');
-					try {
-						const boxInstance = window.CuralifeBoxes.instances[SID];
-						if (boxInstance.togglePurchaseBox) {
-							boxInstance.togglePurchaseBox(box);
-							console.log('[DEBUG] Successfully called togglePurchaseBox');
-
-							// Check if frequency options were updated
-							setTimeout(() => {
-								const frequencyOptions = document.getElementById(`frequency-options-${SID}`);
-								console.log('[DEBUG] After toggle, frequency options count:',
-									frequencyOptions ? frequencyOptions.children.length : 0);
-
-								if (frequencyOptions && frequencyOptions.children.length === 0) {
-									console.log('[DEBUG] Still no options after toggle, using fallback');
-									manuallyPopulateFrequencyOptions(SID);
-								}
-							}, 300);
-						} else {
-							console.error('[DEBUG] togglePurchaseBox function not found on instance');
-							// Use our fallback since togglePurchaseBox isn't available
-							manuallySelectVariantBox(box, SID);
-						}
-					} catch (err) {
-						console.error('[DEBUG] Error calling togglePurchaseBox:', err);
-						// Use our fallback on error
-						manuallySelectVariantBox(box, SID);
-					}
-				} else {
-					console.log('[DEBUG] Box already selected, no action needed');
-				}
-			} else {
-				console.error('[DEBUG] No CuralifeBoxes instance for SID:', SID);
-				// Use our fallback since CuralifeBoxes isn't available
-				manuallySelectVariantBox(box, SID);
-			}
-		}
-
-		// Function to manually handle variant box selection when CuralifeBoxes isn't working
-		function manuallySelectVariantBox(box, SID) {
-			// Update selected state
-			const variantBoxes = document.querySelectorAll(`#cta-section-${SID} .variant-box`);
-			variantBoxes.forEach(b => {
-				b.classList.remove('selected');
-			});
-			box.classList.add('selected');
-
-			// Update form fields if they exist
-			const submitSellingPlanId = document.querySelector(`#cta-section-${SID} .submit-selling-plan-id`);
-			const submitVariantId = document.querySelector(`#cta-section-${SID} .submit-variant-id`);
-
-			if (submitSellingPlanId) {
-				submitSellingPlanId.value = box.dataset.purchaseType === 'subscribe' ?
-					box.dataset.subscriptionSellingPlanId : '';
+			// Key step: Make the product data available to buy-box.js
+			// This is crucial for frequency options to render correctly
+			if (!window.productData[productId]) {
+				// Initialize with basic structure that buy-box.js expects
+				window.productData[productId] = {
+					id: productId,
+					variants: [],
+					initialized: false
+				};
 			}
 
-			if (submitVariantId) {
-				submitVariantId.value = box.dataset.variant;
-			}
+			// Get all variant boxes for this product
+			const allVariantBoxes = section.querySelectorAll('.variant-box');
 
-			// Show and populate frequency options if this is a subscription
-			if (box.dataset.purchaseType === 'subscribe') {
-				manuallyPopulateFrequencyOptions(SID);
-			} else {
-				// Hide frequency options if not a subscription
-				const frequencyContainer = document.querySelector(`#cta-section-${SID} [data-frequency-container]`);
-				if (frequencyContainer) {
-					frequencyContainer.classList.add('hidden');
+			// Extract variant information from available boxes
+			allVariantBoxes.forEach(box => {
+				const boxVariantId = parseInt(box.dataset.variant);
+				const boxProductId = box.dataset.product;
+
+				// Skip if not matching our product
+				if (boxProductId !== productId) return;
+
+				// Skip if variant already exists
+				if (window.productData[productId].variants.some(v => v.id === boxVariantId)) return;
+
+				// Extract selling plan if available
+				const sellingPlanId = box.dataset.purchaseType === 'subscribe' ?
+					box.dataset.subscriptionSellingPlanId : null;
+
+				// Extract bottle quantity for frequency recommendation
+				const bottleQuantity = parseInt(box.dataset.bottleQuantity || '1');
+
+				// Create a basic variant structure
+				const variantData = {
+					id: boxVariantId,
+					title: `${bottleQuantity} Bottle${bottleQuantity > 1 ? 's' : ''}`,
+					price: parseFloat(box.dataset.price || '0') * 100, // convert to cents
+					sku: box.dataset.sku || '',
+					selling_plan_allocations: []
+				};
+
+				// If this is a subscription variant with a selling plan, add it
+				if (sellingPlanId) {
+					variantData.selling_plan_allocations.push({
+						selling_plan: {
+							id: sellingPlanId,
+							name: `${bottleQuantity} Month${bottleQuantity > 1 ? 's' : ''}`
+						},
+						price: parseFloat(box.dataset.subscriptionPrice || '0') * 100,
+						compare_at_price: parseFloat(box.dataset.originalItemCap || '0') * 100 * bottleQuantity
+					});
 				}
-			}
 
-			// Update price display if needed
-			updatePriceDisplay(box, SID);
-		}
-
-		// Basic price display updater for fallback
-		function updatePriceDisplay(box, SID) {
-			const priceDisplay = document.querySelector(`#cta-section-${SID} .price-display`);
-			if (!priceDisplay) return;
-
-			// Add any price updating logic here if needed
-			console.log('[DEBUG] Price display would be updated here if needed');
-		}
-
-		// Function to directly populate frequency options as a fallback
-		function manuallyPopulateFrequencyOptions(SID) {
-			console.log('[DEBUG] Attempting to manually populate frequency options');
-
-			const frequencyContainer = document.querySelector(`#cta-section-${SID} [data-frequency-container]`);
-			const frequencyOptions = document.getElementById(`frequency-options-${SID}`);
-			const selectedBox = document.querySelector(`#cta-section-${SID} .variant-box.selected`);
-			const submitSellingPlanId = document.querySelector(`#cta-section-${SID} .submit-selling-plan-id`);
-
-			if (!frequencyContainer || !frequencyOptions || !selectedBox) {
-				console.error('[DEBUG] Required elements not found:', {
-					container: !!frequencyContainer,
-					options: !!frequencyOptions,
-					selectedBox: !!selectedBox
-				});
-				return;
-			}
-
-			// Get the bottle quantity for recommended frequency
-			const bottleQuantity = parseInt(selectedBox.dataset.bottleQuantity || '1', 10);
-			const sellingPlanId = selectedBox.dataset.subscriptionSellingPlanId;
-
-			console.log('[DEBUG] Selected box data:', {
-				bottleQuantity,
-				sellingPlanId,
-				variantId: selectedBox.dataset.variant,
-				productId: selectedBox.dataset.product
+				// Add to product data
+				window.productData[productId].variants.push(variantData);
 			});
 
-			// Create a simple default option as fallback
-			const option = document.createElement('div');
-			option.className = 'rounded-md cursor-pointer py-2 min-w-[90px] max-w-[168px] text-center w-full';
-			option.style.backgroundColor = 'var(--primary-color)';
-			option.style.color = 'white';
-			option.dataset.sellingPlanId = sellingPlanId;
-			option.dataset.frequencyValue = bottleQuantity;
-			option.dataset.frequencyUnit = 'month';
-			option.innerHTML = `
-				<div class="p-1">
-					<span class="font-semibold">Every ${bottleQuantity} Month${bottleQuantity > 1 ? 's' : ''}</span>
-				</div>
-			`;
+			// Mark as initialized
+			window.productData[productId].initialized = true;
 
-			// Clear and append
-			frequencyOptions.innerHTML = '';
-			frequencyOptions.appendChild(option);
-			frequencyContainer.classList.remove('hidden');
+			console.log('Product data initialized for SID:', SID);
 
-			console.log('[DEBUG] Manually added frequency option:', option);
+			// If CuralifeBoxes is initialized, re-select the variant box to trigger frequency options
+			if (window.CuralifeBoxes && window.CuralifeBoxes.instances && window.CuralifeBoxes.instances[SID]) {
+				// Trigger selection of the appropriate box
+				const boxInstance = window.CuralifeBoxes.instances[SID];
+				if (boxInstance.togglePurchaseBox && selectedBox) {
+					console.log('Triggering box selection to initialize frequency options');
 
-			// Add click handler to the option
-			option.addEventListener('click', function() {
-				console.log('[DEBUG] Frequency option clicked:', this.dataset.sellingPlanId);
-
-				// Update the selling plan ID on the selected box and form
-				if (selectedBox) {
-					selectedBox.dataset.subscriptionSellingPlanId = this.dataset.sellingPlanId;
+					// Give the system time to process
+					setTimeout(() => {
+						boxInstance.togglePurchaseBox(selectedBox);
+					}, 100);
 				}
-
-				if (submitSellingPlanId) {
-					submitSellingPlanId.value = this.dataset.sellingPlanId;
-				}
-
-				// Visual feedback
-				this.style.backgroundColor = 'var(--primary-color)';
-				this.style.color = 'white';
-
-				// Highlight the clicked option (in case we add more in the future)
-				Array.from(frequencyOptions.children).forEach(child => {
-					if (child !== this) {
-						child.style.backgroundColor = 'var(--bg-color)';
-						child.style.color = 'var(--primary-color)';
-					}
-				});
-			});
-		}
-
-		// Function to activate frequency options
-		function activateFrequencyOptions(SID) {
-			console.log('[DEBUG] Inside activateFrequencyOptions for SID:', SID);
-
-			// Detailed debug info for window.CuralifeBoxes
-			console.log('[DEBUG] CuralifeBoxes state:', {
-				exists: !!window.CuralifeBoxes,
-				initialized: window.CuralifeBoxes?.initialized,
-				hasInstances: !!window.CuralifeBoxes?.instances,
-				instanceCount: window.CuralifeBoxes?.instances ? Object.keys(window.CuralifeBoxes.instances).length : 0,
-				availableSIDs: window.CuralifeBoxes?.instances ? Object.keys(window.CuralifeBoxes.instances) : []
-			});
-
-			// Check if boxInstance exists
-			const boxInstance = window.CuralifeBoxes?.instances?.[SID];
-			console.log('[DEBUG] Box instance found?', !!boxInstance);
-
-			if (!boxInstance) {
-				console.error('[DEBUG] Buy box instance not found for SID:', SID);
-				console.log('[DEBUG] Retrying in 200ms...');
-				setTimeout(() => activateFrequencyOptions(SID), 200);
-				return;
-			}
-
-			// Check if togglePurchaseBox exists
-			console.log('[DEBUG] togglePurchaseBox function exists?', !!boxInstance.togglePurchaseBox);
-
-			// Get essential elements
-			const frequencyContainer = document.querySelector(`#cta-section-${SID} [data-frequency-container]`);
-			const selectedBox = document.querySelector(`#cta-section-${SID} .variant-box.selected`);
-			const frequencyOptions = document.getElementById(`frequency-options-${SID}`);
-
-			console.log('[DEBUG] Essential elements:', {
-				frequencyContainer: !!frequencyContainer,
-				selectedBox: !!selectedBox,
-				frequencyOptions: !!frequencyOptions,
-				optionsCount: frequencyOptions ? frequencyOptions.children.length : 0
-			});
-
-			if (!selectedBox || !frequencyContainer) {
-				console.error('[DEBUG] Missing required elements');
-				return;
-			}
-
-			// Debug selected box data
-			console.log('[DEBUG] Selected box data:', {
-				purchaseType: selectedBox.dataset.purchaseType,
-				variant: selectedBox.dataset.variant,
-				product: selectedBox.dataset.product,
-				sellingPlanId: selectedBox.dataset.subscriptionSellingPlanId,
-				bottleQuantity: selectedBox.dataset.bottleQuantity
-			});
-
-			// If the selected box is a subscription variant
-			if (selectedBox.dataset.purchaseType === 'subscribe') {
-				console.log('[DEBUG] Selected box is a subscription variant');
-
-				// Get the variant selling plan allocations
-				const variantId = selectedBox.dataset.variant;
-				const productId = selectedBox.dataset.product;
-
-				// Product data debug
-				console.log('[DEBUG] ProductData exists?', !!window.productData);
-				if (window.productData) {
-					console.log('[DEBUG] ProductData for this product exists?', !!window.productData[productId]);
-					if (window.productData[productId]) {
-						console.log('[DEBUG] Product data:', window.productData[productId]);
-					}
-				}
-
-				// Populate productData if needed
-				if (!window.productData || !window.productData[productId]) {
-					console.log('[DEBUG] Creating productData for product:', productId);
-					window.productData = window.productData || {};
-					window.productData[productId] = {
-						id: productId,
-						variants: []
-					};
-
-					// Add the current variant if needed
-					if (variantId) {
-						console.log('[DEBUG] Adding current variant to productData');
-						window.productData[productId].variants.push({
-							id: parseInt(variantId),
-							selling_plan_allocations: []
-						});
-					}
-				}
-
-				// Force update frequency options
-				if (frequencyOptions && (!frequencyOptions.children.length || frequencyOptions.children.length < 2)) {
-					console.log('[DEBUG] Frequency options need to be populated');
-
-					// Show the frequency container
-					frequencyContainer.classList.remove('hidden');
-					console.log('[DEBUG] Frequency container made visible');
-
-					// Try different approaches
-					if (boxInstance.togglePurchaseBox) {
-						console.log('[DEBUG] Attempting to call togglePurchaseBox');
-						try {
-							boxInstance.togglePurchaseBox(selectedBox);
-							console.log('[DEBUG] togglePurchaseBox called successfully');
-
-							// Check after a short delay if options were populated
-							setTimeout(() => {
-								const optionCount = frequencyOptions.children.length;
-								console.log('[DEBUG] After togglePurchaseBox, option count:', optionCount);
-
-								if (optionCount === 0) {
-									console.log('[DEBUG] Options still not populated, using manual fallback');
-									manuallyPopulateFrequencyOptions(SID);
-								}
-							}, 300);
-
-						} catch (err) {
-							console.error('[DEBUG] Error calling togglePurchaseBox:', err);
-							manuallyPopulateFrequencyOptions(SID);
-						}
-					} else {
-						console.error('[DEBUG] togglePurchaseBox not available, using manual fallback');
-						manuallyPopulateFrequencyOptions(SID);
-					}
-				} else {
-					console.log('[DEBUG] Frequency options already populated:', frequencyOptions ? frequencyOptions.children.length : 0);
-				}
-			} else {
-				console.log('[DEBUG] Selected box is not a subscription variant, type:', selectedBox.dataset.purchaseType);
 			}
 		}
-
-		// Check rendering after a longer delay as a final fallback
-		setTimeout(function() {
-			const SID = '{{ SID }}';
-			const frequencyOptions = document.getElementById(`frequency-options-${SID}`);
-			console.log('[DEBUG] Final check - frequency options count:', frequencyOptions ? frequencyOptions.children.length : 0);
-
-			if (frequencyOptions && frequencyOptions.children.length === 0) {
-				console.log('[DEBUG] Still no options after delay, using emergency fallback');
-				manuallyPopulateFrequencyOptions(SID);
-			}
-
-			// Also check if variant click events might be getting blocked
-			console.log('[DEBUG] Setting up emergency click event monitoring');
-			document.addEventListener('click', function(event) {
-				const clickedBox = event.target.closest(`#cta-section-${SID} .variant-box`);
-				if (clickedBox) {
-					console.log('[DEBUG] Emergency click monitor detected variant box click:', clickedBox.id);
-				}
-			});
-		}, 2000);
 	});
-</script>
 </script>
