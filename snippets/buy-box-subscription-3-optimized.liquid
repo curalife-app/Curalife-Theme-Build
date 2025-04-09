@@ -702,5 +702,81 @@
 		if (window.innerWidth < 768 && ctaText) {
 			productActions.insertAdjacentElement('afterbegin', ctaText);
 		}
+
+		// Add first month discount handling
+		const handleFirstMonthDiscount = () => {
+			const section = document.getElementById(`cta-section-{{ SID }}`);
+			if (!section) return;
+
+			// Watch for selection changes
+			section.addEventListener('click', event => {
+				// Wait a moment for CuralifeBoxes to process the selection
+				setTimeout(() => {
+					const selectedBox = section.querySelector('.variant-box.selected');
+					if (!selectedBox) return;
+
+					const firstMonthDiscount = parseFloat(selectedBox.dataset.firstMonthDiscount) || 0;
+					if (firstMonthDiscount <= 0) return;
+
+					const futureNotice = section.querySelector('.future-price-notice');
+					if (!futureNotice) return;
+
+					// Get price values
+					const subscriptionDiscount = parseFloat(selectedBox.dataset.subscriptionDiscount) || 0;
+					const priceFormat = selectedBox.dataset.pricePer || 'dont_split';
+					const origPerItem = parseFloat(selectedBox.dataset.originalItemCap) / 100 || 0;
+					const bottles = parseInt(selectedBox.dataset.bottleQuantity, 10) || 1;
+					const totalOrig = origPerItem * bottles;
+
+					// Calculate regular subscription price (future months)
+					const regularDiscountMultiplier = (100 - subscriptionDiscount) / 100;
+					const regularPrice = (priceFormat === 'total' ? totalOrig : origPerItem) * regularDiscountMultiplier;
+
+					// Format price for display
+					const currencySymbol = window.Shopify?.currency?.symbol || "$";
+					const regularPriceFormatted = `${currencySymbol}${regularPrice.toFixed(2)}`;
+
+					// Update future price notice
+					futureNotice.textContent = `Special price for first order. Refills for ${regularPriceFormatted}${priceFormat === 'per_bottle' ? '/bottle' : ''}.`;
+				}, 100);
+			});
+
+			// Initial update for default selection
+			setTimeout(() => {
+				const selectedBox = section.querySelector('.variant-box.selected');
+				if (selectedBox) {
+					const firstMonthDiscount = parseFloat(selectedBox.dataset.firstMonthDiscount) || 0;
+					if (firstMonthDiscount <= 0) return;
+
+					const futureNotice = section.querySelector('.future-price-notice');
+					if (!futureNotice) return;
+
+					// Get price values
+					const subscriptionDiscount = parseFloat(selectedBox.dataset.subscriptionDiscount) || 0;
+					const priceFormat = selectedBox.dataset.pricePer || 'dont_split';
+					const origPerItem = parseFloat(selectedBox.dataset.originalItemCap) / 100 || 0;
+					const bottles = parseInt(selectedBox.dataset.bottleQuantity, 10) || 1;
+					const totalOrig = origPerItem * bottles;
+
+					// Calculate regular subscription price (future months)
+					const regularDiscountMultiplier = (100 - subscriptionDiscount) / 100;
+					const regularPrice = (priceFormat === 'total' ? totalOrig : origPerItem) * regularDiscountMultiplier;
+
+					// Format price for display
+					const currencySymbol = window.Shopify?.currency?.symbol || "$";
+					const regularPriceFormatted = `${currencySymbol}${regularPrice.toFixed(2)}`;
+
+					// Update future price notice
+					futureNotice.textContent = `Special price for first order. Refills for ${regularPriceFormatted}${priceFormat === 'per_bottle' ? '/bottle' : ''}.`;
+				}
+			}, 200);
+		};
+
+		// Run after CuralifeBoxes has had a chance to initialize
+		if (window.CuralifeBoxes) {
+			handleFirstMonthDiscount();
+		} else {
+			window.addEventListener('load', handleFirstMonthDiscount);
+		}
 	});
 </script>
