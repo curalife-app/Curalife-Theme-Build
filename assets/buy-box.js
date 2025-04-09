@@ -334,6 +334,16 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 				const productActions = this.elements.productActions;
 				if (productActions.dataset.buyType) {
 					this.state.buyType = productActions.dataset.buyType;
+					console.log(`Buy box ${this.SID} buy type set to: ${this.state.buyType}`);
+				}
+
+				// Explicitly check for "buy_now" text in the submit button
+				if (this.elements.submitButton) {
+					const buttonText = this.elements.submitButton.textContent.trim().toLowerCase();
+					if (buttonText === "get started") {
+						this.state.buyType = "buy_now";
+						console.log(`Buy box ${this.SID} buy type overridden to buy_now based on button text`);
+					}
 				}
 
 				// Initialize components
@@ -342,7 +352,7 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 				this.initSubmitButton();
 				this.initOneTimeButton();
 
-				console.log(`Buy box ${this.SID} initialized with custom checkout handling`);
+				console.log(`Buy box ${this.SID} initialized with custom checkout handling (buyType: ${this.state.buyType})`);
 			},
 
 			/**
@@ -741,6 +751,12 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 			 */
 			async addValidItemsToCart(items) {
 				try {
+					// Check if we should be redirecting to checkout instead (buy_now mode)
+					if (this.state.buyType === "buy_now") {
+						console.log("Detected buy_now mode, redirecting to checkout instead of adding to cart");
+						return await this.handleBuyNowFlow(items);
+					}
+
 					// Get current cart
 					let cart = await CuralifeBoxes.utils.getCart();
 
@@ -819,6 +835,13 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 				// Add data attribute to mark as using custom handler
 				this.elements.submitButton.setAttribute("data-using-custom-handler", "true");
 
+				// Check if we should be in buy_now mode based on button text
+				const buttonText = this.elements.submitButton.textContent.trim().toLowerCase();
+				if (buttonText === "get started") {
+					this.state.buyType = "buy_now";
+					console.log(`Buy box button text is "Get Started", setting buyType to buy_now`);
+				}
+
 				this.elements.submitButton.addEventListener("click", async e => {
 					e.preventDefault();
 					e.stopPropagation();
@@ -832,6 +855,8 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 
 					isSubmitting = true;
 					this.setState({ isLoading: true });
+
+					console.log(`Button clicked, buy type: ${this.state.buyType}`);
 
 					try {
 						const box = this.elements.productActions.querySelector(".variant-box.selected");
@@ -879,9 +904,13 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 							}
 						});
 
+						console.log(`Ready to process items with buyType=${this.state.buyType}`, items);
+
 						if (this.state.buyType === "buy_now") {
+							console.log("Proceeding with buy_now flow (redirect to checkout)");
 							await this.handleBuyNowFlow(items);
 						} else {
+							console.log("Proceeding with add_to_cart flow");
 							await this.addValidItemsToCart(items);
 							isSubmitting = false;
 							this.setState({ isLoading: false });
