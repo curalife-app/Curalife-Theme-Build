@@ -423,38 +423,61 @@
 			script.onload = function() {
 				if (window.CuralifeBoxes) {
 					window.CuralifeBoxes.initAll();
+
+					// After initialization, force-check frequency options
+					setTimeout(function() {
+						activateFrequencyOptions('{{ SID }}');
+					}, 300);
 				}
 			};
+		} else {
+			// If already loaded, activate frequency options
+			setTimeout(function() {
+				activateFrequencyOptions('{{ SID }}');
+			}, 300);
 		}
 
-		// Initialize frequency options when a variant is selected
-		// This ensures frequency options are populated properly
-		const SID = '{{ SID }}';
-		const frequencyContainer = document.querySelector(`#cta-section-${SID} [data-frequency-container]`);
-		const frequencyOptions = document.getElementById(`frequency-options-${SID}`);
-
-		// Watch for changes to the variant selection
-		const observeVariantChanges = function() {
-			if (!window.CuralifeBoxes || !window.CuralifeBoxes.instances || !window.CuralifeBoxes.instances[SID]) {
-				// If CuralifeBoxes isn't initialized yet, try again in a moment
-				setTimeout(observeVariantChanges, 100);
+		// Function to activate frequency options
+		function activateFrequencyOptions(SID) {
+			const boxInstance = window.CuralifeBoxes.instances[SID];
+			if (!boxInstance) {
+				console.log('Buy box instance not found for', SID);
+				setTimeout(() => activateFrequencyOptions(SID), 200);
 				return;
 			}
 
-			// The buy box instance for this section
-			const buyBox = window.CuralifeBoxes.instances[SID];
+			const frequencyContainer = document.querySelector(`#cta-section-${SID} [data-frequency-container]`);
+			const selectedBox = document.querySelector(`#cta-section-${SID} .variant-box.selected`);
 
-			// If the frequency container exists but is empty, ensure it gets populated
-			if (frequencyContainer && frequencyOptions && frequencyOptions.children.length === 0) {
-				const selectedBox = document.querySelector(`#cta-section-${SID} .variant-box.selected`);
-				if (selectedBox && selectedBox.dataset.purchaseType === 'subscribe') {
-					// Make the frequency container visible
+			if (!selectedBox || !frequencyContainer) return;
+
+			// If the selected box is a subscription variant
+			if (selectedBox.dataset.purchaseType === 'subscribe') {
+				// Get the variant selling plan allocations
+				const variantId = selectedBox.dataset.variant;
+				const productId = selectedBox.dataset.product;
+
+				// Get the product from the global CuralifeBoxes data
+				if (!window.productData || !window.productData[productId]) {
+					window.productData = window.productData || {};
+					window.productData[productId] = {
+						id: productId,
+						variants: []
+					};
+				}
+
+				// Force update frequency options
+				const frequencyOptions = document.getElementById(`frequency-options-${SID}`);
+				if (frequencyOptions && (!frequencyOptions.children.length || frequencyOptions.children.length < 2)) {
+					// Show the frequency container
 					frequencyContainer.classList.remove('hidden');
+
+					// Force a "selection" of the box to trigger the frequency option population
+					if (boxInstance.togglePurchaseBox) {
+						boxInstance.togglePurchaseBox(selectedBox);
+					}
 				}
 			}
-		};
-
-		// Start observing
-		setTimeout(observeVariantChanges, 500);
+		}
 	});
 </script>
