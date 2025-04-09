@@ -340,7 +340,6 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 				if (this.elements.submitButton) {
 					this.elements.buyForm = this.elements.submitButton.closest("form");
 
-					// Completely disable the default form submission mechanism
 					if (this.elements.buyForm) {
 						// Prevent normal form submission
 						this.elements.buyForm.addEventListener("submit", this.handleFormSubmit.bind(this), true);
