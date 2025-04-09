@@ -146,8 +146,14 @@
 				data-bottle-quantity="{{ bottle_quantity }}"
 				data-purchase-type="{{ varPurchaseType }}"
 				data-buy-type="{{ buyType }}"
+				{% if isGlobal %}
+				{% if block.settings.allowed_selling_plan_ids_global != blank %}
+				data-allowed-selling-plans="{{ block.settings.allowed_selling_plan_ids_global | strip | escape }}"
+				{% endif %}
+				{% else %}
 				{% if block.settings.allowed_selling_plan_ids != blank %}
 				data-allowed-selling-plans="{{ block.settings.allowed_selling_plan_ids | strip | escape }}"
+				{% endif %}
 				{% endif %}
 						name="track:variant-box|variant-sku:{{ var.sku }}|purchase-type:{{ varPurchaseType }}">
 						{% if product.handle == 'curalin' %}
