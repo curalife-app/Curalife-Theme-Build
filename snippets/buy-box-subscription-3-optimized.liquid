@@ -688,58 +688,58 @@
 	}
 </style>
 
-<!-- Position the CTA text correctly on mobile if needed -->
+<!-- Initialize CuralifeBoxes and handle first month discount -->
 <script>
 	document.addEventListener('DOMContentLoaded', function () {
+		const SID = '{{ SID }}';
+
+		// Handle the mobile CTA text positioning
 		const ctasection = document.querySelector('#cta-section-{{ SID }}');
-		if (!ctasection) return;
+		if (ctasection) {
+			const productActions = ctasection.querySelector('.product-actions');
+			const ctaText = ctasection.querySelector('.cta-text');
 
-		const productActions = ctasection.querySelector('.product-actions');
-		const ctaText = ctasection.querySelector('.cta-text');
-
-		if (!productActions) return;
-
-		if (window.innerWidth < 768 && ctaText) {
-			productActions.insertAdjacentElement('afterbegin', ctaText);
+			if (productActions && ctaText && window.innerWidth < 768) {
+				productActions.insertAdjacentElement('afterbegin', ctaText);
+			}
 		}
 
-		// Fix for first month discount badge and price calculation
-		// Use setTimeout to ensure this runs after CuralifeBoxes has initialized
+		// Set up first month discount functionality
+		// This extends the CuralifeBoxes functionality
 		setTimeout(function() {
-			const SID = '{{ SID }}';
 			console.log(`Buy box ${SID}: Setting up first month pricing`);
 
-			// Direct DOM references to avoid selector issues
-			const section = document.getElementById(`cta-section-${SID}`);
-			if (!section) {
-				console.error(`Buy box ${SID}: Section not found`);
+			// Check if CuralifeBoxes is available
+			if (!window.CuralifeBoxes || !window.CuralifeBoxes.instances) {
+				console.error(`Buy box ${SID}: CuralifeBoxes not available`);
 				return;
 			}
 
-			// Find discount badge using more specific selector
-			const priceDisplay = section.querySelector('.price-display');
-			const discountBadge = priceDisplay?.querySelector('.discount-badge');
-			const futureNotice = section.querySelector('.future-price-notice');
-			const mainPriceElement = priceDisplay?.querySelector('.price');
-			const totalLineElement = priceDisplay?.querySelector('.total-line');
+			// Get or create instance
+			let instance = window.CuralifeBoxes.instances[SID];
 
-			if (!priceDisplay || !discountBadge || !futureNotice || !mainPriceElement) {
-				console.error(`Buy box ${SID}: Required elements not found`, {
-					priceDisplay: !!priceDisplay,
-					discountBadge: !!discountBadge,
-					futureNotice: !!futureNotice,
-					mainPriceElement: !!mainPriceElement
-				});
-				return;
+			if (!instance) {
+				// Initialize if not already done
+				instance = window.CuralifeBoxes.createInstance(SID);
+				instance.init();
 			}
 
-			// Store badge original text (for debugging)
-			const originalBadgeText = discountBadge.textContent;
-			console.log(`Buy box ${SID}: Original badge text: "${originalBadgeText}"`);
-
+			// Function to update first month pricing display
 			function updateFirstMonthPricing(variantBox) {
 				if (!variantBox) {
 					console.error(`Buy box ${SID}: No variant box selected`);
+					return;
+				}
+
+				const section = document.getElementById(`cta-section-${SID}`);
+				const priceDisplay = section?.querySelector('.price-display');
+				const discountBadge = priceDisplay?.querySelector('.discount-badge');
+				const futureNotice = section?.querySelector('.future-price-notice');
+				const mainPriceElement = priceDisplay?.querySelector('.price');
+				const totalLineElement = priceDisplay?.querySelector('.total-line');
+
+				if (!priceDisplay || !futureNotice || !mainPriceElement) {
+					console.error(`Buy box ${SID}: Required elements not found`);
 					return;
 				}
 
@@ -759,16 +759,6 @@
 					return;
 				}
 
-				console.log(`Buy box ${SID}: Price calculation inputs`, {
-					boxId: variantBox.id,
-					firstMonthDiscount,
-					subscriptionDiscount,
-					origPerItem,
-					bottles,
-					totalOrig,
-					priceFormat
-				});
-
 				// Calculate first month price (with both discounts)
 				const combinedDiscountPercent = subscriptionDiscount + firstMonthDiscount;
 				const combinedDiscountMultiplier = (100 - combinedDiscountPercent) / 100;
@@ -787,61 +777,30 @@
 				const currencySymbol = window.Shopify?.currency?.symbol || "$";
 				const savingsFormatted = Math.floor(savingsAmount);
 
-				console.log(`Buy box ${SID}: Calculated prices`, {
-					firstMonthPerItem,
-					firstMonthTotal,
-					regPerItem,
-					regTotal,
-					savingsAmount,
-					savingsFormatted
-				});
-
 				// 1. Update badge with correct savings
-				if (priceFormat === "total" && savingsAmount > 0) {
+				if (discountBadge && priceFormat === "total" && savingsAmount > 0) {
 					const badgeText = `SAVE ${currencySymbol}${savingsFormatted}`;
-					console.log(`Buy box ${SID}: Setting badge text to: "${badgeText}"`);
 					discountBadge.textContent = badgeText;
 					discountBadge.style.display = 'inline-flex';
 					discountBadge.style.opacity = '1';
 				}
 
-				// 2. Modify main price to show first month price
-				const priceText = priceFormat === "total" ?
-					firstMonthTotal.toFixed(2) :
-					firstMonthPerItem.toFixed(2);
-
-				// 3. Add future price notice
-				const regText = priceFormat === "total" ?
-					regTotal.toFixed(2) :
-					regPerItem.toFixed(2);
-
+				// 2. Add future price notice
+				const regText = priceFormat === "total" ? regTotal.toFixed(2) : regPerItem.toFixed(2);
 				futureNotice.textContent = `Special price for first order. Refills for ${currencySymbol}${regText}${priceFormat === 'per_bottle' ? '/bottle' : ''}.`;
 				futureNotice.style.opacity = '1';
 
-				// 4. Update total line for per-bottle format
-				if (priceFormat === "per_bottle" && totalLineElement) {
-					if (savingsAmount > 0) {
-						totalLineElement.innerHTML = `Total ${currencySymbol}${firstMonthTotal.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">${currencySymbol}${totalOrig.toFixed(2)}</span>`;
-						totalLineElement.style.opacity = '1';
-					}
+				// 3. Update total line for per-bottle format
+				if (priceFormat === "per_bottle" && totalLineElement && savingsAmount > 0) {
+					totalLineElement.innerHTML = `Total ${currencySymbol}${firstMonthTotal.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">${currencySymbol}${totalOrig.toFixed(2)}</span>`;
+					totalLineElement.style.opacity = '1';
 				}
 
 				console.log(`Buy box ${SID}: Price display updated with first month pricing`);
 			}
 
-			// Override the price update method from CuralifeBoxes when available
-			function monkeyPatchPriceUpdate() {
-				if (!window.CuralifeBoxes?.instances?.[SID]) {
-					setTimeout(monkeyPatchPriceUpdate, 100);
-					return;
-				}
-
-				const instance = window.CuralifeBoxes.instances[SID];
-				if (!instance.updatePriceDisplay) {
-					console.error(`Buy box ${SID}: updatePriceDisplay method not found`);
-					return;
-				}
-
+			// Extend the CuralifeBoxes instance to handle first month pricing
+			if (instance && instance.updatePriceDisplay) {
 				// Store original method
 				const originalUpdatePriceDisplay = instance.updatePriceDisplay;
 
@@ -854,29 +813,14 @@
 					setTimeout(() => updateFirstMonthPricing(el), 50);
 				};
 
-				console.log(`Buy box ${SID}: Successfully patched price display method`);
+				console.log(`Buy box ${SID}: Successfully extended price display method`);
 
 				// Trigger update for currently selected variant
-				const selectedBox = section.querySelector('.variant-box.selected');
+				const selectedBox = document.querySelector(`#cta-section-${SID} .variant-box.selected`);
 				if (selectedBox) {
 					updateFirstMonthPricing(selectedBox);
 				}
 			}
-
-			// Start the monkey patching process
-			monkeyPatchPriceUpdate();
-
-			// Also set up a click handler as fallback
-			section.addEventListener('click', function(e) {
-				if (e.target.closest('.variant-box')) {
-					setTimeout(function() {
-						const selectedBox = section.querySelector('.variant-box.selected');
-						if (selectedBox) {
-							updateFirstMonthPricing(selectedBox);
-						}
-					}, 100);
-				}
-			});
 		}, 500); // Delay to ensure CuralifeBoxes has initialized
 	});
 </script>
