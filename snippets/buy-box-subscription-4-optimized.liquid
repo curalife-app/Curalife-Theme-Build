@@ -344,10 +344,20 @@
 
 			.frequency-option {
 				min-width: 100px;
+				padding: 8px;
+				text-align: center;
+				cursor: pointer;
 				background-color: var(--bg-color);
 				color: var(--primary-color);
 				border-width: 1px;
 				border-color: var(--border-color, #e2e8f0);
+				border-radius: 0.375rem;
+				transition: all 0.3s ease;
+			}
+
+			.frequency-option.selected {
+				background-color: var(--primary-color);
+				color: white;
 			}
 
 			/* Product Actions - Keep these custom grid areas */
@@ -995,15 +1005,11 @@
 					console.log(`Creating frequency option: ID=${plan.id}, value=${value}, unit=${unit}, plan=${plan.name}`);
 
 					// Determine if this option should be selected
-					const shouldSelect =
-						(plan.id?.toString() === currentSellingPlanId) ||
-						(!currentSellingPlanId && !hasAllowedSellingPlans && unit === 'month' && value === bottleQuantity);
-
-					// Apply selected class if needed
-					if (shouldSelect) {
+					if ((plan.id && plan.id.toString() === currentSellingPlanId) ||
+						(!currentSellingPlanId && !hasAllowedSellingPlans && unit === 'month' && value === bottleQuantity)) {
 						frequencyBox.classList.add('selected');
 
-						// Update selling plan ID if this is the recommended option
+						// Update the current box with the recommended selling plan ID
 						if (!currentSellingPlanId && !hasAllowedSellingPlans && unit === 'month' && value === bottleQuantity) {
 							el.dataset.subscriptionSellingPlanId = plan.id.toString();
 							const submitSellingPlanId = getElement('.submit-selling-plan-id', section);
@@ -1044,6 +1050,12 @@
 					}
 
 					frequencyBox.innerHTML = `<span class="font-semibold">${displayText}</span>`;
+
+					// Add click event listener
+					frequencyBox.addEventListener('click', function() {
+						selectFrequencyOption(this, SID);
+					});
+
 					fragment.appendChild(frequencyBox);
 				});
 
@@ -1082,22 +1094,15 @@
 				if (currentSellingPlanId) {
 					frequencyOptions.innerHTML = '';
 					const fallbackBox = document.createElement('div');
-					fallbackBox.className = 'frequency-box rounded-md cursor-pointer py-2 min-w-[90px] max-w-[168px] text-center w-full transition-all duration-300 ease-in-out';
-					fallbackBox.style.backgroundColor = 'var(--primary-color)';
-					fallbackBox.style.color = 'white';
-					fallbackBox.setAttribute('data-selling-plan-id', currentSellingPlanId);
-					fallbackBox.setAttribute('data-frequency-value', bottleQuantity.toString()); // Use bottle quantity as default recommended frequency
-					fallbackBox.setAttribute('data-frequency-unit', 'month'); // Default to months
+					fallbackBox.className = 'frequency-option variant-tab-style rounded-md cursor-pointer py-2 min-w-[90px] text-center selected';
+					fallbackBox.dataset.sellingPlanId = currentSellingPlanId;
+					fallbackBox.dataset.frequencyValue = bottleQuantity.toString(); // Use bottle quantity as default recommended frequency
+					fallbackBox.dataset.frequencyUnit = 'month'; // Default to months
 					fallbackBox.innerHTML = `
 						<div class="p-1">
 							<span class="font-semibold">Every ${bottleQuantity} Month${bottleQuantity > 1 ? 's' : ''}</span>
 						</div>
 					`;
-
-					// Make sure fallback box has click handler
-					fallbackBox.addEventListener('click', function() {
-						selectFrequencyOption(this);
-					});
 
 					frequencyOptions.appendChild(fallbackBox);
 					frequencyContainer.classList.remove('hidden');
