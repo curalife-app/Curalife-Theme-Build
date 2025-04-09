@@ -958,8 +958,74 @@
 			updateFrequencyDescription(SID);
 		}
 
+		// Function to get filtered selling plans
+		function getFilteredSellingPlans(sellingPlans, boxElement) {
+			let filteredPlans = [...sellingPlans];
+			let hasChanged = false;
+			const allowedSellingPlansStr = boxElement.dataset.allowedSellingPlans?.trim();
+
+			if (allowedSellingPlansStr) {
+				try {
+					const allowedPlans = allowedSellingPlansStr
+						.split(',')
+						.map(id => id.trim())
+						.filter(id => id && !isNaN(parseInt(id)));
+
+					console.log('[Optimized] Filtering selling plans by allowed plans:', allowedPlans);
+
+					if (allowedPlans.length > 0) {
+						const originalLength = filteredPlans.length;
+
+						filteredPlans = filteredPlans.filter(allocation =>
+							allocation.selling_plan?.id &&
+							allowedPlans.includes(allocation.selling_plan.id.toString())
+						);
+
+						console.log(`[Optimized] Filtered selling plans: ${originalLength} → ${filteredPlans.length}`);
+
+						// If we have allowed plans, sort them according to the specified order
+						if (filteredPlans.length > 0) {
+							filteredPlans.sort((a, b) => {
+								const indexA = allowedPlans.indexOf(a.selling_plan.id.toString());
+								const indexB = allowedPlans.indexOf(b.selling_plan.id.toString());
+								return indexA - indexB;
+							});
+						}
+
+						hasChanged = filteredPlans.length !== originalLength;
+					}
+				} catch (err) {
+					console.error('[Optimized] Error filtering selling plans:', err);
+					filteredPlans = [...sellingPlans];
+				}
+			} else {
+				// Default sorting by frequency (days)
+				filteredPlans.sort((a, b) => {
+					const daysA = getDaysFromFrequency(a);
+					const daysB = getDaysFromFrequency(b);
+					return daysA - daysB;
+				});
+			}
+
+			// If filtering removed all plans, use the original set
+			if (filteredPlans.length === 0 && sellingPlans.length > 0) {
+				console.warn('[Optimized] Filtering removed all selling plans! Using all available plans.');
+				filteredPlans = [...sellingPlans];
+				hasChanged = true;
+
+				// Sort by frequency in days for the default case
+				filteredPlans.sort((a, b) => {
+					const daysA = getDaysFromFrequency(a);
+					const daysB = getDaysFromFrequency(b);
+					return daysA - daysB;
+				});
+			}
+
+			return { filteredPlans, hasChanged };
+		}
+
 		// Rebuild all frequency options based on filtered plans
-		rebuildFrequencyOptions(filteredPlans, boxElement) {
+		function rebuildFrequencyOptions(filteredPlans, boxElement) {
 			const frequencyOptions = document.getElementById(`frequency-options-${SID}`);
 			if (!frequencyOptions) {
 				console.error('[Optimized] Frequency options container not found!');
@@ -985,7 +1051,7 @@
 					return;
 				}
 
-				const { value, unit } = this.extractFrequency(plan.name);
+				const { value, unit } = extractFrequency(plan.name); // Use the globally defined extractFrequency
 				console.log('[Optimized] Processing plan:', { id: plan.id, name: plan.name, value, unit });
 
 				// Check if this is the recommended plan (matching bottle quantity)
@@ -1071,7 +1137,40 @@
 			console.log('[Optimized] Appended', fragment.children.length, 'options to the container.');
 
 			// Update the frequency description
-			this.updateFrequencyDescription();
-		},
+			updateFrequencyDescription(SID);
+		}
+
+		// Function to initialize product data from Shopify product JSON
+		function initializeProductData(SID) {
+			// Ensure we have a global productData object
+			window.productData = window.productData || {};
+
+			// Try to load product data from Shopify's product JSON
+			try {
+				const productId = document.querySelector(`#cta-section-${SID}`)?.querySelector('.variant-box')?.dataset.product;
+				if (productId && !window.productData[productId]) {
+					const productJSON = document.getElementById(`ProductJson-${productId}`);
+					if (productJSON) {
+						window.productData[productId] = JSON.parse(productJSON.textContent);
+						console.log(`[Optimized] Loaded product data for ${productId}`);
+					}
+				}
+			} catch (error) {
+				console.error('[Optimized] Error initializing product data:', error);
+			}
+		}
+
+		// Convert frequency to approximate days for sorting
+		function getDaysFromFrequency(plan) {
+			try {
+				if (!plan?.selling_plan?.name) return 30; // default
+
+				const { value, unit } = extractFrequency(plan.selling_plan.name); // Use global extractFrequency
+				return unit === 'day' ? value : value * 30; // approximate month as 30 days
+			} catch (error) {
+				console.warn('[Optimized] Error calculating days for plan:', plan, error);
+				return 30; // default fallback
+			}
+		}
 	});
 </script>
