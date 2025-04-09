@@ -206,7 +206,7 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 		 * @returns {string} Formatted price string
 		 */
 		formatMoney(cents) {
-			const currencySymbol = window.Shopify?.currency?.active || "$";
+			const currencySymbol = window.Shopify?.currency?.active === "GBP" ? "£" : window.Shopify?.currency?.active === "USD" ? "$" : window.Shopify?.currency?.symbol || "$";
 			return `${currencySymbol}${(cents / 100).toFixed(2)}`;
 		}
 	},
