@@ -345,6 +345,8 @@
 				min-width: 100px;
 				background-color: var(--bg-color);
 				color: var(--primary-color);
+				border-width: 1px;
+				border-color: var(--border-color, #e2e8f0);
 			}
 
 			/* Product Actions - Keep these custom grid areas */
@@ -453,12 +455,46 @@
 			initializeProductData('{{ SID }}');
 		}
 
+		// Cache DOM elements to avoid repeated queries
+		const domCache = {};
+
+		/**
+		 * Get a DOM element with caching
+		 * @param {string} selector - CSS selector
+		 * @param {Element} context - Parent element context (optional)
+		 * @returns {Element|null} - The found element or null
+		 */
+		function getElement(selector, context = document) {
+			const key = `${context === document ? 'doc' : 'ctx'}_${selector}`;
+			if (!domCache[key]) {
+				domCache[key] = context.querySelector(selector);
+			}
+			return domCache[key];
+		}
+
+		/**
+		 * Clear cache for a specific selector or all cache if no selector provided
+		 */
+		function clearCache(selector = null) {
+			if (selector) {
+				Object.keys(domCache).forEach(key => {
+					if (key.endsWith(selector)) {
+						delete domCache[key];
+					}
+				});
+			} else {
+				Object.keys(domCache).forEach(key => {
+					delete domCache[key];
+				});
+			}
+		}
+
 		/**
 		 * Ensures the product data is available for variants
 		 * This is critical for frequency options to work properly
 		 */
 		function initializeProductData(SID) {
-			const section = document.getElementById(`cta-section-${SID}`);
+			const section = getElement(`#cta-section-${SID}`);
 			if (!section) return;
 
 			// Get selected variant box
@@ -488,102 +524,93 @@
 			// Get all variant boxes for this product
 			const allVariantBoxes = section.querySelectorAll('.variant-box');
 
-			// Extract variant information from available boxes
-			allVariantBoxes.forEach(box => {
-				const boxVariantId = parseInt(box.dataset.variant);
-				const boxProductId = box.dataset.product;
+			// Only process if we haven't already initialized this product
+			if (!window.productData[productId].initialized) {
+				// Extract variant information from available boxes
+				allVariantBoxes.forEach(box => {
+					const boxVariantId = parseInt(box.dataset.variant);
+					const boxProductId = box.dataset.product;
 
-				// Skip if not matching our product
-				if (boxProductId !== productId) return;
+					// Skip if not matching our product
+					if (boxProductId !== productId) return;
 
-				// Skip if variant already exists
-				if (window.productData[productId].variants.some(v => v.id === boxVariantId)) return;
+					// Skip if variant already exists
+					if (window.productData[productId].variants.some(v => v.id === boxVariantId)) return;
 
-				// Extract bottle quantity for frequency recommendation
-				const bottleQuantity = parseInt(box.dataset.bottleQuantity || '1');
+					// Extract bottle quantity for frequency recommendation
+					const bottleQuantity = parseInt(box.dataset.bottleQuantity || '1');
 
-				// Create a basic variant structure
-				const variantData = {
-					id: boxVariantId,
-					title: `${bottleQuantity} Bottle${bottleQuantity > 1 ? 's' : ''}`,
-					price: parseFloat(box.dataset.price || '0') * 100, // convert to cents
-					sku: box.dataset.sku || '',
-					selling_plan_allocations: []
-				};
+					// Create a basic variant structure
+					const variantData = {
+						id: boxVariantId,
+						title: `${bottleQuantity} Bottle${bottleQuantity > 1 ? 's' : ''}`,
+						price: parseFloat(box.dataset.price || '0') * 100, // convert to cents
+						sku: box.dataset.sku || '',
+						selling_plan_allocations: []
+					};
 
-				// Check if this is a subscription variant
-				if (box.dataset.purchaseType === 'subscribe') {
-					// Check if the box has allowed selling plans
-					const allowedSellingPlansStr = box.dataset.allowedSellingPlans;
+					// Check if this is a subscription variant
+					if (box.dataset.purchaseType === 'subscribe') {
+						// Check if the box has allowed selling plans
+						const allowedSellingPlansStr = box.dataset.allowedSellingPlans;
 
-					// Default selling plan from the box
-					const defaultSellingPlanId = box.dataset.subscriptionSellingPlanId;
+						// Default selling plan from the box
+						const defaultSellingPlanId = box.dataset.subscriptionSellingPlanId;
 
-					console.log('Variant box data:', {
-						boxId: box.id,
-						variantId: boxVariantId,
-						defaultSellingPlanId,
-						allowedSellingPlans: allowedSellingPlansStr || 'none specified'
-					});
+						if (allowedSellingPlansStr && allowedSellingPlansStr.trim()) {
+							// Parse allowed selling plan IDs
+							const allowedPlans = allowedSellingPlansStr
+								.split(',')
+								.map(id => id.trim())
+								.filter(id => id && !isNaN(parseInt(id)));
 
-					if (allowedSellingPlansStr && allowedSellingPlansStr.trim()) {
-						// Parse allowed selling plan IDs
-						const allowedPlans = allowedSellingPlansStr
-							.split(',')
-							.map(id => id.trim())
-							.filter(id => id && !isNaN(parseInt(id)));
+							// Add each allowed selling plan to the variant's allocations
+							allowedPlans.forEach((planId, index) => {
+								// Create descriptive name based on bottle quantity and frequency
+								// For allowed plans other than the default, we'll create variations
+								const isDefault = planId === defaultSellingPlanId;
+								let planName;
 
-						console.log('Found allowed selling plans:', allowedPlans);
+								// For the default one, use the bottle quantity as months
+								if (isDefault) {
+									planName = `${bottleQuantity} Month${bottleQuantity > 1 ? 's' : ''}`;
+								} else {
+									// For others, create alternative frequencies
+									// This is an estimation - in a real scenario, you'd know the actual frequencies
+									const frequencies = [30, 60, 90]; // days
+									const frequency = frequencies[index % frequencies.length];
+									planName = `${frequency} Days`;
+								}
 
-						// Add each allowed selling plan to the variant's allocations
-						allowedPlans.forEach((planId, index) => {
-							// Create descriptive name based on bottle quantity and frequency
-							// For allowed plans other than the default, we'll create variations
-							const isDefault = planId === defaultSellingPlanId;
-							let planName;
-
-							// For the default one, use the bottle quantity as months
-							if (isDefault) {
-								planName = `${bottleQuantity} Month${bottleQuantity > 1 ? 's' : ''}`;
-							} else {
-								// For others, create alternative frequencies
-								// This is an estimation - in a real scenario, you'd know the actual frequencies
-								const frequencies = [30, 60, 90]; // days
-								const frequency = frequencies[index % frequencies.length];
-								planName = `${frequency} Days`;
-							}
-
+								variantData.selling_plan_allocations.push({
+									selling_plan: {
+										id: planId,
+										name: planName
+									},
+									price: parseFloat(box.dataset.subscriptionPrice || '0') * 100,
+									compare_at_price: parseFloat(box.dataset.originalItemCap || '0') * 100 * bottleQuantity
+								});
+							});
+						} else if (defaultSellingPlanId) {
+							// If no allowed plans specified but we have a default one
 							variantData.selling_plan_allocations.push({
 								selling_plan: {
-									id: planId,
-									name: planName
+									id: defaultSellingPlanId,
+									name: `${bottleQuantity} Month${bottleQuantity > 1 ? 's' : ''}`
 								},
 								price: parseFloat(box.dataset.subscriptionPrice || '0') * 100,
 								compare_at_price: parseFloat(box.dataset.originalItemCap || '0') * 100 * bottleQuantity
 							});
-						});
-					} else if (defaultSellingPlanId) {
-						// If no allowed plans specified but we have a default one
-						variantData.selling_plan_allocations.push({
-							selling_plan: {
-								id: defaultSellingPlanId,
-								name: `${bottleQuantity} Month${bottleQuantity > 1 ? 's' : ''}`
-							},
-							price: parseFloat(box.dataset.subscriptionPrice || '0') * 100,
-							compare_at_price: parseFloat(box.dataset.originalItemCap || '0') * 100 * bottleQuantity
-						});
+						}
 					}
-				}
 
-				// Add to product data
-				window.productData[productId].variants.push(variantData);
-			});
+					// Add to product data
+					window.productData[productId].variants.push(variantData);
+				});
 
-			// Mark as initialized
-			window.productData[productId].initialized = true;
-
-			console.log('Product data initialized for SID:', SID);
-			console.log('Product data structure:', window.productData[productId]);
+				// Mark as initialized
+				window.productData[productId].initialized = true;
+			}
 
 			// Set up frequency options functionality
 			setupFrequencyOptions(SID);
@@ -593,9 +620,6 @@
 				// Trigger selection of the appropriate box
 				const boxInstance = window.CuralifeBoxes.instances[SID];
 				if (boxInstance.togglePurchaseBox && selectedBox) {
-					console.log('Triggering box selection to initialize frequency options');
-
-					// Give the system time to process
 					setTimeout(() => {
 						boxInstance.togglePurchaseBox(selectedBox);
 					}, 100);
@@ -605,28 +629,31 @@
 
 		// Setup frequency options functionality
 		function setupFrequencyOptions(SID) {
-			const section = document.getElementById(`cta-section-${SID}`);
+			const section = getElement(`#cta-section-${SID}`);
 			if (!section) return;
 
-			// Add the frequency selection functionality
+			// Add the frequency selection functionality - use event delegation for better performance
 			section.addEventListener('click', function(e) {
 				const frequencyOption = e.target.closest('#frequency-options-' + SID + ' > div');
-				if (!frequencyOption) return;
-
-				selectFrequencyOption(frequencyOption, SID);
+				if (frequencyOption) {
+					selectFrequencyOption(frequencyOption, SID);
+				}
 			});
 
-			// Add a function to populate the frequency selector based on selected variant
-			section.querySelectorAll('.variant-box').forEach(box => {
-				box.addEventListener('click', function() {
-					console.log('Variant box clicked, updating frequency options');
+			// Use event delegation for variant boxes too
+			section.addEventListener('click', function(e) {
+				const variantBox = e.target.closest('.variant-box');
+				if (variantBox) {
+					// Clear cache to ensure we get fresh elements after variant change
+					clearCache();
+
 					// Clear the frequency options first to ensure a fresh start
-					const frequencyOptions = section.querySelector('#frequency-options-' + SID);
+					const frequencyOptions = getElement('#frequency-options-' + SID, section);
 					if (frequencyOptions) frequencyOptions.innerHTML = '';
 
 					// Force a slight delay to ensure DOM has time to update
-					setTimeout(() => populateFrequencySelector(this, SID), 50);
-				});
+					setTimeout(() => populateFrequencySelector(variantBox, SID), 50);
+				}
 			});
 
 			// Initial population for selected box
@@ -638,7 +665,7 @@
 
 		// Function to handle frequency option selection
 		function selectFrequencyOption(option, SID) {
-			const section = document.getElementById(`cta-section-${SID}`);
+			const section = getElement(`#cta-section-${SID}`);
 			if (!section) return;
 
 			// Get all options in the container
@@ -653,7 +680,7 @@
 
 			// Update the form field and selected box with new selling plan ID
 			const sellingPlanId = option.dataset.sellingPlanId;
-			const submitSellingPlanId = section.querySelector('.submit-selling-plan-id');
+			const submitSellingPlanId = getElement('.submit-selling-plan-id', section);
 			const selectedBox = section.querySelector('.variant-box.selected');
 
 			if (submitSellingPlanId) {
@@ -670,17 +697,16 @@
 
 		// Function to update the frequency description text
 		function updateFrequencyDescription(SID) {
-			const section = document.getElementById(`cta-section-${SID}`);
+			const section = getElement(`#cta-section-${SID}`);
 			if (!section) return;
 
-			const descriptionEl = section.querySelector('.frequency-description');
+			const descriptionEl = getElement('.frequency-description', section);
 			if (!descriptionEl) return;
 
-			const frequencyOptions = section.querySelector('#frequency-options-' + SID);
+			const frequencyOptions = getElement('#frequency-options-' + SID, section);
 			if (!frequencyOptions) return;
 
 			const selectedOption = frequencyOptions.querySelector('.selected');
-
 			if (!selectedOption) return;
 
 			const selectedFrequencyValue = parseInt(selectedOption.dataset.frequencyValue || '1', 10);
@@ -688,59 +714,69 @@
 			const selectedBox = section.querySelector('.variant-box.selected');
 			const bottleQuantity = parseInt(selectedBox?.dataset.bottleQuantity || '1', 10);
 
-			let description = '';
+			// Only show recommendation text if not matching the recommended frequency
+			const description = (selectedFrequencyUnit === 'month' && selectedFrequencyValue === bottleQuantity)
+				? '' // No text when on recommended frequency
+				: `Recommended - every ${bottleQuantity} month${bottleQuantity > 1 ? 's' : ''}`;
 
-			// If selected frequency matches recommended frequency (only for months)
-			if (selectedFrequencyUnit === 'month' && selectedFrequencyValue === bottleQuantity) {
-				description = ''; // No text when on recommended frequency
-			} else {
-				// Otherwise show the recommendation
-				description = `Recommended - every ${bottleQuantity} month${bottleQuantity > 1 ? 's' : ''}`;
+			// Animate the description update only if content changed
+			if (descriptionEl.innerHTML !== description) {
+				descriptionEl.style.opacity = '0';
+				setTimeout(() => {
+					descriptionEl.innerHTML = description;
+					descriptionEl.style.opacity = '1';
+				}, 200);
 			}
-
-			// Animate the description update
-			descriptionEl.style.opacity = '0';
-			setTimeout(() => {
-				descriptionEl.innerHTML = description;
-				descriptionEl.style.opacity = '1';
-			}, 200);
 		}
 
-		// Function to extract frequency value and unit from plan name
+		// Function to extract frequency value and unit from plan name - memoized for performance
+		const memoizedFrequencies = {};
+
 		function extractFrequency(planName) {
+			// Check memo cache first
+			if (memoizedFrequencies[planName]) {
+				return memoizedFrequencies[planName];
+			}
+
+			let result;
+
 			// Try matching days pattern first
 			let daysMatch = planName.match(/(\d+)\s*Day/i);
 			if (daysMatch) {
-				return {
+				result = {
 					value: parseInt(daysMatch[1], 10),
 					unit: 'day'
 				};
+			} else {
+				// Try matching months pattern
+				let monthsMatch = planName.match(/(\d+)\s*Month/i);
+				if (monthsMatch) {
+					result = {
+						value: parseInt(monthsMatch[1], 10),
+						unit: 'month'
+					};
+				} else {
+					// Default fallback
+					result = { value: 1, unit: 'month' };
+				}
 			}
 
-			// Try matching months pattern
-			let monthsMatch = planName.match(/(\d+)\s*Month/i);
-			if (monthsMatch) {
-				return {
-					value: parseInt(monthsMatch[1], 10),
-					unit: 'month'
-				};
-			}
-
-			// Default fallback
-			return { value: 1, unit: 'month' };
+			// Save to cache
+			memoizedFrequencies[planName] = result;
+			return result;
 		}
 
 		// Function to populate frequency options based on the selected variant
 		function populateFrequencySelector(el, SID) {
 			try {
-				const section = document.getElementById(`cta-section-${SID}`);
+				const section = getElement(`#cta-section-${SID}`);
 				if (!section) return;
 
 				// Use the data attribute for more specific selection
-				const frequencyContainer = section.querySelector('[data-frequency-container]');
+				const frequencyContainer = getElement('[data-frequency-container]', section);
 				if (!frequencyContainer) return;
 
-				const frequencyOptions = section.querySelector('#frequency-options-' + SID);
+				const frequencyOptions = getElement('#frequency-options-' + SID, section);
 				if (!frequencyOptions) return;
 
 				// Always start with a clean slate
@@ -760,46 +796,23 @@
 				const allowedSellingPlansStr = el.dataset.allowedSellingPlans ? el.dataset.allowedSellingPlans.trim() : '';
 				const hasAllowedSellingPlans = allowedSellingPlansStr !== '';
 
-				console.log('Populating frequency selector for bottle quantity:', bottleQuantity, {
-					productId,
-					variant,
-					hasAllowedSellingPlans,
-					allowedSellingPlans: allowedSellingPlansStr
-				});
-
 				// Try to find the variant in product data
-				let selectedVariant = null;
-				if (window.productData && window.productData[productId]) {
-					const product = window.productData[productId];
-					if (product.variants) {
-						// First try exact match
-						selectedVariant = product.variants.find(v => v.id === variantId);
-
-						if (!selectedVariant) {
-							console.log('Variant not found in product data. Available variants:', product.variants.map(v => v.id));
-
-							// Try original variant as fallback
-							const originalVariantId = parseInt(el.dataset.originalVariant || '0');
-							if (originalVariantId > 0) {
-								selectedVariant = product.variants.find(v => v.id === originalVariantId);
-
-								if (selectedVariant) {
-									console.log('Found variant using original variant ID fallback');
-								}
-							}
-						}
-					}
-				}
-
-				if (!selectedVariant) {
-					console.log('Variant not found in product data, using fallback');
+				const productData = window.productData?.[productId];
+				if (!productData || !productData.variants) {
 					handleFallbackFrequencyOptions(el, frequencyOptions, frequencyContainer, SID);
 					return;
 				}
 
-				// Check if variant has selling plan allocations
-				if (!selectedVariant.selling_plan_allocations || selectedVariant.selling_plan_allocations.length === 0) {
-					console.warn('Selected variant has no selling plan allocations:', selectedVariant.id);
+				// Find the variant
+				let selectedVariant = productData.variants.find(v => v.id === variantId);
+
+				// Try original variant as fallback
+				if (!selectedVariant && el.dataset.originalVariant) {
+					const originalVariantId = parseInt(el.dataset.originalVariant);
+					selectedVariant = productData.variants.find(v => v.id === originalVariantId);
+				}
+
+				if (!selectedVariant || !selectedVariant.selling_plan_allocations?.length) {
 					handleFallbackFrequencyOptions(el, frequencyOptions, frequencyContainer, SID);
 					return;
 				}
@@ -813,8 +826,6 @@
 						.split(',')
 						.map(id => id.trim())
 						.filter(id => id && !isNaN(parseInt(id)));
-
-					console.log('Filtering to allowed selling plans:', allowedPlans);
 
 					// Only keep the selling plans that are in the allowed list
 					sellingPlanAllocations = sellingPlanAllocations.filter(allocation =>
@@ -833,59 +844,61 @@
 					// Default sorting for non-allowed plans
 					// Helper function to get days from frequency for sorting
 					const getAllocationDays = (allocation) => {
-						if (!allocation || !allocation.selling_plan) return 30; // default
+						if (!allocation?.selling_plan?.name) return 30; // default
 						const { value, unit } = extractFrequency(allocation.selling_plan.name);
 						return unit === 'day' ? value : value * 30; // approximate month as 30 days
 					};
 
 					// Sort allocations by frequency in days (ascending)
-					sellingPlanAllocations.sort((a, b) => {
-						return getAllocationDays(a) - getAllocationDays(b);
-					});
+					sellingPlanAllocations.sort((a, b) => getAllocationDays(a) - getAllocationDays(b));
 				}
 
-				// Find selling plan that matches the bottle quantity (recommended frequency)
+				// Find selling plan that matches the bottle quantity (recommended frequency) - only if no allowed plans
 				let recommendedSellingPlanId = '';
 
-				if (!hasAllowedSellingPlans && selectedVariant.selling_plan_allocations) {
+				if (!hasAllowedSellingPlans) {
 					for (const allocation of selectedVariant.selling_plan_allocations) {
-						const { value, unit } = extractFrequency(allocation.selling_plan.name);
+						if (!allocation?.selling_plan?.name) continue;
 
+						const { value, unit } = extractFrequency(allocation.selling_plan.name);
 						// If unit is months and matches bottle quantity
 						if (unit === 'month' && value === bottleQuantity) {
 							recommendedSellingPlanId = allocation.selling_plan.id.toString();
 							break;
 						}
 					}
-				}
 
-				// If we found a recommended selling plan and no current one is set, set it as the current
-				if (recommendedSellingPlanId && !el.dataset.subscriptionSellingPlanId && !hasAllowedSellingPlans) {
-					el.dataset.subscriptionSellingPlanId = recommendedSellingPlanId;
+					// If we found a recommended selling plan and no current one is set, set it
+					if (recommendedSellingPlanId && !el.dataset.subscriptionSellingPlanId) {
+						el.dataset.subscriptionSellingPlanId = recommendedSellingPlanId;
+					}
 				}
 
 				// If no allocations to show after filtering, fallback
 				if (sellingPlanAllocations.length === 0) {
-					console.warn('No selling plan allocations after filtering');
 					handleFallbackFrequencyOptions(el, frequencyOptions, frequencyContainer, SID);
 					return;
 				}
 
 				// Build frequency options
-				frequencyOptions.innerHTML = '';
 				const currentSellingPlanId = el.dataset.subscriptionSellingPlanId;
 				const fragment = document.createDocumentFragment();
 
+				// Pre-compute some values for display text formatting
+				const useDaysFormat = bottleQuantity <= 1;
+				const useMonthsFormat = bottleQuantity >= 3;
+
 				sellingPlanAllocations.forEach(allocation => {
-					if (!allocation || !allocation.selling_plan) return;
+					if (!allocation?.selling_plan?.name) return;
 
 					const plan = allocation.selling_plan;
 
-					// Extract frequency value and unit from plan name
-					const { value, unit } = extractFrequency(plan.name);
-
+					// Create option element
 					const frequencyBox = document.createElement('div');
 					frequencyBox.className = 'frequency-option variant-tab-style rounded-md cursor-pointer p-2 min-w-[90px] text-center transition-all duration-300 ease-in-out';
+
+					// Extract frequency value and unit
+					const { value, unit } = extractFrequency(plan.name);
 
 					// Set data attributes
 					frequencyBox.dataset.sellingPlanId = plan.id;
@@ -893,107 +906,55 @@
 					frequencyBox.dataset.frequencyUnit = unit;
 
 					// Determine if this option should be selected
-					let shouldSelect = false;
+					const shouldSelect =
+						(plan.id?.toString() === currentSellingPlanId) ||
+						(!currentSellingPlanId && !hasAllowedSellingPlans && unit === 'month' && value === bottleQuantity);
 
-					// If this plan matches the current selling plan ID, select it
-					if (plan.id && plan.id.toString() === currentSellingPlanId) {
-						shouldSelect = true;
-					}
-					// Otherwise, if we have no current selection and this is the recommended plan
-					// (but only if we're not using allowed plans)
-					else if (!currentSellingPlanId && !hasAllowedSellingPlans) {
-						const isRecommendedMonthPlan = (unit === 'month' && value === bottleQuantity);
-						if (isRecommendedMonthPlan) {
-							shouldSelect = true;
+					// Apply selected class if needed
+					if (shouldSelect) {
+						frequencyBox.classList.add('selected');
+
+						// Update selling plan ID if this is the recommended option
+						if (!currentSellingPlanId && !hasAllowedSellingPlans && unit === 'month' && value === bottleQuantity) {
 							el.dataset.subscriptionSellingPlanId = plan.id.toString();
-							const submitSellingPlanId = section.querySelector('.submit-selling-plan-id');
+							const submitSellingPlanId = getElement('.submit-selling-plan-id', section);
 							if (submitSellingPlanId) {
 								submitSellingPlanId.value = plan.id.toString();
 							}
 						}
 					}
 
-					// Apply selected class if needed
-					if (shouldSelect) {
-						frequencyBox.classList.add('selected');
-					}
-
-					// Get display text dynamically from the selling plan name
+					// Format display text based on bottle quantity
 					let displayText = '';
 
-					// First try to extract directly from the selling plan name/description
-					if (plan.name) {
-						// Extract the frequency information from the plan name
-						const { value, unit } = extractFrequency(plan.name);
-
-						// Format consistently based on bottle quantity
-						if (bottleQuantity <= 1) {
-							// For 1-bottle variants, prefer days format
-							if (unit === 'month') {
-								// Convert months to days
-								const days = Math.round(value * 30);
-								displayText = `Every ${days} Days`;
+					if (useDaysFormat) {
+						// For 1-bottle variants, convert to days format
+						if (unit === 'month') {
+							const days = Math.round(value * 30);
+							displayText = `Every ${days} Days`;
+						} else {
+							displayText = value === 1 ? 'Every Day' : `Every ${value} Days`;
+						}
+					} else if (useMonthsFormat) {
+						// For 3+ bottle variants, convert to months format when possible
+						if (unit === 'day') {
+							const months = value / 30;
+							if (Math.abs(months - Math.round(months)) < 0.1) { // within 10% of a whole number
+								displayText = months === 1 ? 'Every Month' : `Every ${Math.round(months)} Months`;
 							} else {
-								// Already in days
-								displayText = value === 1 ? 'Every Day' : `Every ${value} Days`;
+								displayText = `Every ${value} Days`;
 							}
 						} else {
-							// For 3+ bottle variants, prefer months format
-							if (unit === 'day') {
-								// Convert days to months if it's a clean conversion
-								const months = value / 30;
-								if (months === Math.round(months)) {
-									displayText = months === 1 ? 'Every Month' : `Every ${months} Months`;
-								} else {
-									displayText = `Every ${value} Days`;
-								}
-							} else {
-								// Already in months
-								displayText = value === 1 ? 'Every Month' : `Every ${value} Months`;
-							}
+							displayText = value === 1 ? 'Every Month' : `Every ${value} Months`;
 						}
-					}
-
-					// If allowed selling plans are specified, use the exact format from the original
-					if (hasAllowedSellingPlans && displayText) {
-						// For reference: original patterns we want to match
-						// 1-bottle variants: "Every 30 Days", "Every 45 Days", "Every 60 Days"
-						// 3-bottle variants: "Every 3 Months", "Every 4 Months", "Every 6 Months"
-
-						// Make sure the format aligns with the bottle quantity expectations
-						if (bottleQuantity <= 1 && !displayText.includes('Days')) {
-							// Convert "Every X Months" to "Every (X*30) Days"
-							const match = displayText.match(/Every\s+(\d+)\s+Months?/i);
-							if (match) {
-								const months = parseInt(match[1], 10);
-								displayText = `Every ${months * 30} Days`;
-							}
-						} else if (bottleQuantity >= 3 && !displayText.includes('Months')) {
-							// Convert "Every X Days" to "Every (X/30) Months" if divisible
-							const match = displayText.match(/Every\s+(\d+)\s+Days?/i);
-							if (match) {
-								const days = parseInt(match[1], 10);
-								const months = days / 30;
-								if (months === Math.round(months)) {
-									displayText = months === 1 ? 'Every Month' : `Every ${months} Months`;
-								}
-							}
-						}
-					}
-
-					// Fallback if we couldn't determine a display text
-					if (!displayText) {
-						if (bottleQuantity <= 1) {
-							// Default for 1-bottle variants
-							displayText = 'Every 30 Days';
-						} else {
-							// Default for 3+ bottle variants
-							displayText = `Every ${bottleQuantity} Months`;
-						}
+					} else {
+						// For other bottle quantities, use the original format
+						displayText = unit === 'day'
+							? (value === 1 ? 'Every Day' : `Every ${value} Days`)
+							: (value === 1 ? 'Every Month' : `Every ${value} Months`);
 					}
 
 					frequencyBox.innerHTML = `<span class="font-semibold">${displayText}</span>`;
-
 					fragment.appendChild(frequencyBox);
 				});
 
@@ -1004,7 +965,7 @@
 
 					// Update the selected selling plan
 					el.dataset.subscriptionSellingPlanId = firstOption.dataset.sellingPlanId;
-					const submitSellingPlanId = section.querySelector('.submit-selling-plan-id');
+					const submitSellingPlanId = getElement('.submit-selling-plan-id', section);
 					if (submitSellingPlanId) {
 						submitSellingPlanId.value = firstOption.dataset.sellingPlanId;
 					}
@@ -1032,15 +993,18 @@
 				if (currentSellingPlanId) {
 					frequencyOptions.innerHTML = '';
 					const fallbackBox = document.createElement('div');
-					fallbackBox.className = 'frequency-option variant-tab-style selected rounded-md cursor-pointer py-2 px-4 min-w-[90px] text-center transition-all duration-300 ease-in-out';
+					fallbackBox.className = 'frequency-option variant-tab-style selected rounded-md cursor-pointer p-2 min-w-[90px] text-center transition-all duration-300 ease-in-out';
 					fallbackBox.dataset.sellingPlanId = currentSellingPlanId;
 					fallbackBox.dataset.frequencyValue = bottleQuantity.toString();
 					fallbackBox.dataset.frequencyUnit = 'month'; // Default to months
-					fallbackBox.innerHTML = `
-						<div class="p-1">
-							<span class="font-semibold">Every ${bottleQuantity} Month${bottleQuantity > 1 ? 's' : ''}</span>
-						</div>
-					`;
+
+					// Format text based on bottle quantity
+					const displayText = bottleQuantity <= 1
+						? `Every 30 Days`
+						: `Every ${bottleQuantity} Month${bottleQuantity > 1 ? 's' : ''}`;
+
+					fallbackBox.innerHTML = `<span class="font-semibold">${displayText}</span>`;
+
 					frequencyOptions.appendChild(fallbackBox);
 					frequencyContainer.classList.remove('hidden');
 
