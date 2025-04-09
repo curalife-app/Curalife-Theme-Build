@@ -71,7 +71,6 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 				return await res.json();
 			} catch (err) {
 				console.error("Error in getCart:", err);
-				throw new Error("Unable to access your cart");
 			}
 		},
 
