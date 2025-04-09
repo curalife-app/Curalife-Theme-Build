@@ -417,6 +417,17 @@
 		// Set up click monitoring for variant boxes
 		setupVariantClickMonitoring('{{ SID }}');
 
+		// Select the first variant automatically on page load
+		setTimeout(function() {
+			const SID = '{{ SID }}';
+			const firstVariantBox = document.querySelector(`#cta-section-${SID} .variant-box`);
+			if (firstVariantBox && !document.querySelector(`#cta-section-${SID} .variant-box.selected`)) {
+				console.log('[DEBUG] Auto-selecting first variant box');
+				// Trigger click on the first variant box to initialize everything
+				firstVariantBox.click();
+			}
+		}, 100);
+
 		// Determine if we need to load the script or if it's already loaded
 		if (!window.CuralifeBoxes || !window.CuralifeBoxes.initialized) {
 			console.log('[DEBUG] CuralifeBoxes not initialized, loading script...');
@@ -528,28 +539,68 @@
 							}, 300);
 						} else {
 							console.error('[DEBUG] togglePurchaseBox function not found on instance');
+							// Use our fallback since togglePurchaseBox isn't available
+							manuallySelectVariantBox(box, SID);
 						}
 					} catch (err) {
 						console.error('[DEBUG] Error calling togglePurchaseBox:', err);
+						// Use our fallback on error
+						manuallySelectVariantBox(box, SID);
 					}
 				} else {
 					console.log('[DEBUG] Box already selected, no action needed');
 				}
 			} else {
 				console.error('[DEBUG] No CuralifeBoxes instance for SID:', SID);
+				// Use our fallback since CuralifeBoxes isn't available
+				manuallySelectVariantBox(box, SID);
+			}
+		}
 
-				// Fallback handling - update manually
-				const variantBoxes = document.querySelectorAll(`#cta-section-${SID} .variant-box`);
-				variantBoxes.forEach(b => {
-					b.classList.remove('selected');
-				});
-				box.classList.add('selected');
+		// Function to manually handle variant box selection when CuralifeBoxes isn't working
+		function manuallySelectVariantBox(box, SID) {
+			// Update selected state
+			const variantBoxes = document.querySelectorAll(`#cta-section-${SID} .variant-box`);
+			variantBoxes.forEach(b => {
+				b.classList.remove('selected');
+			});
+			box.classList.add('selected');
 
-				// Show and populate frequency options if this is a subscription
-				if (box.dataset.purchaseType === 'subscribe') {
-					manuallyPopulateFrequencyOptions(SID);
+			// Update form fields if they exist
+			const submitSellingPlanId = document.querySelector(`#cta-section-${SID} .submit-selling-plan-id`);
+			const submitVariantId = document.querySelector(`#cta-section-${SID} .submit-variant-id`);
+
+			if (submitSellingPlanId) {
+				submitSellingPlanId.value = box.dataset.purchaseType === 'subscribe' ?
+					box.dataset.subscriptionSellingPlanId : '';
+			}
+
+			if (submitVariantId) {
+				submitVariantId.value = box.dataset.variant;
+			}
+
+			// Show and populate frequency options if this is a subscription
+			if (box.dataset.purchaseType === 'subscribe') {
+				manuallyPopulateFrequencyOptions(SID);
+			} else {
+				// Hide frequency options if not a subscription
+				const frequencyContainer = document.querySelector(`#cta-section-${SID} [data-frequency-container]`);
+				if (frequencyContainer) {
+					frequencyContainer.classList.add('hidden');
 				}
 			}
+
+			// Update price display if needed
+			updatePriceDisplay(box, SID);
+		}
+
+		// Basic price display updater for fallback
+		function updatePriceDisplay(box, SID) {
+			const priceDisplay = document.querySelector(`#cta-section-${SID} .price-display`);
+			if (!priceDisplay) return;
+
+			// Add any price updating logic here if needed
+			console.log('[DEBUG] Price display would be updated here if needed');
 		}
 
 		// Function to directly populate frequency options as a fallback
@@ -559,6 +610,7 @@
 			const frequencyContainer = document.querySelector(`#cta-section-${SID} [data-frequency-container]`);
 			const frequencyOptions = document.getElementById(`frequency-options-${SID}`);
 			const selectedBox = document.querySelector(`#cta-section-${SID} .variant-box.selected`);
+			const submitSellingPlanId = document.querySelector(`#cta-section-${SID} .submit-selling-plan-id`);
 
 			if (!frequencyContainer || !frequencyOptions || !selectedBox) {
 				console.error('[DEBUG] Required elements not found:', {
@@ -604,6 +656,27 @@
 			// Add click handler to the option
 			option.addEventListener('click', function() {
 				console.log('[DEBUG] Frequency option clicked:', this.dataset.sellingPlanId);
+
+				// Update the selling plan ID on the selected box and form
+				if (selectedBox) {
+					selectedBox.dataset.subscriptionSellingPlanId = this.dataset.sellingPlanId;
+				}
+
+				if (submitSellingPlanId) {
+					submitSellingPlanId.value = this.dataset.sellingPlanId;
+				}
+
+				// Visual feedback
+				this.style.backgroundColor = 'var(--primary-color)';
+				this.style.color = 'white';
+
+				// Highlight the clicked option (in case we add more in the future)
+				Array.from(frequencyOptions.children).forEach(child => {
+					if (child !== this) {
+						child.style.backgroundColor = 'var(--bg-color)';
+						child.style.color = 'var(--primary-color)';
+					}
+				});
 			});
 		}
 
@@ -759,4 +832,5 @@
 			});
 		}, 2000);
 	});
+</script>
 </script>
