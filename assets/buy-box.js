@@ -419,17 +419,8 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 			initGlobalSettings() {
 				const section = this.elements.section;
 
-				// Cache the dataset for more efficient access
-				const dataset = { ...section.dataset };
-
-				// Helper function to check for attribute presence
-				const hasAttr = name => section.hasAttribute(`data-${name}`);
-
-				// Helper function to get data attribute with default
-				const getAttr = (name, defaultValue) => dataset[name] || defaultValue;
-
 				// Check for debug mode
-				if (hasAttr("is-debug")) {
+				if (section.hasAttribute("data-is-debug")) {
 					this.state.isDebug = true;
 					CuralifeBoxes.utils.setDebugMode(true);
 				}
@@ -443,35 +434,31 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 				 * The JavaScript code will prioritize settings from the section attributes.
 				 */
 
-				// Read and apply all settings at once using a settings map
-				const settings = {
-					// Text and selection settings
-					buyType: getAttr("buyType", "add_to_cart"),
-					defaultSelectionIndex: CuralifeBoxes.utils.safeParseInt(getAttr("defaultSelection", "1"), 1),
+				// Read buy type
+				this.state.buyType = section.dataset.buyType || "add_to_cart";
 
-					// Format settings
-					priceFormat: getAttr("priceFormat", "total"),
-					saveFormat: getAttr("saveFormat", "percentage"),
-					pricePer: getAttr("pricePer", "dont_split"),
-					thumbsLayout: getAttr("thumbs", "horizontal"),
+				// Read selection settings
+				this.state.defaultSelectionIndex = CuralifeBoxes.utils.safeParseInt(section.dataset.defaultSelection, 1);
 
-					// Feature flags (boolean)
-					isOneTimePurchase: hasAttr("one-time-purchase"),
-					isOneTimeGift: hasAttr("one-time-gift"),
-					isSlideVariant: hasAttr("slide-variant"),
-					isPrimeEnabled: hasAttr("buy-with-prime"),
-					isShowReviews: hasAttr("show-reviews"),
-					isProductThumbs: hasAttr("product-thumbs"),
-					isHideThumbs: hasAttr("hide-thumbs"),
-					isHideInfo: hasAttr("hide-info"),
-					isBuyQuantity: hasAttr("buy-quantity")
-				};
+				// Read format settings
+				this.state.priceFormat = section.dataset.priceFormat || "total";
+				this.state.saveFormat = section.dataset.saveFormat || "percentage";
+				this.state.pricePer = section.dataset.pricePer || "dont_split";
+				this.state.thumbsLayout = section.dataset.thumbs || "horizontal";
 
-				// Apply all settings to state at once (more efficient than individual assignments)
-				Object.assign(this.state, settings);
+				// Read feature flags
+				this.state.isOneTimePurchase = section.hasAttribute("data-one-time-purchase");
+				this.state.isOneTimeGift = section.hasAttribute("data-one-time-gift");
+				this.state.isSlideVariant = section.hasAttribute("data-slide-variant");
+				this.state.isPrimeEnabled = section.hasAttribute("data-buy-with-prime");
+				this.state.isShowReviews = section.hasAttribute("data-show-reviews");
+				this.state.isProductThumbs = section.hasAttribute("data-product-thumbs");
+				this.state.isHideThumbs = section.hasAttribute("data-hide-thumbs");
+				this.state.isHideInfo = section.hasAttribute("data-hide-info");
+				this.state.isBuyQuantity = section.hasAttribute("data-buy-quantity");
 
 				if (this.state.isDebug) {
-					console.log(`Buy box ${this.SID} initialized with global settings from section element:`, settings);
+					console.log(`Buy box ${this.SID} initialized with global settings from section element`);
 				}
 			},
 
