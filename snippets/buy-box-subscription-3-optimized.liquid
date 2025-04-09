@@ -738,6 +738,8 @@
 				const mainPriceElement = priceDisplay?.querySelector('.price');
 				const totalLineElement = priceDisplay?.querySelector('.total-line');
 				const perTextElement = priceDisplay?.querySelector('.per-text');
+				const capElement = priceDisplay?.querySelector('.cap');
+				const finalPriceElement = priceDisplay?.querySelector('.final-price');
 
 				if (!priceDisplay || !futureNotice || !mainPriceElement) {
 					console.error(`Buy box ${SID}: Required elements not found`);
@@ -801,61 +803,87 @@
 					savingsFormatted
 				});
 
-				// 1. Update the main price display with first month price
-				if (mainPriceElement) {
-					// Format with proper currency representation
-					let formattedPrice;
-					if (priceFormat === 'total') {
-						formattedPrice = `${currencySymbol}${firstMonthTotal.toFixed(2)}`;
-						// Hide per-bottle text if showing total price
-						if (perTextElement) perTextElement.style.display = 'none';
-					} else {
-						formattedPrice = `${currencySymbol}${firstMonthPerItem.toFixed(2)}`;
-						// Show per-bottle text if showing per-bottle price
-						if (perTextElement) perTextElement.style.display = 'inline';
-					}
+				// Animate the price update
+				const animatePriceUpdate = () => {
+					// Fade out price elements
+					const elementsToFade = [finalPriceElement, discountBadge, totalLineElement].filter(Boolean);
+					elementsToFade.forEach(el => {
+						el.style.transition = "opacity 200ms ease-out";
+						el.style.opacity = "0";
+					});
 
-					console.log(`Buy box ${SID}: Setting price to ${formattedPrice} (format: ${priceFormat})`);
-					mainPriceElement.textContent = formattedPrice;
+					// Update price elements after fade out
+					setTimeout(() => {
+						// 1. Update the main price display with first month price
+						if (mainPriceElement) {
+							// Format with proper currency representation
+							let formattedPrice;
+							if (priceFormat === 'total') {
+								formattedPrice = `${currencySymbol}${firstMonthTotal.toFixed(2)}`;
+								// Hide per-bottle text if showing total price
+								if (perTextElement) perTextElement.style.display = 'none';
+							} else {
+								formattedPrice = `${currencySymbol}${firstMonthPerItem.toFixed(2)}`;
+								// Show per-bottle text if showing per-bottle price
+								if (perTextElement) perTextElement.style.display = 'inline';
+							}
 
-					// Store the current price in a data attribute to check if it gets changed
-					mainPriceElement.setAttribute('data-custom-price', formattedPrice);
-				}
+							console.log(`Buy box ${SID}: Setting price to ${formattedPrice} (format: ${priceFormat})`);
+							mainPriceElement.textContent = formattedPrice;
 
-				// Update the compare-at price based on format
-				const capElement = priceDisplay.querySelector('.cap');
-				if (capElement) {
-					const compareAtPrice = priceFormat === 'total'
-						? `${currencySymbol}${totalOrig.toFixed(2)}`
-						: `${currencySymbol}${origPerItem.toFixed(2)}`;
+							// Store the current price in a data attribute to check if it gets changed
+							mainPriceElement.setAttribute('data-custom-price', formattedPrice);
+						}
 
-					console.log(`Buy box ${SID}: Setting compare-at price to ${compareAtPrice} (format: ${priceFormat})`);
-					capElement.textContent = compareAtPrice;
-				}
+						// Update the compare-at price based on format
+						if (capElement) {
+							const compareAtPrice = priceFormat === 'total'
+								? `${currencySymbol}${totalOrig.toFixed(2)}`
+								: `${currencySymbol}${origPerItem.toFixed(2)}`;
 
-				// 2. Update badge with correct savings amount
-				if (discountBadge && priceFormat === "total" && savingsAmount > 0) {
-					const badgeText = `SAVE ${currencySymbol}${savingsFormatted}`;
-					console.log(`Buy box ${SID}: Setting badge text to: "${badgeText}"`);
-					discountBadge.textContent = badgeText;
-					discountBadge.style.display = 'inline-flex';
-					discountBadge.style.opacity = '1';
-				}
+							console.log(`Buy box ${SID}: Setting compare-at price to ${compareAtPrice} (format: ${priceFormat})`);
+							capElement.textContent = compareAtPrice;
+						}
 
-				// 3. Add future price notice
-				const regText = priceFormat === "total" ? regTotal.toFixed(2) : regPerItem.toFixed(2);
-				futureNotice.textContent = `Special price for first order. Refills for ${currencySymbol}${regText}${priceFormat === 'per_bottle' ? '/bottle' : ''}.`;
-				futureNotice.style.opacity = '1';
+						// 2. Update badge with correct savings amount
+						if (discountBadge && priceFormat === "total" && savingsAmount > 0) {
+							const badgeText = `SAVE ${currencySymbol}${savingsFormatted}`;
+							console.log(`Buy box ${SID}: Setting badge text to: "${badgeText}"`);
+							discountBadge.textContent = badgeText;
+							discountBadge.style.display = 'inline-flex';
+						}
 
-				// 4. Update total line for per-bottle format
-				if (priceFormat === "per_bottle" && totalLineElement && savingsAmount > 0) {
-					totalLineElement.innerHTML = `Total ${currencySymbol}${firstMonthTotal.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">${currencySymbol}${totalOrig.toFixed(2)}</span>`;
-					totalLineElement.style.opacity = '1';
-				} else if (totalLineElement) {
-					totalLineElement.style.opacity = '0';
-				}
+						// 3. Add future price notice
+						const regText = priceFormat === "total" ? regTotal.toFixed(2) : regPerItem.toFixed(2);
+						futureNotice.textContent = `Special price for first order. Refills for ${currencySymbol}${regText}${priceFormat === 'per_bottle' ? '/bottle' : ''}.`;
+						futureNotice.style.opacity = '1';
 
-				console.log(`Buy box ${SID}: Price display updated with first month pricing`);
+						// 4. Update total line for per-bottle format
+						if (priceFormat === "per_bottle" && totalLineElement && savingsAmount > 0) {
+							totalLineElement.innerHTML = `Total ${currencySymbol}${firstMonthTotal.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">${currencySymbol}${totalOrig.toFixed(2)}</span>`;
+						} else if (totalLineElement) {
+							totalLineElement.style.opacity = '0';
+						}
+
+						// Fade elements back in, staggered for visual effect
+						setTimeout(() => {
+							if (finalPriceElement) finalPriceElement.style.opacity = "1";
+						}, 50);
+
+						setTimeout(() => {
+							if (discountBadge) discountBadge.style.opacity = "1";
+						}, 100);
+
+						setTimeout(() => {
+							if (totalLineElement && priceFormat === "per_bottle") totalLineElement.style.opacity = "1";
+						}, 150);
+
+						console.log(`Buy box ${SID}: Price display updated with first month pricing`);
+					}, 200);
+				};
+
+				// Use requestAnimationFrame for smoother animation
+				requestAnimationFrame(animatePriceUpdate);
 			}
 
 			// Completely override the updatePriceDisplay method instead of extending it
@@ -878,6 +906,7 @@
 							const cap = priceDisplay.querySelector('.cap');
 							const totalLine = priceDisplay.querySelector('.total-line');
 							const discount = priceDisplay.querySelector('.discount-badge');
+							const finalPrice = priceDisplay.querySelector('.final-price');
 
 							// Format based on price format
 							const priceFormat = '{{ priceFormat }}';
@@ -889,30 +918,48 @@
 
 							const currencySymbol = window.Shopify?.currency?.symbol || "$";
 
-							if (mainPrice) {
-								if (priceFormat === 'total') {
-									mainPrice.textContent = `${currencySymbol}${subscriptionPrice.toFixed(2)}`;
-								} else {
-									mainPrice.textContent = `${currencySymbol}${subscriptionItemPrice.toFixed(2)}`;
-								}
-							}
+							// Animate the price update (similar to original CuralifeBoxes)
+							const animateUpdate = () => {
+								// Fade out elements first
+								[finalPrice, discount, totalLine].filter(Boolean).forEach(el => {
+									el.style.transition = "opacity 200ms ease-out";
+									el.style.opacity = "0";
+								});
 
-							if (cap) {
-								if (priceFormat === 'total') {
-									cap.textContent = `${currencySymbol}${(originalItemCap * bottles).toFixed(2)}`;
-								} else {
-									cap.textContent = `${currencySymbol}${originalItemCap.toFixed(2)}`;
-								}
-							}
+								setTimeout(() => {
+									if (mainPrice) {
+										if (priceFormat === 'total') {
+											mainPrice.textContent = `${currencySymbol}${subscriptionPrice.toFixed(2)}`;
+										} else {
+											mainPrice.textContent = `${currencySymbol}${subscriptionItemPrice.toFixed(2)}`;
+										}
+									}
 
-							const saveAmt = (originalItemCap - subscriptionItemPrice) * bottles;
-							if (discount && priceFormat === 'total' && saveAmt > 0) {
-								discount.textContent = `SAVE ${currencySymbol}${Math.floor(saveAmt)}`;
-							}
+									if (cap) {
+										if (priceFormat === 'total') {
+											cap.textContent = `${currencySymbol}${(originalItemCap * bottles).toFixed(2)}`;
+										} else {
+											cap.textContent = `${currencySymbol}${originalItemCap.toFixed(2)}`;
+										}
+									}
 
-							if (totalLine && priceFormat === 'per_bottle') {
-								totalLine.innerHTML = `Total ${currencySymbol}${subscriptionPrice.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">${currencySymbol}${(originalItemCap * bottles).toFixed(2)}</span>`;
-							}
+									const saveAmt = (originalItemCap - subscriptionItemPrice) * bottles;
+									if (discount && priceFormat === 'total' && saveAmt > 0) {
+										discount.textContent = `SAVE ${currencySymbol}${Math.floor(saveAmt)}`;
+									}
+
+									if (totalLine && priceFormat === 'per_bottle') {
+										totalLine.innerHTML = `Total ${currencySymbol}${subscriptionPrice.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">${currencySymbol}${(originalItemCap * bottles).toFixed(2)}</span>`;
+									}
+
+									// Fade elements back in with staggered timing
+									setTimeout(() => finalPrice && (finalPrice.style.opacity = "1"), 50);
+									setTimeout(() => discount && (discount.style.opacity = "1"), 100);
+									setTimeout(() => totalLine && (totalLine.style.opacity = "1"), 150);
+								}, 200);
+							};
+
+							requestAnimationFrame(animateUpdate);
 						}
 					}
 				};
