@@ -703,90 +703,180 @@
 			productActions.insertAdjacentElement('afterbegin', ctaText);
 		}
 
-		// Fix for first month discount badge
-		// Wait for the page to fully load before modifying elements
-		window.addEventListener('load', function() {
-			// Get section ID for this buy box
+		// Fix for first month discount badge and price calculation
+		// Use setTimeout to ensure this runs after CuralifeBoxes has initialized
+		setTimeout(function() {
 			const SID = '{{ SID }}';
+			console.log(`Buy box ${SID}: Setting up first month pricing`);
+
+			// Direct DOM references to avoid selector issues
 			const section = document.getElementById(`cta-section-${SID}`);
-			if (!section) return;
+			if (!section) {
+				console.error(`Buy box ${SID}: Section not found`);
+				return;
+			}
 
-			// Find required elements
-			const variantBoxes = section.querySelectorAll('.variant-box');
-			const discountBadge = section.querySelector('.discount-badge');
+			// Find discount badge using more specific selector
+			const priceDisplay = section.querySelector('.price-display');
+			const discountBadge = priceDisplay?.querySelector('.discount-badge');
 			const futureNotice = section.querySelector('.future-price-notice');
+			const mainPriceElement = priceDisplay?.querySelector('.price');
+			const totalLineElement = priceDisplay?.querySelector('.total-line');
 
-			// If no discount badge or boxes, exit
-			if (!variantBoxes.length || !discountBadge || !futureNotice) return;
+			if (!priceDisplay || !discountBadge || !futureNotice || !mainPriceElement) {
+				console.error(`Buy box ${SID}: Required elements not found`, {
+					priceDisplay: !!priceDisplay,
+					discountBadge: !!discountBadge,
+					futureNotice: !!futureNotice,
+					mainPriceElement: !!mainPriceElement
+				});
+				return;
+			}
 
-			// Simple function to calculate savings with first month discount
-			function updateFirstMonthDiscount(variantBox) {
-				// Exit if no variant box is provided
-				if (!variantBox) return;
+			// Store badge original text (for debugging)
+			const originalBadgeText = discountBadge.textContent;
+			console.log(`Buy box ${SID}: Original badge text: "${originalBadgeText}"`);
 
-				// Get data from the variant box
+			function updateFirstMonthPricing(variantBox) {
+				if (!variantBox) {
+					console.error(`Buy box ${SID}: No variant box selected`);
+					return;
+				}
+
+				// Get all pricing data from the variant box
 				const firstMonthDiscount = parseFloat(variantBox.dataset.firstMonthDiscount || 0);
-
-				// Skip if no first month discount
-				if (firstMonthDiscount <= 0) return;
-
-				// Collect all required values from data attributes
 				const subscriptionDiscount = parseFloat(variantBox.dataset.subscriptionDiscount || 0);
 				const origPerItem = parseFloat(variantBox.dataset.originalItemCap || 0) / 100;
 				const bottles = parseInt(variantBox.dataset.bottleQuantity || 1, 10);
 				const totalOrig = origPerItem * bottles;
 				const priceFormat = variantBox.dataset.pricePer || "dont_split";
 
-				// First month discount (both discounts applied)
-				const combinedDiscountPercent = subscriptionDiscount + firstMonthDiscount;
-				const combinedDiscountMultiplier = (100 - combinedDiscountPercent) / 100;
-				const firstMonthPrice = totalOrig * combinedDiscountMultiplier;
-
-				// Regular subscription price (only subscription discount)
-				const subDiscountMultiplier = (100 - subscriptionDiscount) / 100;
-				const regularPrice = totalOrig * subDiscountMultiplier;
-
-				// Calculate savings (difference between original and first month price)
-				const savings = totalOrig - firstMonthPrice;
-
-				// Display formatting
-				const currencySymbol = window.Shopify?.currency?.symbol || "$";
-				const regularPriceFormatted = `${currencySymbol}${regularPrice.toFixed(2)}`;
-				const savingsFormatted = `${currencySymbol}${Math.floor(savings)}`;
-
-				// Update the discount badge directly
-				if (priceFormat === "total" && savings > 0) {
-					discountBadge.textContent = `SAVE ${savingsFormatted}`;
-					discountBadge.style.opacity = "1";
-					discountBadge.style.display = "inline-flex";
+				// Skip if no first month discount
+				if (firstMonthDiscount <= 0) {
+					console.log(`Buy box ${SID}: No first month discount, skipping custom price display`);
+					futureNotice.textContent = '';
+					futureNotice.style.opacity = '0';
+					return;
 				}
 
-				// Update future price notice
-				futureNotice.textContent = `Special price for first order. Refills for ${regularPriceFormatted}.`;
-				futureNotice.style.opacity = "1";
-			}
+				console.log(`Buy box ${SID}: Price calculation inputs`, {
+					boxId: variantBox.id,
+					firstMonthDiscount,
+					subscriptionDiscount,
+					origPerItem,
+					bottles,
+					totalOrig,
+					priceFormat
+				});
 
-			// Function to find the currently selected variant box
-			function findSelectedVariantBox() {
-				return section.querySelector('.variant-box.selected');
-			}
+				// Calculate first month price (with both discounts)
+				const combinedDiscountPercent = subscriptionDiscount + firstMonthDiscount;
+				const combinedDiscountMultiplier = (100 - combinedDiscountPercent) / 100;
+				const firstMonthPerItem = origPerItem * combinedDiscountMultiplier;
+				const firstMonthTotal = firstMonthPerItem * bottles;
 
-			// Initial update for the default selection
-			const initialBox = findSelectedVariantBox();
-			if (initialBox) {
-				updateFirstMonthDiscount(initialBox);
-			}
+				// Calculate regular subscription price (subscription discount only)
+				const regDiscountMultiplier = (100 - subscriptionDiscount) / 100;
+				const regPerItem = origPerItem * regDiscountMultiplier;
+				const regTotal = regPerItem * bottles;
 
-			// Add a simple click handler to the section
-			section.addEventListener('click', function() {
-				// Wait for the selection to be updated by the shared script
-				setTimeout(function() {
-					const selectedBox = findSelectedVariantBox();
-					if (selectedBox) {
-						updateFirstMonthDiscount(selectedBox);
+				// Calculate savings
+				const savingsAmount = totalOrig - firstMonthTotal;
+
+				// Format for display
+				const currencySymbol = window.Shopify?.currency?.symbol || "$";
+				const savingsFormatted = Math.floor(savingsAmount);
+
+				console.log(`Buy box ${SID}: Calculated prices`, {
+					firstMonthPerItem,
+					firstMonthTotal,
+					regPerItem,
+					regTotal,
+					savingsAmount,
+					savingsFormatted
+				});
+
+				// 1. Update badge with correct savings
+				if (priceFormat === "total" && savingsAmount > 0) {
+					const badgeText = `SAVE ${currencySymbol}${savingsFormatted}`;
+					console.log(`Buy box ${SID}: Setting badge text to: "${badgeText}"`);
+					discountBadge.textContent = badgeText;
+					discountBadge.style.display = 'inline-flex';
+					discountBadge.style.opacity = '1';
+				}
+
+				// 2. Modify main price to show first month price
+				const priceText = priceFormat === "total" ?
+					firstMonthTotal.toFixed(2) :
+					firstMonthPerItem.toFixed(2);
+
+				// 3. Add future price notice
+				const regText = priceFormat === "total" ?
+					regTotal.toFixed(2) :
+					regPerItem.toFixed(2);
+
+				futureNotice.textContent = `Special price for first order. Refills for ${currencySymbol}${regText}${priceFormat === 'per_bottle' ? '/bottle' : ''}.`;
+				futureNotice.style.opacity = '1';
+
+				// 4. Update total line for per-bottle format
+				if (priceFormat === "per_bottle" && totalLineElement) {
+					if (savingsAmount > 0) {
+						totalLineElement.innerHTML = `Total ${currencySymbol}${firstMonthTotal.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">${currencySymbol}${totalOrig.toFixed(2)}</span>`;
+						totalLineElement.style.opacity = '1';
 					}
-				}, 200);
+				}
+
+				console.log(`Buy box ${SID}: Price display updated with first month pricing`);
+			}
+
+			// Override the price update method from CuralifeBoxes when available
+			function monkeyPatchPriceUpdate() {
+				if (!window.CuralifeBoxes?.instances?.[SID]) {
+					setTimeout(monkeyPatchPriceUpdate, 100);
+					return;
+				}
+
+				const instance = window.CuralifeBoxes.instances[SID];
+				if (!instance.updatePriceDisplay) {
+					console.error(`Buy box ${SID}: updatePriceDisplay method not found`);
+					return;
+				}
+
+				// Store original method
+				const originalUpdatePriceDisplay = instance.updatePriceDisplay;
+
+				// Override with our implementation that runs after the original
+				instance.updatePriceDisplay = function(el) {
+					// Call original implementation first
+					originalUpdatePriceDisplay.call(this, el);
+
+					// Then our custom implementation
+					setTimeout(() => updateFirstMonthPricing(el), 50);
+				};
+
+				console.log(`Buy box ${SID}: Successfully patched price display method`);
+
+				// Trigger update for currently selected variant
+				const selectedBox = section.querySelector('.variant-box.selected');
+				if (selectedBox) {
+					updateFirstMonthPricing(selectedBox);
+				}
+			}
+
+			// Start the monkey patching process
+			monkeyPatchPriceUpdate();
+
+			// Also set up a click handler as fallback
+			section.addEventListener('click', function(e) {
+				if (e.target.closest('.variant-box')) {
+					setTimeout(function() {
+						const selectedBox = section.querySelector('.variant-box.selected');
+						if (selectedBox) {
+							updateFirstMonthPricing(selectedBox);
+						}
+					}, 100);
+				}
 			});
-		});
+		}, 500); // Delay to ensure CuralifeBoxes has initialized
 	});
 </script>
