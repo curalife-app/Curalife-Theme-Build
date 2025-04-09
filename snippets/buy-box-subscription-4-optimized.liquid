@@ -808,19 +808,30 @@
 					// Only keep the selling plans that are in the allowed list
 					sellingPlanAllocations = sellingPlanAllocations.filter(allocation =>
 						allowedPlans.includes(allocation.selling_plan.id.toString()));
+
+					// For allowed plans, we need to preserve their original order as specified
+					if (allowedPlans.length > 0) {
+						// Sort based on the order in the allowedPlans array
+						sellingPlanAllocations.sort((a, b) => {
+							const indexA = allowedPlans.indexOf(a.selling_plan.id.toString());
+							const indexB = allowedPlans.indexOf(b.selling_plan.id.toString());
+							return indexA - indexB;
+						});
+					}
+				} else {
+					// Default sorting for non-allowed plans
+					// Helper function to get days from frequency for sorting
+					const getAllocationDays = (allocation) => {
+						if (!allocation || !allocation.selling_plan) return 30; // default
+						const { value, unit } = extractFrequency(allocation.selling_plan.name);
+						return unit === 'day' ? value : value * 30; // approximate month as 30 days
+					};
+
+					// Sort allocations by frequency in days (ascending)
+					sellingPlanAllocations.sort((a, b) => {
+						return getAllocationDays(a) - getAllocationDays(b);
+					});
 				}
-
-				// Helper function to get days from frequency for sorting
-				const getAllocationDays = (allocation) => {
-					if (!allocation || !allocation.selling_plan) return 30; // default
-					const { value, unit } = extractFrequency(allocation.selling_plan.name);
-					return unit === 'day' ? value : value * 30; // approximate month as 30 days
-				};
-
-				// Sort allocations by frequency in days (ascending)
-				sellingPlanAllocations.sort((a, b) => {
-					return getAllocationDays(a) - getAllocationDays(b);
-				});
 
 				// Find selling plan that matches the bottle quantity (recommended frequency)
 				let recommendedSellingPlanId = '';
@@ -896,11 +907,21 @@
 						frequencyBox.classList.add('selected');
 					}
 
-					// Change label format based on the frequency unit
+					// Match the original formatting style:
+					// - For months less than 2, use days (30, 45, 60, 90 days)
+					// - For 2+ months, use months format
 					let displayText = '';
-					if (unit === 'day') {
+
+					// Special case to match original: convert 1 month to 30 days
+					if (unit === 'month' && value === 1) {
+						displayText = 'Every 30 Days';
+					}
+					// For days or specific month values, keep the original format
+					else if (unit === 'day') {
 						displayText = value === 1 ? 'Every Day' : `Every ${value} Days`;
-					} else { // month
+					}
+					// For months, keep as months
+					else {
 						displayText = value === 1 ? 'Every Month' : `Every ${value} Months`;
 					}
 
