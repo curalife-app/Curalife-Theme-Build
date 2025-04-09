@@ -510,6 +510,43 @@
 			// Create product data structure if it doesn't exist
 			if (!window.productData) window.productData = {};
 
+            // Initialize with product structure from Liquid template
+			{% if prod and prod.id %}
+            console.log('Using Liquid template data for initialization');
+            window.productData['{{ prod.id }}'] = {
+                id: {{ prod.id | json }},
+                handle: {{ prod.handle | json }},
+                title: {{ prod.title | json }},
+                variants: [
+                    {% for variant in prod.variants %}
+                    {
+                        id: {{ variant.id | json }},
+                        title: {{ variant.title | json }},
+                        price: {{ variant.price | json }},
+                        sku: {{ variant.sku | json }},
+                        {% if variant.selling_plan_allocations.size > 0 %}
+                        selling_plan_allocations: [
+                            {% for allocation in variant.selling_plan_allocations %}
+                            {
+                                selling_plan: {
+                                    id: {{ allocation.selling_plan.id | json }},
+                                    name: {{ allocation.selling_plan.name | json }}
+                                },
+                                price: {{ allocation.price | json }},
+                                compare_at_price: {{ allocation.compare_at_price | json }}
+                            }{% unless forloop.last %},{% endunless %}
+                            {% endfor %}
+                        ]
+                        {% else %}
+                        selling_plan_allocations: []
+                        {% endif %}
+                    }{% unless forloop.last %},{% endunless %}
+                    {% endfor %}
+                ],
+                initialized: true
+            };
+            {% endif %}
+
 			// Key step: Make the product data available to buy-box.js
 			// This is crucial for frequency options to render correctly
 			if (!window.productData[productId]) {
@@ -554,34 +591,33 @@
 						// Check if the box has allowed selling plans
 						const allowedSellingPlansStr = box.dataset.allowedSellingPlans;
 
-						// Default selling plan from the box
-						const defaultSellingPlanId = box.dataset.subscriptionSellingPlanId;
-
+						// IMPORTANT: Directly read and parse the allowed selling plans from the DOM attribute
+						let allowedPlans = [];
 						if (allowedSellingPlansStr && allowedSellingPlansStr.trim()) {
-							// Parse allowed selling plan IDs
-							const allowedPlans = allowedSellingPlansStr
+							console.log('Reading allowed selling plans from DOM attribute:', allowedSellingPlansStr);
+							allowedPlans = allowedSellingPlansStr
 								.split(',')
 								.map(id => id.trim())
 								.filter(id => id && !isNaN(parseInt(id)));
+							console.log('Parsed allowed selling plans:', allowedPlans);
+						}
 
-							// Add each allowed selling plan to the variant's allocations
+						// Default selling plan from the box
+						const defaultSellingPlanId = box.dataset.subscriptionSellingPlanId;
+
+						// Create dummy selling plan allocations for this variant
+						// This ensures they'll be available to the frequency selector
+						if (allowedPlans.length > 0) {
 							allowedPlans.forEach((planId, index) => {
-								// Create descriptive name based on bottle quantity and frequency
-								// For allowed plans other than the default, we'll create variations
-								const isDefault = planId === defaultSellingPlanId;
+								// Create descriptive name based on bottle quantity
 								let planName;
-
-								// For the default one, use the bottle quantity as months
-								if (isDefault) {
-									planName = `${bottleQuantity} Month${bottleQuantity > 1 ? 's' : ''}`;
+								if (bottleQuantity <= 1) {
+									planName = `30 Days`;  // For 1-bottle variants, use days
 								} else {
-									// For others, create alternative frequencies
-									// This is an estimation - in a real scenario, you'd know the actual frequencies
-									const frequencies = [30, 60, 90]; // days
-									const frequency = frequencies[index % frequencies.length];
-									planName = `${frequency} Days`;
+									planName = `${bottleQuantity} Months`;  // For multi-bottle variants, use months
 								}
 
+								// Add allocation to variant
 								variantData.selling_plan_allocations.push({
 									selling_plan: {
 										id: planId,
@@ -590,6 +626,8 @@
 									price: parseFloat(box.dataset.subscriptionPrice || '0') * 100,
 									compare_at_price: parseFloat(box.dataset.originalItemCap || '0') * 100 * bottleQuantity
 								});
+
+								console.log(`Added selling plan allocation: ID=${planId}, name=${planName}`);
 							});
 						} else if (defaultSellingPlanId) {
 							// If no allowed plans specified but we have a default one
@@ -601,15 +639,18 @@
 								price: parseFloat(box.dataset.subscriptionPrice || '0') * 100,
 								compare_at_price: parseFloat(box.dataset.originalItemCap || '0') * 100 * bottleQuantity
 							});
+							console.log(`Added default selling plan allocation: ID=${defaultSellingPlanId}`);
 						}
 					}
 
 					// Add to product data
 					window.productData[productId].variants.push(variantData);
+					console.log(`Added variant to product data: ${variantData.id}`);
 				});
 
 				// Mark as initialized
 				window.productData[productId].initialized = true;
+				console.log(`Product data initialized for product ${productId}`);
 			}
 
 			// Set up frequency options functionality
