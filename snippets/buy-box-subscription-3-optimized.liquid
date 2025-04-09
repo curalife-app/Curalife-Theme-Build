@@ -727,7 +727,6 @@
 				const bottles = parseInt(selectedBox.dataset.bottleQuantity, 10) || 1;
 				const totalOrig = origPerItem * bottles;
 
-				// Log inputs for debugging
 				console.log('Price calculation inputs:', {
 					variant: selectedBox.id,
 					subscriptionDiscount,
@@ -756,7 +755,6 @@
 				// For display, we use either the per-item savings or total savings depending on format
 				const displaySavings = priceFormat === 'total' ? totalSavings : savingsPerItem;
 
-				// Log calculated values for debugging
 				console.log('Price calculations:', {
 					regularPerItem,
 					regularTotalPrice,
@@ -775,34 +773,69 @@
 				// Use Math.round to avoid floating point issues in display
 				const savingsAmountDisplay = Math.round(displaySavings);
 
-				// Update price display with first month discount
+				// Find elements
 				const mainPriceEl = priceDisplayEl.querySelector('.price');
 				const discountBadgeEl = priceDisplayEl.querySelector('.discount-badge');
 				const totalLineEl = priceDisplayEl.querySelector('.total-line');
 
+				// Update main price immediately with first month price
 				if (mainPriceEl) {
 					mainPriceEl.textContent = firstMonthPriceFormatted;
 				}
 
-				if (discountBadgeEl && priceFormat === 'total' && savingsAmountDisplay > 0) {
-					discountBadgeEl.textContent = `SAVE ${currencySymbol}${savingsAmountDisplay}`;
-					console.log(`Setting discount badge: SAVE ${currencySymbol}${savingsAmountDisplay}`);
-				}
+				// Create a function to force-update the discount badge
+				const forceSavingsUpdate = () => {
+					if (discountBadgeEl && priceFormat === 'total' && savingsAmountDisplay > 0) {
+						// Force the update by replacing the element's entire content
+						const savingsText = `SAVE ${currencySymbol}${savingsAmountDisplay}`;
+						console.log(`Forcing discount badge update: ${savingsText}`, discountBadgeEl);
 
-				if (totalLineEl && priceFormat === 'per_bottle' && totalSavings > 0) {
-					totalLineEl.innerHTML = `Total ${currencySymbol}${firstMonthTotalPrice.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">${currencySymbol}${totalOrig.toFixed(2)}</span>`;
+						// Set text content and make sure it's visible
+						discountBadgeEl.textContent = savingsText;
+						discountBadgeEl.style.opacity = '1';
+						discountBadgeEl.style.display = 'inline-flex';
+					}
+
+					if (totalLineEl && priceFormat === 'per_bottle' && totalSavings > 0) {
+						// For per-bottle pricing, update the total line
+						totalLineEl.innerHTML = `Total ${currencySymbol}${firstMonthTotalPrice.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">${currencySymbol}${totalOrig.toFixed(2)}</span>`;
+						totalLineEl.style.opacity = '1';
+					}
+				};
+
+				// Call immediately and also with a delay
+				forceSavingsUpdate();
+
+				// Then call it again after a short delay to ensure our value takes precedence
+				setTimeout(forceSavingsUpdate, 10);
+				setTimeout(forceSavingsUpdate, 100);
+
+				// Set up an observer on the discount badge element to react if it changes
+				if (discountBadgeEl && priceFormat === 'total') {
+					const badgeObserver = new MutationObserver((mutations) => {
+						mutations.forEach((mutation) => {
+							if (mutation.type === 'childList' || mutation.type === 'characterData') {
+								const currentText = discountBadgeEl.textContent;
+								const expectedText = `SAVE ${currencySymbol}${savingsAmountDisplay}`;
+
+								if (currentText !== expectedText) {
+									console.log(`Badge changed to "${currentText}", forcing back to "${expectedText}"`);
+									discountBadgeEl.textContent = expectedText;
+								}
+							}
+						});
+					});
+
+					// Observe both text content changes and child changes
+					badgeObserver.observe(discountBadgeEl, {
+						characterData: true,
+						childList: true,
+						subtree: true
+					});
 				}
 
 				// Update future price notice
 				futureNotice.textContent = `Special price for first order. Refills for ${regularPriceFormatted}${priceFormat === 'per_bottle' ? '/bottle' : ''}.`;
-
-				// Force the discount badge to be visible
-				if (discountBadgeEl) {
-					discountBadgeEl.style.opacity = '1';
-				}
-				if (totalLineEl) {
-					totalLineEl.style.opacity = '1';
-				}
 			};
 
 			// Create a MutationObserver to watch for class changes on the variant boxes
