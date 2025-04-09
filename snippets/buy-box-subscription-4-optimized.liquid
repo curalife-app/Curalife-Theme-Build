@@ -521,48 +521,8 @@
 
 			console.log('Product data initialized for SID:', SID);
 
-			// Custom code to manage frequency container visibility
-			function manageFrequencyContainer() {
-				// Get the frequency container
-				const frequencyContainer = section.querySelector('[data-frequency-container]');
-				if (!frequencyContainer) return;
-
-				// Get the selected box (may have changed since function start)
-				const currentSelected = section.querySelector('.variant-box.selected') || selectedBox;
-
-				// Show frequency container if subscription box is selected
-				if (currentSelected.dataset.purchaseType === 'subscribe') {
-					console.log('Showing frequency container for subscription product');
-					frequencyContainer.classList.remove('hidden');
-
-					// Populate the frequency options if not already done
-					const frequencyOptions = section.querySelector('#frequency-options-' + SID);
-					if (frequencyOptions && frequencyOptions.children.length === 0) {
-						// If empty, we need to create at least a default option
-						const bottleQuantity = parseInt(currentSelected.dataset.bottleQuantity || '1');
-						const sellingPlanId = currentSelected.dataset.subscriptionSellingPlanId;
-
-						if (sellingPlanId) {
-							const option = document.createElement('div');
-							option.className = 'rounded-md cursor-pointer py-2 min-w-[90px] max-w-[168px] text-center w-full';
-							option.style.backgroundColor = 'var(--primary-color)';
-							option.style.color = 'white';
-							option.dataset.sellingPlanId = sellingPlanId;
-							option.dataset.frequencyValue = bottleQuantity;
-							option.dataset.frequencyUnit = 'month';
-							option.innerHTML = `
-								<div class="p-1">
-									<span class="font-semibold">Every ${bottleQuantity} Month${bottleQuantity > 1 ? 's' : ''}</span>
-								</div>
-							`;
-							frequencyOptions.appendChild(option);
-						}
-					}
-				} else {
-					// Hide frequency container for non-subscription products
-					frequencyContainer.classList.add('hidden');
-				}
-			}
+			// Set up frequency options functionality
+			setupFrequencyOptions(SID);
 
 			// If CuralifeBoxes is initialized, re-select the variant box to trigger frequency options
 			if (window.CuralifeBoxes && window.CuralifeBoxes.instances && window.CuralifeBoxes.instances[SID]) {
@@ -574,27 +534,331 @@
 					// Give the system time to process
 					setTimeout(() => {
 						boxInstance.togglePurchaseBox(selectedBox);
-
-						// Ensure frequency container visibility after toggle
-						setTimeout(manageFrequencyContainer, 50);
 					}, 100);
-				} else {
-					// If togglePurchaseBox isn't available, use our direct management
-					manageFrequencyContainer();
 				}
-			} else {
-				// If CuralifeBoxes isn't available, use our direct management
-				manageFrequencyContainer();
+			}
+		}
+
+		// Setup frequency options functionality (copied from original)
+		function setupFrequencyOptions(SID) {
+			const section = document.getElementById(`cta-section-${SID}`);
+			if (!section) return;
+
+			// Add the frequency selection functionality
+			section.addEventListener('click', function(e) {
+				const frequencyOption = e.target.closest('#frequency-options-' + SID + ' > div');
+				if (!frequencyOption) return;
+
+				selectFrequencyOption(frequencyOption, SID);
+			});
+
+			// Add a function to populate the frequency selector based on selected variant
+			section.querySelectorAll('.variant-box').forEach(box => {
+				box.addEventListener('click', function() {
+					setTimeout(() => populateFrequencySelector(this, SID), 50);
+				});
+			});
+
+			// Initial population for selected box
+			const selectedBox = section.querySelector('.variant-box.selected') || section.querySelector('.variant-box');
+			if (selectedBox) {
+				populateFrequencySelector(selectedBox, SID);
+			}
+		}
+
+		// Function to handle frequency option selection
+		function selectFrequencyOption(option, SID) {
+			const section = document.getElementById(`cta-section-${SID}`);
+			if (!section) return;
+
+			// Get all options in the container
+			const allOptions = option.parentElement.querySelectorAll('div');
+
+			// Update the visual state of all options
+			allOptions.forEach(opt => {
+				if (opt === option) {
+					opt.style.backgroundColor = 'var(--primary-color)';
+					opt.style.color = 'white';
+				} else {
+					opt.style.backgroundColor = 'var(--bg-color)';
+					opt.style.color = 'var(--primary-color)';
+				}
+			});
+
+			// Update the form field and selected box with new selling plan ID
+			const sellingPlanId = option.dataset.sellingPlanId;
+			const submitSellingPlanId = section.querySelector('.submit-selling-plan-id');
+			const selectedBox = section.querySelector('.variant-box.selected');
+
+			if (submitSellingPlanId) {
+				submitSellingPlanId.value = sellingPlanId;
 			}
 
-			// Add click listeners to all variant boxes to manage frequency container visibility
-			allVariantBoxes.forEach(box => {
-				// Using capture phase to ensure we get the event first
-				box.addEventListener('click', function() {
-					// Short delay to allow CuralifeBoxes to do its work first
-					setTimeout(manageFrequencyContainer, 50);
-				}, true);
-			});
+			if (selectedBox) {
+				selectedBox.dataset.subscriptionSellingPlanId = sellingPlanId;
+			}
+
+			// Update the frequency description
+			updateFrequencyDescription(SID);
+		}
+
+		// Function to update the frequency description text
+		function updateFrequencyDescription(SID) {
+			const section = document.getElementById(`cta-section-${SID}`);
+			if (!section) return;
+
+			const descriptionEl = section.querySelector('.frequency-description');
+			if (!descriptionEl) return;
+
+			const frequencyOptions = section.querySelector('#frequency-options-' + SID);
+			if (!frequencyOptions) return;
+
+			const selectedOption = Array.from(frequencyOptions.children).find(el =>
+				el.style.backgroundColor === 'var(--primary-color)'
+			);
+
+			if (!selectedOption) return;
+
+			const selectedFrequencyValue = parseInt(selectedOption.dataset.frequencyValue || '1', 10);
+			const selectedFrequencyUnit = selectedOption.dataset.frequencyUnit || 'month';
+			const selectedBox = section.querySelector('.variant-box.selected');
+			const bottleQuantity = parseInt(selectedBox?.dataset.bottleQuantity || '1', 10);
+
+			let description = '';
+
+			// If selected frequency matches recommended frequency (only for months)
+			if (selectedFrequencyUnit === 'month' && selectedFrequencyValue === bottleQuantity) {
+				description = ''; // No text when on recommended frequency
+			} else {
+				// Otherwise show the recommendation
+				description = `Recommended - every ${bottleQuantity} month${bottleQuantity > 1 ? 's' : ''}`;
+			}
+
+			// Animate the description update
+			descriptionEl.style.opacity = '0';
+			setTimeout(() => {
+				descriptionEl.innerHTML = description;
+				descriptionEl.style.opacity = '1';
+			}, 200);
+		}
+
+		// Function to extract frequency value and unit from plan name
+		function extractFrequency(planName) {
+			// Try matching days pattern first
+			let daysMatch = planName.match(/(\d+)\s*Day/i);
+			if (daysMatch) {
+				return {
+					value: parseInt(daysMatch[1], 10),
+					unit: 'day'
+				};
+			}
+
+			// Try matching months pattern
+			let monthsMatch = planName.match(/(\d+)\s*Month/i);
+			if (monthsMatch) {
+				return {
+					value: parseInt(monthsMatch[1], 10),
+					unit: 'month'
+				};
+			}
+
+			// Default fallback
+			return { value: 1, unit: 'month' };
+		}
+
+		// Function to populate frequency options based on the selected variant
+		function populateFrequencySelector(el, SID) {
+			try {
+				const section = document.getElementById(`cta-section-${SID}`);
+				if (!section) return;
+
+				// Use the data attribute for more specific selection
+				const frequencyContainer = section.querySelector('[data-frequency-container]');
+				if (!frequencyContainer) return;
+
+				const frequencyOptions = section.querySelector('#frequency-options-' + SID);
+				if (!frequencyOptions) return;
+
+				const variant = el.dataset.originalVariant || el.dataset.variant;
+				const isSub = el.dataset.purchaseType === 'subscribe';
+				const bottleQuantity = parseInt(el.dataset.bottleQuantity || '1', 10);
+
+				if (!isSub) {
+					frequencyContainer.classList.add('hidden');
+					return;
+				}
+
+				const productId = el.dataset.product;
+				const variantId = parseInt(variant);
+
+				console.log('Populating frequency selector:', {
+					productId,
+					variant,
+					bottleQuantity
+				});
+
+				// Try to find the variant in product data
+				let selectedVariant = null;
+				if (window.productData && window.productData[productId]) {
+					const product = window.productData[productId];
+					if (product.variants) {
+						// First try exact match
+						selectedVariant = product.variants.find(v => v.id === variantId);
+
+						if (!selectedVariant) {
+							console.log('Variant not found in product data. Available variants:', product.variants.map(v => v.id));
+
+							// Try original variant as fallback
+							const originalVariantId = parseInt(el.dataset.originalVariant || '0');
+							if (originalVariantId > 0) {
+								selectedVariant = product.variants.find(v => v.id === originalVariantId);
+
+								if (selectedVariant) {
+									console.log('Found variant using original variant ID fallback');
+								}
+							}
+						}
+					}
+				}
+
+				if (!selectedVariant) {
+					console.log('Variant not found in product data, using fallback');
+					handleFallbackFrequencyOptions(el, frequencyOptions, frequencyContainer, SID);
+					return;
+				}
+
+				// Check if variant has selling plan allocations
+				if (!selectedVariant.selling_plan_allocations || selectedVariant.selling_plan_allocations.length === 0) {
+					console.warn('Selected variant has no selling plan allocations:', selectedVariant.id);
+					handleFallbackFrequencyOptions(el, frequencyOptions, frequencyContainer, SID);
+					return;
+				}
+
+				// Find selling plan that matches the bottle quantity (recommended frequency)
+				let recommendedSellingPlanId = '';
+				if (selectedVariant.selling_plan_allocations) {
+					for (const allocation of selectedVariant.selling_plan_allocations) {
+						const { value, unit } = extractFrequency(allocation.selling_plan.name);
+
+						// If unit is months and matches bottle quantity
+						if (unit === 'month' && value === bottleQuantity) {
+							recommendedSellingPlanId = allocation.selling_plan.id.toString();
+							break;
+						}
+					}
+				}
+
+				// If we found a recommended selling plan, set it as the current
+				if (recommendedSellingPlanId && !el.dataset.subscriptionSellingPlanId) {
+					el.dataset.subscriptionSellingPlanId = recommendedSellingPlanId;
+				}
+
+				// Build frequency options
+				frequencyOptions.innerHTML = '';
+				const currentSellingPlanId = el.dataset.subscriptionSellingPlanId;
+				const fragment = document.createDocumentFragment();
+
+				selectedVariant.selling_plan_allocations.forEach(allocation => {
+					if (!allocation || !allocation.selling_plan) return;
+
+					const plan = allocation.selling_plan;
+
+					// Extract frequency value and unit from plan name
+					const { value, unit } = extractFrequency(plan.name);
+
+					const frequencyBox = document.createElement('div');
+					frequencyBox.className = 'rounded-md cursor-pointer py-2 min-w-[90px] max-w-[168px] text-center w-full transition-all duration-300 ease-in-out';
+
+					// Default state
+					frequencyBox.style.backgroundColor = 'var(--bg-color)';
+					frequencyBox.style.color = 'var(--primary-color)';
+
+					// Set data attributes
+					frequencyBox.dataset.sellingPlanId = plan.id;
+					frequencyBox.dataset.frequencyValue = value;
+					frequencyBox.dataset.frequencyUnit = unit;
+
+					// Set the current selling plan ID to recommended months if it's a new selection
+					// or keep existing selection if it was already set
+					const isRecommendedMonthPlan = (unit === 'month' && value === bottleQuantity);
+					const shouldSelectRecommended = !currentSellingPlanId || isRecommendedMonthPlan;
+
+					if ((plan.id && plan.id.toString() === currentSellingPlanId) ||
+						(shouldSelectRecommended && isRecommendedMonthPlan)) {
+						frequencyBox.style.backgroundColor = 'var(--primary-color)';
+						frequencyBox.style.color = 'white';
+
+						// Update the current box with the recommended selling plan ID
+						if (shouldSelectRecommended && isRecommendedMonthPlan) {
+							el.dataset.subscriptionSellingPlanId = plan.id.toString();
+							const submitSellingPlanId = section.querySelector('.submit-selling-plan-id');
+							if (submitSellingPlanId) {
+								submitSellingPlanId.value = plan.id.toString();
+							}
+						}
+					}
+
+					// Change label format based on the frequency unit
+					let displayText = '';
+					if (unit === 'day') {
+						displayText = value === 1 ? 'Every Day' : `Every ${value} Days`;
+					} else { // month
+						displayText = value === 1 ? 'Every Month' : `Every ${value} Months`;
+					}
+
+					frequencyBox.innerHTML = `
+						<div class="p-1">
+							<span class="font-semibold">${displayText}</span>
+						</div>
+					`;
+
+					fragment.appendChild(frequencyBox);
+				});
+
+				frequencyOptions.appendChild(fragment);
+				frequencyContainer.classList.remove('hidden');
+
+				// Update the description
+				updateFrequencyDescription(SID);
+			} catch (error) {
+				console.error('Error in populateFrequencySelector:', error);
+				handleFallbackFrequencyOptions(el, frequencyOptions, frequencyContainer, SID);
+			}
+		}
+
+		// Helper function for fallback frequency option handling
+		function handleFallbackFrequencyOptions(el, frequencyOptions, frequencyContainer, SID) {
+			if (!frequencyOptions || !frequencyContainer) return;
+
+			if (el.dataset.purchaseType === 'subscribe') {
+				const bottleQuantity = parseInt(el.dataset.bottleQuantity || '1', 10);
+				const currentSellingPlanId = el.dataset.subscriptionSellingPlanId;
+
+				if (currentSellingPlanId) {
+					frequencyOptions.innerHTML = '';
+					const fallbackBox = document.createElement('div');
+					fallbackBox.className = 'rounded-md cursor-pointer py-2 min-w-[90px] max-w-[168px] text-center w-full transition-all duration-300 ease-in-out';
+					fallbackBox.style.backgroundColor = 'var(--primary-color)';
+					fallbackBox.style.color = 'white';
+					fallbackBox.dataset.sellingPlanId = currentSellingPlanId;
+					fallbackBox.dataset.frequencyValue = bottleQuantity.toString();
+					fallbackBox.dataset.frequencyUnit = 'month'; // Default to months
+					fallbackBox.innerHTML = `
+						<div class="p-1">
+							<span class="font-semibold">Every ${bottleQuantity} Month${bottleQuantity > 1 ? 's' : ''}</span>
+						</div>
+					`;
+					frequencyOptions.appendChild(fallbackBox);
+					frequencyContainer.classList.remove('hidden');
+
+					// Update description
+					setTimeout(() => updateFrequencyDescription(SID), 100);
+				} else {
+					frequencyContainer.classList.add('hidden');
+				}
+			} else {
+				frequencyContainer.classList.add('hidden');
+			}
 		}
 	});
 </script>
