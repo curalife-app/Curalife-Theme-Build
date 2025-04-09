@@ -145,7 +145,7 @@
 
 						<div
 						id="variant-box-{{ SID }}-{{ forloop.index }}"
-						class="variant-box flex flex-col items-center variant-tab-style text-center w-full {{ varPurchaseType }}"
+						class="variant-box flex flex-col items-center variant-tab-style text-center w-full {% if forloop.index == 1 %}selected{% endif %} {{ varPurchaseType }}"
 						data-variant="{{ blockVarID }}"
 						data-product="{{ prod.id }}"
 						data-original-variant="{{ var.id }}"
@@ -164,6 +164,7 @@
 						data-price-per="{{ pricePer }}"
 						data-bottle-quantity="{{ bottle_quantity }}"
 						data-purchase-type="{{ varPurchaseType }}"
+						data-buy-type="{{ buyType }}"
 						{% if block.settings.allowed_selling_plan_ids != blank %}
 						data-allowed-selling-plans="{{ block.settings.allowed_selling_plan_ids | strip | escape }}"
 						{% endif %}
@@ -225,7 +226,7 @@
 		{% endif %}
 
 		<!-- Subscription Frequency Selector with direct Tailwind classes -->
-		<div class="subscription-frequency-container hidden my-4 transition-all duration-300 ease-in-out" data-frequency-container>
+		<div class="mbl:my-0 hidden my-2 transition-all duration-300 ease-in-out subscription-frequency-container" data-frequency-container>
 			<div class="mb-3 font-semibold text-[18px]">Choose delivery frequency</div>
 			<div class="subscription-frequency-selector">
 				<div id="frequency-options-{{ SID }}" class="flex justify-start gap-2">
@@ -1089,17 +1090,22 @@
 				if (currentSellingPlanId) {
 					frequencyOptions.innerHTML = '';
 					const fallbackBox = document.createElement('div');
-					fallbackBox.className = 'frequency-option variant-tab-style selected rounded-md cursor-pointer p-2 min-w-[90px] text-center transition-all duration-300 ease-in-out';
-					fallbackBox.dataset.sellingPlanId = currentSellingPlanId;
-					fallbackBox.dataset.frequencyValue = bottleQuantity.toString();
-					fallbackBox.dataset.frequencyUnit = 'month'; // Default to months
+					fallbackBox.className = 'frequency-box rounded-md cursor-pointer py-2 min-w-[90px] max-w-[168px] text-center w-full transition-all duration-300 ease-in-out';
+					fallbackBox.style.backgroundColor = 'var(--primary-color)';
+					fallbackBox.style.color = 'white';
+					fallbackBox.setAttribute('data-selling-plan-id', currentSellingPlanId);
+					fallbackBox.setAttribute('data-frequency-value', bottleQuantity.toString()); // Use bottle quantity as default recommended frequency
+					fallbackBox.setAttribute('data-frequency-unit', 'month'); // Default to months
+					fallbackBox.innerHTML = `
+						<div class="p-1">
+							<span class="font-semibold">Every ${bottleQuantity} Month${bottleQuantity > 1 ? 's' : ''}</span>
+						</div>
+					`;
 
-					// Format text based on bottle quantity
-					const displayText = bottleQuantity <= 1
-						? `Every 30 Days`
-						: `Every ${bottleQuantity} Month${bottleQuantity > 1 ? 's' : ''}`;
-
-					fallbackBox.innerHTML = `<span class="font-semibold">${displayText}</span>`;
+					// Make sure fallback box has click handler
+					fallbackBox.addEventListener('click', function() {
+						selectFrequencyOption(this);
+					});
 
 					frequencyOptions.appendChild(fallbackBox);
 					frequencyContainer.classList.remove('hidden');
