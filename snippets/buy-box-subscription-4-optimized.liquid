@@ -165,61 +165,15 @@
 		</div>
 
 		<!-- Frequency Selector -->
-		<div class="frequency-selector mb-3">
-			<div class="font-semibold text-[16px] mb-2">Delivery Frequency</div>
-			<div class="frequency-options flex flex-col gap-2">
-				{% assign selectedVariant = false %}
-				{% for block in blocks %}
-					{% if block.type == 'variant' and block.settings.purchase_type == 'subscribe' %}
-						{% if isGlobal %}
-							{% assign blockVarID = block.settings.variant_id_global | plus: 0 %}
-						{% else %}
-							{% assign blockVarID = block.settings.variant_id | plus: 0 %}
-						{% endif %}
-
-						{% for vari in referenced_variant_product.variants %}
-							{% assign currVarID = vari.id | plus: 0 %}
-							{% if currVarID == blockVarID %}
-								{% assign selectedVariant = vari %}
-								{% break %}
-							{% endif %}
-						{% endfor %}
-
-						{% if selectedVariant %}
-							{% break %}
-						{% endif %}
-					{% endif %}
-				{% endfor %}
-
-				{% if selectedVariant and selectedVariant.selling_plan_allocations.size > 0 %}
-					<div class="frequency-select-wrapper border border-[--primary-color-light] rounded-md overflow-hidden">
-						<select class="frequency-select w-full p-3 outline-none border-none bg-white cursor-pointer" data-variant-id="{{ selectedVariant.id }}">
-							{% for allocation in selectedVariant.selling_plan_allocations %}
-								{% assign plan = allocation.selling_plan %}
-								<option
-									value="{{ plan.id }}"
-									{% if plan.id == selling_plan_id %}
-										selected
-									{% endif %}
-									data-selling-plan-id="{{ plan.id }}"
-									data-price="{{ allocation.price | money_without_currency }}"
-									data-compare-at-price="{{ allocation.compare_at_price | money_without_currency }}">
-									{% if plan.name contains 'day' %}
-										Every {{ plan.name | remove: 'Subscribe and save (' | remove: ' day)' | strip }} days
-									{% elsif plan.name contains 'week' %}
-										Every {{ plan.name | remove: 'Subscribe and save (' | remove: ' week)' | strip }} week
-										{% if plan.name contains '2 week' or plan.name contains '3 week' or plan.name contains '4 week' %}s{% endif %}
-									{% elsif plan.name contains 'month' %}
-										Every {{ plan.name | remove: 'Subscribe and save (' | remove: ' month)' | strip }} month
-										{% if plan.name contains '2 month' or plan.name contains '3 month' or plan.name contains '4 month' %}s{% endif %}
-									{% else %}
-										{{ plan.name | remove: 'Subscribe and save ' }}
-									{% endif %}
-								</option>
-							{% endfor %}
-						</select>
-					</div>
-				{% endif %}
+		<div class="mbl:my-0 hidden my-2 transition-all duration-300 ease-in-out" data-frequency-container>
+			<div class="mb-3 font-semibold">Choose delivery frequency</div>
+			<div class="subscription-frequency-selector">
+				<div id="frequency-options-{{ SID }}" class="flex justify-start gap-2">
+					<!-- Options will be dynamically populated by JavaScript -->
+				</div>
+			</div>
+			<div class="frequency-description text-[14px] text-gray-600 mt-2 transition-opacity duration-300 ease-in-out leading-normal min-h-[24px]">
+				<!-- Frequency description will be populated by JavaScript -->
 			</div>
 		</div>
 
@@ -628,36 +582,216 @@
 			productActions.insertAdjacentElement('afterbegin', ctaText);
 		}
 
-		// Handle frequency selector change
-		const frequencySelect = ctasection.querySelector('.frequency-select');
-		if (frequencySelect) {
-			frequencySelect.addEventListener('change', function () {
-				const selectedOption = this.options[this.selectedIndex];
-				const sellingPlanId = selectedOption.dataset.sellingPlanId;
-				const variantId = this.dataset.variantId;
+		// Initialize frequency selector
+		const frequencyContainer = productActions.querySelector('[data-frequency-container]');
+		const frequencyOptions = document.getElementById('frequency-options-{{ SID }}');
 
-				// Update the active variant box with the new selling plan ID
-				const activeVariantBox = productActions.querySelector('.variant-box.selected');
-				if (activeVariantBox) {
-					activeVariantBox.dataset.subscriptionSellingPlanId = sellingPlanId;
+		if (frequencyContainer && frequencyOptions) {
+			const selectedVariantBox = productActions.querySelector('.variant-box.selected');
+			if (selectedVariantBox && selectedVariantBox.dataset.purchaseType === 'subscribe') {
+				// Get variant ID
+				const variantId = selectedVariantBox.dataset.variant;
+				const productId = selectedVariantBox.dataset.product;
+				const bottleQuantity = parseInt(selectedVariantBox.dataset.bottleQuantity || '1', 10);
+				const sellingPlanId = selectedVariantBox.dataset.subscriptionSellingPlanId;
+
+				// Find selected variant
+				if (productId && variantId) {
+					updateFrequencyOptions(productId, variantId, bottleQuantity, sellingPlanId);
 				}
 
-				// Update the hidden input for selling plan ID if it exists
-				const sellingPlanInput = productActions.querySelector('.submit-selling-plan-id');
-				if (sellingPlanInput) {
-					sellingPlanInput.value = sellingPlanId;
+				// Show the frequency container for subscription products
+				frequencyContainer.classList.remove('hidden');
+			}
+		}
+
+		// Function to update frequency options
+		function updateFrequencyOptions(productId, variantId, bottleQuantity, currentSellingPlanId) {
+			// Get the variant data
+			const selectedVariant = window.CuralifeBoxes?.instances?.{{ SID }}?.variantData?.[variantId];
+
+			if (!selectedVariant && Shopify.Product && Shopify.Product.variants) {
+				// Try to get variant from Shopify global object
+				const shopifyVariant = Shopify.Product.variants.find(v => v.id == variantId);
+				if (shopifyVariant && shopifyVariant.selling_plan_allocations) {
+					createFrequencyOptions(shopifyVariant.selling_plan_allocations, currentSellingPlanId, bottleQuantity);
+					return;
+				}
+			}
+
+			// Fallback to creating a single option based on the bottle quantity
+			if (!selectedVariant || !selectedVariant.selling_plan_allocations) {
+				createFallbackOption(bottleQuantity, currentSellingPlanId);
+				return;
+			}
+
+			createFrequencyOptions(selectedVariant.selling_plan_allocations, currentSellingPlanId, bottleQuantity);
+		}
+
+		// Create frequency options from selling plan allocations
+		function createFrequencyOptions(allocations, currentSellingPlanId, recommendedFrequency) {
+			if (!frequencyOptions) return;
+
+			// Clear existing options
+			frequencyOptions.innerHTML = '';
+
+			// Create boxes for each selling plan
+			allocations.forEach(allocation => {
+				const plan = allocation.selling_plan;
+				let frequencyValue = 0;
+				let frequencyUnit = 'month';
+
+				// Extract frequency from plan name
+				const nameMatch = plan.name.match(/(\d+)\s+(day|week|month)/i);
+				if (nameMatch) {
+					frequencyValue = parseInt(nameMatch[1], 10);
+					frequencyUnit = nameMatch[2].toLowerCase();
+				} else {
+					// Default to bottle quantity if we can't extract from name
+					frequencyValue = recommendedFrequency;
 				}
 
-				// If using buy-box.js, trigger price updates
-				// This works because the buy-box.js updates based on the active variant box
-				if (window.CuralifeBoxes) {
-					const SID = ctasection.id.replace('cta-section-', '');
-					const instance = window.CuralifeBoxes.instances[SID];
-					if (instance) {
-						instance.updatePriceDisplay(activeVariantBox);
-					}
+				// Create the frequency option box
+				const box = document.createElement('div');
+				box.className = 'frequency-box rounded-md cursor-pointer py-2 px-3 text-center transition-all duration-300 ease-in-out';
+				box.setAttribute('data-selling-plan-id', plan.id);
+				box.setAttribute('data-frequency-value', frequencyValue);
+				box.setAttribute('data-frequency-unit', frequencyUnit);
+
+				// Check if this is the selected plan
+				const isSelected = plan.id == currentSellingPlanId;
+				if (isSelected) {
+					box.classList.add('selected');
+					box.style.backgroundColor = 'var(--primary-color)';
+					box.style.color = 'white';
+				} else {
+					box.style.border = '1px solid var(--primary-color-light)';
+					box.style.color = 'var(--text-color)';
 				}
+
+				// Format the display text
+				let displayText;
+				if (frequencyUnit === 'day') {
+					displayText = `Every ${frequencyValue} day${frequencyValue > 1 ? 's' : ''}`;
+				} else if (frequencyUnit === 'week') {
+					displayText = `Every ${frequencyValue} week${frequencyValue > 1 ? 's' : ''}`;
+				} else { // month
+					displayText = `Every ${frequencyValue} month${frequencyValue > 1 ? 's' : ''}`;
+				}
+
+				box.innerHTML = `<div class="p-1"><span class="font-semibold">${displayText}</span></div>`;
+
+				// Add click handler
+				box.addEventListener('click', function() {
+					selectFrequencyOption(this);
+				});
+
+				frequencyOptions.appendChild(box);
 			});
+
+			// Update the frequency description
+			updateFrequencyDescription();
+		}
+
+		// Create a fallback option when variant data is not available
+		function createFallbackOption(bottleQuantity, currentSellingPlanId) {
+			if (!frequencyOptions || !currentSellingPlanId) return;
+
+			// Clear existing options
+			frequencyOptions.innerHTML = '';
+
+			// Create a single option based on bottle quantity
+			const box = document.createElement('div');
+			box.className = 'frequency-box rounded-md cursor-pointer py-2 px-3 text-center transition-all duration-300 ease-in-out selected';
+			box.style.backgroundColor = 'var(--primary-color)';
+			box.style.color = 'white';
+			box.setAttribute('data-selling-plan-id', currentSellingPlanId);
+			box.setAttribute('data-frequency-value', bottleQuantity);
+			box.setAttribute('data-frequency-unit', 'month');
+
+			box.innerHTML = `
+				<div class="p-1">
+					<span class="font-semibold">Every ${bottleQuantity} month${bottleQuantity > 1 ? 's' : ''}</span>
+				</div>
+			`;
+
+			// Add click handler (though with only one option, this is mostly for consistency)
+			box.addEventListener('click', function() {
+				selectFrequencyOption(this);
+			});
+
+			frequencyOptions.appendChild(box);
+
+			// Update description
+			updateFrequencyDescription();
+		}
+
+		// Select a frequency option
+		function selectFrequencyOption(optionElement) {
+			// Deselect all options
+			const allOptions = frequencyOptions.querySelectorAll('.frequency-box');
+			allOptions.forEach(opt => {
+				opt.classList.remove('selected');
+				opt.style.backgroundColor = '';
+				opt.style.color = 'var(--text-color)';
+				opt.style.border = '1px solid var(--primary-color-light)';
+			});
+
+			// Select this option
+			optionElement.classList.add('selected');
+			optionElement.style.backgroundColor = 'var(--primary-color)';
+			optionElement.style.color = 'white';
+			optionElement.style.border = '1px solid var(--primary-color)';
+
+			// Update selling plan ID on the active variant box
+			const sellingPlanId = optionElement.getAttribute('data-selling-plan-id');
+			const activeVariantBox = productActions.querySelector('.variant-box.selected');
+			if (activeVariantBox && sellingPlanId) {
+				activeVariantBox.dataset.subscriptionSellingPlanId = sellingPlanId;
+			}
+
+			// Update hidden input if it exists
+			const sellingPlanInput = productActions.querySelector('.submit-selling-plan-id');
+			if (sellingPlanInput) {
+				sellingPlanInput.value = sellingPlanId;
+			}
+
+			// Update UI description
+			updateFrequencyDescription();
+
+			// If using buy-box.js, trigger price updates
+			if (window.CuralifeBoxes) {
+				const instance = window.CuralifeBoxes.instances['{{ SID }}'];
+				if (instance) {
+					instance.updatePriceDisplay(activeVariantBox);
+				}
+			}
+		}
+
+		// Update frequency description
+		function updateFrequencyDescription() {
+			const descriptionElement = productActions.querySelector('.frequency-description');
+			if (!descriptionElement) return;
+
+			const selectedOption = frequencyOptions.querySelector('.frequency-box.selected');
+			if (!selectedOption) {
+				descriptionElement.textContent = '';
+				return;
+			}
+
+			const value = selectedOption.getAttribute('data-frequency-value');
+			const unit = selectedOption.getAttribute('data-frequency-unit');
+
+			let description = '';
+			if (unit === 'day') {
+				description = `Your subscription will be delivered every ${value} day${value > 1 ? 's' : ''}.`;
+			} else if (unit === 'week') {
+				description = `Your subscription will be delivered every ${value} week${value > 1 ? 's' : ''}.`;
+			} else { // month
+				description = `Your subscription will be delivered every ${value} month${value > 1 ? 's' : ''}.`;
+			}
+
+			descriptionElement.textContent = description;
 		}
 	});
 </script>
