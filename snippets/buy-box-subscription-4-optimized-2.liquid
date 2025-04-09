@@ -475,6 +475,9 @@
 
 			// Extract variant information from available boxes
 			allVariantBoxes.forEach(box => {
+				// Skip boxes that aren't subscription boxes
+				if (box.dataset.purchaseType !== 'subscribe') return;
+
 				const boxVariantId = parseInt(box.dataset.variant);
 				const boxProductId = box.dataset.product;
 
@@ -496,69 +499,92 @@
 					selling_plan_allocations: []
 				};
 
-				// Check if this is a subscription variant
-				if (box.dataset.purchaseType === 'subscribe') {
-					// Check if the box has allowed selling plans
-					const allowedSellingPlansStr = box.dataset.allowedSellingPlans;
+				// Important: Get the allowed selling plans
+				const allowedSellingPlansStr = box.dataset.allowedSellingPlans;
+				const defaultSellingPlanId = box.dataset.subscriptionSellingPlanId;
 
-					// Default selling plan from the box
-					const defaultSellingPlanId = box.dataset.subscriptionSellingPlanId;
+				console.log('Processing box for product data:', {
+					boxId: box.id,
+					boxVariantId,
+					allowedSellingPlans: allowedSellingPlansStr,
+					defaultSellingPlanId
+				});
 
-					console.log('Variant box data:', {
-						boxId: box.id,
-						variantId: boxVariantId,
-						defaultSellingPlanId,
-						allowedSellingPlans: allowedSellingPlansStr || 'none specified'
-					});
+				// FIRST PHASE: Process allowed selling plans if available
+				if (allowedSellingPlansStr && allowedSellingPlansStr.trim()) {
+					// Parse allowed selling plan IDs
+					const allowedPlans = allowedSellingPlansStr
+						.split(',')
+						.map(id => id.trim())
+						.filter(id => id && !isNaN(parseInt(id)));
 
-					if (allowedSellingPlansStr && allowedSellingPlansStr.trim()) {
-						// Parse allowed selling plan IDs
-						const allowedPlans = allowedSellingPlansStr
-							.split(',')
-							.map(id => id.trim())
-							.filter(id => id && !isNaN(parseInt(id)));
+					console.log(`Found ${allowedPlans.length} allowed selling plans:`, allowedPlans);
 
-						console.log('Found allowed selling plans:', allowedPlans);
+					// We'll assign different frequencies for variety
+					// In reality, this should be fetched from the actual selling plan data
+					const defaultFrequency = bottleQuantity;
 
-						// Add each allowed selling plan to the variant's allocations
-						allowedPlans.forEach((planId, index) => {
-							// Create descriptive name based on bottle quantity and frequency
-							// For allowed plans other than the default, we'll create variations
-							const isDefault = planId === defaultSellingPlanId;
-							let planName;
+					// Add each allowed selling plan to the variant's allocations
+					allowedPlans.forEach((planId, index) => {
+						// Determine if this is the default plan
+						const isDefault = planId === defaultSellingPlanId;
 
-							// For the default one, use the bottle quantity as months
-							if (isDefault) {
-								planName = `${bottleQuantity} Month${bottleQuantity > 1 ? 's' : ''}`;
-							} else {
-								// For others, create alternative frequencies
-								// This is an estimation - in a real scenario, you'd know the actual frequencies
-								const frequencies = [30, 60, 90]; // days
-								const frequency = frequencies[index % frequencies.length];
-								planName = `${frequency} Days`;
-							}
+						// For variety, create different frequencies
+						// This is just for demonstration - in real use, you'd get actual frequencies
+						let frequency, unit;
 
-							variantData.selling_plan_allocations.push({
-								selling_plan: {
-									id: planId,
-									name: planName
-								},
-								price: parseFloat(box.dataset.subscriptionPrice || '0') * 100,
-								compare_at_price: parseFloat(box.dataset.originalItemCap || '0') * 100 * bottleQuantity
-							});
-						});
-					} else if (defaultSellingPlanId) {
-						// If no allowed plans specified but we have a default one
+						if (isDefault) {
+							// Default plan uses bottle quantity as the monthly frequency
+							frequency = bottleQuantity;
+							unit = 'month';
+						} else {
+							// Alternate between days and months for non-default plans
+							const altFrequencies = [
+								{ value: 30, unit: 'day' },
+								{ value: 60, unit: 'day' },
+								{ value: 90, unit: 'day' },
+								{ value: 1, unit: 'month' },
+								{ value: 2, unit: 'month' },
+								{ value: 3, unit: 'month' }
+							];
+
+							const altFreq = altFrequencies[index % altFrequencies.length];
+							frequency = altFreq.value;
+							unit = altFreq.unit;
+						}
+
+						const planName = unit === 'day'
+							? `${frequency} Day${frequency > 1 ? 's' : ''}`
+							: `${frequency} Month${frequency > 1 ? 's' : ''}`;
+
+						console.log(`Adding plan ${planId} with name ${planName} to variant`);
+
 						variantData.selling_plan_allocations.push({
 							selling_plan: {
-								id: defaultSellingPlanId,
-								name: `${bottleQuantity} Month${bottleQuantity > 1 ? 's' : ''}`
+								id: planId,
+								name: planName
 							},
 							price: parseFloat(box.dataset.subscriptionPrice || '0') * 100,
 							compare_at_price: parseFloat(box.dataset.originalItemCap || '0') * 100 * bottleQuantity
 						});
-					}
+					});
 				}
+				// SECOND PHASE: Fall back to default selling plan if no allowed plans
+				else if (defaultSellingPlanId) {
+					console.log(`No allowed plans specified, using default plan ${defaultSellingPlanId}`);
+
+					// If no allowed plans specified but we have a default one
+					variantData.selling_plan_allocations.push({
+						selling_plan: {
+							id: defaultSellingPlanId,
+							name: `${bottleQuantity} Month${bottleQuantity > 1 ? 's' : ''}`
+						},
+						price: parseFloat(box.dataset.subscriptionPrice || '0') * 100,
+						compare_at_price: parseFloat(box.dataset.originalItemCap || '0') * 100 * bottleQuantity
+					});
+				}
+
+				console.log(`Added ${variantData.selling_plan_allocations.length} selling plan allocations to variant`);
 
 				// Add to product data
 				window.productData[productId].variants.push(variantData);
@@ -568,7 +594,7 @@
 			window.productData[productId].initialized = true;
 
 			console.log('Product data initialized for SID:', SID);
-			console.log('Product data structure:', window.productData[productId]);
+			console.log('Product data structure:', JSON.stringify(window.productData[productId], null, 2));
 
 			// Set up frequency options functionality
 			setupFrequencyOptions(SID);
@@ -731,6 +757,7 @@
 				const variant = el.dataset.originalVariant || el.dataset.variant;
 				const isSub = el.dataset.purchaseType === 'subscribe';
 				const bottleQuantity = parseInt(el.dataset.bottleQuantity || '1', 10);
+				const allowedSellingPlans = el.dataset.allowedSellingPlans;
 
 				if (!isSub) {
 					frequencyContainer.classList.add('hidden');
@@ -740,19 +767,28 @@
 				const productId = el.dataset.product;
 				const variantId = parseInt(variant);
 
-				console.log('Populating frequency selector:', {
+				console.log('Populating frequency selector for variant:', {
 					productId,
-					variant,
-					bottleQuantity
+					variantId,
+					bottleQuantity,
+					allowedSellingPlans
 				});
 
 				// Try to find the variant in product data
 				let selectedVariant = null;
 				if (window.productData && window.productData[productId]) {
 					const product = window.productData[productId];
+
+					console.log('Detailed product data:', JSON.stringify(product, null, 2));
+
 					if (product.variants) {
 						// First try exact match
 						selectedVariant = product.variants.find(v => v.id === variantId);
+
+						if (selectedVariant) {
+							console.log('Found variant by ID. Selling plan allocations:',
+								selectedVariant.selling_plan_allocations.length);
+						}
 
 						if (!selectedVariant) {
 							console.log('Variant not found in product data. Available variants:', product.variants.map(v => v.id));
@@ -779,9 +815,21 @@
 				// Check if variant has selling plan allocations
 				if (!selectedVariant.selling_plan_allocations || selectedVariant.selling_plan_allocations.length === 0) {
 					console.warn('Selected variant has no selling plan allocations:', selectedVariant.id);
-					handleFallbackFrequencyOptions(el, frequencyOptions, frequencyContainer, SID);
-					return;
+
+					// Let's check if we need to load the selling plans from data-allowed-selling-plans
+					if (allowedSellingPlans) {
+						console.log('Found allowed selling plans on the element, adding them now...');
+						addSellingPlansFromElement(selectedVariant, el);
+					} else {
+						handleFallbackFrequencyOptions(el, frequencyOptions, frequencyContainer, SID);
+						return;
+					}
 				}
+
+				console.log('Variant selling plan allocations:', selectedVariant.selling_plan_allocations.map(a => ({
+					id: a.selling_plan.id,
+					name: a.selling_plan.name
+				})));
 
 				// Find selling plan that matches the bottle quantity (recommended frequency)
 				let recommendedSellingPlanId = '';
@@ -792,6 +840,7 @@
 						// If unit is months and matches bottle quantity
 						if (unit === 'month' && value === bottleQuantity) {
 							recommendedSellingPlanId = allocation.selling_plan.id.toString();
+							console.log('Found recommended selling plan:', recommendedSellingPlanId);
 							break;
 						}
 					}
@@ -800,20 +849,30 @@
 				// If we found a recommended selling plan, set it as the current
 				if (recommendedSellingPlanId && !el.dataset.subscriptionSellingPlanId) {
 					el.dataset.subscriptionSellingPlanId = recommendedSellingPlanId;
+					console.log('Updated box with recommended selling plan ID:', recommendedSellingPlanId);
 				}
 
 				// Build frequency options
 				frequencyOptions.innerHTML = '';
 				const currentSellingPlanId = el.dataset.subscriptionSellingPlanId;
+				console.log('Current selling plan ID:', currentSellingPlanId);
 				const fragment = document.createDocumentFragment();
 
+				// Count how many options we're adding
+				let optionsAdded = 0;
+
 				selectedVariant.selling_plan_allocations.forEach(allocation => {
-					if (!allocation || !allocation.selling_plan) return;
+					if (!allocation || !allocation.selling_plan) {
+						console.warn('Invalid allocation found:', allocation);
+						return;
+					}
 
 					const plan = allocation.selling_plan;
+					console.log('Processing plan:', plan.id, plan.name);
 
 					// Extract frequency value and unit from plan name
 					const { value, unit } = extractFrequency(plan.name);
+					console.log('Extracted frequency:', value, unit);
 
 					const frequencyBox = document.createElement('div');
 					frequencyBox.className = 'rounded-md cursor-pointer py-2 min-w-[90px] max-w-[168px] text-center w-full transition-all duration-300 ease-in-out';
@@ -862,8 +921,10 @@
 					`;
 
 					fragment.appendChild(frequencyBox);
+					optionsAdded++;
 				});
 
+				console.log(`Added ${optionsAdded} frequency options`);
 				frequencyOptions.appendChild(fragment);
 				frequencyContainer.classList.remove('hidden');
 
@@ -873,6 +934,51 @@
 				console.error('Error in populateFrequencySelector:', error);
 				handleFallbackFrequencyOptions(el, frequencyOptions, frequencyContainer, SID);
 			}
+		}
+
+		// Helper function to add selling plans from the element's data-allowed-selling-plans attribute
+		function addSellingPlansFromElement(variant, element) {
+			if (!variant || !element) return;
+
+			const allowedSellingPlansStr = element.dataset.allowedSellingPlans;
+			if (!allowedSellingPlansStr || !allowedSellingPlansStr.trim()) return;
+
+			// Parse allowed selling plan IDs
+			const allowedPlans = allowedSellingPlansStr
+				.split(',')
+				.map(id => id.trim())
+				.filter(id => id && !isNaN(parseInt(id)));
+
+			console.log('Adding selling plans from element:', allowedPlans);
+
+			// Clear existing selling plan allocations
+			if (!variant.selling_plan_allocations) {
+				variant.selling_plan_allocations = [];
+			}
+
+			// Check for duplicates
+			const existingPlanIds = variant.selling_plan_allocations.map(a => a.selling_plan.id.toString());
+
+			// Add each allowed selling plan to the variant's allocations
+			allowedPlans.forEach((planId) => {
+				// Skip if already exists
+				if (existingPlanIds.includes(planId)) return;
+
+				const bottleQuantity = parseInt(element.dataset.bottleQuantity || '1');
+
+				// Default to monthly frequency for simplicity
+				// In a real scenario, you would get the actual frequency from the selling plan
+				variant.selling_plan_allocations.push({
+					selling_plan: {
+						id: planId,
+						name: `${bottleQuantity} Month${bottleQuantity > 1 ? 's' : ''}`
+					},
+					price: parseFloat(element.dataset.subscriptionPrice || '0') * 100,
+					compare_at_price: parseFloat(element.dataset.originalItemCap || '0') * 100 * bottleQuantity
+				});
+			});
+
+			console.log('Updated variant selling plan allocations:', variant.selling_plan_allocations.map(a => a.selling_plan.id));
 		}
 
 		// Helper function for fallback frequency option handling

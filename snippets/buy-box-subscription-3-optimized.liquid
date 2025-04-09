@@ -3,12 +3,8 @@
 	{% assign isGlobal = true %}
 {% endif %}
 
-{% if prod.handle == 'curalin' or prod.handle == 'curaslim' or prod.handle contains '-tm' %}
-	{% if isGlobal %}
-		{% assign shippingPrice = 690 %}
-	{% else %}
-		{% assign shippingPrice = 790 %}
-	{% endif %}
+{% if product.handle == 'curalin' or product.handle == 'curaslim' %}
+	{% assign shippingPrice = 790 %}
 {% else %}
 	{% assign shippingPrice = 1000 %}
 {% endif %}
@@ -16,7 +12,7 @@
 {% assign referenced_variant_product = prod %}
 
 {% assign giftsAmount = 0 %}
-{% assign faqsAmount = 0 %}
+{% assign faqsAmount = value %}
 {% for block in blocks %}
 	{% case block.type %}
 		{% when 'gift' %}
@@ -39,113 +35,101 @@
 {% endfor %}
 
 <div
-	id="cta-section-{{ SID }}"
-	class="cta-section"
-	data-default-selection="{{ defaultSelectionIndex }}"
-	data-price-format="{{ priceFormat }}"
-	data-save-format="{{ saveFormat }}"
-	data-price-per="{{ pricePer }}"
-	data-thumbs="{{ thumbsLayout }}"
-	data-buy-type="{{ buyType }}"
-	{% if isOneTimePurchase %}data-one-time-purchase{% endif %}
-	{% if isOneTimeGift %}data-one-time-gift{% endif %}
-	{% if isSlideVariant %}data-slide-variant{% endif %}
-	{% if isPrimeEnabled %}data-buy-with-prime{% endif %}
-	{% if isShowReviews %}data-show-reviews{% endif %}
-	{% if isProductThumbs %}data-product-thumbs{% endif %}
-	{% if isHideThumbs %}data-hide-thumbs{% endif %}
-	{% if isHideInfo %}data-hide-info{% endif %}
-	{% if isBuyQuantity %}data-buy-quantity{% endif %}>
+  class="product-actions"
+  data-default-variant-index="{{ defaultSelectionIndex }}"
+  data-gifts-amount="{{ giftsAmount }}"
+  data-buy-type="{{ buyType }}"
+  {% if isOneTimeGift %}
+    data-one-time-gift="true"
+  {% endif %}>
+	<div class="purchase-options flex flex-col gap-3 mb-3">
+		<div class="font-semibold text-[18px]">{{ variantsTitle }}</div>
 
-	<div class="product-actions" data-default-variant-index="{{ defaultSelectionIndex }}" data-gifts-amount="{{ giftsAmount }}">
-		<div class="purchase-options flex flex-col gap-3 mb-3">
-			<div class="font-semibold text-[18px]">{{ variantsTitle | default: 'Choose your package' }}</div>
+		<div class="variant-boxes flex justify-around gap-2">
+			{% for block in blocks %}
+				{% assign varPurchaseType = block.settings.purchase_type %}
+				{% if block.type == 'variant' and varPurchaseType == 'subscribe' %}
+					{% assign referenced_variant = blank %}
+					{% if isGlobal %}
+						{% assign blockVarID = block.settings.variant_id_global | plus: 0 %}
+					{% else %}
+						{% assign blockVarID = block.settings.variant_id | plus: 0 %}
+					{% endif %}
 
-			<div class="variant-boxes flex justify-around gap-2">
-				{% for block in blocks %}
-					{% assign varPurchaseType = block.settings.purchase_type %}
-					{% if block.type == 'variant' and varPurchaseType == 'subscribe' %}
-						{% assign referenced_variant = blank %}
-						{% if isGlobal %}
-							{% assign blockVarID = block.settings.variant_id_global | plus: 0 %}
-						{% else %}
-							{% assign blockVarID = block.settings.variant_id | plus: 0 %}
+					{% for vari in referenced_variant_product.variants %}
+						{% assign currVarID = vari.id | plus: 0 %}
+
+						{% if currVarID == blockVarID %}
+							{% assign referenced_variant = vari %}
 						{% endif %}
+					{% endfor %}
 
-						{% for vari in referenced_variant_product.variants %}
-							{% assign currVarID = vari.id | plus: 0 %}
+					{% assign var = referenced_variant %}
 
-							{% if currVarID == blockVarID %}
-								{% assign referenced_variant = vari %}
-							{% endif %}
-						{% endfor %}
+					{% comment %} Core Variable Assignments {% endcomment %}
+					{% assign variant_id = var.metafields.custom.reference_variant_id | default: var.id %}
+					{% assign bottle_quantity = var.metafields.my_fields.pack_bottles_quantity %}
 
-						{% assign var = referenced_variant %}
+					{% comment %} Price Calculations {% endcomment %}
+					{% assign original_item_price = var.metafields.custom.original_item.value.price %}
+					{% assign original_item_cap = var.metafields.custom.original_item.value.compare_at_price | default: original_item_price %}
+					{% assign original_item_cap_total = original_item_cap | times: bottle_quantity %}
+					{% assign item_price = var.price | divided_by: bottle_quantity %}
 
-						{% comment %} Core Variable Assignments {% endcomment %}
-						{% assign variant_id = var.metafields.custom.reference_variant_id | default: var.id %}
-						{% assign bottle_quantity = var.metafields.my_fields.pack_bottles_quantity %}
+					{% comment %} Savings Calculations {% endcomment %}
+					{% assign subscription_save_money = original_item_cap | minus: subscription_item_price %}
+					{% assign buy_once_save_money = original_item_cap | minus: item_price %}
 
-						{% comment %} Price Calculations {% endcomment %}
-						{% assign original_item_price = var.metafields.custom.original_item.value.price %}
-						{% assign original_item_cap = var.metafields.custom.original_item.value.compare_at_price | default: original_item_price %}
-						{% assign original_item_cap_total = original_item_cap | times: bottle_quantity %}
-						{% assign item_price = var.price | divided_by: bottle_quantity %}
-
-						{% comment %} Savings Calculations {% endcomment %}
-						{% assign subscription_save_money = original_item_cap | minus: subscription_item_price %}
-						{% assign buy_once_save_money = original_item_cap | minus: item_price %}
-
-						{% comment %} Selling Plan ID Logic {% endcomment %}
-						{% if var.metafields.custom.referenced_variant_product_handle %}
-							{% assign selling_plan_id = referenced_variant.metafields.subscription.selling_plan_id | default: variant.metafields.subscription.selling_plan_id %}
-						{% elsif var.metafields.subscription.selling_plan_id %}
-							{% assign selling_plan_id = var.metafields.subscription.selling_plan_id %}
-						{% elsif var.selling_plan_allocations.size > 0 %}
-							{% assign found_plan = false %}
-							{% for allocation in var.selling_plan_allocations %}
-								{% if allocation.selling_plan.name contains bottle_quantity %}
-									{% assign selling_plan_id = allocation.selling_plan.id %}
-									{% assign found_plan = true %}
-									{% break %}
-								{% endif %}
-							{% endfor %}
-							{% if found_plan == false %}
-								{% assign selling_plan_id = var.selling_plan_allocations.first.selling_plan.id %}
-							{% endif %}
-						{% endif %}
-
-						{% assign subscription_save_percents = 0 %}
-						{% assign subscription_item_price = original_item_cap %}
-
+					{% comment %} Selling Plan ID Logic {% endcomment %}
+					{% if var.metafields.custom.referenced_variant_product_handle %}
+						{% assign selling_plan_id = referenced_variant.metafields.subscription.selling_plan_id | default: variant.metafields.subscription.selling_plan_id %}
+					{% elsif var.metafields.subscription.selling_plan_id %}
+						{% assign selling_plan_id = var.metafields.subscription.selling_plan_id %}
+					{% elsif var.selling_plan_allocations.size > 0 %}
+						{% assign found_plan = false %}
 						{% for allocation in var.selling_plan_allocations %}
-							{% assign selling = selling_plan_id | minus: 0 %}
-							{% if allocation.selling_plan.id == selling %}
-								{% if allocation.compare_at_price %}
-									{% assign original_price = allocation.compare_at_price %}
-									{% assign discounted_price = allocation.price %}
-									{% assign subscription_save_percents = original_price | minus: discounted_price | times: 100 | divided_by: original_price %}
-									{% assign mod_5_remainder = subscription_save_percents | modulo: 5 %}
-									{% if mod_5_remainder < 3 %}
-										{% assign subscription_save_percents = subscription_save_percents | minus: mod_5_remainder %}
-									{% else %}
-										{% assign subscription_save_percents = subscription_save_percents | plus: 5 | minus: mod_5_remainder %}
-									{% endif %}
-									{% assign subscription_item_price = discounted_price | divided_by: bottle_quantity %}
-								{% else %}
-									{% assign subscription_save_percents = 0 %}
-									{% assign subscription_item_price = allocation.price | divided_by: bottle_quantity %}
-								{% endif %}
+							{% if allocation.selling_plan.name contains bottle_quantity %}
+								{% assign selling_plan_id = allocation.selling_plan.id %}
+								{% assign found_plan = true %}
+								{% break %}
 							{% endif %}
 						{% endfor %}
+						{% if found_plan == false %}
+							{% assign selling_plan_id = var.selling_plan_allocations.first.selling_plan.id %}
+						{% endif %}
+					{% endif %}
 
-						{% assign subscription_total_price = subscription_item_price | times: bottle_quantity %}
+					{% assign subscription_save_percents = 0 %}
+					{% assign subscription_item_price = original_item_cap %}
 
-						{% assign firstMonthDiscount = block.settings.first_month_discount_percentage %}
+					{% for allocation in var.selling_plan_allocations %}
+						{% assign selling = selling_plan_id | minus: 0 %}
+						{% if allocation.selling_plan.id == selling %}
+							{% if allocation.compare_at_price %}
+								{% assign original_price = allocation.compare_at_price %}
+								{% assign discounted_price = allocation.price %}
+								{% assign subscription_save_percents = original_price | minus: discounted_price | times: 100 | divided_by: original_price %}
+								{% assign mod_5_remainder = subscription_save_percents | modulo: 5 %}
+								{% if mod_5_remainder < 3 %}
+									{% assign subscription_save_percents = subscription_save_percents | minus: mod_5_remainder %}
+								{% else %}
+									{% assign subscription_save_percents = subscription_save_percents | plus: 5 | minus: mod_5_remainder %}
+								{% endif %}
+								{% assign subscription_item_price = discounted_price | divided_by: bottle_quantity %}
+							{% else %}
+								{% assign subscription_save_percents = 0 %}
+								{% assign subscription_item_price = allocation.price | divided_by: bottle_quantity %}
+							{% endif %}
+						{% endif %}
+					{% endfor %}
 
-						<div
+					{% assign subscription_total_price = subscription_item_price | times: bottle_quantity %}
+
+					{% assign firstMonthDiscount = block.settings.first_month_discount_percentage %}
+
+					<div
 						id="variant-box-{{ SID }}-{{ forloop.index }}"
-						class="variant-box flex flex-col items-center variant-tab-style text-center w-full {{ varPurchaseType }}"
+						class="variant-box flex flex-col items-center variant-tab-style text-center w-full {% if forloop.index == 1 %}selected{% endif %} {{ varPurchaseType }}"
 						data-variant="{{ blockVarID }}"
 						data-product="{{ prod.id }}"
 						data-original-variant="{{ var.id }}"
@@ -164,143 +148,271 @@
 						data-price-per="{{ pricePer }}"
 						data-bottle-quantity="{{ bottle_quantity }}"
 						data-purchase-type="{{ varPurchaseType }}"
-						{% if block.settings.allowed_selling_plan_ids != blank %}
-						data-allowed-selling-plans="{{ block.settings.allowed_selling_plan_ids | strip | escape }}"
+						data-buy-type="{{ buyType }}"
+						name="track:variant-box|variant-sku:{{ var.sku }}|purchase-type:{{ varPurchaseType }}">
+						{% if product.handle == 'curalin' %}
+							{% assign subscription_save_percents = var.metafields.subscription.save_percents %}
 						{% endif %}
-							name="track:variant-box|variant-sku:{{ var.sku }}|purchase-type:{{ varPurchaseType }}">
-							{% if product.handle == 'curalin' %}
-								{% assign subscription_save_percents = var.metafields.subscription.save_percents %}
-							{% endif %}
-							{% if subscription_save_percents > 0 %}
-								<div class="discount mbl:text-[3.5vw] text-white bg-primary font-bold w-full text-[13px] p-1">{{ subscription_save_percents | plus: firstMonthDiscount }}% OFF</div>
-							{% endif %}
+						{% if subscription_save_percents > 0 %}
+							<div class="discount mbl:text-[3.5vw] text-white bg-primary font-bold w-full text-[13px] p-1">{{ subscription_save_percents | plus: firstMonthDiscount }}% OFF</div>
+						{% endif %}
 
-							<div class="title p-1">
-								<span class="font-bold mbl:text-[4vw]">{{ bottle_quantity }} Bottle{% if bottle_quantity > 1 %}s{% endif %}</span>
-							</div>
-
-							<div class="md:hidden">
-								<span class="title block mbl:text-[3.4vw]"></span>
-							</div>
+						<!-- prettier-ignore -->
+						<div class="title p-1">
+							<span class="font-bold mbl:text-[4vw]">{{ bottle_quantity }} Bottle{% if bottle_quantity > 1 %}s{% endif %}</span>
+							<span class="block text-[15px] mbl:text-[3.4vw]">every {{ bottle_quantity }} month{% if bottle_quantity > 1 %}s{% endif %}</span>
 						</div>
-					{% endif %}
-				{% endfor %}
-			</div>
-
-			<div class="price-display">
-				<div class="gap-y-2 flex flex-wrap items-end gap-2">
-						<div class="final-price flex items-center gap-2">
-								<div class="main-price text-primary flex items-end transition-opacity duration-200 ease-in-out">
-										{% if priceFormat == 'total' %}
-												<span class="price font-bold leading-none text-[30px] mbl:text-[6vw]">{{ subscription_total_price | money }}</span>
-										{% else %}
-												<span class="price font-bold leading-none text-[30px] mbl:text-[6vw]">{{ subscription_item_price | money }}</span>
-												<span class="per-text mt-1 text-[20px]">/bottle</span>
-										{% endif %}
-								</div>
-
-								<span class="cap self-end text-gray-500 line-through transition-opacity duration-200 ease-in-out">{{ original_item_cap | money }}</span>
-
-								{% if priceFormat == 'total' and subscription_total_price != subscription_item_price %}
-										<span class="discount-badge px-4 py-1 text-[16px] font-bold text-white bg-bronze rounded-full transition-opacity duration-200 ease-in-out">SAVE {{ subscription_save_money | money }}</span>
-								{% endif %}
-						</div>
-				</div>
-
-				{% if priceFormat == 'per_bottle' and subscription_total_price != subscription_item_price %}
-						<div class="total-line mt-1 text-[16px] h-4 transition-opacity duration-200 ease-in-out">
-								Total {{ subscription_total_price | money }}
-								<span class="total-price-cap text-gray-500 line-through">{{ original_item_cap_total | money }}</span>
-						</div>
-				{% endif %}
-
-				<div class="future-price-notice mt-2 text-[14px] text-gray-600 transition-opacity duration-200 ease-in-out"></div>
-		</div>
-
-		{% if variantsNotice != blank %}
-			<div class="notice text-primary flex gap-2 my-4 text-[15px]">
-				<span>ⓘ</span>
-				<span>{{ variantsNotice }}</span>
-			</div>
-		{% endif %}
-
-		<!-- Subscription Frequency Selector with direct Tailwind classes -->
-		<div class="mbl:my-0 hidden my-2 transition-all duration-300 ease-in-out" data-frequency-container>
-			<div class="mb-3 font-semibold">Choose delivery frequency</div>
-			<div class="subscription-frequency-selector">
-				<div id="frequency-options-{{ SID }}" class="flex justify-start gap-2">
-					<!-- Options will be dynamically populated by JavaScript -->
-				</div>
-			</div>
-			<div class="frequency-description text-[14px] text-gray-600 mt-2 transition-opacity duration-300 ease-in-out leading-normal min-h-[24px]"><!-- Frequency description will be populated by JavaScript --></div>
-		</div>
-
-		{% render 'subscription-box-faq',
-			SID: SID,
-			faqsAmount: faqsAmount,
-			blocks: blocks
-		%}
-
-		{% render 'subscription-box-gift-selector',
-			SID: SID,
-			giftsAmount: giftsAmount,
-			blocks: blocks,
-			isGlobal: isGlobal
-		%}
-
-		<div class="submit-wrap flex flex-col w-full">
-			<div class="checkout-button">
-				{% assign buttonSID = SID | append: '-checkout' %}
-				{% if buyType == 'buy_now' %}{% assign ctaButtonTitle = 'Get Started' %}{% else %}{% assign ctaButtonTitle = 'Add To Cart' %}{% endif %}
-
-				{% render 'buy-buttons-new-4-old',
-					SID: buttonSID,
-					product: prod,
-					variant: '',
-					buttonText: ctaButtonTitle,
-					selling_plan_id: selling_plan_id,
-					product_form_id: product_form_id,
-					buyType: buyType,
-					isBuyWithPrime: isBuyWithPrime,
-					buyboxType: buyboxType,
-					buyboxName: buyboxName
-				%}
-			</div>
-
-			<div class="one-time-purchase-link mt-3 text-center">
-				{% if isOneTimePurchaseLink %}
-					{% assign firstVariant = prod.selected_or_first_available_variant %}
-					<div
-						id="one-time-add-to-cart"
-						class="one-time-add-to-cart variant-box text-primary mb-2 underline cursor-pointer"
-						name="track:link-submit|buybox-type:{{ buyboxType }}|buybox-name:{{ buyboxName }}|variant-sku:{{ firstVariant.sku }}|purchase-type:buyonce"
-						data-variant-id="{{ firstVariant.id }}"
-						data-bottle-quantity="1"
-						data-sku="{{ firstVariant.sku }}"
-						data-purchase-type="buyonce">
-						Buy Once for {{ firstVariant.price | money }} + {{ shippingPrice | money | replace: '.00', '' }} Shipping
 					</div>
 				{% endif %}
+			{% endfor %}
+		</div>
+
+		<div class="price-display">
+			<div class="gap-y-2 flex flex-wrap items-end gap-2">
+					<div class="final-price flex items-center gap-2">
+							<div class="main-price text-primary flex items-end">
+								{% if priceFormat == 'total' %}
+									<span class="price font-bold leading-none text-[30px] mbl:text-[6vw]">{{ subscription_total_price | money }}</span>
+								{% else %}
+									<span class="price font-bold leading-none text-[30px] mbl:text-[6vw]">{{ subscription_item_price | money }}</span>
+									<span class="per-text mt-1 text-[20px]">/bottle</span>
+								{% endif %}
+							</div>
+
+							<span class="cap self-end text-gray-500 line-through">{{ original_item_cap | money }}</span>
+
+							{% if priceFormat == 'total' and subscription_total_price != subscription_item_price %}
+									<span class="discount-badge px-4 py-1 text-[16px] font-bold text-white bg-bronze rounded-full">SAVE {{ subscription_save_money | money }}</span>
+							{% endif %}
+					</div>
 			</div>
 
-			{% if blocks.size > 0 %}
+			{% if priceFormat == 'per_bottle' and subscription_total_price != subscription_item_price %}
+					<div class="total-line mt-1 text-[16px] h-4">
+							Total {{ subscription_total_price | money }}
+							<span class="total-price-cap text-gray-500 line-through">{{ original_item_cap_total | money }}</span>
+					</div>
+			{% endif %}
+
+			<div class="future-price-notice mt-2 text-[14px] text-gray-600"></div>
+	</div>
+
+	{% if variantsNotice != blank %}
+		<div class="notice text-primary flex gap-2 my-4" style="font-size:15px">
+			<span>ⓘ</span>
+			<span>{{ variantsNotice }}</span>
+		</div>
+	{% endif %}
+
+	{% if faqsAmount > 0 %}
+		<div class="faq-questions flex flex-col my-4">
+			{% for block in blocks %}
+				{% if block.type == 'faq' %}
+					<div class="faq-question overflow-hidden bg-white">
+						<div class="faq-question-header flex items-center justify-between p-4 cursor-pointer">
+							<div class="faq-question-title text-[16px] font-semibold pr-8">{{ block.settings.question }}</div>
+						</div>
+						<div class="faq-answer-wrapper">
+							<div class="faq-answer p-4 pt-0 text-gray-600 text-[16px]">
+								{{ block.settings.answer }}
+							</div>
+						</div>
+					</div>
+				{% endif %}
+			{% endfor %}
+		</div>
+
+		<script>
+			document.addEventListener('DOMContentLoaded', () => {
+				const faqQuestions = document.querySelectorAll('.faq-question');
+
+				faqQuestions.forEach(question => {
+					const header = question.querySelector('.faq-question-header');
+					const answerWrapper = question.querySelector('.faq-answer-wrapper');
+					const answer = question.querySelector('.faq-answer');
+
+					// Initially set height to 0
+					answerWrapper.style.height = '0px';
+
+					header.addEventListener('click', () => {
+						const isOpen = question.classList.contains('open');
+
+						// Close all other questions first
+						faqQuestions.forEach(q => {
+							if (q !== question && q.classList.contains('open')) {
+								q.classList.remove('open');
+								q.querySelector('.faq-answer-wrapper').style.height = '0px';
+							}
+						});
+
+						// Toggle current question
+						question.classList.toggle('open');
+
+						if (!isOpen) {
+							answerWrapper.style.height = answer.offsetHeight + 'px';
+						} else {
+							answerWrapper.style.height = '0px';
+						}
+					});
+				});
+			});
+		</script>
+
+		<style>
+			.faq-question {
+				transition: all 0.3s ease;
+				border-top-width: 1px;
+				border-color: var(--primary-color-light);
+
+				&:last-child {
+					border-bottom-width: 1px;
+				}
+			}
+
+			.faq-answer-wrapper {
+				transition: height 0.3s ease-in-out;
+			}
+
+			.faq-question-header {
+				position: relative;
+				color: var(--primary-color);
+			}
+
+			.faq-question-header::after {
+				content: '+';
+				position: absolute;
+				right: 1rem;
+				font-size: 2rem;
+				transition: transform 0.3s;
+				line-height: 1;
+			}
+
+			.faq-question.open .faq-question-header::after {
+				transform: rotate(45deg);
+			}
+
+			.faq-answer p {
+				margin: 0;
+			}
+
+			@media (max-width: 767px) {
+				.faq-question-title {
+					font-size: 4vw;
+				}
+
+				.faq-answer {
+					font-size: 4vw;
+				}
+			}
+		</style>
+	{% endif %}
+
+	{% if giftsAmount > 0 %}
+		<div class="gift-selector-wrap flex flex-col gap-3 mb-3">
+			<div class="gift-selector-title text-[18px] font-medium">Pick your free gift</div>
+
+			<div class="gift-options flex flex-col gap-2">
 				{% for block in blocks %}
-					{% if block.type == 'text' %}
-						<div class="text-content text-[14px] text-primary whitespace-break-spaces {% if block.settings.text_position == 'center' %}text-center{% else %}text-start{% endif %}">{{ block.settings.content }}</div>
-					{% endif %}
+					{% case block.type %}
+						{% when 'gift' %}
+							{% assign show_gift = false %}
+							{% if block.settings.show_on == 'both' %}
+								{% assign show_gift = true %}
+							{% elsif block.settings.show_on == 'global' and isGlobal %}
+								{% assign show_gift = true %}
+							{% elsif block.settings.show_on == 'us' and isGlobal == false %}
+								{% assign show_gift = true %}
+							{% endif %}
+
+							{% if show_gift %}
+								{% assign giftProd = block.settings.gift_product %}
+								{% assign giftVariant = giftProd.selected_or_first_available_variant %}
+								{% assign giftProdSubscription = block.settings.gift_product_subscription | default: giftProd %}
+								{% assign giftVariantSubscription = giftProdSubscription.selected_or_first_available_variant %}
+								{% assign giftThumb = block.settings.gift_thumbnail | default: giftProdSubscription.featured_image | default: giftProd.featured_image %}
+
+								<div class="gift-box clickable block" name="track:gift|variant-sku:{{ giftVariant.sku }}">
+									<div
+										class="gift-option-border p-2 rounded-lg"
+										data-gift-id="{{ giftVariant.id }}"
+										data-gift-id-subscription="{{ giftVariantSubscription.id | default: giftVariant.id }}">
+										<div class="flex items-center self-end gap-2 ml-auto" style="width:93%">
+											<div class="gift-image-container flex-shrink-0">
+												<img
+													src="{{ giftThumb | image_url: width: 160, height: 160 }}"
+													alt="{{ giftProd.title }}"
+													class="object-contain w-full h-full">
+											</div>
+
+											<div class="gift-content flex-grow">
+												<div class="flex items-center gap-2 mb-1">
+													<div class="gift-name text-[16px] font-bold">{{ giftProd.title | replace: 'Free ', '' }} - FREE</div>
+													<span class="text-gray-600 line-through">{{ giftVariantSubscription.compare_at_price | money }}</span>
+												</div>
+												<div class="text-gray-600" style="font-size: 14px">{{ block.settings.variant_description | default: giftProd.metafields.custom.short_description }}</div>
+											</div>
+
+											<div class="check-indicator w-8 h-8 rounded-full border-2 border-[--primary-color] flex items-center justify-center">
+												<svg class="check-mark text-primary w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+													<path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+												</svg>
+											</div>
+										</div>
+									</div>
+								</div>
+							{% endif %}
+					{% endcase %}
 				{% endfor %}
+			</div>
+		</div>
+	{% endif %}
+
+	<div class="submit-wrap flex flex-col w-full">
+		<div class="checkout-button">
+			{% assign buttonSID = SID | append: '-checkout' %}
+			{% if buyType == 'buy_now' %}{% assign ctaButtonTitle = 'Get Started' %}{% else %}{% assign ctaButtonTitle = 'Add To Cart' %}{% endif %}
+
+			{% render 'buy-buttons-new-4',
+				SID: buttonSID,
+				product: prod,
+				variant: '',
+				buttonText: ctaButtonTitle,
+				selling_plan_id: selling_plan_id,
+				product_form_id: product_form_id,
+				buyType: buyType,
+				isBuyWithPrime: isBuyWithPrime,
+				buyboxType: buyboxType,
+				buyboxName: buyboxName
+			%}
+		</div>
+
+		<div class="one-time-purchase-link mt-3 text-center">
+			{% if isOneTimePurchaseLink %}
+				{% assign firstVariant = prod.selected_or_first_available_variant %}
+				<div
+					id="one-time-add-to-cart"
+					class="one-time-add-to-cart variant-box text-primary mb-2 underline cursor-pointer"
+					name="track:link-submit|buybox-type:{{ buyboxType }}|buybox-name:{{ buyboxName }}|variant-sku:{{ firstVariant.sku }}|purchase-type:buyonce"
+					data-variant-id="{{ firstVariant.id }}"
+					data-bottle-quantity="1"
+					data-sku="{{ firstVariant.sku }}"
+					data-purchase-type="buyonce">
+					Buy Once for {{ firstVariant.price | money }} + {{ shippingPrice | money | replace: '.00', '' }} Shipping
+				</div>
 			{% endif %}
 		</div>
 	</div>
 </div>
 
-<!-- For supporting old styles but with Tailwind classes, hidden by default -->
-<div class="buy-box grid grid-cols-[45%_40%] gap-x-[5%] justify-center hidden">
-</div>
-
 <style>
-	/* Core variables - keep these as CSS variables */
+	.buy-box {
+		grid-template-columns: 45% 40% !important;
+		grid-column-gap: 5% !important;
+		justify-content: center;
+	}
+
 	#cta-section-{{ SID }} {
+			/* Core variables */
 			--text-color: #4a5568;
 			--border-color: #cbcbcb;
 			--radio-size: 1em;
@@ -311,7 +423,7 @@
 			.variant-box.variant-tab-style {
 					border-width: 2px;
 					border-color: var(--primary-color);
-					border-radius: 0.375rem;
+					border-radius: 5px;
 					cursor: pointer;
 					align-content: center;
 					transition: all 0.3s ease;
@@ -326,15 +438,103 @@
 									transition: all 0.3s ease;
 							}
 					}
+			}
 
-					&:not(.selected):hover {
-						background-color: var(--bg-color);
+			/* Gift Selector Component */
+			.gift-selector-wrap {
+					.gift-box {
+							.gift-option-border {
+									position: relative;
+									cursor: pointer;
+									background-color: white;
+									border: 1px solid var(--primary-color-light);
+									transition: all 0.3s ease;
+
+									&:hover {
+											background-color: var(--primary-color-lighter);
+									}
+
+									/* Gift Option Layout */
+									& > div.flex.items-center.gap-4 {
+											padding-left: 3rem;
+									}
+
+									.gift-image-container {
+											width: 80px;
+											height: 80px;
+											flex-shrink: 0;
+									}
+
+									/* Check Indicator */
+									.check-indicator {
+											position: absolute;
+											left: 3%;
+											top: 50%;
+											transform: translateY(-50%);
+											width: 20px;
+											height: 20px;
+											min-width: 20px;
+											min-height: 20px;
+											border: 1px solid var(--primary-color);
+											border-radius: 9999px;
+											display: flex;
+											align-items: center;
+											justify-content: center;
+											background-color: transparent;
+
+											svg.check-mark {
+													width: 12px;
+													height: 12px;
+													min-width: 12px;
+													min-height: 12px;
+													color: white;
+													stroke: var(--primary-color);
+													stroke-width: 2;
+													fill: none;
+													opacity: 0;
+													transition: opacity 0.3s ease;
+											}
+									}
+
+									.gift-content {
+											flex-grow: 1;
+									}
+							}
+
+							/* Selected State */
+							&.selected {
+									.gift-option-border {
+											background-color: var(--primary-color-lighter) !important;
+
+											.check-indicator {
+													background-color: var(--primary-color);
+
+													svg.check-mark {
+															opacity: 1;
+															stroke: white;
+													}
+											}
+									}
+							}
+
+							&:hover {
+									.gift-option-border {
+											background-color: var(--primary-color-lightest);
+									}
+							}
 					}
 			}
 
-			/* Product Actions - Keep these custom grid areas */
+			/* Product Actions */
 			.product-actions {
 					grid-area: {% if isHideInfo %}1{% else %}2{% endif %}/2/3/3;
+			}
+
+			/* One Time Purchase Link */
+			.one-time-purchase-link {
+					a {
+							transition: color 0.3s ease;
+					}
 			}
 
 			/* Radio Input Styles */
@@ -400,6 +600,74 @@
 							min-height: unset;
 					}
 
+					.gift-content {
+							font-size: 4vw;
+					}
+
+					.variant-box {
+							font-size: 4vw;
+
+							&::before {
+									font-size: 3vw;
+									width: 23vw;
+									height: 5vw;
+									top: -5vw;
+									padding: 0.75vw;
+									border-radius: 2vw 2vw 0 0;
+							}
+
+							&.selected {
+									max-height: none;
+							}
+
+							.top-wrapper {
+									min-height: 9vw;
+							}
+
+							.left-wrapper {
+									gap: 2vw;
+							}
+
+							.option-title {
+									font-size: 3.9vw;
+							}
+
+							.price-wrapper {
+									min-width: 17.7vw;
+
+									.real-price {
+											font-size: 4.5vw;
+									}
+							}
+
+							.terms {
+									margin-left: 5vw;
+
+									.subtitle,
+									.terms-title {
+											font-size: 3.5vw;
+									}
+							}
+
+							.radio-box {
+									label {
+											width: 3vw;
+											height: 3vw;
+
+											&:after {
+													font-size: 2vw;
+													width: 3vw !important;
+													height: 3vw !important;
+													top: -0.25vw !important;
+													left: -0.25vw !important;
+													display: flex;
+													justify-content: center;
+													align-items: center;
+											}
+									}
+							}
+					}
+
 					.one-time-purchase-link {
 							.one-time-add-to-cart {
 									font-size: 4vw;
@@ -407,506 +675,338 @@
 					}
 			}
 	}
+
+	.future-price-notice {
+			transition: opacity 200ms ease-out;
+			line-height: 1.4;
+	}
+
+	@media (max-width: 767px) {
+			.future-price-notice {
+					font-size: 12px;
+			}
+	}
 </style>
 
-<!-- Load buy-box.js script if not already loaded -->
+<!-- Initialize CuralifeBoxes and handle first month discount -->
 <script>
-	document.addEventListener('DOMContentLoaded', function() {
-		console.log('Initializing buy-box-subscription-4-optimized-2, SID: {{ SID }}');
+	document.addEventListener('DOMContentLoaded', function () {
+		const SID = '{{ SID }}';
 
-		// Load the buy-box.js script if not already loaded
-		if (!window.CuralifeBoxes || !window.CuralifeBoxes.initialized) {
-			const script = document.createElement('script');
-			script.src = "{{ 'buy-box.js' | asset_url }}";
-			script.async = true;
-			document.head.appendChild(script);
+		// Handle the mobile CTA text positioning
+		const ctasection = document.querySelector('#cta-section-{{ SID }}');
+		if (ctasection) {
+			const productActions = ctasection.querySelector('.product-actions');
+			const ctaText = ctasection.querySelector('.cta-text');
 
-			// Initialize after script loads
-			script.onload = function() {
-				if (window.CuralifeBoxes) {
-					// Initialize all buy boxes on the page
-					window.CuralifeBoxes.initAll();
-
-					// Give some time for initialization then ensure the product variant data is available
-					setTimeout(function() {
-						initializeProductData('{{ SID }}');
-					}, 300);
-				}
-			};
-		} else {
-			// Script already loaded, just ensure product data is available
-			initializeProductData('{{ SID }}');
+			if (productActions && ctaText && window.innerWidth < 768) {
+				productActions.insertAdjacentElement('afterbegin', ctaText);
+			}
 		}
 
-		/**
-		 * Ensures the product data is available for variants
-		 * This is critical for frequency options to work properly
-		 */
-		function initializeProductData(SID) {
-			const section = document.getElementById(`cta-section-${SID}`);
-			if (!section) return;
+		// Set up first month discount functionality
+		// This extends the CuralifeBoxes functionality
+		setTimeout(function() {
+			console.log(`Buy box ${SID}: Setting up first month pricing`);
 
-			// Get selected variant box
-			const selectedBox = section.querySelector('.variant-box.selected') || section.querySelector('.variant-box');
-			if (!selectedBox) return;
-
-			const productId = selectedBox.dataset.product;
-			const variantId = selectedBox.dataset.variant;
-
-			// Only initialize if we have both IDs
-			if (!productId || !variantId) return;
-
-			// Create product data structure if it doesn't exist
-			if (!window.productData) window.productData = {};
-
-			// Key step: Make the product data available to buy-box.js
-			// This is crucial for frequency options to render correctly
-			if (!window.productData[productId]) {
-				// Initialize with basic structure that buy-box.js expects
-				window.productData[productId] = {
-					id: productId,
-					variants: [],
-					initialized: false
-				};
+			// Check if CuralifeBoxes is available
+			if (!window.CuralifeBoxes || !window.CuralifeBoxes.instances) {
+				console.error(`Buy box ${SID}: CuralifeBoxes not available`);
+				return;
 			}
 
-			// Get all variant boxes for this product
-			const allVariantBoxes = section.querySelectorAll('.variant-box');
+			// Get or create instance
+			let instance = window.CuralifeBoxes.instances[SID];
 
-			// Extract variant information from available boxes
-			allVariantBoxes.forEach(box => {
-				const boxVariantId = parseInt(box.dataset.variant);
-				const boxProductId = box.dataset.product;
+			if (!instance) {
+				// Initialize if not already done
+				instance = window.CuralifeBoxes.createInstance(SID);
+				instance.init();
+			}
 
-				// Skip if not matching our product
-				if (boxProductId !== productId) return;
+			// Function to update first month pricing display
+			function updateFirstMonthPricing(variantBox) {
+				if (!variantBox) {
+					console.error(`Buy box ${SID}: No variant box selected`);
+					return;
+				}
 
-				// Skip if variant already exists
-				if (window.productData[productId].variants.some(v => v.id === boxVariantId)) return;
+				const section = document.getElementById(`cta-section-${SID}`);
+				const priceDisplay = section?.querySelector('.price-display');
+				const discountBadge = priceDisplay?.querySelector('.discount-badge');
+				const futureNotice = section?.querySelector('.future-price-notice');
+				const mainPriceElement = priceDisplay?.querySelector('.price');
+				const totalLineElement = priceDisplay?.querySelector('.total-line');
+				const perTextElement = priceDisplay?.querySelector('.per-text');
+				const capElement = priceDisplay?.querySelector('.cap');
+				const finalPriceElement = priceDisplay?.querySelector('.final-price');
 
-				// Extract bottle quantity for frequency recommendation
-				const bottleQuantity = parseInt(box.dataset.bottleQuantity || '1');
+				if (!priceDisplay || !futureNotice || !mainPriceElement) {
+					console.error(`Buy box ${SID}: Required elements not found`);
+					return;
+				}
 
-				// Create a basic variant structure
-				const variantData = {
-					id: boxVariantId,
-					title: `${bottleQuantity} Bottle${bottleQuantity > 1 ? 's' : ''}`,
-					price: parseFloat(box.dataset.price || '0') * 100, // convert to cents
-					sku: box.dataset.sku || '',
-					selling_plan_allocations: []
-				};
+				// Get all pricing data from the variant box
+				const firstMonthDiscount = parseFloat(variantBox.dataset.firstMonthDiscount || 0);
+				const subscriptionDiscount = parseFloat(variantBox.dataset.subscriptionDiscount || 0);
+				const origPerItem = parseFloat(variantBox.dataset.originalItemCap || 0) / 100;
+				const bottles = parseInt(variantBox.dataset.bottleQuantity || 1, 10);
+				const totalOrig = origPerItem * bottles;
 
-				// Check if this is a subscription variant
-				if (box.dataset.purchaseType === 'subscribe') {
-					// Check if the box has allowed selling plans
-					const allowedSellingPlansStr = box.dataset.allowedSellingPlans;
+				// Important: Get the price format from the productActions, not the variant box
+				// This ensures we're using the component-level setting
+				const priceFormat = '{{ priceFormat }}';
 
-					// Default selling plan from the box
-					const defaultSellingPlanId = box.dataset.subscriptionSellingPlanId;
+				console.log(`Buy box ${SID}: Price format from liquid: "${priceFormat}"`);
 
-					console.log('Variant box data:', {
-						boxId: box.id,
-						variantId: boxVariantId,
-						defaultSellingPlanId,
-						allowedSellingPlans: allowedSellingPlansStr || 'none specified'
+				// Skip if no first month discount
+				if (firstMonthDiscount <= 0) {
+					console.log(`Buy box ${SID}: No first month discount, skipping custom price display`);
+					futureNotice.textContent = '';
+					futureNotice.style.opacity = '0';
+					return;
+				}
+
+				console.log(`Buy box ${SID}: Price calculation inputs`, {
+					firstMonthDiscount,
+					subscriptionDiscount,
+					origPerItem,
+					bottles,
+					totalOrig,
+					priceFormat
+				});
+
+				// Calculate first month price (with both discounts)
+				const combinedDiscountPercent = subscriptionDiscount + firstMonthDiscount;
+				const combinedDiscountMultiplier = (100 - combinedDiscountPercent) / 100;
+				const firstMonthPerItem = origPerItem * combinedDiscountMultiplier;
+				const firstMonthTotal = firstMonthPerItem * bottles;
+
+				// Calculate regular subscription price (subscription discount only)
+				const regDiscountMultiplier = (100 - subscriptionDiscount) / 100;
+				const regPerItem = origPerItem * regDiscountMultiplier;
+				const regTotal = regPerItem * bottles;
+
+				// Calculate savings
+				const savingsAmount = totalOrig - firstMonthTotal;
+
+				// Format for display
+				const currencySymbol = window.Shopify?.currency?.symbol || "$";
+				const savingsFormatted = Math.floor(savingsAmount);
+
+				console.log(`Buy box ${SID}: Calculated prices`, {
+					firstMonthPerItem,
+					firstMonthTotal,
+					regPerItem,
+					regTotal,
+					savingsAmount,
+					savingsFormatted
+				});
+
+				// Animate the price update
+				const animatePriceUpdate = () => {
+					// Fade out price elements
+					const elementsToFade = [finalPriceElement, discountBadge, totalLineElement].filter(Boolean);
+					elementsToFade.forEach(el => {
+						el.style.transition = "opacity 200ms ease-out";
+						el.style.opacity = "0";
 					});
 
-					if (allowedSellingPlansStr && allowedSellingPlansStr.trim()) {
-						// Parse allowed selling plan IDs
-						const allowedPlans = allowedSellingPlansStr
-							.split(',')
-							.map(id => id.trim())
-							.filter(id => id && !isNaN(parseInt(id)));
-
-						console.log('Found allowed selling plans:', allowedPlans);
-
-						// Add each allowed selling plan to the variant's allocations
-						allowedPlans.forEach((planId, index) => {
-							// Create descriptive name based on bottle quantity and frequency
-							// For allowed plans other than the default, we'll create variations
-							const isDefault = planId === defaultSellingPlanId;
-							let planName;
-
-							// For the default one, use the bottle quantity as months
-							if (isDefault) {
-								planName = `${bottleQuantity} Month${bottleQuantity > 1 ? 's' : ''}`;
+					// Update price elements after fade out
+					setTimeout(() => {
+						// 1. Update the main price display with first month price
+						if (mainPriceElement) {
+							// Format with proper currency representation
+							let formattedPrice;
+							if (priceFormat === 'total') {
+								formattedPrice = `${currencySymbol}${firstMonthTotal.toFixed(2)}`;
+								// Hide per-bottle text if showing total price
+								if (perTextElement) perTextElement.style.display = 'none';
 							} else {
-								// For others, create alternative frequencies
-								// This is an estimation - in a real scenario, you'd know the actual frequencies
-								const frequencies = [30, 60, 90]; // days
-								const frequency = frequencies[index % frequencies.length];
-								planName = `${frequency} Days`;
+								formattedPrice = `${currencySymbol}${firstMonthPerItem.toFixed(2)}`;
+								// Show per-bottle text if showing per-bottle price
+								if (perTextElement) perTextElement.style.display = 'inline';
 							}
 
-							variantData.selling_plan_allocations.push({
-								selling_plan: {
-									id: planId,
-									name: planName
-								},
-								price: parseFloat(box.dataset.subscriptionPrice || '0') * 100,
-								compare_at_price: parseFloat(box.dataset.originalItemCap || '0') * 100 * bottleQuantity
-							});
-						});
-					} else if (defaultSellingPlanId) {
-						// If no allowed plans specified but we have a default one
-						variantData.selling_plan_allocations.push({
-							selling_plan: {
-								id: defaultSellingPlanId,
-								name: `${bottleQuantity} Month${bottleQuantity > 1 ? 's' : ''}`
-							},
-							price: parseFloat(box.dataset.subscriptionPrice || '0') * 100,
-							compare_at_price: parseFloat(box.dataset.originalItemCap || '0') * 100 * bottleQuantity
-						});
+							console.log(`Buy box ${SID}: Setting price to ${formattedPrice} (format: ${priceFormat})`);
+							mainPriceElement.textContent = formattedPrice;
+
+							// Store the current price in a data attribute to check if it gets changed
+							mainPriceElement.setAttribute('data-custom-price', formattedPrice);
+						}
+
+						// Update the compare-at price based on format
+						if (capElement) {
+							const compareAtPrice = priceFormat === 'total'
+								? `${currencySymbol}${totalOrig.toFixed(2)}`
+								: `${currencySymbol}${origPerItem.toFixed(2)}`;
+
+							console.log(`Buy box ${SID}: Setting compare-at price to ${compareAtPrice} (format: ${priceFormat})`);
+							capElement.textContent = compareAtPrice;
+						}
+
+						// 2. Update badge with correct savings amount
+						if (discountBadge && priceFormat === "total" && savingsAmount > 0) {
+							const badgeText = `SAVE ${currencySymbol}${savingsFormatted}`;
+							console.log(`Buy box ${SID}: Setting badge text to: "${badgeText}"`);
+							discountBadge.textContent = badgeText;
+							discountBadge.style.display = 'inline-flex';
+						}
+
+						// 3. Add future price notice
+						const regText = priceFormat === "total" ? regTotal.toFixed(2) : regPerItem.toFixed(2);
+						futureNotice.textContent = `Special price for first order. Refills for ${currencySymbol}${regText}${priceFormat === 'per_bottle' ? '/bottle' : ''}.`;
+						futureNotice.style.opacity = '1';
+
+						// 4. Update total line for per-bottle format
+						if (priceFormat === "per_bottle" && totalLineElement && savingsAmount > 0) {
+							totalLineElement.innerHTML = `Total ${currencySymbol}${firstMonthTotal.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">${currencySymbol}${totalOrig.toFixed(2)}</span>`;
+						} else if (totalLineElement) {
+							totalLineElement.style.opacity = '0';
+						}
+
+						// Fade elements back in, staggered for visual effect
+						setTimeout(() => {
+							if (finalPriceElement) finalPriceElement.style.opacity = "1";
+						}, 50);
+
+						setTimeout(() => {
+							if (discountBadge) discountBadge.style.opacity = "1";
+						}, 100);
+
+						setTimeout(() => {
+							if (totalLineElement && priceFormat === "per_bottle") totalLineElement.style.opacity = "1";
+						}, 150);
+
+						console.log(`Buy box ${SID}: Price display updated with first month pricing`);
+					}, 200);
+				};
+
+				// Use requestAnimationFrame for smoother animation
+				requestAnimationFrame(animatePriceUpdate);
+			}
+
+			// Completely override the updatePriceDisplay method instead of extending it
+			if (instance) {
+				instance.updatePriceDisplay = function(el) {
+					console.log(`Buy box ${SID}: Custom price update called`);
+
+					// If there's a first month discount, use our custom implementation
+					const firstMonthDiscount = parseFloat(el?.dataset?.firstMonthDiscount || 0);
+					if (firstMonthDiscount > 0) {
+						updateFirstMonthPricing(el);
+					} else {
+						// Call the original CuralifeBoxes method using a generic implementation
+						// since we can't access the original
+						const section = document.getElementById(`cta-section-${SID}`);
+						const priceDisplay = section?.querySelector('.price-display');
+
+						if (priceDisplay) {
+							const mainPrice = priceDisplay.querySelector('.price');
+							const cap = priceDisplay.querySelector('.cap');
+							const totalLine = priceDisplay.querySelector('.total-line');
+							const discount = priceDisplay.querySelector('.discount-badge');
+							const finalPrice = priceDisplay.querySelector('.final-price');
+
+							// Format based on price format
+							const priceFormat = '{{ priceFormat }}';
+							const itemPrice = parseFloat(el.dataset.itemPrice || 0) / 100;
+							const subscriptionPrice = parseFloat(el.dataset.subscriptionPrice || 0) / 100;
+							const subscriptionItemPrice = parseFloat(el.dataset.subscriptionItemPrice || 0) / 100;
+							const originalItemCap = parseFloat(el.dataset.originalItemCap || 0) / 100;
+							const bottles = parseInt(el.dataset.bottleQuantity || 1, 10);
+
+							const currencySymbol = window.Shopify?.currency?.symbol || "$";
+
+							// Animate the price update (similar to original CuralifeBoxes)
+							const animateUpdate = () => {
+								// Fade out elements first
+								[finalPrice, discount, totalLine].filter(Boolean).forEach(el => {
+									el.style.transition = "opacity 200ms ease-out";
+									el.style.opacity = "0";
+								});
+
+								setTimeout(() => {
+									if (mainPrice) {
+										if (priceFormat === 'total') {
+											mainPrice.textContent = `${currencySymbol}${subscriptionPrice.toFixed(2)}`;
+										} else {
+											mainPrice.textContent = `${currencySymbol}${subscriptionItemPrice.toFixed(2)}`;
+										}
+									}
+
+									if (cap) {
+										if (priceFormat === 'total') {
+											cap.textContent = `${currencySymbol}${(originalItemCap * bottles).toFixed(2)}`;
+										} else {
+											cap.textContent = `${currencySymbol}${originalItemCap.toFixed(2)}`;
+										}
+									}
+
+									const saveAmt = (originalItemCap - subscriptionItemPrice) * bottles;
+									if (discount && priceFormat === 'total' && saveAmt > 0) {
+										discount.textContent = `SAVE ${currencySymbol}${Math.floor(saveAmt)}`;
+									}
+
+									if (totalLine && priceFormat === 'per_bottle') {
+										totalLine.innerHTML = `Total ${currencySymbol}${subscriptionPrice.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">${currencySymbol}${(originalItemCap * bottles).toFixed(2)}</span>`;
+									}
+
+									// Fade elements back in with staggered timing
+									setTimeout(() => finalPrice && (finalPrice.style.opacity = "1"), 50);
+									setTimeout(() => discount && (discount.style.opacity = "1"), 100);
+									setTimeout(() => totalLine && (totalLine.style.opacity = "1"), 150);
+								}, 200);
+							};
+
+							requestAnimationFrame(animateUpdate);
+						}
 					}
-				}
-
-				// Add to product data
-				window.productData[productId].variants.push(variantData);
-			});
-
-			// Mark as initialized
-			window.productData[productId].initialized = true;
-
-			console.log('Product data initialized for SID:', SID);
-			console.log('Product data structure:', window.productData[productId]);
-
-			// Set up frequency options functionality
-			setupFrequencyOptions(SID);
-
-			// If CuralifeBoxes is initialized, re-select the variant box to trigger frequency options
-			if (window.CuralifeBoxes && window.CuralifeBoxes.instances && window.CuralifeBoxes.instances[SID]) {
-				// Trigger selection of the appropriate box
-				const boxInstance = window.CuralifeBoxes.instances[SID];
-				if (boxInstance.togglePurchaseBox && selectedBox) {
-					console.log('Triggering box selection to initialize frequency options');
-
-					// Give the system time to process
-					setTimeout(() => {
-						boxInstance.togglePurchaseBox(selectedBox);
-					}, 100);
-				}
-			}
-		}
-
-		// Setup frequency options functionality (copied from original)
-		function setupFrequencyOptions(SID) {
-			const section = document.getElementById(`cta-section-${SID}`);
-			if (!section) return;
-
-			// Add the frequency selection functionality
-			section.addEventListener('click', function(e) {
-				const frequencyOption = e.target.closest('#frequency-options-' + SID + ' > div');
-				if (!frequencyOption) return;
-
-				selectFrequencyOption(frequencyOption, SID);
-			});
-
-			// Add a function to populate the frequency selector based on selected variant
-			section.querySelectorAll('.variant-box').forEach(box => {
-				box.addEventListener('click', function() {
-					setTimeout(() => populateFrequencySelector(this, SID), 50);
-				});
-			});
-
-			// Initial population for selected box
-			const selectedBox = section.querySelector('.variant-box.selected') || section.querySelector('.variant-box');
-			if (selectedBox) {
-				populateFrequencySelector(selectedBox, SID);
-			}
-		}
-
-		// Function to handle frequency option selection
-		function selectFrequencyOption(option, SID) {
-			const section = document.getElementById(`cta-section-${SID}`);
-			if (!section) return;
-
-			// Get all options in the container
-			const allOptions = option.parentElement.querySelectorAll('div');
-
-			// Update the visual state of all options
-			allOptions.forEach(opt => {
-				if (opt === option) {
-					opt.style.backgroundColor = 'var(--primary-color)';
-					opt.style.color = 'white';
-				} else {
-					opt.style.backgroundColor = 'var(--bg-color)';
-					opt.style.color = 'var(--primary-color)';
-				}
-			});
-
-			// Update the form field and selected box with new selling plan ID
-			const sellingPlanId = option.dataset.sellingPlanId;
-			const submitSellingPlanId = section.querySelector('.submit-selling-plan-id');
-			const selectedBox = section.querySelector('.variant-box.selected');
-
-			if (submitSellingPlanId) {
-				submitSellingPlanId.value = sellingPlanId;
-			}
-
-			if (selectedBox) {
-				selectedBox.dataset.subscriptionSellingPlanId = sellingPlanId;
-			}
-
-			// Update the frequency description
-			updateFrequencyDescription(SID);
-		}
-
-		// Function to update the frequency description text
-		function updateFrequencyDescription(SID) {
-			const section = document.getElementById(`cta-section-${SID}`);
-			if (!section) return;
-
-			const descriptionEl = section.querySelector('.frequency-description');
-			if (!descriptionEl) return;
-
-			const frequencyOptions = section.querySelector('#frequency-options-' + SID);
-			if (!frequencyOptions) return;
-
-			const selectedOption = Array.from(frequencyOptions.children).find(el =>
-				el.style.backgroundColor === 'var(--primary-color)'
-			);
-
-			if (!selectedOption) return;
-
-			const selectedFrequencyValue = parseInt(selectedOption.dataset.frequencyValue || '1', 10);
-			const selectedFrequencyUnit = selectedOption.dataset.frequencyUnit || 'month';
-			const selectedBox = section.querySelector('.variant-box.selected');
-			const bottleQuantity = parseInt(selectedBox?.dataset.bottleQuantity || '1', 10);
-
-			let description = '';
-
-			// If selected frequency matches recommended frequency (only for months)
-			if (selectedFrequencyUnit === 'month' && selectedFrequencyValue === bottleQuantity) {
-				description = ''; // No text when on recommended frequency
-			} else {
-				// Otherwise show the recommendation
-				description = `Recommended - every ${bottleQuantity} month${bottleQuantity > 1 ? 's' : ''}`;
-			}
-
-			// Animate the description update
-			descriptionEl.style.opacity = '0';
-			setTimeout(() => {
-				descriptionEl.innerHTML = description;
-				descriptionEl.style.opacity = '1';
-			}, 200);
-		}
-
-		// Function to extract frequency value and unit from plan name
-		function extractFrequency(planName) {
-			// Try matching days pattern first
-			let daysMatch = planName.match(/(\d+)\s*Day/i);
-			if (daysMatch) {
-				return {
-					value: parseInt(daysMatch[1], 10),
-					unit: 'day'
 				};
-			}
 
-			// Try matching months pattern
-			let monthsMatch = planName.match(/(\d+)\s*Month/i);
-			if (monthsMatch) {
-				return {
-					value: parseInt(monthsMatch[1], 10),
-					unit: 'month'
-				};
-			}
+				console.log(`Buy box ${SID}: Price display method completely overridden`);
 
-			// Default fallback
-			return { value: 1, unit: 'month' };
-		}
-
-		// Function to populate frequency options based on the selected variant
-		function populateFrequencySelector(el, SID) {
-			try {
+				// Setup a MutationObserver to ensure our price updates persist
 				const section = document.getElementById(`cta-section-${SID}`);
-				if (!section) return;
+				if (section) {
+					const priceDisplay = section.querySelector('.price-display');
+					if (priceDisplay) {
+						// Create a new observer
+						const observer = new MutationObserver((mutations) => {
+							const selectedBox = section.querySelector('.variant-box.selected');
+							if (selectedBox) {
+								const firstMonthDiscount = parseFloat(selectedBox.dataset.firstMonthDiscount || 0);
+								if (firstMonthDiscount > 0) {
+									// Check if price display has changed from our custom value
+									const mainPrice = priceDisplay.querySelector('.price');
+									const customPrice = mainPrice?.getAttribute('data-custom-price');
 
-				// Use the data attribute for more specific selection
-				const frequencyContainer = section.querySelector('[data-frequency-container]');
-				if (!frequencyContainer) return;
-
-				const frequencyOptions = section.querySelector('#frequency-options-' + SID);
-				if (!frequencyOptions) return;
-
-				const variant = el.dataset.originalVariant || el.dataset.variant;
-				const isSub = el.dataset.purchaseType === 'subscribe';
-				const bottleQuantity = parseInt(el.dataset.bottleQuantity || '1', 10);
-
-				if (!isSub) {
-					frequencyContainer.classList.add('hidden');
-					return;
-				}
-
-				const productId = el.dataset.product;
-				const variantId = parseInt(variant);
-
-				console.log('Populating frequency selector:', {
-					productId,
-					variant,
-					bottleQuantity
-				});
-
-				// Try to find the variant in product data
-				let selectedVariant = null;
-				if (window.productData && window.productData[productId]) {
-					const product = window.productData[productId];
-					if (product.variants) {
-						// First try exact match
-						selectedVariant = product.variants.find(v => v.id === variantId);
-
-						if (!selectedVariant) {
-							console.log('Variant not found in product data. Available variants:', product.variants.map(v => v.id));
-
-							// Try original variant as fallback
-							const originalVariantId = parseInt(el.dataset.originalVariant || '0');
-							if (originalVariantId > 0) {
-								selectedVariant = product.variants.find(v => v.id === originalVariantId);
-
-								if (selectedVariant) {
-									console.log('Found variant using original variant ID fallback');
+									if (customPrice && mainPrice && mainPrice.textContent !== customPrice) {
+										console.log(`Buy box ${SID}: Price was changed, re-applying our custom price`);
+										// Re-apply our custom price update
+										updateFirstMonthPricing(selectedBox);
+									}
 								}
 							}
-						}
+						});
+
+						// Start observing price display for changes
+						observer.observe(priceDisplay, {
+							childList: true,
+							subtree: true,
+							characterData: true
+						});
+
+						console.log(`Buy box ${SID}: Mutation observer setup for price display`);
 					}
 				}
 
-				if (!selectedVariant) {
-					console.log('Variant not found in product data, using fallback');
-					handleFallbackFrequencyOptions(el, frequencyOptions, frequencyContainer, SID);
-					return;
+				// Trigger update for currently selected variant
+				const selectedBox = document.querySelector(`#cta-section-${SID} .variant-box.selected`);
+				if (selectedBox) {
+					updateFirstMonthPricing(selectedBox);
 				}
-
-				// Check if variant has selling plan allocations
-				if (!selectedVariant.selling_plan_allocations || selectedVariant.selling_plan_allocations.length === 0) {
-					console.warn('Selected variant has no selling plan allocations:', selectedVariant.id);
-					handleFallbackFrequencyOptions(el, frequencyOptions, frequencyContainer, SID);
-					return;
-				}
-
-				// Find selling plan that matches the bottle quantity (recommended frequency)
-				let recommendedSellingPlanId = '';
-				if (selectedVariant.selling_plan_allocations) {
-					for (const allocation of selectedVariant.selling_plan_allocations) {
-						const { value, unit } = extractFrequency(allocation.selling_plan.name);
-
-						// If unit is months and matches bottle quantity
-						if (unit === 'month' && value === bottleQuantity) {
-							recommendedSellingPlanId = allocation.selling_plan.id.toString();
-							break;
-						}
-					}
-				}
-
-				// If we found a recommended selling plan, set it as the current
-				if (recommendedSellingPlanId && !el.dataset.subscriptionSellingPlanId) {
-					el.dataset.subscriptionSellingPlanId = recommendedSellingPlanId;
-				}
-
-				// Build frequency options
-				frequencyOptions.innerHTML = '';
-				const currentSellingPlanId = el.dataset.subscriptionSellingPlanId;
-				const fragment = document.createDocumentFragment();
-
-				selectedVariant.selling_plan_allocations.forEach(allocation => {
-					if (!allocation || !allocation.selling_plan) return;
-
-					const plan = allocation.selling_plan;
-
-					// Extract frequency value and unit from plan name
-					const { value, unit } = extractFrequency(plan.name);
-
-					const frequencyBox = document.createElement('div');
-					frequencyBox.className = 'rounded-md cursor-pointer py-2 min-w-[90px] max-w-[168px] text-center w-full transition-all duration-300 ease-in-out';
-
-					// Default state
-					frequencyBox.style.backgroundColor = 'var(--bg-color)';
-					frequencyBox.style.color = 'var(--primary-color)';
-
-					// Set data attributes
-					frequencyBox.dataset.sellingPlanId = plan.id;
-					frequencyBox.dataset.frequencyValue = value;
-					frequencyBox.dataset.frequencyUnit = unit;
-
-					// Set the current selling plan ID to recommended months if it's a new selection
-					// or keep existing selection if it was already set
-					const isRecommendedMonthPlan = (unit === 'month' && value === bottleQuantity);
-					const shouldSelectRecommended = !currentSellingPlanId || isRecommendedMonthPlan;
-
-					if ((plan.id && plan.id.toString() === currentSellingPlanId) ||
-						(shouldSelectRecommended && isRecommendedMonthPlan)) {
-						frequencyBox.style.backgroundColor = 'var(--primary-color)';
-						frequencyBox.style.color = 'white';
-
-						// Update the current box with the recommended selling plan ID
-						if (shouldSelectRecommended && isRecommendedMonthPlan) {
-							el.dataset.subscriptionSellingPlanId = plan.id.toString();
-							const submitSellingPlanId = section.querySelector('.submit-selling-plan-id');
-							if (submitSellingPlanId) {
-								submitSellingPlanId.value = plan.id.toString();
-							}
-						}
-					}
-
-					// Change label format based on the frequency unit
-					let displayText = '';
-					if (unit === 'day') {
-						displayText = value === 1 ? 'Every Day' : `Every ${value} Days`;
-					} else { // month
-						displayText = value === 1 ? 'Every Month' : `Every ${value} Months`;
-					}
-
-					frequencyBox.innerHTML = `
-						<div class="p-1">
-							<span class="font-semibold">${displayText}</span>
-						</div>
-					`;
-
-					fragment.appendChild(frequencyBox);
-				});
-
-				frequencyOptions.appendChild(fragment);
-				frequencyContainer.classList.remove('hidden');
-
-				// Update the description
-				updateFrequencyDescription(SID);
-			} catch (error) {
-				console.error('Error in populateFrequencySelector:', error);
-				handleFallbackFrequencyOptions(el, frequencyOptions, frequencyContainer, SID);
 			}
-		}
-
-		function handleFallbackFrequencyOptions(el, frequencyOptions, frequencyContainer, SID) {
-			if (!frequencyOptions || !frequencyContainer) return;
-
-			if (el.dataset.purchaseType === 'subscribe') {
-				const bottleQuantity = parseInt(el.dataset.bottleQuantity || '1', 10);
-				const currentSellingPlanId = el.dataset.subscriptionSellingPlanId;
-
-				if (currentSellingPlanId) {
-					frequencyOptions.innerHTML = '';
-					const fallbackBox = document.createElement('div');
-					fallbackBox.className = 'rounded-md cursor-pointer py-2 min-w-[90px] max-w-[168px] text-center w-full transition-all duration-300 ease-in-out';
-					fallbackBox.style.backgroundColor = 'var(--primary-color)';
-					fallbackBox.style.color = 'white';
-					fallbackBox.dataset.sellingPlanId = currentSellingPlanId;
-					fallbackBox.dataset.frequencyValue = bottleQuantity.toString();
-					fallbackBox.dataset.frequencyUnit = 'month'; // Default to months
-					fallbackBox.innerHTML = `
-						<div class="p-1">
-							<span class="font-semibold">Every ${bottleQuantity} Month${bottleQuantity > 1 ? 's' : ''}</span>
-						</div>
-					`;
-					frequencyOptions.appendChild(fallbackBox);
-					frequencyContainer.classList.remove('hidden');
-
-					// Update description
-					setTimeout(() => updateFrequencyDescription(SID), 100);
-				} else {
-					frequencyContainer.classList.add('hidden');
-				}
-			} else {
-				frequencyContainer.classList.add('hidden');
-			}
-		}
+		}, 500); // Delay to ensure CuralifeBoxes has initialized
 	});
 </script>
