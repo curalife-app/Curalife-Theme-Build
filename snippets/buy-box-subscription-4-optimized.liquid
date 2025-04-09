@@ -470,28 +470,21 @@
 				};
 			}
 
-			// Get all variant boxes for this product
 			const allVariantBoxes = section.querySelectorAll('.variant-box');
 
-			// Extract variant information from available boxes
 			allVariantBoxes.forEach(box => {
 				const boxVariantId = parseInt(box.dataset.variant);
 				const boxProductId = box.dataset.product;
 
-				// Skip if not matching our product
 				if (boxProductId !== productId) return;
 
-				// Skip if variant already exists
 				if (window.productData[productId].variants.some(v => v.id === boxVariantId)) return;
 
-				// Extract selling plan if available
 				const sellingPlanId = box.dataset.purchaseType === 'subscribe' ?
 					box.dataset.subscriptionSellingPlanId : null;
 
-				// Extract bottle quantity for frequency recommendation
 				const bottleQuantity = parseInt(box.dataset.bottleQuantity || '1');
 
-				// Create a basic variant structure
 				const variantData = {
 					id: boxVariantId,
 					title: `${bottleQuantity} Bottle${bottleQuantity > 1 ? 's' : ''}`,
@@ -500,7 +493,6 @@
 					selling_plan_allocations: []
 				};
 
-				// If this is a subscription variant with a selling plan, add it
 				if (sellingPlanId) {
 					variantData.selling_plan_allocations.push({
 						selling_plan: {
@@ -512,23 +504,18 @@
 					});
 				}
 
-				// Add to product data
 				window.productData[productId].variants.push(variantData);
 			});
 
-			// Mark as initialized
 			window.productData[productId].initialized = true;
 
 			console.log('Product data initialized for SID:', SID);
 
-			// If CuralifeBoxes is initialized, re-select the variant box to trigger frequency options
 			if (window.CuralifeBoxes && window.CuralifeBoxes.instances && window.CuralifeBoxes.instances[SID]) {
-				// Trigger selection of the appropriate box
 				const boxInstance = window.CuralifeBoxes.instances[SID];
 				if (boxInstance.togglePurchaseBox && selectedBox) {
 					console.log('Triggering box selection to initialize frequency options');
 
-					// Give the system time to process
 					setTimeout(() => {
 						boxInstance.togglePurchaseBox(selectedBox);
 					}, 100);
