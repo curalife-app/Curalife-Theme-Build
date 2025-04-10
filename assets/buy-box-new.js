@@ -1123,7 +1123,8 @@ class BuyBoxNew {
 			const { value, unit } = extractFrequency(alloc.selling_plan.name);
 			// Recommended if: unit is month AND value matches quantity
 			// OR if: quantity is 1 AND unit is day AND value is 30
-			if ((unit === "month" && value === bottleQuantity) || (bottleQuantity === 1 && unit === "day" && value === 30)) {
+			// OR if: unit is week AND value is 4
+			if ((unit === "month" && value === bottleQuantity) || (bottleQuantity === 1 && unit === "day" && value === 30) || (unit === "week" && value === 4)) {
 				recommendedPlanId = alloc.selling_plan.id.toString();
 			}
 		});
