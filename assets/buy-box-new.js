@@ -763,7 +763,14 @@ class BuyBoxNew {
 			}
 
 			CartCache.invalidate();
-			window.location.href = "/checkout";
+
+			// Reset loading states before redirecting
+			this.setState({ isRedirectingToCheckout: false, isLoading: false });
+
+			// Small delay to ensure state update completes before redirect
+			setTimeout(() => {
+				window.location.href = "/checkout";
+			}, 50);
 		} catch (err) {
 			console.error("handleBuyNowFlow error:", err);
 			// Reset state only if redirect fails
