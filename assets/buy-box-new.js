@@ -446,7 +446,13 @@ class BuyBoxNew {
 			DOMUtils.updateProperty(this.elements.oneTimeButton, "disabled", isLoading);
 			DOMUtils.updateAttribute(this.elements.oneTimeButton, "aria-busy", isLoading ? "true" : null);
 			DOMUtils.toggleClass(this.elements.oneTimeButton, "disabled", isLoading);
-			// Visual text/style updates for one-time button happen in its click handler
+
+			// Update one-time button content based on loading state
+			if (isLoading) {
+				this.elements.oneTimeButton.innerHTML = '<div class="border-primary/20 border-t-primary animate-spin inline-block w-4 h-4 mr-2 align-middle border-2 rounded-full"></div> Adding...';
+			} else {
+				this.elements.oneTimeButton.innerHTML = this.elements.oneTimeButton.getAttribute("data-original-text") || "One-Time Purchase";
+			}
 		}
 		if (this.elements.productActions) {
 			DOMUtils.toggleClass(this.elements.productActions, "processing-order", isLoading);
@@ -550,30 +556,29 @@ class BuyBoxNew {
 
 		// Main submit button
 		if (this.elements.submitButton) {
-			let isSubmitting = false;
 			this.elements.submitButton.addEventListener("click", async e => {
 				e.preventDefault();
-				if (isSubmitting || this.state.isLoading || this.state.isRedirectingToCheckout) return;
+				if (this.state.isLoading || this.state.isRedirectingToCheckout) return;
 
-				isSubmitting = true;
 				this.setState({ isLoading: true });
 
 				try {
 					const items = this.prepareItemsForCart();
-					if (!items) throw new Error("Could not prepare items."); // prepareItemsForCart handles gift validation
+					if (!items) {
+						this.setState({ isLoading: false });
+						return;
+					}
 
 					if (this.config.buyType === "buy_now") {
 						await this.handleBuyNowFlow(items);
-						// isSubmitting will remain true as page redirects
+						// Loading state reset happens in handleBuyNowFlow
 					} else {
 						await this.addValidItemsToCart(items);
-						isSubmitting = false; // Only reset if not redirecting
 						this.setState({ isLoading: false });
 					}
 				} catch (err) {
 					console.error("Submit error:", err);
 					showNotification(parseErrorMessage(err, "checkout"), "error");
-					isSubmitting = false;
 					this.setState({ isLoading: false });
 				}
 			});
@@ -581,19 +586,11 @@ class BuyBoxNew {
 
 		// One-time purchase button
 		if (this.elements.oneTimeButton) {
-			let isSubmittingOneTime = false;
 			this.elements.oneTimeButton.addEventListener("click", async e => {
 				e.preventDefault();
-				if (isSubmittingOneTime || this.state.isLoading || this.state.isRedirectingToCheckout) return;
+				if (this.state.isLoading || this.state.isRedirectingToCheckout) return;
 
-				isSubmittingOneTime = true;
-				this.setState({ isLoading: true }); // Use centralized loading state
-				DOMUtils.updateProperty(
-					this.elements.oneTimeButton,
-					"innerHTML",
-					'<div class="border-primary/20 border-t-primary animate-spin inline-block w-4 h-4 mr-2 align-middle border-2 rounded-full"></div> Adding...'
-				);
-				DOMUtils.updateAttribute(this.elements.oneTimeButton, "aria-busy", "true");
+				this.setState({ isLoading: true });
 
 				try {
 					const variantId = this.elements.oneTimeButton.dataset.variantId;
@@ -619,31 +616,28 @@ class BuyBoxNew {
 					} else {
 						await this.addValidItemsToCart(items);
 
-						DOMUtils.updateProperty(this.elements.oneTimeButton, "innerHTML", "✓ Added!");
+						// Show success state for 2 seconds then reset
+						this.elements.oneTimeButton.innerHTML = "✓ Added!";
 						this.elements.oneTimeButton.classList.add("text-green-700", "border-green-700");
 						this.elements.oneTimeButton.classList.remove("text-red-600", "border-red-600");
 
 						setTimeout(() => {
-							DOMUtils.updateProperty(this.elements.oneTimeButton, "innerHTML", this.elements.oneTimeButton.getAttribute("data-original-text"));
-							this.elements.oneTimeButton.classList.remove("text-green-700", "border-green-700");
-							DOMUtils.updateAttribute(this.elements.oneTimeButton, "aria-busy", null);
-							isSubmittingOneTime = false;
 							this.setState({ isLoading: false });
+							this.elements.oneTimeButton.classList.remove("text-green-700", "border-green-700");
 						}, 2000);
 					}
 				} catch (err) {
 					console.error("One-time add error:", err);
 					showNotification(parseErrorMessage(err, "cart-add"), "error");
-					DOMUtils.updateProperty(this.elements.oneTimeButton, "innerHTML", "⚠ Failed");
+
+					// Show error state for 2 seconds then reset
+					this.elements.oneTimeButton.innerHTML = "⚠ Failed";
 					this.elements.oneTimeButton.classList.add("text-red-600", "border-red-600");
 					this.elements.oneTimeButton.classList.remove("text-green-700", "border-green-700");
 
 					setTimeout(() => {
-						DOMUtils.updateProperty(this.elements.oneTimeButton, "innerHTML", this.elements.oneTimeButton.getAttribute("data-original-text"));
-						this.elements.oneTimeButton.classList.remove("text-red-600", "border-red-600");
-						DOMUtils.updateAttribute(this.elements.oneTimeButton, "aria-busy", null);
-						isSubmittingOneTime = false;
 						this.setState({ isLoading: false });
+						this.elements.oneTimeButton.classList.remove("text-red-600", "border-red-600");
 					}, 2000);
 				}
 			});
@@ -741,7 +735,7 @@ class BuyBoxNew {
 
 	async handleBuyNowFlow(items) {
 		try {
-			this.setState({ isRedirectingToCheckout: true }); // Keep loading true
+			this.setState({ isRedirectingToCheckout: true });
 
 			// Remove cart popup if it exists
 			const cartPopup = document.getElementById("upCart");
