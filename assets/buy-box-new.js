@@ -219,27 +219,21 @@ async function clearCart() {
 function extractFrequency(planName) {
 	if (!planName) return { value: 1, unit: "month" };
 
-	console.log(`Extracting frequency from plan name: "${planName}"`);
-
 	let daysMatch = planName.match(/(\d+)\s*Day/i);
 	if (daysMatch) {
-		console.log(`Found days match: ${daysMatch[1]} days`);
 		return { value: parseInt(daysMatch[1], 10), unit: "day" };
 	}
 
 	let weeksMatch = planName.match(/(\d+)\s*Week/i);
 	if (weeksMatch) {
-		console.log(`Found weeks match: ${weeksMatch[1]} weeks`);
 		return { value: parseInt(weeksMatch[1], 10), unit: "week" };
 	}
 
 	let monthsMatch = planName.match(/(\d+)\s*Month/i);
 	if (monthsMatch) {
-		console.log(`Found months match: ${monthsMatch[1]} months`);
 		return { value: parseInt(monthsMatch[1], 10), unit: "month" };
 	}
 
-	console.warn(`No frequency match found in plan name: "${planName}". Defaulting to 1 month.`);
 	return { value: 1, unit: "month" };
 }
 
@@ -1082,15 +1076,8 @@ class BuyBoxNew {
 
 		let plans = variantData.selling_plan_allocations;
 
-		// Debug: Log the selling plans we found
-		console.log(`Found ${plans.length} selling plans for variant ${variantId}:`);
-		plans.forEach(plan => {
-			console.log(`  Plan ID: ${plan.selling_plan.id}, Name: "${plan.selling_plan.name}"`);
-		});
-
 		// Filter by allowed IDs if provided
 		if (allowedPlanIds) {
-			console.log(`Filtering by allowed plan IDs: ${allowedPlanIds.join(", ")}`);
 			plans = plans.filter(alloc => allowedPlanIds.includes(alloc.selling_plan.id.toString()));
 			if (plans.length === 0) {
 				console.warn(`No selling plans matched the allowed list for variant ${variantId}:`, allowedPlansAttr);
@@ -1098,13 +1085,6 @@ class BuyBoxNew {
 				return;
 			}
 		}
-
-		// Debug: Log the frequencies extracted from each plan
-		console.log(`After filtering, ${plans.length} plans remain. Extracted frequencies:`);
-		plans.forEach(plan => {
-			const freq = extractFrequency(plan.selling_plan.name);
-			console.log(`  Plan: "${plan.selling_plan.name}" → ${freq.value} ${freq.unit}(s)`);
-		});
 
 		// Sort plans by frequency
 		plans.sort((a, b) => {
