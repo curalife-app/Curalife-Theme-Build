@@ -1228,7 +1228,6 @@ window.CuralifeBoxes = window.CuralifeBoxes || {
 	 * Add required styles to the document
 	 */
 	addStyles() {
-		// Check if styles are already added
 		if (document.getElementById("curalife-buy-box-styles")) return;
 
 		const styleElement = document.createElement("style");
