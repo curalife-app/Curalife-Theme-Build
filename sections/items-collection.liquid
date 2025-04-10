@@ -370,13 +370,13 @@
 			};
 
 			// Create a debounce function for resize events
-			const debounce = (func, delay) => {
+			window.debounce = window.debounce || ((func, delay) => {
 				let timeout;
 				return function(...args) {
 					clearTimeout(timeout);
 					timeout = setTimeout(() => func.apply(this, args), delay);
 				};
-			};
+			});
 
 			// Use "load" event to initialize UI after content is fully loaded
 			window.addEventListener('load', function() {
@@ -413,7 +413,7 @@
 				{% endif %}
 
 				// Use passive event listener for better scroll performance
-				window.addEventListener('resize', debounce(function() {
+				window.addEventListener('resize', window.debounce(function() {
 					const newIsMobile = window.innerWidth <= 768;
 					if (isMobile !== newIsMobile) {
 						isMobile = newIsMobile;
