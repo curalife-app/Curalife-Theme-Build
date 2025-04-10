@@ -1097,7 +1097,7 @@ class BuyBoxNew {
 				let optionText = `Every ${value} ${unit.charAt(0).toUpperCase() + unit.slice(1)}${value > 1 ? "s" : ""}`;
 				console.log(` -> Creating option: PlanID=${plan.id}, Value=${value}, Unit=${unit}, Recommended? ${isRecommended} (Comparing to ${recommendedPlanId})`);
 				if (isRecommended) {
-					optionText += " (Recommended)";
+					optionText += " (Recommended Use)";
 				}
 				const option = DOMUtils.createElement("option", {
 					value: plan.id,
