@@ -226,6 +226,7 @@ function extractFrequency(planName) {
 
 class BuyBoxNew {
 	constructor(container, config) {
+		console.log(`BuyBoxNew (${config.SID}): Constructor started.`);
 		this.container = container;
 		this.config = config;
 		this.elements = {};
@@ -253,11 +254,17 @@ class BuyBoxNew {
 		this.initState();
 		this.attachEventListeners();
 		this.moveCtaTextIfNeeded();
+		console.log(`BuyBoxNew (${config.SID}): Constructor finished.`);
 	}
 
 	bindElements() {
-		this.elements.productActions = this.container.querySelector(".product-actions");
-		if (!this.elements.productActions) return;
+		console.log(`BuyBoxNew (${this.config.SID}): bindElements started.`);
+		this.elements.productActions = this.container;
+
+		if (!this.elements.productActions || !this.elements.productActions.classList.contains("product-actions")) {
+			console.error(`BuyBoxNew (${this.config.SID}): The provided container is not the expected .product-actions element.`);
+			return; // Stop binding if the container is wrong
+		}
 
 		this.elements.purchaseOptionBoxes = this.elements.productActions.querySelectorAll(".variant-box");
 		this.elements.submitButton = this.elements.productActions.querySelector(".checkout-button button");
@@ -271,6 +278,7 @@ class BuyBoxNew {
 		this.elements.priceDisplays = this.elements.productActions.querySelectorAll(".price-display");
 		this.elements.ctaText = this.container.querySelector(".cta-text");
 		this.elements.giftContainer = this.elements.productActions.querySelector(".gift-container"); // Assuming a container for gifts
+		console.log(`BuyBoxNew (${this.config.SID}): Elements bound:`, this.elements);
 	}
 
 	storeInitialProductData() {
@@ -412,7 +420,11 @@ class BuyBoxNew {
 	}
 
 	initState() {
-		if (!this.elements.productActions || !this.elements.purchaseOptionBoxes?.length > 0) return;
+		console.log(`BuyBoxNew (${this.config.SID}): initState started.`);
+		if (!this.elements.productActions || !this.elements.purchaseOptionBoxes?.length > 0) {
+			console.warn(`BuyBoxNew (${this.config.SID}): initState - productActions or purchaseOptionBoxes not found. Aborting init.`);
+			return;
+		}
 
 		const defaultIdx = parseInt(this.elements.productActions.dataset.defaultVariantIndex, 10) || 0;
 		let defaultBox = null;
@@ -449,15 +461,22 @@ class BuyBoxNew {
 		}
 
 		setTimeout(() => this.setState({ isInitialLoad: false }), 100);
+		console.log(`BuyBoxNew (${this.config.SID}): initState finished. Initial state:`, this.state);
 	}
 
 	attachEventListeners() {
-		if (!this.elements.productActions) return;
+		console.log(`BuyBoxNew (${this.config.SID}): attachEventListeners started.`);
+		if (!this.elements.productActions) {
+			console.error(`BuyBoxNew (${this.config.SID}): Cannot attach listeners, productActions element not found.`);
+			return;
+		}
 
 		// Variant box selection
 		this.elements.productActions.addEventListener("click", e => {
+			console.log(`BuyBoxNew (${this.config.SID}): productActions click event fired. Target:`, e.target);
 			const box = e.target.closest(".variant-boxes .variant-box");
 			if (box && !box.classList.contains("selected")) {
+				console.log(`BuyBoxNew (${this.config.SID}): Variant box clicked:`, box);
 				e.preventDefault();
 				this.setState({ selectedBox: box }); // Trigger state update
 			}
@@ -580,6 +599,7 @@ class BuyBoxNew {
 				}
 			});
 		}
+		console.log(`BuyBoxNew (${this.config.SID}): attachEventListeners finished.`);
 	}
 
 	prepareItemsForCart() {
@@ -1200,10 +1220,13 @@ class BuyBoxNew {
 
 // Initialization logic
 document.addEventListener("DOMContentLoaded", () => {
+	console.log("BuyBoxNew Init: DOMContentLoaded fired.");
 	// Find all buy box containers on the page
 	const buyBoxContainers = document.querySelectorAll("[data-buy-box-new-root]"); // Add this attribute to your root container in Liquid
+	console.log(`BuyBoxNew Init: Found ${buyBoxContainers.length} container(s).`);
 
-	buyBoxContainers.forEach(container => {
+	buyBoxContainers.forEach((container, index) => {
+		console.log(`BuyBoxNew Init: Processing container ${index + 1}.`);
 		// Extract config from data attributes
 		const config = {
 			SID: container.dataset.sid,
@@ -1224,6 +1247,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			console.warn(`BuyBoxNew (${config.SID}): Product data for ID ${container.dataset.productId} not found in window.productData during initialization.`);
 		}
 
+		console.log(`BuyBoxNew Init: Config for container ${index + 1}:`, config);
 		// Initialize a BuyBoxNew instance for each container
 		new BuyBoxNew(container, config);
 	});
