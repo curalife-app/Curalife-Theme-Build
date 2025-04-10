@@ -1069,29 +1069,38 @@ class BuyBoxNew {
 			return daysA - daysB;
 		});
 
-		// Find recommended plan (matches bottle quantity, in months)
+		// Find recommended plan (matches bottle quantity, in months, OR 30 days if quantity is 1)
 		const bottleQuantity = parseInt(selectedVariantBox.dataset.bottleQuantity || "1", 10);
 		let recommendedPlanId = null;
 		plans.forEach(alloc => {
 			const { value, unit } = extractFrequency(alloc.selling_plan.name);
-			if (unit === "month" && value === bottleQuantity) {
+			// Recommended if: unit is month AND value matches quantity
+			// OR if: quantity is 1 AND unit is day AND value is 30
+			if ((unit === "month" && value === bottleQuantity) || (bottleQuantity === 1 && unit === "day" && value === 30)) {
 				recommendedPlanId = alloc.selling_plan.id.toString();
 			}
 		});
 
 		// Determine the plan ID to pre-select
-		// Priority: current state -> box attribute -> recommended -> first plan
 		let planIdToSelect = this.state.sellingPlanId || selectedVariantBox.dataset.subscriptionSellingPlanId || recommendedPlanId || plans[0]?.selling_plan.id.toString();
+
+		console.log(`populateFrequencySelector: bottleQuantity=${bottleQuantity}, recommendedPlanId=${recommendedPlanId}, planIdToSelect=${planIdToSelect}`); // Log initial values
 
 		plans.forEach(allocation => {
 			const plan = allocation.selling_plan;
 			const { value, unit } = extractFrequency(plan.name);
 			const isSelected = plan.id.toString() === planIdToSelect;
+			const isRecommended = plan.id.toString() === recommendedPlanId;
 
 			if (uiType === "dropdown") {
+				let optionText = `Every ${value} ${unit.charAt(0).toUpperCase() + unit.slice(1)}${value > 1 ? "s" : ""}`;
+				console.log(` -> Creating option: PlanID=${plan.id}, Value=${value}, Unit=${unit}, Recommended? ${isRecommended} (Comparing to ${recommendedPlanId})`);
+				if (isRecommended) {
+					optionText += " (Recommended)";
+				}
 				const option = DOMUtils.createElement("option", {
 					value: plan.id,
-					textContent: `Every ${value} ${unit.charAt(0).toUpperCase() + unit.slice(1)}${value > 1 ? "s" : ""}`,
+					textContent: optionText,
 					selected: isSelected,
 					"data-frequency-value": value,
 					"data-frequency-unit": unit
@@ -1172,25 +1181,31 @@ class BuyBoxNew {
 	updateFrequencyDescription() {
 		if (!this.elements.frequencyDescription || !this.state.selectedBox) return;
 
+		const uiType = this.elements.frequencyContainer?.dataset.uiType || "tabs";
+
+		// Hide description element if using dropdown UI
+		if (uiType === "dropdown") {
+			DOMUtils.updateProperty(this.elements.frequencyDescription, "innerHTML", ""); // Clear text
+			DOMUtils.updateStyle(this.elements.frequencyDescription, "opacity", "0"); // Hide immediately
+			return; // Exit early
+		}
+
+		// --- Existing logic for Tabs UI ---
 		const selectedBox = this.state.selectedBox;
 		const bottleQuantity = parseInt(selectedBox.dataset.bottleQuantity || "1", 10);
-		const uiType = this.elements.frequencyContainer?.dataset.uiType || "tabs";
 		let selectedValue, selectedUnit;
 
 		if (this.state.sellingPlanId) {
-			// Try to get frequency from the selected option element first
 			let selectedOption;
-			if (uiType === "dropdown" && this.elements.frequencyDropdown) {
-				selectedOption = this.elements.frequencyDropdown.options[this.elements.frequencyDropdown.selectedIndex];
-			} else if (uiType === "tabs" && this.elements.frequencyOptions) {
+			// Only check Tabs here since dropdown case is handled above
+			if (uiType === "tabs" && this.elements.frequencyOptions) {
 				selectedOption = this.elements.frequencyOptions.querySelector(`[data-selling-plan-id="${this.state.sellingPlanId}"]`);
 			}
 
-			if (selectedOption && selectedOption.dataset.frequencyValue && selectedOption.dataset.frequencyUnit) {
+			if (selectedOption?.dataset.frequencyValue && selectedOption?.dataset.frequencyUnit) {
 				selectedValue = parseInt(selectedOption.dataset.frequencyValue, 10);
 				selectedUnit = selectedOption.dataset.frequencyUnit;
 			} else {
-				// Fallback: Find plan in product data if element data is missing
 				const variantData = this.findVariantInProductData(this.state.variantId);
 				const allocation = variantData?.selling_plan_allocations?.find(a => a.selling_plan.id.toString() === this.state.sellingPlanId);
 				if (allocation) {
@@ -1202,18 +1217,16 @@ class BuyBoxNew {
 		}
 
 		let description = "";
-		// Show recommendation only if the selected frequency is *not* the bottle quantity (in months)
 		if (selectedValue && selectedUnit && !(selectedUnit === "month" && selectedValue === bottleQuantity)) {
 			description = `Recommended - every ${bottleQuantity} month${bottleQuantity > 1 ? "s" : ""}`;
 		}
 
-		// Animate the description change
 		if (this.elements.frequencyDescription.innerHTML !== description) {
 			DOMUtils.updateStyle(this.elements.frequencyDescription, "opacity", "0");
 			setTimeout(() => {
 				DOMUtils.updateProperty(this.elements.frequencyDescription, "innerHTML", description);
 				DOMUtils.updateStyle(this.elements.frequencyDescription, "opacity", "1");
-			}, 200); // Match fade duration
+			}, 200);
 		}
 	}
 
