@@ -662,26 +662,10 @@ class BuyBoxNew {
 			// persisted is true if the page was restored from the bfcache
 			if (event.persisted) {
 				console.log(`BuyBoxNew (${this.config.SID}): Page restored from cache - reinitializing UI`);
-
-				// Wait for DOM to fully restore
-				setTimeout(() => {
-					// Reinitialize UI elements
-					if (this.state.selectedBox) {
-						this.updateSelectedBoxUI(this.state.selectedBox);
-
-						// Explicitly restore frequency dropdown if applicable
-						if (this.state.purchaseType === "subscribe" && this.state.sellingPlanId) {
-							// First ensure the frequency container is visible
-							this.handleFrequencySelectorVisibility(true, this.state.selectedBox);
-
-							// Then explicitly set the dropdown value if it's a dropdown
-							if (this.elements.frequencyContainer?.dataset.uiType === "dropdown" && this.elements.frequencyDropdown) {
-								console.log(`BuyBoxNew (${this.config.SID}): Explicitly restoring dropdown selection to ${this.state.sellingPlanId}`);
-								this.elements.frequencyDropdown.value = this.state.sellingPlanId;
-							}
-						}
-					}
-				}, 150); // Slightly longer delay to ensure DOM is fully ready
+				// Reinitialize UI elements
+				if (this.state.selectedBox) {
+					this.updateSelectedBoxUI(this.state.selectedBox);
+				}
 			}
 		});
 
@@ -1193,25 +1177,6 @@ class BuyBoxNew {
 				optionsContainer.appendChild(freqBox);
 			}
 		});
-
-		// For dropdown, explicitly set the selected value - this is crucial for visual indicator
-		if (uiType === "dropdown" && planIdToSelect && this.elements.frequencyDropdown) {
-			// Set the value directly after all options are added
-			this.elements.frequencyDropdown.value = planIdToSelect;
-
-			// Force a change event if needed
-			if (this.elements.frequencyDropdown.value !== planIdToSelect) {
-				console.warn(`BuyBoxNew (${this.config.SID}): Dropdown value not set correctly, forcing selection`);
-				// Try setting it with additional DOM methods
-				const optionToSelect = Array.from(this.elements.frequencyDropdown.options).find(opt => opt.value === planIdToSelect);
-				if (optionToSelect) {
-					optionToSelect.selected = true;
-					this.elements.frequencyDropdown.dispatchEvent(new Event("change", { bubbles: true }));
-				}
-			}
-
-			console.log(`BuyBoxNew (${this.config.SID}): Set dropdown value to ${planIdToSelect}`);
-		}
 
 		// Ensure the state reflects the actual selected plan ID
 		if (planIdToSelect && planIdToSelect !== this.state.sellingPlanId) {
