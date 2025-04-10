@@ -224,9 +224,19 @@ function extractFrequency(planName) {
 	return { value: 1, unit: "month" };
 }
 
+// At the top of the file, add a static instances map for tracking
+const BuyBoxNewInstances = new Map();
+
 class BuyBoxNew {
 	constructor(container, config) {
 		console.log(`BuyBoxNew (${config.SID}): Constructor started.`);
+
+		// Check if an instance already exists for this SID
+		if (BuyBoxNewInstances.has(config.SID)) {
+			console.warn(`BuyBoxNew (${config.SID}): Instance already exists, returning existing instance`);
+			return BuyBoxNewInstances.get(config.SID);
+		}
+
 		this.container = container;
 		this.config = config;
 		this.elements = {};
@@ -247,6 +257,9 @@ class BuyBoxNew {
 			console.error("BuyBoxNew: Container element not found for SID:", this.config.SID);
 			return;
 		}
+
+		// Store this instance in the map
+		BuyBoxNewInstances.set(config.SID, this);
 
 		this.bindElements();
 		this.storeInitialProductData();
@@ -1275,6 +1288,16 @@ class BuyBoxNew {
 			}
 		}
 		// Optional: Add logic to move it back on resize if needed
+	}
+
+	// Optional: Add a static method to retrieve instances
+	static getInstance(sid) {
+		return BuyBoxNewInstances.get(sid);
+	}
+
+	// Optional: Add a static method to retrieve all instances
+	static getAllInstances() {
+		return Array.from(BuyBoxNewInstances.values());
 	}
 }
 
