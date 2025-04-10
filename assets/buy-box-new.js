@@ -831,9 +831,10 @@ class BuyBoxNew {
 		// Calculate savings IN CENTS
 		const saveAmount = displayOrigPrice - displayItemPrice;
 
-		// Calculate savings IN DOLLARS for display text
+		// Calculate savings IN DOLLARS and round to nearest whole number
 		const saveAmountDollars = saveAmount / 100;
-		const savingsText = saveAmountDollars > 0 ? `SAVE ${this.state.currencySymbol}${saveAmountDollars.toFixed(2)}` : "";
+		const roundedSaveAmountDollars = Math.round(saveAmountDollars);
+		const savingsText = roundedSaveAmountDollars > 0 ? `SAVE ${this.state.currencySymbol}${roundedSaveAmountDollars}` : "";
 
 		// Format prices (expects cents input)
 		const formatMoney = amount => `${this.state.currencySymbol}${(amount / 100).toFixed(2)}`;
