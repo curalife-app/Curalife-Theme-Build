@@ -328,13 +328,11 @@ class BuyBoxNew {
 
 		const isSub = boxElement.dataset.purchaseType === "subscribe";
 		const variantId = boxElement.dataset.variant;
-		let planId = isSub ? boxElement.dataset.subscriptionSellingPlanId : null; // Null for non-subs
+		let planId = isSub ? boxElement.dataset.subscriptionSellingPlanId : null;
 
-		// Update hidden inputs if they exist
 		if (this.elements.submitSellingPlanId) this.elements.submitSellingPlanId.value = planId || "";
 		if (this.elements.submitVariantId) this.elements.submitVariantId.value = variantId || "";
 
-		// Update state (internal tracking)
 		this.setState({
 			sellingPlanId: planId,
 			variantId: variantId,
@@ -342,11 +340,21 @@ class BuyBoxNew {
 			productId: boxElement.dataset.product
 		});
 
-		// Visual selection update
+		// Visual selection update using Tailwind classes
 		this.elements.purchaseOptionBoxes.forEach(box => {
-			DOMUtils.toggleClass(box, "selected", box === boxElement);
+			const isSelected = box === boxElement;
+			// Active state
+			DOMUtils.toggleClass(box, "bg-primary", isSelected);
+			DOMUtils.toggleClass(box, "text-white", isSelected);
+			// Default/Unselected state
+			DOMUtils.toggleClass(box, "bg-white", !isSelected);
+			DOMUtils.toggleClass(box, "text-primary", !isSelected);
+			// Hover state (only for unselected)
+			DOMUtils.toggleClass(box, "hover:bg-gray-100", !isSelected);
+
+			// Ensure radio button state matches
 			const radio = box.querySelector('input[type="radio"]');
-			if (radio) DOMUtils.updateProperty(radio, "checked", box === boxElement);
+			if (radio) DOMUtils.updateProperty(radio, "checked", isSelected);
 		});
 
 		this.updateBuyButtonTracking(boxElement);
@@ -368,8 +376,11 @@ class BuyBoxNew {
 			this.elements.frequencyOptions.querySelectorAll("div[data-selling-plan-id]").forEach(box => {
 				const boxId = box.getAttribute("data-selling-plan-id");
 				const isSelected = boxId === sellingPlanId;
-				DOMUtils.updateStyle(box, "backgroundColor", isSelected ? "var(--primary-color)" : "var(--bg-color)");
-				DOMUtils.updateStyle(box, "color", isSelected ? "white" : "var(--primary-color)");
+				DOMUtils.toggleClass(box, "bg-primary", isSelected);
+				DOMUtils.toggleClass(box, "text-white", isSelected);
+				DOMUtils.toggleClass(box, "bg-white", !isSelected);
+				DOMUtils.toggleClass(box, "text-primary", !isSelected);
+				DOMUtils.toggleClass(box, "hover:bg-gray-100", !isSelected);
 			});
 		} else if (uiType === "dropdown" && this.elements.frequencyDropdown) {
 			// Dropdown selection is handled by its 'change' event,
@@ -780,16 +791,18 @@ class BuyBoxNew {
 		const displayOrigPrice = this.config.priceFormat === "per_bottle" ? origItemCap : totalOrigCap;
 		const displayRegularPrice = this.config.priceFormat === "per_bottle" ? regularItemPrice : regularTotalPrice;
 
-		// Calculate savings
+		// Calculate savings IN CENTS
 		const saveAmount = displayOrigPrice - displayItemPrice;
-		const flooredSave = Math.floor(saveAmount); // Use floor for display consistency
-		const savingsText = flooredSave > 0 ? `SAVE ${this.state.currencySymbol}${flooredSave}` : "";
 
-		// Format prices
-		const formatMoney = amount => `${this.state.currencySymbol}${amount.toFixed(2)}`;
-		const newMainPriceText = formatMoney(displayItemPrice / 100);
-		const newComparePriceText = formatMoney(displayOrigPrice / 100);
-		const regularPriceFormatted = formatMoney(displayRegularPrice / 100);
+		// Calculate savings IN DOLLARS for display text
+		const saveAmountDollars = saveAmount / 100;
+		const savingsText = saveAmountDollars > 0 ? `SAVE ${this.state.currencySymbol}${saveAmountDollars.toFixed(2)}` : "";
+
+		// Format prices (expects cents input)
+		const formatMoney = amount => `${this.state.currencySymbol}${(amount / 100).toFixed(2)}`;
+		const newMainPriceText = formatMoney(displayItemPrice);
+		const newComparePriceText = formatMoney(displayOrigPrice);
+		const regularPriceFormatted = formatMoney(displayRegularPrice);
 
 		// Future price notice text
 		const newFuturePriceText = firstMonthDiscountPercent > 0 ? `Special price for first order. Refills for ${regularPriceFormatted}${this.config.priceFormat === "per_bottle" ? "/bottle" : ""}.` : "";
@@ -822,7 +835,7 @@ class BuyBoxNew {
 				if (capChanged) DOMUtils.updateProperty(capEl, "textContent", newComparePriceText);
 				if (discountChanged) {
 					DOMUtils.updateProperty(discountBadgeEl, "textContent", savingsText);
-					DOMUtils.toggleClass(discountBadgeEl, "hidden", flooredSave <= 0 || this.config.priceFormat !== "total");
+					DOMUtils.toggleClass(discountBadgeEl, "hidden", saveAmount <= 0 || this.config.priceFormat !== "total");
 				}
 				if (totalLineChanged) DOMUtils.updateProperty(totalLineEl, "innerHTML", newTotalLineHTML);
 				if (futurePriceChanged) DOMUtils.updateProperty(futurePriceEl, "textContent", newFuturePriceText);
@@ -842,7 +855,7 @@ class BuyBoxNew {
 					if (capChanged) DOMUtils.updateProperty(capEl, "textContent", newComparePriceText);
 					if (discountChanged) {
 						DOMUtils.updateProperty(discountBadgeEl, "textContent", savingsText);
-						DOMUtils.toggleClass(discountBadgeEl, "hidden", flooredSave <= 0 || this.config.priceFormat !== "total");
+						DOMUtils.toggleClass(discountBadgeEl, "hidden", saveAmount <= 0 || this.config.priceFormat !== "total");
 					}
 					if (totalLineChanged) DOMUtils.updateProperty(totalLineEl, "innerHTML", newTotalLineHTML);
 					if (futurePriceChanged) DOMUtils.updateProperty(futurePriceEl, "textContent", newFuturePriceText);
@@ -1050,14 +1063,10 @@ class BuyBoxNew {
 			} else {
 				// Tabs UI
 				const freqBox = DOMUtils.createElement("div", {
-					className: "frequency-box rounded-md cursor-pointer py-2 px-3 min-w-[90px] max-w-[168px] text-center w-full transition-all duration-300 ease-in-out border border-primary",
+					className: `frequency-box rounded border border-primary cursor-pointer py-2 px-3 min-w-[90px] max-w-[168px] text-center w-full transition-all duration-300 ease-in-out ${isSelected ? "bg-primary text-white" : "bg-white text-primary hover:bg-gray-100"}`,
 					"data-selling-plan-id": plan.id,
 					"data-frequency-value": value,
 					"data-frequency-unit": unit,
-					style: {
-						backgroundColor: isSelected ? "var(--primary-color)" : "var(--bg-color)",
-						color: isSelected ? "white" : "var(--primary-color)"
-					},
 					innerHTML: `<span class="font-semibold text-[14px] block">Every ${value}</span><span class="text-[12px] block">${unit.charAt(0).toUpperCase() + unit.slice(1)}${value > 1 ? "s" : ""}</span>`
 				});
 				optionsContainer.appendChild(freqBox);
@@ -1105,11 +1114,10 @@ class BuyBoxNew {
 			} else {
 				// Tabs
 				const fallbackBox = DOMUtils.createElement("div", {
-					className: "frequency-box rounded-md cursor-pointer py-2 px-3 min-w-[90px] max-w-[168px] text-center w-full transition-all duration-300 ease-in-out border border-primary",
+					className: "frequency-box rounded border border-primary cursor-pointer py-2 px-3 min-w-[90px] max-w-[168px] text-center w-full transition-all duration-300 ease-in-out bg-primary text-white", // Selected style
 					"data-selling-plan-id": currentSellingPlanId,
 					"data-frequency-value": bottleQuantity.toString(),
 					"data-frequency-unit": "month",
-					style: { backgroundColor: "var(--primary-color)", color: "white" }, // Selected style
 					innerHTML: `<span class="font-semibold text-[14px] block">Every ${bottleQuantity}</span><span class="text-[12px] block">Month${bottleQuantity > 1 ? "s" : ""}</span>`
 				});
 				frequencyOptions.appendChild(fallbackBox);
