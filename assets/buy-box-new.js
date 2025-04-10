@@ -342,6 +342,8 @@ class BuyBoxNew {
 		// Visual selection update using Tailwind classes
 		this.elements.purchaseOptionBoxes.forEach(box => {
 			const isSelected = box === boxElement;
+
+			// --- Parent Box Styling ---
 			// Active state
 			DOMUtils.toggleClass(box, "bg-primary", isSelected);
 			DOMUtils.toggleClass(box, "text-white", isSelected);
@@ -350,6 +352,17 @@ class BuyBoxNew {
 			DOMUtils.toggleClass(box, "text-primary", !isSelected);
 			// Hover state (only for unselected)
 			DOMUtils.toggleClass(box, "hover:bg-gray-100", !isSelected);
+
+			// --- Child Discount Badge Styling ---
+			const discountBadge = box.querySelector(".discount");
+			if (discountBadge) {
+				// Selected Parent State (Orange Badge)
+				DOMUtils.toggleClass(discountBadge, "bg-orange", isSelected);
+				DOMUtils.toggleClass(discountBadge, "text-primary", isSelected);
+				// Default Parent State (Primary Badge)
+				DOMUtils.toggleClass(discountBadge, "bg-primary", !isSelected);
+				DOMUtils.toggleClass(discountBadge, "text-white", !isSelected);
+			}
 
 			// Ensure radio button state matches
 			const radio = box.querySelector('input[type="radio"]');
