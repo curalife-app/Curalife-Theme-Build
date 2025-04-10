@@ -642,6 +642,33 @@ class BuyBoxNew {
 				}
 			});
 		}
+
+		// Add visibility change listener to handle browser back button
+		document.addEventListener("visibilitychange", () => {
+			if (document.visibilityState === "visible") {
+				// Small delay to ensure DOM is ready after tab/page becomes visible
+				setTimeout(() => {
+					// Check if we need to repopulate the frequency selector
+					if (this.state.selectedBox && this.state.purchaseType === "subscribe") {
+						console.log(`BuyBoxNew (${this.config.SID}): Page became visible - repopulating frequency selector`);
+						this.handleFrequencySelectorVisibility(true, this.state.selectedBox);
+					}
+				}, 100);
+			}
+		});
+
+		// Add pageshow event as additional protection for back button
+		window.addEventListener("pageshow", event => {
+			// persisted is true if the page was restored from the bfcache
+			if (event.persisted) {
+				console.log(`BuyBoxNew (${this.config.SID}): Page restored from cache - reinitializing UI`);
+				// Reinitialize UI elements
+				if (this.state.selectedBox) {
+					this.updateSelectedBoxUI(this.state.selectedBox);
+				}
+			}
+		});
+
 		console.log(`BuyBoxNew (${this.config.SID}): attachEventListeners finished.`);
 	}
 
@@ -1065,7 +1092,15 @@ class BuyBoxNew {
 			return;
 		}
 
-		optionsContainer.innerHTML = ""; // Clear previous options
+		// Check if empty (for dropdown, check if it has no options or only empty options)
+		const isEmpty =
+			uiType === "dropdown" ? optionsContainer.options.length === 0 || (optionsContainer.options.length === 1 && optionsContainer.options[0].value === "") : optionsContainer.innerHTML.trim() === "";
+
+		// Only clear if it's actually empty - helps prevent flickering when just updating selection
+		if (isEmpty) {
+			console.log(`BuyBoxNew (${this.config.SID}): Frequency container was empty, repopulating`);
+			optionsContainer.innerHTML = ""; // Clear previous options
+		}
 
 		const variantData = this.findVariantInProductData(variantId);
 
