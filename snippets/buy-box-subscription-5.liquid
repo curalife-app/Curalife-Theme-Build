@@ -301,6 +301,47 @@
 	</div>
 </div>
 
-{% comment %} Removed inline JavaScript - Logic moved to buy-box-new.js {% endcomment %}
+{% comment %} Pass product data to JS {% endcomment %}
+<script>
+	document.addEventListener('DOMContentLoaded', () => {
+		if (!window.productData) window.productData = {};
+		{% if prod and prod.id %}
+		window.productData[{{ prod.id | json }}] = {
+			id: {{ prod.id | json }},
+			handle: {{ prod.handle | json }},
+			title: {{ prod.title | json }},
+			variants: [
+				{% for variant in prod.variants %}
+				{
+					id: {{ variant.id | json }},
+					title: {{ variant.title | json }},
+					price: {{ variant.price | json }},
+                    compare_at_price: {{ variant.compare_at_price | json }},
+					sku: {{ variant.sku | json }},
+					{% if variant.selling_plan_allocations.size > 0 %}
+					selling_plan_allocations: [
+						{% for allocation in variant.selling_plan_allocations %}
+						{
+							selling_plan: {
+								id: {{ allocation.selling_plan.id | json }},
+								name: {{ allocation.selling_plan.name | json }}
+							},
+							price: {{ allocation.price | json }},
+							compare_at_price: {{ allocation.compare_at_price | json }}
+						}{% unless forloop.last %},{% endunless %}
+						{% endfor %}
+					]
+					{% else %}
+					selling_plan_allocations: []
+					{% endif %}
+				}{% unless forloop.last %},{% endunless %}
+				{% endfor %}
+			],
+			initialized: true // Mark as initialized by Liquid
+		};
+		{% endif %}
+	});
+</script>
 
+{% comment %} JS logic moved to src/js/buy-box-new.js {% endcomment %}
 <script src="{{ 'buy-box-new.js' | asset_url }}" defer="defer"></script>

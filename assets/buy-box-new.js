@@ -275,20 +275,27 @@ class BuyBoxNew {
 
 	storeInitialProductData() {
 		if (!window.productData) window.productData = {};
-		if (this.config.product && this.config.product.id && !window.productData[this.config.product.id]) {
-			window.productData[this.config.product.id] = { ...this.config.product, initialized: true };
-			this.state.productId = this.config.product.id;
-		} else if (this.elements.purchaseOptionBoxes?.length > 0) {
-			const firstBox = this.elements.purchaseOptionBoxes[0];
-			const productId = firstBox.dataset.product;
-			if (productId && !window.productData[productId]) {
-				window.productData[productId] = {
-					id: productId,
-					variants: [],
-					initialized: false // Mark as not fully initialized yet
-				};
+
+		const productIdFromData = this.container.dataset.productId;
+		if (!productIdFromData) {
+			console.error(`BuyBoxNew (${this.config.SID}): Missing data-product-id on root container.`);
+			return; // Cannot proceed without product ID
+		}
+
+		this.state.productId = productIdFromData;
+
+		// Check if data for this product ID was already populated by the inline script
+		if (window.productData[productIdFromData]?.initialized) {
+			console.log(`BuyBoxNew (${this.config.SID}): Using pre-populated product data for ID ${productIdFromData}.`);
+			this.config.product = window.productData[productIdFromData]; // Assign to instance config
+		} else {
+			// If not pre-populated (e.g., inline script failed or wasn't present), log a warning.
+			// The findVariantInProductData method might still work if data exists but lacks the 'initialized' flag.
+			console.warn(`BuyBoxNew (${this.config.SID}): Product data for ID ${productIdFromData} was not marked as initialized by Liquid. Functionality may be limited.`);
+			// Optionally create a placeholder if it doesn't exist at all
+			if (!window.productData[productIdFromData]) {
+				window.productData[productIdFromData] = { id: productIdFromData, variants: [], initialized: false };
 			}
-			this.state.productId = productId;
 		}
 	}
 
