@@ -572,7 +572,10 @@ document.addEventListener('DOMContentLoaded', () => {
 					selectedBox: defaultBox,
 					isInitialLoad: true,
 					purchaseType: defaultBox.dataset.purchaseType || null,
-					sellingPlanId: defaultBox.dataset.subscriptionSellingPlanId || null
+					sellingPlanId: defaultBox.dataset.subscriptionSellingPlanId || null,
+					// Reset any lingering state immediately on page load
+					isLoading: false,
+					isRedirectingToCheckout: false
 				});
 
 				// Make sure the UI is updated to reflect this selection
@@ -1360,11 +1363,44 @@ document.addEventListener('DOMContentLoaded', () => {
 		// Use a variable to track if a submission is in progress
 		let isSubmitting = false;
 
+		// Create a function to fully reset the button state
+		function resetButtonState() {
+			isSubmitting = false;
+			BuyBoxState.setState({
+				isLoading: false,
+				isRedirectingToCheckout: false
+			});
+
+			// Ensure button is visually ready
+			submitButton.disabled = false;
+			submitButton.innerHTML = submitButton.getAttribute('data-original-text') || 'Add To Cart';
+			submitButton.removeAttribute('aria-busy');
+			submitButton.classList.remove('loading-active');
+
+			// Also reset one-time button if it exists
+			if (oneTimeButton) {
+				oneTimeButton.disabled = false;
+				oneTimeButton.classList.remove('disabled');
+				oneTimeButton.removeAttribute('aria-busy');
+			}
+
+			// Remove processing state from container
+			if (productActions) {
+				productActions.classList.remove('processing-order');
+			}
+
+			console.log('Button state fully reset');
+		}
+
+		// Make resetButtonState available globally for the visibility handler
+		window.resetBuyBoxButtonState = resetButtonState;
+
 		submitButton.addEventListener('click', async e => {
 			e.preventDefault();
 
 			// Prevent double-clicks or multiple submissions
 			if (isSubmitting || BuyBoxState.data.isLoading) {
+				console.log('Button click ignored - already processing');
 				return;
 			}
 
@@ -1439,12 +1475,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				if (buyType === 'buy_now') {
 					await handleBuyNowFlow(items);
-					// Don't reset loading state if we're redirecting
+					// Will be reset in handleBuyNowFlow with longer delay
 				} else {
 					await addValidItemsToCart(items);
 					// Only reset loading state if we're not redirecting
 					isSubmitting = false;
-					BuyBoxState.setState({ isLoading: false });
+
+					// Reset button state
+					resetButtonState();
 				}
 			} catch (err) {
 				console.error('Submit error:', err);
@@ -1455,6 +1493,22 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	}
 
+	// Add a visibility change handler to reset button state when returning from checkout
+	document.addEventListener('visibilitychange', function() {
+		if (document.visibilityState === 'visible') {
+			console.log('Page visible again, resetting button state');
+			if (typeof window.resetBuyBoxButtonState === 'function') {
+				window.resetBuyBoxButtonState();
+			}
+
+			// Always ensure these states are reset
+			BuyBoxState.setState({
+				isLoading: false,
+				isRedirectingToCheckout: false
+			});
+		}
+	});
+
 	function initOneTimeButton() {
 		if (!oneTimeButton) return;
 
@@ -1463,11 +1517,25 @@ document.addEventListener('DOMContentLoaded', () => {
 		// Track submission state
 		let isSubmittingOneTime = false;
 
+		// Create a function to fully reset the one-time button state
+		function resetOneTimeButtonState() {
+			isSubmittingOneTime = false;
+			oneTimeButton.disabled = false;
+			oneTimeButton.classList.remove('disabled', 'text-green-700', 'border-green-700', 'text-red-600', 'border-red-600');
+			oneTimeButton.innerHTML = oneTimeButton.getAttribute('data-original-text');
+			oneTimeButton.removeAttribute('aria-busy');
+			console.log('One-time button state fully reset');
+		}
+
+		// Make resetOneTimeButtonState available globally for the visibility handler
+		window.resetOneTimeButtonState = resetOneTimeButtonState;
+
 		oneTimeButton.addEventListener('click', async e => {
 			e.preventDefault();
 
 			// Prevent multiple submissions
 			if (isSubmittingOneTime || BuyBoxState.data.isLoading) {
+				console.log('One-time button click ignored - already processing');
 				return;
 			}
 
@@ -1535,6 +1603,9 @@ document.addEventListener('DOMContentLoaded', () => {
 						isRedirectingToCheckout: false
 					});
 
+					// Also reset the oneTimeButton state
+					resetOneTimeButtonState();
+
 					// Go to checkout with a small delay to ensure state updates
 					console.log("One-time purchase: Redirecting to checkout...");
 					setTimeout(() => {
@@ -1573,10 +1644,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 					// Reset state
 					setTimeout(() => {
-						oneTimeButton.innerHTML = oneTimeButton.getAttribute('data-original-text');
-						oneTimeButton.classList.remove('text-green-700', 'border-green-700');
-						oneTimeButton.removeAttribute('aria-busy');
-						isSubmittingOneTime = false;
+						resetOneTimeButtonState();
 						BuyBoxState.setState({ isLoading: false });
 					}, 2000);
 				}
@@ -1594,10 +1662,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				// Reset state
 				setTimeout(() => {
-					oneTimeButton.innerHTML = oneTimeButton.getAttribute('data-original-text');
-					oneTimeButton.classList.remove('text-red-600', 'border-red-600');
-					oneTimeButton.removeAttribute('aria-busy');
-					isSubmittingOneTime = false;
+					resetOneTimeButtonState();
 					BuyBoxState.setState({ isLoading: false });
 				}, 2000);
 			}
@@ -1975,6 +2040,31 @@ document.addEventListener('DOMContentLoaded', () => {
 		hideMonthTextIfNeeded();
 	}
 	init();
+
+	// Global reset function to ensure buttons work after returning from checkout
+	window.addEventListener('pageshow', function(event) {
+		// This fires when navigating back using browser back button
+		console.log('Page shown, checking if coming back from checkout');
+
+		// Reset all button states
+		if (typeof window.resetBuyBoxButtonState === 'function') {
+			window.resetBuyBoxButtonState();
+		}
+
+		if (typeof window.resetOneTimeButtonState === 'function') {
+			window.resetOneTimeButtonState();
+		}
+
+		// Force complete UI reset
+		BuyBoxState.setState({
+			isLoading: false,
+			isRedirectingToCheckout: false
+		});
+
+		if (productActions) {
+			productActions.classList.remove('processing-order');
+		}
+	});
 
 	// Updated to extract both value and unit (days or months)
     function extractFrequency(planName) {
