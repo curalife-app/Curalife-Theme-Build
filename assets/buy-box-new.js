@@ -236,7 +236,6 @@ class BuyBoxNew {
 			isInitialLoad: true,
 			isLoading: false,
 			isRedirectingToCheckout: false,
-			selectedGift: null,
 			productId: null,
 			variantId: null,
 			sellingPlanId: null,
@@ -614,8 +613,12 @@ class BuyBoxNew {
 	}
 
 	prepareItemsForCart() {
+		console.log("prepareItemsForCart: Starting...");
+		console.log("State:", JSON.parse(JSON.stringify(this.state))); // Log current state
+
 		const selectedBox = this.state.selectedBox;
 		if (!selectedBox) {
+			console.log("prepareItemsForCart: FAIL - No selectedBox");
 			showNotification("Please select a purchase option");
 			return null;
 		}
@@ -624,11 +627,15 @@ class BuyBoxNew {
 		const isSub = this.state.purchaseType === "subscribe";
 		const sellingPlanId = isSub ? this.state.sellingPlanId : null;
 
+		console.log(`prepareItemsForCart: variantId=${variantId}, isSub=${isSub}, sellingPlanId=${sellingPlanId}`);
+
 		if (!variantId) {
+			console.log("prepareItemsForCart: FAIL - No variantId");
 			showNotification("Invalid product option selected");
 			return null;
 		}
 		if (isSub && !sellingPlanId) {
+			console.log("prepareItemsForCart: FAIL - isSub is true but no sellingPlanId");
 			// Attempt to auto-select first available plan if none chosen - might be needed if UI fails
 			const variantData = this.findVariantInProductData(variantId);
 			if (variantData?.selling_plan_allocations?.length > 0) {
@@ -644,36 +651,53 @@ class BuyBoxNew {
 			{
 				id: parseInt(variantId, 10),
 				quantity: 1,
-				selling_plan: isSub ? this.state.sellingPlanId : undefined // Use updated state value
+				...(isSub && this.state.sellingPlanId ? { selling_plan: this.state.sellingPlanId } : {})
 			}
 		];
 
-		// Handle gifts
 		const giftsAmount = parseInt(this.elements.productActions?.dataset.giftsAmount || "0", 10);
+		console.log(`prepareItemsForCart: giftsAmount=${giftsAmount}`);
+
 		if (giftsAmount > 0) {
 			const selectedGiftId = this.getSelectedGiftId(isSub);
+			console.log(`prepareItemsForCart: selectedGiftId (isSub=${isSub}) = ${selectedGiftId}`);
 			if (!selectedGiftId) {
-				// Check if gift selection is actually *required*
-				// For now, throw error assuming it is required if gifts are present.
+				console.log("prepareItemsForCart: FAIL - giftsAmount > 0 but no selectedGiftId");
 				showNotification("Please select your free gift");
 				return null;
 			}
 			items.push({ id: parseInt(selectedGiftId, 10), quantity: 1 });
 		}
 
+		console.log("prepareItemsForCart: SUCCESS - Prepared items:", items);
 		return items;
 	}
 
 	getSelectedGiftId(isSubscription) {
-		if (!this.elements.giftContainer) return null;
+		if (!this.elements.giftContainer) {
+			// Check if gift container exists
+			console.log("getSelectedGiftId: No gift container found.");
+			return null;
+		}
 
+		// Find the selected gift box using the class added by the inline script
 		const selectedGiftBox = this.elements.giftContainer.querySelector(".gift-box.selected");
-		if (!selectedGiftBox) return null; // No gift box itself is selected
+		if (!selectedGiftBox) {
+			console.log("getSelectedGiftId: Could not find .gift-box with .selected class.");
+			return null;
+		}
 
-		const selectedOptionBorder = selectedGiftBox.querySelector(".gift-option-border"); // The element confirming *which* option inside the box
-		if (!selectedOptionBorder) return null; // No specific gift variant chosen within the box
+		// Find the border element *within* the selected gift box
+		const selectedGiftOption = selectedGiftBox.querySelector(".gift-option-border");
+		if (!selectedGiftOption) {
+			console.error("getSelectedGiftId: Could not find .gift-option-border within selected gift box:", selectedGiftBox);
+			return null;
+		}
 
-		return isSubscription ? selectedOptionBorder.dataset.giftIdSubscription : selectedOptionBorder.dataset.giftId;
+		// Return the appropriate gift ID
+		const giftId = isSubscription ? selectedGiftOption.dataset.giftIdSubscription : selectedGiftOption.dataset.giftId;
+		console.log(`getSelectedGiftId: Found gift ID: ${giftId} (isSub=${isSubscription})`);
+		return giftId;
 	}
 
 	async handleBuyNowFlow(items) {
