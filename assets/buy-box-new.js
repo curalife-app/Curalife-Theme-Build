@@ -1092,15 +1092,9 @@ class BuyBoxNew {
 			return;
 		}
 
-		// Check if empty (for dropdown, check if it has no options or only empty options)
-		const isEmpty =
-			uiType === "dropdown" ? optionsContainer.options.length === 0 || (optionsContainer.options.length === 1 && optionsContainer.options[0].value === "") : optionsContainer.innerHTML.trim() === "";
-
-		// Only clear if it's actually empty - helps prevent flickering when just updating selection
-		if (isEmpty) {
-			console.log(`BuyBoxNew (${this.config.SID}): Frequency container was empty, repopulating`);
-			optionsContainer.innerHTML = ""; // Clear previous options
-		}
+		// Always clear previous options to prevent duplicates
+		optionsContainer.innerHTML = "";
+		console.log(`BuyBoxNew (${this.config.SID}): Cleared frequency options before repopulating`);
 
 		const variantData = this.findVariantInProductData(variantId);
 
