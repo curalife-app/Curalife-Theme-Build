@@ -351,5 +351,22 @@
 	});
 </script>
 
+<script>
+	document.addEventListener('DOMContentLoaded', function () {
+		const ctasection = document.querySelector('#cta-section-{{ SID }}');
+		if (!ctasection) return;
+
+		const productActions = ctasection.querySelector('.product-actions');
+		const ctaText = ctasection.querySelector('.cta-text');
+		const purchaseOptions = productActions ? productActions.querySelector('.purchase-options') : null;
+
+		if (!productActions) return;
+
+		if (window.innerWidth < 768 && ctaText) {
+			productActions.insertAdjacentElement('afterbegin', ctaText);
+		}
+	});
+</script>
+
 {% comment %} JS logic moved to src/js/buy-box-new.js {% endcomment %}
 <script src="{{ 'buy-box-new.js' | asset_url }}" defer="defer"></script>
