@@ -688,8 +688,17 @@ document.addEventListener('DOMContentLoaded', () => {
 							throw new Error(errorData.description || 'Failed to add items to cart');
 					}
 
-					// If we get here, redirect to checkout
-					window.location.href = '/checkout';
+					// Reset button state before redirecting
+					if (submitButton) {
+							submitButton.innerHTML = submitButton.getAttribute('data-original-text') || 'Add To Cart';
+							submitButton.disabled = false;
+					}
+
+					// Small delay to ensure state updates before redirect
+					setTimeout(() => {
+							// If we get here, redirect to checkout
+							window.location.href = '/checkout';
+					}, 50);
 			} catch (err) {
 					console.error('handleBuyNowFlow error:', err);
 					throw err; // Re-throw to be handled by the caller
@@ -698,6 +707,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	function initSubmitButton() {
 			if (!submitButton) return;
+
+			// Store original button text for later restoration
+			submitButton.setAttribute('data-original-text', submitButton.innerHTML);
+
 			submitButton.addEventListener('click', async e => {
 					e.preventDefault();
 					const box = productActions.querySelector('.variant-box.selected');
@@ -758,7 +771,6 @@ document.addEventListener('DOMContentLoaded', () => {
 					} catch (err) {
 							console.error('Submit error:', err);
 							showNotification(err.message || 'Error adding items to cart. Please try again.');
-					} finally {
 							submitButton.innerHTML = btnHTML;
 							submitButton.disabled = false;
 					}
@@ -767,10 +779,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	function initOneTimeButton() {
 		if (!oneTimeButton) return;
+
+		// Store original text for restoration
+		oneTimeButton.setAttribute('data-original-text', oneTimeButton.textContent);
+
 		oneTimeButton.addEventListener('click', async e => {
 				e.preventDefault();
+
+				// Prevent multiple clicks
+				if (oneTimeButton.disabled) return;
+
 				oneTimeButton.disabled = true;
-				const origText = oneTimeButton.textContent;
+				const origText = oneTimeButton.getAttribute('data-original-text') || oneTimeButton.textContent;
 				oneTimeButton.textContent = 'Adding...';
 
 				try {
@@ -809,7 +829,14 @@ document.addEventListener('DOMContentLoaded', () => {
 										throw error;
 								}
 
-								window.location.href = '/checkout';
+								// Reset button state before redirecting
+								oneTimeButton.textContent = origText;
+								oneTimeButton.disabled = false;
+
+								// Small delay to ensure state updates before redirect
+								setTimeout(() => {
+										window.location.href = '/checkout';
+								}, 50);
 						} else {
 								const res = await fetch('/cart/add.js', {
 										method: 'POST',
@@ -854,6 +881,26 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 		});
 	}
+
+	// Handle back button navigation from checkout
+	window.addEventListener('pageshow', function(event) {
+		// This will trigger when coming back from checkout using the back button
+		if (event.persisted) {
+			console.log('Page restored from back/forward cache, resetting button states');
+
+			// Reset main button
+			if (submitButton) {
+				submitButton.innerHTML = submitButton.getAttribute('data-original-text') || 'Add To Cart';
+				submitButton.disabled = false;
+			}
+
+			// Reset one-time button
+			if (oneTimeButton) {
+				oneTimeButton.textContent = oneTimeButton.getAttribute('data-original-text') || 'Buy Once for...';
+				oneTimeButton.disabled = false;
+			}
+		}
+	});
 
 	function hideMonthTextIfNeeded() {
 		document.querySelectorAll('.price-display').forEach(d => {
