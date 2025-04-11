@@ -914,35 +914,44 @@ document.addEventListener('DOMContentLoaded', () => {
 					if (!button) return;
 
 					try {
-						// Primary fix: Ensure disabled attribute is removed and property is false
+						// --- State Reset ---
 						button.removeAttribute('disabled');
 						button.disabled = false;
 
-						// Reset appearance
+						// --- Appearance Reset ---
+						const originalText = button.getAttribute('data-original-text');
+
 						if (isSubmit) {
-							if (button.innerHTML.includes('button-spinner') || button.innerHTML.length < 10) {
-								const originalText = button.getAttribute('data-original-text') || (buyType === 'buy_now' ? 'Get Started' : 'Add To Cart');
-								button.innerHTML = originalText;
+							// Restore original HTML if spinner is present or text is missing
+							if (button.innerHTML.includes('button-spinner') || button.textContent.trim().length < 2) {
+								button.innerHTML = originalText || (buyType === 'buy_now' ? 'Get Started' : 'Add To Cart');
 							}
-							button.classList.remove('loading', 'loading-active', 'disabled');
+							// Ensure common loading/active classes are removed
+							button.classList.remove('loading', 'loading-active', 'processing', 'disabled', 'active');
 						} else { // One-time button
+							// Restore original text if temporary state text is present
 							if (['Adding...', 'Added!', 'Failed'].includes(button.textContent)) {
-								button.textContent = button.getAttribute('data-original-text') || `Buy Once for...`; // Use a simpler default
+								button.textContent = originalText || `Buy Once for...`;
 							}
-							button.classList.remove('disabled');
+							// Ensure common loading/active classes are removed
+							button.classList.remove('loading', 'loading-active', 'processing', 'disabled', 'active', 'text-green-700', 'border-green-700', 'text-red-600', 'border-red-600');
 						}
 
-						// Ensure button is visually enabled
+						// --- Visual State Reset ---
 						button.style.opacity = '1';
 						button.style.pointerEvents = 'auto';
+						// Remove potential inline styles causing issues
+						button.style.backgroundColor = '';
+						button.style.borderColor = '';
+						button.style.color = '';
 
-						console.log(`[pageshow] ✓ ${isSubmit ? 'Submit' : 'One-time'} button state reset.`);
+						console.log(`[pageshow] ✓ ${isSubmit ? 'Submit' : 'One-time'} button appearance reset.`);
 					} catch (e) {
-						console.error(`[pageshow] Error resetting ${isSubmit ? 'Submit' : 'One-time'} button:`, e);
+						console.error(`[pageshow] Error resetting ${isSubmit ? 'Submit' : 'One-time'} button appearance:`, e);
 					}
 				};
 
-				// Execute the reset after a short delay - allows browser to finish rendering/state restoration
+				// Execute the reset after a short delay
 				setTimeout(() => {
 					resetButtonState(submitButton, true);
 					resetButtonState(oneTimeButton, false);
