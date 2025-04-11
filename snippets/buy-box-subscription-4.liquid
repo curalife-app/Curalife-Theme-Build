@@ -1044,8 +1044,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		const priceEls = document.querySelectorAll('.price-display');
 
 		// Get base prices and convert from cents to dollars
-		const subItem = parseFloat(el.dataset.subscriptionItemPrice) / 100 || 0;
-		const subPrice = parseFloat(el.dataset.subscriptionPrice) / 100 || 0;
 		const origPerItem = parseFloat(el.dataset.originalItemCap) / 100 || 0;
 		const bottles = parseInt(el.dataset.bottleQuantity, 10) || 1;
 
@@ -1056,24 +1054,31 @@ document.addEventListener('DOMContentLoaded', () => {
 		const subscriptionDiscount = parseFloat(el.dataset.subscriptionDiscount) || 0;
 		const firstMonthDiscount = parseFloat(el.dataset.firstMonthDiscount) || 0;
 
-		// Combine discounts for first month
-		const totalFirstMonthDiscount = subscriptionDiscount + firstMonthDiscount;
-		const firstMonthDiscountMultiplier = (100 - totalFirstMonthDiscount) / 100;
+		// --- Revised Price Calculation ---
+		// 1. Calculate base subscription price (applying subscriptionDiscount)
+		const baseSubDiscountMultiplier = (100 - subscriptionDiscount) / 100;
+		const baseSubItem = origPerItem * baseSubDiscountMultiplier;
+		const baseSubPrice = totalOrig * baseSubDiscountMultiplier;
 
-		// Calculate first month prices
-		const firstMonthSubItem = origPerItem * firstMonthDiscountMultiplier;
-		const firstMonthSubPrice = totalOrig * firstMonthDiscountMultiplier;
+        // 2. Calculate the additional discount multiplier JUST for the first month
+        const firstMonthAdditionalMultiplier = (100 - firstMonthDiscount) / 100;
 
-		const regularDiscountMultiplier = (100 - subscriptionDiscount) / 100;
-		const regularPrice = (priceFormat === 'total' ? totalOrig : origPerItem) * regularDiscountMultiplier;
+        // 3. Calculate the final price for the first month
+        const firstMonthFinalItem = baseSubItem * firstMonthAdditionalMultiplier;
+        const firstMonthFinalPrice = baseSubPrice * firstMonthAdditionalMultiplier;
 
+        // 4. Regular price for refills is simply the base subscription price
+		const regularPrice = priceFormat === 'total' ? baseSubPrice : baseSubItem;
+
+        // 5. Calculate savings compared to the original price
 		const saveAmt = priceFormat === 'total'
-				? (totalOrig - firstMonthSubPrice)
-				: ((origPerItem - firstMonthSubItem) * bottles);
+				? (totalOrig - firstMonthFinalPrice)
+				: ((origPerItem - firstMonthFinalItem) * bottles);
+		// --- End Revised Price Calculation ---
 
 		const currencySymbol = '{{ cart.currency.symbol }}' || '$';
 
-		const newMainPrice = `${currencySymbol}${(priceFormat === 'total' ? firstMonthSubPrice : firstMonthSubItem).toFixed(2)}`;
+		const newMainPrice = `${currencySymbol}${(priceFormat === 'total' ? firstMonthFinalPrice : firstMonthFinalItem).toFixed(2)}`;
 		const newComparePrice = `${currencySymbol}${(priceFormat === 'total' ? totalOrig : origPerItem).toFixed(2)}`;
 		const regularPriceFormatted = `${currencySymbol}${regularPrice.toFixed(2)}`;
 		const flooredSave = Math.floor(saveAmt);
@@ -1100,11 +1105,11 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 
 				if (totalLine && priceFormat === 'per_bottle') {
-					if (flooredSave > 0 && firstMonthSubPrice != firstMonthSubItem) {
+					if (flooredSave > 0 && firstMonthFinalPrice != firstMonthFinalItem) {
 						DOMUtils.updateProperty(
 							totalLine,
 							'innerHTML',
-							`Total ${currencySymbol}${firstMonthSubPrice.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">${currencySymbol}${totalOrig.toFixed(2)}</span>`
+							`Total ${currencySymbol}${firstMonthFinalPrice.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">${currencySymbol}${totalOrig.toFixed(2)}</span>`
 						);
 					} else {
 						DOMUtils.updateProperty(totalLine, 'textContent', '');
@@ -1141,8 +1146,8 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 
 			if (totalLine && priceFormat === 'per_bottle') {
-				const newTotalLineHTML = flooredSave > 0 && firstMonthSubPrice != firstMonthSubItem
-					? `Total ${currencySymbol}${firstMonthSubPrice.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">${currencySymbol}${totalOrig.toFixed(2)}</span>`
+				const newTotalLineHTML = flooredSave > 0 && firstMonthFinalPrice != firstMonthFinalItem
+					? `Total ${currencySymbol}${firstMonthFinalPrice.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">${currencySymbol}${totalOrig.toFixed(2)}</span>`
 					: '';
 				hasContentChanged = hasContentChanged || totalLine.innerHTML !== newTotalLineHTML;
 			}
@@ -1179,15 +1184,15 @@ document.addEventListener('DOMContentLoaded', () => {
 						}
 
 						if (totalLine && priceFormat === 'per_bottle') {
-							if (flooredSave > 0 && firstMonthSubPrice != firstMonthSubItem) {
+							if (flooredSave > 0 && firstMonthFinalPrice != firstMonthFinalItem) {
 								DOMUtils.updateProperty(
 									totalLine,
 									'innerHTML',
-									`Total ${currencySymbol}${firstMonthSubPrice.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">${currencySymbol}${totalOrig.toFixed(2)}</span>`
+									`Total ${currencySymbol}${firstMonthFinalPrice.toFixed(2)} <span class="total-price-cap text-gray-500 line-through">${currencySymbol}${totalOrig.toFixed(2)}</span>`
 								);
 							} else {
-								DOMUtils.updateProperty(totalLine, 'textContent', ' ');
-							}
+									DOMUtils.updateProperty(totalLine, 'textContent', ' ');
+								}
 						}
 
 						// Update future price notice
