@@ -1401,17 +1401,39 @@ document.addEventListener('DOMContentLoaded', () => {
 				isRedirectingToCheckout: false
 			});
 
-			// Ensure button is visually ready
-			submitButton.disabled = false;
-			submitButton.innerHTML = submitButton.getAttribute('data-original-text') || 'Add To Cart';
-			submitButton.removeAttribute('aria-busy');
-			submitButton.classList.remove('loading-active');
+			// Ensure button is visually ready - enhanced to clear more visual states
+			if (submitButton) {
+				submitButton.disabled = false;
+				submitButton.innerHTML = submitButton.getAttribute('data-original-text') || 'Add To Cart';
+				submitButton.removeAttribute('aria-busy');
 
-			// Also reset one-time button if it exists
+				// More thorough CSS class cleanup
+				submitButton.classList.remove('loading-active', 'loading', 'processing', 'active');
+
+				// Clear any inline styles that might be affecting appearance
+				submitButton.style.backgroundColor = '';
+				submitButton.style.borderColor = '';
+				submitButton.style.color = '';
+			}
+
+			// Reset one-time button if it exists
 			if (oneTimeButton) {
 				oneTimeButton.disabled = false;
-				oneTimeButton.classList.remove('disabled');
+
+				// More thorough CSS class cleanup
+				oneTimeButton.classList.remove('disabled', 'text-green-700', 'border-green-700', 'text-red-600', 'border-red-600', 'loading', 'processing', 'active');
+
+				// Restore original text if it was changed
+				if (oneTimeButton.getAttribute('data-original-text')) {
+					oneTimeButton.innerHTML = oneTimeButton.getAttribute('data-original-text');
+				}
+
 				oneTimeButton.removeAttribute('aria-busy');
+
+				// Clear any inline styles
+				oneTimeButton.style.backgroundColor = '';
+				oneTimeButton.style.borderColor = '';
+				oneTimeButton.style.color = '';
 			}
 
 			// Remove processing state from container
@@ -2129,26 +2151,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	// Global reset function to ensure buttons work after returning from checkout
 	window.addEventListener('pageshow', function(event) {
-		// This fires when navigating back using browser back button
-		console.log('Page shown, checking if coming back from checkout');
+		// Only run this when navigating back via browser history (persisted page)
+		if (event.persisted) {
+			console.log('Page shown from back/forward cache, resetting button state');
 
-		// Reset all button states
-		if (typeof window.resetBuyBoxButtonState === 'function') {
-			window.resetBuyBoxButtonState();
+			// Add a short delay to let the browser finish restoration
+			setTimeout(function() {
+				// Reset all button states
+				if (typeof window.resetBuyBoxButtonState === 'function') {
+					window.resetBuyBoxButtonState();
+				}
+
+				if (typeof window.resetOneTimeButtonState === 'function') {
+					window.resetOneTimeButtonState();
+				}
+
+				// Force complete UI reset
+				BuyBoxState.setState({
+					isLoading: false,
+					isRedirectingToCheckout: false
+				});
+
+				if (productActions) {
+					productActions.classList.remove('processing-order');
+				}
+			}, 150);
 		}
+	});
 
-		if (typeof window.resetOneTimeButtonState === 'function') {
-			window.resetOneTimeButtonState();
-		}
+	// Keep existing visibilitychange listener as backup
+	document.addEventListener('visibilitychange', function() {
+		if (document.visibilityState === 'visible') {
+			console.log('Page visible again, resetting button state');
+			if (typeof window.resetBuyBoxButtonState === 'function') {
+				window.resetBuyBoxButtonState();
+			}
 
-		// Force complete UI reset
-		BuyBoxState.setState({
-			isLoading: false,
-			isRedirectingToCheckout: false
-		});
-
-		if (productActions) {
-			productActions.classList.remove('processing-order');
+			// Always ensure these states are reset
+			BuyBoxState.setState({
+				isLoading: false,
+				isRedirectingToCheckout: false
+			});
 		}
 	});
 
