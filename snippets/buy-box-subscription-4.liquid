@@ -124,6 +124,11 @@
 
 					{% assign firstMonthDiscount = block.settings.first_month_discount_percentage %}
 
+					{% comment %} Check if there's a metafield discount percentage and use it if available {% endcomment %}
+					{% if var.metafields.subscription.save_percents %}
+						{% assign subscription_save_percents = var.metafields.subscription.save_percents %}
+					{% endif %}
+
 					<div
 					id="variant-box-{{ SID }}-{{ forloop.index }}"
 				class="variant-box flex flex-col items-center variant-tab-style text-center w-full {% if forloop.index == 1 %}selected{% endif %} {{ varPurchaseType }}"
@@ -156,6 +161,9 @@
 				{% endif %}
 				{% endif %}
 						name="track:variant-box|variant-sku:{{ var.sku }}|purchase-type:{{ varPurchaseType }}">
+						{% if product.handle contains 'curalin' %}
+							{% assign subscription_save_percents = var.metafields.subscription.save_percents %}
+						{% endif %}
 						<div class="discount mbl:text-[3.5vw] text-white bg-primary font-bold w-full text-[13px] p-1">{{ subscription_save_percents }}% OFF</div>
 
 						<!-- prettier-ignore -->
@@ -163,6 +171,7 @@
 							<span class="font-bold mbl:text-[4vw]">{{ bottle_quantity }} Bottle{% if bottle_quantity > 1 %}s{% endif %}</span>
 						</div>
 
+						<!-- Replace the inline style with Tailwind class -->
 						<div class="md:hidden">
 							<span class="title block mbl:text-[3.4vw]"></span>
 						</div>
@@ -589,8 +598,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 2. Populate frequency selector - this might update sellingPlanId in state/dataset
                 populateFrequencySelector(defaultBox);
 
+                // 3. Update price display - uses the potentially updated sellingPlanId
                 updatePriceDisplay(defaultBox);
 
+                // 4. Update other UI elements
                 updateBuyButton(defaultBox);
                 {% if isSlideVariant %}
                     if (!window.hasInitialImageUpdateHappened) {
