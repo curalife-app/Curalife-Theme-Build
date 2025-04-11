@@ -508,20 +508,15 @@ class BuyBoxNew {
 			this.state.selectedBox = defaultBox;
 			this.state.purchaseType = defaultBox.dataset.purchaseType || null;
 			this.state.variantId = defaultBox.dataset.variant || null;
-			this.state.sellingPlanId = defaultBox.dataset.subscriptionSellingPlanId || null;
 			this.state.productId = defaultBox.dataset.product || null;
 
-			// Update hidden inputs directly during initialization
-			if (this.elements.submitSellingPlanId) {
-				this.elements.submitSellingPlanId.value = this.state.sellingPlanId || "";
-			}
-			if (this.elements.submitVariantId) {
-				this.elements.submitVariantId.value = this.state.variantId || "";
-			}
-			// Update the actual form selling_plan input too
-			if (this.elements.sellingPlanInput && this.state.sellingPlanId) {
-				this.elements.sellingPlanInput.value = this.state.sellingPlanId;
-				console.log(`BuyBoxNew (${this.config.SID}): Set initial selling_plan input value to ${this.state.sellingPlanId}`);
+			// For subscriptions, we'll get the selling plan ID from the populateFrequencySelector method
+			// which will identify the recommended plan
+			if (this.state.purchaseType === "subscribe") {
+				// Don't set sellingPlanId yet - let populateFrequencySelector determine the recommended one
+				this.state.sellingPlanId = null;
+			} else {
+				this.state.sellingPlanId = null;
 			}
 
 			// Manually apply initial UI state based on the default box
@@ -1163,15 +1158,37 @@ class BuyBoxNew {
 			}
 		});
 
-		// Determine the plan ID to pre-select
-		let planIdToSelect = this.state.sellingPlanId || selectedVariantBox.dataset.subscriptionSellingPlanId || recommendedPlanId || plans[0]?.selling_plan.id.toString();
+		// IMPORTANT CHANGE: Prioritize the recommended plan ID for the initial load
+		// If no sellingPlanId is set yet, or if we're in initial load, use the recommended one
+		if (this.state.isInitialLoad || !this.state.sellingPlanId) {
+			// Determine the plan ID to pre-select - PRIORITIZE RECOMMENDED PLAN
+			let planIdToSelect = recommendedPlanId || this.state.sellingPlanId || selectedVariantBox.dataset.subscriptionSellingPlanId || plans[0]?.selling_plan.id.toString();
 
-		console.log(`populateFrequencySelector: bottleQuantity=${bottleQuantity}, recommendedPlanId=${recommendedPlanId}, planIdToSelect=${planIdToSelect}`); // Log initial values
+			// Update the state and form inputs directly with the recommended plan
+			this.state.sellingPlanId = planIdToSelect;
+
+			// Update the form fields
+			if (this.elements.submitSellingPlanId) {
+				this.elements.submitSellingPlanId.value = planIdToSelect;
+			}
+			if (this.elements.sellingPlanInput) {
+				this.elements.sellingPlanInput.value = planIdToSelect;
+				console.log(`BuyBoxNew (${this.config.SID}): Set selling_plan input to recommended plan ${planIdToSelect}`);
+			}
+
+			// Update the variant box data
+			selectedVariantBox.dataset.subscriptionSellingPlanId = planIdToSelect;
+		} else {
+			// For non-initial loads, respect the current selection
+			let planIdToSelect = this.state.sellingPlanId || selectedVariantBox.dataset.subscriptionSellingPlanId || recommendedPlanId || plans[0]?.selling_plan.id.toString();
+		}
+
+		console.log(`populateFrequencySelector: bottleQuantity=${bottleQuantity}, recommendedPlanId=${recommendedPlanId}, planIdToSelect=${this.state.sellingPlanId}`);
 
 		plans.forEach(allocation => {
 			const plan = allocation.selling_plan;
 			const { value, unit } = extractFrequency(plan.name);
-			const isSelected = plan.id.toString() === planIdToSelect;
+			const isSelected = plan.id.toString() === this.state.sellingPlanId;
 			const isRecommended = plan.id.toString() === recommendedPlanId;
 
 			if (uiType === "dropdown") {
@@ -1202,12 +1219,12 @@ class BuyBoxNew {
 			}
 		});
 
-		// Ensure the state reflects the actual selected plan ID
-		if (planIdToSelect && planIdToSelect !== this.state.sellingPlanId) {
-			this.setState({ sellingPlanId: planIdToSelect });
-		} else if (!planIdToSelect && plans.length > 0) {
-			// Fallback if somehow no plan ID was determined but plans exist
-			this.setState({ sellingPlanId: plans[0].selling_plan.id.toString() });
+		// For dropdown, explicitly set the selected value
+		if (uiType === "dropdown" && this.elements.frequencyDropdown) {
+			// Set the value directly
+			this.elements.frequencyDropdown.value = this.state.sellingPlanId;
+
+			console.log(`BuyBoxNew (${this.config.SID}): Set dropdown value to ${this.state.sellingPlanId}`);
 		}
 
 		this.updateFrequencyDescription(); // Update text based on selection
