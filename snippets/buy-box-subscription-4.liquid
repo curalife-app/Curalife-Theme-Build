@@ -532,6 +532,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		// Initialize state with default values
 		init() {
+			// Check for missing subscription discounts and log warnings
+			console.log('Initializing buy box...');
+			Array.from(purchaseOptionBoxes).forEach((box, index) => {
+				if (box.dataset.purchaseType === 'subscribe' && (!box.dataset.subscriptionDiscount || parseFloat(box.dataset.subscriptionDiscount) <= 0)) {
+					console.warn(`Box ${index} (${box.dataset.sku}) has subscribe purchase type but missing subscription discount.`);
+					box.dataset.subscriptionDiscount = '10'; // Default 10% subscription discount
+				}
+			});
+
 			// Use the data attribute to determine default selection index
 			const defaultIdx = parseInt(productActions.dataset.defaultVariantIndex, 10) || 0;
 
@@ -1040,8 +1049,17 @@ document.addEventListener('DOMContentLoaded', () => {
 	// ~~~~~~~~~~~~~~~~~~~~~
 	//   Price Updates
 	// ~~~~~~~~~~~~~~~~~~~~~
-	function updatePriceDisplay(el) {
-		const priceEls = document.querySelectorAll('.price-display');
+	function updatePriceDisplay(el, options = {}) {
+		if (!el) return;
+
+		const priceDisplay = options.priceDisplay || productActions.querySelector('.price-display');
+		const saveAmount = options.saveAmount || productActions.querySelector('.save-amount');
+		const priceFormat = options.priceFormat || (priceDisplay.dataset.priceFormat || 'per_bottle');
+		const totalLine = options.totalLine || productActions.querySelector('.total-line');
+		const regularTextRefill = options.regularTextRefill || productActions.querySelector('.regular-text-refill');
+		const savings = options.savings || productActions.querySelector('.savings');
+		const isPerBottle = priceFormat === 'per_bottle';
+        const isPurchaseTypeSubscription = el.dataset.purchaseType === 'subscribe';
 
 		// Get base prices and convert from cents to dollars
 		const origPerItem = parseFloat(el.dataset.originalItemCap) / 100 || 0;
@@ -1051,7 +1069,16 @@ document.addEventListener('DOMContentLoaded', () => {
 		const totalOrig = origPerItem * bottles;
 
 		// Get subscription and first month discounts
-		const subscriptionDiscount = parseFloat(el.dataset.subscriptionDiscount) || 0;
+		let subscriptionDiscount = parseFloat(el.dataset.subscriptionDiscount) || 0;
+
+        // ===== FIX: Force discount for subscription purchase type =====
+        // If purchase type is subscribe but discount is somehow missing, add default 10%
+        if (isPurchaseTypeSubscription && subscriptionDiscount <= 0) {
+            console.log('Fixing missing subscription discount for variant:', el.dataset.sku);
+            subscriptionDiscount = 10; // Default 10% subscription discount
+        }
+        // ==== End Fix ====
+
 		const firstMonthDiscount = parseFloat(el.dataset.firstMonthDiscount) || 0;
 
 		// --- Revised Price Calculation ---
