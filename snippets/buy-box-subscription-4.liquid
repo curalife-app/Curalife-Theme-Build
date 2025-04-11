@@ -1881,6 +1881,18 @@ document.addEventListener('DOMContentLoaded', () => {
 		const selectedBox = productActions.querySelector('.variant-box.selected');
 		const recommendedMonths = parseInt(selectedBox?.dataset.bottleQuantity || '1', 10);
 
+		// Clear existing styles before rebuilding to avoid conflicts
+		filteredPlans.forEach(allocation => {
+            if (!allocation || !allocation.selling_plan) return;
+            const plan = allocation.selling_plan;
+            const planId = plan.id.toString();
+            const freqBox = fragment.querySelector(`div[data-selling-plan-id="${planId}"]`);
+            if (freqBox) {
+                 freqBox.style.backgroundColor = 'var(--bg-color)';
+			     freqBox.style.color = 'var(--primary-color)';
+            }
+        });
+
 		filteredPlans.forEach(allocation => {
 			// Defensive check to ensure allocation exists
 			if (!allocation || !allocation.selling_plan) {
@@ -1910,34 +1922,13 @@ document.addEventListener('DOMContentLoaded', () => {
 			const frequencyBox = document.createElement('div');
 			frequencyBox.className = 'rounded-md cursor-pointer py-2 min-w-[90px] max-w-[168px] text-center w-full transition-all duration-300 ease-in-out';
 
+            // Default style
 			frequencyBox.style.backgroundColor = 'var(--bg-color)';
 			frequencyBox.style.color = 'var(--primary-color)';
 
 			frequencyBox.setAttribute('data-selling-plan-id', plan.id);
 			frequencyBox.setAttribute('data-frequency-value', value);
 			frequencyBox.setAttribute('data-frequency-unit', unit);
-
-			// Set the current selling plan ID to recommended months if it's a new selection
-			// or keep existing selection if it was already set
-			const isRecommendedMonthPlan = (unit === 'month' && value === recommendedMonths);
-			const shouldSelectRecommended = !currentSellingPlanId || isRecommendedMonthPlan;
-
-			if ((plan.id && plan.id.toString() === currentSellingPlanId) ||
-				(shouldSelectRecommended && isRecommendedMonthPlan)) {
-				frequencyBox.style.backgroundColor = 'var(--primary-color)';
-				frequencyBox.style.color = 'white';
-
-				// Update the current box with the recommended selling plan ID
-				if (shouldSelectRecommended && isRecommendedMonthPlan) {
-					currentSellingPlanId = plan.id.toString();
-
-					// Update the selected box with the new selling plan ID
-					if (selectedBox) {
-						selectedBox.dataset.subscriptionSellingPlanId = currentSellingPlanId;
-						if (submitSellingPlanId) submitSellingPlanId.value = currentSellingPlanId;
-					}
-				}
-			}
 
 			// Change label format based on the frequency unit
             let displayText = '';
@@ -1959,6 +1950,71 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			fragment.appendChild(frequencyBox);
 		});
+
+        // --- Start: New Selection Logic ---
+        let finalSelectedPlanId = null;
+        const recommendedPlan = filteredPlans.find(alloc => {
+             if (!alloc || !alloc.selling_plan || !alloc.selling_plan.name) return false;
+             const { value, unit } = extractFrequency(alloc.selling_plan.name);
+             return unit === 'month' && value === recommendedMonths;
+        });
+
+        if (BuyBoxState.data.isInitialLoad) {
+            // On initial load, prioritize the recommended plan
+            if (recommendedPlan) {
+                finalSelectedPlanId = recommendedPlan.selling_plan.id.toString();
+                console.log('Initial load: Selecting recommended plan:', finalSelectedPlanId);
+            } else if (filteredPlans.length > 0) {
+                // Fallback to the first available plan if no recommended found
+                finalSelectedPlanId = filteredPlans[0].selling_plan.id.toString();
+                console.log('Initial load: No recommended plan found, selecting first available:', finalSelectedPlanId);
+            }
+        } else {
+            // After initial load, prioritize the plan stored in state (from user click)
+            const statePlanId = BuyBoxState.data.sellingPlanId;
+            const statePlanExists = filteredPlans.some(alloc => alloc.selling_plan.id.toString() === statePlanId);
+
+            if (statePlanId && statePlanExists) {
+                finalSelectedPlanId = statePlanId;
+                console.log('User interaction: Selecting plan from state:', finalSelectedPlanId);
+            } else if (recommendedPlan) {
+                 // Fallback to recommended if state plan is invalid or missing
+                finalSelectedPlanId = recommendedPlan.selling_plan.id.toString();
+                console.log('User interaction: State plan invalid/missing, falling back to recommended:', finalSelectedPlanId);
+            } else if (filteredPlans.length > 0) {
+                // Fallback to the first available plan if no state or recommended plan found
+                finalSelectedPlanId = filteredPlans[0].selling_plan.id.toString();
+                 console.log('User interaction: No state or recommended plan, selecting first available:', finalSelectedPlanId);
+            }
+        }
+
+        // Apply styles to the selected frequency box in the fragment
+        if (finalSelectedPlanId) {
+             const selectedFreqBox = fragment.querySelector(`div[data-selling-plan-id="${finalSelectedPlanId}"]`);
+             if (selectedFreqBox) {
+                selectedFreqBox.style.backgroundColor = 'var(--primary-color)';
+				selectedFreqBox.style.color = 'white';
+             } else {
+                 console.warn('Selected plan ID not found in fragment:', finalSelectedPlanId);
+                 // Potentially reset finalSelectedPlanId if the element wasn't found?
+                 // finalSelectedPlanId = null;
+             }
+        }
+
+        // Update state and related elements if the selection changed or needs setting
+        if (finalSelectedPlanId && BuyBoxState.data.sellingPlanId !== finalSelectedPlanId) {
+            console.log(`Updating sellingPlanId. Was: ${BuyBoxState.data.sellingPlanId}, New: ${finalSelectedPlanId}`);
+            BuyBoxState.setState({ sellingPlanId: finalSelectedPlanId });
+            if (selectedBox) selectedBox.dataset.subscriptionSellingPlanId = finalSelectedPlanId;
+            if (submitSellingPlanId) submitSellingPlanId.value = finalSelectedPlanId;
+        } else if (!finalSelectedPlanId && BuyBoxState.data.sellingPlanId) {
+            // If nothing is selected, clear the state
+             console.log(`Clearing sellingPlanId. Was: ${BuyBoxState.data.sellingPlanId}`);
+             BuyBoxState.setState({ sellingPlanId: null });
+             if (selectedBox) selectedBox.dataset.subscriptionSellingPlanId = '';
+             if (submitSellingPlanId) submitSellingPlanId.value = '';
+        }
+        // --- End: New Selection Logic ---
 
 		frequencyOptions.innerHTML = '';
 		frequencyOptions.appendChild(fragment);
