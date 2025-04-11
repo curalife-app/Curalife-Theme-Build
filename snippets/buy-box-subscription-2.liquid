@@ -884,26 +884,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	}
 
-	// Handle back button navigation from checkout
-	window.addEventListener('pageshow', function(event) {
-		// This will trigger when coming back from checkout using the back button
-		if (event.persisted) {
-			console.log('Page restored from back/forward cache, resetting button states');
-
-			// Reset main button
-			if (submitButton) {
-				submitButton.innerHTML = submitButton.getAttribute('data-original-text') || 'Add To Cart';
-				submitButton.disabled = false;
-			}
-
-			// Reset one-time button
-			if (oneTimeButton) {
-				oneTimeButton.textContent = oneTimeButton.getAttribute('data-original-text') || 'Buy Once for...';
-				oneTimeButton.disabled = false;
-			}
-		}
-	});
-
 	function hideMonthTextIfNeeded() {
 		document.querySelectorAll('.price-display').forEach(d => {
 			const monthText = d.querySelector('.per-text');
@@ -923,23 +903,161 @@ document.addEventListener('DOMContentLoaded', () => {
 		initOneTimeButton();
 		hideMonthTextIfNeeded();
 
-		// Add pageshow event listener to handle browser back button
+		// Handle back button navigation from checkout - ultra aggressive approach
 		window.addEventListener('pageshow', function(event) {
 			// This will trigger when coming back from checkout using the back button
-			if (event.persisted) {
-				console.log('Page restored from back/forward cache, resetting button states');
+			console.log('Pageshow event triggered, persisted=', event.persisted);
 
-				// Reset main button
-				if (submitButton) {
-					submitButton.innerHTML = submitButton.getAttribute('data-original-text') || 'Add To Cart';
-					submitButton.disabled = false;
-				}
+			// Use this handler regardless of persisted state as a safety measure
+			// More aggressive button reset with multiple attempts and monitoring
+			const resetButtons = () => {
+				try {
+					// Reset main button - try multiple approaches to ensure it works
+					if (submitButton) {
+						// Direct DOM attribute manipulation - most reliable
+						submitButton.removeAttribute('disabled');
+						// JS property manipulation
+						submitButton.disabled = false;
+						// For completeness, try jQuery if it exists
+						if (window.jQuery) {
+							try {
+								window.jQuery(submitButton).prop('disabled', false).attr('disabled', null);
+							} catch(e) {
+								console.warn('jQuery reset attempt failed:', e);
+							}
+						}
 
-				// Reset one-time button
-				if (oneTimeButton) {
-					oneTimeButton.textContent = oneTimeButton.getAttribute('data-original-text') || 'Buy Once for...';
-					oneTimeButton.disabled = false;
+						// Reset appearance if it looks like loading state
+						if (submitButton.innerHTML.includes('button-spinner') ||
+							submitButton.innerHTML.includes('spinner') ||
+							submitButton.innerHTML.length < 3) {
+							const originalText = submitButton.getAttribute('data-original-text') ||
+								(buyType === 'buy_now' ? 'Get Started' : 'Add To Cart');
+							submitButton.innerHTML = originalText;
+						}
+
+						// Clear ANY loading-related classes
+						submitButton.classList.remove('loading');
+						submitButton.classList.remove('loading-active');
+						submitButton.classList.remove('disabled');
+						submitButton.style.opacity = '1';
+						submitButton.style.pointerEvents = 'auto';
+
+						console.log('✓ Submit button reset with ultra-aggressive approach');
+					} else {
+						// If button not found by initial reference, try re-querying
+						const refreshedButton = document.querySelector('.checkout-button button');
+						if (refreshedButton) {
+							refreshedButton.removeAttribute('disabled');
+							refreshedButton.disabled = false;
+							console.log('✓ Submit button found with re-query and reset');
+						}
+					}
+
+					// Same aggressive approach for one-time button
+					if (oneTimeButton) {
+						oneTimeButton.removeAttribute('disabled');
+						oneTimeButton.disabled = false;
+						oneTimeButton.classList.remove('disabled');
+						oneTimeButton.style.opacity = '1';
+						oneTimeButton.style.pointerEvents = 'auto';
+
+						if (oneTimeButton.textContent === 'Adding...' ||
+							oneTimeButton.textContent === 'Added!' ||
+							oneTimeButton.textContent === 'Failed' ||
+							oneTimeButton.innerHTML.includes('spinner')) {
+							oneTimeButton.textContent = oneTimeButton.getAttribute('data-original-text') ||
+								`Buy Once for {{ firstVariant.price | money }} + {{ shippingPrice | money | replace: '.00', '' }} Shipping`;
+						}
+					}
+
+					// As an extreme fallback, enable ALL buttons in the product actions container
+					const allButtons = productActions.querySelectorAll('button');
+					allButtons.forEach(btn => {
+						btn.disabled = false;
+						btn.removeAttribute('disabled');
+					});
+				} catch (e) {
+					console.error('Error in aggressive button reset:', e);
 				}
+			};
+
+			// Execute immediately
+			resetButtons();
+
+			// Try multiple times with increasing delays
+			setTimeout(resetButtons, 100);
+			setTimeout(resetButtons, 500);
+			setTimeout(resetButtons, 1000);
+
+			// Set up a mutation observer to detect if the button becomes disabled again
+			try {
+				if (submitButton && 'MutationObserver' in window) {
+					const observer = new MutationObserver((mutations) => {
+						for (const mutation of mutations) {
+							if ((mutation.type === 'attributes' && mutation.attributeName === 'disabled') ||
+								(mutation.type === 'properties' && mutation.propertyName === 'disabled')) {
+								console.log('Detected button being disabled again, re-enabling');
+								submitButton.disabled = false;
+								submitButton.removeAttribute('disabled');
+							}
+						}
+					});
+
+					observer.observe(submitButton, {
+						attributes: true,
+						attributeFilter: ['disabled'],
+						properties: true
+					});
+
+					// Disconnect after 5 seconds to avoid memory leaks
+					setTimeout(() => observer.disconnect(), 5000);
+				}
+			} catch(e) {
+				console.warn('MutationObserver setup failed:', e);
+			}
+		});
+
+		// Additional visibilitychange listener as a backup safety mechanism
+		document.addEventListener('visibilitychange', function() {
+			if (document.visibilityState === 'visible') {
+				console.log('Page visibility changed to visible, checking button states');
+
+				// Wait a moment for page to stabilize after becoming visible
+				setTimeout(() => {
+					if (submitButton) {
+						// Check button state
+						if (submitButton.disabled || submitButton.hasAttribute('disabled')) {
+							console.log('Button still disabled after visibility change, resetting it');
+							submitButton.disabled = false;
+							submitButton.removeAttribute('disabled');
+
+							// Fix appearance if needed
+							if (submitButton.innerHTML.includes('button-spinner') || submitButton.innerHTML.length < 10) {
+								submitButton.innerHTML = submitButton.getAttribute('data-original-text') ||
+									(buyType === 'buy_now' ? 'Get Started' : 'Add To Cart');
+							}
+
+							// Clear any visual disabled states
+							submitButton.classList.remove('loading', 'loading-active', 'disabled');
+							submitButton.style.opacity = '1';
+							submitButton.style.pointerEvents = 'auto';
+						}
+					}
+
+					// Same for one-time button
+					if (oneTimeButton && (oneTimeButton.disabled || oneTimeButton.hasAttribute('disabled'))) {
+						oneTimeButton.disabled = false;
+						oneTimeButton.removeAttribute('disabled');
+						oneTimeButton.style.pointerEvents = 'auto';
+
+						// Fix text if needed
+						if (['Adding...', 'Added!', 'Failed'].includes(oneTimeButton.textContent)) {
+							oneTimeButton.textContent = oneTimeButton.getAttribute('data-original-text') ||
+								`Buy Once for...`;
+						}
+					}
+				}, 100);
 			}
 		});
 	}
