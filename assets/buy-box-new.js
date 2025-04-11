@@ -295,6 +295,7 @@ class BuyBoxNew {
 		this.elements.submitButton = this.elements.productActions.querySelector(".checkout-button button");
 		this.elements.submitSellingPlanId = this.elements.productActions.querySelector(".submit-selling-plan-id"); // Hidden input likely
 		this.elements.submitVariantId = this.elements.productActions.querySelector(".submit-variant-id"); // Hidden input likely
+		this.elements.sellingPlanInput = this.elements.productActions.querySelector('input[name="selling_plan"]'); // Find the actual form input
 		this.elements.oneTimeButton = this.elements.productActions.querySelector(".one-time-add-to-cart");
 		this.elements.frequencyContainer = this.elements.productActions.querySelector("[data-frequency-container]");
 		this.elements.frequencyOptions = this.elements.productActions.querySelector(`#frequency-options-${this.config.SID}`);
@@ -357,6 +358,10 @@ class BuyBoxNew {
 
 		if (this.elements.submitSellingPlanId) this.elements.submitSellingPlanId.value = planId || "";
 		if (this.elements.submitVariantId) this.elements.submitVariantId.value = variantId || "";
+		if (this.elements.sellingPlanInput) {
+			this.elements.sellingPlanInput.value = planId || "";
+			console.log(`BuyBoxNew (${this.config.SID}): Updated selling_plan input to ${planId || "(empty)"}`);
+		}
 
 		this.setState({
 			sellingPlanId: planId,
@@ -505,6 +510,19 @@ class BuyBoxNew {
 			this.state.variantId = defaultBox.dataset.variant || null;
 			this.state.sellingPlanId = defaultBox.dataset.subscriptionSellingPlanId || null;
 			this.state.productId = defaultBox.dataset.product || null;
+
+			// Update hidden inputs directly during initialization
+			if (this.elements.submitSellingPlanId) {
+				this.elements.submitSellingPlanId.value = this.state.sellingPlanId || "";
+			}
+			if (this.elements.submitVariantId) {
+				this.elements.submitVariantId.value = this.state.variantId || "";
+			}
+			// Update the actual form selling_plan input too
+			if (this.elements.sellingPlanInput && this.state.sellingPlanId) {
+				this.elements.sellingPlanInput.value = this.state.sellingPlanId;
+				console.log(`BuyBoxNew (${this.config.SID}): Set initial selling_plan input value to ${this.state.sellingPlanId}`);
+			}
 
 			// Manually apply initial UI state based on the default box
 			this.updateSelectedBoxUI(defaultBox); // This handles selection visuals, price, frequency visibility etc.
@@ -1064,6 +1082,12 @@ class BuyBoxNew {
 		// Update the hidden input if it exists
 		if (this.elements.submitSellingPlanId) {
 			this.elements.submitSellingPlanId.value = newSellingPlanId;
+		}
+
+		// Update the actual form selling_plan input too
+		if (this.elements.sellingPlanInput) {
+			this.elements.sellingPlanInput.value = newSellingPlanId;
+			console.log(`BuyBoxNew (${this.config.SID}): Updated selling_plan input to ${newSellingPlanId}`);
 		}
 
 		// Update associated variant box data (important!)
