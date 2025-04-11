@@ -568,27 +568,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			// Set initial state if a default box exists
 			if (defaultBox) {
-				this.setState({
-					selectedBox: defaultBox,
-					isInitialLoad: true,
-					purchaseType: defaultBox.dataset.purchaseType || null,
-					sellingPlanId: defaultBox.dataset.subscriptionSellingPlanId || null,
-					// Reset any lingering state immediately on page load
-					isLoading: false,
-					isRedirectingToCheckout: false
-				});
+                // 1. Set initial state directly, avoiding immediate full UI update
+                Object.assign(this.data, { // Direct assignment
+                    selectedBox: defaultBox,
+                    isInitialLoad: true,
+                    purchaseType: defaultBox.dataset.purchaseType || null,
+                    sellingPlanId: defaultBox.dataset.subscriptionSellingPlanId || null,
+                    variantId: defaultBox.dataset.variant || null,
+                    productId: defaultBox.dataset.product || null,
+                    isLoading: false,
+                    isRedirectingToCheckout: false
+                });
 
-				// Make sure the UI is updated to reflect this selection
-				defaultBox.classList.add('selected');
-				const radio = defaultBox.querySelector('input[type="radio"]');
-				if (radio) radio.checked = true;
+                // Ensure the default box has the selected class visually
+                document.querySelectorAll('.variant-box').forEach(box => {
+                    box.classList.remove('selected');
+                    const radio = box.querySelector('input[type="radio"]');
+                    if (radio) radio.checked = false;
+                });
+                defaultBox.classList.add('selected');
+                const radio = defaultBox.querySelector('input[type="radio"]');
+                if (radio) radio.checked = true;
 
-				// Ensure variant is fully selected and UI updated
-				this.updateSelectedBox(defaultBox);
+                // 2. Populate frequency selector - this might update sellingPlanId in state/dataset
+                populateFrequencySelector(defaultBox);
+
+                // 3. Update price display - uses the potentially updated sellingPlanId
+                updatePriceDisplay(defaultBox);
+
+                // 4. Update other UI elements
+                updateBuyButton(defaultBox);
+                {% if isSlideVariant %}
+                    if (!window.hasInitialImageUpdateHappened) {
+                        updateVariantImage(defaultBox);
+                        window.hasInitialImageUpdateHappened = true;
+                    }
+                {% endif %}
 			}
 
-			// Mark initialization as complete
+			// Mark initialization as complete after a delay
 			setTimeout(() => {
+                // Use setState now to trigger potential UI updates if needed
 				this.setState({ isInitialLoad: false });
 			}, 100);
 		}
