@@ -73,19 +73,25 @@
 				{%- assign column_percent = col_width | times: 100 | divided_by: 12 -%}
 
 				{% comment %}
-					Calculate the gap adjustment based on the number of columns and gap size
+					For a 2-column layout with default width, each column should take 50% - gap
 				{% endcomment %}
-				{%- assign gap_share = column_gap | times: (columns | minus: 1) | divided_by: columns -%}
-				{%- assign column_flex_style = 'flex-basis: calc('
-					| append: column_percent
-					| append: '% - '
-					| append: gap_share
-					| append: 'rem); width: calc('
-					| append: column_percent
-					| append: '% - '
-					| append: gap_share
-					| append: 'rem);'
-				-%}
+				{% if columns == 2 and column_percent == 50 %}
+					{%- assign column_flex_style = 'flex-basis: calc(50% - ' | append: column_gap | append: 'rem); width: calc(50% - ' | append: column_gap | append: 'rem);' -%}
+				{% else %}
+					{%- assign gaps_to_account_for = columns | minus: 1 -%}
+					{%- assign gap_per_unit = column_gap | times: gaps_to_account_for | divided_by: 12 -%}
+					{%- assign gap_for_column = gap_per_unit | times: col_width -%}
+					{%- assign column_flex_style = 'flex-basis: calc('
+						| append: column_percent
+						| append: '% - '
+						| append: gap_for_column
+						| append: 'rem); width: calc('
+						| append: column_percent
+						| append: '% - '
+						| append: gap_for_column
+						| append: 'rem);'
+					-%}
+				{% endif %}
 
 				<div class="columns-layout-column" style="{{ column_flex_style }}">
 					{% render block %}
