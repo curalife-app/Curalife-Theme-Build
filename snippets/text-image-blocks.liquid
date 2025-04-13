@@ -1,0 +1,349 @@
+{% comment %}
+	New version using Theme Blocks. Renders the layout for text and image,
+	and iterates through blocks passed from the section to render content.
+
+	Accepts:
+	- section_id: The unique ID of the parent section.
+	- mainImage: The main image object for the section.
+	- mainMobileImage: The mobile version of the main image object.
+	- videoURL: URL for the main video (if no image).
+	- embedCode: Embed code for video/other (if no image/videoURL).
+	- image_position: Layout position of the image (left, right, top, bottom).
+	- image_link: Link for the main image.
+	- image_width: Max width for the main image.
+	- isRetina: Boolean for retina image handling.
+	- is_hide_image_on_mobile: Boolean to hide the main image on mobile.
+	- is_image_overlap_style: Boolean for image overlap styling.
+	- is_limit_image_size: Boolean to limit main image height.
+	- is_no_wrap: Boolean to prevent wrapping on mobile.
+	- is_image_middle_mobile: Boolean to place image after title on mobile.
+	- is_reverse_on_mobile: Boolean to reverse layout on mobile.
+	- is_remove_container_padding_mobile: Boolean for mobile padding.
+	- is_image_bottom: Boolean to align image to bottom.
+	- is_image_overlap: Boolean for image overlap layout.
+	- is_dont_lazyload: Boolean to disable lazy loading for the main image.
+	- title: Main title for the content area.
+	- subtitle: Subtitle for the content area.
+	- title_tag: HTML tag for the title (h1, h2, etc.).
+	- alignment: Text alignment for desktop.
+	- mobile_alignment: Text alignment for mobile.
+	- content: Main rich text content (now potentially replaced/supplemented by blocks).
+	- is_hide_description_on_mobile: Boolean to hide the main content block on mobile.
+	- is_line_seperator: Boolean to show a separator line.
+	- is_no_p_margin: Boolean to remove paragraph margins in the main content.
+	- content_animation: Animation type for the content area.
+	- animation_duration: Duration for the animation.
+	- section_blocks: The array of block objects from the section settings.
+	- lazyLoad: Boolean passed down to control lazy loading for block images.
+{% endcomment %}
+
+{% assign section_id = section_id | default: 'no-section-id' %}
+
+{% comment %} Determine layout direction based on image position and content presence {% endcomment %}
+{% assign itemsDirection = 'vertical' %}
+{% if image_position == 'right' or image_position == 'left' %}
+	{% if mainImage or videoURL != blank or embedCode != blank %}
+		{% if title != blank or content != blank or section_blocks.size > 0 %}
+			{% assign itemsDirection = 'horizontal' %}
+		{% endif %}
+	{% endif %}
+{% endif %}
+
+{% assign imageClass = 'main-image relative z-auto object-contain' %}
+{% if is_hide_image_on_mobile %}
+	{% assign imageClass = imageClass | append: ' mbl:hidden' %}
+{% endif %}
+{% if is_image_overlap_style %}
+	{% assign imageClass = imageClass | append: ' h-[calc(100%+135px)] object-cover object-left' %}
+{% endif %}
+{% if is_limit_image_size %}
+	{% assign imageClass = imageClass | append: ' max-h-500px' %}
+{% endif %}
+
+{% assign lazyLoad = is_dont_lazyload | default: false | B %}
+{% assign lazyLoad = lazyLoad == false %}
+{% comment %} Invert logic, true means lazy load {% endcomment %}
+
+<div class="text-image-wrapper w-full">
+	<div class="container static !p-0 h-auto flex md:gap-4 md:items-center gap-x-16 gap-y-4 {% case image_position %}{% when 'right' %}flex-row-reverse{% when 'left' %}flex-row{% when 'bottom' %}flex-col-reverse{% when 'top' %}flex-col{% endcase %} {% unless is_no_wrap %}{% if is_image_middle_mobile or is_reverse_on_mobile %}md:flex-col{% else %}md:flex-col-reverse{% endif %}{% endunless %} {% if is_image_overlap and image_position == 'left' %}justify-end{% else %}justify-between{% endif %} {% if is_remove_container_padding_mobile %}md:p-0{% endif %}">
+		{% if is_image_middle_mobile and title != blank %}
+			<div class="mobile-titles mobile">
+				<div class="mobile-title title z-[1] justify-{{ alignment }} md:justify-{{ mobile_alignment }} text-{{ alignment }} md:text-{{ mobile_alignment }} {% if is_line_seperator %}m-0{% endif %}">
+					<{{ title_tag }} class="{{ title_tag }}">{{ title }}</{{ title_tag }}>
+				</div>
+				{% if subtitle != blank %}
+					<p class="mobile-subtitle subtitle z-[1] justify-{{ alignment }} md:justify-{{ mobile_alignment }} text-{{ alignment }} md:text-{{ mobile_alignment }} {% if is_line_seperator %}m-0{% endif %}">
+						{{ subtitle }}
+					</p>
+				{% endif %}
+			</div>
+		{% endif %}
+
+		{% comment %} Main Image/Video Area {% endcomment %}
+		{% if mainImage or mainMobileImage or videoURL != blank or embedCode != blank %}
+			<div class="image-wrapper z-[1] h-auto w-auto md:mb-0 max-w-full {% if mainMobileImage and mainImage == blank %}mobile{% endif %} {% if itemsDirection == 'vertical' %}place-self-center{% endif %} {% if is_image_bottom %}self-end md:self-auto{% endif %}">
+				{% if embedCode != blank %}
+					{{ embedCode }}
+				{% elsif videoURL != blank %}
+					{% render 'video', main_image: mainImage, main_mobile_image: mainMobileImage, SID: section_id, videoInput: videoURL %}
+				{% else %}
+					{%
+						render 'image-test',
+						image: mainImage,
+						mobile_image: mainMobileImage,
+						is_retina: isRetina,
+						is_log: true,
+						load_mobile: true,
+						link: image_link,
+						lazy: lazyLoad,
+						max_width: image_width,
+						alt: mainImage.alt | default: 'Section image',
+						class: imageClass
+					%}
+				{% endif %}
+			</div>
+		{% endif %}
+
+		{% comment %} Content Area - Titles and Blocks {% endcomment %}
+		{% if title != blank or subtitle != blank or content != blank or section_blocks.size > 0 %}
+			<div
+				class="content-wrapper break-words z-[1] flex md:py-0 md:!w-full gap-12 md:gap-4 md:m-auto {% if alignment == 'center' %}justify-center m-auto{% endif %} {% if itemsDirection == 'horizontal' %}w-45%{% else %}w-70%{% endif %}"
+				{% if content_animation != 'none' %}
+					data-aos="{{ content_animation }}" data-aos-duration="{{ animation_duration }}"
+				{% endif %}>
+				<div class="content flex flex-col justify-center gap-4 md:w-full text-{{ alignment }} md:text-{{ mobile_alignment }} items-{{ alignment }} md:items-{{ mobile_alignment }} {% unless mainImage or videoURL != blank or embedCode != blank %}w-full{% endunless %}">
+					{% comment %} Section Titles (Optional) {% endcomment %}
+					{% if title != blank or subtitle != blank %}
+						<div class="titles">
+							{% if title != blank %}
+								<{{ title_tag }} class="title text-wrap {% if subtitle != blank %}mb-0{% endif %} {{ title_tag }} w-full {% if is_image_middle_mobile %}md:hidden md:!hidden{% endif %} {% if is_line_seperator %}m-0{% endif %}">
+									{{ title }}
+								</{{ title_tag }}>
+							{% endif %}
+							{% if subtitle != blank %}
+								<p class="subtitle {% if title_tag == 'h1' %}text-[30px]{% endif %} md:text-[6vw] {% if is_no_p_margin %}m-0{% endif %} {% if is_image_middle_mobile %}md:hidden{% endif %}">
+									{{ subtitle }}
+								</p>
+							{% endif %}
+						</div>
+					{% endif %}
+
+					{% if is_line_seperator %}
+						<div class="line-seperator my-2 border-b border-black w-[100px] md:w-[30vw]"></div>
+					{% endif %}
+
+					{% comment %} Original Content Block (Optional - keep for backward compatibility or simple text) {% endcomment %}
+					{% if content != blank %}
+						<div class="description {% if is_hide_description_on_mobile %}md:hidden{% endif %} text-{{ alignment }} md:text-{{ mobile_alignment }}">{{ content }}</div>
+					{% endif %}
+
+					{% comment %} Loop through section blocks and render them {% endcomment %}
+					{% for block in section_blocks %}
+						{% case block.type %}
+							{% when 'text-block' %}
+								{% render 'text-block', block: block %}
+							{% when 'image-block' %}
+								{% render 'image-block', block: block, lazy: lazyLoad %}
+							{% when 'button-block' %}
+								{% render 'button-block', block: block %}
+							{% when 'code-block' %}
+								{% render 'code-block', block: block %}
+							{% when 'video-block' %}
+								{% comment %} Handle potential video carousel logic if needed, or just render single videos {% endcomment %}
+								{% render 'video-block', block: block, section_id: section_id %}
+							{% when 'countdown-block' %}
+								{% render 'countdown-block', block: block, section_id: section_id %}
+								{% comment %} Add cases for other block types as needed {% endcomment %}
+							{% else %}
+								{% comment %} Optional: Output a message for unhandled block types {% endcomment %}
+								<p>Unhandled block type: {{ block.type }}</p>
+						{% endcase %}
+					{% endfor %}
+				</div>
+			</div>
+		{% endif %}
+	</div>
+
+	{% comment %} Remove or adapt the old 'item' block logic. Items could become a separate block type {% endcomment %}
+	{% comment %}
+		{% assign itemsCounter = section_blocks | where: 'type', 'item' | size %}
+		{% if itemsCounter > 0 %}
+		  ... old item slider logic ...
+		{% endif %}
+	{% endcomment %}
+</div>
+
+{% comment %} Styles can be kept, but some might need adjustment based on block structure {% endcomment %}
+{% comment %} Consider moving block-specific styles into their respective block files or a shared CSS file {% endcomment %}
+<style>
+	/* Keep general layout styles */
+	{% unless max_width == 1200 %}
+	  #section-{{ section_id }} .text-image-wrapper {
+	    max-width: {{ max_width }}px !important;
+	    margin-inline: auto;
+	  }
+	{% endunless %}
+
+	{% if is_image_shadow %}
+	  #section-{{ section_id }} .image-wrapper img {
+	    filter: drop-shadow({{ shadow_position_inline }}px {{ shadow_position_block }}px {{ shadow_blur }}px rgba(0, 0, 0, {{ shadow_opacity }}));
+	  }
+	{% endif %}
+
+	{% if is_image_overlap_style %}
+	  #section-{{ section_id }} .image-wrapper img {
+	    filter: drop-shadow(-21px 22px 21px rgba(0, 0, 0, 0.2));
+	  }
+	{% endif %}
+
+	{% if is_image_full_width_mobile %}
+	  @media screen and (max-width: 768px) {
+	    #section-{{ section_id }} .container {
+	      padding-left: 0;
+	      padding-right: 0;
+	    }
+
+	    #section-{{ section_id }} .image-wrapper {
+	      width: 100vw;
+	      margin-left: calc(-50vw + 50%);
+	    }
+
+	    #section-{{ section_id }} .image-wrapper img {
+	      width: 100%;
+	      max-width: none;
+	      height: auto;
+	      object-fit: cover;
+	    }
+
+	    #section-{{ section_id }} .content-wrapper .content {
+	      padding: 0 15px;
+	    }
+	  }
+	{% endif %}
+
+	{% if title_badge != blank %}
+	  #section-{{ section_id }} .title,
+	  #section-{{ section_id }} .content-wrapper .content h1, /* Might need adjustment if H1 is inside a block */
+	  #section-{{ section_id }} .content-wrapper .content h2, /* Might need adjustment if H2 is inside a block */
+	  #section-{{ section_id }} .mobile-title h1,
+	  #section-{{ section_id }} .mobile-title h2 {
+	    &::before {
+	      content: '{{ title_badge }}';
+	      background: {{ title_color | default: "var(--primary-color)" }};
+	      color: white;
+	      padding: 0.25rem 0.75rem;
+	      font-size: 12px;
+	      border-radius: 50px;
+	      align-self: center;
+	      margin-right: 0.5rem;
+	    }
+	  }
+	{% endif %}
+
+	{% if text_color %}
+	  #section-{{ section_id }} {
+	    color: {{ text_color }};
+	  }
+
+	  /* Adjust title color selectors if titles are within blocks */
+	  #section-{{ section_id }} .title,
+	  #section-{{ section_id }} .content h1,
+	  #section-{{ section_id }} .content h2,
+	  #section-{{ section_id }} .mobile-title * {
+	    color: {{ title_color | default: text_color }};
+	  }
+	{% endif %}
+
+	{% if is_image_overlap %}
+	  #section-{{ section_id }} .image-wrapper img {
+	    {% if image_position == 'right' %}
+	      min-width: 55vw;
+	      object-position: top left;
+	      object-fit: contain;
+	    {% elsif image_position == 'left'%}
+	      object-position: top right;
+	      object-fit: cover;
+	      position: absolute;
+	      right: 50%;
+	      top: 0;
+	      min-width: 50vw;
+	    {% endif %}
+	    height: 500px;
+	    max-height: 100%;
+
+	    @media (width < 768px) {
+	      min-width: 100vw;
+	      object-fit: cover;
+	      object-position: top;
+	      position: unset;
+	      right: unset;
+	      top: unset;
+	      bottom: unset;
+	      margin: unset;
+	      height: unset;
+	    }
+	  }
+	{% endif %}
+
+	{% if padding_top == 0 and padding_bottom == 0 %}
+	  #section-{{ section.id }} .content { /* Ensure this selector still works or adjust */
+	    margin: 50px 0;
+	  }
+	{% endif %}
+
+	{% if title_highlight_color %}
+	  /* Adjust highlight selectors if needed */
+	  #section-{{ section_id }} .content-wrapper h1 strong,
+	  #section-{{ section_id }} .content-wrapper h2 strong,
+	  #section-{{ section_id }} .mobile-title strong {
+	    color: {{ title_highlight_color }};
+	  }
+
+	  /* This might need to target lists within text blocks specifically */
+	  #section-{{ section_id }} .content-wrapper .description ul li::before {
+	    background-color: {{ title_highlight_color }};
+	  }
+	{% endif %}
+
+	#section-{{ section_id }} .content-wrapper {
+	  width: {{ content_width }}%;
+
+	  /* Global paragraph size - consider if blocks need different sizes */
+	  p {
+	    font-size: {{ text_size }}px;
+	  }
+	}
+
+	/* Global link style - consider if blocks need different link styles */
+	#section-{{ section_id }} .content-wrapper .content a {
+	  color: var(--primary-color);
+	  font-weight: bold;
+	}
+
+	/* This might need refinement if blocks contain the last p */
+	#section-{{ section_id }} .content-wrapper .content p:last-of-type {
+	  margin: unset;
+	}
+
+	/* This might need refinement based on block content */
+	#section-{{ section_id }} .content-wrapper .content strong em,
+	#section-{{ section_id }} .content-wrapper .content em strong {
+	  vertical-align: super;
+	  font-size: 0.8em;
+	}
+
+	{% if itemsDirection == 'horizontal' %}
+	  #section-{{ section_id }} .image-wrapper {
+	    max-width: calc(100% - {{ content_width }}%);
+
+	    @media (max-width: 768px) {
+	      max-width: 100%;
+	    }
+	  }
+	{% endif %}
+
+	/* This might need adjustment */
+	#section-{{ section_id }} h2 {
+	  text-align: inherit;
+	}
+</style>
