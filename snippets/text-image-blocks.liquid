@@ -60,9 +60,11 @@
 	{% assign imageClass = imageClass | append: ' max-h-500px' %}
 {% endif %}
 
-{% assign lazyLoad = is_dont_lazyload | default: false | B %}
-{% assign lazyLoad = lazyLoad == false %}
-{% comment %} Invert logic, true means lazy load {% endcomment %}
+{% comment %} Determine if lazy loading should be active. Default to true. {% endcomment %}
+{% assign lazyLoad = true %}
+{% if is_dont_lazyload %}
+	{% assign lazyLoad = false %}
+{% endif %}
 
 <div class="text-image-wrapper w-full">
 	<div class="container static !p-0 h-auto flex md:gap-4 md:items-center gap-x-16 gap-y-4 {% case image_position %}{% when 'right' %}flex-row-reverse{% when 'left' %}flex-row{% when 'bottom' %}flex-col-reverse{% when 'top' %}flex-col{% endcase %} {% unless is_no_wrap %}{% if is_image_middle_mobile or is_reverse_on_mobile %}md:flex-col{% else %}md:flex-col-reverse{% endif %}{% endunless %} {% if is_image_overlap and image_position == 'left' %}justify-end{% else %}justify-between{% endif %} {% if is_remove_container_padding_mobile %}md:p-0{% endif %}">
