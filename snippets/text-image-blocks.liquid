@@ -139,27 +139,13 @@
 						<div class="description {% if is_hide_description_on_mobile %}md:hidden{% endif %} text-{{ alignment }} md:text-{{ mobile_alignment }}">{{ content }}</div>
 					{% endif %}
 
-					{% comment %} Loop through section blocks and render them {% endcomment %}
+					{% comment %} Loop through section blocks and render them (Shopify handles finding the /blocks/ file) {% endcomment %}
 					{% for block in section_blocks %}
-						{% case block.type %}
-							{% when 'text-block' %}
-								{% render 'text-block', block: block %}
-							{% when 'image-block' %}
-								{% render 'image-block', block: block, lazy: lazyLoad %}
-							{% when 'button-block' %}
-								{% render 'button-block', block: block %}
-							{% when 'code-block' %}
-								{% render 'code-block', block: block %}
-							{% when 'video-block' %}
-								{% comment %} Handle potential video carousel logic if needed, or just render single videos {% endcomment %}
-								{% render 'video-block', block: block, section_id: section_id %}
-							{% when 'countdown-block' %}
-								{% render 'countdown-block', block: block, section_id: section_id %}
-								{% comment %} Add cases for other block types as needed {% endcomment %}
-							{% else %}
-								{% comment %} Optional: Output a message for unhandled block types {% endcomment %}
-								<p>Unhandled block type: {{ block.type }}</p>
-						{% endcase %}
+						{%- comment -%} Skip decoration blocks in this loop, render them separately if needed {%- endcomment -%}
+						{%- unless block.type == 'decoration' -%}
+							{%- comment -%} Output the rendered block. Shopify injects HTML from /blocks/{{ block.type }}.liquid {%- endcomment -%}
+							{{ block }}
+						{%- endunless -%}
 					{% endfor %}
 				</div>
 			</div>
