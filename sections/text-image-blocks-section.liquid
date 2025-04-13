@@ -104,9 +104,52 @@
 				shadow_position_block: section.settings.shadow_position_block,
 				content_animation: section.settings.content_animation,
 				image_animation: section.settings.image_animation,
-				animation_duration: section.settings.animation_duration,
-				section_blocks: section.blocks
+				animation_duration: section.settings.animation_duration
 			%}
+
+			{% comment %} Render the blocks directly within the section {% endcomment %}
+			<div
+				class="content-wrapper break-words z-[1] flex md:py-0 md:!w-full gap-12 md:gap-4 md:m-auto {% if section.settings.alignment == 'center' %}justify-center m-auto{% endif %} {% if itemsDirection == 'horizontal' %}w-45%{% else %}w-70%{% endif %}"
+				{% if section.settings.content_animation != 'none' %}
+					data-aos="{{ section.settings.content_animation }}" data-aos-duration="{{ section.settings.animation_duration }}"
+				{% endif %}>
+				<div class="content flex flex-col justify-center gap-4 md:w-full text-{{ section.settings.alignment }} md:text-{{ section.settings.mobile_alignment }} items-{{ section.settings.alignment }} md:items-{{ section.settings.mobile_alignment }} {% unless section.settings.image or section.settings.video_embed != blank or section.settings.embed_code != blank %}w-full{% endunless %}">
+					{% comment %} Re-add Section Titles here if they were inside the snippet previously {% endcomment %}
+					{% if section.settings.title != blank or section.settings.subtitle != blank %}
+						<div class="titles">
+							{% if section.settings.title != blank %}
+								<{{ section.settings.title_tag }} class="title text-wrap {% if section.settings.subtitle != blank %}mb-0{% endif %} {{ section.settings.title_tag }} w-full {% if section.settings.is_image_middle_mobile %}md:hidden md:!hidden{% endif %} {% if section.settings.is_line_seperator %}m-0{% endif %}">
+									{{ section.settings.title }}
+								</{{ section.settings.title_tag }}>
+							{% endif %}
+							{% if section.settings.subtitle != blank %}
+								<p class="subtitle {% if section.settings.title_tag == 'h1' %}text-[30px]{% endif %} md:text-[6vw] {% if section.settings.is_no_p_margin %}m-0{% endif %} {% if section.settings.is_image_middle_mobile %}md:hidden{% endif %}">
+									{{ section.settings.subtitle }}
+								</p>
+							{% endif %}
+						</div>
+					{% endif %}
+
+					{% if section.settings.is_line_seperator %}
+						<div class="line-seperator my-2 border-b border-black w-[100px] md:w-[30vw]"></div>
+					{% endif %}
+
+					{% comment %} Re-add Legacy Content Field here {% endcomment %}
+					{% if section.settings.content != blank %}
+						<div class="description {% if section.settings.is_hide_description_on_mobile %}md:hidden{% endif %} text-{{ section.settings.alignment }} md:text-{{ section.settings.mobile_alignment }}">
+							{{ section.settings.content }}
+						</div>
+					{% endif %}
+
+					{% comment %} Loop through section blocks and render them (Shopify handles finding the /blocks/ file) {% endcomment %}
+					{% for block in section.blocks %}
+						{%- comment -%} Skip decoration blocks in this loop {%- endcomment -%}
+						{%- unless block.type == 'decoration' -%}
+							{{ block }}
+						{%- endunless -%}
+					{% endfor %}
+				</div>
+			</div>
 		</div>
 
 		{% comment %} Decoration logic remains the same {% endcomment %}
