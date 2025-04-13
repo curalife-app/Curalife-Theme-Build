@@ -6,7 +6,7 @@
 {% assign section_id = section.id %}
 {% assign columns = section.settings.columns | default: 2 %}
 {% assign columns_mobile = section.settings.columns_mobile | default: 1 %}
-{% assign column_gap = section.settings.column_gap | default: 4 %}
+{% assign column_gap = section.settings.column_gap | default: 2 %}
 
 <style>
 	#section-{{ section_id }} .columns-layout-flex {
@@ -22,6 +22,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;
+		box-sizing: border-box;
 	}
 	@media (max-width: 768px) {
 		#section-{{ section_id }} .columns-layout-flex {
@@ -30,10 +31,12 @@
 		}
 		#section-{{ section_id }} .columns-layout-column {
 			flex-basis: 100% !important;
+			width: 100% !important;
 		}
 		{% if columns_mobile == '2' %}
 			#section-{{ section_id }} .columns-layout-column {
-				flex-basis: calc(50% - {{ column_gap | times: 0.375 }}rem) !important;
+				flex-basis: calc(50% - {{ column_gap | times: 0.5 | times: 0.75 }}rem) !important;
+				width: calc(50% - {{ column_gap | times: 0.5 | times: 0.75 }}rem) !important;
 			}
 		{% endif %}
 	}
@@ -69,10 +72,12 @@
 				{%- assign column_percent = col_width | times: 100 | divided_by: 12 -%}
 
 				{% comment %}
-					For a 2-column layout with default width, each column should take 50% - gap
+					For a 2-column layout with default width, each column should take 50% - 1rem
+					(half of the total gap)
 				{% endcomment %}
 				{% if columns == 2 and column_percent == 50 %}
-					{%- assign column_flex_style = 'flex-basis: calc(50% - ' | append: column_gap | append: 'rem); width: calc(50% - ' | append: column_gap | append: 'rem);' -%}
+					{%- assign column_gap_per_column = column_gap | divided_by: 2 -%}
+					{%- assign column_flex_style = 'flex-basis: calc(50% - ' | append: column_gap_per_column | append: 'rem); width: calc(50% - ' | append: column_gap_per_column | append: 'rem);' -%}
 				{% else %}
 					{%- assign gaps_to_account_for = columns | minus: 1 -%}
 					{%- assign gap_per_unit = column_gap | times: gaps_to_account_for | divided_by: 12 -%}
@@ -196,9 +201,9 @@
 				"label": "Column Gap",
 				"min": 0,
 				"max": 8,
-				"step": 1,
+				"step": 0.5,
 				"unit": "rem",
-				"default": 4
+				"default": 2
 			},
 			{
 				"type": "checkbox",
@@ -272,7 +277,8 @@
 			{
 				"name": "Two Columns with Heading & Text",
 				"settings": {
-					"columns": 2
+					"columns": 2,
+					"column_gap": 2
 				},
 				"blocks": [
 					{
