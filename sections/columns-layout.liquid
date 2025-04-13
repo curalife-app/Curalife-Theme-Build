@@ -7,7 +7,6 @@
 {% assign columns = section.settings.columns | default: 2 %}
 {% assign columns_mobile = section.settings.columns_mobile | default: 1 %}
 {% assign column_gap = section.settings.column_gap | default: 4 %}
-{% assign total_gap_space = column_gap | times: columns | minus: column_gap %}
 
 <style>
 	#section-{{ section_id }} .columns-layout-flex {
@@ -23,7 +22,6 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;
-		box-sizing: border-box;
 	}
 	@media (max-width: 768px) {
 		#section-{{ section_id }} .columns-layout-flex {
@@ -32,12 +30,10 @@
 		}
 		#section-{{ section_id }} .columns-layout-column {
 			flex-basis: 100% !important;
-			width: 100% !important;
 		}
 		{% if columns_mobile == '2' %}
 			#section-{{ section_id }} .columns-layout-column {
-				flex-basis: calc(50% - {{ column_gap | times: 0.5 }}rem) !important;
-				width: calc(50% - {{ column_gap | times: 0.5 }}rem) !important;
+				flex-basis: calc(50% - {{ column_gap | times: 0.375 }}rem) !important;
 			}
 		{% endif %}
 	}
@@ -71,22 +67,8 @@
 				{%- assign default_col_span = 12 | divided_by: columns | default: 1 -%}
 				{%- assign col_width = block.settings.column_width | default: default_col_span -%}
 				{%- assign column_percent = col_width | times: 100 | divided_by: 12 -%}
-
-				{% comment %}
-					Calculate the gap adjustment based on the number of columns and gap size
-				{% endcomment %}
-				{%- assign gap_share = column_gap | times: (columns | minus: 1) | divided_by: columns -%}
-				{%- assign column_flex_style = 'flex-basis: calc('
-					| append: column_percent
-					| append: '% - '
-					| append: gap_share
-					| append: 'rem); width: calc('
-					| append: column_percent
-					| append: '% - '
-					| append: gap_share
-					| append: 'rem);'
-				-%}
-
+				{%- assign gap_compensation = column_gap | times: col_width | divided_by: 12 | times: 0.5 -%}
+				{%- assign column_flex_style = 'flex-basis: calc(' | append: column_percent | append: '% - ' | append: gap_compensation | append: 'rem);' -%}
 				<div class="columns-layout-column" style="{{ column_flex_style }}">
 					{% render block %}
 				</div>
@@ -194,9 +176,9 @@
 				"label": "Column Gap",
 				"min": 0,
 				"max": 8,
-				"step": 0.5,
+				"step": 1,
 				"unit": "rem",
-				"default": 2
+				"default": 4
 			},
 			{
 				"type": "checkbox",
@@ -270,8 +252,7 @@
 			{
 				"name": "Two Columns with Heading & Text",
 				"settings": {
-					"columns": 2,
-					"column_gap": 2
+					"columns": 2
 				},
 				"blocks": [
 					{
