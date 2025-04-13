@@ -10,18 +10,23 @@
 
 <style>
 	#section-{{ section_id }} .columns-layout-grid {
-	  grid-template-columns: repeat({{ columns }}, minmax(0, 1fr));
-	  gap: {{ column_gap }}rem; /* Adjust unit if needed */
+		display: grid;
+		grid-template-columns: repeat(12, minmax(0, 1fr));
+		gap: {{ column_gap }}rem;
 	}
 	@media (max-width: 768px) {
-	  #section-{{ section_id }} .columns-layout-grid {
-	    grid-template-columns: repeat({{ columns_mobile }}, minmax(0, 1fr));
-	     gap: {{ column_gap | times: 0.75 | default: 1 }}rem; /* Smaller gap on mobile */
-	  }
-	  #section-{{ section_id }} .columns-layout-grid > div[style*="grid-column-start"] {
-	    grid-column-start: auto !important;
-	    grid-column-end: auto !important;
-	  }
+		#section-{{ section_id }} .columns-layout-grid {
+			grid-template-columns: repeat(12, minmax(0, 1fr));
+			gap: {{ column_gap | times: 0.75 | default: 1 }}rem;
+		}
+		#section-{{ section_id }} .columns-layout-column {
+			grid-column: span 12 / span 12 !important;
+		}
+		{% if columns_mobile == '2' %}
+			#section-{{ section_id }} .columns-layout-column {
+				grid-column: span 6 / span 6 !important;
+			}
+		{% endif %}
 	}
 </style>
 
@@ -35,12 +40,12 @@
 			<h2 class="text-center text-2xl mb-6">{{ section.settings.title }}</h2>
 		{% endif %}
 
-		<div class="columns-layout-grid grid">
+		<div class="columns-layout-grid">
 			{% for block in section.blocks %}
 				{%- assign default_col_span = 12 | divided_by: columns | default: 1 -%}
 				{%- assign col_width = block.settings.column_width | default: default_col_span -%}
 				{%- assign grid_col_style = 'grid-column: span ' | append: col_width | append: ' / span ' | append: col_width | append: ';' -%}
-				<div style="{{ grid_col_style }}">
+				<div class="columns-layout-column" style="{{ grid_col_style }}">
 					{% render block %}
 				</div>
 			{% endfor %}
