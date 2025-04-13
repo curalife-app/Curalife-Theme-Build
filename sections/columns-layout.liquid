@@ -11,15 +11,21 @@
 <style>
 	#section-{{ section_id }} .columns-layout-flex {
 		display: flex;
+		{% if section.settings.is_wrap_columns %}flex-wrap: wrap;{% endif %}
 		gap: {{ column_gap }}rem;
+		{% if section.settings.vertical_alignment != blank %}align-items: {{ section.settings.vertical_alignment }};{% endif %}
 	}
 	#section-{{ section_id }} .columns-layout-column {
 		/* Default flex behavior will be overridden inline based on column settings */
 		flex-grow: 0;
 		flex-shrink: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
 	}
 	@media (max-width: 768px) {
 		#section-{{ section_id }} .columns-layout-flex {
+			{% if section.settings.is_wrap_columns_mobile %}flex-wrap: wrap;{% else %}flex-direction: column;{% endif %}
 			gap: {{ column_gap | times: 0.75 | default: 1 }}rem;
 		}
 		#section-{{ section_id }} .columns-layout-column {
@@ -35,12 +41,25 @@
 
 <section
 	id="section-{{ section_id }}"
-	class="columns-layout-section"
+	class="columns-layout-section {% if section.settings.section_classes %}{{ section.settings.section_classes }}{% endif %}"
 	data-section-id="{{ section_id }}"
-	data-section-type="columns-layout">
+	data-section-type="columns-layout"
+	style="
+		{% if section.settings.bg_color %}background-color: {{ section.settings.bg_color }};{% endif %}
+		{% if section.settings.section_padding_top != blank %}padding-top: {{ section.settings.section_padding_top }}px;{% endif %}
+		{% if section.settings.section_padding_bottom != blank %}padding-bottom: {{ section.settings.section_padding_bottom }}px;{% endif %}
+	">
 	<div class="container mx-auto px-4 py-8">
 		{% if section.settings.title != blank %}
-			<h2 class="text-center text-2xl mb-6">{{ section.settings.title }}</h2>
+			<{{ section.settings.title_tag | default: 'h2' }} class="section-title {% if section.settings.title_alignment %}text-{{ section.settings.title_alignment }}{% else %}text-center{% endif %} text-2xl mb-6 {% if section.settings.title_color %}text-[{{ section.settings.title_color }}]{% endif %}">
+				{{ section.settings.title }}
+			</{{ section.settings.title_tag | default: 'h2' }}>
+		{% endif %}
+
+		{% if section.settings.subtitle != blank %}
+			<div class="section-subtitle {% if section.settings.title_alignment %}text-{{ section.settings.title_alignment }}{% else %}text-center{% endif %} mb-6 {% if section.settings.subtitle_color %}text-[{{ section.settings.subtitle_color }}]{% endif %}">
+				{{ section.settings.subtitle }}
+			</div>
 		{% endif %}
 
 		<div class="columns-layout-flex">
@@ -65,9 +84,72 @@
 		"class": "columns-layout-section",
 		"settings": [
 			{
+				"type": "header",
+				"content": "Section Header"
+			},
+			{
 				"type": "text",
 				"id": "title",
 				"label": "Section Title (Optional)"
+			},
+			{
+				"type": "select",
+				"id": "title_tag",
+				"label": "Title Tag",
+				"options": [
+					{
+						"value": "h1",
+						"label": "H1"
+					},
+					{
+						"value": "h2",
+						"label": "H2"
+					},
+					{
+						"value": "h3",
+						"label": "H3"
+					}
+				],
+				"default": "h2"
+			},
+			{
+				"type": "color",
+				"id": "title_color",
+				"label": "Title Color"
+			},
+			{
+				"type": "select",
+				"id": "title_alignment",
+				"label": "Title Alignment",
+				"options": [
+					{
+						"value": "left",
+						"label": "Left"
+					},
+					{
+						"value": "center",
+						"label": "Center"
+					},
+					{
+						"value": "right",
+						"label": "Right"
+					}
+				],
+				"default": "center"
+			},
+			{
+				"type": "richtext",
+				"id": "subtitle",
+				"label": "Section Subtitle"
+			},
+			{
+				"type": "color",
+				"id": "subtitle_color",
+				"label": "Subtitle Color"
+			},
+			{
+				"type": "header",
+				"content": "Column Layout"
 			},
 			{
 				"type": "range",
@@ -91,12 +173,74 @@
 			{
 				"type": "range",
 				"id": "column_gap",
-				"label": "Column Gap (Desktop)",
+				"label": "Column Gap",
 				"min": 0,
 				"max": 8,
 				"step": 1,
 				"unit": "rem",
 				"default": 4
+			},
+			{
+				"type": "checkbox",
+				"id": "is_wrap_columns",
+				"label": "Wrap columns (Desktop)",
+				"default": false
+			},
+			{
+				"type": "checkbox",
+				"id": "is_wrap_columns_mobile",
+				"label": "Wrap columns (Mobile)",
+				"default": false
+			},
+			{
+				"type": "select",
+				"id": "vertical_alignment",
+				"label": "Vertical Alignment",
+				"options": [
+					{
+						"value": "flex-start",
+						"label": "Top"
+					},
+					{
+						"value": "center",
+						"label": "Middle"
+					},
+					{
+						"value": "flex-end",
+						"label": "Bottom"
+					},
+					{
+						"value": "stretch",
+						"label": "Stretch"
+					}
+				],
+				"default": "flex-start"
+			},
+			{
+				"type": "header",
+				"content": "Section Styling"
+			},
+			{
+				"type": "color",
+				"id": "bg_color",
+				"label": "Background Color"
+			},
+			{
+				"type": "number",
+				"id": "section_padding_top",
+				"label": "Section Padding Top",
+				"default": 50
+			},
+			{
+				"type": "number",
+				"id": "section_padding_bottom",
+				"label": "Section Padding Bottom",
+				"default": 50
+			},
+			{
+				"type": "text",
+				"id": "section_classes",
+				"label": "Additional Section Classes"
 			}
 		],
 		"blocks": [{ "type": "@theme" }, { "type": "@app" }],
