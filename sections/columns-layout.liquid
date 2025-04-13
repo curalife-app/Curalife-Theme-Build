@@ -9,22 +9,26 @@
 {% assign column_gap = section.settings.column_gap | default: 4 %}
 
 <style>
-	#section-{{ section_id }} .columns-layout-grid {
-		display: grid;
-		grid-template-columns: repeat(12, minmax(0, 1fr));
+	#section-{{ section_id }} .columns-layout-flex {
+		display: flex;
+		flex-wrap: wrap;
 		gap: {{ column_gap }}rem;
 	}
+	#section-{{ section_id }} .columns-layout-column {
+		/* Default flex behavior will be overridden inline based on column settings */
+		flex-grow: 0;
+		flex-shrink: 0;
+	}
 	@media (max-width: 768px) {
-		#section-{{ section_id }} .columns-layout-grid {
-			grid-template-columns: repeat(12, minmax(0, 1fr));
+		#section-{{ section_id }} .columns-layout-flex {
 			gap: {{ column_gap | times: 0.75 | default: 1 }}rem;
 		}
 		#section-{{ section_id }} .columns-layout-column {
-			grid-column: span 12 / span 12 !important;
+			flex-basis: 100% !important;
 		}
 		{% if columns_mobile == '2' %}
 			#section-{{ section_id }} .columns-layout-column {
-				grid-column: span 6 / span 6 !important;
+				flex-basis: calc(50% - {{ column_gap | times: 0.375 }}rem) !important;
 			}
 		{% endif %}
 	}
@@ -40,12 +44,14 @@
 			<h2 class="text-center text-2xl mb-6">{{ section.settings.title }}</h2>
 		{% endif %}
 
-		<div class="columns-layout-grid">
+		<div class="columns-layout-flex">
 			{% for block in section.blocks %}
 				{%- assign default_col_span = 12 | divided_by: columns | default: 1 -%}
 				{%- assign col_width = block.settings.column_width | default: default_col_span -%}
-				{%- assign grid_col_style = 'grid-column: span ' | append: col_width | append: ' / span ' | append: col_width | append: ';' -%}
-				<div class="columns-layout-column" style="{{ grid_col_style }}">
+				{%- assign column_percent = col_width | times: 100 | divided_by: 12 -%}
+				{%- assign gap_compensation = column_gap | times: col_width | divided_by: 12 | times: 0.5 -%}
+				{%- assign column_flex_style = 'flex-basis: calc(' | append: column_percent | append: '% - ' | append: gap_compensation | append: 'rem);' -%}
+				<div class="columns-layout-column" style="{{ column_flex_style }}">
 					{% render block %}
 				</div>
 			{% endfor %}
