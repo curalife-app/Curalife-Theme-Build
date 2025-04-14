@@ -1261,18 +1261,14 @@ class BuyBoxNew {
 			const uiType = frequencyContainer.dataset.uiType || "tabs";
 			const isDropdown = uiType === "dropdown";
 
-			// Look for any selling plan data in the variant box's dataset
 			let frequencyValue = bottleQuantity;
 			let frequencyUnit = "month";
 
-			// Check if there's frequency data in a data attribute (e.g. data-frequency-value, data-frequency-unit)
-			// This could be set elsewhere or determined from the selling plan name if available
 			if (el.dataset.frequencyValue && el.dataset.frequencyUnit) {
 				frequencyValue = parseInt(el.dataset.frequencyValue, 10);
 				frequencyUnit = el.dataset.frequencyUnit;
 			}
 
-			// Create a single option representing the known plan ID
 			const fallbackText = `${frequencyValue} ${frequencyUnit.charAt(0).toUpperCase() + frequencyUnit.slice(1)}${frequencyValue > 1 ? "s" : ""}`;
 
 			if (isDropdown) {
