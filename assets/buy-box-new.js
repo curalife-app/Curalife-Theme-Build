@@ -1286,7 +1286,6 @@ class BuyBoxNew {
 				});
 				frequencyOptions.appendChild(option);
 			} else {
-				// Tabs
 				const fallbackBox = DOMUtils.createElement("div", {
 					className:
 						"frequency-box rounded border-2 border-primary-lighter cursor-pointer py-2 px-3 min-w-[90px] max-w-[168px] text-center w-full transition-all duration-300 ease-in-out aria-selected:bg-primary aria-selected:text-white aria-[selected=false]:bg-white aria-[selected=false]:text-primary hover:bg-gray-100",
