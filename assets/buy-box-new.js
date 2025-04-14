@@ -242,11 +242,8 @@ const BuyBoxNewInstances = new Map();
 
 class BuyBoxNew {
 	constructor(container, config) {
-		console.log(`BuyBoxNew (${config.SID}): Constructor started.`);
-
 		// Check if an instance already exists for this SID
 		if (BuyBoxNewInstances.has(config.SID)) {
-			console.warn(`BuyBoxNew (${config.SID}): Instance already exists, returning existing instance`);
 			return BuyBoxNewInstances.get(config.SID);
 		}
 
@@ -267,7 +264,6 @@ class BuyBoxNew {
 		};
 
 		if (!this.container) {
-			console.error("BuyBoxNew: Container element not found for SID:", this.config.SID);
 			return;
 		}
 
@@ -279,15 +275,12 @@ class BuyBoxNew {
 		this.initState();
 		this.attachEventListeners();
 		this.moveCtaTextIfNeeded();
-		console.log(`BuyBoxNew (${config.SID}): Constructor finished.`);
 	}
 
 	bindElements() {
-		console.log(`BuyBoxNew (${this.config.SID}): bindElements started.`);
 		this.elements.productActions = this.container;
 
 		if (!this.elements.productActions || !this.elements.productActions.classList.contains("product-actions")) {
-			console.error(`BuyBoxNew (${this.config.SID}): The provided container is not the expected .product-actions element.`);
 			return; // Stop binding if the container is wrong
 		}
 
@@ -304,7 +297,6 @@ class BuyBoxNew {
 		this.elements.priceDisplays = this.elements.productActions.querySelectorAll(".price-display");
 		this.elements.ctaText = this.container.querySelector(".cta-text");
 		this.elements.giftContainer = this.elements.productActions.querySelector(".gift-container"); // Assuming a container for gifts
-		console.log(`BuyBoxNew (${this.config.SID}): Elements bound:`, this.elements);
 	}
 
 	storeInitialProductData() {
@@ -312,7 +304,6 @@ class BuyBoxNew {
 
 		const productIdFromData = this.container.dataset.productId;
 		if (!productIdFromData) {
-			console.error(`BuyBoxNew (${this.config.SID}): Missing data-product-id on root container.`);
 			return; // Cannot proceed without product ID
 		}
 
@@ -320,13 +311,10 @@ class BuyBoxNew {
 
 		// Check if data for this product ID was already populated by the inline script
 		if (window.productData[productIdFromData]?.initialized) {
-			console.log(`BuyBoxNew (${this.config.SID}): Using pre-populated product data for ID ${productIdFromData}.`);
 			this.config.product = window.productData[productIdFromData]; // Assign to instance config
 		} else {
 			// If not pre-populated (e.g., inline script failed or wasn't present), log a warning.
 			// The findVariantInProductData method might still work if data exists but lacks the 'initialized' flag.
-			console.warn(`BuyBoxNew (${this.config.SID}): Product data for ID ${productIdFromData} was not marked as initialized by Liquid. Functionality may be limited.`);
-			// Optionally create a placeholder if it doesn't exist at all
 			if (!window.productData[productIdFromData]) {
 				window.productData[productIdFromData] = { id: productIdFromData, variants: [], initialized: false };
 			}
@@ -360,7 +348,6 @@ class BuyBoxNew {
 		if (this.elements.submitVariantId) this.elements.submitVariantId.value = variantId || "";
 		if (this.elements.sellingPlanInput) {
 			this.elements.sellingPlanInput.value = planId || "";
-			console.log(`BuyBoxNew (${this.config.SID}): Updated selling_plan input to ${planId || "(empty)"}`);
 		}
 
 		this.setState({
@@ -460,9 +447,7 @@ class BuyBoxNew {
 	}
 
 	initState() {
-		console.log(`BuyBoxNew (${this.config.SID}): initState started.`);
 		if (!this.elements.productActions || !this.elements.purchaseOptionBoxes?.length > 0) {
-			console.warn(`BuyBoxNew (${this.config.SID}): initState - productActions or purchaseOptionBoxes not found. Aborting init.`);
 			return;
 		}
 
@@ -509,22 +494,17 @@ class BuyBoxNew {
 		}
 
 		setTimeout(() => this.setState({ isInitialLoad: false }), 100);
-		console.log(`BuyBoxNew (${this.config.SID}): initState finished. Initial state:`, this.state);
 	}
 
 	attachEventListeners() {
-		console.log(`BuyBoxNew (${this.config.SID}): attachEventListeners started.`);
 		if (!this.elements.productActions) {
-			console.error(`BuyBoxNew (${this.config.SID}): Cannot attach listeners, productActions element not found.`);
 			return;
 		}
 
 		// Variant box selection - click event
 		this.elements.productActions.addEventListener("click", e => {
-			console.log(`BuyBoxNew (${this.config.SID}): productActions click event fired. Target:`, e.target);
 			const box = e.target.closest(".variant-boxes .variant-box");
 			if (box && box.getAttribute("aria-selected") !== "true") {
-				console.log(`BuyBoxNew (${this.config.SID}): Variant box clicked:`, box);
 				e.preventDefault();
 				this.setState({ selectedBox: box }); // Trigger state update
 			}
@@ -536,7 +516,6 @@ class BuyBoxNew {
 
 			const box = e.target.closest(".variant-boxes .variant-box");
 			if (box && box.getAttribute("aria-selected") !== "true") {
-				console.log(`BuyBoxNew (${this.config.SID}): Variant box selected with keyboard:`, box);
 				e.preventDefault();
 				this.setState({ selectedBox: box }); // Trigger state update
 			}
@@ -666,7 +645,6 @@ class BuyBoxNew {
 				setTimeout(() => {
 					// Check if we need to repopulate the frequency selector
 					if (this.state.selectedBox && this.state.purchaseType === "subscribe") {
-						console.log(`BuyBoxNew (${this.config.SID}): Page became visible - repopulating frequency selector`);
 						this.handleFrequencySelectorVisibility(true, this.state.selectedBox);
 					}
 				}, 100);
@@ -677,24 +655,17 @@ class BuyBoxNew {
 		window.addEventListener("pageshow", event => {
 			// persisted is true if the page was restored from the bfcache
 			if (event.persisted) {
-				console.log(`BuyBoxNew (${this.config.SID}): Page restored from cache - reinitializing UI`);
 				// Reinitialize UI elements
 				if (this.state.selectedBox) {
 					this.updateSelectedBoxUI(this.state.selectedBox);
 				}
 			}
 		});
-
-		console.log(`BuyBoxNew (${this.config.SID}): attachEventListeners finished.`);
 	}
 
 	prepareItemsForCart() {
-		console.log("prepareItemsForCart: Starting...");
-		console.log("State:", JSON.parse(JSON.stringify(this.state))); // Log current state
-
 		const selectedBox = this.state.selectedBox;
 		if (!selectedBox) {
-			console.log("prepareItemsForCart: FAIL - No selectedBox");
 			showNotification("Please select a purchase option");
 			return null;
 		}
@@ -703,20 +674,15 @@ class BuyBoxNew {
 		const isSub = this.state.purchaseType === "subscribe";
 		const sellingPlanId = isSub ? this.state.sellingPlanId : null;
 
-		console.log(`prepareItemsForCart: variantId=${variantId}, isSub=${isSub}, sellingPlanId=${sellingPlanId}`);
-
 		if (!variantId) {
-			console.log("prepareItemsForCart: FAIL - No variantId");
 			showNotification("Invalid product option selected");
 			return null;
 		}
 		if (isSub && !sellingPlanId) {
-			console.log("prepareItemsForCart: FAIL - isSub is true but no sellingPlanId");
 			// Attempt to auto-select first available plan if none chosen - might be needed if UI fails
 			const variantData = this.findVariantInProductData(variantId);
 			if (variantData?.selling_plan_allocations?.length > 0) {
 				this.state.sellingPlanId = variantData.selling_plan_allocations[0].selling_plan.id;
-				console.warn("No selling plan selected, auto-selecting first available:", this.state.sellingPlanId);
 			} else {
 				showNotification("Please select a subscription frequency");
 				return null;
@@ -732,47 +698,38 @@ class BuyBoxNew {
 		];
 
 		const giftsAmount = parseInt(this.elements.productActions?.dataset.giftsAmount || "0", 10);
-		console.log(`prepareItemsForCart: giftsAmount=${giftsAmount}`);
 
 		if (giftsAmount > 0) {
 			const selectedGiftId = this.getSelectedGiftId(isSub);
-			console.log(`prepareItemsForCart: selectedGiftId (isSub=${isSub}) = ${selectedGiftId}`);
 			if (!selectedGiftId) {
-				console.log("prepareItemsForCart: FAIL - giftsAmount > 0 but no selectedGiftId");
 				showNotification("Please select your free gift");
 				return null;
 			}
 			items.push({ id: parseInt(selectedGiftId, 10), quantity: 1 });
 		}
 
-		console.log("prepareItemsForCart: SUCCESS - Prepared items:", items);
 		return items;
 	}
 
 	getSelectedGiftId(isSubscription) {
 		if (!this.elements.giftContainer) {
-			// Check if gift container exists
-			console.log("getSelectedGiftId: No gift container found.");
 			return null;
 		}
 
 		// Find the selected gift box using the class added by the inline script
 		const selectedGiftBox = this.elements.giftContainer.querySelector(".gift-box.selected");
 		if (!selectedGiftBox) {
-			console.log("getSelectedGiftId: Could not find .gift-box with .selected class.");
 			return null;
 		}
 
 		// Find the border element *within* the selected gift box
 		const selectedGiftOption = selectedGiftBox.querySelector(".gift-option-border");
 		if (!selectedGiftOption) {
-			console.error("getSelectedGiftId: Could not find .gift-option-border within selected gift box:", selectedGiftBox);
 			return null;
 		}
 
 		// Return the appropriate gift ID
 		const giftId = isSubscription ? selectedGiftOption.dataset.giftIdSubscription : selectedGiftOption.dataset.giftId;
-		console.log(`getSelectedGiftId: Found gift ID: ${giftId} (isSub=${isSubscription})`);
 		return giftId;
 	}
 
@@ -1095,7 +1052,6 @@ class BuyBoxNew {
 		// Update the actual form selling_plan input too
 		if (this.elements.sellingPlanInput) {
 			this.elements.sellingPlanInput.value = newSellingPlanId;
-			console.log(`BuyBoxNew (${this.config.SID}): Updated selling_plan input to ${newSellingPlanId}`);
 		}
 
 		// Update associated variant box data (important!)
@@ -1126,7 +1082,6 @@ class BuyBoxNew {
 
 		// Always clear previous options to prevent duplicates
 		optionsContainer.innerHTML = "";
-		console.log(`BuyBoxNew (${this.config.SID}): Cleared frequency options before repopulating`);
 
 		const variantData = this.findVariantInProductData(variantId);
 
@@ -1186,7 +1141,6 @@ class BuyBoxNew {
 			}
 			if (this.elements.sellingPlanInput) {
 				this.elements.sellingPlanInput.value = planIdToSelect;
-				console.log(`BuyBoxNew (${this.config.SID}): Set selling_plan input to recommended plan ${planIdToSelect}`);
 			}
 
 			// Update the variant box data
@@ -1205,8 +1159,7 @@ class BuyBoxNew {
 			const isRecommended = plan.id.toString() === recommendedPlanId;
 
 			if (uiType === "dropdown") {
-				let optionText = `${value} ${unit.charAt(0).toUpperCase() + unit.slice(1)}${value > 1 ? "s" : ""}`;
-				console.log(` -> Creating option: PlanID=${plan.id}, Value=${value}, Unit=${unit}, Recommended? ${isRecommended} (Comparing to ${recommendedPlanId})`);
+				let optionText = `Every ${value} ${unit.charAt(0).toUpperCase() + unit.slice(1)}${value > 1 ? "s" : ""}`;
 				if (isRecommended) {
 					optionText += " (Recommended use)";
 				}
@@ -1230,7 +1183,7 @@ class BuyBoxNew {
 					"aria-selected": isSelected ? "true" : "false",
 					role: "tab",
 					tabindex: "0", // Make focusable for keyboard navigation
-					innerHTML: `<span class="font-semibold text-[14px] block">${value}</span><span class="text-[12px] block">${unit.charAt(0).toUpperCase() + unit.slice(1)}${value > 1 ? "s" : ""}</span>`
+					innerHTML: `<span class="font-semibold text-[14px] block">Every ${value}</span><span class="text-[12px] block">${unit.charAt(0).toUpperCase() + unit.slice(1)}${value > 1 ? "s" : ""}</span>`
 				});
 				optionsContainer.appendChild(freqBox);
 			}
@@ -1240,8 +1193,6 @@ class BuyBoxNew {
 		if (uiType === "dropdown" && this.elements.frequencyDropdown) {
 			// Set the value directly
 			this.elements.frequencyDropdown.value = this.state.sellingPlanId;
-
-			console.log(`BuyBoxNew (${this.config.SID}): Set dropdown value to ${this.state.sellingPlanId}`);
 		}
 
 		this.updateFrequencyDescription(); // Update text based on selection
@@ -1269,7 +1220,7 @@ class BuyBoxNew {
 				frequencyUnit = el.dataset.frequencyUnit;
 			}
 
-			const fallbackText = `${frequencyValue} ${frequencyUnit.charAt(0).toUpperCase() + frequencyUnit.slice(1)}${frequencyValue > 1 ? "s" : ""}`;
+			const fallbackText = `Every ${frequencyValue} ${frequencyUnit.charAt(0).toUpperCase() + frequencyUnit.slice(1)}${frequencyValue > 1 ? "s" : ""}`;
 
 			if (isDropdown) {
 				const option = DOMUtils.createElement("option", {
@@ -1291,7 +1242,7 @@ class BuyBoxNew {
 					"aria-selected": "true", // Always selected in fallback
 					role: "tab",
 					tabindex: "0", // Make focusable for keyboard navigation
-					innerHTML: `<span class="font-semibold text-[14px] block">${frequencyValue}</span><span class="text-[12px] block">${frequencyUnit.charAt(0).toUpperCase() + frequencyUnit.slice(1)}${frequencyValue > 1 ? "s" : ""}</span>`
+					innerHTML: `<span class="font-semibold text-[14px] block">Every ${frequencyValue}</span><span class="text-[12px] block">${frequencyUnit.charAt(0).toUpperCase() + frequencyUnit.slice(1)}${frequencyValue > 1 ? "s" : ""}</span>`
 				});
 				frequencyOptions.appendChild(fallbackBox);
 			}
@@ -1423,13 +1374,10 @@ class BuyBoxNew {
 
 // Initialization logic
 document.addEventListener("DOMContentLoaded", () => {
-	console.log("BuyBoxNew Init: DOMContentLoaded fired.");
 	// Find all buy box containers on the page
 	const buyBoxContainers = document.querySelectorAll("[data-buy-box-new-root]"); // Add this attribute to your root container in Liquid
-	console.log(`BuyBoxNew Init: Found ${buyBoxContainers.length} container(s).`);
 
 	buyBoxContainers.forEach((container, index) => {
-		console.log(`BuyBoxNew Init: Processing container ${index + 1}.`);
 		// Extract config from data attributes
 		const config = {
 			SID: container.dataset.sid,
@@ -1443,17 +1391,13 @@ document.addEventListener("DOMContentLoaded", () => {
 		};
 
 		if (!config.SID) {
-			console.error("BuyBoxNew: Missing data-sid attribute on root container", container);
 			return;
 		}
 		if (!config.product && container.dataset.productId) {
 			console.warn(`BuyBoxNew (${config.SID}): Product data for ID ${container.dataset.productId} not found in window.productData during initialization.`);
 		}
 
-		console.log(`BuyBoxNew Init: Config for container ${index + 1}:`, config);
 		// Initialize a BuyBoxNew instance for each container
 		new BuyBoxNew(container, config);
 	});
-
-	console.log(`BuyBoxNew Init: DOMContentLoaded finished.`);
 });
