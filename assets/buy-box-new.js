@@ -370,32 +370,14 @@ class BuyBoxNew {
 			productId: boxElement.dataset.product
 		});
 
-		// Visual selection update using Tailwind classes
+		// Visual selection update using aria-selected for accessibility and styling
 		this.elements.purchaseOptionBoxes.forEach(box => {
 			const isSelected = box === boxElement;
 
-			// --- Parent Box Styling ---
-			// Active state
-			DOMUtils.toggleClass(box, "bg-primary", isSelected);
-			DOMUtils.toggleClass(box, "text-white", isSelected);
-			// Default/Unselected state
-			DOMUtils.toggleClass(box, "bg-white", !isSelected);
-			DOMUtils.toggleClass(box, "text-primary", !isSelected);
-			// Hover state (only for unselected)
-			DOMUtils.toggleClass(box, "hover:bg-gray-100", !isSelected);
+			// Set aria-selected for accessibility and styling
+			box.setAttribute("aria-selected", isSelected ? "true" : "false");
 
-			// --- Child Discount Badge Styling ---
-			const discountBadge = box.querySelector(".discount");
-			if (discountBadge) {
-				// Selected Parent State (Orange Badge)
-				DOMUtils.toggleClass(discountBadge, "bg-orange", isSelected);
-				DOMUtils.toggleClass(discountBadge, "text-primary", isSelected);
-				// Default Parent State (Primary Badge)
-				DOMUtils.toggleClass(discountBadge, "bg-primary", !isSelected);
-				DOMUtils.toggleClass(discountBadge, "text-white", !isSelected);
-			}
-
-			// Ensure radio button state matches
+			// Update radio button state
 			const radio = box.querySelector('input[type="radio"]');
 			if (radio) DOMUtils.updateProperty(radio, "checked", isSelected);
 		});
@@ -419,11 +401,8 @@ class BuyBoxNew {
 			this.elements.frequencyOptions.querySelectorAll("div[data-selling-plan-id]").forEach(box => {
 				const boxId = box.getAttribute("data-selling-plan-id");
 				const isSelected = boxId === sellingPlanId;
-				DOMUtils.toggleClass(box, "bg-primary", isSelected);
-				DOMUtils.toggleClass(box, "text-white", isSelected);
-				DOMUtils.toggleClass(box, "bg-white", !isSelected);
-				DOMUtils.toggleClass(box, "text-primary", !isSelected);
-				DOMUtils.toggleClass(box, "hover:bg-gray-100", !isSelected);
+				// Use aria-selected for accessibility and styling
+				box.setAttribute("aria-selected", isSelected ? "true" : "false");
 			});
 		} else if (uiType === "dropdown" && this.elements.frequencyDropdown) {
 			// Dropdown selection is handled by its 'change' event,
@@ -438,19 +417,19 @@ class BuyBoxNew {
 
 	updateLoadingState(isLoading) {
 		if (this.elements.submitButton) {
-			DOMUtils.updateProperty(this.elements.submitButton, "disabled", isLoading);
-			DOMUtils.updateAttribute(this.elements.submitButton, "aria-busy", isLoading ? "true" : null);
-			DOMUtils.toggleClass(this.elements.submitButton, "loading-active", isLoading);
+			this.elements.submitButton.setAttribute("aria-busy", isLoading ? "true" : "false");
+			this.elements.submitButton.disabled = isLoading;
+
 			if (isLoading) {
 				this.elements.submitButton.innerHTML = `<div class="border-white/20 border-t-white animate-spin inline-block w-6 h-6 mx-auto border-2 rounded-full"></div>`;
 			} else {
 				this.elements.submitButton.innerHTML = this.elements.submitButton.getAttribute("data-original-text") || "Add To Cart";
 			}
 		}
+
 		if (this.elements.oneTimeButton) {
-			DOMUtils.updateProperty(this.elements.oneTimeButton, "disabled", isLoading);
-			DOMUtils.updateAttribute(this.elements.oneTimeButton, "aria-busy", isLoading ? "true" : null);
-			DOMUtils.toggleClass(this.elements.oneTimeButton, "disabled", isLoading);
+			this.elements.oneTimeButton.setAttribute("aria-busy", isLoading ? "true" : "false");
+			this.elements.oneTimeButton.disabled = isLoading;
 
 			// Update one-time button content based on loading state
 			if (isLoading) {
@@ -459,8 +438,9 @@ class BuyBoxNew {
 				this.elements.oneTimeButton.innerHTML = this.elements.oneTimeButton.getAttribute("data-original-text") || "One-Time Purchase";
 			}
 		}
+
 		if (this.elements.productActions) {
-			DOMUtils.toggleClass(this.elements.productActions, "processing-order", isLoading);
+			this.elements.productActions.setAttribute("data-processing", isLoading ? "true" : "false");
 		}
 	}
 
@@ -539,22 +519,45 @@ class BuyBoxNew {
 			return;
 		}
 
-		// Variant box selection
+		// Variant box selection - click event
 		this.elements.productActions.addEventListener("click", e => {
 			console.log(`BuyBoxNew (${this.config.SID}): productActions click event fired. Target:`, e.target);
 			const box = e.target.closest(".variant-boxes .variant-box");
-			if (box && !box.classList.contains("selected")) {
+			if (box && box.getAttribute("aria-selected") !== "true") {
 				console.log(`BuyBoxNew (${this.config.SID}): Variant box clicked:`, box);
 				e.preventDefault();
 				this.setState({ selectedBox: box }); // Trigger state update
 			}
 		});
 
-		// Frequency selection (Tabs)
+		// Variant box keyboard navigation
+		this.elements.productActions.addEventListener("keydown", e => {
+			if (e.key !== "Enter" && e.key !== " ") return;
+
+			const box = e.target.closest(".variant-boxes .variant-box");
+			if (box && box.getAttribute("aria-selected") !== "true") {
+				console.log(`BuyBoxNew (${this.config.SID}): Variant box selected with keyboard:`, box);
+				e.preventDefault();
+				this.setState({ selectedBox: box }); // Trigger state update
+			}
+		});
+
+		// Frequency selection (Tabs) - click event
 		if (this.elements.frequencyOptions) {
 			this.elements.frequencyOptions.addEventListener("click", e => {
 				const option = e.target.closest(".frequency-box[data-selling-plan-id]");
 				if (option) {
+					this.selectFrequencyOption(option);
+				}
+			});
+
+			// Frequency selection keyboard navigation
+			this.elements.frequencyOptions.addEventListener("keydown", e => {
+				if (e.key !== "Enter" && e.key !== " ") return;
+
+				const option = e.target.closest(".frequency-box[data-selling-plan-id]");
+				if (option) {
+					e.preventDefault();
 					this.selectFrequencyOption(option);
 				}
 			});
@@ -919,57 +922,67 @@ class BuyBoxNew {
 				: "";
 
 		this.elements.priceDisplays.forEach(display => {
+			// Check if content has actually changed to avoid unnecessary animations
 			const mainPriceEl = display.querySelector(".main-price .price");
 			const capEl = display.querySelector(".cap");
 			const discountBadgeEl = display.querySelector(".discount-badge");
 			const totalLineEl = display.querySelector(".total-line");
 			const futurePriceEl = display.querySelector(".future-price-notice");
+			const perText = display.querySelector(".per-text");
 
-			// Check if content needs updating
-			const mainPriceChanged = mainPriceEl && mainPriceEl.textContent !== newMainPriceText;
-			const capChanged = capEl && capEl.textContent !== newComparePriceText;
-			const discountChanged = discountBadgeEl && discountBadgeEl.textContent !== savingsText;
-			const totalLineChanged = totalLineEl && totalLineEl.innerHTML !== newTotalLineHTML;
-			const futurePriceChanged = futurePriceEl && futurePriceEl.textContent !== newFuturePriceText;
+			const hasContentChanged =
+				(mainPriceEl && mainPriceEl.textContent !== newMainPriceText) ||
+				(capEl && capEl.textContent !== newComparePriceText) ||
+				(discountBadgeEl && discountBadgeEl.textContent !== savingsText) ||
+				(totalLineEl && totalLineEl.innerHTML !== newTotalLineHTML) ||
+				(futurePriceEl && futurePriceEl.textContent !== newFuturePriceText);
 
-			const hasContentChanged = mainPriceChanged || capChanged || discountChanged || totalLineChanged || futurePriceChanged;
+			// Add a data attribute to the display for price format
+			display.setAttribute("data-price-format", this.config.priceFormat);
 
-			if (this.state.isInitialLoad) {
-				// Direct update on initial load
-				if (mainPriceChanged) DOMUtils.updateProperty(mainPriceEl, "textContent", newMainPriceText);
-				if (capChanged) DOMUtils.updateProperty(capEl, "textContent", newComparePriceText);
-				if (discountChanged) {
-					DOMUtils.updateProperty(discountBadgeEl, "textContent", savingsText);
-					DOMUtils.toggleClass(discountBadgeEl, "hidden", saveAmount <= 0 || this.config.priceFormat !== "total");
-				}
-				if (totalLineChanged) DOMUtils.updateProperty(totalLineEl, "innerHTML", newTotalLineHTML);
-				if (futurePriceChanged) DOMUtils.updateProperty(futurePriceEl, "textContent", newFuturePriceText);
+			// Set data attributes for saving calculations
+			display.setAttribute("data-has-savings", saveAmount > 0 ? "true" : "false");
 
-				// Hide per-bottle text if format is total
-				const perText = display.querySelector(".per-text");
-				if (perText) DOMUtils.updateStyle(perText, "display", this.config.priceFormat === "total" ? "none" : "");
-			} else if (hasContentChanged) {
-				// Animate changes after initial load
-				const elementsToAnimate = [mainPriceEl?.parentElement, capEl, discountBadgeEl, totalLineEl, futurePriceEl].filter(Boolean);
+			// If content has changed and not initial load, animate the transition
+			if (hasContentChanged && !this.state.isInitialLoad) {
+				// Start fade out
+				display.setAttribute("data-updating", "true");
 
-				elementsToAnimate.forEach(el => (el.style.opacity = "0"));
-
+				// After fade out completes, update content and start fade in
 				setTimeout(() => {
-					// Update content while invisible
-					if (mainPriceChanged) DOMUtils.updateProperty(mainPriceEl, "textContent", newMainPriceText);
-					if (capChanged) DOMUtils.updateProperty(capEl, "textContent", newComparePriceText);
-					if (discountChanged) {
-						DOMUtils.updateProperty(discountBadgeEl, "textContent", savingsText);
-						DOMUtils.toggleClass(discountBadgeEl, "hidden", saveAmount <= 0 || this.config.priceFormat !== "total");
+					// Set prices
+					if (mainPriceEl) mainPriceEl.textContent = newMainPriceText;
+					if (capEl) capEl.textContent = newComparePriceText;
+					if (discountBadgeEl) {
+						discountBadgeEl.textContent = savingsText;
+						discountBadgeEl.setAttribute("data-visible", saveAmount > 0 && this.config.priceFormat === "total" ? "true" : "false");
 					}
-					if (totalLineChanged) DOMUtils.updateProperty(totalLineEl, "innerHTML", newTotalLineHTML);
-					if (futurePriceChanged) DOMUtils.updateProperty(futurePriceEl, "textContent", newFuturePriceText);
+					if (totalLineEl) totalLineEl.innerHTML = newTotalLineHTML;
+					if (futurePriceEl) futurePriceEl.textContent = newFuturePriceText;
 
-					// Fade back in
-					elementsToAnimate.forEach((el, index) => {
-						setTimeout(() => (el.style.opacity = "1"), index * 25); // Stagger fade-in
-					});
-				}, 200); // Duration of fade-out
+					// Set per bottle text visibility based on format
+					if (perText) {
+						perText.style.display = this.config.priceFormat === "total" ? "none" : "";
+					}
+
+					// Start fade in
+					display.setAttribute("data-updating", "false");
+				}, 220); // Slightly longer than the fadeOut animation duration
+			} else {
+				// No animation needed, just update content
+				if (mainPriceEl) mainPriceEl.textContent = newMainPriceText;
+				if (capEl) capEl.textContent = newComparePriceText;
+				if (discountBadgeEl) {
+					discountBadgeEl.textContent = savingsText;
+					discountBadgeEl.setAttribute("data-visible", saveAmount > 0 && this.config.priceFormat === "total" ? "true" : "false");
+				}
+				if (totalLineEl) totalLineEl.innerHTML = newTotalLineHTML;
+				if (futurePriceEl) futurePriceEl.textContent = newFuturePriceText;
+
+				// Set per bottle text visibility based on format
+				if (perText) {
+					perText.style.display = this.config.priceFormat === "total" ? "none" : "";
+				}
 			}
 		});
 	}
@@ -1209,10 +1222,14 @@ class BuyBoxNew {
 			} else {
 				// Tabs UI
 				const freqBox = DOMUtils.createElement("div", {
-					className: `frequency-box rounded border border-primary cursor-pointer py-2 px-3 min-w-[90px] max-w-[168px] text-center w-full transition-all duration-300 ease-in-out ${isSelected ? "bg-primary text-white" : "bg-white text-primary hover:bg-gray-100"}`,
+					className:
+						"frequency-box rounded border-2 border-primary-lighter cursor-pointer py-2 px-3 min-w-[90px] max-w-[168px] text-center w-full transition-all duration-300 ease-in-out aria-selected:bg-primary aria-selected:text-white aria-[selected=false]:bg-white aria-[selected=false]:text-primary hover:bg-gray-100",
 					"data-selling-plan-id": plan.id,
 					"data-frequency-value": value,
 					"data-frequency-unit": unit,
+					"aria-selected": isSelected ? "true" : "false",
+					role: "tab",
+					tabindex: "0", // Make focusable for keyboard navigation
 					innerHTML: `<span class="font-semibold text-[14px] block">${value}</span><span class="text-[12px] block">${unit.charAt(0).toUpperCase() + unit.slice(1)}${value > 1 ? "s" : ""}</span>`
 				});
 				optionsContainer.appendChild(freqBox);
@@ -1271,10 +1288,14 @@ class BuyBoxNew {
 			} else {
 				// Tabs
 				const fallbackBox = DOMUtils.createElement("div", {
-					className: "frequency-box rounded border border-primary cursor-pointer py-2 px-3 min-w-[90px] max-w-[168px] text-center w-full transition-all duration-300 ease-in-out bg-primary text-white", // Selected style
+					className:
+						"frequency-box rounded border-2 border-primary-lighter cursor-pointer py-2 px-3 min-w-[90px] max-w-[168px] text-center w-full transition-all duration-300 ease-in-out aria-selected:bg-primary aria-selected:text-white aria-[selected=false]:bg-white aria-[selected=false]:text-primary hover:bg-gray-100",
 					"data-selling-plan-id": currentSellingPlanId,
 					"data-frequency-value": frequencyValue.toString(),
 					"data-frequency-unit": frequencyUnit,
+					"aria-selected": "true", // Always selected in fallback
+					role: "tab",
+					tabindex: "0", // Make focusable for keyboard navigation
 					innerHTML: `<span class="font-semibold text-[14px] block">${frequencyValue}</span><span class="text-[12px] block">${frequencyUnit.charAt(0).toUpperCase() + frequencyUnit.slice(1)}${frequencyValue > 1 ? "s" : ""}</span>`
 				});
 				frequencyOptions.appendChild(fallbackBox);
@@ -1296,8 +1317,8 @@ class BuyBoxNew {
 
 		// Hide description element if using dropdown UI
 		if (uiType === "dropdown") {
-			DOMUtils.updateProperty(this.elements.frequencyDescription, "innerHTML", ""); // Clear text
-			DOMUtils.updateStyle(this.elements.frequencyDescription, "opacity", "0"); // Hide immediately
+			this.elements.frequencyDescription.innerHTML = ""; // Clear text
+			this.elements.frequencyDescription.style.display = "none"; // Hide
 			return; // Exit early
 		}
 
@@ -1332,11 +1353,19 @@ class BuyBoxNew {
 			description = `Recommended - ${bottleQuantity} month${bottleQuantity > 1 ? "s" : ""}`;
 		}
 
+		// Only animate if content has changed
 		if (this.elements.frequencyDescription.innerHTML !== description) {
-			DOMUtils.updateStyle(this.elements.frequencyDescription, "opacity", "0");
+			// Start fade out
+			this.elements.frequencyDescription.setAttribute("data-changing", "true");
+
+			// After fade out completes, update content and start fade in
 			setTimeout(() => {
-				DOMUtils.updateProperty(this.elements.frequencyDescription, "innerHTML", description);
-				DOMUtils.updateStyle(this.elements.frequencyDescription, "opacity", "1");
+				this.elements.frequencyDescription.innerHTML = description;
+
+				// Small delay before fade in to ensure DOM has updated
+				setTimeout(() => {
+					this.elements.frequencyDescription.setAttribute("data-changing", "false");
+				}, 20);
 			}, 200);
 		}
 	}
@@ -1430,4 +1459,6 @@ document.addEventListener("DOMContentLoaded", () => {
 		// Initialize a BuyBoxNew instance for each container
 		new BuyBoxNew(container, config);
 	});
+
+	console.log(`BuyBoxNew Init: DOMContentLoaded finished.`);
 });
