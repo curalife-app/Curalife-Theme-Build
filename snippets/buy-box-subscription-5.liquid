@@ -180,7 +180,7 @@
 						{% if product.handle contains 'curalin' %}
 							{% assign subscription_save_percents = var.metafields.subscription.save_percents %}
 						{% endif %}
-						<div class="discount mbl:text-[3.5vw] font-medium w-full text-[13px] p-1 bg-bg text-white">{{ subscription_save_percents }}% OFF</div>
+						<div class="discount mbl:text-[3.5vw] font-medium w-full text-[13px] p-1 text-primary bg-bg">{{ subscription_save_percents }}% OFF</div>
 
 						<!-- prettier-ignore -->
 						<div class="title p-1">
@@ -326,6 +326,11 @@
 		}
 	}
 
+	.discount {
+		border-top-left-radius: 5px;
+		border-top-right-radius: 5px;
+	}
+
   /* Custom dropdown styles */
   #frequency-dropdown-{{ SID }} {
     transition: all 0.2s ease;
@@ -445,17 +450,6 @@
 		const updateDiscountBadgeStyles = () => {
 			document.querySelectorAll('.variant-box').forEach(box => {
 				const isSelected = box.getAttribute('aria-selected') === 'true';
-				const badge = box.querySelector('.discount');
-				if (!badge) return;
-
-				// Update badge styles based on parent's selected state
-				if (isSelected) {
-					badge.classList.remove('bg-primary', 'text-white');
-					badge.classList.add('bg-bg', 'text-primary');
-				} else {
-					badge.classList.remove('bg-bg', 'text-primary');
-					badge.classList.add('bg-primary', 'text-white');
-				}
 			});
 		};
 
