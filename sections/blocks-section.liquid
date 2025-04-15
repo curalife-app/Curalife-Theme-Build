@@ -22,8 +22,7 @@
 	}
 
 	/*
-	 * Always use flex layout for simplicity and consistency
-	 * This will handle both custom width blocks and standard grid layout
+	 * Use flex layout with gap to create proper spacing
 	 */
 	#section-{{ section_id }} .blocks-section-flex {
 		display: flex;
@@ -34,10 +33,11 @@
 		margin: 0 auto;
 	}
 
-	/* Calculate default width based on column count - simpler approach */
+	/* Calculate default width for blocks accounting for the gap */
 	#section-{{ section_id }} .shopify-block {
-		width: calc(100% / {{ columns }});
-		flex-basis: calc(100% / {{ columns }});
+		/* Essential for mobile support: width calculation must handle varying number of columns */
+		width: calc((100% - ({{ column_gap }}rem * ({{ columns }} - 1))) / {{ columns }});
+		flex-basis: calc((100% - ({{ column_gap }}rem * ({{ columns }} - 1))) / {{ columns }});
 		flex-grow: 0;
 		flex-shrink: 0;
 	}
@@ -48,10 +48,10 @@
 			width: 100%;
 		}
 
-		/* Reset block width on mobile - simpler percent-based approach */
+		/* Reset block width on mobile - accounting for gap */
 		#section-{{ section_id }} .shopify-block {
-			width: calc(100% / {{ columns_mobile }});
-			flex-basis: calc(100% / {{ columns_mobile }});
+			width: calc((100% - ({{ column_gap | times: 0.75 }}rem * ({{ columns_mobile }} - 1))) / {{ columns_mobile }});
+			flex-basis: calc((100% - ({{ column_gap | times: 0.75 }}rem * ({{ columns_mobile }} - 1))) / {{ columns_mobile }});
 		}
 
 		/* For very small screens, stack items */

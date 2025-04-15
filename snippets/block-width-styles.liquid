@@ -20,20 +20,16 @@
 
 {% if width_percent %}
 	<style>
-		/* Calculate width based on the desired percentage of the total width */
+		/* For custom widths, we need to scale the requested percentage based on gap */
 		#shopify-block-{{ block_id }} {
-			/* First establish what percentage of container we want to take */
-			--desired-width: {{ width_percent }}%;
-
-			/* Apply to properly handle the gap */
-			width: calc(var(--desired-width)) !important;
-			flex-basis: calc(var(--desired-width)) !important;
+			width: calc(({{ width_percent }}% * (100% - ({{ gap_width }}rem * ({{ columns }} - 1))) / 100%)) !important;
+			flex-basis: calc(({{ width_percent }}% * (100% - ({{ gap_width }}rem * ({{ columns }} - 1))) / 100%)) !important;
 		}
 
 		@media (max-width: 768px) {
 			#shopify-block-{{ block_id }} {
-				width: calc(({{ width_percent }}% * (100% - {{ gap_width_mobile }}rem * ({{ columns_mobile }} - 1)) / 100%)) !important;
-				flex-basis: calc(({{ width_percent }}% * (100% - {{ gap_width_mobile }}rem * ({{ columns_mobile }} - 1)) / 100%)) !important;
+				width: calc(({{ width_percent }}% * (100% - ({{ gap_width_mobile }}rem * ({{ columns_mobile }} - 1))) / 100%)) !important;
+				flex-basis: calc(({{ width_percent }}% * (100% - ({{ gap_width_mobile }}rem * ({{ columns_mobile }} - 1))) / 100%)) !important;
 			}
 		}
 	</style>
