@@ -4,11 +4,18 @@
 {% endcomment %}
 
 {% assign section_id = section.id %}
-{% assign column_gap = section.settings.column_gap | default: 2 %}
+{% assign column_gap = section.settings.column_gap | default: 10 %}
 {% assign columns = section.settings.columns | default: 2 %}
 {% assign columns_mobile = section.settings.columns_mobile | default: 1 %}
 {% assign max_width = section.settings.max_width | default: 1200 %}
 {% assign content_width = section.settings.content_width | default: 100 %}
+
+{% assign total_gaps_desktop = columns | minus: 1 %}
+{% assign total_gaps_mobile = columns_mobile | minus: 1 %}
+{% assign total_gap_percent_desktop = column_gap | times: total_gaps_desktop %}
+{% assign total_gap_percent_mobile = column_gap | times: 0.75 | times: total_gaps_mobile %}
+{% assign default_width_desktop = 100 | minus: total_gap_percent_desktop | divided_by: columns %}
+{% assign default_width_mobile = 100 | minus: total_gap_percent_mobile | divided_by: columns_mobile %}
 
 <style>
 	#section-{{ section_id }} {
@@ -19,6 +26,8 @@
 		--alignment: {{ section.settings.vertical_alignment | default: 'flex-start' }};
 		--max-width: {{ max_width }}px;
 		--content-width: {{ content_width }}%;
+		--default-width-desktop: {{ default_width_desktop }}%;
+		--default-width-mobile: {{ default_width_mobile }}%;
 	}
 
 	/*
@@ -33,11 +42,10 @@
 		margin: 0 auto;
 	}
 
-	/* Calculate default width for blocks accounting for the gap */
+	/* Use pre-calculated width for default blocks */
 	#section-{{ section_id }} .shopify-block {
-		/* Essential for mobile support: width calculation must handle varying number of columns */
-		width: calc((100% - ({{ column_gap }}% * ({{ columns }} - 1))) / {{ columns }});
-		flex-basis: calc((100% - ({{ column_gap }}% * ({{ columns }} - 1))) / {{ columns }});
+		width: {{ default_width_desktop }}%;
+		flex-basis: {{ default_width_desktop }}%;
 		flex-grow: 0;
 		flex-shrink: 0;
 	}
@@ -48,10 +56,10 @@
 			width: 100%;
 		}
 
-		/* Reset block width on mobile - accounting for gap */
+		/* Reset block width on mobile with simplified calculation */
 		#section-{{ section_id }} .shopify-block {
-			width: calc((100% - ({{ column_gap | times: 0.75 }}% * ({{ columns_mobile }} - 1))) / {{ columns_mobile }});
-			flex-basis: calc((100% - ({{ column_gap | times: 0.75 }}% * ({{ columns_mobile }} - 1))) / {{ columns_mobile }});
+			width: {{ default_width_mobile }}%;
+			flex-basis: {{ default_width_mobile }}%;
 		}
 
 		/* For very small screens, stack items */
@@ -82,8 +90,8 @@
 		}
 
 		#section-{{ section_id }} .shopify-block:not([style*="width"]) {
-			width: var(--default-column-width-mobile);
-			flex-basis: var(--default-column-width-mobile);
+			width: var(--default-width-mobile);
+			flex-basis: var(--default-width-mobile);
 		}
 
 		/* For very small screens, stack items */
