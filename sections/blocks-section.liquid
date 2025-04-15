@@ -24,8 +24,13 @@
 	}
 
 	#section-{{ section_id }} .blocks-section-flex {
-		display: grid;
-		grid-template-columns: repeat(var(--columns), 1fr);
+		{% if section.settings.is_uneven_blocks %}
+			display: flex;
+			flex-wrap: {% if section.settings.is_wrap_columns %}wrap{% else %}nowrap{% endif %};
+		{% else %}
+			display: grid;
+			grid-template-columns: repeat(var(--columns), 1fr);
+		{% endif %}
 		gap: var(--column-gap);
 		align-items: var(--alignment);
 		width: var(--content-width);
@@ -60,9 +65,35 @@
 		margin-right: auto;
 	}
 
+	/* Individual block width styles */
+	{% for block in section.blocks %}
+		{% if block.settings.custom_width and section.settings.is_uneven_blocks %}
+			#section-{{ section_id }} .blocks-section-block[data-block-id="{{ block.id }}"] {
+				flex: 0 0 {{ block.settings.custom_width }}%;
+				max-width: {{ block.settings.custom_width }}%;
+			}
+			{% if block.settings.custom_width_mobile %}
+				@media (max-width: 768px) {
+					#section-{{ section_id }} .blocks-section-block[data-block-id="{{ block.id }}"] {
+						flex: 0 0 {{ block.settings.custom_width_mobile }}%;
+						max-width: {{ block.settings.custom_width_mobile }}%;
+					}
+				}
+			{% endif %}
+		{% endif %}
+	{% endfor %}
+
 	@media (max-width: 768px) {
 		#section-{{ section_id }} .blocks-section-flex {
-			grid-template-columns: repeat(var(--columns-mobile), 1fr);
+			{% if section.settings.is_uneven_blocks %}
+				{% if section.settings.is_wrap_columns_mobile %}
+					flex-wrap: wrap;
+				{% else %}
+					flex-direction: column;
+				{% endif %}
+			{% else %}
+				grid-template-columns: repeat(var(--columns-mobile), 1fr);
+			{% endif %}
 			gap: var(--mobile-gap);
 			width: 100%;
 		}
@@ -83,7 +114,7 @@
 
 <section
 	id="section-{{ section_id }}"
-	class="blocks-section {% if any_custom_width %}using-custom-widths{% endif %} {% if section.settings.section_classes %}{{ section.settings.section_classes }}{% endif %}"
+	class="blocks-section {% if any_custom_width or section.settings.is_uneven_blocks %}using-custom-widths{% endif %} {% if section.settings.section_classes %}{{ section.settings.section_classes }}{% endif %}"
 	data-section-id="{{ section_id }}"
 	data-section-type="blocks-section"
 	style="
@@ -138,15 +169,15 @@
 					{% render block %}
 				</div>
 			{% else %}
-				{% if any_custom_width %}
+				{% if any_custom_width and section.settings.is_uneven_blocks == false %}
 					{%- assign col_width = block.settings.column_width | default: 12 | divided_by: columns -%}
 					{%- assign column_percent = col_width | times: 100 | divided_by: 12 -%}
 
-					<div class="blocks-section-block" style="flex-basis: {{ column_percent }}%; width: {{ column_percent }}%;">
+					<div class="blocks-section-block" style="flex-basis: {{ column_percent }}%; width: {{ column_percent }}%;" data-block-id="{{ block.id }}">
 						{% render block %}
 					</div>
 				{% else %}
-					<div class="blocks-section-block">
+					<div class="blocks-section-block" data-block-id="{{ block.id }}">
 						{% render block %}
 					</div>
 				{% endif %}
@@ -345,7 +376,56 @@
 	{
 		"name": "Blocks Section",
 		"tag": "section",
-		"blocks": [{ "type": "@theme" }, { "type": "@app" }],
+		"blocks": [
+			{
+				"type": "@theme",
+				"settings": [
+					{
+						"type": "range",
+						"id": "custom_width",
+						"label": "Custom Block Width",
+						"min": 10,
+						"max": 100,
+						"step": 5,
+						"unit": "%",
+						"info": "Only works when 'Enable Uneven Block Widths' is turned on in section settings"
+					},
+					{
+						"type": "range",
+						"id": "custom_width_mobile",
+						"label": "Custom Block Width Mobile",
+						"min": 10,
+						"max": 100,
+						"step": 5,
+						"unit": "%"
+					}
+				]
+			},
+			{
+				"type": "@app",
+				"settings": [
+					{
+						"type": "range",
+						"id": "custom_width",
+						"label": "Custom Block Width",
+						"min": 10,
+						"max": 100,
+						"step": 5,
+						"unit": "%",
+						"info": "Only works when 'Enable Uneven Block Widths' is turned on in section settings"
+					},
+					{
+						"type": "range",
+						"id": "custom_width_mobile",
+						"label": "Custom Block Width Mobile",
+						"min": 10,
+						"max": 100,
+						"step": 5,
+						"unit": "%"
+					}
+				]
+			}
+		],
 		"class": "blocks-section",
 		"settings": [
 			{
@@ -434,6 +514,13 @@
 					{ "value": "2", "label": "2 columns" }
 				],
 				"default": "1"
+			},
+			{
+				"type": "checkbox",
+				"id": "is_uneven_blocks",
+				"label": "Enable Uneven Block Widths",
+				"default": false,
+				"info": "Allow blocks to have custom width percentages for layouts like 30%/70% split"
 			},
 			{
 				"type": "range",
