@@ -1,99 +1,117 @@
 {% comment %}
-    Gift option box. Takes:
+	Gift option box. Takes:
 
-    giftsAmount: Number of gifts
-    gifts[]: Array of gift objects
-    selectedGiftsDefault: Default selected gifts
-    countriesInternational: Countries in international groups
-    countriesUS: Countries in US groups
-    currentCountryCode: Current country code
+	giftsAmount: Number of gifts
+	gifts[]: Array of gift objects
+	selectedGiftsDefault: Default selected gifts
+	countriesInternational: Countries in international groups
+	countriesUS: Countries in US groups
+	currentCountryCode: Current country code
 {% endcomment %}
 
 {% if giftsAmount > 0 %}
-{% assign visible_gifts_amount = 0 %}
-{% assign hidden_gifts = '' %}
+	{% assign visible_gifts_amount = 0 %}
+	{% assign hidden_gifts = '' %}
 
-{% for gift in gifts %}
-  {% if gift.show_on == 'both' or (gift.show_on == 'us' and countriesUS contains currentCountryCode) or (gift.show_on == 'global' and countriesInternational contains currentCountryCode) %}
-    {% unless gift.hide_from_ui %}
-      {% assign visible_gifts_amount = visible_gifts_amount | plus: 1 %}
-    {% else %}
-      {% assign hidden_gifts = hidden_gifts | append: gift.id | append: ',' %}
-      {% if gift.subscription_id %}
-        {% assign hidden_gifts = hidden_gifts | append: 'sub:' | append: gift.subscription_id | append: ',' %}
-      {% endif %}
-    {% endunless %}
-  {% endif %}
-{% endfor %}
+	{% for gift in gifts %}
+		{% assign should_show = false %}
+		{% if gift.show_on == 'both' %}
+			{% assign should_show = true %}
+		{% elsif gift.show_on == 'us' and countriesUS contains currentCountryCode %}
+			{% assign should_show = true %}
+		{% elsif gift.show_on == 'global' and countriesInternational contains currentCountryCode %}
+			{% assign should_show = true %}
+		{% endif %}
 
-{% if visible_gifts_amount > 0 %}
-<div id="gift-wrapper" class="w-100 py-4">
-    <div class="pb-2">
-        <p class="h6 text-left mb-0">{{ 'products.gift.select_your_gift' | t }}</p>
-    </div>
+		{% if should_show %}
+			{% unless gift.hide_from_ui %}
+				{% assign visible_gifts_amount = visible_gifts_amount | plus: 1 %}
+			{% else %}
+				{% assign hidden_gifts = hidden_gifts | append: gift.id | append: ',' %}
+				{% if gift.subscription_id %}
+					{% assign hidden_gifts = hidden_gifts | append: 'sub:' | append: gift.subscription_id | append: ',' %}
+				{% endif %}
+			{% endunless %}
+		{% endif %}
+	{% endfor %}
 
-    <div class="gift-box-container row">
-        {% for gift in gifts %}
-            {% assign show_gift = false %}
-            {% if gift.show_on == 'both' or (gift.show_on == 'us' and countriesUS contains currentCountryCode) or (gift.show_on == 'global' and countriesInternational contains currentCountryCode) %}
-                {% unless gift.hide_from_ui %}
-                    {% assign show_gift = true %}
-                {% endunless %}
-            {% endif %}
+	{% if visible_gifts_amount > 0 %}
+		<div id="gift-wrapper" class="w-100 py-4">
+			<div class="pb-2">
+				<p class="h6 text-left mb-0">{{ 'products.gift.select_your_gift' | t }}</p>
+			</div>
 
-            {% if show_gift %}
-                <div class="gift-box mb-4 col-12" data-index="{{ forloop.index0 }}">
-                    <div class="gift-option-border border rounded h-100 d-flex py-2 px-3 cursor-pointer"
-                         data-gift-id="{{ gift.id }}"
-                         data-gift-id-subscription="{{ gift.subscription_id }}">
-                        <div class="d-flex">
-                            {% if gift.image != blank %}
-                                <div class="mr-3 gift-image-container">
-                                    <img src="{{ gift.image | img_url: '80x' }}" alt="{{ gift.title }}" loading="lazy"
-                                         width="60"
-                                         height="60"/>
-                                </div>
-                            {% endif %}
-                            <div class="d-flex flex-column justify-content-center">
-                                <p class="mb-0">
-                                    <span class="font-weight-bold">{{ gift.title }}</span>
-                                    <br/>
-                                    {% if gift.description != blank %}
-                                        {{ gift.description }}
-                                    {% endif %}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            {% endif %}
-        {% endfor %}
-    </div>
-</div>
+			<div class="gift-box-container row">
+				{% for gift in gifts %}
+					{% assign show_gift = false %}
+					{% if gift.show_on == 'both' %}
+						{% assign show_gift = true %}
+					{% elsif gift.show_on == 'us' and countriesUS contains currentCountryCode %}
+						{% assign show_gift = true %}
+					{% elsif gift.show_on == 'global' and countriesInternational contains currentCountryCode %}
+						{% assign show_gift = true %}
+					{% endif %}
 
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const giftBoxes = document.querySelectorAll('.gift-box');
-    const hiddenGifts = '{{ hidden_gifts }}';
+					{% if show_gift %}
+						{% unless gift.hide_from_ui %}
+							<div class="gift-box mb-4 col-12" data-index="{{ forloop.index0 }}">
+								<div
+									class="gift-option-border border rounded h-100 d-flex py-2 px-3 cursor-pointer"
+									data-gift-id="{{ gift.id }}"
+									data-gift-id-subscription="{{ gift.subscription_id }}">
+									<div class="d-flex">
+										{% if gift.image != blank %}
+											<div class="mr-3 gift-image-container">
+												<img
+													src="{{ gift.image | img_url: '80x' }}"
+													alt="{{ gift.title }}"
+													loading="lazy"
+													width="60"
+													height="60">
+											</div>
+										{% endif %}
+										<div class="d-flex flex-column justify-content-center">
+											<p class="mb-0">
+												<span class="font-weight-bold">{{ gift.title }}</span>
+												<br>
+												{% if gift.description != blank %}
+													{{ gift.description }}
+												{% endif %}
+											</p>
+										</div>
+									</div>
+								</div>
+							</div>
+						{% endunless %}
+					{% endif %}
+				{% endfor %}
+			</div>
+		</div>
 
-    // Setup automatic selection for visible gifts
-    if (giftBoxes.length > 0) {
-      const firstGiftBox = giftBoxes[0];
-      firstGiftBox.classList.add('selected');
+		<script>
+			document.addEventListener('DOMContentLoaded', function () {
+				const giftBoxes = document.querySelectorAll('.gift-box');
+				const hiddenGifts = '{{ hidden_gifts }}';
 
-      giftBoxes.forEach(box => {
-        box.addEventListener('click', function() {
-          giftBoxes.forEach(b => b.classList.remove('selected'));
-          this.classList.add('selected');
-        });
-      });
-    }
+				// Setup automatic selection for visible gifts
+				if (giftBoxes.length > 0) {
+					const firstGiftBox = giftBoxes[0];
+					firstGiftBox.classList.add('selected');
 
-    // Store hidden gifts in a data attribute on the parent form for later use
-    const buyBoxForm = document.querySelector('form[data-type="add-to-cart-form"]');
-    if (buyBoxForm && hiddenGifts) {
-      buyBoxForm.dataset.hiddenGifts = hiddenGifts;
-    }
-  });
-</script>
+					giftBoxes.forEach(box => {
+						box.addEventListener('click', function () {
+							giftBoxes.forEach(b => b.classList.remove('selected'));
+							this.classList.add('selected');
+						});
+					});
+				}
+
+				// Store hidden gifts in a data attribute on the parent form for later use
+				const buyBoxForm = document.querySelector('form[data-type="add-to-cart-form"]');
+				if (buyBoxForm && hiddenGifts) {
+					buyBoxForm.dataset.hiddenGifts = hiddenGifts;
+				}
+			});
+		</script>
+	{% endif %}
 {% endif %}
