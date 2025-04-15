@@ -9,6 +9,7 @@
 {% assign column_gap = section.settings.column_gap | default: 2 %}
 {% assign max_width = section.settings.max_width | default: 1200 %}
 {% assign content_width = section.settings.content_width | default: 100 %}
+{% assign block_width = section.settings.block_width | default: 100 %}
 
 <style>
 	#section-{{ section_id }} {
@@ -19,6 +20,7 @@
 		--alignment: {{ section.settings.vertical_alignment | default: 'flex-start' }};
 		--max-width: {{ max_width }}px;
 		--content-width: {{ content_width }}%;
+		--block-width: {{ block_width }}%;
 	}
 
 	#section-{{ section_id }} .blocks-section-flex {
@@ -37,6 +39,13 @@
 		width: 100%;
 	}
 
+	/* Apply block width percentage within grid cells */
+	#section-{{ section_id }} .blocks-section-block > * {
+		width: var(--block-width);
+		margin-left: auto;
+		margin-right: auto;
+	}
+
 	/* For flex-based layout when using custom column widths */
 	#section-{{ section_id }}.using-custom-widths .blocks-section-flex {
 		display: flex;
@@ -44,11 +53,22 @@
 		gap: var(--column-gap);
 	}
 
+	/* For direct blocks in custom width mode */
+	#section-{{ section_id }}.using-custom-widths .blocks-section-block > * {
+		width: var(--block-width);
+		margin-left: auto;
+		margin-right: auto;
+	}
+
 	@media (max-width: 768px) {
 		#section-{{ section_id }} .blocks-section-flex {
 			grid-template-columns: repeat(var(--columns-mobile), 1fr);
 			gap: var(--mobile-gap);
 			width: 100%;
+		}
+
+		#section-{{ section_id }} .blocks-section-block > * {
+			width: {% if section.settings.block_width_mobile %}{{ section.settings.block_width_mobile }}%{% else %}var(--block-width){% endif %};
 		}
 
 		#section-{{ section_id }}.using-custom-widths .blocks-section-flex {
@@ -424,6 +444,27 @@
 				"step": 0.5,
 				"unit": "rem",
 				"default": 2
+			},
+			{
+				"type": "range",
+				"id": "block_width",
+				"label": "Block Content Width",
+				"min": 50,
+				"max": 100,
+				"step": 5,
+				"unit": "%",
+				"default": 100,
+				"info": "Controls how much width each block's content takes within its column"
+			},
+			{
+				"type": "range",
+				"id": "block_width_mobile",
+				"label": "Block Content Width (Mobile)",
+				"min": 50,
+				"max": 100,
+				"step": 5,
+				"unit": "%",
+				"default": 100
 			},
 			{
 				"type": "checkbox",
