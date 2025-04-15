@@ -41,13 +41,13 @@
 
 	/* Adjust the custom widths to account for gaps */
 	{% for width in '25,33,50,66,75,100' | split: ',' %}
-	#section-{{ section_id }} .shopify-block[data-block-width="{{ width }}%"] {
+	#section-{{ section_id }} .shopify-block[style*="width: {{ width }}%"] {
 		width: calc(({{ width }}% * (100% - var(--total-gap-space)) / 100%)) !important;
 		flex-basis: calc(({{ width }}% * (100% - var(--total-gap-space)) / 100%)) !important;
 	}
 
 	@media (max-width: 768px) {
-		#section-{{ section_id }} .shopify-block[data-block-width="{{ width }}%"] {
+		#section-{{ section_id }} .shopify-block[style*="width: {{ width }}%"] {
 			width: calc(({{ width }}% * (100% - var(--total-gap-space-mobile)) / 100%)) !important;
 			flex-basis: calc(({{ width }}% * (100% - var(--total-gap-space-mobile)) / 100%)) !important;
 		}
@@ -55,7 +55,7 @@
 	{% endfor %}
 
 	/* Default width for blocks that don't have custom width */
-	#section-{{ section_id }} .shopify-block:not([data-block-width]) {
+	#section-{{ section_id }} .shopify-block:not([style*="width"]) {
 		width: var(--default-column-width);
 		flex-basis: var(--default-column-width);
 		flex-grow: 0;
@@ -75,7 +75,7 @@
 			width: 100%;
 		}
 
-		#section-{{ section_id }} .shopify-block:not([data-block-width]) {
+		#section-{{ section_id }} .shopify-block:not([style*="width"]) {
 			width: var(--default-column-width-mobile);
 			flex-basis: var(--default-column-width-mobile);
 		}
@@ -335,36 +335,6 @@
 		}
 	</style>
 {% endif %}
-
-<script>
-	document.addEventListener('DOMContentLoaded', function () {
-		// Look for data-block-width divs and apply width to their shopify-block parent
-		const section = document.getElementById('section-{{ section_id }}');
-		if (!section) return;
-
-		// Find all divs with data-block-width attribute and width-marker class
-		const widthMarkers = section.querySelectorAll('.width-marker[data-block-width]');
-
-		widthMarkers.forEach(marker => {
-			// Get the width value
-			const width = marker.getAttribute('data-block-width');
-
-			// Find the parent shopify-block
-			let parent = marker.parentElement;
-			while (parent && !parent.classList.contains('shopify-block')) {
-				parent = parent.parentElement;
-			}
-
-			if (parent) {
-				// Apply the width as a data attribute to the shopify-block
-				parent.setAttribute('data-block-width', width);
-
-				// Remove the marker div as it's no longer needed
-				marker.remove();
-			}
-		});
-	});
-</script>
 
 {% schema %}
 	{
