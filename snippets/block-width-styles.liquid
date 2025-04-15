@@ -9,18 +9,28 @@
 	- width_percent: The width percentage from block settings
 	- columns: Number of columns for desktop (default: 2)
 	- columns_mobile: Number of columns for mobile (default: 1)
+	- gap_width: Gap width in rem (default: 2)
 {% endcomment %}
+
+{% assign columns = columns | default: 2 %}
+{% assign columns_mobile = columns_mobile | default: 1 %}
+{% assign gap_width = gap_width | default: 2 %}
+{% assign gap_width_mobile = gap_width | times: 0.75 | default: 1.5 %}
 
 {% if width_percent %}
 	<style>
+		/* Direct calculation without depending on section CSS variables */
 		#shopify-block-{{ block_id }} {
-		  --block-width-pct: calc(({{ width_percent }}% * (100% - (var(--gap-width) * ({{ columns | default: 2 }} - 1))) / 100%) !important;
+			/* Formula: (percent * (100% - totalGapWidth) / 100%) */
+			width: calc(({{ width_percent }}% * (100% - {{ gap_width }}rem * ({{ columns }} - 1)) / 100%)) !important;
+			flex-basis: calc(({{ width_percent }}% * (100% - {{ gap_width }}rem * ({{ columns }} - 1)) / 100%)) !important;
 		}
 
 		@media (max-width: 768px) {
-		  #shopify-block-{{ block_id }} {
-		    --block-width-pct: calc(({{ width_percent }}% * (100% - (var(--gap-width-mobile) * ({{ columns_mobile | default: 1 }} - 1))) / 100%) !important;
-		  }
+			#shopify-block-{{ block_id }} {
+				width: calc(({{ width_percent }}% * (100% - {{ gap_width_mobile }}rem * ({{ columns_mobile }} - 1)) / 100%)) !important;
+				flex-basis: calc(({{ width_percent }}% * (100% - {{ gap_width_mobile }}rem * ({{ columns_mobile }} - 1)) / 100%)) !important;
+			}
 		}
 	</style>
 {% endif %}

@@ -19,11 +19,6 @@
 		--alignment: {{ section.settings.vertical_alignment | default: 'flex-start' }};
 		--max-width: {{ max_width }}px;
 		--content-width: {{ content_width }}%;
-		/* Calculate width accounting for gaps */
-		--gap-width: {{ column_gap }}rem;
-		--gap-width-mobile: {{ column_gap | times: 0.75 | default: 1 }}rem;
-		--default-column-width: calc((100% - (var(--gap-width) * ({{ columns }} - 1))) / {{ columns }});
-		--default-column-width-mobile: calc((100% - (var(--gap-width-mobile) * ({{ columns_mobile }} - 1))) / {{ columns_mobile }});
 	}
 
 	/*
@@ -39,11 +34,10 @@
 		margin: 0 auto;
 	}
 
-	/* Default CSS for all blocks - use default width if no custom width is set */
+	/* Calculate default width based on column count */
 	#section-{{ section_id }} .shopify-block {
-		--block-width-pct: var(--default-column-width); /* This is just a fallback */
-		width: var(--block-width-pct);
-		flex-basis: var(--block-width-pct);
+		width: calc((100% - ({{ column_gap }}rem * ({{ columns }} - 1))) / {{ columns }});
+		flex-basis: calc((100% - ({{ column_gap }}rem * ({{ columns }} - 1))) / {{ columns }});
 		flex-grow: 0;
 		flex-shrink: 0;
 	}
@@ -56,7 +50,8 @@
 
 		/* Reset block width on mobile */
 		#section-{{ section_id }} .shopify-block {
-			--block-width-pct: var(--default-column-width-mobile);
+			width: calc((100% - ({{ column_gap | times: 0.75 }}rem * ({{ columns_mobile }} - 1))) / {{ columns_mobile }});
+			flex-basis: calc((100% - ({{ column_gap | times: 0.75 }}rem * ({{ columns_mobile }} - 1))) / {{ columns_mobile }});
 		}
 
 		/* For very small screens, stack items */
@@ -66,7 +61,8 @@
 			}
 
 			#section-{{ section_id }} .shopify-block {
-				--block-width-pct: 100% !important;
+				width: 100% !important;
+				flex-basis: 100% !important;
 			}
 		}
 	}
