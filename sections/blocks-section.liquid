@@ -8,7 +8,6 @@
 {% assign columns_mobile = section.settings.columns_mobile | default: 1 %}
 {% assign column_gap = section.settings.column_gap | default: 2 %}
 {% assign max_width = section.settings.max_width | default: 1200 %}
-{% assign block_width = section.settings.block_width | default: 100 %}
 
 <style>
 	#section-{{ section_id }} {
@@ -18,7 +17,6 @@
 		--columns-mobile: {{ columns_mobile }};
 		--alignment: {{ section.settings.vertical_alignment | default: 'flex-start' }};
 		--max-width: {{ max_width }}px;
-		--block-width: {{ block_width }}%;
 	}
 
 	/* Base flex container - always flex */
@@ -37,13 +35,6 @@
 		flex-direction: column;
 		gap: 1rem;
 		/* Width is controlled by inline styles or default flex behavior */
-	}
-
-	/* Block content width (adjusts content inside the block) */
-	#section-{{ section_id }} .blocks-section-block > * {
-		width: var(--block-width);
-		margin-left: auto;
-		margin-right: auto;
 	}
 
 	/* Mobile Styles */
@@ -65,10 +56,6 @@
 				max-width: 100% !important;
 				flex-basis: auto !important;
 			{% endif %}
-		}
-
-		#section-{{ section_id }} .blocks-section-block > * {
-			width: {% if section.settings.block_width_mobile %}{{ section.settings.block_width_mobile }}%{% else %}var(--block-width){% endif %};
 		}
 
 		/* Apply mobile custom width via CSS */
@@ -436,27 +423,6 @@
 				"step": 0.5,
 				"unit": "rem",
 				"default": 2
-			},
-			{
-				"type": "range",
-				"id": "block_width",
-				"label": "Block Content Width",
-				"min": 50,
-				"max": 100,
-				"step": 5,
-				"unit": "%",
-				"default": 100,
-				"info": "Controls how much width each block's content takes within its column"
-			},
-			{
-				"type": "range",
-				"id": "block_width_mobile",
-				"label": "Block Content Width (Mobile)",
-				"min": 50,
-				"max": 100,
-				"step": 5,
-				"unit": "%",
-				"default": 100
 			},
 			{
 				"type": "checkbox",
