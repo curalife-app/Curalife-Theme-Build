@@ -8,6 +8,7 @@
 {% assign columns_mobile = section.settings.columns_mobile | default: 1 %}
 {% assign column_gap = section.settings.column_gap | default: 2 %}
 {% assign max_width = section.settings.max_width | default: 1200 %}
+{% assign content_width = section.settings.content_width | default: 100 %}
 
 <style>
 	#section-{{ section_id }} {
@@ -17,63 +18,52 @@
 		--columns-mobile: {{ columns_mobile }};
 		--alignment: {{ section.settings.vertical_alignment | default: 'flex-start' }};
 		--max-width: {{ max_width }}px;
+		--content-width: {{ content_width }}%;
 	}
 
-	/* Base flex container - always flex */
 	#section-{{ section_id }} .blocks-section-flex {
-		display: flex;
-		flex-wrap: {% if section.settings.is_wrap_columns %}wrap{% else %}nowrap{% endif %};
+		display: grid;
+		grid-template-columns: repeat(var(--columns), 1fr);
 		gap: var(--column-gap);
 		align-items: var(--alignment);
-		width: 100%;
+		width: var(--content-width);
 		margin: 0 auto;
 	}
 
-	/* Base block styling */
 	#section-{{ section_id }} .blocks-section-block {
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;
-		/* Width is controlled by inline styles or default flex behavior */
+		width: 100%;
 	}
 
-	/* Mobile Styles */
+	/* For flex-based layout when using custom column widths */
+	#section-{{ section_id }}.using-custom-widths .blocks-section-flex {
+		display: flex;
+		flex-wrap: {% if section.settings.is_wrap_columns %}wrap{% else %}nowrap{% endif %};
+		gap: var(--column-gap);
+	}
+
 	@media (max-width: 768px) {
 		#section-{{ section_id }} .blocks-section-flex {
+			grid-template-columns: repeat(var(--columns-mobile), 1fr);
 			gap: var(--mobile-gap);
 			width: 100%;
+		}
+
+		#section-{{ section_id }}.using-custom-widths .blocks-section-flex {
 			{% if section.settings.is_wrap_columns_mobile %}
 				flex-wrap: wrap;
 			{% else %}
 				flex-direction: column;
 			{% endif %}
 		}
-
-		#section-{{ section_id }} .blocks-section-block {
-			/* Reset width for stacked mobile layout if not wrapping */
-			{% if section.settings.is_wrap_columns_mobile == false %}
-				width: 100% !important;
-				max-width: 100% !important;
-				flex-basis: auto !important;
-			{% endif %}
-		}
-
-		/* Apply mobile custom width via CSS */
-		{% for block in section.blocks %}
-			{% if block.settings.width_mobile %}
-				#section-{{ section_id }} .blocks-section-block-{{ block.id }} {
-					flex: 0 0 {{ block.settings.width_mobile }}% !important;
-					max-width: {{ block.settings.width_mobile }}% !important;
-					width: {{ block.settings.width_mobile }}% !important;
-				}
-			{% endif %}
-		{% endfor %}
 	}
 </style>
 
 <section
 	id="section-{{ section_id }}"
-	class="blocks-section {% if section.settings.section_classes %}{{ section.settings.section_classes }}{% endif %}"
+	class="blocks-section {% if any_custom_width %}using-custom-widths{% endif %} {% if section.settings.section_classes %}{{ section.settings.section_classes }}{% endif %}"
 	data-section-id="{{ section_id }}"
 	data-section-type="blocks-section"
 	style="
@@ -102,6 +92,14 @@
 			</div>
 		{% endif %}
 
+		{% assign any_custom_width = false %}
+		{% for block in section.blocks %}
+			{% if block.settings.column_width and block.settings.column_width != 6 %}
+				{% assign any_custom_width = true %}
+				{% break %}
+			{% endif %}
+		{% endfor %}
+
 		{% if section.settings.is_slider %}
 			<div
 				class="swiper blocks-section-swiper !overflow-visible z-10 {% if section.settings.is_dots or section.settings.is_scrollbar %}!pb-12{% endif %}"
@@ -120,13 +118,18 @@
 					{% render block %}
 				</div>
 			{% else %}
-				<div
-					class="blocks-section-block blocks-section-block-{{ block.id }}"
-					{% if block.settings.width %}
-						style="flex-basis: {{ block.settings.width }}%; max-width: {{ block.settings.width }}%; width: {{ block.settings.width }}%;"
-					{% endif %}>
-					{% render block %}
-				</div>
+				{% if any_custom_width %}
+					{%- assign col_width = block.settings.column_width | default: 12 | divided_by: columns -%}
+					{%- assign column_percent = col_width | times: 100 | divided_by: 12 -%}
+
+					<div class="blocks-section-block" style="flex-basis: {{ column_percent }}%; width: {{ column_percent }}%;">
+						{% render block %}
+					</div>
+				{% else %}
+					<div class="blocks-section-block">
+						{% render block %}
+					</div>
+				{% endif %}
 			{% endif %}
 		{% endfor %}
 
@@ -212,6 +215,7 @@
 			}
 		};
 
+		// Create a debounce function for resize events
 		window.debounce = window.debounce || ((func, delay) => {
 			let timeout;
 			return function(...args) {
@@ -285,7 +289,7 @@
 				}
 
 				@media (width < 768px) {
-					--swiper-navigation-sides-offset: 15vw  !important;
+					--swiper-navigation-sides-offset: 15vw !important;
 					--swiper-navigation-top-offset: 105vw !important;
 
 					.swiper {
@@ -395,23 +399,21 @@
 			{
 				"type": "range",
 				"id": "columns",
-				"label": "Columns (Informational)",
+				"label": "Columns (Desktop)",
 				"min": 1,
 				"max": 6,
 				"step": 1,
-				"default": 2,
-				"info": "Layout is now flex-based. Use block settings for width."
+				"default": 2
 			},
 			{
 				"type": "select",
 				"id": "columns_mobile",
-				"label": "Columns (Mobile - Informational)",
+				"label": "Columns (Mobile)",
 				"options": [
 					{ "value": "1", "label": "1 column" },
 					{ "value": "2", "label": "2 columns" }
 				],
-				"default": "1",
-				"info": "Layout is now flex-based. Use block settings for width."
+				"default": "1"
 			},
 			{
 				"type": "range",
@@ -451,6 +453,10 @@
 					{
 						"value": "flex-end",
 						"label": "Bottom"
+					},
+					{
+						"value": "stretch",
+						"label": "Stretch"
 					}
 				],
 				"default": "flex-start"
@@ -471,13 +477,23 @@
 			},
 			{
 				"type": "range",
+				"id": "content_width",
+				"label": "Content Width",
+				"min": 50,
+				"max": 100,
+				"step": 1,
+				"unit": "%",
+				"default": 100
+			},
+			{
+				"type": "range",
 				"id": "container_border_radius",
 				"label": "Container Border Radius",
 				"min": 0,
-				"max": 50,
-				"step": 5,
+				"max": 30,
+				"step": 1,
 				"unit": "px",
-				"default": 15
+				"default": 5
 			},
 			{
 				"type": "color",
