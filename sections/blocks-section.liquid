@@ -34,10 +34,10 @@
 		margin: 0 auto;
 	}
 
-	/* Calculate default width based on column count */
+	/* Calculate default width based on column count - simpler approach */
 	#section-{{ section_id }} .shopify-block {
-		width: calc((100% - ({{ column_gap }}rem * ({{ columns }} - 1))) / {{ columns }});
-		flex-basis: calc((100% - ({{ column_gap }}rem * ({{ columns }} - 1))) / {{ columns }});
+		width: calc(100% / {{ columns }});
+		flex-basis: calc(100% / {{ columns }});
 		flex-grow: 0;
 		flex-shrink: 0;
 	}
@@ -48,16 +48,17 @@
 			width: 100%;
 		}
 
-		/* Reset block width on mobile */
+		/* Reset block width on mobile - simpler percent-based approach */
 		#section-{{ section_id }} .shopify-block {
-			width: calc((100% - ({{ column_gap | times: 0.75 }}rem * ({{ columns_mobile }} - 1))) / {{ columns_mobile }});
-			flex-basis: calc((100% - ({{ column_gap | times: 0.75 }}rem * ({{ columns_mobile }} - 1))) / {{ columns_mobile }});
+			width: calc(100% / {{ columns_mobile }});
+			flex-basis: calc(100% / {{ columns_mobile }});
 		}
 
 		/* For very small screens, stack items */
 		@media (max-width: 480px) {
 			#section-{{ section_id }} .blocks-section-flex {
 				flex-direction: column;
+				gap: calc(var(--mobile-gap) * 1.5);
 			}
 
 			#section-{{ section_id }} .shopify-block {
