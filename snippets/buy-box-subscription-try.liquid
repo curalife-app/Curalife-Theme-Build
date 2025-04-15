@@ -9,8 +9,6 @@
 {% assign referenced_variant = null %}
 
 {% assign giftsAmount = 0 %}
-{% assign visibleGiftsAmount = 0 %}
-{% assign hiddenGifts = '' %}
 {% assign faqsAmount = value %}
 {% for block in blocks %}
 	{% case block.type %}
@@ -26,25 +24,6 @@
 
 			{% if show_gift %}
 				{% assign giftsAmount = giftsAmount | plus: 1 %}
-
-				{% if block.settings.hide_from_ui %}
-					{% if isGlobal %}
-						{% assign giftID = block.settings.gift_id_global | plus: 0 %}
-						{% assign giftIDSub = block.settings.gift_id_subscription_global | plus: 0 %}
-					{% else %}
-						{% assign giftID = block.settings.gift_id | plus: 0 %}
-						{% assign giftIDSub = block.settings.gift_id_subscription | plus: 0 %}
-					{% endif %}
-
-					{% if giftID > 0 %}
-						{% assign hiddenGifts = hiddenGifts | append: giftID | append: ',' %}
-					{% endif %}
-					{% if giftIDSub > 0 %}
-						{% assign hiddenGifts = hiddenGifts | append: 'sub:' | append: giftIDSub | append: ',' %}
-					{% endif %}
-				{% else %}
-					{% assign visibleGiftsAmount = visibleGiftsAmount | plus: 1 %}
-				{% endif %}
 			{% endif %}
 
 		{% when 'faq' %}
@@ -143,7 +122,7 @@
 				</li>
 			</ul>
 
-			{% if visibleGiftsAmount > 0 %}
+			{% if giftsAmount > 0 %}
 				<div class="gift-selector mb-2">
 					{% render 'subscription-box-gift-selector',
 						SID: SID,
@@ -203,8 +182,7 @@
 				isBuyWithPrime: isBuyWithPrime,
 				buyboxType: buyboxType,
 				buyboxName: buyboxName,
-				buttonClass: 'bg-[#FCAF2A] hover:bg-[#E99E20] text-black font-bold rounded-full py-3 w-full transition-all duration-300',
-				hiddenGifts: hiddenGifts
+				buttonClass: 'bg-[#FCAF2A] hover:bg-[#E99E20] text-black font-bold rounded-full py-3 w-full transition-all duration-300'
 			%}
 		</div>
 
@@ -603,46 +581,31 @@ document.addEventListener('DOMContentLoaded', () => {
 						}
 					}
 				} else {
-					// Check for hidden gifts
-					const hiddenGift = document.querySelector('#cta-section-{{ SID }} .hidden-gift');
-					if (hiddenGift) {
-						const giftIDSub = hiddenGift.dataset.giftIdSubscription;
-						const giftID = hiddenGift.dataset.giftId;
-
-						// Use subscription gift ID for subscription purchase, otherwise use regular gift ID
-						const giftIDToUse = isSub && giftIDSub ? giftIDSub : giftID;
-
-						if (giftIDToUse) {
-							items.push({ id: parseInt(giftIDToUse, 10), quantity: 1 });
-							console.log('Adding hidden gift to cart:', giftIDToUse);
-						}
-					} else {
-						console.log('No gift selected, looking for default gift');
-						// Get first available gift when no gift selection UI is shown
-						{% for block in blocks %}
-							{% if block.type == 'gift' and block.settings.show_on != 'none' %}
-								{% if isGlobal %}
-									{% assign giftID = block.settings.gift_id_global | plus: 0 %}
-									{% assign giftIDSub = block.settings.gift_id_subscription_global | plus: 0 %}
-								{% else %}
-									{% assign giftID = block.settings.gift_id | plus: 0 %}
-									{% assign giftIDSub = block.settings.gift_id_subscription | plus: 0 %}
-								{% endif %}
-
-								{% if giftID > 0 or giftIDSub > 0 %}
-								const giftID = {{ giftID }};
-								const giftIDSub = {{ giftIDSub }};
-								const giftIDToUse = isSub && giftIDSub ? giftIDSub : giftID;
-
-								if (giftIDToUse) {
-									items.push({ id: giftIDToUse, quantity: 1 });
-									console.log('Adding default gift to cart:', giftIDToUse);
-								}
-								{% break %}
-								{% endif %}
+					console.log('No gift selected, looking for default gift');
+					// Get first available gift when no gift selection UI is shown
+					{% for block in blocks %}
+						{% if block.type == 'gift' and block.settings.show_on != 'none' %}
+							{% if isGlobal %}
+								{% assign giftID = block.settings.gift_id_global | plus: 0 %}
+								{% assign giftIDSub = block.settings.gift_id_subscription_global | plus: 0 %}
+							{% else %}
+								{% assign giftID = block.settings.gift_id | plus: 0 %}
+								{% assign giftIDSub = block.settings.gift_id_subscription | plus: 0 %}
 							{% endif %}
-						{% endfor %}
-					}
+
+							{% if giftID > 0 or giftIDSub > 0 %}
+							const giftID = {{ giftID }};
+							const giftIDSub = {{ giftIDSub }};
+							const giftIDToUse = isSub && giftIDSub ? giftIDSub : giftID;
+
+							if (giftIDToUse) {
+								items.push({ id: giftIDToUse, quantity: 1 });
+								console.log('Adding default gift to cart:', giftIDToUse);
+							}
+							{% break %}
+							{% endif %}
+						{% endif %}
+					{% endfor %}
 				}
 				{% endif %}
 
