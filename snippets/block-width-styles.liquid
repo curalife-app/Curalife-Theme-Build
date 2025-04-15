@@ -9,32 +9,27 @@
 	- width_percent: The width percentage from block settings
 	- columns: Number of columns for desktop (default: 2)
 	- columns_mobile: Number of columns for mobile (default: 1)
-	- gap_width: Gap width in rem (default: 2)
+	- gap_width: Gap width in % (default: 2)
+	- gap_width_mobile: Optional mobile gap width
 {% endcomment %}
 
 {% assign columns = columns | default: 2 %}
 {% assign columns_mobile = columns_mobile | default: 1 %}
 {% assign gap_width = gap_width | default: 2 %}
+{% assign gap_width_mobile = gap_width_mobile | default: gap_width | times: 0.75 %}
 
 {% if width_percent %}
 	<style>
-		/* Set custom width - using !important to override section defaults */
+		/* For custom widths, we scale the percentage based on available space after gaps */
 		#shopify-block-{{ block_id }} {
-			width: {{ width_percent }}% !important;
-			flex-basis: {{ width_percent }}% !important;
-			/* Apply margin to account for gap - half of gap on each side except outer edges */
-			margin-right: calc({{ gap_width }}rem / {{ columns }} / 2);
-			margin-left: calc({{ gap_width }}rem / {{ columns }} / 2);
-			/* Adjust width to account for margins */
-			box-sizing: border-box;
+			width: calc(({{ width_percent }}% * (100% - ({{ gap_width }}% * ({{ columns }} - 1))) / 100%)) !important;
+			flex-basis: calc(({{ width_percent }}% * (100% - ({{ gap_width }}% * ({{ columns }} - 1))) / 100%)) !important;
 		}
 
 		@media (max-width: 768px) {
 			#shopify-block-{{ block_id }} {
-				width: {{ width_percent }}% !important;
-				flex-basis: {{ width_percent }}% !important;
-				margin-right: calc({{ gap_width | times: 0.75 }}rem / {{ columns_mobile }} / 2);
-				margin-left: calc({{ gap_width | times: 0.75 }}rem / {{ columns_mobile }} / 2);
+				width: calc(({{ width_percent }}% * (100% - ({{ gap_width_mobile }}% * ({{ columns_mobile }} - 1))) / 100%)) !important;
+				flex-basis: calc(({{ width_percent }}% * (100% - ({{ gap_width_mobile }}% * ({{ columns_mobile }} - 1))) / 100%)) !important;
 			}
 		}
 	</style>

@@ -4,16 +4,16 @@
 {% endcomment %}
 
 {% assign section_id = section.id %}
+{% assign column_gap = section.settings.column_gap | default: 2 %}
 {% assign columns = section.settings.columns | default: 2 %}
 {% assign columns_mobile = section.settings.columns_mobile | default: 1 %}
-{% assign column_gap = section.settings.column_gap | default: 2 %}
 {% assign max_width = section.settings.max_width | default: 1200 %}
 {% assign content_width = section.settings.content_width | default: 100 %}
 
 <style>
 	#section-{{ section_id }} {
-		--column-gap: {{ column_gap }}rem;
-		--mobile-gap: {{ column_gap | times: 0.75 | default: 1 }}rem;
+		--column-gap: {{ column_gap }}%;
+		--mobile-gap: {{ column_gap | times: 0.75 | default: 1 }}%;
 		--columns: {{ columns }};
 		--columns-mobile: {{ columns_mobile }};
 		--alignment: {{ section.settings.vertical_alignment | default: 'flex-start' }};
@@ -22,62 +22,48 @@
 	}
 
 	/*
-	 * Use flex layout with a modified approach for gaps
+	 * Use flex layout with gap to create proper spacing
 	 */
 	#section-{{ section_id }} .blocks-section-flex {
 		display: flex;
 		flex-wrap: wrap;
+		gap: var(--column-gap);
 		align-items: var(--alignment);
 		width: var(--content-width);
 		margin: 0 auto;
-		/* Remove the gap property since we're handling it with margins */
-		margin-left: calc(-1 * {{ column_gap }}rem / {{ columns }} / 2);
-		margin-right: calc(-1 * {{ column_gap }}rem / {{ columns }} / 2);
 	}
 
-	/* Set width as a simple percentage and use margins for spacing */
+	/* Calculate default width for blocks accounting for the gap */
 	#section-{{ section_id }} .shopify-block {
-		width: calc(100% / {{ columns }});
-		flex-basis: calc(100% / {{ columns }});
+		/* Essential for mobile support: width calculation must handle varying number of columns */
+		width: calc((100% - ({{ column_gap }}% * ({{ columns }} - 1))) / {{ columns }});
+		flex-basis: calc((100% - ({{ column_gap }}% * ({{ columns }} - 1))) / {{ columns }});
 		flex-grow: 0;
 		flex-shrink: 0;
-		/* Add spacing via margins */
-		margin-left: calc({{ column_gap }}rem / {{ columns }} / 2);
-		margin-right: calc({{ column_gap }}rem / {{ columns }} / 2);
-		box-sizing: border-box;
 	}
 
 	@media (max-width: 768px) {
 		#section-{{ section_id }} .blocks-section-flex {
+			gap: var(--mobile-gap);
 			width: 100%;
-			/* Adjust negative margins for mobile */
-			margin-left: calc(-1 * {{ column_gap | times: 0.75 }}rem / {{ columns_mobile }} / 2);
-			margin-right: calc(-1 * {{ column_gap | times: 0.75 }}rem / {{ columns_mobile }} / 2);
 		}
 
-		/* Reset block width on mobile using the margin approach */
+		/* Reset block width on mobile - accounting for gap */
 		#section-{{ section_id }} .shopify-block {
-			width: calc(100% / {{ columns_mobile }});
-			flex-basis: calc(100% / {{ columns_mobile }});
-			margin-left: calc({{ column_gap | times: 0.75 }}rem / {{ columns_mobile }} / 2);
-			margin-right: calc({{ column_gap | times: 0.75 }}rem / {{ columns_mobile }} / 2);
+			width: calc((100% - ({{ column_gap | times: 0.75 }}% * ({{ columns_mobile }} - 1))) / {{ columns_mobile }});
+			flex-basis: calc((100% - ({{ column_gap | times: 0.75 }}% * ({{ columns_mobile }} - 1))) / {{ columns_mobile }});
 		}
 
 		/* For very small screens, stack items */
 		@media (max-width: 480px) {
 			#section-{{ section_id }} .blocks-section-flex {
 				flex-direction: column;
-				/* Add spacing between stacked items */
-				margin-left: 0;
-				margin-right: 0;
+				gap: calc(var(--mobile-gap) * 1.5);
 			}
 
 			#section-{{ section_id }} .shopify-block {
 				width: 100% !important;
 				flex-basis: 100% !important;
-				margin-left: 0;
-				margin-right: 0;
-				margin-bottom: {{ column_gap | times: 0.75 }}rem;
 			}
 		}
 	}
@@ -455,10 +441,10 @@
 				"id": "column_gap",
 				"label": "Block Gap",
 				"min": 0,
-				"max": 8,
-				"step": 0.5,
-				"unit": "rem",
-				"default": 2
+				"max": 50,
+				"step": 5,
+				"unit": "%",
+				"default": 10
 			},
 			{
 				"type": "checkbox",
