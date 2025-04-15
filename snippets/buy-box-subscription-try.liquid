@@ -371,6 +371,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			await clearCartPromise;
 
+			// Make sure main product is first and gift is second by sorting items
+			// Main product has selling_plan, gift does not
+			items.sort((a, b) => {
+				if (a.selling_plan !== undefined && b.selling_plan === undefined) return -1;
+				if (a.selling_plan === undefined && b.selling_plan !== undefined) return 1;
+				return 0;
+			});
+
 			items.forEach(item => {
 				if (item.selling_plan !== undefined) {
 					item.selling_plan = parseInt(item.selling_plan, 10);
@@ -381,7 +389,12 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 			});
 
-			const requestBody = JSON.stringify({ items });
+			const requestBody = JSON.stringify({
+				items,
+				attributes: {
+					"_item_order_priority": "maintain_order"
+				}
+			});
 			const addRes = await fetch('/cart/add.js', {
 				method: 'POST',
 				headers: {
@@ -445,7 +458,12 @@ document.addEventListener('DOMContentLoaded', () => {
 					'Cache-Control': 'no-cache'
 				},
 				cache: 'no-store',
-				body: JSON.stringify({ items })
+				body: JSON.stringify({
+					items: items,
+					attributes: {
+						"_item_order_priority": "maintain_order"
+					}
+				})
 			});
 
 			console.log('Cart add response status:', res.status);
@@ -683,7 +701,12 @@ document.addEventListener('DOMContentLoaded', () => {
 							'Cache-Control': 'no-cache'
 						},
 						cache: 'no-store',
-						body: JSON.stringify({ items: toAdd })
+						body: JSON.stringify({
+							items: toAdd,
+							attributes: {
+								"_item_order_priority": "maintain_order"
+							}
+						})
 					});
 
 					const responseData = await res.json();
