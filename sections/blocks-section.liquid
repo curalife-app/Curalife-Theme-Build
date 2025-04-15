@@ -7,6 +7,8 @@
 {% assign columns = section.settings.columns | default: 2 %}
 {% assign columns_mobile = section.settings.columns_mobile | default: 1 %}
 {% assign column_gap = section.settings.column_gap | default: 2 %}
+{% assign max_width = section.settings.max_width | default: 1200 %}
+{% assign container_width = section.settings.container_width | default: 100 %}
 
 <style>
 	#section-{{ section_id }} {
@@ -15,6 +17,8 @@
 		--columns: {{ columns }};
 		--columns-mobile: {{ columns_mobile }};
 		--alignment: {{ section.settings.vertical_alignment | default: 'flex-start' }};
+		--max-width: {{ max_width }}px;
+		--container-width: {{ container_width }}%;
 	}
 
 	#section-{{ section_id }} .blocks-section-flex {
@@ -61,10 +65,19 @@
 	data-section-type="blocks-section"
 	style="
 		{% if section.settings.bg_color %}background-color: {{ section.settings.bg_color }};{% endif %}
+		{% if section.settings.bg_image %}background-image: url('{{ section.settings.bg_image | image_url }}'); background-size: cover; background-position: center; background-repeat: no-repeat;{% endif %}
 		{% if section.settings.section_padding_top != blank %}padding-top: {{ section.settings.section_padding_top }}px;{% endif %}
 		{% if section.settings.section_padding_bottom != blank %}padding-bottom: {{ section.settings.section_padding_bottom }}px;{% endif %}
 	">
-	<div class="container mx-auto px-4 py-8">
+	<div
+		class="container mx-auto px-4 py-8"
+		style="
+			max-width: var(--max-width);
+			width: var(--container-width);
+			{% if section.settings.bg_width == 'container' and section.settings.container_bg_color %}background-color: {{ section.settings.container_bg_color }};{% endif %}
+			{% if section.settings.bg_width == 'container' and section.settings.container_bg_color %}border-radius: {{ section.settings.container_border_radius | default: 5 }}px; padding: 30px;{% endif %}
+			{% if section.settings.border_color %}border: 1px solid {{ section.settings.border_color }};{% endif %}
+		">
 		{% if section.settings.title != blank %}
 			<{{ section.settings.title_tag | default: 'h2' }} class="section-title {% if section.settings.title_alignment %}text-{{ section.settings.title_alignment }}{% else %}text-center{% endif %} text-2xl mb-6 {% if section.settings.title_color %}text-[{{ section.settings.title_color }}]{% endif %}">
 				{{ section.settings.title }}
@@ -286,6 +299,26 @@
 	</style>
 {% endif %}
 
+{% if section.settings.bg_image_mobile %}
+	<style>
+		@media (max-width: 768px) {
+			#section-{{ section_id }} {
+				background-image: url('{{ section.settings.bg_image_mobile | image_url }}');
+			}
+		}
+	</style>
+{% endif %}
+
+{% if section.settings.is_remove_container_padding_mobile %}
+	<style>
+		@media (max-width: 768px) {
+			#section-{{ section_id }} .container {
+				padding-inline: 0;
+			}
+		}
+	</style>
+{% endif %}
+
 {% schema %}
 	{
 		"name": "Blocks Section",
@@ -428,6 +461,71 @@
 			},
 			{
 				"type": "header",
+				"content": "Container Settings"
+			},
+			{
+				"type": "range",
+				"id": "max_width",
+				"label": "Maximum Container Width",
+				"min": 600,
+				"max": 1600,
+				"step": 10,
+				"unit": "px",
+				"default": 1200
+			},
+			{
+				"type": "range",
+				"id": "container_width",
+				"label": "Container Width",
+				"min": 50,
+				"max": 100,
+				"step": 1,
+				"unit": "%",
+				"default": 100
+			},
+			{
+				"type": "select",
+				"id": "bg_width",
+				"label": "Background Width",
+				"options": [
+					{
+						"value": "full",
+						"label": "Full Width"
+					},
+					{
+						"value": "container",
+						"label": "Only Container Width"
+					}
+				],
+				"default": "full"
+			},
+			{
+				"type": "range",
+				"id": "container_border_radius",
+				"label": "Container Border Radius",
+				"min": 0,
+				"max": 30,
+				"step": 1,
+				"unit": "px",
+				"default": 5
+			},
+			{
+				"type": "color",
+				"id": "container_bg_color",
+				"label": "Container Background Color"
+			},
+			{
+				"type": "color",
+				"id": "border_color",
+				"label": "Border Color"
+			},
+			{
+				"type": "checkbox",
+				"id": "is_remove_container_padding_mobile",
+				"label": "Remove container padding on mobile"
+			},
+			{
+				"type": "header",
 				"content": "Slider Settings"
 			},
 			{
@@ -512,6 +610,16 @@
 				"label": "Background Color"
 			},
 			{
+				"type": "image_picker",
+				"id": "bg_image",
+				"label": "Background Image"
+			},
+			{
+				"type": "image_picker",
+				"id": "bg_image_mobile",
+				"label": "Background Image on Mobile"
+			},
+			{
 				"type": "number",
 				"id": "section_padding_top",
 				"label": "Section Padding Top",
@@ -524,9 +632,39 @@
 				"default": 50
 			},
 			{
+				"type": "number",
+				"id": "section_padding_top_mobile",
+				"label": "Section Padding Top on Mobile (vw unit)"
+			},
+			{
+				"type": "number",
+				"id": "section_padding_bottom_mobile",
+				"label": "Section Padding Bottom on Mobile (vw unit)"
+			},
+			{
+				"type": "checkbox",
+				"id": "is_remove_padding_top",
+				"label": "Remove Padding Top"
+			},
+			{
+				"type": "checkbox",
+				"id": "is_remove_padding_bottom",
+				"label": "Remove Padding Bottom"
+			},
+			{
 				"type": "text",
 				"id": "section_classes",
 				"label": "Additional Section Classes"
+			},
+			{
+				"type": "text",
+				"id": "anchor_id",
+				"label": "Anchor ID"
+			},
+			{
+				"type": "html",
+				"id": "additional_code",
+				"label": "Additional Code"
 			},
 			{
 				"type": "select",
