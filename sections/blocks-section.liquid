@@ -23,18 +23,25 @@
 		--default-column-width-mobile: calc(100% / {{ columns_mobile }});
 	}
 
+	/*
+	 * Always use flex layout for simplicity and consistency
+	 * This will handle both custom width blocks and standard grid layout
+	 */
 	#section-{{ section_id }} .blocks-section-flex {
-		{% if any_custom_width %}
-			display: flex;
-			flex-wrap: wrap;
-		{% else %}
-			display: grid;
-			grid-template-columns: repeat(var(--columns), 1fr);
-		{% endif %}
+		display: flex;
+		flex-wrap: wrap;
 		gap: var(--column-gap);
 		align-items: var(--alignment);
 		width: var(--content-width);
 		margin: 0 auto;
+	}
+
+	/* Default width for blocks that don't have custom width */
+	#section-{{ section_id }} .shopify-block:not([style*="width"]) {
+		width: var(--default-column-width);
+		flex-basis: var(--default-column-width);
+		flex-grow: 0;
+		flex-shrink: 0;
 	}
 
 	#section-{{ section_id }} .blocks-section-block {
@@ -44,51 +51,34 @@
 		width: 100%;
 	}
 
-	{% if any_custom_width %}
-	#section-{{ section_id }} .shopify-block:not([style*="width"]) {
-		width: var(--default-column-width) !important;
-		flex-basis: var(--default-column-width) !important;
-	}
-	{% endif %}
-
-	#section-{{ section_id }}.using-custom-widths .blocks-section-flex {
-		display: flex;
-		flex-wrap: {% if section.settings.is_wrap_columns %}wrap{% else %}nowrap{% endif %};
-		gap: var(--column-gap);
-	}
-
 	@media (max-width: 768px) {
 		#section-{{ section_id }} .blocks-section-flex {
-			{% if any_custom_width %}
-				display: flex;
-				flex-wrap: wrap;
-			{% else %}
-				grid-template-columns: repeat(var(--columns-mobile), 1fr);
-			{% endif %}
 			gap: var(--mobile-gap);
 			width: 100%;
 		}
 
-		{% if any_custom_width %}
 		#section-{{ section_id }} .shopify-block:not([style*="width"]) {
-			width: var(--default-column-width-mobile) !important;
-			flex-basis: var(--default-column-width-mobile) !important;
+			width: var(--default-column-width-mobile);
+			flex-basis: var(--default-column-width-mobile);
 		}
-		{% endif %}
 
-		#section-{{ section_id }}.using-custom-widths .blocks-section-flex {
-			{% if section.settings.is_wrap_columns_mobile %}
-				flex-wrap: wrap;
-			{% else %}
+		/* For very small screens, stack items */
+		@media (max-width: 480px) {
+			#section-{{ section_id }} .blocks-section-flex {
 				flex-direction: column;
-			{% endif %}
+			}
+
+			#section-{{ section_id }} .shopify-block {
+				width: 100% !important;
+				flex-basis: 100% !important;
+			}
 		}
 	}
 </style>
 
 <section
 	id="section-{{ section_id }}"
-	class="blocks-section {% if any_custom_width %}using-custom-widths{% endif %} {% if section.settings.section_classes %}{{ section.settings.section_classes }}{% endif %}"
+	class="blocks-section {% if section.settings.section_classes %}{{ section.settings.section_classes }}{% endif %}"
 	data-section-id="{{ section_id }}"
 	data-section-type="blocks-section"
 	style="
@@ -116,18 +106,6 @@
 				{{ section.settings.subtitle }}
 			</div>
 		{% endif %}
-
-		{% assign any_custom_width = false %}
-		{% for block in section.blocks %}
-			{% if block.settings.column_width and block.settings.column_width != 6 %}
-				{% assign any_custom_width = true %}
-				{% break %}
-			{% endif %}
-			{% if block.settings.block_width_percent %}
-				{% assign any_custom_width = true %}
-				{% break %}
-			{% endif %}
-		{% endfor %}
 
 		{% if section.settings.is_slider %}
 			<div
