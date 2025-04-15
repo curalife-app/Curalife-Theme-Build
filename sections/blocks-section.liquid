@@ -21,7 +21,7 @@
 		--block-width: {{ block_width }}%;
 	}
 
-	/* Base flex container */
+	/* Base flex container - always flex */
 	#section-{{ section_id }} .blocks-section-flex {
 		display: flex;
 		flex-wrap: {% if section.settings.is_wrap_columns %}wrap{% else %}nowrap{% endif %};
@@ -31,27 +31,15 @@
 		margin: 0 auto;
 	}
 
-	/* Use grid only when uneven blocks is disabled */
-	#section-{{ section_id }} .blocks-section-flex:not(.uneven-blocks) {
-		{% if section.settings.is_uneven_blocks == false %}
-			display: grid;
-			grid-template-columns: repeat(var(--columns), 1fr);
-		{% endif %}
-	}
-
 	/* Base block styling */
 	#section-{{ section_id }} .blocks-section-block {
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;
+		/* Width is controlled by inline styles or default flex behavior */
 	}
 
-	/* Equal width blocks */
-	#section-{{ section_id }} .blocks-section-flex:not(.uneven-blocks) .blocks-section-block {
-		width: 100%;
-	}
-
-	/* Block content width */
+	/* Block content width (adjusts content inside the block) */
 	#section-{{ section_id }} .blocks-section-block > * {
 		width: var(--block-width);
 		margin-left: auto;
@@ -63,43 +51,37 @@
 		#section-{{ section_id }} .blocks-section-flex {
 			gap: var(--mobile-gap);
 			width: 100%;
-			{% if section.settings.is_uneven_blocks %}
-				{% if section.settings.is_wrap_columns_mobile %}
-					flex-wrap: wrap;
-				{% else %}
-					flex-direction: column;
-				{% endif %}
+			{% if section.settings.is_wrap_columns_mobile %}
+				flex-wrap: wrap;
 			{% else %}
-				display: grid;
-				grid-template-columns: repeat(var(--columns-mobile), 1fr);
+				flex-direction: column;
+			{% endif %}
+		}
+
+		#section-{{ section_id }} .blocks-section-block {
+			/* Reset width for stacked mobile layout if not wrapping */
+			{% if section.settings.is_wrap_columns_mobile == false %}
+				width: 100% !important;
+				max-width: 100% !important;
+				flex-basis: auto !important;
 			{% endif %}
 		}
 
 		#section-{{ section_id }} .blocks-section-block > * {
 			width: {% if section.settings.block_width_mobile %}{{ section.settings.block_width_mobile }}%{% else %}var(--block-width){% endif %};
 		}
-	}
 
-	/* Individual block custom widths - these take precedence */
-	{% for block in section.blocks %}
-		{% if section.settings.is_uneven_blocks and block.settings.custom_width %}
-			#section-{{ section_id }} .blocks-section-block-{{ block.id }} {
-				flex: 0 0 {{ block.settings.custom_width }}% !important;
-				max-width: {{ block.settings.custom_width }}% !important;
-				width: {{ block.settings.custom_width }}% !important;
-			}
-
+		/* Apply mobile custom width via CSS */
+		{% for block in section.blocks %}
 			{% if block.settings.custom_width_mobile %}
-				@media (max-width: 768px) {
-					#section-{{ section_id }} .blocks-section-block-{{ block.id }} {
-						flex: 0 0 {{ block.settings.custom_width_mobile }}% !important;
-						max-width: {{ block.settings.custom_width_mobile }}% !important;
-						width: {{ block.settings.custom_width_mobile }}% !important;
-					}
+				#section-{{ section_id }} .blocks-section-block-{{ block.id }} {
+					flex: 0 0 {{ block.settings.custom_width_mobile }}% !important;
+					max-width: {{ block.settings.custom_width_mobile }}% !important;
+					width: {{ block.settings.custom_width_mobile }}% !important;
 				}
 			{% endif %}
-		{% endif %}
-	{% endfor %}
+		{% endfor %}
+	}
 </style>
 
 <section
@@ -142,7 +124,7 @@
 				{% endif %}>
 				<div class="swiper-wrapper">
 		{% else %}
-			<div class="blocks-section-flex {% if section.settings.is_uneven_blocks %}uneven-blocks{% endif %}">
+			<div class="blocks-section-flex">
 		{% endif %}
 
 		{% for block in section.blocks %}
@@ -153,8 +135,8 @@
 			{% else %}
 				<div
 					class="blocks-section-block blocks-section-block-{{ block.id }}"
-					{% if section.settings.is_uneven_blocks and block.settings.custom_width %}
-						style="flex: 0 0 {{ block.settings.custom_width }}%; max-width: {{ block.settings.custom_width }}%; width: {{ block.settings.custom_width }}%;"
+					{% if block.settings.custom_width %}
+						style="flex-basis: {{ block.settings.custom_width }}%; max-width: {{ block.settings.custom_width }}%; width: {{ block.settings.custom_width }}%;"
 					{% endif %}>
 					{% render block %}
 				</div>
@@ -427,28 +409,23 @@
 			{
 				"type": "range",
 				"id": "columns",
-				"label": "Columns (Desktop)",
+				"label": "Columns (Informational)",
 				"min": 1,
 				"max": 6,
 				"step": 1,
-				"default": 2
+				"default": 2,
+				"info": "Layout is now flex-based. Use block settings for width."
 			},
 			{
 				"type": "select",
 				"id": "columns_mobile",
-				"label": "Columns (Mobile)",
+				"label": "Columns (Mobile - Informational)",
 				"options": [
 					{ "value": "1", "label": "1 column" },
 					{ "value": "2", "label": "2 columns" }
 				],
-				"default": "1"
-			},
-			{
-				"type": "checkbox",
-				"id": "is_uneven_blocks",
-				"label": "Enable Uneven Block Widths",
-				"default": false,
-				"info": "Allow blocks to have custom width percentages for layouts like 30%/70% split"
+				"default": "1",
+				"info": "Layout is now flex-based. Use block settings for width."
 			},
 			{
 				"type": "range",
