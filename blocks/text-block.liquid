@@ -25,7 +25,10 @@
 <div
 	id="text-block-{{ block.id }}"
 	class="text-block"
-	style="opacity: {{ block.settings.opacity }}%; color: {{ block.settings.text_color }}; border-radius: 10px; {{ text_block_styles }}"
+	style="
+		{% if block.settings.block_width_percent %}width: {{ block.settings.block_width_percent }}%; flex-basis: {{ block.settings.block_width_percent }}%;{% endif %}
+		opacity: {{ block.settings.opacity }}%; color: {{ block.settings.text_color }}; border-radius: 10px; {{ text_block_styles }}
+	"
 	{{ block.shopify_attributes }}>
 	{{ block.settings.text }}
 	{% if block.settings.font_size != 18 %}
@@ -92,6 +95,20 @@
 				"id": "is_box_shadow",
 				"label": "Add Box Shadow",
 				"default": false
+			},
+			{
+				"type": "select",
+				"id": "block_width_percent",
+				"label": "Block Width (%)",
+				"options": [
+					{ "value": "100", "label": "100% (Full)" },
+					{ "value": "75", "label": "75% (3/4)" },
+					{ "value": "66", "label": "66% (2/3)" },
+					{ "value": "50", "label": "50% (Half)" },
+					{ "value": "33", "label": "33% (1/3)" },
+					{ "value": "25", "label": "25% (1/4)" }
+				],
+				"info": "Overrides grid width for this block. Leave blank to use section grid."
 			}
 		],
 		"presets": [
