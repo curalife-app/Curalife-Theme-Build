@@ -8,9 +8,17 @@
 	{% render 'code-block', block: block %}
 {% endcomment %}
 
+{% if block.settings.block_width_percent %}
+	<style>
+		#shopify-block-{{ block.id }} {
+			width: {{ block.settings.block_width_percent }}% !important;
+			flex-basis: {{ block.settings.block_width_percent }}% !important;
+		}
+	</style>
+{% endif %}
+
 <div
 	class="code-block-wrapper"
-	style="{% if block.settings.block_width_percent %}width: {{ block.settings.block_width_percent }}%; flex-basis: {{ block.settings.block_width_percent }}%;{% endif %}"
 	{{ block.shopify_attributes }}>
 	{{ block.settings.content }}
 </div>

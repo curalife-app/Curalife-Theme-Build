@@ -9,9 +9,17 @@
 	{% render 'video-block', block: block, section_id: section_id %}
 {% endcomment %}
 
+{% if block.settings.block_width_percent %}
+	<style>
+		#shopify-block-{{ block.id }} {
+			width: {{ block.settings.block_width_percent }}% !important;
+			flex-basis: {{ block.settings.block_width_percent }}% !important;
+		}
+	</style>
+{% endif %}
+
 <div
 	class="video-block-wrapper swiper-slide"
-	style="{% if block.settings.block_width_percent %}width: {{ block.settings.block_width_percent }}%; flex-basis: {{ block.settings.block_width_percent }}%;{% endif %}"
 	{{ block.shopify_attributes }}>
 	{%
 		render 'video',

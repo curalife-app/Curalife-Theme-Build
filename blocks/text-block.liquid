@@ -8,6 +8,15 @@
 	{% render 'text-block', block: block %}
 {% endcomment %}
 
+{% if block.settings.block_width_percent %}
+	<style>
+		#shopify-block-{{ block.id }} {
+			width: {{ block.settings.block_width_percent }}% !important;
+			flex-basis: {{ block.settings.block_width_percent }}% !important;
+		}
+	</style>
+{% endif %}
+
 {% assign text_block_styles = '' %}
 {% if block.settings.box_border_color != blank %}
 	{% assign border_style = 'border: 1px solid ' | append: block.settings.box_border_color | append: ';' %}
@@ -25,10 +34,7 @@
 <div
 	id="text-block-{{ block.id }}"
 	class="text-block"
-	style="
-		{% if block.settings.block_width_percent %}width: {{ block.settings.block_width_percent }}%; flex-basis: {{ block.settings.block_width_percent }}%;{% endif %}
-		opacity: {{ block.settings.opacity }}%; color: {{ block.settings.text_color }}; border-radius: 10px; {{ text_block_styles }}
-	"
+	style="opacity: {{ block.settings.opacity }}%; color: {{ block.settings.text_color }}; border-radius: 10px; {{ text_block_styles }}"
 	{{ block.shopify_attributes }}>
 	{{ block.settings.text }}
 	{% if block.settings.font_size != 18 %}

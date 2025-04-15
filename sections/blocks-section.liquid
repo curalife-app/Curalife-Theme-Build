@@ -118,18 +118,8 @@
 					{% render block %}
 				</div>
 			{% else %}
-				{% if any_custom_width %}
-					{%- assign col_width = block.settings.column_width | default: 12 | divided_by: columns -%}
-					{%- assign column_percent = col_width | times: 100 | divided_by: 12 -%}
-
-					<div class="blocks-section-block" style="flex-basis: {{ column_percent }}%; width: {{ column_percent }}%;">
-						{% render block %}
-					</div>
-				{% else %}
-					<div class="blocks-section-block">
-						{% render block %}
-					</div>
-				{% endif %}
+				{% comment %} Render block directly without wrapper when not a slider {% endcomment %}
+				{% render block %}
 			{% endif %}
 		{% endfor %}
 

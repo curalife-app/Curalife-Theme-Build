@@ -8,9 +8,17 @@
 	{% render 'button-block', block: block %}
 {% endcomment %}
 
+{% if block.settings.block_width_percent %}
+	<style>
+		#shopify-block-{{ block.id }} {
+			width: {{ block.settings.block_width_percent }}% !important;
+			flex-basis: {{ block.settings.block_width_percent }}% !important;
+		}
+	</style>
+{% endif %}
+
 <div
 	class="button-block-wrapper flex {% if block.settings.button_align == 'center' %}justify-center{% else %}justify-start{% endif %}"
-	style="{% if block.settings.block_width_percent %}width: {{ block.settings.block_width_percent }}%; flex-basis: {{ block.settings.block_width_percent }}%;{% endif %}"
 	{{ block.shopify_attributes }}>
 	{%
 		render 'button',
