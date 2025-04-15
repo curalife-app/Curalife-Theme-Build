@@ -296,7 +296,13 @@ class BuyBoxNew {
 		this.elements.frequencyDescription = this.elements.productActions.querySelector(".frequency-description");
 		this.elements.priceDisplays = this.elements.productActions.querySelectorAll(".price-display");
 		this.elements.ctaText = this.container.querySelector(".cta-text");
-		this.elements.giftContainer = this.elements.productActions.querySelector(".gift-container"); // Assuming a container for gifts
+
+		// Try multiple selectors for gift containers to ensure compatibility with all templates
+		this.elements.giftContainer =
+			this.elements.productActions.querySelector(".gift-container") ||
+			this.elements.productActions.querySelector(".gift-selector") ||
+			this.elements.productActions.querySelector(".gift-box-container") ||
+			this.elements.productActions.querySelector("#gift-wrapper");
 	}
 
 	storeInitialProductData() {
@@ -703,24 +709,91 @@ class BuyBoxNew {
 
 		if (giftsAmount > 0) {
 			const selectedGiftId = this.getSelectedGiftId(isSub);
-			if (!selectedGiftId) {
-				showNotification("Please select your free gift");
-				return null;
+
+			// Check if a gift should be added to cart
+			if (selectedGiftId) {
+				items.push({ id: parseInt(selectedGiftId, 10), quantity: 1 });
+			} else {
+				// Check if we have a visible gift selection UI
+				const hasVisibleGiftSelector = this.elements.giftContainer && this.elements.giftContainer.querySelectorAll(".gift-box").length > 0;
+
+				// Only show the notification if there's a visible gift selector but no selection
+				if (hasVisibleGiftSelector) {
+					showNotification("Please select your free gift");
+					return null;
+				}
+
+				// If there's no visible gift selector but gifts were expected,
+				// check for hidden gifts in the form
+				const buyBoxForm = this.container.querySelector('form[data-type="add-to-cart-form"]');
+				const hasHiddenGifts = buyBoxForm && buyBoxForm.dataset.hiddenGifts;
+
+				// If no hidden gifts either, show a notification
+				if (!hasHiddenGifts) {
+					showNotification("No gift available for this selection");
+					return null;
+				}
+				// Otherwise, proceed without a gift (hidden gifts handling failed)
 			}
-			items.push({ id: parseInt(selectedGiftId, 10), quantity: 1 });
 		}
 
 		return items;
 	}
 
 	getSelectedGiftId(isSubscription) {
+		// If no gift container exists, check for hidden gifts in the form
 		if (!this.elements.giftContainer) {
+			// Look for form with hidden gifts data attribute
+			const buyBoxForm = this.container.querySelector('form[data-type="add-to-cart-form"]');
+			if (buyBoxForm && buyBoxForm.dataset.hiddenGifts) {
+				const hiddenGiftsData = buyBoxForm.dataset.hiddenGifts;
+				// Parse hidden gifts from the data attribute (format: "id,sub:id,id,...")
+				const hiddenGiftParts = hiddenGiftsData.split(",").filter(part => part.trim());
+
+				// Find appropriate gift based on purchase type
+				if (isSubscription) {
+					// Look for subscription gift (format "sub:id")
+					const subGift = hiddenGiftParts.find(part => part.startsWith("sub:"));
+					if (subGift) {
+						console.log("Using hidden subscription gift:", subGift.replace("sub:", ""));
+						return subGift.replace("sub:", "");
+					}
+				}
+
+				// Use first non-subscription gift as fallback
+				const regularGift = hiddenGiftParts.find(part => !part.startsWith("sub:"));
+				if (regularGift) {
+					console.log("Using hidden regular gift:", regularGift);
+					return regularGift;
+				}
+			}
 			return null;
 		}
 
 		// Find the selected gift box using the class added by the inline script
 		const selectedGiftBox = this.elements.giftContainer.querySelector(".gift-box.selected");
 		if (!selectedGiftBox) {
+			// If no selection but we have hidden gifts, check the form
+			const buyBoxForm = this.container.querySelector('form[data-type="add-to-cart-form"]');
+			if (buyBoxForm && buyBoxForm.dataset.hiddenGifts) {
+				const hiddenGiftsData = buyBoxForm.dataset.hiddenGifts;
+				// Same parsing logic as above
+				const hiddenGiftParts = hiddenGiftsData.split(",").filter(part => part.trim());
+
+				if (isSubscription) {
+					const subGift = hiddenGiftParts.find(part => part.startsWith("sub:"));
+					if (subGift) {
+						console.log("Using hidden subscription gift as fallback:", subGift.replace("sub:", ""));
+						return subGift.replace("sub:", "");
+					}
+				}
+
+				const regularGift = hiddenGiftParts.find(part => !part.startsWith("sub:"));
+				if (regularGift) {
+					console.log("Using hidden regular gift as fallback:", regularGift);
+					return regularGift;
+				}
+			}
 			return null;
 		}
 
@@ -732,7 +805,7 @@ class BuyBoxNew {
 
 		// Return the appropriate gift ID
 		const giftId = isSubscription ? selectedGiftOption.dataset.giftIdSubscription : selectedGiftOption.dataset.giftId;
-		return giftId;
+		return giftId || null;
 	}
 
 	async handleBuyNowFlow(items) {
