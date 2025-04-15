@@ -1,239 +1,99 @@
+{% comment %}
+    Gift option box. Takes:
+
+    giftsAmount: Number of gifts
+    gifts[]: Array of gift objects
+    selectedGiftsDefault: Default selected gifts
+    countriesInternational: Countries in international groups
+    countriesUS: Countries in US groups
+    currentCountryCode: Current country code
+{% endcomment %}
+
 {% if giftsAmount > 0 %}
-	<div class="gift-selector-wrap flex flex-col gap-3">
-		{% if isHideTitle != true %}
-			<div class="gift-selector-title text-[18px] font-medium">
-				{% if giftsAmount > 1 %}Pick your free gift{% else %}Your free gift{% endif %}
-			</div>
-		{% endif %}
+{% assign visible_gifts_amount = 0 %}
+{% assign hidden_gifts = '' %}
 
-		<div class="gift-options flex flex-col gap-2">
-			{% for block in blocks %}
-				{% case block.type %}
-					{% when 'gift' %}
-						{% assign show_gift = false %}
-						{% if block.settings.show_on == 'both' %}
-							{% assign show_gift = true %}
-						{% elsif block.settings.show_on == 'global' and isGlobal %}
-							{% assign show_gift = true %}
-						{% elsif block.settings.show_on == 'us' and isGlobal == false %}
-							{% assign show_gift = true %}
-						{% endif %}
+{% for gift in gifts %}
+  {% if gift.show_on == 'both' or (gift.show_on == 'us' and countriesUS contains currentCountryCode) or (gift.show_on == 'global' and countriesInternational contains currentCountryCode) %}
+    {% unless gift.hide_from_ui %}
+      {% assign visible_gifts_amount = visible_gifts_amount | plus: 1 %}
+    {% else %}
+      {% assign hidden_gifts = hidden_gifts | append: gift.id | append: ',' %}
+      {% if gift.subscription_id %}
+        {% assign hidden_gifts = hidden_gifts | append: 'sub:' | append: gift.subscription_id | append: ',' %}
+      {% endif %}
+    {% endunless %}
+  {% endif %}
+{% endfor %}
 
-						{% if show_gift %}
-							{% assign giftProd = block.settings.gift_product %}
-							{% assign giftVariant = giftProd.selected_or_first_available_variant %}
-							{% assign giftProdSubscription = block.settings.gift_product_subscription | default: giftProd %}
-							{% assign giftVariantSubscription = giftProdSubscription.selected_or_first_available_variant | default: giftVariant %}
-							{% assign giftThumb = block.settings.gift_thumbnail | default: giftProdSubscription.featured_image | default: giftProd.featured_image %}
+{% if visible_gifts_amount > 0 %}
+<div id="gift-wrapper" class="w-100 py-4">
+    <div class="pb-2">
+        <p class="h6 text-left mb-0">{{ 'products.gift.select_your_gift' | t }}</p>
+    </div>
 
-							<div
-								class="gift-box {% if giftsAmount > 1 %}clickable{% endif %} block"
-								{% if giftsAmount > 1 %}
-									name="track:gift|variant-sku:{{ giftVariant.sku }}"
-									tabindex="0"
-								{% else %}
-									aria-disabled="true"
-									tabindex="-1"
-								{% endif %}>
-								<div
-									class="gift-option-border p-2 rounded-lg"
-									data-gift-id="{{ giftVariant.id }}"
-									data-gift-id-subscription="{{ giftVariantSubscription.id | default: giftVariant.id }}">
-									<div class="flex items-center self-end gap-2 {% if giftsAmount > 1 %} ml-6 {% endif %}">
-										<div class="gift-image-container flex-shrink-0">
-											{% render 'image-test', image: giftThumb, is_retina: true, lazy: true, alt: giftProd.title, class: 'w-full h-full', max_width: 80 %}
-										</div>
+    <div class="gift-box-container row">
+        {% for gift in gifts %}
+            {% assign show_gift = false %}
+            {% if gift.show_on == 'both' or (gift.show_on == 'us' and countriesUS contains currentCountryCode) or (gift.show_on == 'global' and countriesInternational contains currentCountryCode) %}
+                {% unless gift.hide_from_ui %}
+                    {% assign show_gift = true %}
+                {% endunless %}
+            {% endif %}
 
-										<div class="gift-content flex-grow">
-											<div class="flex  items-center gap-2 mb-1 flex-wrap">
-												<div class="gift-name">
-													{% if giftsAmount == 1 %}
-														<span class="text-bronze inline-block">FREE Gift:</span>
-													{% endif %}
-													{{ giftProd.title | replace: 'Free ', '' }}
-												</div>
+            {% if show_gift %}
+                <div class="gift-box mb-4 col-12" data-index="{{ forloop.index0 }}">
+                    <div class="gift-option-border border rounded h-100 d-flex py-2 px-3 cursor-pointer"
+                         data-gift-id="{{ gift.id }}"
+                         data-gift-id-subscription="{{ gift.subscription_id }}">
+                        <div class="d-flex">
+                            {% if gift.image != blank %}
+                                <div class="mr-3 gift-image-container">
+                                    <img src="{{ gift.image | img_url: '80x' }}" alt="{{ gift.title }}" loading="lazy"
+                                         width="60"
+                                         height="60"/>
+                                </div>
+                            {% endif %}
+                            <div class="d-flex flex-column justify-content-center">
+                                <p class="mb-0">
+                                    <span class="font-weight-bold">{{ gift.title }}</span>
+                                    <br/>
+                                    {% if gift.description != blank %}
+                                        {{ gift.description }}
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>
 
-												<div class="price-wrapper w-min text-end flex items-center gap-1">
-													<span>{{ 0 | money_without_trailing_zeros }}</span>
-													<span class="text-gray-600 line-through">
-														{{ giftVariantSubscription.compare_at_price | default: giftVariantSubscription.price | default: giftVariantSubscription.product.price | money_without_trailing_zeros }}
-													</span>
-												</div>
-											</div>
-											<div class="gift-description text-gray-600" style="font-size: 14px">{{ block.settings.variant_description | default: giftProd.metafields.custom.short_description }}</div>
-										</div>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const giftBoxes = document.querySelectorAll('.gift-box');
+    const hiddenGifts = '{{ hidden_gifts }}';
 
-										{% if giftsAmount > 1 %}
-											<div class="check-indicator w-8 h-8 rounded-full border-2 border-[--primary-color] flex items-center justify-center">
-												<svg class="check-mark text-primary w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
-													<path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-												</svg>
-											</div>
-										{% endif %}
-									</div>
-								</div>
-							</div>
-						{% endif %}
-				{% endcase %}
-			{% endfor %}
-		</div>
-	</div>
+    // Setup automatic selection for visible gifts
+    if (giftBoxes.length > 0) {
+      const firstGiftBox = giftBoxes[0];
+      firstGiftBox.classList.add('selected');
 
-	<style>
-		#cta-section-{{ SID }} .gift-selector-wrap {
-		  .gift-box {
-		    .gift-option-border {
-		      position: relative;
-		      cursor: {% if giftsAmount > 1 %}pointer{% else %}default{% endif %};
-		      background-color: white;
-		      border: 1px solid var(--primary-color-light);
-		      transition: all 0.3s ease;
+      giftBoxes.forEach(box => {
+        box.addEventListener('click', function() {
+          giftBoxes.forEach(b => b.classList.remove('selected'));
+          this.classList.add('selected');
+        });
+      });
+    }
 
-		      &:hover {
-		        background-color: var(--primary-color-lighter);
-		      }
-
-		      /* Gift Option Layout */
-		      & > div.flex.items-center.gap-4 {
-		        padding-left: {% if giftsAmount > 1 %}3rem{% else %}1rem{% endif %};
-		      }
-
-		      .gift-image-container {
-		        width: 80px;
-		        height: 80px;
-		        flex-shrink: 0;
-		      }
-
-		      /* Check Indicator */
-		      .check-indicator {
-		        position: absolute;
-		        left: 3%;
-		        top: 50%;
-		        transform: translateY(-50%);
-		        width: 20px;
-		        height: 20px;
-		        min-width: 20px;
-		        min-height: 20px;
-		        border: 1px solid var(--primary-color);
-		        border-radius: 9999px;
-		        display: flex;
-		        align-items: center;
-		        justify-content: center;
-		        background-color: transparent;
-
-		        svg.check-mark {
-		          width: 12px;
-		          height: 12px;
-		          min-width: 12px;
-		          min-height: 12px;
-		          color: white;
-		          stroke: var(--primary-color);
-		          stroke-width: 2;
-		          fill: none;
-		          opacity: 0;
-		          transition: opacity 0.3s ease;
-		        }
-		      }
-
-		      .gift-content {
-		        flex-grow: 1;
-		      }
-		    }
-
-		    &.selected {
-		      .gift-option-border {
-		        background-color: {% if giftsAmount > 1 %}var(--primary-color-lighter){% else %}white{% endif %} !important;
-
-		        .check-indicator {
-		          background-color: var(--primary-color);
-
-		          svg.check-mark {
-		            opacity: 1;
-		            stroke: white;
-		          }
-		        }
-		      }
-		    }
-
-		    &:hover {
-		      .gift-option-border {
-		        background-color: {% if giftsAmount > 1 %}var(--primary-color-lightest){% else %}white{% endif %};
-		      }
-		    }
-		  }
-		}
-
-		@media (max-width: 767px) {
-		  .gift-content {
-		    font-size: 4vw;
-		  }
-		}
-	</style>
-
-	<script>
-		document.addEventListener('DOMContentLoaded', () => {
-			const SID = '{{ SID }}';
-			const productActions = document.querySelector('#cta-section-' + SID + ' .product-actions');
-			if (!productActions) return;
-
-			const giftOptionContainers = productActions.querySelectorAll('.gift-box');
-
-			window.subscriptionBox = window.subscriptionBox || {};
-			window.subscriptionBox[SID] = window.subscriptionBox[SID] || {};
-
-			function updateGiftSelection(container) {
-				if (giftOptionContainers.length > 1) {
-					giftOptionContainers.forEach(c => {
-						const mark = c.querySelector('.check-mark');
-						const sel = c === container;
-						c.classList.toggle('selected', sel);
-						if (mark) {
-							mark.style.display = 'block';
-							mark.style.opacity = sel ? '1' : '0';
-						}
-					});
-				} else {
-					container.classList.add('selected');
-				}
-			}
-
-			window.subscriptionBox[SID].getSelectedGift = function (isSubscription = false) {
-				const giftEl = document.querySelector('#cta-section-' + SID + ' .gift-box.selected');
-				if (!giftEl || !giftEl.querySelector('.gift-option-border')) {
-					return null;
-				}
-
-				const giftBorder = giftEl.querySelector('.gift-option-border');
-				const giftID = isSubscription ? giftBorder.dataset.giftIdSubscription : giftBorder.dataset.giftId;
-
-				if (!giftID) return null;
-
-				return {
-					id: parseInt(giftID, 10),
-					quantity: 1,
-					element: giftEl
-				};
-			};
-
-			if (giftOptionContainers.length > 0) {
-				updateGiftSelection(giftOptionContainers[0]);
-			}
-
-			if (giftOptionContainers.length > 1) {
-				giftOptionContainers.forEach(c => {
-					c.addEventListener('click', () => updateGiftSelection(c));
-				});
-			} else if (giftOptionContainers.length === 1) {
-				giftOptionContainers[0].addEventListener(
-					'click',
-					e => {
-						e.preventDefault();
-						e.stopPropagation();
-						return false;
-					},
-					true
-				);
-			}
-		});
-	</script>
+    // Store hidden gifts in a data attribute on the parent form for later use
+    const buyBoxForm = document.querySelector('form[data-type="add-to-cart-form"]');
+    if (buyBoxForm && hiddenGifts) {
+      buyBoxForm.dataset.hiddenGifts = hiddenGifts;
+    }
+  });
+</script>
 {% endif %}
