@@ -1,0 +1,26 @@
+{% comment %}
+	Block Width Styles Snippet
+
+	Renders CSS to set the width of a block based on its block_width_percent setting.
+	Adjusts the width to account for gaps between columns.
+
+	Parameters:
+	- block_id: The ID of the block
+	- width_percent: The width percentage from block settings
+	- columns: Number of columns for desktop (default: 2)
+	- columns_mobile: Number of columns for mobile (default: 1)
+{% endcomment %}
+
+{% if width_percent %}
+	<style>
+		#shopify-block-{{ block_id }} {
+		  --block-width-pct: calc(({{ width_percent }}% * (100% - (var(--gap-width) * ({{ columns | default: 2 }} - 1))) / 100%) !important;
+		}
+
+		@media (max-width: 768px) {
+		  #shopify-block-{{ block_id }} {
+		    --block-width-pct: calc(({{ width_percent }}% * (100% - (var(--gap-width-mobile) * ({{ columns_mobile | default: 1 }} - 1))) / 100%) !important;
+		  }
+		}
+	</style>
+{% endif %}

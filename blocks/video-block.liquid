@@ -9,19 +9,7 @@
 	{% render 'video-block', block: block, section_id: section_id %}
 {% endcomment %}
 
-{% if block.settings.block_width_percent %}
-	<style>
-		#shopify-block-{{ block.id }} {
-			--block-width-pct: calc(({{ block.settings.block_width_percent }}% * (100% - var(--total-gap-space)) / 100%));
-		}
-
-		@media (max-width: 768px) {
-			#shopify-block-{{ block.id }} {
-				--block-width-pct: calc(({{ block.settings.block_width_percent }}% * (100% - var(--total-gap-space-mobile)) / 100%));
-			}
-		}
-	</style>
-{% endif %}
+{% render 'block-width-styles', block_id: block.id, width_percent: block.settings.block_width_percent, columns: section.settings.columns, columns_mobile: section.settings.columns_mobile %}
 
 <div
 	class="video-block-wrapper swiper-slide"

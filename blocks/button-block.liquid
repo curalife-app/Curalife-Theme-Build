@@ -8,19 +8,7 @@
 	{% render 'button-block', block: block %}
 {% endcomment %}
 
-{% if block.settings.block_width_percent %}
-	<style>
-		#shopify-block-{{ block.id }} {
-			--block-width-pct: calc(({{ block.settings.block_width_percent }}% * (100% - var(--total-gap-space)) / 100%));
-		}
-
-		@media (max-width: 768px) {
-			#shopify-block-{{ block.id }} {
-				--block-width-pct: calc(({{ block.settings.block_width_percent }}% * (100% - var(--total-gap-space-mobile)) / 100%));
-			}
-		}
-	</style>
-{% endif %}
+{% render 'block-width-styles', block_id: block.id, width_percent: block.settings.block_width_percent, columns: section.settings.columns, columns_mobile: section.settings.columns_mobile %}
 
 <div
 	class="button-block-wrapper flex {% if block.settings.button_align == 'center' %}justify-center{% else %}justify-start{% endif %}"

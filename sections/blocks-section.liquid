@@ -20,10 +20,10 @@
 		--max-width: {{ max_width }}px;
 		--content-width: {{ content_width }}%;
 		/* Calculate width accounting for gaps */
-		--total-gap-space: calc(var(--column-gap) * ({{ columns }} - 1));
-		--default-column-width: calc((100% - var(--total-gap-space)) / {{ columns }});
-		--total-gap-space-mobile: calc(var(--mobile-gap) * ({{ columns_mobile }} - 1));
-		--default-column-width-mobile: calc((100% - var(--total-gap-space-mobile)) / {{ columns_mobile }});
+		--gap-width: {{ column_gap }}rem;
+		--gap-width-mobile: {{ column_gap | times: 0.75 | default: 1 }}rem;
+		--default-column-width: calc((100% - (var(--gap-width) * ({{ columns }} - 1))) / {{ columns }});
+		--default-column-width-mobile: calc((100% - (var(--gap-width-mobile) * ({{ columns_mobile }} - 1))) / {{ columns_mobile }});
 	}
 
 	/*
@@ -39,9 +39,9 @@
 		margin: 0 auto;
 	}
 
-	/* Default CSS for all blocks - will use either variable set on the block or default */
+	/* Default CSS for all blocks - use default width if no custom width is set */
 	#section-{{ section_id }} .shopify-block {
-		--block-width-pct: var(--default-column-width);
+		--block-width-pct: var(--default-column-width); /* This is just a fallback */
 		width: var(--block-width-pct);
 		flex-basis: var(--block-width-pct);
 		flex-grow: 0;
@@ -49,19 +49,25 @@
 	}
 
 	@media (max-width: 768px) {
+		#section-{{ section_id }} .blocks-section-flex {
+			gap: var(--mobile-gap);
+			width: 100%;
+		}
+
+		/* Reset block width on mobile */
 		#section-{{ section_id }} .shopify-block {
 			--block-width-pct: var(--default-column-width-mobile);
 		}
-	}
 
-	/* For very small screens, stack items */
-	@media (max-width: 480px) {
-		#section-{{ section_id }} .blocks-section-flex {
-			flex-direction: column;
-		}
+		/* For very small screens, stack items */
+		@media (max-width: 480px) {
+			#section-{{ section_id }} .blocks-section-flex {
+				flex-direction: column;
+			}
 
-		#section-{{ section_id }} .shopify-block {
-			--block-width-pct: 100%;
+			#section-{{ section_id }} .shopify-block {
+				--block-width-pct: 100% !important;
+			}
 		}
 	}
 
