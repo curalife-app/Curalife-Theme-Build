@@ -23,68 +23,48 @@
 		--block-width: {{ block_width }}%;
 	}
 
+	/* Base flex container */
 	#section-{{ section_id }} .blocks-section-flex {
-		{% if section.settings.is_uneven_blocks %}
-			display: flex;
-			flex-wrap: {% if section.settings.is_wrap_columns %}wrap{% else %}nowrap{% endif %};
-		{% else %}
-			display: grid;
-			grid-template-columns: repeat(var(--columns), 1fr);
-		{% endif %}
+		display: flex;
+		flex-wrap: {% if section.settings.is_wrap_columns %}wrap{% else %}nowrap{% endif %};
 		gap: var(--column-gap);
 		align-items: var(--alignment);
 		width: var(--content-width);
 		margin: 0 auto;
 	}
 
+	/* Use grid only when uneven blocks is disabled */
+	#section-{{ section_id }} .blocks-section-flex:not(.uneven-blocks) {
+		{% if section.settings.is_uneven_blocks == false %}
+			display: grid;
+			grid-template-columns: repeat(var(--columns), 1fr);
+		{% endif %}
+	}
+
+	/* Base block styling */
 	#section-{{ section_id }} .blocks-section-block {
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;
+	}
+
+	/* Equal width blocks */
+	#section-{{ section_id }} .blocks-section-flex:not(.uneven-blocks) .blocks-section-block {
 		width: 100%;
 	}
 
-	/* Apply block width percentage within grid cells */
+	/* Block content width */
 	#section-{{ section_id }} .blocks-section-block > * {
 		width: var(--block-width);
 		margin-left: auto;
 		margin-right: auto;
 	}
 
-	/* For flex-based layout when using custom column widths */
-	#section-{{ section_id }}.using-custom-widths .blocks-section-flex {
-		display: flex;
-		flex-wrap: {% if section.settings.is_wrap_columns %}wrap{% else %}nowrap{% endif %};
-		gap: var(--column-gap);
-	}
-
-	/* For direct blocks in custom width mode */
-	#section-{{ section_id }}.using-custom-widths .blocks-section-block > * {
-		width: var(--block-width);
-		margin-left: auto;
-		margin-right: auto;
-	}
-
-	/* Individual block width styles */
-	{% for block in section.blocks %}
-		{% if block.settings.custom_width and section.settings.is_uneven_blocks %}
-			#section-{{ section_id }} .blocks-section-block[data-block-id="{{ block.id }}"] {
-				flex: 0 0 {{ block.settings.custom_width }}%;
-				max-width: {{ block.settings.custom_width }}%;
-			}
-			{% if block.settings.custom_width_mobile %}
-				@media (max-width: 768px) {
-					#section-{{ section_id }} .blocks-section-block[data-block-id="{{ block.id }}"] {
-						flex: 0 0 {{ block.settings.custom_width_mobile }}%;
-						max-width: {{ block.settings.custom_width_mobile }}%;
-					}
-				}
-			{% endif %}
-		{% endif %}
-	{% endfor %}
-
+	/* Mobile Styles */
 	@media (max-width: 768px) {
 		#section-{{ section_id }} .blocks-section-flex {
+			gap: var(--mobile-gap);
+			width: 100%;
 			{% if section.settings.is_uneven_blocks %}
 				{% if section.settings.is_wrap_columns_mobile %}
 					flex-wrap: wrap;
@@ -92,29 +72,41 @@
 					flex-direction: column;
 				{% endif %}
 			{% else %}
+				display: grid;
 				grid-template-columns: repeat(var(--columns-mobile), 1fr);
 			{% endif %}
-			gap: var(--mobile-gap);
-			width: 100%;
 		}
 
 		#section-{{ section_id }} .blocks-section-block > * {
 			width: {% if section.settings.block_width_mobile %}{{ section.settings.block_width_mobile }}%{% else %}var(--block-width){% endif %};
 		}
-
-		#section-{{ section_id }}.using-custom-widths .blocks-section-flex {
-			{% if section.settings.is_wrap_columns_mobile %}
-				flex-wrap: wrap;
-			{% else %}
-				flex-direction: column;
-			{% endif %}
-		}
 	}
+
+	/* Individual block custom widths - these take precedence */
+	{% for block in section.blocks %}
+		{% if section.settings.is_uneven_blocks and block.settings.custom_width %}
+			#section-{{ section_id }} .blocks-section-block-{{ block.id }} {
+				flex: 0 0 {{ block.settings.custom_width }}% !important;
+				max-width: {{ block.settings.custom_width }}% !important;
+				width: {{ block.settings.custom_width }}% !important;
+			}
+
+			{% if block.settings.custom_width_mobile %}
+				@media (max-width: 768px) {
+					#section-{{ section_id }} .blocks-section-block-{{ block.id }} {
+						flex: 0 0 {{ block.settings.custom_width_mobile }}% !important;
+						max-width: {{ block.settings.custom_width_mobile }}% !important;
+						width: {{ block.settings.custom_width_mobile }}% !important;
+					}
+				}
+			{% endif %}
+		{% endif %}
+	{% endfor %}
 </style>
 
 <section
 	id="section-{{ section_id }}"
-	class="blocks-section {% if any_custom_width or section.settings.is_uneven_blocks %}using-custom-widths{% endif %} {% if section.settings.section_classes %}{{ section.settings.section_classes }}{% endif %}"
+	class="blocks-section {% if section.settings.section_classes %}{{ section.settings.section_classes }}{% endif %}"
 	data-section-id="{{ section_id }}"
 	data-section-type="blocks-section"
 	style="
@@ -143,14 +135,6 @@
 			</div>
 		{% endif %}
 
-		{% assign any_custom_width = false %}
-		{% for block in section.blocks %}
-			{% if block.settings.column_width and block.settings.column_width != 6 %}
-				{% assign any_custom_width = true %}
-				{% break %}
-			{% endif %}
-		{% endfor %}
-
 		{% if section.settings.is_slider %}
 			<div
 				class="swiper blocks-section-swiper !overflow-visible z-10 {% if section.settings.is_dots or section.settings.is_scrollbar %}!pb-12{% endif %}"
@@ -160,7 +144,7 @@
 				{% endif %}>
 				<div class="swiper-wrapper">
 		{% else %}
-			<div class="blocks-section-flex">
+			<div class="blocks-section-flex {% if section.settings.is_uneven_blocks %}uneven-blocks{% endif %}">
 		{% endif %}
 
 		{% for block in section.blocks %}
@@ -169,18 +153,13 @@
 					{% render block %}
 				</div>
 			{% else %}
-				{% if any_custom_width and section.settings.is_uneven_blocks == false %}
-					{%- assign col_width = block.settings.column_width | default: 12 | divided_by: columns -%}
-					{%- assign column_percent = col_width | times: 100 | divided_by: 12 -%}
-
-					<div class="blocks-section-block" style="flex-basis: {{ column_percent }}%; width: {{ column_percent }}%;" data-block-id="{{ block.id }}">
-						{% render block %}
-					</div>
-				{% else %}
-					<div class="blocks-section-block" data-block-id="{{ block.id }}">
-						{% render block %}
-					</div>
-				{% endif %}
+				<div
+					class="blocks-section-block blocks-section-block-{{ block.id }}"
+					{% if section.settings.is_uneven_blocks and block.settings.custom_width %}
+						style="flex: 0 0 {{ block.settings.custom_width }}%; max-width: {{ block.settings.custom_width }}%; width: {{ block.settings.custom_width }}%;"
+					{% endif %}>
+					{% render block %}
+				</div>
 			{% endif %}
 		{% endfor %}
 
@@ -376,56 +355,7 @@
 	{
 		"name": "Blocks Section",
 		"tag": "section",
-		"blocks": [
-			{
-				"type": "@theme",
-				"settings": [
-					{
-						"type": "range",
-						"id": "custom_width",
-						"label": "Custom Block Width",
-						"min": 10,
-						"max": 100,
-						"step": 5,
-						"unit": "%",
-						"info": "Only works when 'Enable Uneven Block Widths' is turned on in section settings"
-					},
-					{
-						"type": "range",
-						"id": "custom_width_mobile",
-						"label": "Custom Block Width Mobile",
-						"min": 10,
-						"max": 100,
-						"step": 5,
-						"unit": "%"
-					}
-				]
-			},
-			{
-				"type": "@app",
-				"settings": [
-					{
-						"type": "range",
-						"id": "custom_width",
-						"label": "Custom Block Width",
-						"min": 10,
-						"max": 100,
-						"step": 5,
-						"unit": "%",
-						"info": "Only works when 'Enable Uneven Block Widths' is turned on in section settings"
-					},
-					{
-						"type": "range",
-						"id": "custom_width_mobile",
-						"label": "Custom Block Width Mobile",
-						"min": 10,
-						"max": 100,
-						"step": 5,
-						"unit": "%"
-					}
-				]
-			}
-		],
+		"blocks": [{ "type": "@theme" }, { "type": "@app" }],
 		"class": "blocks-section",
 		"settings": [
 			{
