@@ -12,8 +12,13 @@
 {% if block.settings.block_width_percent %}
 	<style>
 		#shopify-block-{{ block.id }} {
-			width: {{ block.settings.block_width_percent }}% !important;
-			flex-basis: {{ block.settings.block_width_percent }}% !important;
+			--block-width-pct: calc(({{ block.settings.block_width_percent }}% * (100% - var(--total-gap-space)) / 100%));
+		}
+
+		@media (max-width: 768px) {
+			#shopify-block-{{ block.id }} {
+				--block-width-pct: calc(({{ block.settings.block_width_percent }}% * (100% - var(--total-gap-space-mobile)) / 100%));
+			}
 		}
 	</style>
 {% endif %}

@@ -39,27 +39,30 @@
 		margin: 0 auto;
 	}
 
-	/* Adjust the custom widths to account for gaps */
-	{% for width in '25,33,50,66,75,100' | split: ',' %}
-	#section-{{ section_id }} .shopify-block[style*="width: {{ width }}%"] {
-		width: calc(({{ width }}% * (100% - var(--total-gap-space)) / 100%)) !important;
-		flex-basis: calc(({{ width }}% * (100% - var(--total-gap-space)) / 100%)) !important;
+	/* Default CSS for all blocks - will use either variable set on the block or default */
+	#section-{{ section_id }} .shopify-block {
+		--block-width-pct: var(--default-column-width);
+		width: var(--block-width-pct);
+		flex-basis: var(--block-width-pct);
+		flex-grow: 0;
+		flex-shrink: 0;
 	}
 
 	@media (max-width: 768px) {
-		#section-{{ section_id }} .shopify-block[style*="width: {{ width }}%"] {
-			width: calc(({{ width }}% * (100% - var(--total-gap-space-mobile)) / 100%)) !important;
-			flex-basis: calc(({{ width }}% * (100% - var(--total-gap-space-mobile)) / 100%)) !important;
+		#section-{{ section_id }} .shopify-block {
+			--block-width-pct: var(--default-column-width-mobile);
 		}
 	}
-	{% endfor %}
 
-	/* Default width for blocks that don't have custom width */
-	#section-{{ section_id }} .shopify-block:not([style*="width"]) {
-		width: var(--default-column-width);
-		flex-basis: var(--default-column-width);
-		flex-grow: 0;
-		flex-shrink: 0;
+	/* For very small screens, stack items */
+	@media (max-width: 480px) {
+		#section-{{ section_id }} .blocks-section-flex {
+			flex-direction: column;
+		}
+
+		#section-{{ section_id }} .shopify-block {
+			--block-width-pct: 100%;
+		}
 	}
 
 	#section-{{ section_id }} .blocks-section-block {
