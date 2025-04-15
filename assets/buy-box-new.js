@@ -546,6 +546,8 @@ class BuyBoxNew {
 		if (this.elements.frequencyDropdown) {
 			this.elements.frequencyDropdown.addEventListener("change", e => {
 				this.selectFrequencyOption(e.target.options[e.target.selectedIndex]);
+				// Remove focus after selection
+				e.target.blur();
 			});
 		}
 
