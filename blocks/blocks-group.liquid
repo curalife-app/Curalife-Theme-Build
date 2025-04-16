@@ -39,12 +39,33 @@
 
 	#block-{{ block_id }} .block-flex-layout {
 	  display: flex;
-	  flex-wrap: wrap;
+	  flex-wrap: {% if block.settings.is_nowrap %}nowrap{% else %}wrap{% endif %};
 	  justify-content: flex-start;
 	  gap: var(--block-row-gap) var(--block-column-gap);
 	  align-items: var(--block-alignment);
 	  width: 100%;
+	  {% if block.settings.is_nowrap %}
+	  overflow-x: auto;
+	  scrollbar-width: thin;
+	  -webkit-overflow-scrolling: touch;
+	  padding-bottom: 5px; /* Space for scrollbar */
+	  {% endif %}
 	}
+
+	{% if block.settings.is_nowrap %}
+	/* Customize scrollbar for better UX */
+	#block-{{ block_id }} .block-flex-layout::-webkit-scrollbar {
+	  height: 4px;
+	}
+	#block-{{ block_id }} .block-flex-layout::-webkit-scrollbar-track {
+	  background: rgba(0,0,0,0.05);
+	  border-radius: 10px;
+	}
+	#block-{{ block_id }} .block-flex-layout::-webkit-scrollbar-thumb {
+	  background: rgba(0,0,0,0.2);
+	  border-radius: 10px;
+	}
+	{% endif %}
 
 	   /* Target all direct child blocks regardless of class */
 	   #block-{{ block_id }} .block-flex-layout > .shopify-block > .custom-block {
@@ -52,6 +73,9 @@
 	     flex-basis: var(--nested-block-width) !important;
 	     flex-grow: 0;
 	     flex-shrink: 0;
+	     {% if block.settings.is_nowrap %}
+	     min-width: {% if block.settings.min_block_width %}{{ block.settings.min_block_width }}px{% else %}200px{% endif %};
+	     {% endif %}
 	   }
 
 	   /* Ensure nested blocks are excluded */
@@ -67,12 +91,12 @@
 
 	@media (max-width: 480px) {
 	  #block-{{ block_id }} .block-flex-layout {
-	    {% if block.settings.is_stack_mobile %}
+	    {% if block.settings.is_stack_mobile and block.settings.is_nowrap != true %}
 	    flex-direction: column;
 	    {% endif %}
 	  }
 
-	  {% if block.settings.is_stack_mobile %}
+	  {% if block.settings.is_stack_mobile and block.settings.is_nowrap != true %}
 	     #block-{{ block_id }} .block-flex-layout > .shopify-block > .custom-block {
 	       width: 100% !important;
 	       flex-basis: 100% !important;
@@ -368,6 +392,24 @@
 				"step": 0.1,
 				"unit": "rem",
 				"default": 1
+			},
+			{
+				"type": "checkbox",
+				"id": "is_nowrap",
+				"label": "Force Single Row (No Wrap)",
+				"default": false,
+				"info": "Forces blocks to stay in a single row, may require horizontal scrolling"
+			},
+			{
+				"type": "range",
+				"id": "min_block_width",
+				"label": "Minimum Block Width (No Wrap mode)",
+				"min": 100,
+				"max": 500,
+				"step": 10,
+				"unit": "px",
+				"default": 200,
+				"info": "Applies only when No Wrap is enabled"
 			},
 			{
 				"type": "checkbox",
