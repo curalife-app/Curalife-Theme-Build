@@ -4,7 +4,7 @@
 {% endcomment %}
 
 {% assign section_id = section.id %}
-{% assign column_gap = section.settings.column_gap | default: 10 %}
+{% assign column_gap_rem = section.settings.column_gap_rem | default: 1 %}
 {% assign columns = section.settings.columns | default: 2 %}
 {% assign columns_mobile = section.settings.columns_mobile | default: 1 %}
 {% assign max_width = section.settings.max_width | default: 1200 %}
@@ -12,15 +12,13 @@
 
 {% assign total_gaps_desktop = columns | minus: 1 %}
 {% assign total_gaps_mobile = columns_mobile | minus: 1 %}
-{% assign total_gap_percent_desktop = column_gap | times: total_gaps_desktop %}
-{% assign total_gap_percent_mobile = column_gap | times: 0.75 | times: total_gaps_mobile %}
-{% assign default_width_desktop = 100 | minus: total_gap_percent_desktop | divided_by: columns %}
-{% assign default_width_mobile = 100 | minus: total_gap_percent_mobile | divided_by: columns_mobile %}
+{% assign default_width_desktop = 100 | minus: 2 | divided_by: columns %}
+{% assign default_width_mobile = 100 | minus: 2 | divided_by: columns_mobile %}
 
 <style>
 	#section-{{ section_id }} {
-		--column-gap: {{ column_gap }}%;
-		--mobile-gap: {{ column_gap | times: 0.75 | default: 1 }}%;
+		--column-gap: {{ column_gap_rem }}rem;
+		--mobile-gap: {{ column_gap_rem }}rem;
 		--columns: {{ columns }};
 		--columns-mobile: {{ columns_mobile }};
 		--alignment: {{ section.settings.vertical_alignment | default: 'flex-start' }};
@@ -67,18 +65,17 @@
 			width: unset;
 			margin: 0 15px;
 		}
+	}
 
-		/* For very small screens, stack items */
-		@media (max-width: 480px) {
-			#section-{{ section_id }} .blocks-section-flex {
-				flex-direction: column;
-				gap: calc(var(--mobile-gap) * 1.5);
-			}
+	@media (max-width: 480px) {
+		#section-{{ section_id }} .blocks-section-flex {
+			flex-direction: column;
+			gap: calc(var(--mobile-gap) * 1.5);
+		}
 
-			#section-{{ section_id }} .shopify-block {
-				width: 100% !important;
-				flex-basis: 100% !important;
-			}
+		#section-{{ section_id }} .shopify-block {
+			width: 100% !important;
+			flex-basis: 100% !important;
 		}
 	}
 
@@ -90,33 +87,25 @@
 	}
 
 	@media (max-width: 768px) {
-		#section-{{ section_id }} .blocks-section-flex {
-			gap: var(--mobile-gap);
-			width: 100%;
-		}
-
 		#section-{{ section_id }} .shopify-block:not([style*="width"]) {
 			width: var(--default-width-mobile);
 			flex-basis: var(--default-width-mobile);
 		}
 
-		/* For very small screens, stack items */
-		@media (max-width: 480px) {
-			#section-{{ section_id }} .blocks-section-flex {
-				flex-direction: column;
-			}
-
-			#section-{{ section_id }} .shopify-block {
-				width: 100% !important;
-				flex-basis: 100% !important;
-			}
-		}
-	}
-
-	@media (max-width: 768px) {
 		#section-{{ section_id }} .container {
 			width: unset;
 			margin: 0 15px;
+		}
+	}
+
+	@media (max-width: 480px) {
+		#section-{{ section_id }} .blocks-section-flex {
+			flex-direction: column;
+		}
+
+		#section-{{ section_id }} .shopify-block {
+			width: 100% !important;
+			flex-basis: 100% !important;
 		}
 	}
 </style>
@@ -459,13 +448,13 @@
 			},
 			{
 				"type": "range",
-				"id": "column_gap",
+				"id": "column_gap_rem",
 				"label": "Block Gap",
 				"min": 0,
-				"max": 50,
-				"step": 1,
-				"unit": "%",
-				"default": 5
+				"max": 5,
+				"step": 0.1,
+				"unit": "rem",
+				"default": 1
 			},
 			{
 				"type": "checkbox",
