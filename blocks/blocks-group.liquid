@@ -26,27 +26,12 @@
 <style>
 	#block-{{ block_id }} .block-flex-layout {
 	  display: flex;
-	  flex-wrap: {% if block.settings.is_nowrap %}nowrap{% else %}wrap{% endif %};
+	  flex-wrap: wrap;
 	  justify-content: space-between;
 	  gap: var(--block-row-gap) var(--block-column-gap);
 	  align-items: var(--block-alignment);
 	  width: 100%;
 	}
-
-	{% if block.settings.is_nowrap %}
-	/* Customize scrollbar for better UX */
-	#block-{{ block_id }} .block-flex-layout::-webkit-scrollbar {
-	  height: 4px;
-	}
-	#block-{{ block_id }} .block-flex-layout::-webkit-scrollbar-track {
-	  background: rgba(0,0,0,0.05);
-	  border-radius: 10px;
-	}
-	#block-{{ block_id }} .block-flex-layout::-webkit-scrollbar-thumb {
-	  background: rgba(0,0,0,0.2);
-	  border-radius: 10px;
-	}
-	{% endif %}
 
 	#block-{{ block.id }} {
 		flex-grow: 0;
@@ -341,24 +326,6 @@
 				"step": 0.1,
 				"unit": "rem",
 				"default": 1
-			},
-			{
-				"type": "checkbox",
-				"id": "is_nowrap",
-				"label": "Force Single Row (No Wrap)",
-				"default": false,
-				"info": "Forces blocks to stay in a single row, may require horizontal scrolling"
-			},
-			{
-				"type": "range",
-				"id": "min_block_width",
-				"label": "Minimum Block Width (No Wrap mode)",
-				"min": 100,
-				"max": 500,
-				"step": 10,
-				"unit": "px",
-				"default": 200,
-				"info": "Applies only when No Wrap is enabled"
 			},
 			{
 				"type": "checkbox",
