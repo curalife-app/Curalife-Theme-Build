@@ -10,11 +10,23 @@
 {% assign column_gap = block.settings.column_gap | default: 2 %}
 {% assign row_gap_rem = block.settings.row_gap_rem | default: 1 %}
 
+{% comment %}Calculate nested block width with gaps considered{% endcomment %}
+{% assign total_blocks = block.blocks | size %}
+{% if total_blocks > 0 %}
+	{% assign total_gaps = total_blocks | minus: 1 %}
+	{% assign total_gap_space = column_gap | times: total_gaps %}
+	{% assign available_space = 100 | minus: total_gap_space %}
+	{% assign block_width = available_space | divided_by: total_blocks %}
+{% else %}
+	{% assign block_width = 100 %}
+{% endif %}
+
 <style>
 	#block-{{ block_id }} {
 	  --block-column-gap: {{ column_gap }}%;
 	  --block-row-gap: {{ row_gap_rem }}rem;
 	  --block-alignment: {{ block.settings.content_alignment | default: 'flex-start' }};
+	     --nested-block-width: {{ block_width }}%;
 	}
 
 	/* More specific selector to override the section styles */
@@ -32,6 +44,15 @@
 	  align-items: var(--block-alignment);
 	  width: 100%;
 	}
+
+	   /* Apply pre-calculated width to nested blocks */
+	   #block-{{ block_id }} .block-flex-layout > .blocks-group,
+	   #block-{{ block_id }} .block-flex-layout > .custom-block {
+	     width: var(--nested-block-width) !important;
+	     flex-basis: var(--nested-block-width) !important;
+	     flex-grow: 0;
+	     flex-shrink: 0;
+	   }
 
 	#block-{{ block.id }} {
 		flex-grow: 0;
@@ -51,6 +72,11 @@
 	    width: 100% !important;
 	    flex-basis: 100% !important;
 	  }
+
+	     #block-{{ block_id }} .block-flex-layout > .shopify-block {
+	       width: 100% !important;
+	       flex-basis: 100% !important;
+	     }
 	  {% endif %}
 	}
 </style>
