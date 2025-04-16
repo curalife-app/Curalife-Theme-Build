@@ -9,25 +9,12 @@
 {% assign block_id = block.id %}
 {% assign column_gap = block.settings.column_gap | default: 2 %}
 {% assign row_gap_rem = block.settings.row_gap_rem | default: 1 %}
-{% assign columns = block.settings.columns | default: 2 %}
-{% assign columns_mobile = block.settings.columns_mobile | default: 1 %}
-
-{% assign total_gaps_desktop = columns | minus: 1 %}
-{% assign total_gaps_mobile = columns_mobile | minus: 1 %}
-{% assign total_gap_percent_desktop = column_gap | times: total_gaps_desktop %}
-{% assign total_gap_percent_mobile = column_gap | times: total_gaps_mobile %}
-{% assign actual_width_desktop = block.settings.block_width_percent | minus: total_gap_percent_desktop | divided_by: columns %}
-{% assign actual_width_mobile = block.settings.block_width_percent | minus: total_gap_percent_mobile | divided_by: columns_mobile %}
 
 <style>
 	#block-{{ block_id }} {
 	  --block-column-gap: {{ column_gap }}%;
 	  --block-row-gap: {{ row_gap_rem }}rem;
-	  --block-columns: {{ columns }};
-	  --block-columns-mobile: {{ columns_mobile }};
 	  --block-alignment: {{ block.settings.content_alignment | default: 'flex-start' }};
-	  --block-default-width-desktop: {{ actual_width_desktop }}%;
-	  --block-default-width-mobile: {{ actual_width_mobile }}%;
 	}
 
 	/* More specific selector to override the section styles */
@@ -47,15 +34,24 @@
 	}
 
 	#block-{{ block.id }} {
-		width: var(--block-default-width-desktop);
-		flex-basis: var(--block-default-width-desktop);
 		flex-grow: 0;
 		flex-shrink: 0;
+	}
 
-		@media (max-width: 768px) {
-	    width: var(--block-default-width-mobile);
-	    flex-basis: var(--block-default-width-mobile);
-		}
+	@media (max-width: 480px) {
+	  #block-{{ block_id }} .block-flex-layout {
+	    {% if block.settings.is_stack_mobile %}
+	    flex-direction: column;
+	    row-gap: calc(var(--block-row-gap) * 1.5);
+	    {% endif %}
+	  }
+
+	  {% if block.settings.is_stack_mobile %}
+	  #block-{{ block.id }} {
+	    width: 100% !important;
+	    flex-basis: 100% !important;
+	  }
+	  {% endif %}
 	}
 </style>
 
@@ -326,25 +322,6 @@
 			{
 				"type": "header",
 				"content": "Block Layout"
-			},
-			{
-				"type": "range",
-				"id": "columns",
-				"label": "Columns (Desktop)",
-				"min": 1,
-				"max": 6,
-				"step": 1,
-				"default": 2
-			},
-			{
-				"type": "select",
-				"id": "columns_mobile",
-				"label": "Columns (Mobile)",
-				"options": [
-					{ "value": "1", "label": "1 column" },
-					{ "value": "2", "label": "2 columns" }
-				],
-				"default": "1"
 			},
 			{
 				"type": "range",
