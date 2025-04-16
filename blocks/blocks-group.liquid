@@ -25,18 +25,21 @@
 {% endif %}
 
 <style>
-	#block-{{ block_id }} .block-flex-layout {
-	  display: flex;
-	  flex-wrap: wrap;
-	  justify-content: space-between;
-	  gap: var(--block-row-gap) var(--block-column-gap);
-	  align-items: var(--block-alignment);
-	  width: 100%;
-	}
-
-	#block-{{ block.id }} {
+	#block-{{ block_id }} {
+		--block-row-gap: {{ row_gap_rem }}rem;
+		--block-column-gap: {{ column_gap }}%;
+		--block-alignment: {{ block.settings.content_alignment | default: 'flex-start' }};
 		flex-grow: 0;
 		flex-shrink: 0;
+	}
+
+	#block-{{ block_id }} .block-flex-layout {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		gap: var(--block-row-gap) var(--block-column-gap);
+		align-items: var(--block-alignment);
+		width: 100%;
 	}
 </style>
 
