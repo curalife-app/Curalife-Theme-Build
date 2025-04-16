@@ -40,6 +40,12 @@
 	  gap: var(--block-row-gap) var(--block-column-gap);
 	  align-items: var(--block-alignment);
 	  width: 100%;
+	  {% if block.settings.is_nowrap %}
+	  overflow-x: auto;
+	  scrollbar-width: thin;
+	  -webkit-overflow-scrolling: touch;
+	  padding-bottom: 5px; /* Space for scrollbar */
+	  {% endif %}
 	}
 
 	{% if block.settings.is_nowrap %}
@@ -57,11 +63,22 @@
 	}
 	{% endif %}
 
-	   /* Ensure nested blocks are excluded */
-	   #block-{{ block_id }} .block-flex-layout > * .block-flex-layout > * {
-	     width: auto !important;
-	     flex-basis: auto !important;
-	   }
+	/* Target all direct child blocks regardless of class */
+	#block-{{ block_id }} .block-flex-layout > .shopify-block > .custom-block {
+	  width: var(--nested-block-width) !important;
+	  flex-basis: var(--nested-block-width) !important;
+	  flex-grow: 0;
+	  flex-shrink: 0;
+	  {% if block.settings.is_nowrap %}
+	  min-width: {% if block.settings.min_block_width %}{{ block.settings.min_block_width }}px{% else %}200px{% endif %};
+	  {% endif %}
+	}
+
+	/* Ensure nested blocks are excluded */
+	#block-{{ block_id }} .block-flex-layout > * .block-flex-layout > * {
+	  width: auto !important;
+	  flex-basis: auto !important;
+	}
 
 	#block-{{ block.id }} {
 		flex-grow: 0;
