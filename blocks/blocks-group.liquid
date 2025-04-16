@@ -10,21 +10,11 @@
 {% assign column_gap = block.settings.column_gap | default: 2 %}
 {% assign row_gap_rem = block.settings.row_gap_rem | default: 1 %}
 
-{% comment %}
-	Calculate standard widths for common column counts, accounting for gaps
-{% endcomment %}
-{% assign two_col_width = 50 | minus: column_gap | divided_by: 2 %}
-{% assign three_col_width = 100 | minus: column_gap | minus: column_gap | divided_by: 3 %}
-{% assign four_col_width = 100 | minus: column_gap | minus: column_gap | minus: column_gap | divided_by: 4 %}
-
 <style>
 	#block-{{ block_id }} {
 	  --block-column-gap: {{ column_gap }}%;
 	  --block-row-gap: {{ row_gap_rem }}rem;
 	  --block-alignment: {{ block.settings.content_alignment | default: 'flex-start' }};
-	  --two-col-width: {{ two_col_width }}%;
-	  --three-col-width: {{ three_col_width }}%;
-	  --four-col-width: {{ four_col_width }}%;
 	}
 
 	/* More specific selector to override the section styles */
@@ -43,49 +33,6 @@
 	  width: 100%;
 	}
 
-	/* Set standard widths for nested block elements based on common percentage classes */
-	#block-{{ block_id }} .block-flex-layout > .shopify-block[data-width="50"] {
-	  width: var(--two-col-width);
-	  flex-basis: var(--two-col-width);
-	  flex-grow: 0;
-	  flex-shrink: 0;
-	}
-
-	#block-{{ block_id }} .block-flex-layout > .shopify-block[data-width="33"] {
-	  width: var(--three-col-width);
-	  flex-basis: var(--three-col-width);
-	  flex-grow: 0;
-	  flex-shrink: 0;
-	}
-
-	#block-{{ block_id }} .block-flex-layout > .shopify-block[data-width="25"] {
-	  width: var(--four-col-width);
-	  flex-basis: var(--four-col-width);
-	  flex-grow: 0;
-	  flex-shrink: 0;
-	}
-
-	#block-{{ block_id }} .block-flex-layout > .shopify-block[data-width="66"] {
-	  width: calc(var(--three-col-width) * 2 + var(--block-column-gap));
-	  flex-basis: calc(var(--three-col-width) * 2 + var(--block-column-gap));
-	  flex-grow: 0;
-	  flex-shrink: 0;
-	}
-
-	#block-{{ block_id }} .block-flex-layout > .shopify-block[data-width="75"] {
-	  width: calc(var(--four-col-width) * 3 + var(--block-column-gap) * 2);
-	  flex-basis: calc(var(--four-col-width) * 3 + var(--block-column-gap) * 2);
-	  flex-grow: 0;
-	  flex-shrink: 0;
-	}
-
-	#block-{{ block_id }} .block-flex-layout > .shopify-block[data-width="100"] {
-	  width: 100%;
-	  flex-basis: 100%;
-	  flex-grow: 0;
-	  flex-shrink: 0;
-	}
-
 	#block-{{ block.id }} {
 		flex-grow: 0;
 		flex-shrink: 0;
@@ -101,11 +48,6 @@
 
 	  {% if block.settings.is_stack_mobile %}
 	  #block-{{ block.id }} {
-	    width: 100% !important;
-	    flex-basis: 100% !important;
-	  }
-
-	  #block-{{ block_id }} .block-flex-layout > .shopify-block {
 	    width: 100% !important;
 	    flex-basis: 100% !important;
 	  }
@@ -146,10 +88,7 @@
 			<div class="swiper-wrapper">
 				{% for nested_block in block.blocks %}
 					<div class="swiper-slide block-slide">
-						{% assign width_attr = nested_block.settings.block_width_percent | default: '100' %}
-						<div class="shopify-block" data-width="{{ width_attr }}">
-							{% render nested_block %}
-						</div>
+						{% render nested_block %}
 					</div>
 				{% endfor %}
 			</div>
@@ -171,10 +110,7 @@
 	{% else %}
 		<div class="block-flex-layout">
 			{% for nested_block in block.blocks %}
-				{% assign width_attr = nested_block.settings.block_width_percent | default: '100' %}
-				<div class="shopify-block" data-width="{{ width_attr }}">
-					{% render nested_block %}
-				</div>
+				{% render nested_block %}
 			{% endfor %}
 		</div>
 	{% endif %}
