@@ -782,31 +782,6 @@ class BuyBoxNew {
 
 	async addValidItemsToCart(items) {
 		try {
-			// Check for existing subscriptions only if adding a subscription
-			const subItemToAdd = items.find(i => i.selling_plan);
-			if (subItemToAdd) {
-				let cart = await getCart(true); // Force fresh fetch
-				const variantIdToAdd = subItemToAdd.id;
-				const itemsToRemove = {}; // Use object for easier update format
-
-				cart.items.forEach(item => {
-					// Check if existing item is a subscription for the *same variant*
-					if (item.selling_plan_allocation && item.variant_id === variantIdToAdd) {
-						itemsToRemove[item.key] = 0; // Mark for removal
-					}
-				});
-
-				if (Object.keys(itemsToRemove).length > 0) {
-					await fetch("/cart/update.js", {
-						method: "POST",
-						headers: { "Content-Type": "application/json", "Cache-Control": "no-cache" },
-						cache: "no-store",
-						body: JSON.stringify({ updates: itemsToRemove })
-					});
-					CartCache.invalidate();
-				}
-			}
-
 			// Add the new items
 			const res = await fetch("/cart/add.js", {
 				method: "POST",
