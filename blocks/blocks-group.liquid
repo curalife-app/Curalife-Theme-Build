@@ -24,15 +24,12 @@
 {% endif %}
 
 <style>
-	#block-{{ block_id }} {
-	  --block-column-gap: {{ column_gap }}%;
+	/* More specific selector to override the section styles */
+	.blocks-section-flex > #block-{{ block_id }}.blocks-group {
+		--block-column-gap: {{ column_gap }}%;
 	  --block-row-gap: {{ row_gap_rem }}rem;
 	  --block-alignment: {{ block.settings.content_alignment | default: 'flex-start' }};
 	  --nested-block-width: {{ block_width }}%;
-	}
-
-	/* More specific selector to override the section styles */
-	.blocks-section-flex > #block-{{ block_id }}.blocks-group {
 	  width: {% if block.settings.block_width_percent %}{{ block.settings.block_width_percent }}{% else %}auto{% endif %}% !important;
 	  flex-basis: {% if block.settings.block_width_percent %}{{ block.settings.block_width_percent }}{% else %}auto{% endif %}% !important;
 	}
