@@ -16,7 +16,9 @@
 	{% assign total_gaps = total_blocks | minus: 1 %}
 	{% assign total_gap_space = column_gap | times: total_gaps %}
 	{% assign available_space = 100 | minus: total_gap_space %}
-	{% assign block_width = available_space | divided_by: total_blocks %}
+
+	{% comment %}Calculate per-block width with a small adjustment for precision{% endcomment %}
+	{% assign block_width = available_space | divided_by: total_blocks | times: 0.99 %}
 {% else %}
 	{% assign block_width = 100 %}
 {% endif %}
@@ -38,14 +40,14 @@
 	#block-{{ block_id }} .block-flex-layout {
 	  display: flex;
 	  flex-wrap: wrap;
-	  justify-content: space-between;
-	  column-gap: var(--block-column-gap);
-	  row-gap: var(--block-row-gap);
+	  justify-content: flex-start;
+	  gap: var(--block-row-gap) var(--block-column-gap);
 	  align-items: var(--block-alignment);
 	  width: 100%;
 	}
 
-	   /* Apply pre-calculated width to nested blocks */
+	   /* Target all direct child blocks regardless of class */
+	   #block-{{ block_id }} .block-flex-layout > .shopify-block,
 	   #block-{{ block_id }} .block-flex-layout > .custom-block {
 	     width: var(--nested-block-width) !important;
 	     flex-basis: var(--nested-block-width) !important;
@@ -53,9 +55,31 @@
 	     flex-shrink: 0;
 	   }
 
+	   /* Ensure nested blocks are excluded */
+	   #block-{{ block_id }} .block-flex-layout > * .block-flex-layout > * {
+	     width: auto !important;
+	     flex-basis: auto !important;
+	   }
+
 	#block-{{ block.id }} {
 		flex-grow: 0;
 		flex-shrink: 0;
+	}
+
+	@media (max-width: 480px) {
+	  #block-{{ block_id }} .block-flex-layout {
+	    {% if block.settings.is_stack_mobile %}
+	    flex-direction: column;
+	    {% endif %}
+	  }
+
+	  {% if block.settings.is_stack_mobile %}
+	     #block-{{ block_id }} .block-flex-layout > .shopify-block,
+	     #block-{{ block_id }} .block-flex-layout > .custom-block {
+	       width: 100% !important;
+	       flex-basis: 100% !important;
+	     }
+	  {% endif %}
 	}
 </style>
 
