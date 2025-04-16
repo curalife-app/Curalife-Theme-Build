@@ -20,251 +20,259 @@
 {% assign default_width_mobile = 100 | minus: total_gap_percent_mobile | divided_by: columns_mobile %}
 
 <style>
-  #block-{{ block_id }} {
-    --block-column-gap: {{ column_gap }}%;
-    --block-row-gap: {{ row_gap_rem }}rem;
-    --block-columns: {{ columns }};
-    --block-columns-mobile: {{ columns_mobile }};
-    --block-alignment: {{ block.settings.content_alignment | default: 'flex-start' }};
-    --block-default-width-desktop: {{ default_width_desktop }}%;
-    --block-default-width-mobile: {{ default_width_mobile }}%;
-  }
+	#block-{{ block_id }} {
+	  --block-column-gap: {{ column_gap }}%;
+	  --block-row-gap: {{ row_gap_rem }}rem;
+	  --block-columns: {{ columns }};
+	  --block-columns-mobile: {{ columns_mobile }};
+	  --block-alignment: {{ block.settings.content_alignment | default: 'flex-start' }};
+	  --block-default-width-desktop: {{ default_width_desktop }}%;
+	  --block-default-width-mobile: {{ default_width_mobile }}%;
+	}
 
-  /* More specific selector to override the section styles */
-  .blocks-section-flex > #block-{{ block_id }}.blocks-group {
-    width: {% if block.settings.block_width_percent %}{{ block.settings.block_width_percent }}{% else %}auto{% endif %}% !important;
-    flex-basis: {% if block.settings.block_width_percent %}{{ block.settings.block_width_percent }}{% else %}auto{% endif %}% !important;
-  }
+	/* More specific selector to override the section styles */
+	.blocks-section-flex > #block-{{ block_id }}.blocks-group {
+	  width: {% if block.settings.block_width_percent %}{{ block.settings.block_width_percent }}{% else %}auto{% endif %}% !important;
+	  flex-basis: {% if block.settings.block_width_percent %}{{ block.settings.block_width_percent }}{% else %}auto{% endif %}% !important;
+	}
 
-  #block-{{ block_id }} .block-flex-layout {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    column-gap: var(--block-column-gap);
-    row-gap: var(--block-row-gap);
-    align-items: var(--block-alignment);
-    width: 100%;
-  }
+	#block-{{ block_id }} .block-flex-layout {
+	  display: flex;
+	  flex-wrap: wrap;
+	  justify-content: space-between;
+	  column-gap: var(--block-column-gap);
+	  row-gap: var(--block-row-gap);
+	  align-items: var(--block-alignment);
+	  width: 100%;
+	}
 
-  /* Override section styles with more specific selectors */
-  #block-{{ block_id }}.blocks-group .block-flex-layout > .shopify-block {
-    width: var(--block-default-width-desktop) !important;
-    flex-basis: var(--block-default-width-desktop) !important;
-    flex-grow: 0;
-    flex-shrink: 0;
-  }
+	/* Override section styles with more specific selectors */
+	#block-{{ block_id }}.blocks-group .block-flex-layout > .shopify-block {
+	  width: var(--block-default-width-desktop) !important;
+	  flex-basis: var(--block-default-width-desktop) !important;
+	  flex-grow: 0;
+	  flex-shrink: 0;
+	}
 
-  @media (max-width: 768px) {
-    #block-{{ block_id }}.blocks-group .block-flex-layout > .shopify-block {
-      width: var(--block-default-width-mobile) !important;
-      flex-basis: var(--block-default-width-mobile) !important;
-    }
-  }
+	@media (max-width: 768px) {
+	  #block-{{ block_id }}.blocks-group .block-flex-layout > .shopify-block {
+	    width: var(--block-default-width-mobile) !important;
+	    flex-basis: var(--block-default-width-mobile) !important;
+	  }
+	}
 
-  @media (max-width: 480px) {
-    #block-{{ block_id }} .block-flex-layout {
-      {% if block.settings.is_stack_mobile %}
-      flex-direction: column;
-      row-gap: calc(var(--block-row-gap) * 1.5);
-      {% endif %}
-    }
+	@media (max-width: 480px) {
+	  #block-{{ block_id }} .block-flex-layout {
+	    {% if block.settings.is_stack_mobile %}
+	    flex-direction: column;
+	    row-gap: calc(var(--block-row-gap) * 1.5);
+	    {% endif %}
+	  }
 
-    {% if block.settings.is_stack_mobile %}
-    #block-{{ block_id }}.blocks-group .block-flex-layout > .shopify-block {
-      width: 100% !important;
-      flex-basis: 100% !important;
-    }
-    {% endif %}
-  }
+	  {% if block.settings.is_stack_mobile %}
+	  #block-{{ block_id }}.blocks-group .block-flex-layout > .shopify-block {
+	    width: 100% !important;
+	    flex-basis: 100% !important;
+	  }
+	  {% endif %}
+	}
 </style>
 
-<div id="block-{{ block_id }}" class="blocks-group shopify-block {% if block.settings.alignment %}text-{{ block.settings.alignment }}{% endif %}" {% if block.settings.animation != 'none' %}data-aos="{{ block.settings.animation }}"{% endif %} {% if block.settings.animation_duration != blank %}data-aos-duration="{{ block.settings.animation_duration }}"{% endif %} {% if block.settings.additional_classes %}{{ block.settings.additional_classes }}{% endif %}"
+<div
+	id="block-{{ block_id }}"
+	class="blocks-group shopify-block {% if block.settings.alignment %}text-{{ block.settings.alignment }}{% endif %} {% if block.settings.additional_classes %}{{ block.settings.additional_classes }}{% endif %}"
+	{% if block.settings.animation != 'none' %}
+		data-aos="{{ block.settings.animation }}"
+	{% endif %}
+	{% if block.settings.animation_duration != blank %}
+		data-aos-duration="{{ block.settings.animation_duration }}"
+	{% endif %}
 	style="
-	{% if block.settings.bg_color %}background-color: {{ block.settings.bg_color }};{% endif %}
-	{% if block.settings.padding != blank %}padding: {{ block.settings.padding }}rem;{% endif %}
-	{% if block.settings.text_color %}color: {{ block.settings.text_color }};{% endif %}
-	{% if block.settings.border_radius != blank %}border-radius: {{ block.settings.border_radius }}px;{% endif %}
-	{% if block.settings.border_color and block.settings.border_color != 'rgba(0,0,0,0)' %}border: 1px solid {{ block.settings.border_color | default: 'transparent' }};{% endif %}
-	{% if block.settings.is_shadow %}box-shadow: 0px 4px 20px rgba(0, 0, 0, {{ block.settings.shadow_opacity | divided_by: 100.0 }});{% endif %}">
-
+		{% if block.settings.bg_color %}background-color: {{ block.settings.bg_color }};{% endif %}
+		{% if block.settings.padding != blank %}padding: {{ block.settings.padding }}rem;{% endif %}
+		{% if block.settings.text_color %}color: {{ block.settings.text_color }};{% endif %}
+		{% if block.settings.border_radius != blank %}border-radius: {{ block.settings.border_radius }}px;{% endif %}
+		{% if block.settings.border_color and block.settings.border_color != 'rgba(0,0,0,0)' %}border: 1px solid {{ block.settings.border_color | default: 'transparent' }};{% endif %}
+		{% if block.settings.is_shadow %}box-shadow: 0px 4px 20px rgba(0, 0, 0, {{ block.settings.shadow_opacity | divided_by: 100.0 }});{% endif %}
+	">
 	{% if block.settings.title != blank %}
 		<{{ block.settings.title_tag | default: 'h3' }} class="column-title {% if block.settings.title_color %}text-[{{ block.settings.title_color }}]{% endif %} mb-4">
 			{{ block.settings.title }}
 		</{{ block.settings.title_tag | default: 'h3' }}>
 	{% endif %}
 
-  {% if block.settings.is_slider %}
-    <div
-      class="swiper block-swiper !overflow-visible z-10 {% if block.settings.is_dots or block.settings.is_scrollbar %}!pb-12{% endif %}"
-      id="block-swiper-{{ block_id }}"
-      {% if block.settings.animation %}
-        data-aos="{{ block.settings.animation }}"
-      {% endif %}>
-      <div class="swiper-wrapper">
-        {% for nested_block in block.blocks %}
-          <div class="swiper-slide block-slide">
-            {% render nested_block %}
-          </div>
-        {% endfor %}
-      </div>
-      <div class="swiper-navigations">
-        {% if block.settings.is_arrows %}
-          <div class="swiper-nav swiper-button-next" name="track:Slider Arrow - Next"></div>
-          <div class="swiper-nav swiper-button-prev" name="track:Slider Arrow - Preview"></div>
-        {% endif %}
+	{% if block.settings.is_slider %}
+		<div
+			class="swiper block-swiper !overflow-visible z-10 {% if block.settings.is_dots or block.settings.is_scrollbar %}!pb-12{% endif %}"
+			id="block-swiper-{{ block_id }}"
+			{% if block.settings.animation %}
+				data-aos="{{ block.settings.animation }}"
+			{% endif %}>
+			<div class="swiper-wrapper">
+				{% for nested_block in block.blocks %}
+					<div class="swiper-slide block-slide">
+						{% render nested_block %}
+					</div>
+				{% endfor %}
+			</div>
+			<div class="swiper-navigations">
+				{% if block.settings.is_arrows %}
+					<div class="swiper-nav swiper-button-next" name="track:Slider Arrow - Next"></div>
+					<div class="swiper-nav swiper-button-prev" name="track:Slider Arrow - Preview"></div>
+				{% endif %}
 
-        {% if block.settings.is_dots %}
-          <div class="swiper-pagination"></div>
-        {% endif %}
+				{% if block.settings.is_dots %}
+					<div class="swiper-pagination"></div>
+				{% endif %}
 
-        {% if block.settings.is_scrollbar %}
-          <div class="swiper-scrollbar"></div>
-        {% endif %}
-      </div>
-    </div>
-  {% else %}
-    <div class="block-flex-layout">
-      {% for nested_block in block.blocks %}
-        {% render nested_block %}
-      {% endfor %}
-    </div>
-  {% endif %}
+				{% if block.settings.is_scrollbar %}
+					<div class="swiper-scrollbar"></div>
+				{% endif %}
+			</div>
+		</div>
+	{% else %}
+		<div class="block-flex-layout">
+			{% for nested_block in block.blocks %}
+				{% render nested_block %}
+			{% endfor %}
+		</div>
+	{% endif %}
 </div>
 
 {% if block.settings.is_slider %}
-<script defer>
-  // Define functions outside of DOMContentLoaded to avoid duplicate function creation
-  window.blockGroupSwiperFunctions = window.blockGroupSwiperFunctions || {
-    initSwiper: function(swiperContainer) {
-      requestAnimationFrame(() => {
-        loadSwiper(() => {
-          let swiper = initializeSwiper('#block-swiper-{{ block_id }}', {
-            spaceBetween: 15,
-            grabCursor: true,
-            watchSlidesVisibility: true,
-            slidesPerView: 'auto',
-            autoHeight: {{ block.settings.is_auto_height | default: false }},
-            {% if block.settings.is_arrows %}
-            navigation: {
-              nextEl: '#block-swiper-{{ block_id }} .swiper-button-next',
-              prevEl: '#block-swiper-{{ block_id }} .swiper-button-prev',
-            },
-            {% endif %}
-            {% if block.settings.is_dots %}
-            pagination: {
-              el: '#block-swiper-{{ block_id }} .swiper-pagination',
-              clickable: true
-            },
-            {% endif %}
-            {% if block.settings.is_scrollbar %}
-            scrollbar: {
-              el: '#block-swiper-{{ block_id }} .swiper-scrollbar'
-            },
-            {% endif %}
-            {% if block.settings.is_ticker %}
-            loop: true,
-            speed: 1500,
-            autoplay: {
-              delay: 0,
-              disableOnInteraction: false
-            },
-            {% elsif block.settings.slider_autoplay_speed > 0 %}
-            loop: true,
-            speed: {{ block.settings.slider_autoplay_speed }},
-            autoplay: {
-              delay: {{ block.settings.slider_autoplay_speed }},
-            },
-            {% endif %}
-            lazy: true,
-            breakpoints: {
-              768: {
-                slidesPerView: {{ block.settings.slides_per_view_mobile | default: 1 }},
-              },
-              1200: {
-                slidesPerView: {% if block.settings.slides_per_view != 'all' %}{{ block.settings.slides_per_view | default: 3 }}{% else %}'auto'{% endif %}
-              }
-            }
-          });
-        });
-      });
-    }
-  };
+	<script defer>
+		// Define functions outside of DOMContentLoaded to avoid duplicate function creation
+		window.blockGroupSwiperFunctions = window.blockGroupSwiperFunctions || {
+		  initSwiper: function(swiperContainer) {
+		    requestAnimationFrame(() => {
+		      loadSwiper(() => {
+		        let swiper = initializeSwiper('#block-swiper-{{ block_id }}', {
+		          spaceBetween: 15,
+		          grabCursor: true,
+		          watchSlidesVisibility: true,
+		          slidesPerView: 'auto',
+		          autoHeight: {{ block.settings.is_auto_height | default: false }},
+		          {% if block.settings.is_arrows %}
+		          navigation: {
+		            nextEl: '#block-swiper-{{ block_id }} .swiper-button-next',
+		            prevEl: '#block-swiper-{{ block_id }} .swiper-button-prev',
+		          },
+		          {% endif %}
+		          {% if block.settings.is_dots %}
+		          pagination: {
+		            el: '#block-swiper-{{ block_id }} .swiper-pagination',
+		            clickable: true
+		          },
+		          {% endif %}
+		          {% if block.settings.is_scrollbar %}
+		          scrollbar: {
+		            el: '#block-swiper-{{ block_id }} .swiper-scrollbar'
+		          },
+		          {% endif %}
+		          {% if block.settings.is_ticker %}
+		          loop: true,
+		          speed: 1500,
+		          autoplay: {
+		            delay: 0,
+		            disableOnInteraction: false
+		          },
+		          {% elsif block.settings.slider_autoplay_speed > 0 %}
+		          loop: true,
+		          speed: {{ block.settings.slider_autoplay_speed }},
+		          autoplay: {
+		            delay: {{ block.settings.slider_autoplay_speed }},
+		          },
+		          {% endif %}
+		          lazy: true,
+		          breakpoints: {
+		            768: {
+		              slidesPerView: {{ block.settings.slides_per_view_mobile | default: 1 }},
+		            },
+		            1200: {
+		              slidesPerView: {% if block.settings.slides_per_view != 'all' %}{{ block.settings.slides_per_view | default: 3 }}{% else %}'auto'{% endif %}
+		            }
+		          }
+		        });
+		      });
+		    });
+		  }
+		};
 
-  // Use "load" event to initialize UI after content is fully loaded
-  window.addEventListener('load', function() {
-    const swiperContainer = document.getElementById('block-swiper-{{ block_id }}');
-    if (!swiperContainer) return;
+		// Use "load" event to initialize UI after content is fully loaded
+		window.addEventListener('load', function() {
+		  const swiperContainer = document.getElementById('block-swiper-{{ block_id }}');
+		  if (!swiperContainer) return;
 
-    blockGroupSwiperFunctions.initSwiper(swiperContainer);
-  });
-</script>
+		  blockGroupSwiperFunctions.initSwiper(swiperContainer);
+		});
+	</script>
 
-<style>
-  {% if block.settings.is_ticker %}
-    :root {
-      --swiper-transition-timing-function: linear;
-    }
-  {% endif %}
+	<style>
+		{% if block.settings.is_ticker %}
+		  :root {
+		    --swiper-transition-timing-function: linear;
+		  }
+		{% endif %}
 
-  #block-{{ block_id }} .swiper-slide {
-    opacity: 0;
-    transition: opacity 1s ease;
-  }
+		#block-{{ block_id }} .swiper-slide {
+		  opacity: 0;
+		  transition: opacity 1s ease;
+		}
 
-  #block-{{ block_id }} .swiper-slide-active {
-    opacity: 1;
-  }
+		#block-{{ block_id }} .swiper-slide-active {
+		  opacity: 1;
+		}
 
-  {% if block.settings.slides_per_view == 'all' %}
-    {% assign slides_per_view = block.blocks.size %}
-  {% else %}
-    {% assign slides_per_view = block.settings.slides_per_view | minus: 1 | default: 2 %}
-  {% endif %}
+		{% if block.settings.slides_per_view == 'all' %}
+		  {% assign slides_per_view = block.blocks.size %}
+		{% else %}
+		  {% assign slides_per_view = block.settings.slides_per_view | minus: 1 | default: 2 %}
+		{% endif %}
 
-  {% for i in (1..slides_per_view) %}
-    #block-{{ block_id }} .swiper-slide-active{% for j in (1..i) %} + .swiper-slide{% endfor %} {
-      opacity: 1;
-    }
-  {% endfor %}
+		{% for i in (1..slides_per_view) %}
+		  #block-{{ block_id }} .swiper-slide-active{% for j in (1..i) %} + .swiper-slide{% endfor %} {
+		    opacity: 1;
+		  }
+		{% endfor %}
 
-  @media (max-width: 768px) {
-    #block-{{ block_id }} .swiper-slide-active {
-      opacity: 1;
-    }
+		@media (max-width: 768px) {
+		  #block-{{ block_id }} .swiper-slide-active {
+		    opacity: 1;
+		  }
 
-    {% if block.settings.slides_per_view_mobile == 'all' %}
-      {% assign slides_per_view_mobile = block.blocks.size %}
-    {% else %}
-      {% assign slides_per_view_mobile = block.settings.slides_per_view_mobile | minus: 1 | default: 0 %}
-    {% endif %}
+		  {% if block.settings.slides_per_view_mobile == 'all' %}
+		    {% assign slides_per_view_mobile = block.blocks.size %}
+		  {% else %}
+		    {% assign slides_per_view_mobile = block.settings.slides_per_view_mobile | minus: 1 | default: 0 %}
+		  {% endif %}
 
-    {% for i in (1..slides_per_view_mobile) %}
-      #block-{{ block_id }} .swiper-slide-active{% for j in (1..i) %} + .swiper-slide{% endfor %} {
-        opacity: 1;
-      }
-    {% endfor %}
-  }
+		  {% for i in (1..slides_per_view_mobile) %}
+		    #block-{{ block_id }} .swiper-slide-active{% for j in (1..i) %} + .swiper-slide{% endfor %} {
+		      opacity: 1;
+		    }
+		  {% endfor %}
+		}
 
-  {% if block.settings.is_arrows_bottom %}
-    #block-{{ block_id }} {
-      --swiper-navigation-top-offset: 98% !important;
-      --swiper-navigation-sides-offset: 370px;
+		{% if block.settings.is_arrows_bottom %}
+		  #block-{{ block_id }} {
+		    --swiper-navigation-top-offset: 98% !important;
+		    --swiper-navigation-sides-offset: 370px;
 
-      .swiper {
-        padding-bottom: 50px !important;
-      }
+		    .swiper {
+		      padding-bottom: 50px !important;
+		    }
 
-      @media (width < 768px) {
-        --swiper-navigation-sides-offset: 15vw !important;
-        --swiper-navigation-top-offset: 105vw !important;
+		    @media (width < 768px) {
+		      --swiper-navigation-sides-offset: 15vw !important;
+		      --swiper-navigation-top-offset: 105vw !important;
 
-        .swiper {
-          padding-bottom: 13vw !important;
-        }
-      }
-    }
-  {% endif %}
-</style>
+		      .swiper {
+		        padding-bottom: 13vw !important;
+		      }
+		    }
+		  }
+		{% endif %}
+	</style>
 {% endif %}
 
 {% schema %}
