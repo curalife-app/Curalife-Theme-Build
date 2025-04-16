@@ -4,7 +4,8 @@
 {% endcomment %}
 
 {% assign section_id = section.id %}
-{% assign column_gap_rem = section.settings.column_gap_rem | default: 1 %}
+{% assign column_gap = section.settings.column_gap | default: 5 %}
+{% assign row_gap_rem = section.settings.row_gap_rem | default: 1 %}
 {% assign columns = section.settings.columns | default: 2 %}
 {% assign columns_mobile = section.settings.columns_mobile | default: 1 %}
 {% assign max_width = section.settings.max_width | default: 1200 %}
@@ -12,13 +13,15 @@
 
 {% assign total_gaps_desktop = columns | minus: 1 %}
 {% assign total_gaps_mobile = columns_mobile | minus: 1 %}
-{% assign default_width_desktop = 100 | minus: 2 | divided_by: columns %}
-{% assign default_width_mobile = 100 | minus: 2 | divided_by: columns_mobile %}
+{% assign total_gap_percent_desktop = column_gap | times: total_gaps_desktop %}
+{% assign total_gap_percent_mobile = column_gap | times: total_gaps_mobile %}
+{% assign default_width_desktop = 100 | minus: total_gap_percent_desktop | divided_by: columns %}
+{% assign default_width_mobile = 100 | minus: total_gap_percent_mobile | divided_by: columns_mobile %}
 
 <style>
 	#section-{{ section_id }} {
-		--column-gap: {{ column_gap_rem }}rem;
-		--mobile-gap: {{ column_gap_rem }}rem;
+		--column-gap: {{ column_gap }}%;
+		--row-gap: {{ row_gap_rem }}rem;
 		--columns: {{ columns }};
 		--columns-mobile: {{ columns_mobile }};
 		--alignment: {{ section.settings.vertical_alignment | default: 'flex-start' }};
@@ -34,7 +37,8 @@
 	#section-{{ section_id }} .blocks-section-flex {
 		display: flex;
 		flex-wrap: wrap;
-		gap: var(--column-gap);
+		column-gap: var(--column-gap);
+		row-gap: var(--row-gap);
 		align-items: var(--alignment);
 		width: var(--content-width);
 		margin: 0 auto;
@@ -50,7 +54,6 @@
 
 	@media (max-width: 768px) {
 		#section-{{ section_id }} .blocks-section-flex {
-			gap: var(--mobile-gap);
 			width: 100%;
 		}
 
@@ -70,7 +73,7 @@
 	@media (max-width: 480px) {
 		#section-{{ section_id }} .blocks-section-flex {
 			flex-direction: column;
-			gap: calc(var(--mobile-gap) * 1.5);
+			row-gap: calc(var(--row-gap) * 1.5);
 		}
 
 		#section-{{ section_id }} .shopify-block {
@@ -448,8 +451,18 @@
 			},
 			{
 				"type": "range",
-				"id": "column_gap_rem",
-				"label": "Block Gap",
+				"id": "column_gap",
+				"label": "Column Gap",
+				"min": 0,
+				"max": 20,
+				"step": 1,
+				"unit": "%",
+				"default": 5
+			},
+			{
+				"type": "range",
+				"id": "row_gap_rem",
+				"label": "Row Gap",
 				"min": 0,
 				"max": 5,
 				"step": 0.1,
@@ -726,7 +739,8 @@
 				"blocks": [{ "type": "blocks-group" }, { "type": "blocks-group" }],
 				"settings": {
 					"columns": 2,
-					"column_gap_rem": 1
+					"column_gap": 5,
+					"row_gap_rem": 1
 				}
 			}
 		]
