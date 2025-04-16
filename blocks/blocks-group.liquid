@@ -76,71 +76,6 @@
 	  }
 	  {% endif %}
 	}
-
-	{% if block.settings.is_ticker %}
-	  :root {
-	    --swiper-transition-timing-function: linear;
-	  }
-	{% endif %}
-
-	#block-{{ block_id }} .swiper-wrapper > .shopify-block {
-	  opacity: 0;
-	  transition: opacity 1s ease;
-	}
-
-	#block-{{ block_id }} .swiper-wrapper > .shopify-block.swiper-slide-active {
-	  opacity: 1;
-	}
-
-	{% if block.settings.slides_per_view == 'all' %}
-	  {% assign slides_per_view = block.blocks.size %}
-	{% else %}
-	  {% assign slides_per_view = block.settings.slides_per_view | minus: 1 | default: 2 %}
-	{% endif %}
-
-	{% for i in (1..slides_per_view) %}
-	  #block-{{ block_id }} .swiper-wrapper > .shopify-block.swiper-slide-active{% for j in (1..i) %} + .shopify-block{% endfor %} {
-	    opacity: 1;
-	  }
-	{% endfor %}
-
-	@media (max-width: 768px) {
-	  #block-{{ block_id }} .swiper-slide-active {
-	    opacity: 1;
-	  }
-
-	  {% if block.settings.slides_per_view_mobile == 'all' %}
-	    {% assign slides_per_view_mobile = block.blocks.size %}
-	  {% else %}
-	    {% assign slides_per_view_mobile = block.settings.slides_per_view_mobile | minus: 1 | default: 0 %}
-	  {% endif %}
-
-	  {% for i in (1..slides_per_view_mobile) %}
-	    #block-{{ block_id }} .swiper-slide-active{% for j in (1..i) %} + .swiper-slide{% endfor %} {
-	      opacity: 1;
-	    }
-	  {% endfor %}
-	}
-
-	{% if block.settings.is_arrows_bottom %}
-	  #block-{{ block_id }} {
-	    --swiper-navigation-top-offset: 98% !important;
-	    --swiper-navigation-sides-offset: 370px;
-
-	    .swiper {
-	      padding-bottom: 50px !important;
-	    }
-
-	    @media (width < 768px) {
-	      --swiper-navigation-sides-offset: 15vw !important;
-	      --swiper-navigation-top-offset: 105vw !important;
-
-	      .swiper {
-	        padding-bottom: 13vw !important;
-	      }
-	    }
-	  }
-	{% endif %}
 </style>
 
 <div
@@ -173,9 +108,11 @@
 			{% if block.settings.animation %}
 				data-aos="{{ block.settings.animation }}"
 			{% endif %}>
-			<div class="swiper-wrapper block-flex-layout">
+			<div class="swiper-wrapper">
 				{% for nested_block in block.blocks %}
-					{% render nested_block, additional_classes: 'swiper-slide block-slide' %}
+					<div class="swiper-slide block-slide">
+						{% render nested_block %}
+					</div>
 				{% endfor %}
 			</div>
 			<div class="swiper-navigations">
@@ -277,12 +214,12 @@
 		  }
 		{% endif %}
 
-		#block-{{ block_id }} .swiper-wrapper > .shopify-block {
+		#block-{{ block_id }} .swiper-slide {
 		  opacity: 0;
 		  transition: opacity 1s ease;
 		}
 
-		#block-{{ block_id }} .swiper-wrapper > .shopify-block.swiper-slide-active {
+		#block-{{ block_id }} .swiper-slide-active {
 		  opacity: 1;
 		}
 
@@ -293,7 +230,7 @@
 		{% endif %}
 
 		{% for i in (1..slides_per_view) %}
-		  #block-{{ block_id }} .swiper-wrapper > .shopify-block.swiper-slide-active{% for j in (1..i) %} + .shopify-block{% endfor %} {
+		  #block-{{ block_id }} .swiper-slide-active{% for j in (1..i) %} + .swiper-slide{% endfor %} {
 		    opacity: 1;
 		  }
 		{% endfor %}
