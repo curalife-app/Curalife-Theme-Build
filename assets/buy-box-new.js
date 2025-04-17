@@ -801,9 +801,7 @@ class BuyBoxNew {
 
 			// Small delay to ensure state update completes before redirect
 			setTimeout(() => {
-				{% unless customer.email contains 'yotam' %}
 				window.location.href = "/checkout";
-				{% endunless %}
 			}, 50);
 		} catch (err) {
 			console.error("handleBuyNowFlow error:", err);
