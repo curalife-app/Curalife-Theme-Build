@@ -277,13 +277,11 @@
 	<div class="submit-wrap flex flex-col w-full">
 		<div class="checkout-button">
 			{% assign buttonSID = SID | append: '-checkout' %}
-			{% assign ctaButtonTitle = 'Add To Cart' %} {% comment %} Default button text {% endcomment %}
+			{% assign ctaButtonTitle = 'Add To Cart' %}
 
-			{% comment %} Downpay Integration - Use Downpay form if available {% endcomment %}
 			{% if downpay_selling_plan_groups.size > 0 %}
 				<script>console.log('Downpay is available for this product');</script>
 				{% form 'product', product, id: product_form_id, class: 'downpay-form' %}
-					{% comment %} Hidden inputs need to be updated by JS based on variant selection {% endcomment %}
 					<input type="hidden" name="id" value="{{ prod.selected_or_first_available_variant.id }}" class="downpay-variant-id-input">
 					<input type="hidden" name="selling_plan" value="" class="downpay-selling-plan-input"> {% comment %} JS needs to populate this {% endcomment %}
 
@@ -305,7 +303,6 @@
 				{% endform %}
 			{% else %}
 				<script>console.log('Downpay is not available for this product');</script>
-				{% comment %} Fallback to original buttons if Downpay is not configured for this product {% endcomment %}
 				{% render 'buy-buttons-new-4-old',
 					SID: buttonSID,
 					product: prod,
@@ -321,7 +318,6 @@
 			{% endif %}
 		</div>
 
-		{% comment %} Keep one-time purchase link logic if needed, adjust as necessary {% endcomment %}
 		<div class="one-time-purchase-link mt-3 text-center">
 			{% if isOneTimePurchaseLink %}
 				{% assign firstVariant = prod.selected_or_first_available_variant %}
@@ -363,7 +359,6 @@
 			background-color: var(--beige) ;
 	}
 
-  /* Price animation */
   @keyframes fadeOut {
     from { opacity: 1; }
     to { opacity: 0; }
