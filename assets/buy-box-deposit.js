@@ -496,16 +496,19 @@ class BuyBoxNew {
 			});
 		});
 
-		// Form Submission
-		if (this.elements.form) {
-			console.log(`[BuyBox ${this.config.SID}] Attaching submit listener to form:`, this.elements.form);
-			this.elements.form.addEventListener("submit", e => this.handleFormSubmission(e));
-		}
+		// Button Click Listener (Replaces Form Submit Listener)
+		const submitButton = this.elements.downpayForm?.querySelector('button[type="submit"]') || this.elements.form?.querySelector('button[type="submit"]');
 
-		// Downpay Form Submission (if exists) - uses same handler logic
-		if (this.elements.downpayForm) {
-			console.log(`[BuyBox ${this.config.SID}] Attaching submit listener to downpayForm:`, this.elements.downpayForm);
-			this.elements.downpayForm.addEventListener("submit", e => this.handleFormSubmission(e));
+		if (submitButton) {
+			console.log(`[BuyBox ${this.config.SID}] Attaching click listener to submit button:`, submitButton);
+			submitButton.addEventListener("click", event => {
+				// Check if the click should trigger the submission logic
+				// We prevent default form submission since we handle it via JS/AJAX
+				event.preventDefault();
+				this.handleFormSubmission(event); // Pass the event object
+			});
+		} else {
+			console.warn(`[BuyBox ${this.config.SID}] Could not find submit button to attach click listener.`);
 		}
 
 		// One-Time Purchase Link
@@ -561,8 +564,11 @@ class BuyBoxNew {
 	}
 
 	async handleFormSubmission(event) {
-		console.log(`[BuyBox ${this.config.SID}] handleFormSubmission entered.`);
-		event.preventDefault();
+		// Event type might be 'click' now
+		console.log(`[BuyBox ${this.config.SID}] handleFormSubmission entered via ${event.type} event.`); // Updated log
+
+		// No need for event.preventDefault() here if we did it in the click listener
+
 		if (this.state.isLoading) return;
 
 		this.setState({ isLoading: true });
