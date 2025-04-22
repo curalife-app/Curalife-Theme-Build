@@ -252,7 +252,30 @@ class BuyBoxNew {
 		}
 
 		this.container = container;
-		this.config = config;
+		this.config = {
+			// Default config
+			priceFormat: "per_bottle",
+			currencySymbol: "$",
+			isSlideVariant: false,
+			isOneTimeGift: false,
+			isOneTimePurchaseLink: false,
+			defaultSelectionIndex: 0,
+			giftsAmount: 0,
+			buyType: "add_to_cart", // Default buy type
+			SID: null,
+			productId: null,
+			...config // Merge passed config
+		};
+
+		if (!this.config.SID) {
+			console.error("BuyBoxNew requires a SID in config.");
+			return;
+		}
+		if (BuyBoxNewInstances.has(this.config.SID)) {
+			console.warn(`BuyBoxNew instance with SID ${this.config.SID} already exists.`);
+			return BuyBoxNewInstances.get(this.config.SID);
+		}
+
 		this.state = {};
 		this.elements = {};
 		this.productData = null;
@@ -267,7 +290,7 @@ class BuyBoxNew {
 		this.initialized = true;
 
 		// Store the instance in the map
-		BuyBoxNewInstances.set(config.SID, this);
+		BuyBoxNewInstances.set(this.config.SID, this);
 	}
 
 	bindElements() {
@@ -385,52 +408,51 @@ class BuyBoxNew {
 	}
 
 	initState() {
-		let defaultSelectedBox = this.container.querySelector(`.variant-box[data-index="${this.config.defaultVariantIndex}"]`) || this.elements.variantBoxes[0];
+		const initialState = {
+			isLoading: false,
+			selectedVariantId: null,
+			selectedSellingPlanId: null, // For standard subscriptions
+			selectedDownpayPlanId: null, // For Downpay
+			isSubscription: false, // Tracks if the *selected variant* is intended for subscription
+			// selectedFrequencyPlanId: null, // Removed as Downpay handles its own logic
+			currentPrice: 0,
+			currentCapPrice: 0,
+			currentSavePercents: 0,
+			currentTotalPrice: 0,
+			currentTotalCapPrice: 0,
+			futurePriceNotice: "",
+			selectedGiftId: null
+		};
 
-		if (defaultSelectedBox) {
-			const isSubscription = defaultSelectedBox.dataset.purchaseType === "subscribe";
-			const initialSellingPlanId = isSubscription ? defaultSelectedBox.dataset.subscriptionSellingPlanId : null;
-			const initialVariantId = defaultSelectedBox.dataset.originalVariant;
-
-			this.state = {
-				selectedVariantId: initialVariantId,
-				selectedSku: defaultSelectedBox.dataset.sku,
-				isSubscription: isSubscription,
-				selectedSellingPlanId: initialSellingPlanId, // Base plan ID for the variant (non-Downpay)
-				selectedGiftId: null,
-				isLoading: false
-			};
-
-			// Set initial UI state without triggering full updateUI yet
-			this.elements.variantBoxes.forEach(box => {
-				DOMUtils.updateAttribute(box, "aria-selected", box === defaultSelectedBox ? "true" : "false");
+		// Determine initial selected variant
+		const variantBoxes = this.elements.variantBoxes;
+		let initialBox = null;
+		if (variantBoxes.length > 0) {
+			const defaultIndex = Math.max(0, Math.min(this.config.defaultSelectionIndex, variantBoxes.length - 1));
+			initialBox = variantBoxes[defaultIndex];
+			initialBox.setAttribute("aria-selected", "true"); // Visually mark initial selection
+			initialBox.setAttribute("tabindex", "0");
+			variantBoxes.forEach((box, index) => {
+				if (index !== defaultIndex) {
+					box.setAttribute("aria-selected", "false");
+					box.setAttribute("tabindex", "-1");
+				}
 			});
 
-			this.updatePriceDisplay(defaultSelectedBox);
-			this.updateVariantImage(defaultSelectedBox);
-			this.updateBuyButtonTracking(defaultSelectedBox);
-		} else {
-			this.state = {
-				selectedVariantId: null,
-				selectedSku: null,
-				isSubscription: false,
-				selectedSellingPlanId: null,
-				selectedGiftId: null,
-				isLoading: false
-			};
-			console.warn(`[BuyBox ${this.config.SID}] No default variant box found.`);
+			initialState.selectedVariantId = initialBox.dataset.originalVariant;
+			initialState.selectedSellingPlanId = initialBox.dataset.subscriptionSellingPlanId || null; // Keep for non-Downpay
+			initialState.selectedDownpayPlanId = initialBox.dataset.downpayPlanId || null; // Store initial Downpay ID
+			initialState.isSubscription = initialBox.dataset.purchaseType === "subscribe";
 		}
 
-		// Initial gift selection
-		this.elements.giftSelectors.forEach(selector => {
-			const defaultGiftRadio = selector.querySelector('input[type="radio"]:checked');
-			if (defaultGiftRadio) {
-				const giftType = selector.getAttribute("data-gift-type"); // 'subscription' or 'one-time'
-				if ((giftType === "subscription" && this.state.isSubscription) || (giftType === "one-time" && !this.state.isSubscription)) {
-					this.setState({ selectedGiftId: defaultGiftRadio.value });
-				}
-			}
-		});
+		this.state = initialState;
+		// Initial UI update based on derived state
+		if (initialBox) {
+			this.updatePriceDisplay(initialBox);
+			this.updateBuyButtonTracking(initialBox);
+			this.updateVariantImage(initialBox);
+		}
+		// console.log(`[BuyBox ${this.config.SID}] Initial state:`, this.state);
 	}
 
 	attachEventListeners() {
@@ -473,12 +495,47 @@ class BuyBoxNew {
 	handleVariantSelection(event) {
 		const selectedBox = event.currentTarget;
 		const variantId = selectedBox.dataset.originalVariant;
+		const downpayPlanId = selectedBox.dataset.downpayPlanId || null;
+		const subscriptionPlanId = selectedBox.dataset.subscriptionSellingPlanId || null;
 
 		// Prevent re-selecting the same variant unnecessarily
 		if (variantId === this.state.selectedVariantId) return;
 
-		// Update state and UI
-		this.updateSelectedBoxUI(selectedBox);
+		// Update state
+		this.setState({
+			selectedVariantId: variantId,
+			selectedDownpayPlanId: downpayPlanId,
+			selectedSellingPlanId: subscriptionPlanId, // Keep standard subscription plan ID too
+			isSubscription: selectedBox.dataset.purchaseType === "subscribe"
+		});
+
+		// Update UI (handles aria-selected, price, image, etc.)
+		this.updateSelectedBoxUI(selectedBox); // This calls updatePriceDisplay etc.
+
+		// --- Update Downpay hidden form fields ---
+		const downpayForm = this.container.querySelector("form.downpay-form");
+		if (downpayForm) {
+			const variantInput = downpayForm.querySelector(".downpay-variant-id-input");
+			const planInput = downpayForm.querySelector(".downpay-selling-plan-input");
+
+			if (variantInput) {
+				variantInput.value = variantId;
+				// console.log(`[BuyBox ${this.config.SID}] Updated downpay variant ID input to: ${variantId}`);
+			} else {
+				// console.warn(`[BuyBox ${this.config.SID}] Downpay variant ID input not found.`);
+			}
+
+			if (planInput) {
+				// IMPORTANT: Only set the selling plan if a Downpay plan exists for this variant
+				planInput.value = downpayPlanId || "";
+				// console.log(`[BuyBox ${this.config.SID}] Updated downpay selling plan input to: ${planInput.value}`);
+			} else {
+				// console.warn(`[BuyBox ${this.config.SID}] Downpay selling plan input not found.`);
+			}
+		} else {
+			// console.log(`[BuyBox ${this.config.SID}] Downpay form not found, skipping hidden input update.`);
+		}
+		// --- End Update Downpay hidden form fields ---
 	}
 
 	async handleFormSubmission(event) {
@@ -490,29 +547,28 @@ class BuyBoxNew {
 		try {
 			const items = this.prepareItemsForCart();
 			if (!items || items.length === 0) {
-				throw new Error("No valid items to add.");
+				throw new Error("No valid items selected."); // More specific error
 			}
 
-			// Identify which form was submitted (standard or Downpay)
-			const submittedForm = event.target.closest("form");
-			const isDownpaySubmit = submittedForm && submittedForm.classList.contains("downpay-form");
-
-			// Clear cart only if it's NOT a Downpay submission and buyType is 'buy_now'
-			if (!isDownpaySubmit && this.config.buyType === "buy_now") {
+			// --- Modify Buy Now Logic ---
+			// Trigger Buy Now flow if configured, regardless of which form was submitted
+			if (this.config.buyType === "buy_now") {
 				await this.handleBuyNowFlow(items);
 			} else {
-				// Add items to existing cart (standard add-to-cart or Downpay add-to-cart)
+				// Standard Add-to-Cart flow
 				const addedItems = await this.addValidItemsToCart(items);
 				if (addedItems && addedItems.length > 0) {
-					// Optionally show success notification or trigger cart drawer update
 					showNotification("Item added to cart!", "success");
-					// Dispatch event for cart drawer, etc.
 					document.dispatchEvent(new CustomEvent("cart:items-added", { detail: { items: addedItems } }));
+				} else {
+					throw new Error("Failed to add items to cart.");
 				}
 			}
 		} catch (error) {
-			const errorMessage = parseErrorMessage(error, "cart-add");
+			// Ensure error.message is used if available, otherwise use parsed message
+			const errorMessage = error.message || parseErrorMessage(error, "cart-add");
 			showNotification(errorMessage, "error");
+			console.error(`[BuyBox ${this.config.SID}] Form submission error:`, error);
 		} finally {
 			this.setState({ isLoading: false });
 		}
@@ -561,18 +617,23 @@ class BuyBoxNew {
 		if (!selectedBox) return [];
 
 		const quantity = parseInt(selectedBox.dataset.bottleQuantity || "1", 10);
-		const sellingPlanId = this.state.isSubscription ? this.state.selectedSellingPlanId : null;
+
+		// --- Determine Selling Plan ID ---
+		// Prioritize Downpay plan ID if it exists in the state for the selected variant
+		const sellingPlanId = this.state.selectedDownpayPlanId || (this.state.isSubscription ? this.state.selectedSellingPlanId : null);
+		// --- End Determine Selling Plan ID ---
 
 		const items = [
 			{
 				id: selectedVariantId,
 				quantity: quantity,
+				// Use the determined sellingPlanId (could be Downpay, subscription, or null)
 				selling_plan: sellingPlanId || ""
 			}
 		];
 
 		// Add selected gift if applicable
-		const giftId = this.getSelectedGiftId(this.state.isSubscription);
+		const giftId = this.getSelectedGiftId(this.state.isSubscription); // Gift logic might need review depending on Downpay interaction
 		if (giftId && this.config.giftsAmount > 0) {
 			items.push({
 				id: giftId,
