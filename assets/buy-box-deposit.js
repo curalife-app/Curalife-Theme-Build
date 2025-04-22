@@ -283,18 +283,13 @@ class BuyBoxNew {
 		this.elements.discountBadge = this.container.querySelector(".discount-badge");
 		this.elements.futurePriceNotice = this.container.querySelector(".future-price-notice");
 		this.elements.submitButton = this.container.querySelector(".variant-submit");
-		this.elements.frequencyContainer = this.container.querySelector("[data-frequency-container]");
-		this.elements.frequencySelector = this.container.querySelector(".subscription-frequency-selector");
-		this.elements.frequencyOptionsContainer = this.elements.frequencySelector?.querySelector("#frequency-options-" + this.config.SID);
-		this.elements.frequencyDropdown = this.elements.frequencySelector?.querySelector("#frequency-dropdown-" + this.config.SID);
-		this.elements.frequencyDescription = this.container.querySelector(".frequency-description");
-		this.elements.giftSelectors = this.container.querySelectorAll(".gift-selector");
 		this.elements.oneTimePurchaseLink = this.container.querySelector(".one-time-add-to-cart");
 		this.elements.checkoutButtonContainer = this.container.querySelector(".checkout-button");
 		this.elements.form = this.container.querySelector("form");
 		this.elements.downpayForm = this.container.querySelector(".downpay-form"); // Added for Downpay
 		this.elements.downpayVariantInput = this.elements.downpayForm?.querySelector(".downpay-variant-id-input"); // Added for Downpay
 		this.elements.downpayPlanInput = this.elements.downpayForm?.querySelector(".downpay-selling-plan-input"); // Added for Downpay
+		this.elements.giftSelectors = this.container.querySelectorAll(".gift-selector");
 	}
 
 	storeInitialProductData() {
@@ -323,14 +318,13 @@ class BuyBoxNew {
 	}
 
 	updateUI(changes, previousState) {
-		if (changes.selectedVariantId || changes.selectedFrequencyPlanId) {
+		if (changes.selectedVariantId) {
 			const selectedBoxElement = this.container.querySelector(`.variant-box[data-original-variant="${this.state.selectedVariantId}"]`);
 			if (selectedBoxElement) {
 				this.updateSelectedBoxUI(selectedBoxElement);
 				this.updatePriceDisplay(selectedBoxElement);
 				this.updateVariantImage(selectedBoxElement);
 				this.updateBuyButtonTracking(selectedBoxElement);
-				this.handleFrequencySelectorVisibility(this.state.isSubscription, selectedBoxElement);
 
 				// --- Downpay Form Update ---
 				if (this.elements.downpayForm && this.elements.downpayVariantInput && this.elements.downpayPlanInput) {
@@ -349,25 +343,12 @@ class BuyBoxNew {
 			}
 		}
 
-		if (changes.selectedFrequencyPlanId || (changes.selectedVariantId && this.state.isSubscription)) {
-			this.populateFrequencySelector(this.container.querySelector(`.variant-box[data-original-variant="${this.state.selectedVariantId}"]`));
-		}
-
-		if (changes.isSubscription) {
-			this.handleFrequencySelectorVisibility(this.state.isSubscription, this.container.querySelector(`.variant-box[data-original-variant="${this.state.selectedVariantId}"]`));
-		}
-
 		if (changes.isLoading) {
 			this.updateLoadingState(this.state.isLoading);
 		}
 
 		if (changes.selectedGiftId) {
 			// Update gift selector UI if needed
-		}
-
-		// Highlight selected frequency option if changed
-		if (changes.selectedFrequencyPlanId) {
-			this.selectFrequencyOption(this.state.selectedFrequencyPlanId); // Re-select to ensure UI consistency
 		}
 	}
 
@@ -384,14 +365,8 @@ class BuyBoxNew {
 			selectedVariantId: boxElement.dataset.originalVariant,
 			selectedSku: boxElement.dataset.sku,
 			isSubscription: isSubscription,
-			selectedSellingPlanId: sellingPlanId,
-			selectedFrequencyPlanId: isSubscription ? this.state.selectedFrequencyPlanId || sellingPlanId : null // Keep frequency if switching between subscription variants
+			selectedSellingPlanId: sellingPlanId
 		});
-	}
-
-	updateFrequencyUI() {
-		if (!this.elements.frequencyContainer) return;
-		DOMUtils.toggleClass(this.elements.frequencyContainer, "hidden", !this.state.isSubscription || !this.state.hasFrequencyOptions);
 	}
 
 	updateLoadingState(isLoading) {
@@ -409,28 +384,6 @@ class BuyBoxNew {
 		}
 	}
 
-	handleFrequencySelectorVisibility(isSubscription, selectedBoxElement) {
-		if (!this.elements.frequencyContainer) return;
-
-		let shouldShow = false;
-		if (isSubscription && selectedBoxElement) {
-			const productData = this.productData;
-			const variantData = this.findVariantInProductData(selectedBoxElement.dataset.originalVariant);
-			if (variantData && variantData.selling_plan_allocations) {
-				// Check if there are multiple valid selling plans or if specific allowed plans are defined
-				const allowedPlanIds = selectedBoxElement.dataset.allowedSellingPlans ? JSON.parse(selectedBoxElement.dataset.allowedSellingPlans) : null;
-				const validPlans = variantData.selling_plan_allocations.filter(alloc => {
-					// Ensure plan ID exists before checking
-					const planId = alloc.selling_plan?.id;
-					return planId && (!allowedPlanIds || allowedPlanIds.includes(planId)) && alloc.selling_plan.app_id !== "downpay"; // Exclude downpay plans
-				});
-				shouldShow = validPlans.length > 1;
-			}
-		}
-		this.setState({ hasFrequencyOptions: shouldShow });
-		this.updateFrequencyUI();
-	}
-
 	initState() {
 		let defaultSelectedBox = this.container.querySelector(`.variant-box[data-index="${this.config.defaultVariantIndex}"]`) || this.elements.variantBoxes[0];
 
@@ -439,22 +392,13 @@ class BuyBoxNew {
 			const initialSellingPlanId = isSubscription ? defaultSelectedBox.dataset.subscriptionSellingPlanId : null;
 			const initialVariantId = defaultSelectedBox.dataset.originalVariant;
 
-			// Check if there's an active subscription for this variant
-			const activeSub = window.customer?.active_subscriptions?.find(sub => sub.external_variant_id?.id == initialVariantId);
-			let initialFrequencyPlanId = initialSellingPlanId;
-			if (isSubscription && activeSub && activeSub.external_selling_plan_id?.id) {
-				initialFrequencyPlanId = activeSub.external_selling_plan_id.id.toString();
-			}
-
 			this.state = {
 				selectedVariantId: initialVariantId,
 				selectedSku: defaultSelectedBox.dataset.sku,
 				isSubscription: isSubscription,
-				selectedSellingPlanId: initialSellingPlanId, // Base plan ID for the variant
-				selectedFrequencyPlanId: initialFrequencyPlanId, // Actual selected frequency plan ID
+				selectedSellingPlanId: initialSellingPlanId, // Base plan ID for the variant (non-Downpay)
 				selectedGiftId: null,
-				isLoading: false,
-				hasFrequencyOptions: false // Will be updated by handleFrequencySelectorVisibility
+				isLoading: false
 			};
 
 			// Set initial UI state without triggering full updateUI yet
@@ -465,20 +409,14 @@ class BuyBoxNew {
 			this.updatePriceDisplay(defaultSelectedBox);
 			this.updateVariantImage(defaultSelectedBox);
 			this.updateBuyButtonTracking(defaultSelectedBox);
-			this.handleFrequencySelectorVisibility(this.state.isSubscription, defaultSelectedBox); // Calculate initial visibility & state.hasFrequencyOptions
-			if (this.state.isSubscription) {
-				this.populateFrequencySelector(defaultSelectedBox); // Populate and select initial frequency
-			}
 		} else {
 			this.state = {
 				selectedVariantId: null,
 				selectedSku: null,
 				isSubscription: false,
 				selectedSellingPlanId: null,
-				selectedFrequencyPlanId: null,
 				selectedGiftId: null,
-				isLoading: false,
-				hasFrequencyOptions: false
+				isLoading: false
 			};
 			console.warn(`[BuyBox ${this.config.SID}] No default variant box found.`);
 		}
@@ -506,30 +444,6 @@ class BuyBoxNew {
 				}
 			});
 		});
-
-		// Frequency Selection (Dropdown)
-		if (this.elements.frequencyDropdown) {
-			this.elements.frequencyDropdown.addEventListener("change", e => {
-				this.selectFrequencyOption(e.target.value);
-			});
-		}
-
-		// Frequency Selection (Tabs - delegated)
-		if (this.elements.frequencyOptionsContainer) {
-			this.elements.frequencyOptionsContainer.addEventListener("click", e => {
-				const button = e.target.closest("[role='tab']");
-				if (button) {
-					this.selectFrequencyOption(button);
-				}
-			});
-			this.elements.frequencyOptionsContainer.addEventListener("keydown", e => {
-				const button = e.target.closest("[role='tab']");
-				if (button && (e.key === "Enter" || e.key === " ")) {
-					e.preventDefault();
-					this.selectFrequencyOption(button);
-				}
-			});
-		}
 
 		// Gift Selection
 		this.elements.giftSelectors.forEach(selector => {
@@ -647,13 +561,13 @@ class BuyBoxNew {
 		if (!selectedBox) return [];
 
 		const quantity = parseInt(selectedBox.dataset.bottleQuantity || "1", 10);
-		const sellingPlanId = this.state.isSubscription ? this.state.selectedFrequencyPlanId : null;
+		const sellingPlanId = this.state.isSubscription ? this.state.selectedSellingPlanId : null;
 
 		const items = [
 			{
 				id: selectedVariantId,
 				quantity: quantity,
-				selling_plan: sellingPlanId || "" // Use selected frequency plan for subscriptions
+				selling_plan: sellingPlanId || ""
 			}
 		];
 
@@ -663,7 +577,6 @@ class BuyBoxNew {
 			items.push({
 				id: giftId,
 				quantity: 1,
-				// Gifts typically shouldn't have selling plans
 				selling_plan: "",
 				properties: { _gift_source_variant_id: selectedVariantId }
 			});
@@ -775,10 +688,13 @@ class BuyBoxNew {
 		let itemPrice, totalPrice, capPrice, savePercents, saveMoney, isDiscounted;
 
 		// Retrieve prices based on purchase type (subscription or one-time)
-		if (isSubscription && this.state.selectedFrequencyPlanId) {
+		if (isSubscription /* && this.state.selectedFrequencyPlanId removed */) {
 			// Find the specific selling plan allocation for the selected frequency
 			const variantData = this.findVariantInProductData(el.dataset.originalVariant);
-			const allocation = variantData?.selling_plan_allocations?.find(alloc => alloc.selling_plan.id.toString() === this.state.selectedFrequencyPlanId.toString());
+			// Find the *first* non-Downpay allocation if multiple exist (or use selectedSellingPlanId if set)
+			const allocation = variantData?.selling_plan_allocations?.find(
+				alloc => alloc.selling_plan.app_id !== "downpay" && (this.state.selectedSellingPlanId ? alloc.selling_plan.id.toString() === this.state.selectedSellingPlanId.toString() : true)
+			);
 
 			if (allocation) {
 				totalPrice = allocation.price;
@@ -920,211 +836,6 @@ class BuyBoxNew {
 
 		const newTrackingName = `${baseName}|buybox-type:${buyboxType}|buybox-name:${buyboxName}|variant-sku:${sku}|purchase-type:${purchaseType}`;
 		DOMUtils.updateAttribute(this.elements.submitButton, "name", newTrackingName);
-	}
-
-	selectFrequencyOption(optionElementOrValue) {
-		if (!this.elements.frequencyContainer || !this.state.isSubscription) return;
-
-		let selectedPlanId = null;
-		let selectedOptionElement = null;
-
-		if (typeof optionElementOrValue === "object" && optionElementOrValue.nodeType === 1) {
-			// It's an element (likely a tab button)
-			selectedOptionElement = optionElementOrValue;
-			selectedPlanId = selectedOptionElement.dataset.sellingPlanId;
-		} else {
-			// It's a value (from dropdown or direct call)
-			selectedPlanId = optionElementOrValue;
-			if (this.config.sellingPlanUI === "dropdown" && this.elements.frequencyDropdown) {
-				selectedOptionElement = this.elements.frequencyDropdown.querySelector(`option[value="${selectedPlanId}"]`);
-			} else if (this.elements.frequencyOptionsContainer) {
-				selectedOptionElement = this.elements.frequencyOptionsContainer.querySelector(`[data-selling-plan-id="${selectedPlanId}"]`);
-			}
-		}
-
-		if (!selectedPlanId) return;
-
-		// Update state only if the plan ID is changing
-		if (this.state.selectedFrequencyPlanId !== selectedPlanId) {
-			this.setState({ selectedFrequencyPlanId: selectedPlanId });
-		}
-
-		// Update UI
-		if (this.config.sellingPlanUI === "dropdown" && this.elements.frequencyDropdown) {
-			if (this.elements.frequencyDropdown.value !== selectedPlanId) {
-				this.elements.frequencyDropdown.value = selectedPlanId;
-			}
-		} else if (this.elements.frequencyOptionsContainer) {
-			// Tab UI
-			this.elements.frequencyOptionsContainer.querySelectorAll("[role='tab']").forEach(tab => {
-				const isSelected = tab.dataset.sellingPlanId === selectedPlanId;
-				DOMUtils.updateAttribute(tab, "aria-selected", isSubscription ? "true" : "false");
-				DOMUtils.toggleClass(tab, "bg-primary", isSelected);
-				DOMUtils.toggleClass(tab, "text-white", isSelected);
-				DOMUtils.toggleClass(tab, "border-primary", isSelected);
-				DOMUtils.toggleClass(tab, "bg-white", !isSelected);
-				DOMUtils.toggleClass(tab, "text-primary", !isSelected);
-				DOMUtils.toggleClass(tab, "border-primary-lighter", !isSelected);
-			});
-		}
-
-		// Update description and price display
-		this.updateFrequencyDescription();
-		this.updatePriceDisplay(this.container.querySelector(`.variant-box[data-original-variant="${this.state.selectedVariantId}"]`));
-	}
-
-	populateFrequencySelector(selectedVariantBox) {
-		if (!this.elements.frequencyContainer || !selectedVariantBox) return;
-
-		const variantId = selectedVariantBox.dataset.originalVariant;
-		const productData = this.productData;
-		const variantData = this.findVariantInProductData(variantId);
-
-		if (!variantData || !variantData.selling_plan_allocations || variantData.selling_plan_allocations.length === 0) {
-			this.handleFallbackFrequencyOptions(selectedVariantBox, [], this.elements.frequencyContainer);
-			this.setState({ hasFrequencyOptions: false });
-			this.updateFrequencyUI();
-			return;
-		}
-
-		const allowedPlanIdsRaw = selectedVariantBox.dataset.allowedSellingPlans;
-		let allowedPlanIds = null;
-		try {
-			allowedPlanIds = allowedPlanIdsRaw ? JSON.parse(allowedPlanIdsRaw) : null;
-		} catch (e) {
-			console.error("Error parsing allowed selling plan IDs:", e, allowedPlanIdsRaw);
-		}
-
-		let frequencyOptions = variantData.selling_plan_allocations
-			.map(allocation => allocation.selling_plan)
-			.filter(plan => plan.app_id !== "downpay") // Exclude Downpay plans
-			.filter(plan => !allowedPlanIds || allowedPlanIds.includes(plan.id)) // Filter by allowed IDs if specified
-			.map(plan => ({
-				id: plan.id.toString(), // Ensure ID is a string for comparison
-				name: plan.name,
-				frequency: extractFrequency(plan.name) // Extract { value, unit }
-			}))
-			.sort((a, b) => {
-				// Sort by frequency (days, then weeks, then months)
-				const unitOrder = { day: 1, week: 2, month: 3 };
-				const unitComparison = unitOrder[a.frequency.unit] - unitOrder[b.frequency.unit];
-				if (unitComparison !== 0) return unitComparison;
-				return a.frequency.value - b.frequency.value;
-			});
-
-		// Check if there are enough options to warrant showing the selector
-		const showSelector = frequencyOptions.length > 1;
-		this.setState({ hasFrequencyOptions: showSelector });
-		this.updateFrequencyUI();
-
-		if (!showSelector) {
-			// If only one option, ensure it's selected in the state, but hide selector
-			if (frequencyOptions.length === 1 && this.state.selectedFrequencyPlanId !== frequencyOptions[0].id) {
-				this.setState({ selectedFrequencyPlanId: frequencyOptions[0].id });
-			}
-			this.handleFallbackFrequencyOptions(selectedVariantBox, frequencyOptions, this.elements.frequencyContainer);
-			return; // Don't populate the selector if it's hidden
-		}
-
-		// --- Populate UI ---
-		if (this.config.sellingPlanUI === "dropdown" && this.elements.frequencyDropdown) {
-			this.elements.frequencyDropdown.innerHTML = ""; // Clear existing options
-			frequencyOptions.forEach(option => {
-				DOMUtils.createElement(
-					"option",
-					{
-						value: option.id,
-						textContent: option.name, // Use the full plan name for display
-						selected: option.id === this.state.selectedFrequencyPlanId
-					},
-					this.elements.frequencyDropdown
-				);
-			});
-			// Ensure the dropdown reflects the current state
-			if (this.elements.frequencyDropdown.value !== this.state.selectedFrequencyPlanId) {
-				this.elements.frequencyDropdown.value = this.state.selectedFrequencyPlanId;
-			}
-		} else if (this.elements.frequencyOptionsContainer) {
-			// Tab UI
-			this.elements.frequencyOptionsContainer.innerHTML = ""; // Clear existing tabs
-			frequencyOptions.forEach(option => {
-				const isSelected = option.id === this.state.selectedFrequencyPlanId;
-				DOMUtils.createElement(
-					"button",
-					{
-						type: "button",
-						role: "tab",
-						"aria-selected": isSelected ? "true" : "false",
-						className: `frequency-option-tab p-3 border-2 rounded-md cursor-pointer transition-all duration-200 ease-in-out text-sm font-medium ${isSelected ? "bg-primary text-white border-primary" : "bg-white text-primary border-primary-lighter hover:bg-gray-50"}`,
-						textContent: option.name, // Use full plan name for display
-						"data-selling-plan-id": option.id,
-						name: `track:frequency-select|plan-id:${option.id}` // Add tracking
-					},
-					this.elements.frequencyOptionsContainer
-				);
-			});
-		}
-
-		// Ensure the correct frequency is selected visually after populating
-		this.selectFrequencyOption(this.state.selectedFrequencyPlanId);
-		this.updateFrequencyDescription(); // Update description based on selected frequency
-	}
-
-	handleFallbackFrequencyOptions(el, frequencyOptions, frequencyContainer) {
-		// Fallback if product data is missing or selector shouldn't be shown
-		// console.warn(`[BuyBox ${this.config.SID}] Using fallback frequency for variant ${el?.dataset.originalVariant}. Options found: ${frequencyOptions.length}`);
-		if (frequencyOptions.length === 1) {
-			// If there's exactly one valid plan, ensure it's selected in state
-			if (this.state.selectedFrequencyPlanId !== frequencyOptions[0].id) {
-				this.setState({ selectedFrequencyPlanId: frequencyOptions[0].id });
-			}
-		} else if (frequencyOptions.length === 0 && this.state.isSubscription) {
-			// No valid selling plans found for a subscription variant - this is an issue
-			console.error(`[BuyBox ${this.config.SID}] No valid selling plans found for subscription variant ${el?.dataset.originalVariant}.`);
-			// Reset to one-time purchase? Or show error?
-			// For now, just hide the frequency selector UI elements
-		}
-
-		if (this.elements.frequencyOptionsContainer) this.elements.frequencyOptionsContainer.innerHTML = "";
-		if (this.elements.frequencyDropdown) this.elements.frequencyDropdown.innerHTML = "";
-		if (this.elements.frequencyDescription) this.elements.frequencyDescription.textContent = "";
-
-		// Ensure container is hidden if needed
-		this.updateFrequencyUI();
-	}
-
-	updateFrequencyDescription() {
-		if (!this.elements.frequencyDescription || !this.state.isSubscription || !this.state.selectedFrequencyPlanId) {
-			if (this.elements.frequencyDescription) DOMUtils.updateProperty(this.elements.frequencyDescription, "textContent", "");
-			return;
-		}
-
-		const selectedVariantBox = this.container.querySelector(`.variant-box[data-original-variant="${this.state.selectedVariantId}"]`);
-		if (!selectedVariantBox) return;
-
-		const variantData = this.findVariantInProductData(this.state.selectedVariantId);
-		const allocation = variantData?.selling_plan_allocations?.find(alloc => alloc.selling_plan.id.toString() === this.state.selectedFrequencyPlanId);
-
-		if (!allocation) {
-			DOMUtils.updateProperty(this.elements.frequencyDescription, "textContent", "");
-			return;
-		}
-
-		const plan = allocation.selling_plan;
-		const frequency = extractFrequency(plan.name);
-		const nextPrice = allocation.price;
-		const currencySymbol = this.config.currencySymbol;
-		const formatMoney = amount => currencySymbol + (amount / 100).toFixed(2).replace(".00", "");
-
-		let description = `Delivered every ${frequency.value > 1 ? frequency.value + " " : ""}${frequency.unit}${frequency.value > 1 ? "s" : ""}. `;
-		description += `Your card will be charged ${formatMoney(nextPrice)} for each delivery. Cancel anytime.`;
-
-		// Animate description change
-		DOMUtils.updateAttribute(this.elements.frequencyDescription, "data-changing", "true");
-		setTimeout(() => {
-			DOMUtils.updateProperty(this.elements.frequencyDescription, "textContent", description);
-			DOMUtils.updateAttribute(this.elements.frequencyDescription, "data-changing", "false");
-		}, 150); // Match animation duration
 	}
 
 	findVariantInProductData(variantId) {
