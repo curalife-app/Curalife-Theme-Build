@@ -498,11 +498,13 @@ class BuyBoxNew {
 
 		// Form Submission
 		if (this.elements.form) {
+			console.log(`[BuyBox ${this.config.SID}] Attaching submit listener to form:`, this.elements.form);
 			this.elements.form.addEventListener("submit", e => this.handleFormSubmission(e));
 		}
 
 		// Downpay Form Submission (if exists) - uses same handler logic
 		if (this.elements.downpayForm) {
+			console.log(`[BuyBox ${this.config.SID}] Attaching submit listener to downpayForm:`, this.elements.downpayForm);
 			this.elements.downpayForm.addEventListener("submit", e => this.handleFormSubmission(e));
 		}
 
@@ -559,6 +561,7 @@ class BuyBoxNew {
 	}
 
 	async handleFormSubmission(event) {
+		console.log(`[BuyBox ${this.config.SID}] handleFormSubmission entered.`);
 		event.preventDefault();
 		if (this.state.isLoading) return;
 
