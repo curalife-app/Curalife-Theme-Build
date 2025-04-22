@@ -656,7 +656,7 @@ class BuyBoxNew {
 		const selectedBox = this.container.querySelector(`.variant-box[data-original-variant="${selectedVariantId}"]`);
 		if (!selectedBox) return [];
 
-		const quantity = parseInt(selectedBox.dataset.bottleQuantity || "1", 10);
+		const quantity = 1;
 
 		// --- Determine Selling Plan ID ---
 		// Prioritize Downpay plan ID if it exists in the state for the selected variant
