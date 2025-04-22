@@ -290,6 +290,7 @@
 
 			{% comment %} Downpay Integration - Use Downpay form if available {% endcomment %}
 			{% if downpay_selling_plan_groups.size > 0 %}
+				<script>console.log('Downpay is available for this product');</script>
 				{% form 'product', product, id: product_form_id, class: 'downpay-form' %}
 					{% comment %} Hidden inputs need to be updated by JS based on variant selection {% endcomment %}
 					<input type="hidden" name="id" value="{{ prod.selected_or_first_available_variant.id }}" class="downpay-variant-id-input">
@@ -308,6 +309,7 @@
 					</button>
 				{% endform %}
 			{% else %}
+				<script>console.log('Downpay is not available for this product');</script>
 				{% comment %} Fallback to original buttons if Downpay is not configured for this product {% endcomment %}
 				{% render 'buy-buttons-new-4-old',
 					SID: buttonSID,
