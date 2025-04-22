@@ -38,6 +38,17 @@
 	{% endcase %}
 {% endfor %}
 
+{% comment %} Check if product has Downpay selling plans AT THE PRODUCT LEVEL {% endcomment %}
+{% assign product_downpay_group = prod.selling_plan_groups | where: 'app_id', 'downpay' | first %}
+{% assign product_downpay_plan_id = '' %}
+{% if product_downpay_group %}
+    {% assign product_downpay_plan_id = product_downpay_group.selling_plans[0].id %}
+    {% comment %} Debugging: Output ID to console {% endcomment %}
+    <script>console.log('Product Downpay Plan ID Found:', {{ product_downpay_plan_id | json }});</script>
+{% else %}
+    <script>console.log('No Product Level Downpay Plan Group Found for app_id=downpay');</script>
+{% endif %}
+
 {% comment %} Check if product has Downpay selling plans {% endcomment %}
 {% assign downpay_selling_plan_groups = prod.selling_plan_groups | where: 'app_id', 'downpay' %}
 
@@ -93,9 +104,8 @@
 					{% assign subscription_save_money = 0 %}
 					{% assign buy_once_save_money = original_item_cap | minus: item_price %}
 
-					{% comment %} Selling Plan ID Logic (Keep subscription for now, add Downpay) {% endcomment %}
+					{% comment %} Selling Plan ID Logic (Subscription only here) {% endcomment %}
 					{% assign subscription_selling_plan_id = '' %}
-					{% assign downpay_selling_plan_id = '' %}
 
 					{% if var.metafields.custom.referenced_variant_product_handle %}
 						{% assign subscription_selling_plan_id = referenced_variant.metafields.subscription.selling_plan_id | default: variant.metafields.subscription.selling_plan_id %}
@@ -104,6 +114,7 @@
 					{% elsif var.selling_plan_allocations.size > 0 %}
 						{% assign found_plan = false %}
 						{% for allocation in var.selling_plan_allocations %}
+                            {% comment %} Ensure we only grab non-Downpay subscription plans here {% endcomment %}
 							{% if allocation.selling_plan.name contains bottle_quantity and allocation.selling_plan.app_id != 'downpay' %}
 								{% assign subscription_selling_plan_id = allocation.selling_plan.id %}
 								{% assign found_plan = true %}
@@ -113,11 +124,6 @@
 						{% if found_plan == false and var.selling_plan_allocations.first.selling_plan.app_id != 'downpay' %}
 							{% assign subscription_selling_plan_id = var.selling_plan_allocations.first.selling_plan.id %}
 						{% endif %}
-					{% endif %}
-
-					{% assign downpay_plans_for_variant = var.selling_plan_groups | where: 'app_id', 'downpay' | first %}
-					{% if downpay_plans_for_variant %}
-						{% assign downpay_selling_plan_id = downpay_plans_for_variant.selling_plans[0].id %}
 					{% endif %}
 
 					{% assign subscription_save_percents = 0 %}
@@ -170,7 +176,7 @@
 						data-product="{{ prod.id }}"
 						data-original-variant="{{ var.id }}"
 						data-subscription-selling-plan-id="{{ subscription_selling_plan_id }}" {% comment %} Keep for potential hybrid use {% endcomment %}
-						data-downpay-plan-id="{{ downpay_selling_plan_id }}" {% comment %} Add Downpay plan ID {% endcomment %}
+						data-downpay-plan-id="{{ product_downpay_plan_id }}"
 						data-price="{{ var.price | money_without_currency | replace: ".00", "" }}"
 						data-sku="{{ var.sku }}"
 						data-index="{{ forloop.index }}"
@@ -279,11 +285,13 @@
 			{% assign buttonSID = SID | append: '-checkout' %}
 			{% assign ctaButtonTitle = 'Add To Cart' %}
 
-			{% if downpay_selling_plan_groups.size > 0 %}
-				<script>console.log('Downpay is available for this product');</script>
+			{% comment %} Use the product-level check now {% endcomment %}
+			{% if product_downpay_plan_id != '' %}
+				{% comment %} Downpay form setup {% endcomment %}
 				{% form 'product', product, id: product_form_id, class: 'downpay-form' %}
 					<input type="hidden" name="id" value="{{ prod.selected_or_first_available_variant.id }}" class="downpay-variant-id-input">
-					<input type="hidden" name="selling_plan" value="" class="downpay-selling-plan-input"> {% comment %} JS needs to populate this {% endcomment %}
+					{% comment %} Set initial value using the product-level ID {% endcomment %}
+					<input type="hidden" name="selling_plan" value="{{ product_downpay_plan_id }}" class="downpay-selling-plan-input">
 
 					<button
 						type="submit"
@@ -302,13 +310,14 @@
 					</button>
 				{% endform %}
 			{% else %}
-				<script>console.log('Downpay is not available for this product');</script>
+				{% comment %} Fallback to original non-Downpay button {% endcomment %}
+				<script>console.log('Downpay is not available for this product (based on product_downpay_plan_id)');</script>
 				{% render 'buy-buttons-new-4-old',
 					SID: buttonSID,
 					product: prod,
 					variant: '',
 					buttonText: ctaButtonTitle,
-					selling_plan_id: '',
+					selling_plan_id: '', {% comment %} Ensure this is empty if no Downpay {% endcomment %}
 					product_form_id: product_form_id,
 					buyType: buyType,
 					isBuyWithPrime: isBuyWithPrime,
