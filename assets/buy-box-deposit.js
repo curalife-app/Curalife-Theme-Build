@@ -502,6 +502,7 @@ class BuyBoxNew {
 		if (submitButton) {
 			console.log(`[BuyBox ${this.config.SID}] Attaching click listener to submit button:`, submitButton);
 			submitButton.addEventListener("click", event => {
+				console.log(`[BuyBox ${this.config.SID}] Submit button CLICKED! Event:`, event);
 				// Check if the click should trigger the submission logic
 				// We prevent default form submission since we handle it via JS/AJAX
 				event.preventDefault();
