@@ -1,0 +1,477 @@
+{% assign isGlobal = false %}
+{% if shop.name contains 'Global' %}
+	{% assign isGlobal = true %}
+{% endif %}
+
+{% if prod.handle == 'curalin' or prod.handle == 'curaslim' or prod.handle contains '-tm' %}
+	{% if isGlobal %}
+		{% assign shippingPrice = 690 %}
+	{% else %}
+		{% assign shippingPrice = 790 %}
+	{% endif %}
+{% else %}
+	{% assign shippingPrice = 1000 %}
+{% endif %}
+
+{% assign referenced_variant_product = prod %}
+
+{% assign giftsAmount = 0 %}
+{% assign faqsAmount = value %}
+{% for block in blocks %}
+	{% case block.type %}
+		{% when 'gift' %}
+			{% assign show_gift = false %}
+			{% if block.settings.show_on == 'both' %}
+				{% assign show_gift = true %}
+			{% elsif block.settings.show_on == 'global' and isGlobal %}
+				{% assign show_gift = true %}
+			{% elsif block.settings.show_on == 'us' and isGlobal == false %}
+				{% assign show_gift = true %}
+			{% endif %}
+
+			{% if show_gift %}
+				{% assign giftsAmount = giftsAmount | plus: 1 %}
+			{% endif %}
+
+		{% when 'faq' %}
+			{% assign faqsAmount = faqsAmount | plus: 1 %}
+	{% endcase %}
+{% endfor %}
+
+{% comment %} Check if product has Downpay selling plans {% endcomment %}
+{% assign downpay_selling_plan_groups = prod.selling_plan_groups | where: 'app_id', 'downpay' %}
+
+<div
+	class="product-actions [&[data-processing=true]]:opacity-70 [&[data-processing=true]]:pointer-events-none"
+	data-buy-box-new-root="true"
+	data-sid="{{ SID }}"
+	data-buy-type="{{ buyType }}" {% comment %} Keep buyType for potential future use or differentiation {% endcomment %}
+	data-price-format="{{ priceFormat | default: 'per_bottle' }}"
+	data-is-slide-variant="{{ isSlideVariant | default: false }}"
+	data-is-one-time-gift="{{ isOneTimeGift | default: false }}"
+	data-is-one-time-purchase-link="{{ isOneTimePurchaseLink | default: false }}"
+	data-currency-symbol="{{ cart.currency.symbol | default: '$' }}"
+	data-product-id="{{ prod.id }}"
+	data-default-variant-index="{{ defaultSelectionIndex }}"
+	data-gifts-amount="{{ giftsAmount }}">
+
+	<div class="purchase-options flex flex-col gap-3 mb-3">
+		<div class="font-medium text-[18px]">Choose your package</div>
+
+		<div class="variant-boxes flex justify-around gap-2" role="tablist" aria-label="Purchase options">
+			{% for block in blocks %}
+				{% assign varPurchaseType = block.settings.purchase_type %}
+				{% if block.type == 'variant' %} {% comment %} Allow both subscribe and one-time variants initially, Downpay logic handled at button {% endcomment %}
+					{% assign referenced_variant = blank %}
+					{% if isGlobal %}
+						{% assign blockVarID = block.settings.variant_id_global | plus: 0 %}
+					{% else %}
+						{% assign blockVarID = block.settings.variant_id | plus: 0 %}
+					{% endif %}
+
+					{% for vari in referenced_variant_product.variants %}
+						{% assign currVarID = vari.id | plus: 0 %}
+
+						{% if currVarID == blockVarID %}
+							{% assign referenced_variant = vari %}
+						{% endif %}
+					{% endfor %}
+
+					{% assign var = referenced_variant %}
+
+					{% comment %} Core Variable Assignments {% endcomment %}
+					{% assign variant_id = var.metafields.custom.reference_variant_id | default: var.id %}
+					{% assign bottle_quantity = var.metafields.my_fields.pack_bottles_quantity %}
+
+					{% comment %} Price Calculations (Keep original for context) {% endcomment %}
+					{% assign original_item_price = var.metafields.custom.original_item.value.price %}
+					{% assign original_item_cap = var.metafields.custom.original_item.value.compare_at_price | default: original_item_price %}
+					{% assign original_item_cap_total = original_item_cap | times: bottle_quantity %}
+					{% assign item_price = var.price | divided_by: bottle_quantity %}
+
+					{% comment %} Savings Calculations (Keep original for context) {% endcomment %}
+					{% assign subscription_save_money = 0 %}
+					{% assign buy_once_save_money = original_item_cap | minus: item_price %}
+
+					{% comment %} Selling Plan ID Logic (Keep subscription for now, add Downpay) {% endcomment %}
+					{% assign subscription_selling_plan_id = '' %}
+					{% assign downpay_selling_plan_id = '' %}
+
+					{% if var.metafields.custom.referenced_variant_product_handle %}
+						{% assign subscription_selling_plan_id = referenced_variant.metafields.subscription.selling_plan_id | default: variant.metafields.subscription.selling_plan_id %}
+					{% elsif var.metafields.subscription.selling_plan_id %}
+						{% assign subscription_selling_plan_id = var.metafields.subscription.selling_plan_id %}
+					{% elsif var.selling_plan_allocations.size > 0 %}
+						{% assign found_plan = false %}
+						{% for allocation in var.selling_plan_allocations %}
+							{% if allocation.selling_plan.name contains bottle_quantity and allocation.selling_plan.app_id != 'downpay' %}
+								{% assign subscription_selling_plan_id = allocation.selling_plan.id %}
+								{% assign found_plan = true %}
+								{% break %}
+							{% endif %}
+						{% endfor %}
+						{% if found_plan == false and var.selling_plan_allocations.first.selling_plan.app_id != 'downpay' %}
+							{% assign subscription_selling_plan_id = var.selling_plan_allocations.first.selling_plan.id %}
+						{% endif %}
+					{% endif %}
+
+					{% comment %} Extract Downpay Plan ID {% endcomment %}
+					{% assign downpay_plans_for_variant = var.selling_plan_groups | where: 'app_id', 'downpay' | first %}
+					{% if downpay_plans_for_variant %}
+						{% assign downpay_selling_plan_id = downpay_plans_for_variant.selling_plans[0].id %}
+					{% endif %}
+
+					{% assign subscription_save_percents = 0 %}
+					{% assign subscription_item_price = original_item_cap %}
+
+					{% for allocation in var.selling_plan_allocations %}
+						{% assign selling = subscription_selling_plan_id | minus: 0 %}
+						{% if allocation.selling_plan.id == selling and allocation.selling_plan.app_id != 'downpay' %}
+							{% if allocation.compare_at_price %}
+								{% assign original_price = allocation.compare_at_price %}
+								{% assign discounted_price = allocation.price %}
+								{% assign subscription_save_percents = original_price | minus: discounted_price | times: 100 | divided_by: original_price %}
+								{% assign mod_5_remainder = subscription_save_percents | modulo: 5 %}
+								{% if mod_5_remainder < 3 %}
+									{% assign subscription_save_percents = subscription_save_percents | minus: mod_5_remainder %}
+								{% else %}
+									{% assign subscription_save_percents = subscription_save_percents | plus: 5 | minus: mod_5_remainder %}
+								{% endif %}
+								{% assign subscription_item_price = discounted_price | divided_by: bottle_quantity %}
+							{% else %}
+								{% assign subscription_save_percents = 0 %}
+								{% assign subscription_item_price = allocation.price | divided_by: bottle_quantity %}
+							{% endif %}
+						{% endif %}
+					{% endfor %}
+
+					{% assign subscription_total_price = subscription_item_price | times: bottle_quantity %}
+
+					{% assign firstMonthDiscount = block.settings.first_month_discount_percentage %}
+
+					{% comment %} Check if there's a metafield discount percentage and use it if available {% endcomment %}
+					{% if var.metafields.subscription.save_percents %}
+						{% assign subscription_save_percents = var.metafields.subscription.save_percents %}
+					{% endif %}
+
+					{% comment %} Determine display price (this might need JS adjustment for deposit amount) {% endcomment %}
+					{% assign display_item_price = item_price %}
+					{% assign display_total_price = item_price | times: bottle_quantity %}
+					{% assign display_cap_price = original_item_cap %}
+					{% assign display_total_cap_price = original_item_cap_total %}
+					{% assign display_save_percents = var.metafields.custom.save_percents | default: 0 %}
+
+					<div id="variant-box-{{ SID }}-{{ forloop.index }}"
+						class="variant-box flex flex-col items-center relative border-2 border-primary-lighter rounded-md cursor-pointer transition-all duration-300 ease-in-out aria-selected:bg-primary aria-selected:border-primary aria-selected:text-white aria-[selected=false]:bg-white aria-[selected=false]:text-primary hover:bg-gray-100 text-center w-full {{ varPurchaseType }}"
+						role="tab"
+						aria-selected="false"
+						aria-controls="variant-content-{{ SID }}-{{ forloop.index }}"
+						tabindex="0"
+						data-variant="{{ blockVarID }}"
+						data-product="{{ prod.id }}"
+						data-original-variant="{{ var.id }}"
+						data-subscription-selling-plan-id="{{ subscription_selling_plan_id }}" {% comment %} Keep for potential hybrid use {% endcomment %}
+						data-downpay-plan-id="{{ downpay_selling_plan_id }}" {% comment %} Add Downpay plan ID {% endcomment %}
+						data-price="{{ var.price | money_without_currency | replace: ".00", "" }}"
+						data-sku="{{ var.sku }}"
+						data-index="{{ forloop.index }}"
+						data-item-price="{{ item_price }}"
+						data-subscription-price="{{ subscription_total_price }}" {% comment %} Keep for context {% endcomment %}
+						data-subscription-item-price="{{ subscription_item_price }}" {% comment %} Keep for context {% endcomment %}
+						data-original-item-cap="{{ original_item_cap }}"
+						data-dc="{{ var.metafields.custom.discount_code | base64_encode }}"
+						data-buy-once-discount="{{ var.metafields.custom.save_percents }}"
+						data-subscription-discount="{{ subscription_save_percents }}" {% comment %} Keep for context {% endcomment %}
+						data-first-month-discount="{{ firstMonthDiscount }}" {% comment %} Keep for context {% endcomment %}
+						data-price-per="{{ pricePer }}"
+						data-bottle-quantity="{{ bottle_quantity }}"
+						data-purchase-type="{{ varPurchaseType }}" {% comment %} Indicate if variant block is setup for 'subscribe' or 'buyonce' {% endcomment %}
+						data-buy-type="{{ buyType }}"
+						{% if isGlobal %}
+						{% if block.settings.allowed_selling_plan_ids_global != blank %}
+						data-allowed-selling-plans="{{ block.settings.allowed_selling_plan_ids_global | strip | escape }}"
+						{% endif %}
+						{% else %}
+						{% if block.settings.allowed_selling_plan_ids != blank %}
+						data-allowed-selling-plans="{{ block.settings.allowed_selling_plan_ids | strip | escape }}"
+						{% endif %}
+						{% endif %}
+						name="track:variant-box|variant-sku:{{ var.sku }}|purchase-type:{{ varPurchaseType }}">
+
+						{% assign displayDiscount = subscription_save_percents %}
+						{% if varPurchaseType == 'buyonce' and var.metafields.custom.save_percents %}
+							{% assign displayDiscount = var.metafields.custom.save_percents %}
+						{% endif %}
+
+						{% if displayDiscount > 0 %}
+							<div class="discount mbl:text-[3.5vw] font-medium w-full text-[13px] p-1 text-primary bg-bg">{{ displayDiscount }}% OFF</div>
+						{% else %}
+							<div class="discount mbl:text-[3.5vw] font-medium w-full text-[13px] p-1 text-transparent bg-transparent">&nbsp;</div> {% comment %} Placeholder for consistent height {% endcomment %}
+						{% endif %}
+
+						<!-- prettier-ignore -->
+						<div class="title p-1">
+							<span class="font-bold mbl:text-[4vw]">{{ bottle_quantity }} Bottle{% if bottle_quantity > 1 %}s{% endif %}</span>
+						</div>
+
+						<!-- Replace the inline style with Tailwind class -->
+						<div class="md:hidden">
+							<span class="title block mbl:text-[3.4vw]"></span>
+						</div>
+					</div>
+				{% endif %}
+			{% endfor %}
+		</div>
+
+		<div class="price-display transition-all duration-300 ease-in-out">
+			{% comment %} Price display will need JS adjustment to show deposit amount when Downpay is selected {% endcomment %}
+			<div class="gap-y-2 flex flex-wrap items-end gap-2 transition-opacity duration-300">
+					<div class="final-price flex items-end gap-2">
+							<div class="main-price text-primary flex items-end transition-opacity duration-300 ease-in-out">
+									{% if priceFormat == 'total' %}
+											<span class="price leading-none text-[30px] font-semibold mbl:text-[6vw] transition-all duration-300">{{ display_total_price | money }}</span>
+									{% else %}
+											<span class="price leading-none text-[30px] mbl:text-[6vw] transition-all duration-300">{{ display_item_price | money }}</span>
+											<span class="per-text mt-1 text-[20px] transition-all duration-300">/bottle</span>
+									{% endif %}
+							</div>
+
+							<span class="cap self-end text-gray-500 line-through transition-opacity duration-300 ease-in-out">{{ display_cap_price | money }}</span>
+
+							{% if priceFormat == 'total' and display_total_price != display_item_price %}
+									<span class="discount-badge text-bronze transition-opacity duration-300 ease-in-out [&[data-visible=false]]:hidden">SAVE {{ buy_once_save_money | money }}</span>
+							{% endif %}
+					</div>
+			</div>
+
+			{% if priceFormat == 'per_bottle' and display_total_price != display_item_price %}
+					<div class="total-line mt-1 text-[16px] h-4 transition-opacity duration-300 ease-in-out">
+							Total {{ display_total_price | money }}
+							<span class="total-price-cap text-gray-500 line-through">{{ display_total_cap_price | money }}</span>
+					</div>
+			{% endif %}
+
+			<div class="future-price-notice mt-2 text-[14px] text-gray-600 transition-opacity duration-300 ease-in-out"></div>
+	</div>
+
+	{% if variantsNotice != blank %}
+		<div class="notice text-primary flex gap-2 text-[15px]">
+			<span>ⓘ</span>
+			<span>{{ variantsNotice }}</span>
+		</div>
+	{% endif %}
+
+	{% comment %} Removed subscription frequency selector {% endcomment %}
+	{% comment %}
+	<div class="mbl:my-0 hidden my-2 transition-all duration-300 ease-in-out" data-frequency-container data-ui-type="{{ sellingPlanUI | default: 'tabs' }}">
+		... frequency selection UI removed ...
+	</div>
+	{% endcomment %}
+
+	{% render 'subscription-box-faq',
+		SID: SID,
+		faqsAmount: faqsAmount,
+		blocks: blocks
+	%}
+
+	<div class="gift-container">
+		{% render 'subscription-box-gift-selector',
+			SID: SID,
+			giftsAmount: giftsAmount,
+			blocks: blocks,
+			isGlobal: isGlobal
+		%}
+	</div>
+
+	<div class="submit-wrap flex flex-col w-full">
+		<div class="checkout-button">
+			{% assign buttonSID = SID | append: '-checkout' %}
+			{% assign ctaButtonTitle = 'Add To Cart' %} {% comment %} Default button text {% endcomment %}
+
+			{% comment %} Downpay Integration - Use Downpay form if available {% endcomment %}
+			{% if downpay_selling_plan_groups.size > 0 %}
+				{% form 'product', product, id: product_form_id, class: 'downpay-form' %}
+					{% comment %} Hidden inputs need to be updated by JS based on variant selection {% endcomment %}
+					<input type="hidden" name="id" value="{{ prod.selected_or_first_available_variant.id }}" class="downpay-variant-id-input">
+					<input type="hidden" name="selling_plan" value="" class="downpay-selling-plan-input"> {% comment %} JS needs to populate this {% endcomment %}
+
+					<button
+						type="submit"
+						name="add"
+						class="button w-full variant-submit button--primary bg-primary text-white py-3 px-4 rounded-md font-semibold hover:bg-primary-dark transition-colors duration-300 ease-in-out disabled:opacity-70 disabled:cursor-not-allowed"
+						data-button-name="track:button-submit|buybox-type:{{ buyboxType }}|buybox-name:{{ buyboxName }}"
+						data-alternative-text="Processing..."
+						aria-busy="false"
+						{% unless prod.selected_or_first_available_variant.available %}disabled{% endunless %}>
+						<span class="button__content">Pay Deposit</span> {% comment %} TODO: Make text dynamic? {% endcomment %}
+						<span class="button__loader">{% render 'component.loader' %}</span>
+					</button>
+				{% endform %}
+			{% else %}
+				{% comment %} Fallback to original buttons if Downpay is not configured for this product {% endcomment %}
+				{% render 'buy-buttons-new-4-old',
+					SID: buttonSID,
+					product: prod,
+					variant: '', {% comment %} JS updates this {% endcomment %}
+					buttonText: ctaButtonTitle,
+					selling_plan_id: '', {% comment %} JS updates this {% endcomment %}
+					product_form_id: product_form_id,
+					buyType: buyType,
+					isBuyWithPrime: isBuyWithPrime,
+					buyboxType: buyboxType,
+					buyboxName: buyboxName
+				%}
+			{% endif %}
+		</div>
+
+		{% comment %} Keep one-time purchase link logic if needed, adjust as necessary {% endcomment %}
+		<div class="one-time-purchase-link mt-3 text-center">
+			{% if isOneTimePurchaseLink %}
+				{% assign firstVariant = prod.selected_or_first_available_variant %}
+				<div
+					id="one-time-add-to-cart"
+					class="one-time-add-to-cart variant-box text-primary mb-2 underline cursor-pointer !bg-white aria-[busy=true]:opacity-70 aria-[busy=true]:cursor-not-allowed"
+					name="track:link-submit|buybox-type:{{ buyboxType }}|buybox-name:{{ buyboxName }}|variant-sku:{{ firstVariant.sku }}|purchase-type:buyonce"
+					data-variant-id="{{ firstVariant.id }}"
+					data-bottle-quantity="1"
+					data-sku="{{ firstVariant.sku }}"
+					data-purchase-type="buyonce">
+					Buy Once for {{ firstVariant.price | money }} + {{ shippingPrice | money | replace: '.00', '' }} Shipping
+				</div>
+			{% endif %}
+		</div>
+
+		{% if blocks.size > 0 %}
+			{% for block in blocks %}
+				{% if block.type == 'text' %}
+					<div class="text-content text-[14px] text-primary whitespace-break-spaces {% if block.settings.text_position == 'center' %}text-center{% else %}text-start{% endif %}">{{ block.settings.content }}</div>
+				{% endif %}
+			{% endfor %}
+		{% endif %}
+	</div>
+</div>
+
+<style>
+	@media (min-width: 768px) {
+		#cta-section-{{ SID }} .right {
+			max-width: 450px;
+		}
+	}
+
+	.discount {
+		border-top-left-radius: 5px;
+		border-top-right-radius: 5px;
+	}
+	[aria-selected="true"] .discount {
+			background-color: var(--beige) ;
+	}
+
+  /* Price animation */
+  @keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .price-display[data-updating="true"] > * {
+    animation: fadeOut 0.2s forwards;
+  }
+
+  .price-display[data-updating="false"] > * {
+    animation: fadeIn 0.3s forwards;
+  }
+</style>
+
+{% comment %} Pass product data to JS - Keep this as JS might still need it {% endcomment %}
+<script>
+	document.addEventListener('DOMContentLoaded', () => {
+		if (!window.productData) window.productData = {};
+		{% if prod and prod.id %}
+		window.productData[{{ prod.id | json }}] = {
+			id: {{ prod.id | json }},
+			handle: {{ prod.handle | json }},
+			title: {{ prod.title | json }},
+			variants: [
+				{% for variant in prod.variants %}
+				{
+					id: {{ variant.id | json }},
+					title: {{ variant.title | json }},
+					price: {{ variant.price | json }},
+                    compare_at_price: {{ variant.compare_at_price | json }},
+					sku: {{ variant.sku | json }},
+					{% if variant.selling_plan_allocations.size > 0 %}
+					selling_plan_allocations: [
+						{% for allocation in variant.selling_plan_allocations %}
+						{
+							selling_plan: {
+								id: {{ allocation.selling_plan.id | json }},
+								name: {{ allocation.selling_plan.name | json }},
+								app_id: {{ allocation.selling_plan.app_id | json }} {% comment %} Add app_id {% endcomment %}
+							},
+							price: {{ allocation.price | json }},
+							compare_at_price: {{ allocation.compare_at_price | json }}
+						}{% unless forloop.last %},{% endunless %}
+						{% endfor %}
+					]
+					{% else %}
+					selling_plan_allocations: []
+					{% endif %}
+				}{% unless forloop.last %},{% endunless %}
+				{% endfor %}
+			],
+			initialized: true // Mark as initialized by Liquid
+		};
+		{% endif %}
+	});
+</script>
+
+<script>
+	document.addEventListener('DOMContentLoaded', function () {
+		const ctasection = document.querySelector('#cta-section-{{ SID }}');
+		if (!ctasection) return;
+
+		const productActions = ctasection.querySelector('.product-actions');
+		const ctaText = ctasection.querySelector('.cta-text');
+		const purchaseOptions = productActions ? productActions.querySelector('.purchase-options') : null;
+
+		if (!productActions) return;
+
+		if (window.innerWidth < 768 && ctaText) {
+			productActions.insertAdjacentElement('afterbegin', ctaText);
+		}
+	});
+</script>
+
+{% comment %} JS logic moved to src/js/buy-box-new.js - This script will need updates for Downpay {% endcomment %}
+<script src="{{ 'buy-box-deposit.js' | asset_url }}" defer="defer"></script>
+
+<script>
+	// Update discount badge styles based on box selection - Keep this
+	document.addEventListener('DOMContentLoaded', function() {
+		const updateDiscountBadgeStyles = () => {
+			document.querySelectorAll('.variant-box').forEach(box => {
+				const isSelected = box.getAttribute('aria-selected') === 'true';
+			});
+		};
+
+		// Initial update
+		updateDiscountBadgeStyles();
+
+		// Watch for attribute changes on variant boxes
+		const observer = new MutationObserver(mutations => {
+			mutations.forEach(mutation => {
+				if (mutation.type === 'attributes' && mutation.attributeName === 'aria-selected') {
+					updateDiscountBadgeStyles();
+				}
+			});
+		});
+
+		document.querySelectorAll('.variant-box').forEach(box => {
+			observer.observe(box, { attributes: true });
+		});
+	});
+</script>
