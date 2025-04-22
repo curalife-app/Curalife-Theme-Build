@@ -496,24 +496,28 @@ class BuyBoxNew {
 			});
 		});
 
-		// Button Click Listener (Replaces Form Submit Listener)
-		const submitButton = this.elements.downpayForm?.querySelector('button[type="submit"]') || this.elements.form?.querySelector('button[type="submit"]');
-
-		if (submitButton) {
-			console.log(`[BuyBox ${this.config.SID}] Attaching click listener to submit button (capture phase):`, submitButton);
-			submitButton.addEventListener(
-				"click",
+		// Capture form submit to intercept regardless of other handlers
+		if (this.elements.form) {
+			this.elements.form.addEventListener(
+				"submit",
 				event => {
-					console.log(`[BuyBox ${this.config.SID}] Submit button CLICKED! Event:`, event);
-					// Check if the click should trigger the submission logic
-					// We prevent default form submission since we handle it via JS/AJAX
+					console.log(`[BuyBox ${this.config.SID}] FORM SUBMIT captured.`);
 					event.preventDefault();
-					this.handleFormSubmission(event); // Pass the event object
+					this.handleFormSubmission(event);
 				},
 				true
 			);
-		} else {
-			console.warn(`[BuyBox ${this.config.SID}] Could not find submit button to attach click listener.`);
+		}
+		if (this.elements.downpayForm && this.elements.downpayForm !== this.elements.form) {
+			this.elements.downpayForm.addEventListener(
+				"submit",
+				event => {
+					console.log(`[BuyBox ${this.config.SID}] DOWNPAY FORM SUBMIT captured.`);
+					event.preventDefault();
+					this.handleFormSubmission(event);
+				},
+				true
+			);
 		}
 
 		// One-Time Purchase Link
