@@ -1006,3 +1006,24 @@ document.addEventListener("DOMContentLoaded", () => {
 // window.addEventListener('resize', () => {
 //     BuyBoxNew.getAllInstances().forEach(instance => instance.moveCtaTextIfNeeded());
 // });
+
+// Global delegated click listener to capture variant-submit clicks even if button replaced
+if (!window.__buyBoxGlobalClickListenerAdded) {
+	window.__buyBoxGlobalClickListenerAdded = true;
+	document.addEventListener(
+		"click",
+		event => {
+			const btn = event.target.closest("button.variant-submit");
+			if (!btn) return;
+			const root = btn.closest('[data-buy-box-new-root="true"]');
+			if (!root) return;
+			const sid = root.dataset.sid;
+			const instance = BuyBoxNew.getInstance(sid);
+			if (!instance) return;
+			console.log(`[BuyBox ${sid}] Global delegate CLICK captured on variant-submit.`);
+			event.preventDefault();
+			instance.handleFormSubmission(event);
+		},
+		true
+	);
+}
