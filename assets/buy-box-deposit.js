@@ -451,6 +451,26 @@ class BuyBoxNew {
 			this.updatePriceDisplay(initialBox);
 			this.updateBuyButtonTracking(initialBox);
 			this.updateVariantImage(initialBox);
+
+			// --- Set Initial Downpay hidden form fields ---
+			const downpayForm = this.container.querySelector("form.downpay-form");
+			if (downpayForm) {
+				const variantInput = downpayForm.querySelector(".downpay-variant-id-input");
+				const planInput = downpayForm.querySelector(".downpay-selling-plan-input");
+				const initialVariantId = initialState.selectedVariantId;
+				const initialDownpayPlanId = initialState.selectedDownpayPlanId;
+
+				if (variantInput && initialVariantId) {
+					variantInput.value = initialVariantId;
+					// console.log(`[BuyBox ${this.config.SID} Init] Set downpay variant ID input to: ${initialVariantId}`);
+				}
+				if (planInput) {
+					// Check if planInput exists before setting value
+					planInput.value = initialDownpayPlanId || "";
+					// console.log(`[BuyBox ${this.config.SID} Init] Set downpay selling plan input to: ${planInput.value}`);
+				}
+			}
+			// --- End Set Initial Downpay hidden form fields ---
 		}
 		// console.log(`[BuyBox ${this.config.SID}] Initial state:`, this.state);
 	}
