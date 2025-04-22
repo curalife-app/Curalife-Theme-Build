@@ -375,9 +375,9 @@ class BuyBoxNew {
 			DOMUtils.updateProperty(this.elements.submitButton, "disabled", isLoading);
 			DOMUtils.updateAttribute(this.elements.submitButton, "aria-busy", isLoading ? "true" : "false");
 			const buttonContent = this.elements.submitButton.querySelector(".button__content");
-			const buttonLoader = this.elements.submitButton.querySelector(".button__loader");
+			const buttonLoader = this.elements.submitButton.querySelector(".loading-overlay__spinner");
 			if (buttonContent) DOMUtils.updateStyle(buttonContent, "display", isLoading ? "none" : "inline-block");
-			if (buttonLoader) DOMUtils.updateStyle(buttonLoader, "display", isLoading ? "inline-block" : "none");
+			if (buttonLoader) DOMUtils.toggleClass(buttonLoader, "hidden", !isLoading);
 		}
 		if (this.elements.oneTimePurchaseLink) {
 			DOMUtils.updateAttribute(this.elements.oneTimePurchaseLink, "aria-busy", isLoading ? "true" : "false");
