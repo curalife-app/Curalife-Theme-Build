@@ -565,6 +565,8 @@ class BuyBoxNew {
 		this.setState({ isLoading: true });
 
 		try {
+			console.log(`[BuyBox ${this.config.SID}] handleFormSubmission: buyType =`, this.config.buyType);
+
 			const items = this.prepareItemsForCart();
 			if (!items || items.length === 0) {
 				throw new Error("No valid items selected."); // More specific error
