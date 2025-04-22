@@ -176,7 +176,7 @@
 						data-product="{{ prod.id }}"
 						data-original-variant="{{ var.id }}"
 						data-subscription-selling-plan-id="{{ subscription_selling_plan_id }}" {% comment %} Keep for potential hybrid use {% endcomment %}
-						data-downpay-plan-id="{{ product_downpay_plan_id }}"
+						data-downpay-plan-id="97983627645"
 						data-price="{{ var.price | money_without_currency | replace: ".00", "" }}"
 						data-sku="{{ var.sku }}"
 						data-index="{{ forloop.index }}"
@@ -285,13 +285,13 @@
 			{% assign buttonSID = SID | append: '-checkout' %}
 			{% assign ctaButtonTitle = 'Add To Cart' %}
 
-			{% comment %} Use the product-level check now {% endcomment %}
-			{% if product_downpay_plan_id != '' %}
+			{% comment %} Use the product-level check now - BUT ID WILL BE HARDCODED {% endcomment %}
+			{% if product_downpay_plan_id != '' or true %} {% comment %} Force true since we hardcode {% endcomment %}
 				{% comment %} Downpay form setup {% endcomment %}
 				{% form 'product', product, id: product_form_id, class: 'downpay-form' %}
 					<input type="hidden" name="id" value="{{ prod.selected_or_first_available_variant.id }}" class="downpay-variant-id-input">
-					{% comment %} Set initial value using the product-level ID {% endcomment %}
-					<input type="hidden" name="selling_plan" value="{{ product_downpay_plan_id }}" class="downpay-selling-plan-input">
+					{% comment %} Set initial value using the product-level ID - NOW HARDCODED {% endcomment %}
+					<input type="hidden" name="selling_plan" value="97983627645" class="downpay-selling-plan-input">
 
 					<button
 						type="submit"
@@ -310,6 +310,7 @@
 					</button>
 				{% endform %}
 			{% else %}
+				{% comment %} This block should ideally not be reached if Downpay is expected {% endcomment %}
 				{% comment %} Fallback to original non-Downpay button {% endcomment %}
 				<script>console.log('Downpay is not available for this product (based on product_downpay_plan_id)');</script>
 				{% render 'buy-buttons-new-4-old',
