@@ -392,6 +392,32 @@ class ProductQuiz {
 		sessionStorage.setItem("quizResponses", JSON.stringify(this.responses));
 		sessionStorage.setItem("quizId", this.quizData.id);
 
+		// Send quiz responses to n8n workflow
+		try {
+			const n8nWebhookUrl = this.container.getAttribute("data-n8n-webhook") || "/api/quiz-webhook";
+
+			const payload = {
+				quizId: this.quizData.id,
+				quizTitle: this.quizData.title,
+				responses: this.responses,
+				completedAt: new Date().toISOString()
+			};
+
+			const response = await fetch(n8nWebhookUrl, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json"
+				},
+				body: JSON.stringify(payload)
+			});
+
+			if (!response.ok) {
+				console.error("Failed to send quiz data to n8n workflow:", await response.text());
+			}
+		} catch (error) {
+			console.error("Error sending quiz data to n8n workflow:", error);
+		}
+
 		// Simulate a short delay
 		await new Promise(resolve => setTimeout(resolve, 500));
 
