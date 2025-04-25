@@ -392,35 +392,74 @@ class ProductQuiz {
 		sessionStorage.setItem("quizResponses", JSON.stringify(this.responses));
 		sessionStorage.setItem("quizId", this.quizData.id);
 
-		// Send quiz responses to n8n workflow
+		// Prepare the quiz data payload
+		const payload = {
+			quizId: this.quizData.id,
+			quizTitle: this.quizData.title,
+			responses: this.responses,
+			completedAt: new Date().toISOString()
+		};
+
+		// Get the webhook URL
+		const n8nWebhookUrl = this.container.getAttribute("data-n8n-webhook") || "/api/quiz-webhook";
+
+		// Log for debugging
+		console.log("Submitting quiz data to:", n8nWebhookUrl);
+
+		// Send data to backend - attempt multiple methods if needed
+		let dataSent = false;
+
 		try {
-			const n8nWebhookUrl = this.container.getAttribute("data-n8n-webhook") || "/api/quiz-webhook";
+			// First try XMLHttpRequest which gives us better error handling
+			const xhr = new XMLHttpRequest();
+			xhr.open("POST", n8nWebhookUrl, true);
+			xhr.setRequestHeader("Content-Type", "application/json");
 
-			const payload = {
-				quizId: this.quizData.id,
-				quizTitle: this.quizData.title,
-				responses: this.responses,
-				completedAt: new Date().toISOString()
-			};
+			// Set up a promise to track completion
+			const xhrPromise = new Promise((resolve, reject) => {
+				xhr.onload = function () {
+					if (this.status >= 200 && this.status < 300) {
+						console.log("Quiz data sent successfully via XHR");
+						dataSent = true;
+						resolve();
+					} else {
+						console.warn(`Server returned ${this.status} ${this.statusText}`, this.responseText);
+						reject(new Error(`Server error: ${this.status}`));
+					}
+				};
 
-			// Use beacon API as a fallback for CORS issues
-			const sendSuccess = navigator.sendBeacon(n8nWebhookUrl, JSON.stringify(payload));
+				xhr.onerror = function () {
+					console.error("Network error occurred with XHR");
+					reject(new Error("Network error"));
+				};
+			});
 
-			if (!sendSuccess) {
-				// If beacon fails, try an image pixel as last resort
-				const img = new Image();
-				const params = encodeURIComponent(JSON.stringify(payload));
-				img.src = `${n8nWebhookUrl}?data=${params}`;
+			// Send the request
+			xhr.send(JSON.stringify(payload));
 
-				// Wait a bit for the image to load
-				await new Promise(resolve => setTimeout(resolve, 300));
-			}
+			// Wait for completion or timeout after 3 seconds
+			await Promise.race([xhrPromise, new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 3000))]);
 		} catch (error) {
-			console.error("Error sending quiz data to n8n workflow:", error);
-			// Continue with completion even if data sending fails
+			console.warn("XHR failed:", error.message);
+
+			// Try navigator.sendBeacon as fallback
+			if (!dataSent) {
+				try {
+					const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
+					dataSent = navigator.sendBeacon(n8nWebhookUrl, blob);
+					if (dataSent) {
+						console.log("Quiz data sent successfully via Beacon API");
+					} else {
+						console.warn("Beacon API failed to send data");
+					}
+				} catch (beaconError) {
+					console.warn("Beacon API error:", beaconError);
+				}
+			}
 		}
 
-		// Simulate a short delay
+		// Even if data sending failed, show completion
+		// Wait a moment to make the loading state visible
 		await new Promise(resolve => setTimeout(resolve, 500));
 
 		// Hide questions and show a completion message
