@@ -99,29 +99,45 @@ class ProductQuiz {
 		// Create question HTML
 		let questionHTML = `
       <div class="quiz-fade-in">
-        <h3 class="quiz-question-title">${question.text}</h3>
-        ${question.description ? `<p class="quiz-question-description">${question.description}</p>` : ""}
     `;
 
-		// Add question type specific HTML
-		switch (question.type) {
-			case "multiple-choice":
-				questionHTML += this.renderMultipleChoice(question, response);
-				break;
-			case "checkbox":
-				questionHTML += this.renderCheckbox(question, response);
-				break;
-			case "text":
-				questionHTML += this.renderTextInput(question, response);
-				break;
-			case "textarea":
-				questionHTML += this.renderTextarea(question, response);
-				break;
-			case "rating":
-				questionHTML += this.renderRating(question, response);
-				break;
-			default:
-				questionHTML += '<p class="quiz-error">Unknown question type</p>';
+		// Check if this is an info type (not an actual question)
+		if (question.type === "info") {
+			questionHTML += `
+        <h3 class="quiz-question-title">${question.heading}</h3>
+        <p class="quiz-question-description">${question.text}</p>
+        ${question.subtext ? `<p class="quiz-subtext">${question.subtext}</p>` : ""}
+      `;
+		} else {
+			// Regular question
+			questionHTML += `
+        <h3 class="quiz-question-title">${question.text}</h3>
+        ${question.helpText ? `<p class="quiz-question-description">${question.helpText}</p>` : ""}
+      `;
+
+			// Add question type specific HTML
+			switch (question.type) {
+				case "multiple-choice":
+					questionHTML += this.renderMultipleChoice(question, response);
+					break;
+				case "checkbox":
+					questionHTML += this.renderCheckbox(question, response);
+					break;
+				case "dropdown":
+					questionHTML += this.renderDropdown(question, response);
+					break;
+				case "text":
+					questionHTML += this.renderTextInput(question, response);
+					break;
+				case "textarea":
+					questionHTML += this.renderTextarea(question, response);
+					break;
+				case "rating":
+					questionHTML += this.renderRating(question, response);
+					break;
+				default:
+					questionHTML += '<p class="quiz-error">Unknown question type</p>';
+			}
 		}
 
 		questionHTML += "</div>";
@@ -169,6 +185,34 @@ class ProductQuiz {
 		return html;
 	}
 
+	renderDropdown(question, response) {
+		// Handle dynamic options sources
+		let options = [];
+		if (question.options) {
+			options = question.options;
+		} else if (question.optionsSource === "US_STATES") {
+			options = this.getUSStates();
+		} else if (question.optionsSource === "INSURANCE_PROVIDERS") {
+			options = this.getInsuranceProviders();
+		}
+
+		let html = `
+			<div class="quiz-dropdown">
+				<select id="question-${question.id}" class="quiz-select">
+					<option value="">Select an option</option>
+		`;
+
+		options.forEach(option => {
+			html += `<option value="${option.id}" ${response.answer === option.id ? "selected" : ""}>${option.text}</option>`;
+		});
+
+		html += `
+				</select>
+			</div>
+		`;
+		return html;
+	}
+
 	renderTextInput(question, response) {
 		return `
       <div class="quiz-text-answer">
@@ -203,6 +247,13 @@ class ProductQuiz {
 	}
 
 	attachQuestionEventListeners(question) {
+		// Skip event listeners for info type
+		if (question.type === "info") {
+			// No input to listen for, just enable the next button
+			this.handleAnswer("info-acknowledged");
+			return;
+		}
+
 		switch (question.type) {
 			case "multiple-choice":
 				const radioInputs = this.questionContainer.querySelectorAll(`input[name="question-${question.id}"]`);
@@ -225,11 +276,30 @@ class ProductQuiz {
 				});
 				break;
 
+			case "dropdown":
+				const dropdownInput = this.questionContainer.querySelector(`#question-${question.id}`);
+				dropdownInput.addEventListener("change", () => {
+					this.handleAnswer(dropdownInput.value);
+				});
+				break;
+
 			case "text":
 			case "textarea":
 				const textInput = this.questionContainer.querySelector(`#question-${question.id}`);
 				textInput.addEventListener("input", () => {
-					this.handleAnswer(textInput.value);
+					// If there's validation, check it
+					if (question.validation && question.validation.pattern) {
+						const regex = new RegExp(question.validation.pattern);
+						if (regex.test(textInput.value)) {
+							textInput.classList.remove("quiz-input-error");
+							this.handleAnswer(textInput.value);
+						} else {
+							textInput.classList.add("quiz-input-error");
+							this.handleAnswer(null); // Invalid input
+						}
+					} else {
+						this.handleAnswer(textInput.value);
+					}
 				});
 				break;
 
@@ -338,6 +408,78 @@ class ProductQuiz {
     `;
 
 		this.submitting = false; // Reset submitting state (though UI is now different)
+	}
+
+	// Helper methods for dropdown options
+	getUSStates() {
+		return [
+			{ id: "AL", text: "Alabama" },
+			{ id: "AK", text: "Alaska" },
+			{ id: "AZ", text: "Arizona" },
+			{ id: "AR", text: "Arkansas" },
+			{ id: "CA", text: "California" },
+			{ id: "CO", text: "Colorado" },
+			{ id: "CT", text: "Connecticut" },
+			{ id: "DE", text: "Delaware" },
+			{ id: "FL", text: "Florida" },
+			{ id: "GA", text: "Georgia" },
+			{ id: "HI", text: "Hawaii" },
+			{ id: "ID", text: "Idaho" },
+			{ id: "IL", text: "Illinois" },
+			{ id: "IN", text: "Indiana" },
+			{ id: "IA", text: "Iowa" },
+			{ id: "KS", text: "Kansas" },
+			{ id: "KY", text: "Kentucky" },
+			{ id: "LA", text: "Louisiana" },
+			{ id: "ME", text: "Maine" },
+			{ id: "MD", text: "Maryland" },
+			{ id: "MA", text: "Massachusetts" },
+			{ id: "MI", text: "Michigan" },
+			{ id: "MN", text: "Minnesota" },
+			{ id: "MS", text: "Mississippi" },
+			{ id: "MO", text: "Missouri" },
+			{ id: "MT", text: "Montana" },
+			{ id: "NE", text: "Nebraska" },
+			{ id: "NV", text: "Nevada" },
+			{ id: "NH", text: "New Hampshire" },
+			{ id: "NJ", text: "New Jersey" },
+			{ id: "NM", text: "New Mexico" },
+			{ id: "NY", text: "New York" },
+			{ id: "NC", text: "North Carolina" },
+			{ id: "ND", text: "North Dakota" },
+			{ id: "OH", text: "Ohio" },
+			{ id: "OK", text: "Oklahoma" },
+			{ id: "OR", text: "Oregon" },
+			{ id: "PA", text: "Pennsylvania" },
+			{ id: "RI", text: "Rhode Island" },
+			{ id: "SC", text: "South Carolina" },
+			{ id: "SD", text: "South Dakota" },
+			{ id: "TN", text: "Tennessee" },
+			{ id: "TX", text: "Texas" },
+			{ id: "UT", text: "Utah" },
+			{ id: "VT", text: "Vermont" },
+			{ id: "VA", text: "Virginia" },
+			{ id: "WA", text: "Washington" },
+			{ id: "WV", text: "West Virginia" },
+			{ id: "WI", text: "Wisconsin" },
+			{ id: "WY", text: "Wyoming" },
+			{ id: "DC", text: "District of Columbia" }
+		];
+	}
+
+	getInsuranceProviders() {
+		return [
+			{ id: "aetna", text: "Aetna" },
+			{ id: "bcbs", text: "Blue Cross Blue Shield" },
+			{ id: "cigna", text: "Cigna" },
+			{ id: "humana", text: "Humana" },
+			{ id: "kaiser", text: "Kaiser Permanente" },
+			{ id: "medicare", text: "Medicare" },
+			{ id: "medicaid", text: "Medicaid" },
+			{ id: "uhc", text: "UnitedHealthcare" },
+			{ id: "other", text: "Other Insurance" },
+			{ id: "none", text: "No Insurance / Self Pay" }
+		];
 	}
 }
 
