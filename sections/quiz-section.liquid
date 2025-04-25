@@ -1,0 +1,132 @@
+{{ 'quiz.css' | asset_url | stylesheet_tag }}
+{{ 'quiz.js' | asset_url | script_tag }}
+
+<div id="product-quiz" class="quiz-container" data-quiz-url="{{ 'quiz-data.json' | asset_url }}">
+	<!-- Quiz Intro -->
+	<div class="quiz-intro">
+		<h2>{{ section.settings.title }}</h2>
+		<p>{{ section.settings.description }}</p>
+		<button id="quiz-start-button" class="quiz-btn quiz-btn-primary">
+			{{ section.settings.button_text }}
+			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<path d="M5 12h14M12 5l7 7-7 7"/>
+			</svg>
+		</button>
+	</div>
+
+	<!-- Loading Indicator -->
+	<div class="quiz-loading" style="display: none;">
+		<div class="quiz-spinner"></div>
+		<p>Loading quiz...</p>
+	</div>
+
+	<!-- Error Message -->
+	<div class="quiz-error" style="display: none;">
+		<h3 class="quiz-error-title">Error</h3>
+		<p class="quiz-error-message">Failed to load quiz data. Please try again later.</p>
+		<button class="quiz-btn quiz-btn-primary" onclick="window.location.reload()">Retry</button>
+	</div>
+
+	<!-- Quiz Questions -->
+	<div class="quiz-questions">
+		<div class="quiz-progress-container">
+			<div class="quiz-progress-bar"></div>
+		</div>
+
+		<div class="quiz-question-container">
+			<!-- Question will be inserted here by JavaScript -->
+		</div>
+
+		<div class="quiz-navigation">
+			<button class="quiz-btn quiz-btn-secondary" id="quiz-prev-button">
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M19 12H5M12 19l-7-7 7-7"/>
+				</svg>
+				Back
+			</button>
+			<button class="quiz-btn quiz-btn-primary" id="quiz-next-button">
+				Next
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M5 12h14M12 5l7 7-7 7"/>
+				</svg>
+			</button>
+		</div>
+	</div>
+
+	<!-- Quiz Results -->
+	<div class="quiz-results">
+		<div class="quiz-results-header">
+			<h2>{{ section.settings.results_title }}</h2>
+			<p>{{ section.settings.results_description }}</p>
+		</div>
+
+		<div class="quiz-product-grid">
+			<!-- Products will be inserted here by JavaScript -->
+		</div>
+
+		<div class="quiz-action-buttons">
+			<button class="quiz-btn quiz-btn-secondary" id="quiz-share-button">
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+				</svg>
+				Share Results
+			</button>
+			<button class="quiz-btn quiz-btn-secondary" onclick="window.location.reload()">
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+				</svg>
+				Take Quiz Again
+			</button>
+			<a href="{{ routes.root_url }}" class="quiz-btn quiz-btn-secondary">
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+				</svg>
+				Return Home
+			</a>
+		</div>
+	</div>
+</div>
+
+{% schema %}
+	{
+		"name": "Product Quiz",
+		"settings": [
+			{
+				"type": "text",
+				"id": "title",
+				"label": "Quiz Title",
+				"default": "Find Your Perfect Product"
+			},
+			{
+				"type": "textarea",
+				"id": "description",
+				"label": "Quiz Description",
+				"default": "Answer a few questions and we'll recommend the best products for your needs."
+			},
+			{
+				"type": "text",
+				"id": "button_text",
+				"label": "Start Button Text",
+				"default": "Start Quiz"
+			},
+			{
+				"type": "text",
+				"id": "results_title",
+				"label": "Results Title",
+				"default": "Your Personalized Recommendations"
+			},
+			{
+				"type": "textarea",
+				"id": "results_description",
+				"label": "Results Description",
+				"default": "Based on your responses, we've selected these products that best match your needs and preferences."
+			}
+		],
+		"presets": [
+			{
+				"name": "Product Quiz",
+				"category": "Interactive"
+			}
+		]
+	}
+{% endschema %}
