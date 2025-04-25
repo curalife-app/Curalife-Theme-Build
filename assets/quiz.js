@@ -403,19 +403,21 @@ class ProductQuiz {
 				completedAt: new Date().toISOString()
 			};
 
-			const response = await fetch(n8nWebhookUrl, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json"
-				},
-				body: JSON.stringify(payload)
-			});
+			// Use beacon API as a fallback for CORS issues
+			const sendSuccess = navigator.sendBeacon(n8nWebhookUrl, JSON.stringify(payload));
 
-			if (!response.ok) {
-				console.error("Failed to send quiz data to n8n workflow:", await response.text());
+			if (!sendSuccess) {
+				// If beacon fails, try an image pixel as last resort
+				const img = new Image();
+				const params = encodeURIComponent(JSON.stringify(payload));
+				img.src = `${n8nWebhookUrl}?data=${params}`;
+
+				// Wait a bit for the image to load
+				await new Promise(resolve => setTimeout(resolve, 300));
 			}
 		} catch (error) {
 			console.error("Error sending quiz data to n8n workflow:", error);
+			// Continue with completion even if data sending fails
 		}
 
 		// Simulate a short delay
