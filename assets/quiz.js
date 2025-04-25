@@ -24,12 +24,9 @@ class ProductQuiz {
 		this.prevButton = this.container.querySelector("#quiz-prev-button");
 		this.nextButton = this.container.querySelector("#quiz-next-button");
 		this.startButton = this.container.querySelector("#quiz-start-button");
-		this.productGrid = this.container.querySelector(".quiz-product-grid");
-		this.shareButton = this.container.querySelector("#quiz-share-button");
 
 		// Options
 		this.dataUrl = options.dataUrl || this.container.getAttribute("data-quiz-url") || "/apps/product-quiz/data.json";
-		this.redirectToProduct = options.redirectToProduct || false;
 
 		// State
 		this.quizData = null;
@@ -53,17 +50,6 @@ class ProductQuiz {
 
 		if (this.nextButton) {
 			this.nextButton.addEventListener("click", () => this.goToNextQuestion());
-		}
-
-		if (this.shareButton) {
-			this.shareButton.addEventListener("click", () => this.shareResults());
-		}
-
-		// Check if we should show results directly (if coming back from a shared link)
-		const urlParams = new URLSearchParams(window.location.search);
-		if (urlParams.has("quiz-results")) {
-			this.showResults();
-			return;
 		}
 	}
 
@@ -274,7 +260,7 @@ class ProductQuiz {
 		// Update next button text and state
 		const isLastQuestion = this.currentQuestionIndex === this.quizData.questions.length - 1;
 		this.nextButton.innerHTML = isLastQuestion
-			? "See Results"
+			? "Finish Quiz"
 			: 'Next <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
 
 		// Check if current question has an answer
@@ -317,138 +303,41 @@ class ProductQuiz {
 			this.updateNavigation();
 		} else {
 			// Submit the quiz
-			this.handleSubmit();
+			this.finishQuiz();
 		}
 	}
 
-	async handleSubmit() {
+	async finishQuiz() {
 		if (!this.quizData || this.submitting) return;
 
 		this.submitting = true;
 		this.updateNavigation();
 
-		try {
-			// Show loading state
-			this.nextButton.innerHTML = '<span class="quiz-spinner-small"></span> Submitting...';
+		// Show completion state
+		this.nextButton.innerHTML = '<span class="quiz-spinner-small"></span> Finishing...';
+		this.nextButton.disabled = true;
+		this.prevButton.disabled = true;
 
-			// Store responses in sessionStorage
-			sessionStorage.setItem("quizResponses", JSON.stringify(this.responses));
-			sessionStorage.setItem("quizId", this.quizData.id);
+		// Store responses (optional, maybe useful for analytics later)
+		sessionStorage.setItem("quizResponses", JSON.stringify(this.responses));
+		sessionStorage.setItem("quizId", this.quizData.id);
 
-			// In a real implementation, you would send the responses to your server
-			// and get personalized recommendations back.
-			// For this demo, we'll just simulate a network delay
-			await new Promise(resolve => setTimeout(resolve, 1000));
+		// Simulate a short delay
+		await new Promise(resolve => setTimeout(resolve, 500));
 
-			// Show results
-			this.showResults();
-		} catch (error) {
-			console.error("Failed to submit quiz responses:", error);
-			this.submitting = false;
-			this.updateNavigation();
-
-			// Show error message
-			alert("Failed to submit quiz. Please try again.");
-		}
-	}
-
-	async showResults() {
-		// Hide questions, show results
+		// Hide questions and show a completion message
 		this.questions.style.display = "none";
-		this.intro.style.display = "none";
-		this.results.style.display = "block";
-		this.loading.style.display = "flex";
+		this.results.style.display = "block"; // Re-purpose the results container
+		this.results.innerHTML = `
+      <div class="quiz-results-header quiz-fade-in">
+        <h2>Quiz Complete!</h2>
+        <p>Thank you for taking the quiz.</p>
+        <button class="quiz-btn quiz-btn-primary" onclick="window.location.reload()">Take Again</button>
+				<a href="/" class="quiz-btn quiz-btn-secondary">Return Home</a>
+      </div>
+    `;
 
-		try {
-			// If we don't have quiz data yet, load it
-			if (!this.quizData) {
-				await this.loadQuizData();
-			}
-
-			// Get stored responses
-			const responses = JSON.parse(sessionStorage.getItem("quizResponses")) || [];
-
-			// In a real app, you would send the responses to the server
-			// and get personalized recommendations back.
-			// For this demo, we'll just use the recommendations from the JSON file.
-			const recommendations = this.quizData.recommendations;
-
-			// Hide loading indicator
-			this.loading.style.display = "none";
-
-			// Render product recommendations
-			this.renderProductRecommendations(recommendations);
-
-			// Update URL with a parameter to indicate we're showing results
-			// This allows sharing the results page
-			if (history.pushState) {
-				const newUrl = new URL(window.location.href);
-				newUrl.searchParams.set("quiz-results", "true");
-				window.history.pushState({ path: newUrl.href }, "", newUrl.href);
-			}
-		} catch (error) {
-			console.error("Failed to load quiz results:", error);
-			this.loading.style.display = "none";
-			this.error.style.display = "block";
-		}
-	}
-
-	renderProductRecommendations(products) {
-		let productsHTML = "";
-
-		products.forEach(product => {
-			productsHTML += `
-        <div class="quiz-product-card">
-          <div class="quiz-product-image">Product Image</div>
-          <div class="quiz-product-details">
-            <h3 class="quiz-product-title">${product.name}</h3>
-            <p class="quiz-product-category">${product.category}</p>
-            <p class="quiz-product-description">${product.description}</p>
-            <div class="quiz-product-price">
-              $${product.price.toFixed(2)}
-              ${product.matchScore ? `<span class="quiz-match-badge">${product.matchScore}% Match</span>` : ""}
-            </div>
-          </div>
-          <div class="quiz-product-footer">
-            <button class="quiz-btn quiz-btn-primary" data-product-id="${product.id}">View Details</button>
-          </div>
-        </div>
-      `;
-		});
-
-		this.productGrid.innerHTML = productsHTML;
-
-		// Add event listeners to product buttons
-		const productButtons = this.productGrid.querySelectorAll(".quiz-btn");
-		productButtons.forEach(button => {
-			button.addEventListener("click", () => {
-				const productId = button.getAttribute("data-product-id");
-				// In a real implementation, you would redirect to the product page
-				if (this.redirectToProduct) {
-					window.location.href = `/products/${productId}`;
-				} else {
-					console.log("View product:", productId);
-				}
-			});
-		});
-	}
-
-	shareResults() {
-		if (navigator.share) {
-			navigator
-				.share({
-					title: "My Product Recommendations",
-					text: "Check out these product recommendations I got from the quiz!",
-					url: window.location.href
-				})
-				.catch(error => console.log("Error sharing:", error));
-		} else {
-			// Fallback for browsers that don't support the Web Share API
-			navigator.clipboard
-				.writeText(window.location.href)
-				.then(() => alert("Link copied to clipboard!"))
-				.catch(err => console.error("Failed to copy link:", err));
-		}
+		this.submitting = false; // Reset submitting state (though UI is now different)
 	}
 }
 
