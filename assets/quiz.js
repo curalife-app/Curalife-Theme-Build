@@ -176,7 +176,7 @@ class ProductQuiz {
 			return;
 		}
 
-		console.log("Rendering step:", step.id, step.info ? "info-step" : "question-step");
+		console.log("Rendering step:", step.id, step.info ? "has-info" : "", step.questions ? "has-questions" : "");
 
 		// Update progress bar
 		const progress = ((this.currentStepIndex + 1) / this.quizData.steps.length) * 100;
@@ -185,16 +185,16 @@ class ProductQuiz {
 		// Create step HTML
 		let stepHTML = `<div class="quiz-fade-in">`;
 
-		// Check if this is an info-only step or has questions
+		// Add the info section if present
 		if (step.info) {
-			// Info-only step
 			stepHTML += `
 				<h3 class="quiz-question-title">${step.info.heading}</h3>
 				<p class="quiz-question-description">${step.info.text}</p>
 				${step.info.subtext ? `<p class="quiz-subtext">${step.info.subtext}</p>` : ""}
 			`;
-			// Update this step's response to acknowledge it was seen
-			const infoResponse = this.responses.find(r => r.stepId === step.id);
+
+			// Mark this step's info as acknowledged
+			const infoResponse = this.responses.find(r => r.stepId === step.id && r.questionId === step.id);
 			if (infoResponse) {
 				infoResponse.answer = "info-acknowledged";
 			} else {
@@ -204,13 +204,10 @@ class ProductQuiz {
 					answer: "info-acknowledged"
 				});
 			}
+		}
 
-			// For info steps, make sure next button is enabled immediately
-			setTimeout(() => {
-				this.nextButton.disabled = false;
-			}, 0);
-		} else if (step.questions && step.questions.length > 0) {
-			// Step with questions - render current question
+		// Add the questions section if present and we're in a questions step
+		if (step.questions && step.questions.length > 0) {
 			const question = step.questions[this.currentQuestionIndex];
 			const response = this.getResponseForCurrentQuestion();
 
@@ -218,10 +215,23 @@ class ProductQuiz {
 				console.error("No question found at index", this.currentQuestionIndex, "for step", step.id);
 				stepHTML += `<p class="quiz-error">Question not found. Please try again.</p>`;
 			} else {
-				stepHTML += `
-					<h3 class="quiz-question-title">${question.text}</h3>
-					${question.helpText ? `<p class="quiz-question-description">${question.helpText}</p>` : ""}
-				`;
+				console.log("Rendering question:", question.id, question.type);
+
+				// Add the question title and help text if they weren't already added via info
+				if (!step.info) {
+					stepHTML += `
+						<h3 class="quiz-question-title">${question.text}</h3>
+						${question.helpText ? `<p class="quiz-question-description">${question.helpText}</p>` : ""}
+					`;
+				} else {
+					// If we have both info and questions, still show the question text
+					stepHTML += `
+						<div class="quiz-question-form">
+							<h4 class="quiz-form-label">${question.text}</h4>
+							${question.helpText ? `<p class="quiz-help-text">${question.helpText}</p>` : ""}
+						</div>
+					`;
+				}
 
 				// Add question type specific HTML
 				switch (question.type) {
@@ -250,7 +260,7 @@ class ProductQuiz {
 						stepHTML += '<p class="quiz-error">Unknown question type</p>';
 				}
 			}
-		} else {
+		} else if (!step.info) {
 			// Neither info nor questions found
 			console.error("Step has neither info nor questions:", step.id);
 			stepHTML += `<p class="quiz-error">Step configuration error. Please contact support.</p>`;
@@ -272,6 +282,13 @@ class ProductQuiz {
 			if (currentQuestion) {
 				this.attachQuestionEventListeners(currentQuestion);
 			}
+		}
+
+		// If this is a step with only info (no questions), enable the next button
+		if (step.info && (!step.questions || step.questions.length === 0)) {
+			setTimeout(() => {
+				this.nextButton.disabled = false;
+			}, 0);
 		}
 
 		// Always update navigation to ensure buttons are correctly enabled/disabled
