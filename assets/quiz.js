@@ -101,12 +101,28 @@ class ProductQuiz {
 	}
 
 	async loadQuizData() {
-		const response = await fetch(this.dataUrl);
-		if (!response.ok) {
-			throw new Error(`HTTP error! status: ${response.status}`);
+		try {
+			const response = await fetch(this.dataUrl);
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+
+			const text = await response.text();
+			console.log("Raw JSON response:", text.substring(0, 100) + "...");
+
+			try {
+				this.quizData = JSON.parse(text);
+				console.log("Quiz data loaded successfully:", this.quizData.id, this.quizData.title);
+				return this.quizData;
+			} catch (parseError) {
+				console.error("JSON parse error:", parseError);
+				console.error("Invalid JSON received, first 200 characters:", text.substring(0, 200));
+				throw new Error("Failed to parse quiz data: " + parseError.message);
+			}
+		} catch (error) {
+			console.error("Failed to load quiz data:", error);
+			throw error;
 		}
-		this.quizData = await response.json();
-		return this.quizData;
 	}
 
 	// Get the current step
