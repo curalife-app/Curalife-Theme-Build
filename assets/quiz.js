@@ -811,28 +811,62 @@ class ProductQuiz {
 				Processing...
 			`;
 
-			// Process and filter the responses - ensure it matches n8n workflow expectations
-			// Format: array of objects with {stepId, questionId, answer}
-			const allResponses = this.responses.map(response => ({
-				stepId: response.stepId,
-				questionId: response.questionId,
-				answer: response.answer
-			}));
+			// Extract required data from responses
+			// This is directly matching what the n8n workflow expects
+			let customerEmail = "";
+			let firstName = "";
+			let lastName = "";
+			let phoneNumber = "";
+			let state = "";
+			let insurance = "";
+			let insuranceMemberId = "";
+			let mainReason = "";
+			let secondaryReasons = [];
+			let dateOfBirth = "";
 
-			// Create the responses object for the API in the format it expects
-			const finalResponses = this.responses.reduce((acc, response) => {
-				// Skip any null answers or "info-acknowledged" answers
-				if (response.answer === null || response.answer === "info-acknowledged") {
-					return acc;
-				}
+			// Extract individual answers
+			this.responses.forEach(response => {
+				if (response.questionId === "q9") customerEmail = response.answer || "";
+				if (response.questionId === "q7") firstName = response.answer || "";
+				if (response.questionId === "q8") lastName = response.answer || "";
+				if (response.questionId === "q10") phoneNumber = response.answer || "";
+				if (response.questionId === "q5") state = response.answer || "";
+				if (response.questionId === "q3") insurance = response.answer || "";
+				if (response.questionId === "q4") insuranceMemberId = response.answer || "";
+				if (response.questionId === "q1") mainReason = response.answer || "";
+				if (response.questionId === "q2") secondaryReasons = response.answer || [];
+				if (response.questionId === "q6") dateOfBirth = response.answer || "";
+			});
 
-				// Include any valid answers
-				acc[response.questionId] = response.answer;
-				return acc;
-			}, {});
+			// Format for n8n workflow
+			const completedAt = new Date().toISOString();
+			const quizId = this.quizData?.id || "dietitian-quiz";
+			const quizTitle = this.quizData?.title || "Dietitian Quiz";
 
-			console.log("Sending final responses:", finalResponses);
-			console.log("All responses array format:", allResponses);
+			// Create exact payload structure that n8n expects
+			const payload = {
+				quizId,
+				quizTitle,
+				completedAt,
+				customerEmail,
+				firstName,
+				lastName,
+				phoneNumber,
+				dateOfBirth,
+				state,
+				insurance,
+				insuranceMemberId,
+				mainReason,
+				secondaryReasons,
+				// Provide the full responses array exactly as n8n expects
+				allResponses: this.responses.map(r => ({
+					stepId: r.stepId,
+					questionId: r.questionId,
+					answer: r.answer
+				}))
+			};
+
+			console.log("Sending payload to webhook:", payload);
 
 			// Get webhook URL from data attribute
 			const webhookUrl = this.container.getAttribute("data-n8n-webhook");
@@ -843,17 +877,6 @@ class ProductQuiz {
 				this.showResults(bookingUrl);
 				return;
 			}
-
-			// Prepare the payload - keep it minimal and consistent with n8n expectations
-			const payload = {
-				responses: finalResponses,
-				allResponses: allResponses, // Add the full array for the n8n workflow
-				quizId: this.quizData?.id || "dietitian-quiz",
-				quizTitle: this.quizData?.title || "Dietitian Quiz",
-				timestamp: new Date().toISOString(),
-				completedAt: new Date().toISOString(),
-				source: window.location.href
-			};
 
 			// Try to call the webhook
 			let webhookSuccess = false;
@@ -869,7 +892,9 @@ class ProductQuiz {
 					headers: {
 						"Content-Type": "application/json"
 					},
-					body: JSON.stringify(payload)
+					body: JSON.stringify({
+						data: JSON.stringify(payload) // Double wrap as some n8n workflows expect this format
+					})
 				});
 
 				// Race the timeout against the fetch
