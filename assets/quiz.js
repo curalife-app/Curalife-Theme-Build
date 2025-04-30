@@ -11,19 +11,34 @@ class ProductQuiz {
 		this.container = document.getElementById("product-quiz");
 		if (!this.container) return;
 
-		// Find elements with the new Tailwind classes
-		this.intro = this.container.querySelector(".text-center.py-12");
-		this.questions = this.container.querySelector(".min-h-\\[400px\\]");
-		this.results = this.container.querySelector(".max-w-4xl.my-8.px-4.py-8");
-		this.error = this.container.querySelector(".text-center.py-8.max-w-md");
-		this.loading = this.container.querySelector(".flex.flex-col.items-center.justify-center");
+		// Use the specific class names we added to the HTML
+		this.intro = this.container.querySelector(".quiz-intro");
+		this.questions = this.container.querySelector(".quiz-questions");
+		this.results = this.container.querySelector(".quiz-results");
+		this.error = this.container.querySelector(".quiz-error");
+		this.loading = this.container.querySelector(".quiz-loading");
 
-		this.progressBar = this.container.querySelector(".h-full.bg-slate-800");
-		this.questionContainer = this.container.querySelector(".p-8");
-		this.navigationButtons = this.container.querySelector(".flex.justify-between");
+		this.progressBar = this.container.querySelector(".quiz-progress-bar");
+		this.questionContainer = this.container.querySelector(".quiz-question-container");
+		this.navigationButtons = this.container.querySelector(".quiz-navigation");
 		this.prevButton = this.container.querySelector("#quiz-prev-button");
 		this.nextButton = this.container.querySelector("#quiz-next-button");
 		this.startButton = this.container.querySelector("#quiz-start-button");
+
+		// Check if we found all the required elements
+		console.log("Quiz elements found:", {
+			intro: !!this.intro,
+			questions: !!this.questions,
+			results: !!this.results,
+			error: !!this.error,
+			loading: !!this.loading,
+			progressBar: !!this.progressBar,
+			questionContainer: !!this.questionContainer,
+			navigationButtons: !!this.navigationButtons,
+			prevButton: !!this.prevButton,
+			nextButton: !!this.nextButton,
+			startButton: !!this.startButton
+		});
 
 		// Options
 		this.dataUrl = options.dataUrl || this.container.getAttribute("data-quiz-url") || "/apps/product-quiz/data.json";
@@ -71,6 +86,16 @@ class ProductQuiz {
 	}
 
 	async startQuiz() {
+		// Check that we have all required elements before proceeding
+		if (!this.intro || !this.questions || !this.loading) {
+			console.error("Required quiz elements are missing:", {
+				intro: !!this.intro,
+				questions: !!this.questions,
+				loading: !!this.loading
+			});
+			return;
+		}
+
 		// Hide intro, show questions
 		this.intro.style.display = "none";
 		this.questions.classList.remove("hidden");
@@ -82,6 +107,14 @@ class ProductQuiz {
 
 			// Initialize responses array
 			this.responses = [];
+
+			// Check that quiz data was loaded properly
+			if (!this.quizData || !this.quizData.steps) {
+				console.error("Quiz data is missing or incomplete:", this.quizData);
+				this.loading.classList.add("hidden");
+				if (this.error) this.error.classList.remove("hidden");
+				return;
+			}
 
 			// Initialize responses for all questions across all steps
 			this.quizData.steps.forEach(step => {
@@ -112,7 +145,7 @@ class ProductQuiz {
 		} catch (error) {
 			console.error("Failed to load quiz data:", error);
 			this.loading.classList.add("hidden");
-			this.error.classList.remove("hidden");
+			if (this.error) this.error.classList.remove("hidden");
 		}
 	}
 
@@ -143,6 +176,10 @@ class ProductQuiz {
 
 	// Get the current step
 	getCurrentStep() {
+		// Guard against null quizData
+		if (!this.quizData || !this.quizData.steps) {
+			return null;
+		}
 		return this.quizData.steps[this.currentStepIndex];
 	}
 
@@ -504,10 +541,10 @@ class ProductQuiz {
 					if (question.validation && question.validation.pattern) {
 						const regex = new RegExp(question.validation.pattern);
 						if (regex.test(textInput.value)) {
-							textInput.classList.remove("quiz-input-error");
+							textInput.classList.remove("border-red-500");
 							this.handleAnswer(textInput.value);
 						} else {
-							textInput.classList.add("quiz-input-error");
+							textInput.classList.add("border-red-500");
 							this.handleAnswer(null); // Invalid input
 						}
 					} else {
@@ -899,10 +936,10 @@ class ProductQuiz {
 					if (question.validation && question.validation.pattern) {
 						const regex = new RegExp(question.validation.pattern);
 						if (regex.test(textInput.value)) {
-							textInput.classList.remove("quiz-input-error");
+							textInput.classList.remove("border-red-500");
 							this.handleFormAnswer(question.id, textInput.value);
 						} else {
-							textInput.classList.add("quiz-input-error");
+							textInput.classList.add("border-red-500");
 							this.handleFormAnswer(question.id, null); // Invalid input
 						}
 					} else {
