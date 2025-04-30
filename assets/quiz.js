@@ -30,7 +30,8 @@ class ProductQuiz {
 
 		// State
 		this.quizData = null;
-		this.currentQuestionIndex = 0;
+		this.currentStepIndex = 0;
+		this.currentQuestionIndex = 0; // For steps with multiple questions
 		this.responses = [];
 		this.submitting = false;
 
@@ -45,11 +46,11 @@ class ProductQuiz {
 		}
 
 		if (this.prevButton) {
-			this.prevButton.addEventListener("click", () => this.goToPreviousQuestion());
+			this.prevButton.addEventListener("click", () => this.goToPreviousStep());
 		}
 
 		if (this.nextButton) {
-			this.nextButton.addEventListener("click", () => this.goToNextQuestion());
+			this.nextButton.addEventListener("click", () => this.goToNextStep());
 		}
 	}
 
@@ -63,14 +64,34 @@ class ProductQuiz {
 			// Fetch quiz data
 			await this.loadQuizData();
 
-			// Initialize responses array with empty values
-			this.responses = this.quizData.questions.map(q => ({ questionId: q.id, answer: null }));
+			// Initialize responses array
+			this.responses = [];
+
+			// Initialize responses for all questions across all steps
+			this.quizData.steps.forEach(step => {
+				if (step.questions) {
+					step.questions.forEach(question => {
+						this.responses.push({
+							stepId: step.id,
+							questionId: question.id,
+							answer: null
+						});
+					});
+				} else {
+					// For info-only steps
+					this.responses.push({
+						stepId: step.id,
+						questionId: step.id,
+						answer: null
+					});
+				}
+			});
 
 			// Hide loading indicator
 			this.loading.style.display = "none";
 
-			// Render the first question
-			this.renderCurrentQuestion();
+			// Render the first step
+			this.renderCurrentStep();
 			this.updateNavigation();
 		} catch (error) {
 			console.error("Failed to load quiz data:", error);
@@ -88,65 +109,115 @@ class ProductQuiz {
 		return this.quizData;
 	}
 
-	renderCurrentQuestion() {
-		const question = this.quizData.questions[this.currentQuestionIndex];
-		const response = this.responses[this.currentQuestionIndex];
+	// Get the current step
+	getCurrentStep() {
+		return this.quizData.steps[this.currentStepIndex];
+	}
+
+	// Get the current question (if the step has questions)
+	getCurrentQuestion() {
+		const step = this.getCurrentStep();
+		if (step.questions) {
+			return step.questions[this.currentQuestionIndex];
+		}
+		return null;
+	}
+
+	// Get response for the current question
+	getResponseForCurrentQuestion() {
+		const step = this.getCurrentStep();
+		const questionId = step.questions ? step.questions[this.currentQuestionIndex].id : step.id;
+
+		return (
+			this.responses.find(r => r.questionId === questionId) || {
+				stepId: step.id,
+				questionId: questionId,
+				answer: null
+			}
+		);
+	}
+
+	renderCurrentStep() {
+		const step = this.getCurrentStep();
 
 		// Update progress bar
-		const progress = ((this.currentQuestionIndex + 1) / this.quizData.questions.length) * 100;
+		const progress = ((this.currentStepIndex + 1) / this.quizData.steps.length) * 100;
 		this.progressBar.style.width = `${progress}%`;
 
-		// Create question HTML
-		let questionHTML = `
-      <div class="quiz-fade-in">
-    `;
+		// Create step HTML
+		let stepHTML = `<div class="quiz-fade-in">`;
 
-		// Check if this is an info type (not an actual question)
-		if (question.type === "info") {
-			questionHTML += `
-        <h3 class="quiz-question-title">${question.heading}</h3>
-        <p class="quiz-question-description">${question.text}</p>
-        ${question.subtext ? `<p class="quiz-subtext">${question.subtext}</p>` : ""}
-      `;
-		} else {
-			// Regular question
-			questionHTML += `
-        <h3 class="quiz-question-title">${question.text}</h3>
-        ${question.helpText ? `<p class="quiz-question-description">${question.helpText}</p>` : ""}
-      `;
+		// Check if this is an info-only step or has questions
+		if (step.info) {
+			// Info-only step
+			stepHTML += `
+				<h3 class="quiz-question-title">${step.info.heading}</h3>
+				<p class="quiz-question-description">${step.info.text}</p>
+				${step.info.subtext ? `<p class="quiz-subtext">${step.info.subtext}</p>` : ""}
+			`;
+			// Update this step's response to acknowledge it was seen
+			const infoResponse = this.responses.find(r => r.stepId === step.id);
+			if (infoResponse) {
+				infoResponse.answer = "info-acknowledged";
+			} else {
+				this.responses.push({
+					stepId: step.id,
+					questionId: step.id,
+					answer: "info-acknowledged"
+				});
+			}
+		} else if (step.questions) {
+			// Step with questions - render current question
+			const question = step.questions[this.currentQuestionIndex];
+			const response = this.getResponseForCurrentQuestion();
+
+			stepHTML += `
+				<h3 class="quiz-question-title">${question.text}</h3>
+				${question.helpText ? `<p class="quiz-question-description">${question.helpText}</p>` : ""}
+			`;
 
 			// Add question type specific HTML
 			switch (question.type) {
 				case "multiple-choice":
-					questionHTML += this.renderMultipleChoice(question, response);
+					stepHTML += this.renderMultipleChoice(question, response);
 					break;
 				case "checkbox":
-					questionHTML += this.renderCheckbox(question, response);
+					stepHTML += this.renderCheckbox(question, response);
 					break;
 				case "dropdown":
-					questionHTML += this.renderDropdown(question, response);
+					stepHTML += this.renderDropdown(question, response);
 					break;
 				case "text":
-					questionHTML += this.renderTextInput(question, response);
+					stepHTML += this.renderTextInput(question, response);
+					break;
+				case "date":
+					stepHTML += this.renderDateInput(question, response);
 					break;
 				case "textarea":
-					questionHTML += this.renderTextarea(question, response);
+					stepHTML += this.renderTextarea(question, response);
 					break;
 				case "rating":
-					questionHTML += this.renderRating(question, response);
+					stepHTML += this.renderRating(question, response);
 					break;
 				default:
-					questionHTML += '<p class="quiz-error">Unknown question type</p>';
+					stepHTML += '<p class="quiz-error">Unknown question type</p>';
 			}
 		}
 
-		questionHTML += "</div>";
+		// Add legal text if present
+		if (step.legal) {
+			stepHTML += `<p class="quiz-legal">${step.legal}</p>`;
+		}
+
+		stepHTML += "</div>";
 
 		// Set the HTML
-		this.questionContainer.innerHTML = questionHTML;
+		this.questionContainer.innerHTML = stepHTML;
 
-		// Add event listeners for the new question
-		this.attachQuestionEventListeners(question);
+		// Add event listeners for the questions in the step
+		if (step.questions) {
+			this.attachQuestionEventListeners(step.questions[this.currentQuestionIndex]);
+		}
 	}
 
 	renderMultipleChoice(question, response) {
@@ -154,12 +225,12 @@ class ProductQuiz {
 
 		question.options.forEach(option => {
 			html += `
-        <div class="quiz-option-item">
-          <input type="radio" id="${option.id}" name="question-${question.id}" value="${option.id}"
-            ${response.answer === option.id ? "checked" : ""}>
-          <label class="quiz-option-label" for="${option.id}">${option.text}</label>
-        </div>
-      `;
+				<div class="quiz-option-item">
+					<input type="radio" id="${option.id}" name="question-${question.id}" value="${option.id}"
+						${response.answer === option.id ? "checked" : ""}>
+					<label class="quiz-option-label" for="${option.id}">${option.text}</label>
+				</div>
+			`;
 		});
 
 		html += "</div>";
@@ -173,12 +244,12 @@ class ProductQuiz {
 
 		question.options.forEach(option => {
 			html += `
-        <div class="quiz-option-item">
-          <input type="checkbox" id="${option.id}" name="question-${question.id}" value="${option.id}"
-            ${selectedOptions.includes(option.id) ? "checked" : ""}>
-          <label class="quiz-option-label" for="${option.id}">${option.text}</label>
-        </div>
-      `;
+				<div class="quiz-option-item">
+					<input type="checkbox" id="${option.id}" name="question-${question.id}" value="${option.id}"
+						${selectedOptions.includes(option.id) ? "checked" : ""}>
+					<label class="quiz-option-label" for="${option.id}">${option.text}</label>
+				</div>
+			`;
 		});
 
 		html += "</div>";
@@ -186,15 +257,7 @@ class ProductQuiz {
 	}
 
 	renderDropdown(question, response) {
-		// Handle dynamic options sources
-		let options = [];
-		if (question.options) {
-			options = question.options;
-		} else if (question.optionsSource === "US_STATES") {
-			options = this.getUSStates();
-		} else if (question.optionsSource === "INSURANCE_PROVIDERS") {
-			options = this.getInsuranceProviders();
-		}
+		let options = question.options || [];
 
 		let html = `
 			<div class="quiz-dropdown">
@@ -215,44 +278,51 @@ class ProductQuiz {
 
 	renderTextInput(question, response) {
 		return `
-      <div class="quiz-text-answer">
-        <input type="text" id="question-${question.id}" class="quiz-text-input"
-          placeholder="${question.placeholder || "Type your answer here..."}"
-          value="${response.answer || ""}">
-      </div>
-    `;
+			<div class="quiz-text-answer">
+				<input type="text" id="question-${question.id}" class="quiz-text-input"
+					placeholder="${question.placeholder || "Type your answer here..."}"
+					value="${response.answer || ""}">
+			</div>
+		`;
+	}
+
+	renderDateInput(question, response) {
+		return `
+			<div class="quiz-text-answer">
+				<input type="date" id="question-${question.id}" class="quiz-text-input"
+					placeholder="${question.helpText || "MM/DD/YYYY"}"
+					value="${response.answer || ""}">
+				${question.helpText ? `<p class="quiz-help-text">${question.helpText}</p>` : ""}
+			</div>
+		`;
 	}
 
 	renderTextarea(question, response) {
 		return `
-      <div class="quiz-text-answer">
-        <textarea id="question-${question.id}" class="quiz-textarea" rows="4"
-          placeholder="${question.placeholder || "Type your answer here..."}">${response.answer || ""}</textarea>
-      </div>
-    `;
+			<div class="quiz-text-answer">
+				<textarea id="question-${question.id}" class="quiz-textarea" rows="4"
+					placeholder="${question.placeholder || "Type your answer here..."}">${response.answer || ""}</textarea>
+			</div>
+		`;
 	}
 
 	renderRating(question, response) {
 		return `
-      <div class="quiz-rating-answer">
-        <input type="range" id="question-${question.id}" class="quiz-rating-slider"
-          min="1" max="10" step="1" value="${response.answer || 5}">
-        <div class="quiz-rating-labels">
-          <span>1</span>
-          <span>5</span>
-          <span>10</span>
-        </div>
-      </div>
-    `;
+			<div class="quiz-rating-answer">
+				<input type="range" id="question-${question.id}" class="quiz-rating-slider"
+					min="1" max="10" step="1" value="${response.answer || 5}">
+				<div class="quiz-rating-labels">
+					<span>1</span>
+					<span>5</span>
+					<span>10</span>
+				</div>
+			</div>
+		`;
 	}
 
 	attachQuestionEventListeners(question) {
-		// Skip event listeners for info type
-		if (question.type === "info") {
-			// No input to listen for, just enable the next button
-			this.handleAnswer("info-acknowledged");
-			return;
-		}
+		// Skip event listeners for info-only steps
+		if (!question) return;
 
 		switch (question.type) {
 			case "multiple-choice":
@@ -284,7 +354,7 @@ class ProductQuiz {
 				break;
 
 			case "text":
-			case "textarea":
+			case "date":
 				const textInput = this.questionContainer.querySelector(`#question-${question.id}`);
 				textInput.addEventListener("input", () => {
 					// If there's validation, check it
@@ -303,6 +373,13 @@ class ProductQuiz {
 				});
 				break;
 
+			case "textarea":
+				const textareaInput = this.questionContainer.querySelector(`#question-${question.id}`);
+				textareaInput.addEventListener("input", () => {
+					this.handleAnswer(textareaInput.value);
+				});
+				break;
+
 			case "rating":
 				const ratingInput = this.questionContainer.querySelector(`#question-${question.id}`);
 				ratingInput.addEventListener("input", () => {
@@ -315,66 +392,119 @@ class ProductQuiz {
 	handleAnswer(answer) {
 		if (!this.quizData) return;
 
-		this.responses[this.currentQuestionIndex] = {
-			questionId: this.quizData.questions[this.currentQuestionIndex].id,
-			answer
-		};
+		const step = this.getCurrentStep();
+
+		// If it's a step with questions, update the response for the current question
+		if (step.questions) {
+			const question = step.questions[this.currentQuestionIndex];
+			const responseIndex = this.responses.findIndex(r => r.questionId === question.id);
+
+			if (responseIndex !== -1) {
+				this.responses[responseIndex].answer = answer;
+			} else {
+				this.responses.push({
+					stepId: step.id,
+					questionId: question.id,
+					answer
+				});
+			}
+		} else {
+			// For info-only steps, mark as acknowledged
+			const responseIndex = this.responses.findIndex(r => r.stepId === step.id);
+			if (responseIndex !== -1) {
+				this.responses[responseIndex].answer = answer;
+			} else {
+				this.responses.push({
+					stepId: step.id,
+					questionId: step.id,
+					answer
+				});
+			}
+		}
 
 		this.updateNavigation();
 	}
 
 	updateNavigation() {
 		// Disable/enable previous button
-		this.prevButton.disabled = this.currentQuestionIndex === 0 || this.submitting;
+		this.prevButton.disabled = this.currentStepIndex === 0 || this.submitting;
 
-		// Update next button text and state
-		const isLastQuestion = this.currentQuestionIndex === this.quizData.questions.length - 1;
-		this.nextButton.innerHTML = isLastQuestion
-			? "Finish Quiz"
-			: 'Next <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
+		const step = this.getCurrentStep();
+
+		// Check if we need to show Next or Finish
+		const isLastStep = this.currentStepIndex === this.quizData.steps.length - 1;
+		const isLastQuestionInStep = step.questions ? this.currentQuestionIndex === step.questions.length - 1 : true;
+
+		// Update the button text based on the current step's ctaText
+		if (isLastStep && isLastQuestionInStep) {
+			this.nextButton.innerHTML = step.ctaText || "Finish Quiz";
+		} else {
+			this.nextButton.innerHTML =
+				step.ctaText ||
+				'Next <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
+		}
 
 		// Check if current question has an answer
-		const currentResponse = this.responses[this.currentQuestionIndex];
-		const hasAnswer = currentResponse && currentResponse.answer !== null && (typeof currentResponse.answer !== "string" || currentResponse.answer.trim() !== "");
+		let hasAnswer = true;
+
+		if (step.questions) {
+			const question = step.questions[this.currentQuestionIndex];
+			const response = this.responses.find(r => r.questionId === question.id);
+
+			// Check if the question is required and has an answer
+			if (question.required) {
+				hasAnswer = response && response.answer !== null && (typeof response.answer !== "string" || response.answer.trim() !== "") && (!Array.isArray(response.answer) || response.answer.length > 0);
+			}
+		}
 
 		this.nextButton.disabled = !hasAnswer || this.submitting;
 	}
 
-	goToPreviousQuestion() {
-		if (this.currentQuestionIndex > 0) {
+	goToPreviousStep() {
+		const currentStep = this.getCurrentStep();
+
+		// If we have multiple questions in the current step and not on the first one
+		if (currentStep.questions && this.currentQuestionIndex > 0) {
 			this.currentQuestionIndex--;
-			this.renderCurrentQuestion();
+			this.renderCurrentStep();
+			this.updateNavigation();
+			return;
+		}
+
+		// Otherwise, go to the previous step
+		if (this.currentStepIndex > 0) {
+			this.currentStepIndex--;
+			// If the previous step has questions, position at the last question
+			const prevStep = this.quizData.steps[this.currentStepIndex];
+			this.currentQuestionIndex = prevStep.questions ? prevStep.questions.length - 1 : 0;
+
+			this.renderCurrentStep();
 			this.updateNavigation();
 		}
 	}
 
-	goToNextQuestion() {
-		const currentQuestion = this.quizData.questions[this.currentQuestionIndex];
-		const currentResponse = this.responses[this.currentQuestionIndex];
+	goToNextStep() {
+		const currentStep = this.getCurrentStep();
 
-		// Check for conditional logic
-		if (currentQuestion.conditionalNext && currentResponse.answer) {
-			const nextQuestionId = currentQuestion.conditionalNext[currentResponse.answer.toString()];
-			if (nextQuestionId) {
-				const nextIndex = this.quizData.questions.findIndex(q => q.id === nextQuestionId);
-				if (nextIndex !== -1) {
-					this.currentQuestionIndex = nextIndex;
-					this.renderCurrentQuestion();
-					this.updateNavigation();
-					return;
-				}
-			}
-		}
-
-		// If no conditional logic or condition not met, go to next question
-		if (this.currentQuestionIndex < this.quizData.questions.length - 1) {
+		// If we have multiple questions in the current step and not on the last one
+		if (currentStep.questions && this.currentQuestionIndex < currentStep.questions.length - 1) {
 			this.currentQuestionIndex++;
-			this.renderCurrentQuestion();
+			this.renderCurrentStep();
 			this.updateNavigation();
-		} else {
-			// Submit the quiz
-			this.finishQuiz();
+			return;
 		}
+
+		// If this is the last step, finish the quiz
+		if (this.currentStepIndex === this.quizData.steps.length - 1) {
+			this.finishQuiz();
+			return;
+		}
+
+		// Otherwise, go to the next step
+		this.currentStepIndex++;
+		this.currentQuestionIndex = 0; // Reset question index for the new step
+		this.renderCurrentStep();
+		this.updateNavigation();
 	}
 
 	async finishQuiz() {
@@ -471,23 +601,32 @@ class ProductQuiz {
 			}
 		}
 
-		// Even if data sending failed, show completion
 		// Wait a moment to make the loading state visible
 		await new Promise(resolve => setTimeout(resolve, 500));
 
-		// Hide questions and show a completion message
-		this.questions.style.display = "none";
-		this.results.style.display = "block"; // Re-purpose the results container
-		this.results.innerHTML = `
-      <div class="quiz-results-header quiz-fade-in">
-        <h2>Quiz Complete!</h2>
-        <p>Thank you for taking the quiz.</p>
-        <button class="quiz-btn quiz-btn-primary" onclick="window.location.reload()">Take Again</button>
-				<a href="/" class="quiz-btn quiz-btn-secondary">Return Home</a>
-      </div>
-    `;
+		// Check if we should redirect to appointment booking
+		const lastStep = this.quizData.steps[this.quizData.steps.length - 1];
+		if (lastStep.id === "step-eligibility") {
+			// Get the booking URL from the section settings or use a default
+			const bookingUrl = this.container.getAttribute("data-booking-url") || "/appointment-booking";
+			// Redirect to appointment booking page
+			window.location.href = bookingUrl;
+			return;
+		}
 
-		this.submitting = false; // Reset submitting state (though UI is now different)
+		// Otherwise show completion message
+		this.questions.style.display = "none";
+		this.results.style.display = "block";
+		this.results.innerHTML = `
+			<div class="quiz-results-header quiz-fade-in">
+				<h2>Quiz Complete!</h2>
+				<p>Thank you for taking the quiz.</p>
+				<button class="quiz-btn quiz-btn-primary" onclick="window.location.reload()">Take Again</button>
+				<a href="/" class="quiz-btn quiz-btn-secondary">Return Home</a>
+			</div>
+		`;
+
+		this.submitting = false;
 	}
 
 	// Helper method to submit data via a hidden form (gets around CORS)
@@ -551,78 +690,6 @@ class ProductQuiz {
 				reject(error);
 			}
 		});
-	}
-
-	// Helper methods for dropdown options
-	getUSStates() {
-		return [
-			{ id: "AL", text: "Alabama" },
-			{ id: "AK", text: "Alaska" },
-			{ id: "AZ", text: "Arizona" },
-			{ id: "AR", text: "Arkansas" },
-			{ id: "CA", text: "California" },
-			{ id: "CO", text: "Colorado" },
-			{ id: "CT", text: "Connecticut" },
-			{ id: "DE", text: "Delaware" },
-			{ id: "FL", text: "Florida" },
-			{ id: "GA", text: "Georgia" },
-			{ id: "HI", text: "Hawaii" },
-			{ id: "ID", text: "Idaho" },
-			{ id: "IL", text: "Illinois" },
-			{ id: "IN", text: "Indiana" },
-			{ id: "IA", text: "Iowa" },
-			{ id: "KS", text: "Kansas" },
-			{ id: "KY", text: "Kentucky" },
-			{ id: "LA", text: "Louisiana" },
-			{ id: "ME", text: "Maine" },
-			{ id: "MD", text: "Maryland" },
-			{ id: "MA", text: "Massachusetts" },
-			{ id: "MI", text: "Michigan" },
-			{ id: "MN", text: "Minnesota" },
-			{ id: "MS", text: "Mississippi" },
-			{ id: "MO", text: "Missouri" },
-			{ id: "MT", text: "Montana" },
-			{ id: "NE", text: "Nebraska" },
-			{ id: "NV", text: "Nevada" },
-			{ id: "NH", text: "New Hampshire" },
-			{ id: "NJ", text: "New Jersey" },
-			{ id: "NM", text: "New Mexico" },
-			{ id: "NY", text: "New York" },
-			{ id: "NC", text: "North Carolina" },
-			{ id: "ND", text: "North Dakota" },
-			{ id: "OH", text: "Ohio" },
-			{ id: "OK", text: "Oklahoma" },
-			{ id: "OR", text: "Oregon" },
-			{ id: "PA", text: "Pennsylvania" },
-			{ id: "RI", text: "Rhode Island" },
-			{ id: "SC", text: "South Carolina" },
-			{ id: "SD", text: "South Dakota" },
-			{ id: "TN", text: "Tennessee" },
-			{ id: "TX", text: "Texas" },
-			{ id: "UT", text: "Utah" },
-			{ id: "VT", text: "Vermont" },
-			{ id: "VA", text: "Virginia" },
-			{ id: "WA", text: "Washington" },
-			{ id: "WV", text: "West Virginia" },
-			{ id: "WI", text: "Wisconsin" },
-			{ id: "WY", text: "Wyoming" },
-			{ id: "DC", text: "District of Columbia" }
-		];
-	}
-
-	getInsuranceProviders() {
-		return [
-			{ id: "aetna", text: "Aetna" },
-			{ id: "bcbs", text: "Blue Cross Blue Shield" },
-			{ id: "cigna", text: "Cigna" },
-			{ id: "humana", text: "Humana" },
-			{ id: "kaiser", text: "Kaiser Permanente" },
-			{ id: "medicare", text: "Medicare" },
-			{ id: "medicaid", text: "Medicaid" },
-			{ id: "uhc", text: "UnitedHealthcare" },
-			{ id: "other", text: "Other Insurance" },
-			{ id: "none", text: "No Insurance / Self Pay" }
-		];
 	}
 }
 
