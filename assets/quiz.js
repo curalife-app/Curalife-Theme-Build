@@ -40,18 +40,34 @@ class ProductQuiz {
 	}
 
 	async init() {
-		// Add event listeners
+		console.log("Initializing quiz...");
+
+		// Remove any existing event listeners to prevent duplicates
 		if (this.startButton) {
-			this.startButton.addEventListener("click", () => this.startQuiz());
+			this.startButton.removeEventListener("click", this.startQuizHandler);
+			this.startQuizHandler = () => this.startQuiz();
+			this.startButton.addEventListener("click", this.startQuizHandler);
 		}
 
 		if (this.prevButton) {
-			this.prevButton.addEventListener("click", () => this.goToPreviousStep());
+			this.prevButton.removeEventListener("click", this.prevButtonHandler);
+			this.prevButtonHandler = () => {
+				console.log("Previous button clicked");
+				this.goToPreviousStep();
+			};
+			this.prevButton.addEventListener("click", this.prevButtonHandler);
 		}
 
 		if (this.nextButton) {
-			this.nextButton.addEventListener("click", () => this.goToNextStep());
+			this.nextButton.removeEventListener("click", this.nextButtonHandler);
+			this.nextButtonHandler = () => {
+				console.log("Next button clicked");
+				this.goToNextStep();
+			};
+			this.nextButton.addEventListener("click", this.nextButtonHandler);
 		}
+
+		console.log("Quiz initialization complete");
 	}
 
 	async startQuiz() {
@@ -160,6 +176,8 @@ class ProductQuiz {
 			return;
 		}
 
+		console.log("Rendering step:", step.id, step.info ? "info-step" : "question-step");
+
 		// Update progress bar
 		const progress = ((this.currentStepIndex + 1) / this.quizData.steps.length) * 100;
 		this.progressBar.style.width = `${progress}%`;
@@ -186,6 +204,11 @@ class ProductQuiz {
 					answer: "info-acknowledged"
 				});
 			}
+
+			// For info steps, make sure next button is enabled immediately
+			setTimeout(() => {
+				this.nextButton.disabled = false;
+			}, 0);
 		} else if (step.questions && step.questions.length > 0) {
 			// Step with questions - render current question
 			const question = step.questions[this.currentQuestionIndex];
@@ -250,6 +273,9 @@ class ProductQuiz {
 				this.attachQuestionEventListeners(currentQuestion);
 			}
 		}
+
+		// Always update navigation to ensure buttons are correctly enabled/disabled
+		this.updateNavigation();
 	}
 
 	renderMultipleChoice(question, response) {
@@ -452,10 +478,21 @@ class ProductQuiz {
 		if (!this.quizData) return;
 
 		const step = this.getCurrentStep();
+		if (!step) {
+			console.error("Cannot handle answer: No current step found");
+			return;
+		}
+
+		console.log(`Handling answer for step ${step.id}:`, answer);
 
 		// If it's a step with questions, update the response for the current question
-		if (step.questions) {
+		if (step.questions && step.questions.length > 0) {
 			const question = step.questions[this.currentQuestionIndex];
+			if (!question) {
+				console.error("Cannot handle answer: No question found at index", this.currentQuestionIndex);
+				return;
+			}
+
 			const responseIndex = this.responses.findIndex(r => r.questionId === question.id);
 
 			if (responseIndex !== -1) {
@@ -467,18 +504,21 @@ class ProductQuiz {
 					answer
 				});
 			}
-		} else {
+		} else if (step.info) {
 			// For info-only steps, mark as acknowledged
 			const responseIndex = this.responses.findIndex(r => r.stepId === step.id);
 			if (responseIndex !== -1) {
-				this.responses[responseIndex].answer = answer;
+				this.responses[responseIndex].answer = answer || "info-acknowledged";
 			} else {
 				this.responses.push({
 					stepId: step.id,
 					questionId: step.id,
-					answer
+					answer: answer || "info-acknowledged"
 				});
 			}
+
+			// For info steps, the next button should always be enabled
+			this.nextButton.disabled = false;
 		}
 
 		this.updateNavigation();
@@ -558,6 +598,27 @@ class ProductQuiz {
 
 	goToNextStep() {
 		const currentStep = this.getCurrentStep();
+		if (!currentStep) {
+			console.error("Cannot go to next step: No current step found");
+			return;
+		}
+
+		console.log("Attempting to go to next step from", currentStep.id);
+
+		// If this is an info-only step, simply move to the next step
+		if (currentStep.info) {
+			console.log("Current step is info-only, proceeding to next step");
+			if (this.currentStepIndex < this.quizData.steps.length - 1) {
+				this.currentStepIndex++;
+				this.currentQuestionIndex = 0; // Reset question index for the new step
+				this.renderCurrentStep();
+				this.updateNavigation();
+			} else {
+				// This is the last step, finish the quiz
+				this.finishQuiz();
+			}
+			return;
+		}
 
 		// If we have multiple questions in the current step and not on the last one
 		if (currentStep.questions && this.currentQuestionIndex < currentStep.questions.length - 1) {
