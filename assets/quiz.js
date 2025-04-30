@@ -5,7 +5,6 @@
  * It loads quiz data from a JSON file and guides the user through
  * a series of questions to provide product recommendations.
  */
-
 class ProductQuiz {
 	constructor(options = {}) {
 		// DOM elements
