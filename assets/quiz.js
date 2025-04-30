@@ -811,7 +811,15 @@ class ProductQuiz {
 				Processing...
 			`;
 
-			// Process and filter the responses
+			// Process and filter the responses - ensure it matches n8n workflow expectations
+			// Format: array of objects with {stepId, questionId, answer}
+			const allResponses = this.responses.map(response => ({
+				stepId: response.stepId,
+				questionId: response.questionId,
+				answer: response.answer
+			}));
+
+			// Create the responses object for the API in the format it expects
 			const finalResponses = this.responses.reduce((acc, response) => {
 				// Skip any null answers or "info-acknowledged" answers
 				if (response.answer === null || response.answer === "info-acknowledged") {
@@ -824,61 +832,86 @@ class ProductQuiz {
 			}, {});
 
 			console.log("Sending final responses:", finalResponses);
+			console.log("All responses array format:", allResponses);
 
 			// Get webhook URL from data attribute
 			const webhookUrl = this.container.getAttribute("data-n8n-webhook");
-			const bookingUrl = this.container.getAttribute("data-booking-url");
+			const bookingUrl = this.container.getAttribute("data-booking-url") || "/appointment-booking";
 
 			if (!webhookUrl) {
-				console.error("No webhook URL provided");
-				this.showError("Configuration Error", "Missing webhook URL. Please contact support.");
+				console.warn("No webhook URL provided - proceeding to booking URL without webhook submission");
+				this.showResults(bookingUrl);
 				return;
 			}
 
-			// Call the webhook to process the responses
+			// Prepare the payload - keep it minimal and consistent with n8n expectations
+			const payload = {
+				responses: finalResponses,
+				allResponses: allResponses, // Add the full array for the n8n workflow
+				quizId: this.quizData?.id || "dietitian-quiz",
+				quizTitle: this.quizData?.title || "Dietitian Quiz",
+				timestamp: new Date().toISOString(),
+				completedAt: new Date().toISOString(),
+				source: window.location.href
+			};
+
+			// Try to call the webhook
+			let webhookSuccess = false;
+			let errorMessage = "";
+
 			try {
-				const webhook = await fetch(webhookUrl, {
+				// Set a timeout to avoid waiting too long
+				const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Webhook request timed out")), 8000));
+
+				// Make the actual request
+				const fetchPromise = fetch(webhookUrl, {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json"
 					},
-					body: JSON.stringify({
-						responses: finalResponses,
-						quizId: this.quizData.id,
-						timestamp: new Date().toISOString(),
-						source: window.location.href
-					})
+					body: JSON.stringify(payload)
 				});
 
-				if (!webhook.ok) {
-					throw new Error(`HTTP error! status: ${webhook.status}`);
+				// Race the timeout against the fetch
+				const webhook = await Promise.race([fetchPromise, timeoutPromise]);
+
+				// Check the response status
+				if (webhook.ok) {
+					console.log("Webhook response ok:", webhook.status);
+					webhookSuccess = true;
+
+					try {
+						const webhookResponse = await webhook.json();
+						console.log("Webhook response data:", webhookResponse);
+					} catch (jsonError) {
+						console.warn("Could not parse webhook JSON response:", jsonError);
+					}
+				} else {
+					errorMessage = `Server returned status ${webhook.status}`;
+					console.error("Webhook error:", errorMessage);
+
+					try {
+						const errorData = await webhook.text();
+						console.error("Error response:", errorData);
+					} catch (textError) {
+						console.warn("Could not read error response:", textError);
+					}
 				}
-
-				const webhookResponse = await webhook.json();
-				console.log("Webhook response:", webhookResponse);
-
-				// Hide questions, show results
-				this.questions.classList.add("hidden");
-				this.results.classList.remove("hidden");
-
-				// Generate results content
-				let resultsHTML = `
-					<div class="text-center mb-8">
-						<h2 class="text-4xl font-bold mb-4 leading-tight md:text-5xl">Thanks for completing the quiz!</h2>
-						<p class="text-lg text-slate-500 max-w-xl mx-auto mb-8">We're ready to connect you with a registered dietitian who can help guide your health journey.</p>
-						<div class="space-y-4 md:space-y-0 md:space-x-4">
-							<a href="${bookingUrl}" class="inline-flex items-center justify-center px-6 py-3 text-base font-medium rounded-lg bg-slate-800 text-white hover:bg-slate-700 transition duration-200 relative md:px-8">
-								Book Your Appointment
-								<span class="ml-2 transform transition-transform duration-200">→</span>
-							</a>
-						</div>
-					</div>
-				`;
-
-				this.results.innerHTML = resultsHTML;
 			} catch (error) {
+				errorMessage = error.message || "Network error";
 				console.error("Error submitting quiz responses:", error);
-				this.showError("Submission Error", "There was a problem submitting your responses. Please try again later.");
+			}
+
+			// Always show results, even if webhook fails
+			this.showResults(bookingUrl, webhookSuccess);
+
+			// Log to analytics if available
+			if (window.analytics && typeof window.analytics.track === "function") {
+				window.analytics.track("Quiz Completed", {
+					quizId: this.quizData?.id || "dietitian-quiz",
+					successfullySubmitted: webhookSuccess,
+					error: !webhookSuccess ? errorMessage : null
+				});
 			}
 		} catch (error) {
 			console.error("Error in quiz completion:", error);
@@ -893,6 +926,30 @@ class ProductQuiz {
 				</svg>
 			`;
 		}
+	}
+
+	// New method to show results with booking URL
+	showResults(bookingUrl, webhookSuccess = true) {
+		// Hide questions, show results
+		this.questions.classList.add("hidden");
+		this.results.classList.remove("hidden");
+
+		// Generate results content
+		let resultsHTML = `
+			<div class="text-center mb-8">
+				<h2 class="text-4xl font-bold mb-4 leading-tight md:text-5xl">Thanks for completing the quiz!</h2>
+				<p class="text-lg text-slate-500 max-w-xl mx-auto mb-8">We're ready to connect you with a registered dietitian who can help guide your health journey.</p>
+				${!webhookSuccess ? `<p class="text-amber-600 mb-6">There was an issue processing your submission, but you can still continue.</p>` : ""}
+				<div class="space-y-4 md:space-y-0 md:space-x-4">
+					<a href="${bookingUrl}" class="inline-flex items-center justify-center px-6 py-3 text-base font-medium rounded-lg bg-slate-800 text-white hover:bg-slate-700 transition duration-200 relative md:px-8">
+						Book Your Appointment
+						<span class="ml-2 transform transition-transform duration-200">→</span>
+					</a>
+				</div>
+			</div>
+		`;
+
+		this.results.innerHTML = resultsHTML;
 	}
 
 	showError(title, message) {
