@@ -176,7 +176,7 @@ class ProductQuiz {
 			return;
 		}
 
-		console.log("Rendering step:", step.id, step.info ? "has-info" : "", step.questions ? "has-questions" : "");
+		console.log("Rendering step:", step.id, step.info ? "has-info" : "", step.questions ? `has-${step.questions.length}-questions` : "");
 
 		// Update progress bar
 		const progress = ((this.currentStepIndex + 1) / this.quizData.steps.length) * 100;
@@ -206,58 +206,97 @@ class ProductQuiz {
 			}
 		}
 
-		// Add the questions section if present and we're in a questions step
+		// Check if this is a multi-field form step (like insurance or contact)
+		const isFormStep = step.id === "step-insurance" || step.id === "step-contact";
+
+		// Add the questions section if present
 		if (step.questions && step.questions.length > 0) {
-			const question = step.questions[this.currentQuestionIndex];
-			const response = this.getResponseForCurrentQuestion();
+			if (isFormStep) {
+				// For form-style steps, render all questions at once
+				stepHTML += `<div class="quiz-form-container">`;
 
-			if (!question) {
-				console.error("No question found at index", this.currentQuestionIndex, "for step", step.id);
-				stepHTML += `<p class="quiz-error">Question not found. Please try again.</p>`;
-			} else {
-				console.log("Rendering question:", question.id, question.type);
+				step.questions.forEach((question, index) => {
+					// Find response for this question
+					const response = this.responses.find(r => r.questionId === question.id) || { answer: null };
 
-				// Add the question title and help text if they weren't already added via info
-				if (!step.info) {
 					stepHTML += `
-						<h3 class="quiz-question-title">${question.text}</h3>
-						${question.helpText ? `<p class="quiz-question-description">${question.helpText}</p>` : ""}
-					`;
-				} else {
-					// If we have both info and questions, still show the question text
-					stepHTML += `
-						<div class="quiz-question-form">
-							<h4 class="quiz-form-label">${question.text}</h4>
+						<div class="quiz-form-field">
+							<label class="quiz-form-label" for="question-${question.id}">${question.text}${question.required ? ' <span class="required">*</span>' : ""}</label>
 							${question.helpText ? `<p class="quiz-help-text">${question.helpText}</p>` : ""}
-						</div>
 					`;
-				}
 
-				// Add question type specific HTML
-				switch (question.type) {
-					case "multiple-choice":
-						stepHTML += this.renderMultipleChoice(question, response);
-						break;
-					case "checkbox":
-						stepHTML += this.renderCheckbox(question, response);
-						break;
-					case "dropdown":
-						stepHTML += this.renderDropdown(question, response);
-						break;
-					case "text":
-						stepHTML += this.renderTextInput(question, response);
-						break;
-					case "date":
-						stepHTML += this.renderDateInput(question, response);
-						break;
-					case "textarea":
-						stepHTML += this.renderTextarea(question, response);
-						break;
-					case "rating":
-						stepHTML += this.renderRating(question, response);
-						break;
-					default:
-						stepHTML += '<p class="quiz-error">Unknown question type</p>';
+					// Add input based on question type
+					switch (question.type) {
+						case "dropdown":
+							stepHTML += this.renderDropdown(question, response);
+							break;
+						case "text":
+							stepHTML += this.renderTextInput(question, response);
+							break;
+						case "date":
+							stepHTML += this.renderDateInput(question, response);
+							break;
+						default:
+							stepHTML += `<p class="quiz-error">Unsupported field type: ${question.type}</p>`;
+					}
+
+					stepHTML += `</div>`;
+				});
+
+				stepHTML += `</div>`;
+			} else {
+				// For wizard-style steps, render one question at a time
+				const question = step.questions[this.currentQuestionIndex];
+				const response = this.getResponseForCurrentQuestion();
+
+				if (!question) {
+					console.error("No question found at index", this.currentQuestionIndex, "for step", step.id);
+					stepHTML += `<p class="quiz-error">Question not found. Please try again.</p>`;
+				} else {
+					console.log("Rendering question:", question.id, question.type);
+
+					// Add the question title and help text if they weren't already added via info
+					if (!step.info) {
+						stepHTML += `
+							<h3 class="quiz-question-title">${question.text}</h3>
+							${question.helpText ? `<p class="quiz-question-description">${question.helpText}</p>` : ""}
+						`;
+					} else {
+						// If we have both info and questions, still show the question text
+						stepHTML += `
+							<div class="quiz-question-form">
+								<h4 class="quiz-form-label">${question.text}</h4>
+								${question.helpText ? `<p class="quiz-help-text">${question.helpText}</p>` : ""}
+							</div>
+						`;
+					}
+
+					// Add question type specific HTML
+					switch (question.type) {
+						case "multiple-choice":
+							stepHTML += this.renderMultipleChoice(question, response);
+							break;
+						case "checkbox":
+							stepHTML += this.renderCheckbox(question, response);
+							break;
+						case "dropdown":
+							stepHTML += this.renderDropdown(question, response);
+							break;
+						case "text":
+							stepHTML += this.renderTextInput(question, response);
+							break;
+						case "date":
+							stepHTML += this.renderDateInput(question, response);
+							break;
+						case "textarea":
+							stepHTML += this.renderTextarea(question, response);
+							break;
+						case "rating":
+							stepHTML += this.renderRating(question, response);
+							break;
+						default:
+							stepHTML += '<p class="quiz-error">Unknown question type</p>';
+					}
 				}
 			}
 		} else if (!step.info) {
@@ -276,11 +315,19 @@ class ProductQuiz {
 		// Set the HTML
 		this.questionContainer.innerHTML = stepHTML;
 
-		// Add event listeners for the questions in the step
+		// Add event listeners for the questions
 		if (step.questions && step.questions.length > 0) {
-			const currentQuestion = step.questions[this.currentQuestionIndex];
-			if (currentQuestion) {
-				this.attachQuestionEventListeners(currentQuestion);
+			if (isFormStep) {
+				// For form steps, attach listeners to all questions
+				step.questions.forEach(question => {
+					this.attachFormQuestionListener(question);
+				});
+			} else {
+				// For wizard steps, attach listener to the current question
+				const currentQuestion = step.questions[this.currentQuestionIndex];
+				if (currentQuestion) {
+					this.attachQuestionEventListeners(currentQuestion);
+				}
 			}
 		}
 
@@ -552,9 +599,12 @@ class ProductQuiz {
 			return;
 		}
 
+		// Check if this is a form-style step
+		const isFormStep = step.id === "step-insurance" || step.id === "step-contact";
+
 		// Check if we need to show Next or Finish
 		const isLastStep = this.currentStepIndex === this.quizData.steps.length - 1;
-		const isLastQuestionInStep = step.questions ? this.currentQuestionIndex === step.questions.length - 1 : true;
+		const isLastQuestionInStep = isFormStep ? true : step.questions ? this.currentQuestionIndex === step.questions.length - 1 : true;
 
 		// Update the button text based on the current step's ctaText
 		if (isLastStep && isLastQuestionInStep) {
@@ -565,10 +615,23 @@ class ProductQuiz {
 				'Next <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
 		}
 
-		// Check if current question has an answer or if it's an info step
+		// For form-style steps, check if all required fields have answers
+		if (isFormStep && step.questions) {
+			const allRequiredAnswered = step.questions
+				.filter(q => q.required)
+				.every(q => {
+					const resp = this.responses.find(r => r.questionId === q.id);
+					return resp && resp.answer !== null && (typeof resp.answer !== "string" || resp.answer.trim() !== "") && (!Array.isArray(resp.answer) || resp.answer.length > 0);
+				});
+
+			this.nextButton.disabled = !allRequiredAnswered || this.submitting;
+			return;
+		}
+
+		// For other steps, check if current question has an answer or if it's an info step
 		let hasAnswer = true;
 
-		if (step.questions && step.questions.length > 0) {
+		if (step.questions && step.questions.length > 0 && !isFormStep) {
 			const question = step.questions[this.currentQuestionIndex];
 			if (!question) {
 				console.error("Cannot update navigation: No question found at index", this.currentQuestionIndex);
@@ -622,8 +685,11 @@ class ProductQuiz {
 
 		console.log("Attempting to go to next step from", currentStep.id);
 
+		// Check if this is a form-style step
+		const isFormStep = currentStep.id === "step-insurance" || currentStep.id === "step-contact";
+
 		// If this is an info-only step, simply move to the next step
-		if (currentStep.info) {
+		if (currentStep.info && (!currentStep.questions || currentStep.questions.length === 0)) {
 			console.log("Current step is info-only, proceeding to next step");
 			if (this.currentStepIndex < this.quizData.steps.length - 1) {
 				this.currentStepIndex++;
@@ -637,7 +703,36 @@ class ProductQuiz {
 			return;
 		}
 
-		// If we have multiple questions in the current step and not on the last one
+		// If this is a form step, proceed to the next step directly
+		if (isFormStep) {
+			// Check if all required questions have been answered
+			const allRequiredAnswered = currentStep.questions
+				.filter(q => q.required)
+				.every(q => {
+					const resp = this.responses.find(r => r.questionId === q.id);
+					return resp && resp.answer !== null && (typeof resp.answer !== "string" || resp.answer.trim() !== "") && (!Array.isArray(resp.answer) || resp.answer.length > 0);
+				});
+
+			if (!allRequiredAnswered) {
+				console.warn("Cannot proceed: Not all required questions answered");
+				this.nextButton.disabled = true;
+				return;
+			}
+
+			// Proceed to next step
+			if (this.currentStepIndex < this.quizData.steps.length - 1) {
+				this.currentStepIndex++;
+				this.currentQuestionIndex = 0; // Reset question index for the new step
+				this.renderCurrentStep();
+				this.updateNavigation();
+			} else {
+				// This is the last step, finish the quiz
+				this.finishQuiz();
+			}
+			return;
+		}
+
+		// For wizard-style steps with multiple questions
 		if (currentStep.questions && this.currentQuestionIndex < currentStep.questions.length - 1) {
 			this.currentQuestionIndex++;
 			this.renderCurrentStep();
@@ -843,6 +938,89 @@ class ProductQuiz {
 				reject(error);
 			}
 		});
+	}
+
+	// New method to attach event listeners for form fields
+	attachFormQuestionListener(question) {
+		if (!question) return;
+
+		console.log("Attaching form listener for", question.id, question.type);
+
+		switch (question.type) {
+			case "dropdown":
+				const dropdownInput = this.questionContainer.querySelector(`#question-${question.id}`);
+				if (!dropdownInput) {
+					console.warn(`Dropdown input not found for question ${question.id}`);
+					return;
+				}
+				dropdownInput.addEventListener("change", () => {
+					this.handleFormAnswer(question.id, dropdownInput.value);
+				});
+				break;
+
+			case "text":
+			case "date":
+				const textInput = this.questionContainer.querySelector(`#question-${question.id}`);
+				if (!textInput) {
+					console.warn(`Text input not found for question ${question.id}`);
+					return;
+				}
+				textInput.addEventListener("input", () => {
+					// If there's validation, check it
+					if (question.validation && question.validation.pattern) {
+						const regex = new RegExp(question.validation.pattern);
+						if (regex.test(textInput.value)) {
+							textInput.classList.remove("quiz-input-error");
+							this.handleFormAnswer(question.id, textInput.value);
+						} else {
+							textInput.classList.add("quiz-input-error");
+							this.handleFormAnswer(question.id, null); // Invalid input
+						}
+					} else {
+						this.handleFormAnswer(question.id, textInput.value);
+					}
+				});
+				break;
+
+			default:
+				console.warn(`Unsupported form field type: ${question.type}`);
+		}
+	}
+
+	// New method to handle answers in form-style steps
+	handleFormAnswer(questionId, answer) {
+		if (!this.quizData) return;
+
+		const step = this.getCurrentStep();
+		if (!step || !step.questions) {
+			console.error("Cannot handle form answer: Step or questions not found");
+			return;
+		}
+
+		console.log(`Handling form answer for question ${questionId}:`, answer);
+
+		// Find or create response for this question
+		const responseIndex = this.responses.findIndex(r => r.questionId === questionId);
+		if (responseIndex !== -1) {
+			this.responses[responseIndex].answer = answer;
+		} else {
+			this.responses.push({
+				stepId: step.id,
+				questionId: questionId,
+				answer
+			});
+		}
+
+		// Check if all required questions in the form have answers
+		const allRequiredAnswered = step.questions
+			.filter(q => q.required)
+			.every(q => {
+				const resp = this.responses.find(r => r.questionId === q.id);
+				return resp && resp.answer !== null && (typeof resp.answer !== "string" || resp.answer.trim() !== "") && (!Array.isArray(resp.answer) || resp.answer.length > 0);
+			});
+
+		// Enable/disable the next button based on whether all required fields are filled
+		this.nextButton.disabled = !allRequiredAnswered;
 	}
 }
 
