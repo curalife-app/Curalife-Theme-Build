@@ -155,6 +155,10 @@ class ProductQuiz {
 
 	renderCurrentStep() {
 		const step = this.getCurrentStep();
+		if (!step) {
+			console.error("No step found at index", this.currentStepIndex);
+			return;
+		}
 
 		// Update progress bar
 		const progress = ((this.currentStepIndex + 1) / this.quizData.steps.length) * 100;
@@ -182,42 +186,51 @@ class ProductQuiz {
 					answer: "info-acknowledged"
 				});
 			}
-		} else if (step.questions) {
+		} else if (step.questions && step.questions.length > 0) {
 			// Step with questions - render current question
 			const question = step.questions[this.currentQuestionIndex];
 			const response = this.getResponseForCurrentQuestion();
 
-			stepHTML += `
-				<h3 class="quiz-question-title">${question.text}</h3>
-				${question.helpText ? `<p class="quiz-question-description">${question.helpText}</p>` : ""}
-			`;
+			if (!question) {
+				console.error("No question found at index", this.currentQuestionIndex, "for step", step.id);
+				stepHTML += `<p class="quiz-error">Question not found. Please try again.</p>`;
+			} else {
+				stepHTML += `
+					<h3 class="quiz-question-title">${question.text}</h3>
+					${question.helpText ? `<p class="quiz-question-description">${question.helpText}</p>` : ""}
+				`;
 
-			// Add question type specific HTML
-			switch (question.type) {
-				case "multiple-choice":
-					stepHTML += this.renderMultipleChoice(question, response);
-					break;
-				case "checkbox":
-					stepHTML += this.renderCheckbox(question, response);
-					break;
-				case "dropdown":
-					stepHTML += this.renderDropdown(question, response);
-					break;
-				case "text":
-					stepHTML += this.renderTextInput(question, response);
-					break;
-				case "date":
-					stepHTML += this.renderDateInput(question, response);
-					break;
-				case "textarea":
-					stepHTML += this.renderTextarea(question, response);
-					break;
-				case "rating":
-					stepHTML += this.renderRating(question, response);
-					break;
-				default:
-					stepHTML += '<p class="quiz-error">Unknown question type</p>';
+				// Add question type specific HTML
+				switch (question.type) {
+					case "multiple-choice":
+						stepHTML += this.renderMultipleChoice(question, response);
+						break;
+					case "checkbox":
+						stepHTML += this.renderCheckbox(question, response);
+						break;
+					case "dropdown":
+						stepHTML += this.renderDropdown(question, response);
+						break;
+					case "text":
+						stepHTML += this.renderTextInput(question, response);
+						break;
+					case "date":
+						stepHTML += this.renderDateInput(question, response);
+						break;
+					case "textarea":
+						stepHTML += this.renderTextarea(question, response);
+						break;
+					case "rating":
+						stepHTML += this.renderRating(question, response);
+						break;
+					default:
+						stepHTML += '<p class="quiz-error">Unknown question type</p>';
+				}
 			}
+		} else {
+			// Neither info nor questions found
+			console.error("Step has neither info nor questions:", step.id);
+			stepHTML += `<p class="quiz-error">Step configuration error. Please contact support.</p>`;
 		}
 
 		// Add legal text if present
@@ -231,8 +244,11 @@ class ProductQuiz {
 		this.questionContainer.innerHTML = stepHTML;
 
 		// Add event listeners for the questions in the step
-		if (step.questions) {
-			this.attachQuestionEventListeners(step.questions[this.currentQuestionIndex]);
+		if (step.questions && step.questions.length > 0) {
+			const currentQuestion = step.questions[this.currentQuestionIndex];
+			if (currentQuestion) {
+				this.attachQuestionEventListeners(currentQuestion);
+			}
 		}
 	}
 
@@ -337,12 +353,16 @@ class ProductQuiz {
 	}
 
 	attachQuestionEventListeners(question) {
-		// Skip event listeners for info-only steps
+		// Skip event listeners for info-only steps or if question is null
 		if (!question) return;
 
 		switch (question.type) {
 			case "multiple-choice":
 				const radioInputs = this.questionContainer.querySelectorAll(`input[name="question-${question.id}"]`);
+				if (radioInputs.length === 0) {
+					console.warn(`No radio inputs found for question ${question.id}`);
+					return;
+				}
 				radioInputs.forEach(input => {
 					input.addEventListener("change", () => {
 						this.handleAnswer(input.value);
@@ -352,6 +372,10 @@ class ProductQuiz {
 
 			case "checkbox":
 				const checkboxInputs = this.questionContainer.querySelectorAll(`input[name="question-${question.id}"]`);
+				if (checkboxInputs.length === 0) {
+					console.warn(`No checkbox inputs found for question ${question.id}`);
+					return;
+				}
 				checkboxInputs.forEach(input => {
 					input.addEventListener("change", () => {
 						const selectedOptions = Array.from(checkboxInputs)
@@ -364,6 +388,10 @@ class ProductQuiz {
 
 			case "dropdown":
 				const dropdownInput = this.questionContainer.querySelector(`#question-${question.id}`);
+				if (!dropdownInput) {
+					console.warn(`Dropdown input not found for question ${question.id}`);
+					return;
+				}
 				dropdownInput.addEventListener("change", () => {
 					this.handleAnswer(dropdownInput.value);
 				});
@@ -372,6 +400,10 @@ class ProductQuiz {
 			case "text":
 			case "date":
 				const textInput = this.questionContainer.querySelector(`#question-${question.id}`);
+				if (!textInput) {
+					console.warn(`Text input not found for question ${question.id}`);
+					return;
+				}
 				textInput.addEventListener("input", () => {
 					// If there's validation, check it
 					if (question.validation && question.validation.pattern) {
@@ -391,6 +423,10 @@ class ProductQuiz {
 
 			case "textarea":
 				const textareaInput = this.questionContainer.querySelector(`#question-${question.id}`);
+				if (!textareaInput) {
+					console.warn(`Textarea input not found for question ${question.id}`);
+					return;
+				}
 				textareaInput.addEventListener("input", () => {
 					this.handleAnswer(textareaInput.value);
 				});
@@ -398,10 +434,17 @@ class ProductQuiz {
 
 			case "rating":
 				const ratingInput = this.questionContainer.querySelector(`#question-${question.id}`);
+				if (!ratingInput) {
+					console.warn(`Rating input not found for question ${question.id}`);
+					return;
+				}
 				ratingInput.addEventListener("input", () => {
 					this.handleAnswer(Number.parseInt(ratingInput.value, 10));
 				});
 				break;
+
+			default:
+				console.warn(`Unknown question type: ${question.type}`);
 		}
 	}
 
@@ -446,6 +489,11 @@ class ProductQuiz {
 		this.prevButton.disabled = this.currentStepIndex === 0 || this.submitting;
 
 		const step = this.getCurrentStep();
+		if (!step) {
+			console.error("Cannot update navigation: No step found at index", this.currentStepIndex);
+			this.nextButton.disabled = true;
+			return;
+		}
 
 		// Check if we need to show Next or Finish
 		const isLastStep = this.currentStepIndex === this.quizData.steps.length - 1;
@@ -460,17 +508,26 @@ class ProductQuiz {
 				'Next <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
 		}
 
-		// Check if current question has an answer
+		// Check if current question has an answer or if it's an info step
 		let hasAnswer = true;
 
-		if (step.questions) {
+		if (step.questions && step.questions.length > 0) {
 			const question = step.questions[this.currentQuestionIndex];
+			if (!question) {
+				console.error("Cannot update navigation: No question found at index", this.currentQuestionIndex);
+				this.nextButton.disabled = true;
+				return;
+			}
+
 			const response = this.responses.find(r => r.questionId === question.id);
 
 			// Check if the question is required and has an answer
 			if (question.required) {
 				hasAnswer = response && response.answer !== null && (typeof response.answer !== "string" || response.answer.trim() !== "") && (!Array.isArray(response.answer) || response.answer.length > 0);
 			}
+		} else if (step.info) {
+			// For info steps, always allow proceeding
+			hasAnswer = true;
 		}
 
 		this.nextButton.disabled = !hasAnswer || this.submitting;
@@ -622,9 +679,11 @@ class ProductQuiz {
 
 		// Check if we should redirect to appointment booking
 		const lastStep = this.quizData.steps[this.quizData.steps.length - 1];
-		if (lastStep.id === "step-eligibility") {
+		if (lastStep && lastStep.id === "step-eligibility") {
 			// Get the booking URL from the section settings or use a default
 			const bookingUrl = this.container.getAttribute("data-booking-url") || "/appointment-booking";
+			console.log("Redirecting to booking URL:", bookingUrl);
+
 			// Redirect to appointment booking page
 			window.location.href = bookingUrl;
 			return;
