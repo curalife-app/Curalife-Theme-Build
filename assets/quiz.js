@@ -169,6 +169,11 @@ class ProductQuiz {
 		);
 	}
 
+	// Helper method to detect form-style steps (multiple questions shown at once)
+	isFormStep(stepId) {
+		return stepId === "step-insurance" || stepId === "step-contact";
+	}
+
 	renderCurrentStep() {
 		const step = this.getCurrentStep();
 		if (!step) {
@@ -207,7 +212,7 @@ class ProductQuiz {
 		}
 
 		// Check if this is a multi-field form step (like insurance or contact)
-		const isFormStep = step.id === "step-insurance" || step.id === "step-contact";
+		const isFormStep = this.isFormStep(step.id);
 
 		// Add the questions section if present
 		if (step.questions && step.questions.length > 0) {
@@ -600,7 +605,7 @@ class ProductQuiz {
 		}
 
 		// Check if this is a form-style step
-		const isFormStep = step.id === "step-insurance" || step.id === "step-contact";
+		const isFormStep = this.isFormStep(step.id);
 
 		// Check if we need to show Next or Finish
 		const isLastStep = this.currentStepIndex === this.quizData.steps.length - 1;
@@ -657,7 +662,10 @@ class ProductQuiz {
 		const currentStep = this.getCurrentStep();
 
 		// If we have multiple questions in the current step and not on the first one
-		if (currentStep.questions && this.currentQuestionIndex > 0) {
+		// AND we're not in a form-style step (insurance or contact)
+		const isCurrentFormStep = this.isFormStep(currentStep.id);
+
+		if (currentStep.questions && this.currentQuestionIndex > 0 && !isCurrentFormStep) {
 			this.currentQuestionIndex--;
 			this.renderCurrentStep();
 			this.updateNavigation();
@@ -667,9 +675,13 @@ class ProductQuiz {
 		// Otherwise, go to the previous step
 		if (this.currentStepIndex > 0) {
 			this.currentStepIndex--;
-			// If the previous step has questions, position at the last question
+			// If the previous step has questions, check if it's a form step
 			const prevStep = this.quizData.steps[this.currentStepIndex];
-			this.currentQuestionIndex = prevStep.questions ? prevStep.questions.length - 1 : 0;
+			const isPrevFormStep = this.isFormStep(prevStep.id);
+
+			// For form steps, always set question index to 0 as we display all fields at once
+			// For wizard steps, set to the last question
+			this.currentQuestionIndex = isPrevFormStep ? 0 : prevStep.questions ? prevStep.questions.length - 1 : 0;
 
 			this.renderCurrentStep();
 			this.updateNavigation();
@@ -686,7 +698,7 @@ class ProductQuiz {
 		console.log("Attempting to go to next step from", currentStep.id);
 
 		// Check if this is a form-style step
-		const isFormStep = currentStep.id === "step-insurance" || currentStep.id === "step-contact";
+		const isFormStep = this.isFormStep(currentStep.id);
 
 		// If this is an info-only step, simply move to the next step
 		if (currentStep.info && (!currentStep.questions || currentStep.questions.length === 0)) {
