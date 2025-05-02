@@ -50,7 +50,8 @@
 	data-currency-symbol="{{ cart.currency.symbol | default: '$' }}"
 	data-product-id="{{ prod.id }}"
 	data-default-variant-index="{{ defaultSelectionIndex }}"
-	data-gifts-amount="{{ giftsAmount }}">
+	data-gifts-amount="{{ giftsAmount }}"
+	data-is-cart-notifications="true">
 	<div class="purchase-options flex flex-col gap-2">
 		<div class="font-medium text-[18px]">Choose your package</div>
 
@@ -145,7 +146,7 @@
 					<div
 						class="variant-box purchase-option-box flex flex-col gap-4 relative cursor-pointer bg-white border rounded-lg shadow-sm p-4 transition-all duration-300 hover:shadow-md"
 						role="tab"
-						aria-selected="false"
+						aria-selected="{% if forloop.index == defaultSelectionIndex %}true{% else %}false{% endif %}"
 						aria-controls="variant-content-{{ SID }}-{{ forloop.index }}"
 						tabindex="0"
 						data-variant="{{ blockVarID }}"
@@ -188,13 +189,13 @@
 									name="purchase-option-{{ SID }}"
 									id="purchase-option-{{ SID }}-{{ forloop.index }}"
 									class="sr-only"
-									{% if forloop.index == 1 %}
+									{% if forloop.index == defaultSelectionIndex %}
 										checked
 									{% endif %}>
 								<label
 									for="purchase-option-{{ SID }}-{{ forloop.index }}"
 									class="w-5 h-5 rounded-full border-2 border-primary relative flex items-center justify-center cursor-pointer transition-all duration-200">
-									<span class="w-3 h-3 bg-primary rounded-full opacity-0 transition-opacity duration-200 checked:opacity-100"></span>
+									<span class="w-3 h-3 bg-primary rounded-full opacity-0 transition-opacity duration-200"></span>
 								</label>
 							</div>
 
@@ -310,7 +311,7 @@
 										{% assign giftVariantSubscription = giftProdSubscription.selected_or_first_available_variant %}
 										{% assign giftThumb = block.settings.gift_thumbnail | default: giftProdSubscription.featured_image | default: giftProd.featured_image %}
 
-										<div class="gift-box flex flex-col items-center">
+										<div class="gift-box flex flex-col items-center {% if forloop.first %}selected{% endif %}">
 											<div
 												class="gift-option-border relative w-full p-2 mb-3 border-2 border-gray-200 rounded-lg cursor-pointer transition-all duration-300 hover:border-primary-lighter"
 												data-gift-id="{{ giftVariant.id }}"
@@ -433,40 +434,30 @@
 
 		.product-actions {
 			min-height: 415px;
+		}
 
-			&:not(.with-animation) {
-				.purchase-option-box {
-					position: relative;
-					gap: 1rem;
-					max-height: none !important;
-					transition: none !important;
+		.variant-box {
+			&[aria-selected="true"] {
+				border-color: var(--primary-color);
+				background-color: rgba(var(--primary-color-rgb), 0.05);
+
+				label {
+					&:after, span {
+						opacity: 1 !important;
+					}
+				}
+
+				input[type="radio"] {
+					&:checked + label span {
+						opacity: 1 !important;
+					}
 				}
 			}
 		}
 
-		.purchase-option-box {
-			&.selected {
-				border-color: var(--primary-color);
-				background-color: rgba(var(--primary-color-rgb), 0.05);
-
-				input[type="radio"] + label:after {
-					opacity: 1;
-				}
-			}
-
-			input[type="radio"] + label:after {
-				content: "";
-				position: absolute;
-				top: 50%;
-				left: 50%;
-				transform: translate(-50%, -50%);
-				width: 0.75em;
-				height: 0.75em;
-				background-color: var(--primary-color);
-				border-radius: 50%;
-				opacity: 0;
-				transition: opacity var(--transition-speed);
-			}
+		.purchase-option-box input[type="radio"] + label span {
+			opacity: 0;
+			transition: opacity var(--transition-speed);
 		}
 
 		.one-time-purchase-link {
@@ -606,6 +597,35 @@
 		if (window.innerWidth < 768 && ctaText) {
 			productActions.insertAdjacentElement('afterbegin', ctaText);
 		}
+
+		// Initialize first gift as selected
+		const giftBoxes = productActions.querySelectorAll('.gift-box');
+		if (giftBoxes.length > 0) {
+			const firstGift = giftBoxes[0];
+			firstGift.classList.add('selected');
+			const checkMark = firstGift.querySelector('.check-mark');
+			if (checkMark) {
+				checkMark.classList.remove('hidden');
+			}
+		}
+
+		// Add click handler for gift selection
+		productActions.addEventListener('click', function (e) {
+			const giftBox = e.target.closest('.gift-box');
+			if (giftBox) {
+				giftBoxes.forEach(box => {
+					box.classList.remove('selected');
+					const mark = box.querySelector('.check-mark');
+					if (mark) mark.classList.add('hidden');
+				});
+
+				giftBox.classList.add('selected');
+				const checkMark = giftBox.querySelector('.check-mark');
+				if (checkMark) {
+					checkMark.classList.remove('hidden');
+				}
+			}
+		});
 	});
 </script>
 
