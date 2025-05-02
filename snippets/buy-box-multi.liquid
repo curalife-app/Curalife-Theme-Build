@@ -135,9 +135,13 @@
 	data-product-id="{{ prod.id }}"
 	data-default-variant-index="{{ defaultSelectionIndex }}"
 	data-gifts-amount="{{ giftsAmount }}"
-	data-is-cart-notifications="true">
+	data-is-cart-notifications="{{ isCartNotifications | default: true }}">
 	<div class="purchase-options flex flex-col gap-2">
-		<div class="font-medium text-[18px]">Choose your package</div>
+		{% if variantsTitle %}
+			<div class="font-medium text-[18px]">{{ variantsTitle }}</div>
+		{% else %}
+			<div class="font-medium text-[18px]">Choose your package</div>
+		{% endif %}
 
 		<div class="variant-boxes flex flex-col gap-2" role="tablist" aria-label="Purchase options">
 			{% for block in blocks %}
@@ -228,6 +232,13 @@
 
 					{% assign varPurchaseType = block.settings.purchase_type %}
 
+					{% comment %} Custom Box Color {% endcomment %}
+					{% assign customBoxColor = block.settings.box_color %}
+					{% assign boxStyle = '' %}
+					{% if customBoxColor != blank %}
+						{% assign boxStyle = 'style="--custom-box-color:' | append: customBoxColor | append: ';"' %}
+					{% endif %}
+
 					<div
 						class="variant-box purchase-option-box flex flex-col gap-4 relative cursor-pointer bg-white border rounded-lg shadow-sm p-4 transition-all duration-300 hover:shadow-md"
 						role="tab"
@@ -253,6 +264,9 @@
 						data-bottle-quantity="{{ bottle_quantity }}"
 						data-purchase-type="{{ varPurchaseType }}"
 						data-buy-type="{{ buyType }}"
+						{% if customBoxColor != blank %}
+							{{- boxStyle -}}
+						{% endif %}
 						{% if isGlobal %}
 							{% if block.settings.allowed_selling_plan_ids_global != blank %}
 								data-allowed-selling-plans="{{ block.settings.allowed_selling_plan_ids_global | strip | escape }}"
@@ -264,7 +278,13 @@
 						{% endif %}
 						name="track:variant-box|variant-sku:{{ var.sku }}|purchase-type:{{ varPurchaseType }}">
 						{% if varPurchaseType == 'subscribe' %}
-							<div class="save-badge bg-orange-500 text-white text-xs font-semibold px-3 py-1 rounded-full absolute -top-2 left-4">{{ subscription_save_percents }}% OFF</div>
+							{% if saveFormat == 'money' %}
+								<div class="save-badge bg-orange-500 text-white text-xs font-semibold px-3 py-1 rounded-full absolute -top-2 left-4">SAVE {{ subscription_save_money | money }}</div>
+							{% else %}
+								<div class="save-badge bg-orange-500 text-white text-xs font-semibold px-3 py-1 rounded-full absolute -top-2 left-4">{{ subscription_save_percents }}% OFF</div>
+							{% endif %}
+						{% elsif block.settings.badge_text %}
+							<div class="save-badge bg-orange-500 text-white text-xs font-semibold px-3 py-1 rounded-full absolute -top-2 left-4">{{ block.settings.badge_text }}</div>
 						{% endif %}
 
 						<div class="flex justify-between items-center">
@@ -326,10 +346,21 @@
 						{% if block.settings.variant_description %}
 							<div class="text-sm mt-2">{{ block.settings.variant_description }}</div>
 						{% endif %}
+
+						{% if block.settings.variant_second_description %}
+							<div class="text-sm mt-1 font-medium">{{ block.settings.variant_second_description }}</div>
+						{% endif %}
 					</div>
 				{% endif %}
 			{% endfor %}
 		</div>
+
+		{% if variantsNotice != blank %}
+			<div class="notice text-primary flex gap-2 text-[15px]">
+				<span>ⓘ</span>
+				<span>{{ variantsNotice }}</span>
+			</div>
+		{% endif %}
 
 		<div class="price-display transition-all duration-300 ease-in-out mt-2">
 			<div class="gap-y-2 flex flex-wrap items-end gap-2 transition-opacity duration-300">
@@ -351,8 +382,14 @@
 						{% endif %}
 					</span>
 
-					{% if priceFormat == 'total' and defaultTotalPrice != defaultItemPrice %}
-						<span class="discount-badge text-bronze transition-opacity duration-300 ease-in-out" data-visible="true">SAVE {{ defaultSaveMoney | times: bottle_quantity | money }}</span>
+					{% if saveFormat == 'money' %}
+						{% if priceFormat == 'total' and defaultTotalPrice != defaultItemPrice %}
+							<span class="discount-badge text-bronze transition-opacity duration-300 ease-in-out" data-visible="true">SAVE {{ defaultSaveMoney | times: bottle_quantity | money }}</span>
+						{% endif %}
+					{% else %}
+						{% if priceFormat == 'total' and defaultTotalPrice != defaultItemPrice %}
+							<span class="discount-badge text-bronze transition-opacity duration-300 ease-in-out" data-visible="true">SAVE {{ defaultSavePercents }}%</span>
+						{% endif %}
 					{% endif %}
 				</div>
 			</div>
@@ -448,6 +485,9 @@
 													</span>
 													<span class="sale-price font-bold">FREE</span>
 												</div>
+												{% if block.settings.description %}
+													<div class="gift-description text-sm text-gray-600">{{ block.settings.description }}</div>
+												{% endif %}
 											</div>
 										</div>
 									{% endif %}
@@ -564,6 +604,17 @@
 					&:checked + label span {
 						opacity: 1 !important;
 					}
+				}
+			}
+
+			&[style*="--custom-box-color"] {
+				&[aria-selected="true"] {
+					border-color: var(--custom-box-color);
+					background-color: rgba(var(--custom-box-color), 0.05);
+				}
+
+				.save-badge {
+					background-color: var(--custom-box-color);
 				}
 			}
 		}
