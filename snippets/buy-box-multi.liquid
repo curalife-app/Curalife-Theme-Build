@@ -168,6 +168,7 @@
 					{% assign original_item_cap = var.metafields.custom.original_item.value.compare_at_price | default: original_item_price %}
 					{% assign original_item_cap_total = original_item_cap | times: bottle_quantity %}
 					{% assign item_price = var.price | divided_by: bottle_quantity %}
+					{% assign item_total_price = var.price %}
 
 					{% comment %} Selling Plan ID Logic {% endcomment %}
 					{% if var.metafields.custom.referenced_variant_product_handle %}
@@ -294,15 +295,31 @@
 							</div>
 
 							<div class="price-wrapper text-right">
-								<div class="original-price line-through text-gray-500">{{ original_item_cap | money }}</div>
-								<div class="real-price font-bold text-lg text-primary">
-									{% if varPurchaseType == 'subscribe' %}
-										{{ subscription_item_price | money }}
+								<div class="original-price line-through text-gray-500">
+									{% if priceFormat == 'total' %}
+										{{ original_item_cap_total | money }}
 									{% else %}
-										{{ item_price | money }}
+										{{ original_item_cap | money }}
 									{% endif %}
 								</div>
-								<div class="per-bottle text-xs">per bottle</div>
+								<div class="real-price font-bold text-lg text-primary">
+									{% if varPurchaseType == 'subscribe' %}
+										{% if priceFormat == 'total' %}
+											{{ subscription_total_price | money }}
+										{% else %}
+											{{ subscription_item_price | money }}
+										{% endif %}
+									{% else %}
+										{% if priceFormat == 'total' %}
+											{{ item_total_price | money }}
+										{% else %}
+											{{ item_price | money }}
+										{% endif %}
+									{% endif %}
+								</div>
+								{% if priceFormat != 'total' %}
+									<div class="per-bottle text-xs">per bottle</div>
+								{% endif %}
 							</div>
 						</div>
 
@@ -326,10 +343,16 @@
 						{% endif %}
 					</div>
 
-					<span class="cap self-end text-gray-500 line-through transition-opacity duration-300 ease-in-out">{{ defaultOrigCap | money }}</span>
+					<span class="cap self-end text-gray-500 line-through transition-opacity duration-300 ease-in-out">
+						{% if priceFormat == 'total' %}
+							{{ defaultOrigCapTotal | money }}
+						{% else %}
+							{{ defaultOrigCap | money }}
+						{% endif %}
+					</span>
 
 					{% if priceFormat == 'total' and defaultTotalPrice != defaultItemPrice %}
-						<span class="discount-badge text-bronze transition-opacity duration-300 ease-in-out" data-visible="true">SAVE {{ defaultSaveMoney | money }}</span>
+						<span class="discount-badge text-bronze transition-opacity duration-300 ease-in-out" data-visible="true">SAVE {{ defaultSaveMoney | times: bottle_quantity | money }}</span>
 					{% endif %}
 				</div>
 			</div>
