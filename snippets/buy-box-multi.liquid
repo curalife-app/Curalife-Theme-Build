@@ -38,6 +38,90 @@
 	{% endcase %}
 {% endfor %}
 
+{% comment %} Get default variant information {% endcomment %}
+{% assign defaultIndex = defaultSelectionIndex | default: 1 %}
+{% assign defaultVariantFound = false %}
+{% assign defaultItemPrice = 0 %}
+{% assign defaultTotalPrice = 0 %}
+{% assign defaultOrigCap = 0 %}
+{% assign defaultOrigCapTotal = 0 %}
+{% assign defaultSavePercents = 0 %}
+{% assign defaultSaveMoney = 0 %}
+{% assign counter = 0 %}
+
+{% for block in blocks %}
+	{% if block.type == 'variant' %}
+		{% assign counter = counter | plus: 1 %}
+		{% if counter == defaultIndex %}
+			{% assign defaultVariantFound = true %}
+			{% if isGlobal %}
+				{% assign blockVarID = block.settings.variant_id_global | plus: 0 %}
+			{% else %}
+				{% assign blockVarID = block.settings.variant_id | plus: 0 %}
+			{% endif %}
+
+			{% for vari in referenced_variant_product.variants %}
+				{% assign currVarID = vari.id | plus: 0 %}
+				{% if currVarID == blockVarID %}
+					{% assign default_variant = vari %}
+					{% assign bottle_quantity = vari.metafields.my_fields.pack_bottles_quantity %}
+					{% assign original_item_cap = vari.metafields.custom.original_item.value.compare_at_price | default: vari.metafields.custom.original_item.value.price %}
+					{% assign defaultOrigCap = original_item_cap %}
+					{% assign defaultOrigCapTotal = original_item_cap | times: bottle_quantity %}
+
+					{% if block.settings.purchase_type == 'subscribe' %}
+						{% if vari.metafields.subscription.selling_plan_id %}
+							{% assign selling_plan_id = vari.metafields.subscription.selling_plan_id %}
+						{% elsif vari.selling_plan_allocations.size > 0 %}
+							{% assign found_plan = false %}
+							{% for allocation in vari.selling_plan_allocations %}
+								{% if allocation.selling_plan.name contains bottle_quantity %}
+									{% assign selling_plan_id = allocation.selling_plan.id %}
+									{% assign found_plan = true %}
+									{% break %}
+								{% endif %}
+							{% endfor %}
+							{% if found_plan == false %}
+								{% assign selling_plan_id = vari.selling_plan_allocations.first.selling_plan.id %}
+							{% endif %}
+						{% endif %}
+
+						{% for allocation in vari.selling_plan_allocations %}
+							{% assign selling = selling_plan_id | minus: 0 %}
+							{% if allocation.selling_plan.id == selling %}
+								{% if allocation.compare_at_price %}
+									{% assign original_price = allocation.compare_at_price %}
+									{% assign discounted_price = allocation.price %}
+									{% assign defaultSavePercents = original_price | minus: discounted_price | times: 100 | divided_by: original_price %}
+									{% assign mod_5_remainder = defaultSavePercents | modulo: 5 %}
+									{% if mod_5_remainder < 3 %}
+										{% assign defaultSavePercents = defaultSavePercents | minus: mod_5_remainder %}
+									{% else %}
+										{% assign defaultSavePercents = defaultSavePercents | plus: 5 | minus: mod_5_remainder %}
+									{% endif %}
+									{% assign defaultItemPrice = discounted_price | divided_by: bottle_quantity %}
+								{% else %}
+									{% assign defaultSavePercents = 0 %}
+									{% assign defaultItemPrice = allocation.price | divided_by: bottle_quantity %}
+								{% endif %}
+							{% endif %}
+						{% endfor %}
+
+						{% if vari.metafields.subscription.save_percents %}
+							{% assign defaultSavePercents = vari.metafields.subscription.save_percents %}
+						{% endif %}
+					{% else %}
+						{% assign defaultItemPrice = vari.price | divided_by: bottle_quantity %}
+					{% endif %}
+
+					{% assign defaultTotalPrice = defaultItemPrice | times: bottle_quantity %}
+					{% assign defaultSaveMoney = defaultOrigCap | minus: defaultItemPrice %}
+				{% endif %}
+			{% endfor %}
+		{% endif %}
+	{% endif %}
+{% endfor %}
+
 <div
 	class="product-actions [&[data-processing=true]]:opacity-70 [&[data-processing=true]]:pointer-events-none"
 	data-buy-box-new-root="true"
@@ -85,10 +169,6 @@
 					{% assign original_item_cap_total = original_item_cap | times: bottle_quantity %}
 					{% assign item_price = var.price | divided_by: bottle_quantity %}
 
-					{% comment %} Savings Calculations {% endcomment %}
-					{% assign subscription_save_money = original_item_cap | minus: subscription_item_price %}
-					{% assign buy_once_save_money = original_item_cap | minus: item_price %}
-
 					{% comment %} Selling Plan ID Logic {% endcomment %}
 					{% if var.metafields.custom.referenced_variant_product_handle %}
 						{% assign selling_plan_id = referenced_variant.metafields.subscription.selling_plan_id | default: variant.metafields.subscription.selling_plan_id %}
@@ -133,6 +213,10 @@
 					{% endfor %}
 
 					{% assign subscription_total_price = subscription_item_price | times: bottle_quantity %}
+
+					{% comment %} Savings Calculations {% endcomment %}
+					{% assign subscription_save_money = original_item_cap | minus: subscription_item_price %}
+					{% assign buy_once_save_money = original_item_cap | minus: item_price %}
 
 					{% assign firstMonthDiscount = block.settings.first_month_discount_percentage %}
 
@@ -211,7 +295,13 @@
 
 							<div class="price-wrapper text-right">
 								<div class="original-price line-through text-gray-500">{{ original_item_cap | money }}</div>
-								<div class="real-price font-bold text-lg text-primary">{{ subscription_item_price | money }}</div>
+								<div class="real-price font-bold text-lg text-primary">
+									{% if varPurchaseType == 'subscribe' %}
+										{{ subscription_item_price | money }}
+									{% else %}
+										{{ item_price | money }}
+									{% endif %}
+								</div>
 								<div class="per-bottle text-xs">per bottle</div>
 							</div>
 						</div>
@@ -229,25 +319,25 @@
 				<div class="final-price flex items-end gap-2">
 					<div class="main-price text-primary flex items-end transition-opacity duration-300 ease-in-out">
 						{% if priceFormat == 'total' %}
-							<span class="price leading-none text-[30px] font-semibold mbl:text-[6vw] transition-all duration-300">{{ subscription_total_price | money }}</span>
+							<span class="price leading-none text-[30px] font-semibold mbl:text-[6vw] transition-all duration-300">{{ defaultTotalPrice | money }}</span>
 						{% else %}
-							<span class="price leading-none text-[30px] mbl:text-[6vw] transition-all duration-300">{{ subscription_item_price | money }}</span>
+							<span class="price leading-none text-[30px] mbl:text-[6vw] transition-all duration-300">{{ defaultItemPrice | money }}</span>
 							<span class="per-text mt-1 text-[20px] transition-all duration-300">/bottle</span>
 						{% endif %}
 					</div>
 
-					<span class="cap self-end text-gray-500 line-through transition-opacity duration-300 ease-in-out">{{ original_item_cap | money }}</span>
+					<span class="cap self-end text-gray-500 line-through transition-opacity duration-300 ease-in-out">{{ defaultOrigCap | money }}</span>
 
-					{% if priceFormat == 'total' and subscription_total_price != subscription_item_price %}
-						<span class="discount-badge text-bronze transition-opacity duration-300 ease-in-out [&[data-visible=false]]:hidden">SAVE {{ subscription_save_money | money }}</span>
+					{% if priceFormat == 'total' and defaultTotalPrice != defaultItemPrice %}
+						<span class="discount-badge text-bronze transition-opacity duration-300 ease-in-out" data-visible="true">SAVE {{ defaultSaveMoney | money }}</span>
 					{% endif %}
 				</div>
 			</div>
 
-			{% if priceFormat == 'per_bottle' and subscription_total_price != subscription_item_price %}
+			{% if priceFormat == 'per_bottle' and defaultTotalPrice != defaultItemPrice %}
 				<div class="total-line mt-1 text-[16px] h-4 transition-opacity duration-300 ease-in-out">
-					Total {{ subscription_total_price | money }}
-					<span class="total-price-cap text-gray-500 line-through">{{ original_item_cap_total | money }}</span>
+					Total {{ defaultTotalPrice | money }}
+					<span class="total-price-cap text-gray-500 line-through">{{ defaultOrigCapTotal | money }}</span>
 				</div>
 			{% endif %}
 
