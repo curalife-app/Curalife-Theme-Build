@@ -811,77 +811,53 @@ class ProductQuiz {
 				Processing...
 			`;
 
-			// Extract required data from responses
-			let customerEmail = "";
-			let firstName = "";
-			let lastName = "";
-			let phoneNumber = "";
-			let state = "";
-			let insurance = "";
-			let insuranceMemberId = "";
-			let mainReason = "";
-			let secondaryReasons = [];
-			let dateOfBirth = "";
-
-			this.responses.forEach(response => {
-				if (response.questionId === "q9") customerEmail = response.answer || "";
-				if (response.questionId === "q7") firstName = response.answer || "";
-				if (response.questionId === "q8") lastName = response.answer || "";
-				if (response.questionId === "q10") phoneNumber = response.answer || "";
-				if (response.questionId === "q5") state = response.answer || "";
-				if (response.questionId === "q3") insurance = response.answer || "";
-				if (response.questionId === "q4") insuranceMemberId = response.answer || "";
-				if (response.questionId === "q1") mainReason = response.answer || "";
-				if (response.questionId === "q2") secondaryReasons = response.answer || [];
-				if (response.questionId === "q6") dateOfBirth = response.answer || "";
-			});
-
-			const completedAt = new Date().toISOString();
+			const completedAt = new Date().toISOString(); // Keep for consistency if used elsewhere, but server expects 'timestamp'
 			const quizId = "curalife-intake";
 			const quizTitle = this.quizData?.title || "Find Your Perfect Dietitian";
 
-			const payload = {
-				quizId,
-				quizTitle,
-				completedAt,
-				customerEmail,
-				firstName,
-				lastName,
-				phoneNumber,
-				dateOfBirth,
-				state,
-				insurance,
-				insuranceMemberId,
-				mainReason,
-				secondaryReasons,
-				allResponses: this.responses.map(r => ({
-					stepId: r.stepId,
-					questionId: r.questionId,
-					answer: r.answer
-				}))
+			// Prepare data specifically for JSONP
+			const jsonDataForJsonp = {
+				webhookUrl: this.container.getAttribute("data-n8n-webhook"),
+				quizId: quizId,
+				quizTitle: quizTitle,
+				timestamp: completedAt, // Server workflow expects 'timestamp'
+				responses: {}
 			};
 
-			const webhookUrl = this.container.getAttribute("data-n8n-webhook");
+			this.responses.forEach(responseItem => {
+				if (responseItem.questionId && responseItem.answer !== null && responseItem.answer !== undefined) {
+					jsonDataForJsonp.responses[responseItem.questionId] = responseItem.answer;
+				}
+			});
+
 			const bookingUrl = this.container.getAttribute("data-booking-url") || "/appointment-booking";
 
-			if (!webhookUrl) {
+			if (!jsonDataForJsonp.webhookUrl) {
 				console.warn("No webhook URL provided - proceeding to booking URL without webhook submission");
 				this.showResults(bookingUrl);
+				// No need to call analytics here as submission wasn't attempted
+				this.submitting = false;
+				this.nextButton.disabled = false;
+				// Reset button text (copied from finally block)
+				this.nextButton.innerHTML = `
+					Next
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-2">
+						<path d="M5 12h14M12 5l7 7-7 7"/>
+					</svg>
+				`;
 				return;
 			}
 
 			// Use JSONP for submission
-			let webhookSuccess = false;
-			let errorMessage = "";
 			await new Promise(resolve => {
 				submitQuizViaJsonp(
-					{ ...payload, webhookUrl },
+					jsonDataForJsonp,
 					responseData => {
-						webhookSuccess = true;
+						// Success callback from JSONP
 						this.showResults(bookingUrl, true);
 						if (window.analytics && typeof window.analytics.track === "function") {
 							window.analytics.track("Quiz Completed", {
-								quizId: this.quizData?.id || "dietitian-quiz",
+								quizId: quizId, // Use the defined quizId
 								successfullySubmitted: true,
 								error: null
 							});
@@ -889,21 +865,23 @@ class ProductQuiz {
 						resolve();
 					},
 					errorData => {
-						webhookSuccess = false;
-						errorMessage = errorData && errorData.error && errorData.error.message ? errorData.error.message : "Unknown error";
-						this.showResults(bookingUrl, false);
+						// Error callback from JSONP
+						const errorMessage =
+							errorData && errorData.error && errorData.error.message ? errorData.error.message : errorData && errorData.message ? errorData.message : "Unknown error during submission";
+						this.showResults(bookingUrl, false); // Show results but indicate submission failed
 						if (window.analytics && typeof window.analytics.track === "function") {
 							window.analytics.track("Quiz Completed", {
-								quizId: this.quizData?.id || "dietitian-quiz",
+								quizId: quizId, // Use the defined quizId
 								successfullySubmitted: false,
 								error: errorMessage
 							});
 						}
-						resolve();
+						resolve(); // Resolve promise even on error to proceed to finally block
 					}
 				);
 			});
 		} catch (error) {
+			// Catch errors from outside the JSONP promise (e.g., attribute reading)
 			console.error("Error in quiz completion:", error);
 			this.showError("Unexpected Error", "There was a problem completing the quiz. Please try again later.");
 		} finally {
@@ -1047,52 +1025,91 @@ function submitQuizViaJsonp(data, successCallback, errorCallback) {
 	// Create a unique callback name
 	const callbackName = "jsonp_callback_" + Math.round(100000 * Math.random());
 
-	// Build the URL with all parameters encoded
+	if (!data.webhookUrl) {
+		errorCallback({ success: false, error: { message: "Webhook URL is missing for JSONP." } });
+		return;
+	}
+
 	let url = data.webhookUrl + "?callback=" + callbackName;
 
-	// Add all data as query parameters (excluding allResponses)
+	// Add top-level parameters (quizId, quizTitle, timestamp)
 	for (const key in data) {
-		if (key !== "allResponses" && key !== "webhookUrl") {
+		if (key === "webhookUrl" || key === "responses") continue; // Skip these, handle 'responses' separately
+
+		if (data[key] !== undefined && data[key] !== null) {
 			url += "&" + encodeURIComponent(key) + "=" + encodeURIComponent(data[key]);
 		}
 	}
 
-	// Add allResponses as individual parameters
-	if (Array.isArray(data.allResponses)) {
-		data.allResponses.forEach((resp, idx) => {
-			for (const respKey in resp) {
-				url += `&responses[${idx}].${encodeURIComponent(respKey)}=${encodeURIComponent(resp[respKey])}`;
+	// Add parameters from the 'responses' object, formatting them as responses.questionId=value
+	if (data.responses && typeof data.responses === "object") {
+		for (const questionId in data.responses) {
+			const answer = data.responses[questionId];
+			if (answer !== undefined && answer !== null) {
+				if (Array.isArray(answer)) {
+					// For array answers (e.g., checkboxes), repeat the parameter for each value
+					// This should make request.query.responses.questionId an array on the server
+					if (answer.length === 0) {
+						// If array is empty, send parameter with empty value to indicate it was present
+						url += `&responses.${encodeURIComponent(questionId)}=`;
+					} else {
+						answer.forEach(val => {
+							url += `&responses.${encodeURIComponent(questionId)}=${encodeURIComponent(val)}`;
+						});
+					}
+				} else {
+					// For single answers
+					url += `&responses.${encodeURIComponent(questionId)}=${encodeURIComponent(answer)}`;
+				}
 			}
-		});
+		}
 	}
 
 	// Define the callback function globally
 	window[callbackName] = function (responseData) {
-		if (responseData && responseData.success === true) {
+		// It's good practice to check if responseData exists and has expected structure
+		if (responseData && (responseData.success === true || (responseData.status && responseData.status !== "error"))) {
+			// Adjust success condition based on actual server response for JSONP
 			successCallback(responseData);
 		} else {
-			errorCallback(responseData);
+			errorCallback(responseData || { success: false, error: { message: "Received empty or malformed JSONP response." } });
 		}
-		document.body.removeChild(script);
-		delete window[callbackName];
+
+		// Clean up script and global callback
+		if (script.parentNode) {
+			script.parentNode.removeChild(script);
+		}
+		try {
+			delete window[callbackName];
+		} catch (e) {
+			window[callbackName] = undefined; // For older IE
+		}
 	};
 
 	// Create script element for JSONP request
 	const script = document.createElement("script");
 	script.src = url;
 
-	// Handle script load errors
+	// Handle script load errors (network error, script blocked, 404 on script, etc.)
 	script.onerror = function () {
 		errorCallback({
 			success: false,
 			error: {
-				code: "CONNECTION_ERROR",
-				message: "Failed to connect to the API server"
+				code: "JSONP_LOAD_ERROR",
+				message: "Failed to load the JSONP script. Check network or server."
 			}
 		});
-		document.body.removeChild(script);
-		delete window[callbackName];
+		// Clean up on error as well
+		if (script.parentNode) {
+			script.parentNode.removeChild(script);
+		}
+		try {
+			delete window[callbackName];
+		} catch (e) {
+			window[callbackName] = undefined;
+		}
 	};
 
+	// Start the request
 	document.body.appendChild(script);
 }
