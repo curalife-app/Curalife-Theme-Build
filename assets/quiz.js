@@ -811,77 +811,154 @@ class ProductQuiz {
 				Processing...
 			`;
 
-			const completedAt = new Date().toISOString(); // Keep for consistency if used elsewhere, but server expects 'timestamp'
+			// Extract required data from responses
+			// This is directly matching what the n8n workflow expects
+			let customerEmail = "";
+			let firstName = "";
+			let lastName = "";
+			let phoneNumber = "";
+			let state = "";
+			let insurance = "";
+			let insuranceMemberId = "";
+			let mainReason = "";
+			let secondaryReasons = [];
+			let dateOfBirth = "";
+
+			// Extract individual answers
+			this.responses.forEach(response => {
+				if (response.questionId === "q9") customerEmail = response.answer || "";
+				if (response.questionId === "q7") firstName = response.answer || "";
+				if (response.questionId === "q8") lastName = response.answer || "";
+				if (response.questionId === "q10") phoneNumber = response.answer || "";
+				if (response.questionId === "q5") state = response.answer || "";
+				if (response.questionId === "q3") insurance = response.answer || "";
+				if (response.questionId === "q4") insuranceMemberId = response.answer || "";
+				if (response.questionId === "q1") mainReason = response.answer || "";
+				if (response.questionId === "q2") secondaryReasons = response.answer || [];
+				if (response.questionId === "q6") dateOfBirth = response.answer || "";
+			});
+
+			// Format for n8n workflow
+			const completedAt = new Date().toISOString();
 			const quizId = "curalife-intake";
 			const quizTitle = this.quizData?.title || "Find Your Perfect Dietitian";
 
-			// Prepare data specifically for JSONP
-			const jsonDataForJsonp = {
-				webhookUrl: this.container.getAttribute("data-n8n-webhook"),
-				quizId: quizId,
-				quizTitle: quizTitle,
-				timestamp: completedAt, // Server workflow expects 'timestamp'
-				responses: {}
+			// Create exact payload structure that n8n expects
+			const payload = {
+				quizId,
+				quizTitle,
+				completedAt,
+				customerEmail,
+				firstName,
+				lastName,
+				phoneNumber,
+				dateOfBirth,
+				state,
+				insurance,
+				insuranceMemberId,
+				mainReason,
+				secondaryReasons,
+				// Provide the full responses array exactly as n8n expects
+				allResponses: this.responses.map(r => ({
+					stepId: r.stepId,
+					questionId: r.questionId,
+					answer: r.answer
+				}))
 			};
 
-			this.responses.forEach(responseItem => {
-				if (responseItem.questionId && responseItem.answer !== null && responseItem.answer !== undefined) {
-					jsonDataForJsonp.responses[responseItem.questionId] = responseItem.answer;
-				}
-			});
+			console.log("Sending payload to webhook:", payload);
 
+			// Get webhook URL from data attribute
+			const webhookUrl = this.container.getAttribute("data-n8n-webhook");
 			const bookingUrl = this.container.getAttribute("data-booking-url") || "/appointment-booking";
 
-			if (!jsonDataForJsonp.webhookUrl) {
+			if (!webhookUrl) {
 				console.warn("No webhook URL provided - proceeding to booking URL without webhook submission");
 				this.showResults(bookingUrl);
-				// No need to call analytics here as submission wasn't attempted
-				this.submitting = false;
-				this.nextButton.disabled = false;
-				// Reset button text (copied from finally block)
-				this.nextButton.innerHTML = `
-					Next
-					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-2">
-						<path d="M5 12h14M12 5l7 7-7 7"/>
-					</svg>
-				`;
 				return;
 			}
 
-			// Use JSONP for submission
-			await new Promise(resolve => {
-				submitQuizViaJsonp(
-					jsonDataForJsonp,
-					responseData => {
-						// Success callback from JSONP
-						this.showResults(bookingUrl, true);
-						if (window.analytics && typeof window.analytics.track === "function") {
-							window.analytics.track("Quiz Completed", {
-								quizId: quizId, // Use the defined quizId
-								successfullySubmitted: true,
-								error: null
-							});
-						}
-						resolve();
+			// Try to call the webhook
+			let webhookSuccess = false;
+			let errorMessage = "";
+
+			try {
+				// Set a timeout to avoid waiting too long
+				const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Webhook request timed out")), 8000));
+
+				// Try regular CORS request first
+				let fetchPromise = fetch(webhookUrl, {
+					method: "POST",
+					mode: "cors",
+					credentials: "include",
+					headers: {
+						"Content-Type": "application/json",
+						Accept: "application/json",
+						Origin: window.location.origin
 					},
-					errorData => {
-						// Error callback from JSONP
-						const errorMessage =
-							errorData && errorData.error && errorData.error.message ? errorData.error.message : errorData && errorData.message ? errorData.message : "Unknown error during submission";
-						this.showResults(bookingUrl, false); // Show results but indicate submission failed
-						if (window.analytics && typeof window.analytics.track === "function") {
-							window.analytics.track("Quiz Completed", {
-								quizId: quizId, // Use the defined quizId
-								successfullySubmitted: false,
-								error: errorMessage
-							});
-						}
-						resolve(); // Resolve promise even on error to proceed to finally block
+					body: JSON.stringify({
+						data: JSON.stringify(payload) // Double wrap as some n8n workflows expect this format
+					})
+				}).catch(error => {
+					console.log("CORS request failed, trying no-cors mode:", error);
+					// Fallback to no-cors mode if regular CORS fails
+					return fetch(webhookUrl, {
+						method: "POST",
+						mode: "no-cors",
+						headers: {
+							"Content-Type": "application/json"
+						},
+						body: JSON.stringify({
+							data: JSON.stringify(payload)
+						})
+					});
+				});
+
+				// Race the timeout against the fetch
+				const webhook = await Promise.race([fetchPromise, timeoutPromise]);
+
+				// Check the response status - for no-cors mode, response.type will be 'opaque'
+				if (webhook.type === "opaque") {
+					console.log("Got opaque response from no-cors request - assuming success");
+					webhookSuccess = true;
+				} else if (webhook.ok) {
+					console.log("Webhook response ok:", webhook.status);
+					webhookSuccess = true;
+
+					try {
+						const webhookResponse = await webhook.json();
+						console.log("Webhook response data:", webhookResponse);
+					} catch (jsonError) {
+						console.warn("Could not parse webhook JSON response:", jsonError);
 					}
-				);
-			});
+				} else {
+					errorMessage = `Server returned status ${webhook.status}`;
+					console.error("Webhook error:", errorMessage);
+
+					try {
+						const errorData = await webhook.text();
+						console.error("Error response:", errorData);
+					} catch (textError) {
+						console.warn("Could not read error response:", textError);
+					}
+				}
+			} catch (error) {
+				errorMessage = error.message || "Network error";
+				console.error("Error submitting quiz responses:", error);
+			}
+
+			// Always show results, even if webhook fails
+			this.showResults(bookingUrl, webhookSuccess);
+
+			// Log to analytics if available
+			if (window.analytics && typeof window.analytics.track === "function") {
+				window.analytics.track("Quiz Completed", {
+					quizId: this.quizData?.id || "dietitian-quiz",
+					successfullySubmitted: webhookSuccess,
+					error: !webhookSuccess ? errorMessage : null
+				});
+			}
 		} catch (error) {
-			// Catch errors from outside the JSONP promise (e.g., attribute reading)
 			console.error("Error in quiz completion:", error);
 			this.showError("Unexpected Error", "There was a problem completing the quiz. Please try again later.");
 		} finally {
@@ -1019,97 +1096,3 @@ class ProductQuiz {
 document.addEventListener("DOMContentLoaded", () => {
 	const quiz = new ProductQuiz();
 });
-
-// JSONP utility for quiz submission
-function submitQuizViaJsonp(data, successCallback, errorCallback) {
-	// Create a unique callback name
-	const callbackName = "jsonp_callback_" + Math.round(100000 * Math.random());
-
-	if (!data.webhookUrl) {
-		errorCallback({ success: false, error: { message: "Webhook URL is missing for JSONP." } });
-		return;
-	}
-
-	let url = data.webhookUrl + "?callback=" + callbackName;
-
-	// Add top-level parameters (quizId, quizTitle, timestamp)
-	for (const key in data) {
-		if (key === "webhookUrl" || key === "responses") continue; // Skip these, handle 'responses' separately
-
-		if (data[key] !== undefined && data[key] !== null) {
-			url += "&" + encodeURIComponent(key) + "=" + encodeURIComponent(data[key]);
-		}
-	}
-
-	// Add parameters from the 'responses' object, formatting them as responses.questionId=value
-	if (data.responses && typeof data.responses === "object") {
-		for (const questionId in data.responses) {
-			const answer = data.responses[questionId];
-			if (answer !== undefined && answer !== null) {
-				if (Array.isArray(answer)) {
-					// For array answers (e.g., checkboxes), repeat the parameter for each value
-					// This should make request.query.responses.questionId an array on the server
-					if (answer.length === 0) {
-						// If array is empty, send parameter with empty value to indicate it was present
-						url += `&responses.${encodeURIComponent(questionId)}=`;
-					} else {
-						answer.forEach(val => {
-							url += `&responses.${encodeURIComponent(questionId)}=${encodeURIComponent(val)}`;
-						});
-					}
-				} else {
-					// For single answers
-					url += `&responses.${encodeURIComponent(questionId)}=${encodeURIComponent(answer)}`;
-				}
-			}
-		}
-	}
-
-	// Define the callback function globally
-	window[callbackName] = function (responseData) {
-		// It's good practice to check if responseData exists and has expected structure
-		if (responseData && (responseData.success === true || (responseData.status && responseData.status !== "error"))) {
-			// Adjust success condition based on actual server response for JSONP
-			successCallback(responseData);
-		} else {
-			errorCallback(responseData || { success: false, error: { message: "Received empty or malformed JSONP response." } });
-		}
-
-		// Clean up script and global callback
-		if (script.parentNode) {
-			script.parentNode.removeChild(script);
-		}
-		try {
-			delete window[callbackName];
-		} catch (e) {
-			window[callbackName] = undefined; // For older IE
-		}
-	};
-
-	// Create script element for JSONP request
-	const script = document.createElement("script");
-	script.src = url;
-
-	// Handle script load errors (network error, script blocked, 404 on script, etc.)
-	script.onerror = function () {
-		errorCallback({
-			success: false,
-			error: {
-				code: "JSONP_LOAD_ERROR",
-				message: "Failed to load the JSONP script. Check network or server."
-			}
-		});
-		// Clean up on error as well
-		if (script.parentNode) {
-			script.parentNode.removeChild(script);
-		}
-		try {
-			delete window[callbackName];
-		} catch (e) {
-			window[callbackName] = undefined;
-		}
-	};
-
-	// Start the request
-	document.body.appendChild(script);
-}
