@@ -278,6 +278,9 @@ class ProductQuiz {
 						case "date":
 							stepHTML += this.renderDateInput(question, response);
 							break;
+						case "checkbox":
+							stepHTML += this.renderCheckbox(question, response);
+							break;
 						default:
 							stepHTML += `<p class="text-red-500">Unsupported field type: ${question.type}</p>`;
 					}
@@ -1050,6 +1053,29 @@ class ProductQuiz {
 					} else {
 						this.handleFormAnswer(question.id, textInput.value);
 					}
+				});
+				break;
+
+			case "checkbox":
+				const checkboxInputs = this.questionContainer.querySelectorAll(`input[name="question-${question.id}"]`);
+				if (checkboxInputs.length === 0) {
+					console.warn(`No checkbox inputs found for question ${question.id}`);
+					return;
+				}
+				checkboxInputs.forEach(input => {
+					input.addEventListener("change", () => {
+						// If this is a single checkbox option field (like consent)
+						if (question.options.length === 1) {
+							const isChecked = input.checked;
+							this.handleFormAnswer(question.id, isChecked ? [input.value] : []);
+						} else {
+							// Multiple option checkbox field
+							const selectedOptions = Array.from(checkboxInputs)
+								.filter(cb => cb.checked)
+								.map(cb => cb.value);
+							this.handleFormAnswer(question.id, selectedOptions);
+						}
+					});
 				});
 				break;
 
