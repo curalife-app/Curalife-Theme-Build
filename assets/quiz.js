@@ -1232,22 +1232,38 @@ class ProductQuiz {
 			});
 		}
 
+		// Log all current responses for debugging
+		console.log("Current responses:", JSON.stringify(this.responses, null, 2));
+
 		// Check if all required questions in the form have answers
 		const allRequiredAnswered = step.questions
 			.filter(q => q.required)
 			.every(q => {
 				const resp = this.responses.find(r => r.questionId === q.id);
 
-				if (!resp || resp.answer === null) return false;
+				console.log(`Validating required field ${q.id} (${q.type}):`, {
+					hasResponse: !!resp,
+					answer: resp ? resp.answer : null,
+					questionType: q.type
+				});
+
+				if (!resp || resp.answer === null) {
+					console.log(`Field ${q.id} has no response`);
+					return false;
+				}
 
 				// For checkboxes, check if any option is selected (must be non-empty array)
 				if (q.type === "checkbox") {
-					return Array.isArray(resp.answer) && resp.answer.length > 0;
+					const isValid = Array.isArray(resp.answer) && resp.answer.length > 0;
+					console.log(`Checkbox ${q.id} validation: ${isValid ? "VALID" : "INVALID"}`);
+					return isValid;
 				}
 
 				// For text fields, ensure non-empty
 				if (typeof resp.answer === "string") {
-					return resp.answer.trim() !== "";
+					const isValid = resp.answer.trim() !== "";
+					console.log(`Text field ${q.id} validation: ${isValid ? "VALID" : "INVALID"}`);
+					return isValid;
 				}
 
 				return true;
