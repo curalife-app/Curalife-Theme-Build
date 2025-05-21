@@ -406,15 +406,16 @@ class ProductQuiz {
 
 	renderCheckbox(question, response) {
 		const selectedOptions = Array.isArray(response.answer) ? response.answer : [];
+		console.log(`Rendering checkbox for ${question.id}, selectedOptions:`, selectedOptions);
 
 		let html = '<div class="space-y-3 mt-6">';
 
 		question.options.forEach(option => {
 			html += `
 				<div class="flex items-center">
-					<input type="checkbox" id="${option.id}" name="question-${question.id}" value="${option.id}" class="mr-2"
+					<input type="checkbox" id="${option.id}" name="question-${question.id}" value="${option.id}" class="mr-2 h-5 w-5 cursor-pointer"
 						${selectedOptions.includes(option.id) ? "checked" : ""}>
-					<label class="cursor-pointer" for="${option.id}">${option.text}</label>
+					<label class="cursor-pointer text-base" for="${option.id}">${option.text}</label>
 				</div>
 			`;
 		});
@@ -511,13 +512,33 @@ class ProductQuiz {
 					console.warn(`No checkbox inputs found for question ${question.id}`);
 					return;
 				}
+				console.log(`Found ${checkboxInputs.length} checkbox inputs for ${question.id}`);
+
 				checkboxInputs.forEach(input => {
-					input.addEventListener("change", () => {
-						const selectedOptions = Array.from(checkboxInputs)
-							.filter(cb => cb.checked)
-							.map(cb => cb.value);
-						this.handleAnswer(selectedOptions);
-					});
+					// First remove any existing listeners to avoid duplicates
+					input.removeEventListener("change", input._changeHandler);
+
+					// Define the handler
+					input._changeHandler = () => {
+						console.log(`Checkbox ${input.id} changed, checked:`, input.checked);
+
+						// If this is a single checkbox option field (like consent)
+						if (question.options.length === 1) {
+							const isChecked = input.checked;
+							console.log(`Single checkbox consent: ${isChecked ? "checked" : "unchecked"}`);
+							this.handleFormAnswer(question.id, isChecked ? [input.value] : []);
+						} else {
+							// Multiple option checkbox field
+							const selectedOptions = Array.from(checkboxInputs)
+								.filter(cb => cb.checked)
+								.map(cb => cb.value);
+							console.log(`Multiple checkbox options selected:`, selectedOptions);
+							this.handleFormAnswer(question.id, selectedOptions);
+						}
+					};
+
+					// Add the handler
+					input.addEventListener("change", input._changeHandler);
 				});
 				break;
 
@@ -666,9 +687,23 @@ class ProductQuiz {
 				.filter(q => q.required)
 				.every(q => {
 					const resp = this.responses.find(r => r.questionId === q.id);
-					return resp && resp.answer !== null && (typeof resp.answer !== "string" || resp.answer.trim() !== "") && (!Array.isArray(resp.answer) || resp.answer.length > 0);
+
+					if (!resp || resp.answer === null) return false;
+
+					// For checkboxes, check if any option is selected (must be non-empty array)
+					if (q.type === "checkbox") {
+						return Array.isArray(resp.answer) && resp.answer.length > 0;
+					}
+
+					// For text fields, ensure non-empty
+					if (typeof resp.answer === "string") {
+						return resp.answer.trim() !== "";
+					}
+
+					return true;
 				});
 
+			console.log(`Navigation update: All required fields completed? ${allRequiredAnswered}`);
 			this.nextButton.disabled = !allRequiredAnswered || this.submitting;
 			return;
 		}
@@ -688,7 +723,15 @@ class ProductQuiz {
 
 			// Check if the question is required and has an answer
 			if (question.required) {
-				hasAnswer = response && response.answer !== null && (typeof response.answer !== "string" || response.answer.trim() !== "") && (!Array.isArray(response.answer) || response.answer.length > 0);
+				if (!response || response.answer === null) {
+					hasAnswer = false;
+				} else if (question.type === "checkbox") {
+					// For checkboxes, check if any option is selected
+					hasAnswer = Array.isArray(response.answer) && response.answer.length > 0;
+				} else if (typeof response.answer === "string") {
+					// For text fields, ensure non-empty
+					hasAnswer = response.answer.trim() !== "";
+				}
 			}
 		} else if (step.info) {
 			// For info steps, always allow proceeding
@@ -1062,20 +1105,33 @@ class ProductQuiz {
 					console.warn(`No checkbox inputs found for question ${question.id}`);
 					return;
 				}
+				console.log(`Found ${checkboxInputs.length} checkbox inputs for ${question.id}`);
+
 				checkboxInputs.forEach(input => {
-					input.addEventListener("change", () => {
+					// First remove any existing listeners to avoid duplicates
+					input.removeEventListener("change", input._changeHandler);
+
+					// Define the handler
+					input._changeHandler = () => {
+						console.log(`Checkbox ${input.id} changed, checked:`, input.checked);
+
 						// If this is a single checkbox option field (like consent)
 						if (question.options.length === 1) {
 							const isChecked = input.checked;
+							console.log(`Single checkbox consent: ${isChecked ? "checked" : "unchecked"}`);
 							this.handleFormAnswer(question.id, isChecked ? [input.value] : []);
 						} else {
 							// Multiple option checkbox field
 							const selectedOptions = Array.from(checkboxInputs)
 								.filter(cb => cb.checked)
 								.map(cb => cb.value);
+							console.log(`Multiple checkbox options selected:`, selectedOptions);
 							this.handleFormAnswer(question.id, selectedOptions);
 						}
-					});
+					};
+
+					// Add the handler
+					input.addEventListener("change", input._changeHandler);
 				});
 				break;
 
@@ -1113,8 +1169,23 @@ class ProductQuiz {
 			.filter(q => q.required)
 			.every(q => {
 				const resp = this.responses.find(r => r.questionId === q.id);
-				return resp && resp.answer !== null && (typeof resp.answer !== "string" || resp.answer.trim() !== "") && (!Array.isArray(resp.answer) || resp.answer.length > 0);
+
+				if (!resp || resp.answer === null) return false;
+
+				// For checkboxes, check if any option is selected (must be non-empty array)
+				if (q.type === "checkbox") {
+					return Array.isArray(resp.answer) && resp.answer.length > 0;
+				}
+
+				// For text fields, ensure non-empty
+				if (typeof resp.answer === "string") {
+					return resp.answer.trim() !== "";
+				}
+
+				return true;
 			});
+
+		console.log(`Form validation: All required fields completed? ${allRequiredAnswered}`);
 
 		// Enable/disable the next button based on whether all required fields are filled
 		this.nextButton.disabled = !allRequiredAnswered;
