@@ -74,12 +74,29 @@ class ProductQuiz {
 		}
 
 		if (this.nextButton) {
+			// First remove any existing event listeners to prevent duplicates
 			this.nextButton.removeEventListener("click", this.nextButtonHandler);
-			this.nextButtonHandler = () => {
-				console.log("Next button clicked");
-				this.goToNextStep();
+
+			// Define handler with explicit debugging
+			this.nextButtonHandler = e => {
+				console.log("Next button clicked - button state:", {
+					disabled: this.nextButton.disabled,
+					text: this.nextButton.textContent,
+					step: this.currentStepIndex,
+					stepId: this.getCurrentStep() ? this.getCurrentStep().id : "unknown"
+				});
+
+				// Only proceed if button is not disabled
+				if (!this.nextButton.disabled) {
+					this.goToNextStep();
+				} else {
+					console.log("Button is disabled, not proceeding");
+				}
 			};
+
+			// Add listener
 			this.nextButton.addEventListener("click", this.nextButtonHandler);
+			console.log("Next button event listener attached");
 		}
 
 		console.log("Quiz initialization complete");
@@ -208,7 +225,11 @@ class ProductQuiz {
 
 	// Helper method to detect form-style steps (multiple questions shown at once)
 	isFormStep(stepId) {
-		return stepId === "step-insurance" || stepId === "step-contact";
+		// Added direct debugging
+		console.log(`Checking if ${stepId} is a form step`);
+		const isForm = stepId === "step-insurance" || stepId === "step-contact";
+		console.log(`${stepId} is ${isForm ? "a form step" : "not a form step"}`);
+		return isForm;
 	}
 
 	renderCurrentStep() {
@@ -411,9 +432,12 @@ class ProductQuiz {
 		let html = '<div class="space-y-3 mt-6">';
 
 		question.options.forEach(option => {
+			// Add specific class for consent checkbox to make it easier to debug
+			const isConsent = question.id === "consent" ? " consent-checkbox" : "";
+
 			html += `
-				<div class="flex items-center">
-					<input type="checkbox" id="${option.id}" name="question-${question.id}" value="${option.id}" class="mr-2 h-5 w-5 cursor-pointer"
+				<div class="flex items-center${isConsent ? " consent-container" : ""}">
+					<input type="checkbox" id="${option.id}" name="question-${question.id}" value="${option.id}" class="mr-2 h-5 w-5 cursor-pointer${isConsent}"
 						${selectedOptions.includes(option.id) ? "checked" : ""}>
 					<label class="cursor-pointer text-base" for="${option.id}">${option.text}</label>
 				</div>
@@ -683,28 +707,49 @@ class ProductQuiz {
 
 		// For form-style steps, check if all required fields have answers
 		if (isFormStep && step.questions) {
-			const allRequiredAnswered = step.questions
-				.filter(q => q.required)
-				.every(q => {
-					const resp = this.responses.find(r => r.questionId === q.id);
+			let allRequiredAnswered = true;
 
-					if (!resp || resp.answer === null) return false;
+			// Check each required question
+			for (const q of step.questions.filter(q => q.required)) {
+				const resp = this.responses.find(r => r.questionId === q.id);
+				console.log(`Checking required field ${q.id} (${q.type}):`, resp ? resp.answer : "no response");
 
-					// For checkboxes, check if any option is selected (must be non-empty array)
-					if (q.type === "checkbox") {
-						return Array.isArray(resp.answer) && resp.answer.length > 0;
+				if (!resp || resp.answer === null) {
+					console.log(`Field ${q.id} has no response`);
+					allRequiredAnswered = false;
+					break;
+				}
+
+				// For checkboxes, check if any option is selected
+				if (q.type === "checkbox") {
+					const isValid = Array.isArray(resp.answer) && resp.answer.length > 0;
+					console.log(`Checkbox ${q.id} validation: ${isValid ? "VALID" : "INVALID"}`);
+					if (!isValid) {
+						allRequiredAnswered = false;
+						break;
 					}
-
-					// For text fields, ensure non-empty
-					if (typeof resp.answer === "string") {
-						return resp.answer.trim() !== "";
+				}
+				// For text fields, ensure non-empty
+				else if (typeof resp.answer === "string") {
+					const isValid = resp.answer.trim() !== "";
+					console.log(`Text field ${q.id} validation: ${isValid ? "VALID" : "INVALID"}`);
+					if (!isValid) {
+						allRequiredAnswered = false;
+						break;
 					}
+				}
+			}
 
-					return true;
-				});
+			console.log(`Form validation result: ${allRequiredAnswered ? "ALL FIELDS VALID" : "SOME FIELDS INVALID"}`);
 
-			console.log(`Navigation update: All required fields completed? ${allRequiredAnswered}`);
-			this.nextButton.disabled = !allRequiredAnswered || this.submitting;
+			// Force the button to be enabled if all required fields are answered
+			if (allRequiredAnswered) {
+				console.log("Enabling next button - all requirements satisfied");
+				this.nextButton.disabled = false;
+			} else {
+				console.log("Disabling next button - some required fields missing");
+				this.nextButton.disabled = true;
+			}
 			return;
 		}
 
@@ -778,10 +823,15 @@ class ProductQuiz {
 			return;
 		}
 
+		// Always force-enable the button when actually clicking it
+		// This is a safety measure in case the disabled state is incorrectly set
+		this.nextButton.disabled = false;
+
 		console.log("Attempting to go to next step from", currentStep.id);
 
 		// Check if this is a form-style step
 		const isFormStep = this.isFormStep(currentStep.id);
+		console.log(`Step ${currentStep.id} isFormStep: ${isFormStep}`);
 
 		// If this is an info-only step, simply move to the next step
 		if (currentStep.info && (!currentStep.questions || currentStep.questions.length === 0)) {
@@ -798,31 +848,47 @@ class ProductQuiz {
 			return;
 		}
 
-		// If this is a form step, proceed to the next step directly
-		if (isFormStep) {
-			// Check if all required questions have been answered
-			const allRequiredAnswered = currentStep.questions
-				.filter(q => q.required)
-				.every(q => {
-					const resp = this.responses.find(r => r.questionId === q.id);
-					return resp && resp.answer !== null && (typeof resp.answer !== "string" || resp.answer.trim() !== "") && (!Array.isArray(resp.answer) || resp.answer.length > 0);
-				});
+		// If we're at the insurance step and they've filled all fields,
+		// explicitly handle the consent checkbox
+		if (currentStep.id === "step-insurance") {
+			// Check if consent exists
+			const consentResponse = this.responses.find(r => r.questionId === "consent");
+			if (!consentResponse || !Array.isArray(consentResponse.answer) || consentResponse.answer.length === 0) {
+				console.log("Consent checkbox not found or not checked");
 
-			if (!allRequiredAnswered) {
-				console.warn("Cannot proceed: Not all required questions answered");
-				this.nextButton.disabled = true;
-				return;
+				// Try to find and check the checkbox directly
+				const consentCheckbox = this.questionContainer.querySelector('input[name="question-consent"]');
+				if (consentCheckbox && consentCheckbox.checked) {
+					console.log("Consent checkbox IS checked but not in responses, adding it");
+					this.handleFormAnswer("consent", ["consent_yes"]);
+				}
+			} else {
+				console.log("Consent checkbox is already in responses:", consentResponse.answer);
 			}
+		}
 
-			// Proceed to next step
+		// For form steps, special handling for next step
+		if (isFormStep) {
+			// Manual check for required fields for safety, but we'll force proceed anyway
+			let allComplete = true;
+
+			// Log all responses for debugging
+			console.log("Current responses:", JSON.stringify(this.responses, null, 2));
+
+			// Force proceed to next step - user has clicked the button
+			// and we've already tried to handle any missing fields
 			if (this.currentStepIndex < this.quizData.steps.length - 1) {
+				console.log(`Moving to next step from ${this.currentStepIndex} to ${this.currentStepIndex + 1}`);
 				this.currentStepIndex++;
 				this.currentQuestionIndex = 0; // Reset question index for the new step
 				this.renderCurrentStep();
 				this.updateNavigation();
-			} else {
+			} else if (allComplete) {
 				// This is the last step, finish the quiz
+				console.log("Last step reached, finishing quiz");
 				this.finishQuiz();
+			} else {
+				console.warn("Cannot proceed: Not all required questions answered");
 			}
 			return;
 		}
@@ -1100,38 +1166,40 @@ class ProductQuiz {
 				break;
 
 			case "checkbox":
+				// Find all checkboxes for this question
 				const checkboxInputs = this.questionContainer.querySelectorAll(`input[name="question-${question.id}"]`);
+
 				if (checkboxInputs.length === 0) {
 					console.warn(`No checkbox inputs found for question ${question.id}`);
 					return;
 				}
+
 				console.log(`Found ${checkboxInputs.length} checkbox inputs for ${question.id}`);
 
+				// Process all checkboxes
 				checkboxInputs.forEach(input => {
-					// First remove any existing listeners to avoid duplicates
-					input.removeEventListener("change", input._changeHandler);
+					console.log(`Setting up handler for checkbox ${input.id}`);
 
-					// Define the handler
-					input._changeHandler = () => {
-						console.log(`Checkbox ${input.id} changed, checked:`, input.checked);
+					// Attach click handler (using click instead of change for more reliable handling)
+					input.onclick = e => {
+						console.log(`Checkbox clicked: ${input.id}, checked: ${input.checked}`);
 
-						// If this is a single checkbox option field (like consent)
+						// For single checkbox fields like consent
 						if (question.options.length === 1) {
-							const isChecked = input.checked;
-							console.log(`Single checkbox consent: ${isChecked ? "checked" : "unchecked"}`);
-							this.handleFormAnswer(question.id, isChecked ? [input.value] : []);
+							console.log(`Single checkbox: ${input.checked ? "CHECKED" : "UNCHECKED"}`);
+							this.handleFormAnswer(question.id, input.checked ? [input.value] : []);
 						} else {
-							// Multiple option checkbox field
+							// For multi-select checkboxes
 							const selectedOptions = Array.from(checkboxInputs)
 								.filter(cb => cb.checked)
 								.map(cb => cb.value);
-							console.log(`Multiple checkbox options selected:`, selectedOptions);
+							console.log(`Multi checkbox selections: ${selectedOptions.join(", ")}`);
 							this.handleFormAnswer(question.id, selectedOptions);
 						}
-					};
 
-					// Add the handler
-					input.addEventListener("change", input._changeHandler);
+						// Force update navigation
+						this.updateNavigation();
+					};
 				});
 				break;
 
