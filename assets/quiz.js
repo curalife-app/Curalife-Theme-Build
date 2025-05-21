@@ -17,6 +17,7 @@ class ProductQuiz {
 		this.results = this.container.querySelector(".quiz-results");
 		this.error = this.container.querySelector(".quiz-error");
 		this.loading = this.container.querySelector(".quiz-loading");
+		this.eligibilityCheck = this.container.querySelector(".quiz-eligibility-check");
 
 		this.progressBar = this.container.querySelector(".quiz-progress-bar");
 		this.questionContainer = this.container.querySelector(".quiz-question-container");
@@ -32,6 +33,7 @@ class ProductQuiz {
 			results: !!this.results,
 			error: !!this.error,
 			loading: !!this.loading,
+			eligibilityCheck: !!this.eligibilityCheck,
 			progressBar: !!this.progressBar,
 			questionContainer: !!this.questionContainer,
 			navigationButtons: !!this.navigationButtons,
@@ -994,6 +996,12 @@ class ProductQuiz {
 
 			console.log("Sending payload to webhook:", payload);
 
+			// Hide questions and show eligibility check indicator
+			this.questions.classList.add("hidden");
+			if (this.eligibilityCheck) {
+				this.eligibilityCheck.classList.remove("hidden");
+			}
+
 			// Get webhook URL from data attribute
 			const webhookUrl = this.container.getAttribute("data-n8n-webhook");
 			const bookingUrl = this.container.getAttribute("data-booking-url") || "/appointment-booking";
@@ -1073,7 +1081,12 @@ class ProductQuiz {
 				console.error("Error submitting quiz responses:", error);
 			}
 
-			// Always show results, even if webhook fails
+			// Hide eligibility check indicator
+			if (this.eligibilityCheck) {
+				this.eligibilityCheck.classList.add("hidden");
+			}
+
+			// Show results
 			this.showResults(bookingUrl, webhookSuccess);
 
 			// Log to analytics if available
@@ -1086,6 +1099,10 @@ class ProductQuiz {
 			}
 		} catch (error) {
 			console.error("Error in quiz completion:", error);
+			// Hide eligibility check indicator in case of error
+			if (this.eligibilityCheck) {
+				this.eligibilityCheck.classList.add("hidden");
+			}
 			this.showError("Unexpected Error", "There was a problem completing the quiz. Please try again later.");
 		} finally {
 			this.submitting = false;
@@ -1105,12 +1122,79 @@ class ProductQuiz {
 		this.questions.classList.add("hidden");
 		this.results.classList.remove("hidden");
 
-		// Generate results content
+		// Check if we have eligibility data to display
+		const step = this.quizData.steps.find(s => s.id === "step-eligibility");
+		const eligibilityData = step?.eligibilityData || null;
+		const isEligible = eligibilityData?.eligible === "true";
+		const sessionsCovered = parseInt(eligibilityData?.sessionsCovered || "0", 10);
+		const deductible = parseFloat(eligibilityData?.deductible || "0").toFixed(2);
+		const copay = parseFloat(eligibilityData?.copay || "0").toFixed(2);
+		const message = eligibilityData?.message || "Your eligibility check is complete.";
+
+		// Format date strings if available
+		let coverageDates = "";
+		if (eligibilityData?.planBegin && eligibilityData?.planEnd) {
+			const formatDate = dateStr => {
+				if (!dateStr || dateStr.length !== 8) return "N/A";
+				const year = dateStr.substring(0, 4);
+				const month = dateStr.substring(4, 6);
+				const day = dateStr.substring(6, 8);
+				return `${month}/${day}/${year}`;
+			};
+
+			const beginDate = formatDate(eligibilityData.planBegin);
+			const endDate = formatDate(eligibilityData.planEnd);
+			coverageDates = `<p class="text-sm text-slate-500 mt-2">Coverage period: ${beginDate} to ${endDate}</p>`;
+		}
+
+		// Generate results content with eligibility information
 		let resultsHTML = `
 			<div class="text-center mb-8">
 				<h2 class="text-4xl font-bold mb-4 leading-tight md:text-5xl">Thanks for completing the quiz!</h2>
 				<p class="text-lg text-slate-500 max-w-xl mx-auto mb-8">We're ready to connect you with a registered dietitian who can help guide your health journey.</p>
 				${!webhookSuccess ? `<p class="text-amber-600 mb-6">There was an issue processing your submission, but you can still continue.</p>` : ""}
+
+				<div class="bg-white rounded-lg shadow-md p-6 mb-8 max-w-xl mx-auto">
+					<h3 class="text-xl font-semibold mb-3 ${isEligible ? "text-green-600" : "text-amber-600"}">
+						${isEligible ? "✓ Insurance Coverage Verified" : "Insurance Coverage Information"}
+					</h3>
+					<p class="text-md mb-4">${message}</p>
+
+					${
+						sessionsCovered > 0
+							? `
+					<div class="bg-slate-50 rounded p-4 mb-4">
+						<p class="font-medium">Coverage details:</p>
+						<ul class="mt-2 text-sm text-slate-600">
+							<li class="flex justify-between py-1">
+								<span>Sessions covered:</span>
+								<span class="font-medium">${sessionsCovered}</span>
+							</li>
+							${
+								deductible > 0
+									? `
+							<li class="flex justify-between py-1">
+								<span>Deductible:</span>
+								<span class="font-medium">$${deductible}</span>
+							</li>`
+									: ""
+							}
+							${
+								copay > 0
+									? `
+							<li class="flex justify-between py-1">
+								<span>Co-pay per session:</span>
+								<span class="font-medium">$${copay}</span>
+							</li>`
+									: ""
+							}
+						</ul>
+						${coverageDates}
+					</div>`
+							: ""
+					}
+				</div>
+
 				<div class="space-y-4 md:space-y-0 md:space-x-4">
 					<a href="${bookingUrl}" class="inline-flex items-center justify-center px-6 py-3 text-base font-medium rounded-lg bg-slate-800 text-white hover:bg-slate-700 transition duration-200 relative md:px-8">
 						Book Your Appointment
