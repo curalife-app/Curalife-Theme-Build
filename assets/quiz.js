@@ -584,21 +584,32 @@ class ProductQuiz {
 					console.warn(`Text input not found for question ${question.id}`);
 					return;
 				}
-				textInput.addEventListener("input", () => {
+				// Remove any existing listeners
+				textInput.removeEventListener("input", textInput._inputHandler);
+				textInput.removeEventListener("change", textInput._changeHandler);
+
+				// Define the handler
+				textInput._inputHandler = () => {
+					console.log(`Text input ${question.id} changed:`, textInput.value);
+
 					// If there's validation, check it
 					if (question.validation && question.validation.pattern) {
 						const regex = new RegExp(question.validation.pattern);
 						if (regex.test(textInput.value)) {
 							textInput.classList.remove("border-red-500");
-							this.handleAnswer(textInput.value);
+							this.handleFormAnswer(question.id, textInput.value);
 						} else {
 							textInput.classList.add("border-red-500");
-							this.handleAnswer(null); // Invalid input
+							this.handleFormAnswer(question.id, null); // Invalid input
 						}
 					} else {
-						this.handleAnswer(textInput.value);
+						this.handleFormAnswer(question.id, textInput.value);
 					}
-				});
+				};
+
+				// Add both input and change handlers
+				textInput.addEventListener("input", textInput._inputHandler);
+				textInput.addEventListener("change", textInput._inputHandler);
 				break;
 
 			case "textarea":
@@ -1148,7 +1159,14 @@ class ProductQuiz {
 					console.warn(`Text input not found for question ${question.id}`);
 					return;
 				}
-				textInput.addEventListener("input", () => {
+				// Remove any existing listeners
+				textInput.removeEventListener("input", textInput._inputHandler);
+				textInput.removeEventListener("change", textInput._changeHandler);
+
+				// Define the handler
+				textInput._inputHandler = () => {
+					console.log(`Text input ${question.id} changed:`, textInput.value);
+
 					// If there's validation, check it
 					if (question.validation && question.validation.pattern) {
 						const regex = new RegExp(question.validation.pattern);
@@ -1162,7 +1180,11 @@ class ProductQuiz {
 					} else {
 						this.handleFormAnswer(question.id, textInput.value);
 					}
-				});
+				};
+
+				// Add both input and change handlers
+				textInput.addEventListener("input", textInput._inputHandler);
+				textInput.addEventListener("change", textInput._inputHandler);
 				break;
 
 			case "checkbox":
