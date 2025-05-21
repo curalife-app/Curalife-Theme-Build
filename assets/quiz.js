@@ -820,9 +820,10 @@ class ProductQuiz {
 			let state = "";
 			let insurance = "";
 			let insuranceMemberId = "";
-			let mainReason = "";
-			let secondaryReasons = [];
+			let mainReasons = [];
+			let medicalConditions = [];
 			let dateOfBirth = "";
+			let consent = false;
 
 			// Extract individual answers
 			this.responses.forEach(response => {
@@ -833,9 +834,10 @@ class ProductQuiz {
 				if (response.questionId === "q5") state = response.answer || "";
 				if (response.questionId === "q3") insurance = response.answer || "";
 				if (response.questionId === "q4") insuranceMemberId = response.answer || "";
-				if (response.questionId === "q1") mainReason = response.answer || "";
-				if (response.questionId === "q2") secondaryReasons = response.answer || [];
+				if (response.questionId === "q1") mainReasons = response.answer || [];
+				if (response.questionId === "q2") medicalConditions = response.answer || [];
 				if (response.questionId === "q6") dateOfBirth = response.answer || "";
+				if (response.questionId === "consent") consent = response.answer && response.answer.includes("consent_yes");
 			});
 
 			// Format for n8n workflow
@@ -856,8 +858,9 @@ class ProductQuiz {
 				state,
 				insurance,
 				insuranceMemberId,
-				mainReason,
-				secondaryReasons,
+				mainReasons,
+				medicalConditions,
+				consent,
 				// Provide the full responses array exactly as n8n expects
 				allResponses: this.responses.map(r => ({
 					stepId: r.stepId,
