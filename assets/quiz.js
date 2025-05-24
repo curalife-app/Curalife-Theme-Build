@@ -306,7 +306,6 @@ class ProductQuiz {
 				<h3 class="text-2xl font-semibold mb-2 text-green-600">${step.info.heading}</h3>
 				<p class="text-slate-500 mb-6">${step.info.text}</p>
 				${step.info.subtext ? `<p class="text-slate-500 text-sm mt-2 italic">${step.info.subtext}</p>` : ""}
-				${step.info.formSubHeading ? `<div class="bg-gray-50 rounded-lg p-6 mt-6 mb-6"><h4 class="text-lg font-semibold text-slate-800 mb-0">${step.info.formSubHeading}</h4></div>` : ""}
 			`;
 
 			// Mark this step's info as acknowledged
@@ -329,12 +328,64 @@ class ProductQuiz {
 		if (step.questions && step.questions.length > 0) {
 			if (isFormStep) {
 				// For form-style steps, render all questions at once
-				stepHTML += `<div class="space-y-6">`;
+				stepHTML += `
+					<div class="bg-gray-100 rounded-lg p-6 mt-6">
+						${step.info && step.info.formSubHeading ? `<h4 class="text-lg font-semibold text-slate-800 mb-6">${step.info.formSubHeading}</h4>` : ""}
+						<div class="space-y-6">
+				`;
 
 				let i = 0;
 				while (i < step.questions.length) {
 					const question = step.questions[i];
 					const response = this.responses.find(r => r.questionId === question.id) || { answer: null };
+
+					// Check for insurance plan + member ID row
+					if (question.id === "q3" && step.questions[i + 1] && step.questions[i + 1].id === "q4") {
+						const insuranceQuestion = question;
+						const memberIdQuestion = step.questions[i + 1];
+
+						stepHTML += `
+							<div class="grid grid-cols-2 gap-4 mb-6">
+								<div>
+									<label class="text-lg font-semibold text-slate-800 block mb-2" for="question-${insuranceQuestion.id}">
+										${insuranceQuestion.text}${insuranceQuestion.required ? ' <span class="text-red-500">*</span>' : ""}
+										<svg class="inline w-4 h-4 ml-1 text-slate-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+									</label>
+									${this.renderDropdown(insuranceQuestion, this.responses.find(r => r.questionId === insuranceQuestion.id) || { answer: null })}
+								</div>
+								<div>
+									<label class="text-lg font-semibold text-slate-800 block mb-2" for="question-${memberIdQuestion.id}">
+										${memberIdQuestion.text}${memberIdQuestion.required ? ' <span class="text-red-500">*</span>' : ""}
+										<svg class="inline w-4 h-4 ml-1 text-slate-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+									</label>
+									${this.renderTextInput(memberIdQuestion, this.responses.find(r => r.questionId === memberIdQuestion.id) || { answer: null })}
+								</div>
+							</div>
+						`;
+						i += 2;
+						continue;
+					}
+
+					// Check for first name + last name row
+					if (question.id === "q7" && step.questions[i + 1] && step.questions[i + 1].id === "q8") {
+						const firstNameQuestion = question;
+						const lastNameQuestion = step.questions[i + 1];
+
+						stepHTML += `
+							<div class="grid grid-cols-2 gap-4 mb-6">
+								<div>
+									<label class="text-lg font-semibold text-slate-800 block mb-2" for="question-${firstNameQuestion.id}">${firstNameQuestion.text}${firstNameQuestion.required ? ' <span class="text-red-500">*</span>' : ""}</label>
+									${this.renderTextInput(firstNameQuestion, this.responses.find(r => r.questionId === firstNameQuestion.id) || { answer: null })}
+								</div>
+								<div>
+									<label class="text-lg font-semibold text-slate-800 block mb-2" for="question-${lastNameQuestion.id}">${lastNameQuestion.text}${lastNameQuestion.required ? ' <span class="text-red-500">*</span>' : ""}</label>
+									${this.renderTextInput(lastNameQuestion, this.responses.find(r => r.questionId === lastNameQuestion.id) || { answer: null })}
+								</div>
+							</div>
+						`;
+						i += 2;
+						continue;
+					}
 
 					// Check if this is the start of a date-part group
 					if (question.type === "date-part" && question.part === "month") {
@@ -392,7 +443,10 @@ class ProductQuiz {
 					i++;
 				}
 
-				stepHTML += `</div>`;
+				stepHTML += `
+						</div>
+					</div>
+				`;
 			} else {
 				// For wizard-style steps, render one question at a time
 				const question = step.questions[this.currentQuestionIndex];
@@ -568,7 +622,7 @@ class ProductQuiz {
 		const placeholder = question.placeholder || "Select an option";
 
 		let html = `
-			<div class="mb-6">
+			<div>
 				<select id="question-${question.id}" class="w-full p-3 text-base border border-slate-200 rounded-lg bg-white appearance-none shadow-sm focus:outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-800/10 cursor-pointer">
 					<option value="">${placeholder}</option>
 		`;
@@ -586,7 +640,7 @@ class ProductQuiz {
 
 	renderTextInput(question, response) {
 		return `
-			<div class="mb-6">
+			<div>
 				<input type="text" id="question-${question.id}" class="w-full p-3 border border-slate-200 rounded-lg shadow-sm focus:outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-800/10"
 					placeholder="${question.placeholder || "Type your answer here..."}"
 					value="${response.answer || ""}"
