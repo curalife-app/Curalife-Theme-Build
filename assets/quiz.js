@@ -105,8 +105,6 @@ class ProductQuiz {
 	}
 
 	async startQuiz() {
-		console.log("🚀 Starting quiz...");
-
 		// Check that we have all required elements before proceeding
 		if (!this.intro || !this.questions || !this.loading) {
 			console.error("Required quiz elements are missing:", {
@@ -117,22 +115,14 @@ class ProductQuiz {
 			return;
 		}
 
-		console.log("✅ All required elements found");
-
-		// Hide intro and show loading spinner
+		// Hide intro, show questions
 		this.intro.style.display = "none";
+		this.questions.classList.remove("hidden");
 		this.loading.classList.remove("hidden");
-		this.questions.classList.add("hidden"); // Ensure questions are hidden initially
-
-		console.log("🔄 Loading spinner shown, intro hidden");
 
 		try {
-			console.log("📡 Fetching quiz data from:", this.dataUrl);
-
 			// Fetch quiz data
 			await this.loadQuizData();
-
-			console.log("✅ Quiz data loaded successfully");
 
 			// Initialize responses array
 			this.responses = [];
@@ -144,8 +134,6 @@ class ProductQuiz {
 				if (this.error) this.error.classList.remove("hidden");
 				return;
 			}
-
-			console.log("📊 Processing quiz data:", this.quizData.steps.length, "steps found");
 
 			// Initialize responses for all questions across all steps
 			this.quizData.steps.forEach(step => {
@@ -167,31 +155,14 @@ class ProductQuiz {
 				}
 			});
 
-			console.log("📝 Initialized", this.responses.length, "response slots");
-
-			// Hide loading indicator and show questions
-			console.log("🎯 Hiding loader, showing questions...");
-			console.log("📍 Loader element:", this.loading);
-			console.log("📍 Questions element:", this.questions);
-			console.log("📍 Loader classes before:", this.loading.className);
-			console.log("📍 Questions classes before:", this.questions.className);
-
+			// Hide loading indicator
 			this.loading.classList.add("hidden");
-			this.questions.classList.remove("hidden");
 
-			console.log("📍 Loader classes after:", this.loading.className);
-			console.log("📍 Questions classes after:", this.questions.className);
-			console.log("📍 Loader computed style display:", window.getComputedStyle(this.loading).display);
-			console.log("📍 Questions computed style display:", window.getComputedStyle(this.questions).display);
-
-			console.log("🎨 Rendering first step...");
 			// Render the first step
 			this.renderCurrentStep();
 			this.updateNavigation();
-
-			console.log("✅ Quiz started successfully!");
 		} catch (error) {
-			console.error("❌ Failed to start quiz:", error);
+			console.error("Failed to load quiz data:", error);
 			this.loading.classList.add("hidden");
 			if (this.error) this.error.classList.remove("hidden");
 		}
@@ -357,8 +328,8 @@ class ProductQuiz {
 					} else {
 						// If we have both info and questions, still show the question text
 						stepHTML += `
-							<div class="mt-6">
-								<h4 class="quiz-question-label">${question.text}</h4>
+							<div class="mt-6 pt-4 border-t border-slate-200">
+								<h4 class="text-lg font-semibold text-slate-800 mb-2">${question.text}</h4>
 								${question.helpText ? `<p class="text-slate-500 text-sm mb-2">${question.helpText}</p>` : ""}
 							</div>
 						`;
@@ -436,17 +407,19 @@ class ProductQuiz {
 	}
 
 	renderMultipleChoice(question, response) {
-		let html = '<div class="quiz-options-grid">';
+		let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">';
 
 		question.options.forEach(option => {
 			const isSelected = response.answer === option.id;
 			html += `
-				<label for="${option.id}" class="quiz-option-card">
-					<input type="radio" id="${option.id}" name="question-${question.id}" value="${option.id}" class="quiz-option-input"
+				<label for="${option.id}" class="quiz-option-card cursor-pointer block">
+					<input type="radio" id="${option.id}" name="question-${question.id}" value="${option.id}" class="sr-only"
 						${isSelected ? "checked" : ""}>
-					<div class="quiz-option-button ${isSelected ? "selected" : ""}">
-						<span class="quiz-option-text">${option.text}</span>
-						${isSelected ? '<div class="quiz-checkmark"><svg class="quiz-checkmark-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg></div>' : ""}
+					<div class="quiz-option-button ${isSelected ? "selected" : ""} relative p-6 border-2 rounded-lg transition-all duration-200 hover:border-emerald-400 hover:bg-emerald-50">
+						<div class="text-center">
+							<div class="text-lg font-medium text-slate-800">${option.text}</div>
+						</div>
+						${isSelected ? '<div class="absolute top-3 right-3 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center"><svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg></div>' : ""}
 					</div>
 				</label>
 			`;
