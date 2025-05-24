@@ -94,6 +94,7 @@ class ProductQuiz {
 	_showElement(element) {
 		if (element) {
 			element.classList.remove("hidden");
+			console.log(`Showing element:`, element.className);
 		}
 	}
 
@@ -101,6 +102,7 @@ class ProductQuiz {
 	_hideElement(element) {
 		if (element) {
 			element.classList.add("hidden");
+			console.log(`Hiding element:`, element.className);
 		}
 	}
 
@@ -163,14 +165,17 @@ class ProductQuiz {
 			return;
 		}
 
-		// Show loading indicator and questions container (intro is hidden by CSS)
-		this._showElement(this.loading);
-		this._showElement(this.questions);
+		// Hide intro and questions, show only loading indicator initially
 		this._hideElement(this.intro);
+		this._hideElement(this.questions);
+		this._showElement(this.loading);
 
 		try {
+			console.log("Starting quiz data load...");
+
 			// Fetch quiz data
 			await this.loadQuizData();
+			console.log("Quiz data loaded successfully");
 
 			// Initialize responses array
 			this.responses = [];
@@ -203,8 +208,9 @@ class ProductQuiz {
 				}
 			});
 
-			// Hide loading indicator
+			// Hide loading indicator and show questions container
 			this._hideElement(this.loading);
+			this._showElement(this.questions);
 
 			// Render the first step
 			this.renderCurrentStep();
