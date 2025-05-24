@@ -303,9 +303,10 @@ class ProductQuiz {
 		// Add the info section if present
 		if (step.info) {
 			stepHTML += `
-				<h3 class="text-2xl font-semibold mb-2">${step.info.heading}</h3>
+				<h3 class="text-2xl font-semibold mb-2 text-green-600">${step.info.heading}</h3>
 				<p class="text-slate-500 mb-6">${step.info.text}</p>
 				${step.info.subtext ? `<p class="text-slate-500 text-sm mt-2 italic">${step.info.subtext}</p>` : ""}
+				${step.info.formSubHeading ? `<div class="bg-gray-50 rounded-lg p-6 mt-6 mb-6"><h4 class="text-lg font-semibold text-slate-800 mb-0">${step.info.formSubHeading}</h4></div>` : ""}
 			`;
 
 			// Mark this step's info as acknowledged
@@ -330,10 +331,36 @@ class ProductQuiz {
 				// For form-style steps, render all questions at once
 				stepHTML += `<div class="space-y-6">`;
 
-				step.questions.forEach((question, index) => {
-					// Find response for this question
+				let i = 0;
+				while (i < step.questions.length) {
+					const question = step.questions[i];
 					const response = this.responses.find(r => r.questionId === question.id) || { answer: null };
 
+					// Check if this is the start of a date-part group
+					if (question.type === "date-part" && question.part === "month") {
+						// Find all date parts for this group
+						const monthQuestion = question;
+						const dayQuestion = step.questions[i + 1];
+						const yearQuestion = step.questions[i + 2];
+
+						if (dayQuestion && yearQuestion && dayQuestion.type === "date-part" && dayQuestion.part === "day" && yearQuestion.type === "date-part" && yearQuestion.part === "year") {
+							// Render date group
+							stepHTML += `
+								<div class="mb-6">
+									<label class="text-lg font-semibold text-slate-800 block mb-2">${monthQuestion.text}${monthQuestion.required ? ' <span class="text-red-500">*</span>' : ""}</label>
+									<div class="grid grid-cols-3 gap-4">
+										${this.renderDatePart(monthQuestion, this.responses.find(r => r.questionId === monthQuestion.id) || { answer: null })}
+										${this.renderDatePart(dayQuestion, this.responses.find(r => r.questionId === dayQuestion.id) || { answer: null })}
+										${this.renderDatePart(yearQuestion, this.responses.find(r => r.questionId === yearQuestion.id) || { answer: null })}
+									</div>
+								</div>
+							`;
+							i += 3; // Skip the next two questions as we've processed them
+							continue;
+						}
+					}
+
+					// Regular question rendering
 					stepHTML += `
 						<div class="mb-6">
 							<label class="text-lg font-semibold text-slate-800 block mb-2" for="question-${question.id}">${question.text}${question.required ? ' <span class="text-red-500">*</span>' : ""}</label>
@@ -351,6 +378,9 @@ class ProductQuiz {
 						case "date":
 							stepHTML += this.renderDateInput(question, response);
 							break;
+						case "date-part":
+							stepHTML += this.renderDatePart(question, response);
+							break;
 						case "checkbox":
 							stepHTML += this.renderCheckbox(question, response);
 							break;
@@ -359,7 +389,8 @@ class ProductQuiz {
 					}
 
 					stepHTML += `</div>`;
-				});
+					i++;
+				}
 
 				stepHTML += `</div>`;
 			} else {
@@ -534,11 +565,12 @@ class ProductQuiz {
 
 	renderDropdown(question, response) {
 		let options = question.options || [];
+		const placeholder = question.placeholder || "Select an option";
 
 		let html = `
 			<div class="mb-6">
 				<select id="question-${question.id}" class="w-full p-3 text-base border border-slate-200 rounded-lg bg-white appearance-none shadow-sm focus:outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-800/10 cursor-pointer">
-					<option value="">Select an option</option>
+					<option value="">${placeholder}</option>
 		`;
 
 		options.forEach(option => {
@@ -573,6 +605,51 @@ class ProductQuiz {
 					aria-describedby="error-${question.id}">
 				<p id="error-${question.id}" class="text-red-500 text-sm mt-1" style="display: none;"></p>
 				${question.helpText ? `<p class="text-slate-500 text-sm mt-2">${question.helpText}</p>` : ""}
+			</div>
+		`;
+	}
+
+	renderDatePart(question, response) {
+		const part = question.part;
+		let options = [];
+
+		if (part === "month") {
+			options = [
+				{ id: "01", text: "January" },
+				{ id: "02", text: "February" },
+				{ id: "03", text: "March" },
+				{ id: "04", text: "April" },
+				{ id: "05", text: "May" },
+				{ id: "06", text: "June" },
+				{ id: "07", text: "July" },
+				{ id: "08", text: "August" },
+				{ id: "09", text: "September" },
+				{ id: "10", text: "October" },
+				{ id: "11", text: "November" },
+				{ id: "12", text: "December" }
+			];
+		} else if (part === "day") {
+			options = Array.from({ length: 31 }, (_, i) => {
+				const day = String(i + 1).padStart(2, "0");
+				return { id: day, text: day };
+			});
+		} else if (part === "year") {
+			const currentYear = new Date().getFullYear();
+			const startYear = currentYear - 100;
+			options = Array.from({ length: 100 }, (_, i) => {
+				const year = String(currentYear - i);
+				return { id: year, text: year };
+			});
+		}
+
+		const placeholder = question.placeholder || `Select ${part}`;
+
+		return `
+			<div>
+				<select id="question-${question.id}" class="w-full p-3 text-base border border-slate-200 rounded-lg bg-white appearance-none shadow-sm focus:outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-800/10 cursor-pointer">
+					<option value="">${placeholder}</option>
+					${options.map(option => `<option value="${option.id}" ${response.answer === option.id ? "selected" : ""}>${option.text}</option>`).join("")}
+				</select>
 			</div>
 		`;
 	}
@@ -858,9 +935,7 @@ class ProductQuiz {
 		if (isLastStep && isLastQuestionInStep) {
 			this.nextButton.innerHTML = step.ctaText || "Finish Quiz";
 		} else {
-			this.nextButton.innerHTML =
-				step.ctaText ||
-				'Next <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
+			this.nextButton.innerHTML = step.ctaText || "Continue";
 		}
 
 		// For form-style steps, check if all required fields have answers
@@ -1365,6 +1440,7 @@ class ProductQuiz {
 
 		switch (question.type) {
 			case "dropdown":
+			case "date-part":
 				const dropdownInput = this.questionContainer.querySelector(`#question-${question.id}`);
 				if (!dropdownInput) {
 					console.warn(`Dropdown input not found for question ${question.id}`);
