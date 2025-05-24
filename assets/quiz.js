@@ -487,23 +487,49 @@ class ProductQuiz {
 		const selectedOptions = Array.isArray(response.answer) ? response.answer : [];
 		console.log(`Rendering checkbox for ${question.id}, selectedOptions:`, selectedOptions);
 
-		let html = '<div class="space-y-3 mt-6">';
+		// Use card style for medical conditions and other non-consent checkboxes
+		const useCardStyle = question.id !== "consent";
+		const isConsent = question.id === "consent";
 
-		question.options.forEach(option => {
-			// Add specific class for consent checkbox to make it easier to debug
-			const isConsent = question.id === "consent" ? " consent-checkbox" : "";
+		if (useCardStyle) {
+			// Card-style checkboxes (similar to multiple-choice)
+			let html = '<div class="grid grid-cols-2 gap-4 mt-6">';
 
-			html += `
-				<div class="flex items-center${isConsent ? " consent-container" : ""}">
-					<input type="checkbox" id="${option.id}" name="question-${question.id}" value="${option.id}" class="mr-2 h-5 w-5 cursor-pointer${isConsent}"
-						${selectedOptions.includes(option.id) ? "checked" : ""}>
-					<label class="cursor-pointer text-base" for="${option.id}">${option.text}</label>
-				</div>
-			`;
-		});
+			question.options.forEach(option => {
+				const isSelected = selectedOptions.includes(option.id);
+				html += `
+					<label for="${option.id}" class="quiz-option-card cursor-pointer block">
+						<input type="checkbox" id="${option.id}" name="question-${question.id}" value="${option.id}" class="sr-only"
+							${isSelected ? "checked" : ""}>
+						<div class="quiz-option-button ${isSelected ? "selected" : ""} relative p-6 border-2 rounded-lg transition-all duration-200">
+							<div class="text-center">
+								<div class="text-lg font-medium text-slate-800">${option.text}</div>
+							</div>
+							${isSelected ? '<div class="absolute top-1/2 right-3 w-7 h-7 rounded-full flex items-center justify-center shadow-md transform -translate-y-1/2" style="background-color: #306E51;"><svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg></div>' : ""}
+						</div>
+					</label>
+				`;
+			});
 
-		html += "</div>";
-		return html;
+			html += "</div>";
+			return html;
+		} else {
+			// Traditional checkbox style for consent and other special cases
+			let html = '<div class="space-y-3 mt-6">';
+
+			question.options.forEach(option => {
+				html += `
+					<div class="flex items-center${isConsent ? " consent-container" : ""}">
+						<input type="checkbox" id="${option.id}" name="question-${question.id}" value="${option.id}" class="mr-2 h-5 w-5 cursor-pointer${isConsent ? " consent-checkbox" : ""}"
+							${selectedOptions.includes(option.id) ? "checked" : ""}>
+						<label class="cursor-pointer text-base" for="${option.id}">${option.text}</label>
+					</div>
+				`;
+			});
+
+			html += "</div>";
+			return html;
+		}
 	}
 
 	renderDropdown(question, response) {
