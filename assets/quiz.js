@@ -115,10 +115,10 @@ class ProductQuiz {
 			return;
 		}
 
-		// Hide intro, show questions
+		// Hide intro and show loading spinner
 		this.intro.style.display = "none";
-		this.questions.classList.remove("hidden");
 		this.loading.classList.remove("hidden");
+		this.questions.classList.add("hidden"); // Ensure questions are hidden initially
 
 		try {
 			// Fetch quiz data
@@ -155,8 +155,9 @@ class ProductQuiz {
 				}
 			});
 
-			// Hide loading indicator
+			// Hide loading indicator and show questions
 			this.loading.classList.add("hidden");
+			this.questions.classList.remove("hidden");
 
 			// Render the first step
 			this.renderCurrentStep();
