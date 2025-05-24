@@ -277,24 +277,8 @@ class ProductQuiz {
 
 		// Update progress bar
 		const progress = ((this.currentStepIndex + 1) / this.quizData.steps.length) * 100;
-		console.log("Progress bar update:", {
-			currentStepIndex: this.currentStepIndex,
-			totalSteps: this.quizData.steps.length,
-			calculatedProgress: progress,
-			progressBarElement: !!this.progressBar,
-			progressBarStyle: this.progressBar ? this.progressBar.style.width : "element not found"
-		});
-
 		if (this.progressBar) {
 			this.progressBar.style.width = `${progress}%`;
-			console.log("Progress bar width set to:", this.progressBar.style.width);
-			// Force a visual check by temporarily changing background color
-			this.progressBar.style.backgroundColor = "#ef4444"; // red color to make it obvious
-			setTimeout(() => {
-				this.progressBar.style.backgroundColor = "#16a34a"; // back to green
-			}, 500);
-		} else {
-			console.error("Progress bar element not found!");
 		}
 
 		// Create step HTML with Tailwind classes
