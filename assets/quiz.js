@@ -407,19 +407,17 @@ class ProductQuiz {
 	}
 
 	renderMultipleChoice(question, response) {
-		let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-5 mt-6">';
+		let html = '<div class="quiz-options-grid">';
 
 		question.options.forEach(option => {
 			const isSelected = response.answer === option.id;
 			html += `
-				<label for="${option.id}" class="quiz-option-card cursor-pointer block">
-					<input type="radio" id="${option.id}" name="question-${question.id}" value="${option.id}" class="sr-only"
+				<label for="${option.id}" class="quiz-option-card">
+					<input type="radio" id="${option.id}" name="question-${question.id}" value="${option.id}" class="quiz-option-input"
 						${isSelected ? "checked" : ""}>
 					<div class="quiz-option-button ${isSelected ? "selected" : ""}">
-						<div class="text-center">
-							<div class="text-lg font-medium text-slate-800">${option.text}</div>
-						</div>
-						${isSelected ? '<div class="absolute top-4 right-4 w-5 h-5 bg-[#418865] rounded-full flex items-center justify-center"><svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg></div>' : ""}
+						<span class="quiz-option-text">${option.text}</span>
+						${isSelected ? '<div class="quiz-checkmark"><svg class="quiz-checkmark-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg></div>' : ""}
 					</div>
 				</label>
 			`;
