@@ -227,11 +227,7 @@ class ProductQuiz {
 
 	// Helper method to detect form-style steps (multiple questions shown at once)
 	isFormStep(stepId) {
-		// Added direct debugging
-		console.log(`Checking if ${stepId} is a form step`);
-		const isForm = stepId === "step-insurance" || stepId === "step-contact";
-		console.log(`${stepId} is ${isForm ? "a form step" : "not a form step"}`);
-		return isForm;
+		return stepId === "step-insurance" || stepId === "step-contact";
 	}
 
 	renderCurrentStep() {
@@ -656,8 +652,6 @@ class ProductQuiz {
 			return;
 		}
 
-		console.log(`Handling answer for step ${step.id}:`, answer);
-
 		// If it's a step with questions, update the response for the current question
 		if (step.questions && step.questions.length > 0) {
 			const question = step.questions[this.currentQuestionIndex];
@@ -676,6 +670,16 @@ class ProductQuiz {
 					questionId: question.id,
 					answer
 				});
+			}
+
+			// Auto-advance for multiple-choice questions in non-form steps
+			const isFormStep = this.isFormStep(step.id);
+			if (!isFormStep && question.type === "multiple-choice") {
+				// Add a small delay so user can see their selection
+				setTimeout(() => {
+					this.goToNextStep();
+				}, 600);
+				return; // Don't update navigation immediately as we're auto-advancing
 			}
 		} else if (step.info) {
 			// For info-only steps, mark as acknowledged
