@@ -105,6 +105,8 @@ class ProductQuiz {
 	}
 
 	async startQuiz() {
+		console.log("🚀 Starting quiz...");
+
 		// Check that we have all required elements before proceeding
 		if (!this.intro || !this.questions || !this.loading) {
 			console.error("Required quiz elements are missing:", {
@@ -115,14 +117,22 @@ class ProductQuiz {
 			return;
 		}
 
+		console.log("✅ All required elements found");
+
 		// Hide intro and show loading spinner
 		this.intro.style.display = "none";
 		this.loading.classList.remove("hidden");
 		this.questions.classList.add("hidden"); // Ensure questions are hidden initially
 
+		console.log("🔄 Loading spinner shown, intro hidden");
+
 		try {
+			console.log("📡 Fetching quiz data from:", this.dataUrl);
+
 			// Fetch quiz data
 			await this.loadQuizData();
+
+			console.log("✅ Quiz data loaded successfully");
 
 			// Initialize responses array
 			this.responses = [];
@@ -134,6 +144,8 @@ class ProductQuiz {
 				if (this.error) this.error.classList.remove("hidden");
 				return;
 			}
+
+			console.log("📊 Processing quiz data:", this.quizData.steps.length, "steps found");
 
 			// Initialize responses for all questions across all steps
 			this.quizData.steps.forEach(step => {
@@ -155,15 +167,31 @@ class ProductQuiz {
 				}
 			});
 
+			console.log("📝 Initialized", this.responses.length, "response slots");
+
 			// Hide loading indicator and show questions
+			console.log("🎯 Hiding loader, showing questions...");
+			console.log("📍 Loader element:", this.loading);
+			console.log("📍 Questions element:", this.questions);
+			console.log("📍 Loader classes before:", this.loading.className);
+			console.log("📍 Questions classes before:", this.questions.className);
+
 			this.loading.classList.add("hidden");
 			this.questions.classList.remove("hidden");
 
+			console.log("📍 Loader classes after:", this.loading.className);
+			console.log("📍 Questions classes after:", this.questions.className);
+			console.log("📍 Loader computed style display:", window.getComputedStyle(this.loading).display);
+			console.log("📍 Questions computed style display:", window.getComputedStyle(this.questions).display);
+
+			console.log("🎨 Rendering first step...");
 			// Render the first step
 			this.renderCurrentStep();
 			this.updateNavigation();
+
+			console.log("✅ Quiz started successfully!");
 		} catch (error) {
-			console.error("Failed to load quiz data:", error);
+			console.error("❌ Failed to start quiz:", error);
 			this.loading.classList.add("hidden");
 			if (this.error) this.error.classList.remove("hidden");
 		}
