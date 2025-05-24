@@ -741,11 +741,26 @@ class ProductQuiz {
 				});
 			}
 
-			// Allow user to see their selection and manually proceed
-			// No auto-advance for better user experience
-
 			// Re-render the current step to show the updated selection state
 			this.renderCurrentStep();
+
+			// Auto-advance for single-choice questions (multiple-choice, dropdown)
+			// but not for form fields or multi-select questions
+			const shouldAutoAdvance = this.shouldAutoAdvance(question);
+
+			if (shouldAutoAdvance) {
+				// Add visual feedback that we're advancing
+				const selectedElement = this.questionContainer.querySelector(".quiz-option-button.selected");
+				if (selectedElement) {
+					selectedElement.style.opacity = "0.7";
+				}
+
+				// Add a small delay to let user see their selection before advancing
+				setTimeout(() => {
+					this.goToNextStep();
+				}, 800);
+			}
+
 			return; // Return early since renderCurrentStep calls updateNavigation
 		} else if (step.info) {
 			// For info-only steps, mark as acknowledged
@@ -767,10 +782,23 @@ class ProductQuiz {
 		this.updateNavigation();
 	}
 
-	updateNavigation() {
-		// Disable/enable previous button
-		this.prevButton.disabled = this.currentStepIndex === 0 || this.submitting;
+	// Helper method to determine if a question should auto-advance
+	shouldAutoAdvance(question) {
+		// Auto-advance for single-choice questions
+		if (question.type === "multiple-choice") {
+			return true;
+		}
 
+		// Auto-advance for dropdowns (single select)
+		if (question.type === "dropdown") {
+			return true;
+		}
+
+		// Don't auto-advance for form fields, checkboxes, text inputs, etc.
+		return false;
+	}
+
+	updateNavigation() {
 		const step = this.getCurrentStep();
 		if (!step) {
 			console.error("Cannot update navigation: No step found at index", this.currentStepIndex);
@@ -780,6 +808,21 @@ class ProductQuiz {
 
 		// Check if this is a form-style step
 		const isFormStep = this.isFormStep(step.id);
+
+		// Check if current question is auto-advance
+		const currentQuestion = step.questions && step.questions[this.currentQuestionIndex];
+		const isCurrentQuestionAutoAdvance = currentQuestion && this.shouldAutoAdvance(currentQuestion);
+
+		// Hide navigation entirely for auto-advance questions (unless it's a form step)
+		if (isCurrentQuestionAutoAdvance && !isFormStep) {
+			this.navigationButtons.style.display = "none";
+			return;
+		} else {
+			this.navigationButtons.style.display = "flex";
+		}
+
+		// Disable/enable previous button
+		this.prevButton.disabled = this.currentStepIndex === 0 || this.submitting;
 
 		// Check if we need to show Next or Finish
 		const isLastStep = this.currentStepIndex === this.quizData.steps.length - 1;
