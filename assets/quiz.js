@@ -457,7 +457,7 @@ class ProductQuiz {
 						<div class="text-center">
 							<div class="text-lg font-medium text-slate-800">${option.text}</div>
 						</div>
-						${isSelected ? '<div class="absolute top-2 right-2 w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg transform scale-100 transition-all duration-300"><svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg></div>' : ""}
+						${isSelected ? '<div class="absolute top-1/2 right-3 w-7 h-7 bg-emerald-500 rounded-full flex items-center justify-center shadow-md transform -translate-y-1/2"><svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg></div>' : ""}
 					</div>
 				</label>
 			`;
@@ -772,6 +772,49 @@ class ProductQuiz {
 		// Update the button text based on the current step's ctaText
 		if (isLastStep && isLastQuestionInStep) {
 			this.nextButton.innerHTML = step.ctaText || "Finish Quiz";
+		} else {
+			this.nextButton.innerHTML =
+				step.ctaText ||
+				'Next <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
+		}
+
+		// For form-style steps, check if all required fields have answers
+		if (isFormStep && step.questions) {
+			let allRequiredAnswered = true;
+
+			// Check each required question
+			for (const q of step.questions.filter(q => q.required)) {
+				const resp = this.responses.find(r => r.questionId === q.id);
+				console.log(`Checking required field ${q.id} (${q.type}):`, resp ? resp.answer : "no response");
+
+				if (!resp || resp.answer === null) {
+					console.log(`Field ${q.id} has no response`);
+					allRequiredAnswered = false;
+					break;
+				}
+
+				// For checkboxes, check if any option is selected
+				if (q.type === "checkbox") {
+					const isValid = Array.isArray(resp.answer) && resp.answer.length > 0;
+					console.log(`Checkbox ${q.id} validation: ${isValid ? "VALID" : "INVALID"}`);
+					if (!isValid) {
+						allRequiredAnswered = false;
+						break;
+					}
+				}
+				// For text fields, ensure non-empty
+				else if (typeof resp.answer === "string") {
+					const isValid = resp.answer.trim() !== "";
+					console.log(`Text field ${q.id} validation: ${isValid ? "VALID" : "INVALID"}`);
+					if (!isValid) {
+						allRequiredAnswered = false;
+						break;
+					}
+				}
+			}
+
+			console.log(`Form validation result: ${allRequiredAnswered ? "ALL FIELDS VALID" : "SOME FIELDS INVALID"}`);
+			this.nextButton.disabled = !allRequiredAnswered || this.submitting;
 			return;
 		}
 
