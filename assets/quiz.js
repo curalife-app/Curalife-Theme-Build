@@ -453,11 +453,11 @@ class ProductQuiz {
 				<label for="${option.id}" class="quiz-option-card cursor-pointer block">
 					<input type="radio" id="${option.id}" name="question-${question.id}" value="${option.id}" class="sr-only"
 						${isSelected ? "checked" : ""}>
-					<div class="quiz-option-button ${isSelected ? "selected" : ""} relative p-6 border-2 rounded-lg transition-all duration-200 hover:border-emerald-400 hover:bg-emerald-50">
+					<div class="quiz-option-button ${isSelected ? "selected" : ""} relative p-6 border-2 rounded-lg transition-all duration-200">
 						<div class="text-center">
 							<div class="text-lg font-medium text-slate-800">${option.text}</div>
 						</div>
-						${isSelected ? '<div class="absolute top-1/2 right-3 w-7 h-7 bg-emerald-500 rounded-full flex items-center justify-center shadow-md transform -translate-y-1/2"><svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg></div>' : ""}
+						${isSelected ? '<div class="absolute top-1/2 right-3 w-7 h-7 rounded-full flex items-center justify-center shadow-md transform -translate-y-1/2" style="background-color: #306E51;"><svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg></div>' : ""}
 					</div>
 				</label>
 			`;
