@@ -90,6 +90,20 @@ class ProductQuiz {
 		this.init();
 	}
 
+	// Helper method to show an element
+	_showElement(element) {
+		if (element) {
+			element.classList.remove("hidden");
+		}
+	}
+
+	// Helper method to hide an element
+	_hideElement(element) {
+		if (element) {
+			element.classList.add("hidden");
+		}
+	}
+
 	async init() {
 		console.log("Initializing quiz...");
 
@@ -150,11 +164,9 @@ class ProductQuiz {
 		}
 
 		// Show loading indicator and questions container (intro is hidden by CSS)
-		this.loading.classList.remove("hidden");
-		this.questions.classList.remove("hidden");
-		if (this.intro) {
-			this.intro.classList.add("hidden");
-		}
+		this._showElement(this.loading);
+		this._showElement(this.questions);
+		this._hideElement(this.intro);
 
 		try {
 			// Fetch quiz data
@@ -166,8 +178,8 @@ class ProductQuiz {
 			// Check that quiz data was loaded properly
 			if (!this.quizData || !this.quizData.steps) {
 				console.error("Quiz data is missing or incomplete:", this.quizData);
-				this.loading.classList.add("hidden");
-				if (this.error) this.error.classList.remove("hidden");
+				this._hideElement(this.loading);
+				this._showElement(this.error);
 				return;
 			}
 
@@ -192,15 +204,15 @@ class ProductQuiz {
 			});
 
 			// Hide loading indicator
-			this.loading.classList.add("hidden");
+			this._hideElement(this.loading);
 
 			// Render the first step
 			this.renderCurrentStep();
 			this.updateNavigation();
 		} catch (error) {
 			console.error("Failed to load quiz data:", error);
-			this.loading.classList.add("hidden");
-			if (this.error) this.error.classList.remove("hidden");
+			this._hideElement(this.loading);
+			this._showElement(this.error);
 		}
 	}
 
@@ -1057,10 +1069,8 @@ class ProductQuiz {
 			console.log("Sending payload to webhook:", payload);
 
 			// Hide questions and show eligibility check indicator
-			this.questions.classList.add("hidden");
-			if (this.eligibilityCheck) {
-				this.eligibilityCheck.classList.remove("hidden");
-			}
+			this._hideElement(this.questions);
+			this._showElement(this.eligibilityCheck);
 
 			// Get webhook URL from data attribute
 			const webhookUrl = this.container.getAttribute("data-n8n-webhook");
@@ -1142,9 +1152,7 @@ class ProductQuiz {
 			}
 
 			// Hide eligibility check indicator
-			if (this.eligibilityCheck) {
-				this.eligibilityCheck.classList.add("hidden");
-			}
+			this._hideElement(this.eligibilityCheck);
 
 			// Show results
 			this.showResults(bookingUrl, webhookSuccess);
@@ -1160,9 +1168,7 @@ class ProductQuiz {
 		} catch (error) {
 			console.error("Error in quiz completion:", error);
 			// Hide eligibility check indicator in case of error
-			if (this.eligibilityCheck) {
-				this.eligibilityCheck.classList.add("hidden");
-			}
+			this._hideElement(this.eligibilityCheck);
 			this.showError("Unexpected Error", "There was a problem completing the quiz. Please try again later.");
 		} finally {
 			this.submitting = false;
@@ -1179,8 +1185,8 @@ class ProductQuiz {
 	// New method to show results with booking URL
 	showResults(bookingUrl, webhookSuccess = true) {
 		// Hide questions, show results
-		this.questions.classList.add("hidden");
-		this.results.classList.remove("hidden");
+		this._hideElement(this.questions);
+		this._showElement(this.results);
 
 		// Check if we have eligibility data to display
 		const step = this.quizData.steps.find(s => s.id === "step-eligibility");
@@ -1268,8 +1274,8 @@ class ProductQuiz {
 	}
 
 	showError(title, message) {
-		this.questions.classList.add("hidden");
-		this.error.classList.remove("hidden");
+		this._hideElement(this.questions);
+		this._showElement(this.error);
 
 		const errorTitle = this.error.querySelector("h3");
 		const errorMessage = this.error.querySelector("p");
