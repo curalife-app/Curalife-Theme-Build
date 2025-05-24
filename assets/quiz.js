@@ -727,6 +727,10 @@ class ProductQuiz {
 
 			// Allow user to see their selection and manually proceed
 			// No auto-advance for better user experience
+
+			// Re-render the current step to show the updated selection state
+			this.renderCurrentStep();
+			return; // Return early since renderCurrentStep calls updateNavigation
 		} else if (step.info) {
 			// For info-only steps, mark as acknowledged
 			const responseIndex = this.responses.findIndex(r => r.stepId === step.id);
