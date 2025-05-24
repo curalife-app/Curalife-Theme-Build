@@ -94,7 +94,6 @@ class ProductQuiz {
 	_showElement(element) {
 		if (element) {
 			element.classList.remove("hidden");
-			console.log(`Showing element:`, element.className);
 		}
 	}
 
@@ -102,7 +101,6 @@ class ProductQuiz {
 	_hideElement(element) {
 		if (element) {
 			element.classList.add("hidden");
-			console.log(`Hiding element:`, element.className);
 		}
 	}
 
