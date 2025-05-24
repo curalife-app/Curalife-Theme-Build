@@ -445,7 +445,7 @@ class ProductQuiz {
 	}
 
 	renderMultipleChoice(question, response) {
-		let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">';
+		let html = '<div class="grid grid-cols-2 gap-4 mt-6">';
 
 		question.options.forEach(option => {
 			const isSelected = response.answer === option.id;
