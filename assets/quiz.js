@@ -42,8 +42,7 @@ class ProductQuiz {
 			questionContainer: this.questionContainer,
 			navigationButtons: this.navigationButtons,
 			prevButton: this.prevButton,
-			nextButton: this.nextButton,
-			startButton: this.startButton
+			nextButton: this.nextButton
 		};
 
 		for (const key in essentialElements) {
@@ -60,6 +59,22 @@ class ProductQuiz {
 			}
 		}
 		this._isInitialized = true;
+
+		// Check if we found all the required elements
+		console.log("Quiz elements found:", {
+			intro: !!this.intro,
+			questions: !!this.questions,
+			results: !!this.results,
+			error: !!this.error,
+			loading: !!this.loading,
+			eligibilityCheck: !!this.eligibilityCheck,
+			progressBar: !!this.progressBar,
+			questionContainer: !!this.questionContainer,
+			navigationButtons: !!this.navigationButtons,
+			prevButton: !!this.prevButton,
+			nextButton: !!this.nextButton,
+			startButton: !!this.startButton
+		});
 
 		// Options
 		this.dataUrl = options.dataUrl || this.container.getAttribute("data-quiz-url") || "/apps/product-quiz/data.json";
@@ -84,12 +99,6 @@ class ProductQuiz {
 		}
 
 		// Remove any existing event listeners to prevent duplicates
-		if (this.startButton) {
-			this.startButton.removeEventListener("click", this.startQuizHandler);
-			this.startQuizHandler = () => this.startQuiz();
-			this.startButton.addEventListener("click", this.startQuizHandler);
-		}
-
 		if (this.prevButton) {
 			this.prevButton.removeEventListener("click", this.prevButtonHandler);
 			this.prevButtonHandler = () => {
@@ -125,25 +134,27 @@ class ProductQuiz {
 			console.log("Next button event listener attached");
 		}
 
-		console.log("Quiz initialization complete");
+		console.log("Quiz initialization complete, loading first step...");
+		this._loadAndDisplayFirstStep();
 	}
 
-	async startQuiz() {
+	async _loadAndDisplayFirstStep() {
 		// Check that we have all required elements before proceeding
-		if (!this._isInitialized || !this.intro || !this.questions || !this.loading) {
+		if (!this._isInitialized || !this.questions || !this.loading) {
 			console.error("Required quiz elements are missing or quiz not initialized:", {
 				initialized: this._isInitialized,
-				intro: !!this.intro,
 				questions: !!this.questions,
 				loading: !!this.loading
 			});
 			return;
 		}
 
-		// Hide intro, show questions
-		this.intro.style.display = "none";
-		this.questions.classList.remove("hidden");
+		// Show loading indicator and questions container (intro is hidden by CSS)
 		this.loading.classList.remove("hidden");
+		this.questions.classList.remove("hidden");
+		if (this.intro) {
+			this.intro.classList.add("hidden");
+		}
 
 		try {
 			// Fetch quiz data
