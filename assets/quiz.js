@@ -457,7 +457,7 @@ class ProductQuiz {
 						<div class="text-center">
 							<div class="text-lg font-medium text-slate-800">${option.text}</div>
 						</div>
-						${isSelected ? '<div class="absolute top-3 right-3 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center"><svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg></div>' : ""}
+						${isSelected ? '<div class="absolute top-2 right-2 w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg transform scale-100 transition-all duration-300"><svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg></div>' : ""}
 					</div>
 				</label>
 			`;
@@ -725,15 +725,8 @@ class ProductQuiz {
 				});
 			}
 
-			// Auto-advance for multiple-choice questions in non-form steps
-			const isFormStep = this.isFormStep(step.id);
-			if (!isFormStep && question.type === "multiple-choice") {
-				// Add a small delay so user can see their selection
-				setTimeout(() => {
-					this.goToNextStep();
-				}, 600);
-				return; // Don't update navigation immediately as we're auto-advancing
-			}
+			// Allow user to see their selection and manually proceed
+			// No auto-advance for better user experience
 		} else if (step.info) {
 			// For info-only steps, mark as acknowledged
 			const responseIndex = this.responses.findIndex(r => r.stepId === step.id);
