@@ -1628,19 +1628,22 @@ class ProductQuiz {
 
 		const rightInput = rightQuestion.type === "dropdown" ? this.renderDropdown(rightQuestion, rightResponse) : this.renderTextInput(rightQuestion, rightResponse);
 
+		// Fields that should have help icons
+		const fieldsWithHelpIcon = ["q3", "q4", "q5"]; // insurance plan, member id, state
+
 		return `
 			<div class="quiz-grid-2-form">
 				<div>
 					<label class="quiz-label" for="question-${leftQuestion.id}">
 						${leftQuestion.text}${this._generateRequiredMarker(leftQuestion.required)}
-						${leftQuestion.type === "dropdown" ? this._generateHelpIcon() : ""}
+						${fieldsWithHelpIcon.includes(leftQuestion.id) ? this._generateHelpIcon() : ""}
 					</label>
 					${leftInput}
 				</div>
 				<div>
 					<label class="quiz-label" for="question-${rightQuestion.id}">
 						${rightQuestion.text}${this._generateRequiredMarker(rightQuestion.required)}
-						${rightQuestion.type === "dropdown" ? this._generateHelpIcon() : ""}
+						${fieldsWithHelpIcon.includes(rightQuestion.id) ? this._generateHelpIcon() : ""}
 					</label>
 					${rightInput}
 				</div>
@@ -1711,10 +1714,12 @@ class ProductQuiz {
 			}
 
 			// Regular single question
+			const fieldsWithHelpIcon = ["q3", "q4", "q5"]; // insurance plan, member id, state
 			html += `
 				<div class="quiz-question-section">
 					<label class="quiz-label" for="question-${question.id}">
 						${question.text}${this._generateRequiredMarker(question.required)}
+						${fieldsWithHelpIcon.includes(question.id) ? this._generateHelpIcon() : ""}
 					</label>
 					${question.helpText ? `<p class="quiz-text-sm">${question.helpText}</p>` : ""}
 					${this._renderQuestionByType(question, response)}
