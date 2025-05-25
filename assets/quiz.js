@@ -337,7 +337,7 @@ class ProductQuiz {
 			if (isCurrentFormStep) {
 				// For form-style steps, render all questions at once
 				stepHTML += `
-					<div class="bg-gray-100 rounded-lg p-6 mt-6">
+					<div class="bg-brand-50 rounded-lg p-6 mt-6">
 						${step.info && step.info.formSubHeading ? `<h4 class="text-lg font-semibold text-slate-800 mb-6">${step.info.formSubHeading}</h4>` : ""}
 						<div class="space-y-6">
 				`;
@@ -923,8 +923,14 @@ class ProductQuiz {
 				// For single-choice questions (radio buttons, dropdowns)
 				this.handleSingleChoiceAutoAdvance(answer);
 			} else {
-				// For non-auto-advance questions (checkboxes, text inputs, etc.), re-render immediately
-				this.renderCurrentStep();
+				// For non-auto-advance questions (checkboxes, text inputs, etc.)
+				// Update visual state without full re-render to avoid animation conflicts
+				if (question.type === "checkbox") {
+					this.updateCheckboxVisualState(question, answer);
+				} else {
+					// For other non-auto-advance questions, re-render immediately
+					this.renderCurrentStep();
+				}
 			}
 
 			return; // Return early since renderCurrentStep calls updateNavigation
@@ -967,22 +973,84 @@ class ProductQuiz {
 
 	// Handle auto-advance animation for single-choice questions
 	handleSingleChoiceAutoAdvance(answer) {
-		// Apply visual feedback before re-rendering
+		// Apply visual feedback by showing the checkmark immediately
 		const selectedElement = this.questionContainer.querySelector(`input[value="${answer}"]:checked`);
 		if (selectedElement) {
 			const optionButton = selectedElement.closest(".quiz-option-card")?.querySelector(".quiz-option-button");
 			if (optionButton) {
-				// Add a smooth transition for the selected state
+				// Add selected state and checkmark
+				optionButton.classList.add("selected");
+
+				// Add checkmark if not already present
+				if (!optionButton.querySelector(".absolute")) {
+					const checkmark = document.createElement("div");
+					checkmark.className = "absolute top-1/2 right-3 w-7 h-7 rounded-full flex items-center justify-center shadow-md transform -translate-y-1/2 checkmark-element";
+					checkmark.style.backgroundColor = "#306E51";
+					checkmark.innerHTML =
+						'<svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>';
+					optionButton.appendChild(checkmark);
+				}
+
+				// Add subtle animation feedback
 				optionButton.style.transition = "all 0.3s ease-out";
 				optionButton.style.transform = "translateY(-2px) scale(0.98)";
-				optionButton.style.opacity = "0.8";
+				optionButton.style.opacity = "0.9";
 			}
 		}
 
-		// Don't re-render immediately - just advance after showing selection
+		// Advance after showing the selection feedback
 		setTimeout(() => {
 			this.goToNextStep();
 		}, 600);
+	}
+
+	// Update checkbox visual state for individual checkboxes without re-rendering
+	updateCheckboxVisualState(question, answer) {
+		if (!Array.isArray(answer)) return;
+
+		// Update all checkbox states individually
+		const allCheckboxes = this.questionContainer.querySelectorAll(`input[name="question-${question.id}"]`);
+		allCheckboxes.forEach(checkbox => {
+			const optionCard = checkbox.closest(".quiz-option-card");
+			const optionButton = optionCard?.querySelector(".quiz-option-button");
+
+			if (optionButton) {
+				const shouldBeSelected = answer.includes(checkbox.value);
+				const isCurrentlySelected = optionButton.classList.contains("selected");
+
+				// Only update if the state has changed
+				if (shouldBeSelected !== isCurrentlySelected) {
+					if (shouldBeSelected) {
+						// Add selected state
+						optionButton.classList.add("selected");
+						checkbox.checked = true;
+
+						// Add checkmark with animation
+						if (!optionButton.querySelector(".absolute")) {
+							const checkmark = document.createElement("div");
+							checkmark.className = "absolute top-1/2 right-3 w-7 h-7 rounded-full flex items-center justify-center shadow-md transform -translate-y-1/2 checkmark-element";
+							checkmark.style.backgroundColor = "#306E51";
+							checkmark.innerHTML =
+								'<svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>';
+							optionButton.appendChild(checkmark);
+						}
+					} else {
+						// Remove selected state
+						optionButton.classList.remove("selected");
+						checkbox.checked = false;
+
+						// Remove checkmark
+						const checkmark = optionButton.querySelector(".absolute");
+						if (checkmark) {
+							checkmark.remove();
+						}
+					}
+				}
+			}
+		});
+
+		// Update navigation state
+		this.updateNavigation();
 	}
 
 	updateNavigation() {
