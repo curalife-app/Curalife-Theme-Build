@@ -920,27 +920,15 @@ class ProductQuiz {
 					btn.classList.add("auto-advancing");
 				});
 
-				// Apply visual feedback before re-rendering
-				const selectedElement = this.questionContainer.querySelector(`input[value="${answer}"]:checked`);
-				if (selectedElement) {
-					const optionButton = selectedElement.closest(".quiz-option-card")?.querySelector(".quiz-option-button");
-					if (optionButton) {
-						// Add a smooth transition for the selected state
-						optionButton.style.transition = "all 0.3s ease-out";
-						optionButton.style.transform = "translateY(-2px) scale(0.98)";
-						optionButton.style.opacity = "0.8";
-					}
+				// Handle different question types
+				if (question.type === "checkbox") {
+					// For checkboxes, we need to handle the visual feedback differently
+					// since answer might be an array
+					this.handleCheckboxAutoAdvance(question, answer);
+				} else {
+					// For single-choice questions (radio buttons, dropdowns)
+					this.handleSingleChoiceAutoAdvance(answer);
 				}
-
-				// Re-render after a brief moment to let the selection animation show
-				setTimeout(() => {
-					this.renderCurrentStep();
-
-					// Add a small delay to let user see their selection before advancing
-					setTimeout(() => {
-						this.goToNextStep();
-					}, 500);
-				}, 250);
 			} else {
 				// For non-auto-advance questions, re-render immediately
 				this.renderCurrentStep();
@@ -979,8 +967,122 @@ class ProductQuiz {
 			return true;
 		}
 
-		// Don't auto-advance for form fields, checkboxes, text inputs, etc.
+		// Auto-advance for checkbox questions (with special logic)
+		if (question.type === "checkbox") {
+			return true;
+		}
+
+		// Don't auto-advance for form fields, text inputs, etc.
 		return false;
+	}
+
+	// Handle auto-advance animation for single-choice questions
+	handleSingleChoiceAutoAdvance(answer) {
+		// Apply visual feedback before re-rendering
+		const selectedElement = this.questionContainer.querySelector(`input[value="${answer}"]:checked`);
+		if (selectedElement) {
+			const optionButton = selectedElement.closest(".quiz-option-card")?.querySelector(".quiz-option-button");
+			if (optionButton) {
+				// Add a smooth transition for the selected state
+				optionButton.style.transition = "all 0.3s ease-out";
+				optionButton.style.transform = "translateY(-2px) scale(0.98)";
+				optionButton.style.opacity = "0.8";
+			}
+		}
+
+		// Don't re-render immediately - just advance after showing selection
+		setTimeout(() => {
+			this.goToNextStep();
+		}, 600);
+	}
+
+	// Handle auto-advance animation for checkbox questions
+	handleCheckboxAutoAdvance(question, answer) {
+		// Check if "None of the above" was selected (should advance immediately)
+		const hasNoneOption = Array.isArray(answer) && answer.some(val => question.options.find(opt => opt.id === val && opt.text.toLowerCase().includes("none")));
+
+		if (hasNoneOption) {
+			// If "None of the above" was selected, advance quickly
+			// First update the visual state
+			this.updateCheckboxVisuals(answer);
+			setTimeout(() => {
+				this.goToNextStep();
+			}, 600);
+		} else {
+			// For other selections, give user time to select multiple options
+			// Update visuals immediately
+			this.updateCheckboxVisuals(answer);
+
+			// Clear any existing timeout
+			if (this.checkboxAdvanceTimeout) {
+				clearTimeout(this.checkboxAdvanceTimeout);
+			}
+
+			// Show a subtle indicator that auto-advance is coming
+			this.showAutoAdvanceIndicator();
+
+			// Set new timeout - will advance after user stops clicking for 1.5 seconds
+			this.checkboxAdvanceTimeout = setTimeout(() => {
+				this.goToNextStep();
+			}, 1500);
+		}
+	}
+
+	// Update checkbox visual state without re-rendering
+	updateCheckboxVisuals(answer) {
+		if (!Array.isArray(answer)) return;
+
+		// Update all checkbox states
+		const allCheckboxes = this.questionContainer.querySelectorAll('input[type="checkbox"]');
+		allCheckboxes.forEach(checkbox => {
+			const optionCard = checkbox.closest(".quiz-option-card");
+			const optionButton = optionCard?.querySelector(".quiz-option-button");
+
+			if (optionButton) {
+				const isSelected = answer.includes(checkbox.value);
+
+				if (isSelected) {
+					// Add selected state
+					optionButton.classList.add("selected");
+					checkbox.checked = true;
+
+					// Add checkmark if not already present
+					if (!optionButton.querySelector(".absolute")) {
+						const checkmark = document.createElement("div");
+						checkmark.className = "absolute top-1/2 right-3 w-7 h-7 rounded-full flex items-center justify-center shadow-md transform -translate-y-1/2";
+						checkmark.style.backgroundColor = "#306E51";
+						checkmark.innerHTML =
+							'<svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>';
+						optionButton.appendChild(checkmark);
+					}
+				} else {
+					// Remove selected state
+					optionButton.classList.remove("selected");
+					checkbox.checked = false;
+
+					// Remove checkmark if present
+					const checkmark = optionButton.querySelector(".absolute");
+					if (checkmark) {
+						checkmark.remove();
+					}
+				}
+			}
+		});
+	}
+
+	// Show a subtle indicator that auto-advance is active
+	showAutoAdvanceIndicator() {
+		// Add a subtle animated indicator to the question container
+		if (this.questionContainer) {
+			this.questionContainer.classList.add("auto-advance-active");
+
+			// Remove the indicator after the timeout period
+			setTimeout(() => {
+				if (this.questionContainer) {
+					this.questionContainer.classList.remove("auto-advance-active");
+				}
+			}, 1500);
+		}
 	}
 
 	updateNavigation() {
@@ -1136,6 +1238,17 @@ class ProductQuiz {
 		if (!currentStep) {
 			console.error("Cannot go to next step: No current step found");
 			return;
+		}
+
+		// Clear any pending auto-advance timeouts
+		if (this.checkboxAdvanceTimeout) {
+			clearTimeout(this.checkboxAdvanceTimeout);
+			this.checkboxAdvanceTimeout = null;
+		}
+
+		// Remove auto-advance indicator if present
+		if (this.questionContainer) {
+			this.questionContainer.classList.remove("auto-advance-active");
 		}
 
 		// Always force-enable the button when actually clicking it
