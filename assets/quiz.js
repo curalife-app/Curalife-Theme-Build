@@ -340,7 +340,7 @@ class ProductQuiz {
 				stepHTML += `
 					<div class="quiz-form-container">
 						${step.info && step.info.formSubHeading ? `<h4 class="quiz-heading">${step.info.formSubHeading}</h4>` : ""}
-						<div class="space-y-6">
+						<div class="quiz-space-y-6">
 				`;
 
 				let i = 0;
@@ -563,8 +563,8 @@ class ProductQuiz {
 		question.options.forEach(option => {
 			const isSelected = response.answer === option.id;
 			html += `
-				<label for="${option.id}" class="quiz-option-card cursor-pointer block">
-					<input type="radio" id="${option.id}" name="question-${question.id}" value="${option.id}" class="sr-only"
+				<label for="${option.id}" class="quiz-option-card">
+					<input type="radio" id="${option.id}" name="question-${question.id}" value="${option.id}" class="quiz-sr-only"
 						${isSelected ? "checked" : ""}>
 					<div class="quiz-option-button ${isSelected ? "selected" : ""}">
 						<div class="quiz-option-text">
@@ -595,8 +595,8 @@ class ProductQuiz {
 			question.options.forEach(option => {
 				const isSelected = selectedOptions.includes(option.id);
 				html += `
-					<label for="${option.id}" class="quiz-option-card cursor-pointer block">
-						<input type="checkbox" id="${option.id}" name="question-${question.id}" value="${option.id}" class="sr-only"
+					<label for="${option.id}" class="quiz-option-card">
+						<input type="checkbox" id="${option.id}" name="question-${question.id}" value="${option.id}" class="quiz-sr-only"
 							${isSelected ? "checked" : ""}>
 						<div class="quiz-option-button ${isSelected ? "selected" : ""}">
 							<div class="quiz-option-text">
@@ -612,7 +612,7 @@ class ProductQuiz {
 			return html;
 		} else {
 			// Traditional checkbox style for consent and other special cases
-			let html = '<div class="space-y-3 mt-6">';
+			let html = '<div class="quiz-space-y-3 quiz-spacing-container">';
 
 			question.options.forEach(option => {
 				html += `
@@ -731,7 +731,7 @@ class ProductQuiz {
 
 	renderRating(question, response) {
 		return `
-			<div class="mt-6">
+			<div class="quiz-spacing-container">
 				<input type="range" id="question-${question.id}" class="quiz-range"
 					min="1" max="10" step="1" value="${response.answer || 5}">
 				<div class="quiz-range-labels">
@@ -832,14 +832,16 @@ class ProductQuiz {
 						const errorEl = this.questionContainer.querySelector(`#error-${question.id}`);
 
 						if (regex.test(textInput.value)) {
-							textInput.classList.remove("border-red-500");
+							textInput.classList.remove("quiz-input-error");
+							textInput.classList.add("quiz-input-valid");
 							if (errorEl) {
 								errorEl.classList.add("quiz-error-hidden");
 								errorEl.classList.remove("quiz-error-visible");
 							}
 							this.handleFormAnswer(question.id, textInput.value);
 						} else {
-							textInput.classList.add("border-red-500");
+							textInput.classList.remove("quiz-input-valid");
+							textInput.classList.add("quiz-input-error");
 							if (errorEl && question.validation.message) {
 								errorEl.textContent = question.validation.message;
 								errorEl.classList.remove("quiz-error-hidden");
@@ -1472,7 +1474,7 @@ class ProductQuiz {
 			this.nextButton.disabled = false;
 			this.nextButton.innerHTML = `
 				Next
-				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-2">
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="quiz-button-spacing">
 					<path d="M5 12h14M12 5l7 7-7 7"/>
 				</svg>
 			`;
@@ -1527,18 +1529,18 @@ class ProductQuiz {
 						sessionsCovered > 0
 							? `
 					<div class="quiz-coverage-details">
-						<p class="font-medium">Coverage details:</p>
+						<p class="quiz-font-medium">Coverage details:</p>
 						<ul class="quiz-coverage-list">
 							<li class="quiz-coverage-item">
 								<span>Sessions covered:</span>
-								<span class="font-medium">${sessionsCovered}</span>
+								<span class="quiz-font-medium">${sessionsCovered}</span>
 							</li>
 							${
 								deductible > 0
 									? `
 							<li class="quiz-coverage-item">
 								<span>Deductible:</span>
-								<span class="font-medium">$${deductible}</span>
+								<span class="quiz-font-medium">$${deductible}</span>
 							</li>`
 									: ""
 							}
@@ -1547,7 +1549,7 @@ class ProductQuiz {
 									? `
 							<li class="quiz-coverage-item">
 								<span>Co-pay per session:</span>
-								<span class="font-medium">$${copay}</span>
+								<span class="quiz-font-medium">$${copay}</span>
 							</li>`
 									: ""
 							}
@@ -1558,10 +1560,10 @@ class ProductQuiz {
 					}
 				</div>
 
-				<div class="space-y-4 md:space-y-0 md:space-x-4">
+				<div class="quiz-results-actions quiz-space-y-4">
 					<a href="${bookingUrl}" class="quiz-cta-button">
 						Book Your Appointment
-						<span class="ml-2 transform transition-transform duration-200">→</span>
+						<span class="quiz-button-spacing">→</span>
 					</a>
 				</div>
 			</div>
@@ -1621,14 +1623,16 @@ class ProductQuiz {
 						const errorEl = this.questionContainer.querySelector(`#error-${question.id}`);
 
 						if (regex.test(textInput.value)) {
-							textInput.classList.remove("border-red-500");
+							textInput.classList.remove("quiz-input-error");
+							textInput.classList.add("quiz-input-valid");
 							if (errorEl) {
 								errorEl.classList.add("quiz-error-hidden");
 								errorEl.classList.remove("quiz-error-visible");
 							}
 							this.handleFormAnswer(question.id, textInput.value);
 						} else {
-							textInput.classList.add("border-red-500");
+							textInput.classList.remove("quiz-input-valid");
+							textInput.classList.add("quiz-input-error");
 							if (errorEl && question.validation.message) {
 								errorEl.textContent = question.validation.message;
 								errorEl.classList.remove("quiz-error-hidden");
