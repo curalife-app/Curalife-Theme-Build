@@ -909,24 +909,41 @@ class ProductQuiz {
 				});
 			}
 
-			// Re-render the current step to show the updated selection state
-			this.renderCurrentStep();
-
 			// Auto-advance for single-choice questions (multiple-choice, dropdown)
 			// but not for form fields or multi-select questions
 			const shouldAutoAdvance = this.shouldAutoAdvance(question);
 
 			if (shouldAutoAdvance) {
-				// Add visual feedback that we're advancing
-				const selectedElement = this.questionContainer.querySelector(".quiz-option-button.selected");
+				// Disable all option buttons to prevent double-clicking
+				const allOptionButtons = this.questionContainer.querySelectorAll(".quiz-option-button");
+				allOptionButtons.forEach(btn => {
+					btn.classList.add("auto-advancing");
+				});
+
+				// Apply visual feedback before re-rendering
+				const selectedElement = this.questionContainer.querySelector(`input[value="${answer}"]:checked`);
 				if (selectedElement) {
-					selectedElement.style.opacity = "0.7";
+					const optionButton = selectedElement.closest(".quiz-option-card")?.querySelector(".quiz-option-button");
+					if (optionButton) {
+						// Add a smooth transition for the selected state
+						optionButton.style.transition = "all 0.3s ease-out";
+						optionButton.style.transform = "translateY(-2px) scale(0.98)";
+						optionButton.style.opacity = "0.8";
+					}
 				}
 
-				// Add a small delay to let user see their selection before advancing
+				// Re-render after a brief moment to let the selection animation show
 				setTimeout(() => {
-					this.goToNextStep();
-				}, 800);
+					this.renderCurrentStep();
+
+					// Add a small delay to let user see their selection before advancing
+					setTimeout(() => {
+						this.goToNextStep();
+					}, 500);
+				}, 250);
+			} else {
+				// For non-auto-advance questions, re-render immediately
+				this.renderCurrentStep();
 			}
 
 			return; // Return early since renderCurrentStep calls updateNavigation
