@@ -289,7 +289,15 @@ class ProductQuiz {
 			return;
 		}
 
+		console.log("=== QUIZ DEBUG ===");
 		console.log("Rendering step:", step.id, step.info ? "has-info" : "", step.questions ? `has-${step.questions.length}-questions` : "");
+		console.log("Step ID:", step.id);
+		console.log("Is insurance step?", step.id === "step-insurance");
+
+		// Check if this is a multi-field form step (like insurance or contact)
+		const isFormStep = this.isFormStep(step.id);
+		console.log("isFormStep result:", isFormStep);
+		console.log("==================");
 
 		// Update progress bar
 		const progress = ((this.currentStepIndex + 1) / this.quizData.steps.length) * 100;
@@ -322,11 +330,11 @@ class ProductQuiz {
 		}
 
 		// Check if this is a multi-field form step (like insurance or contact)
-		const isFormStep = this.isFormStep(step.id);
+		const isCurrentFormStep = this.isFormStep(step.id);
 
 		// Add the questions section if present
 		if (step.questions && step.questions.length > 0) {
-			if (isFormStep) {
+			if (isCurrentFormStep) {
 				// For form-style steps, render all questions at once
 				stepHTML += `
 					<div class="bg-gray-100 rounded-lg p-6 mt-6">
@@ -516,11 +524,14 @@ class ProductQuiz {
 		stepHTML += "</div>";
 
 		// Set the HTML
+		console.log("=== GENERATED HTML ===");
+		console.log(stepHTML.substring(0, 500) + "...");
+		console.log("======================");
 		this.questionContainer.innerHTML = stepHTML;
 
 		// Add event listeners for the questions
 		if (step.questions && step.questions.length > 0) {
-			if (isFormStep) {
+			if (isCurrentFormStep) {
 				// For form steps, attach listeners to all questions
 				step.questions.forEach(question => {
 					this.attachFormQuestionListener(question);
