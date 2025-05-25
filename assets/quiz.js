@@ -50,7 +50,7 @@ class ProductQuiz {
 				console.error(`ProductQuiz: Essential DOM element ".${key}" or "#${key}" is missing. Quiz cannot start reliably.`);
 				// Display a user-facing error directly in the quiz container
 				this.container.innerHTML =
-					'<div class="quiz-error" style="display: block; text-align: center; padding: 2rem;">' +
+					'<div class="quiz-error quiz-critical-error">' +
 					'<h3 class="text-xl font-semibold text-red-500 mb-2">Quiz Error</h3>' +
 					'<p class="text-slate-500 mb-6">A critical component of the quiz is missing. Please ensure the page is loaded correctly or contact support.</p>' +
 					"</div>";
@@ -302,6 +302,7 @@ class ProductQuiz {
 		// Update progress bar
 		const progress = ((this.currentStepIndex + 1) / this.quizData.steps.length) * 100;
 		if (this.progressBar) {
+			this.progressBar.classList.add("quiz-progress-bar-animated");
 			this.progressBar.style.width = `${progress}%`;
 		}
 
@@ -569,7 +570,7 @@ class ProductQuiz {
 						<div class="text-center">
 							<div class="text-lg font-medium text-slate-800">${option.text}</div>
 						</div>
-						${isSelected ? '<div class="absolute top-1/2 right-3 w-7 h-7 rounded-full flex items-center justify-center shadow-md transform -translate-y-1/2" style="background-color: #306E51;"><svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg></div>' : ""}
+						${isSelected ? '<div class="quiz-checkmark"><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg></div>' : ""}
 					</div>
 				</label>
 			`;
@@ -656,7 +657,7 @@ class ProductQuiz {
 					placeholder="${question.placeholder || "Type your answer here..."}"
 					value="${response.answer || ""}"
 					aria-describedby="error-${question.id}">
-				<p id="error-${question.id}" class="text-red-500 text-sm mt-1" style="display: none;"></p>
+				<p id="error-${question.id}" class="text-red-500 text-sm mt-1 quiz-error-hidden"></p>
 			</div>
 		`;
 	}
@@ -668,7 +669,7 @@ class ProductQuiz {
 					placeholder="${question.helpText || "MM/DD/YYYY"}"
 					value="${response.answer || ""}"
 					aria-describedby="error-${question.id}">
-				<p id="error-${question.id}" class="text-red-500 text-sm mt-1" style="display: none;"></p>
+				<p id="error-${question.id}" class="text-red-500 text-sm mt-1 quiz-error-hidden"></p>
 				${question.helpText ? `<p class="text-slate-500 text-sm mt-2">${question.helpText}</p>` : ""}
 			</div>
 		`;
@@ -832,13 +833,17 @@ class ProductQuiz {
 
 						if (regex.test(textInput.value)) {
 							textInput.classList.remove("border-red-500");
-							if (errorEl) errorEl.style.display = "none";
+							if (errorEl) {
+								errorEl.classList.add("quiz-error-hidden");
+								errorEl.classList.remove("quiz-error-visible");
+							}
 							this.handleFormAnswer(question.id, textInput.value);
 						} else {
 							textInput.classList.add("border-red-500");
 							if (errorEl && question.validation.message) {
 								errorEl.textContent = question.validation.message;
-								errorEl.style.display = "block";
+								errorEl.classList.remove("quiz-error-hidden");
+								errorEl.classList.add("quiz-error-visible");
 							}
 							this.handleFormAnswer(question.id, null); // Invalid input
 						}
@@ -1060,10 +1065,12 @@ class ProductQuiz {
 
 		// Hide navigation entirely for auto-advance questions (unless it's a form step)
 		if (isCurrentQuestionAutoAdvance && !isFormStep) {
-			this.navigationButtons.style.display = "none";
+			this.navigationButtons.classList.add("quiz-navigation-hidden");
+			this.navigationButtons.classList.remove("quiz-navigation-visible");
 			return;
 		} else {
-			this.navigationButtons.style.display = "flex";
+			this.navigationButtons.classList.remove("quiz-navigation-hidden");
+			this.navigationButtons.classList.add("quiz-navigation-visible");
 		}
 
 		// Disable/enable previous button
@@ -1615,13 +1622,17 @@ class ProductQuiz {
 
 						if (regex.test(textInput.value)) {
 							textInput.classList.remove("border-red-500");
-							if (errorEl) errorEl.style.display = "none";
+							if (errorEl) {
+								errorEl.classList.add("quiz-error-hidden");
+								errorEl.classList.remove("quiz-error-visible");
+							}
 							this.handleFormAnswer(question.id, textInput.value);
 						} else {
 							textInput.classList.add("border-red-500");
 							if (errorEl && question.validation.message) {
 								errorEl.textContent = question.validation.message;
-								errorEl.style.display = "block";
+								errorEl.classList.remove("quiz-error-hidden");
+								errorEl.classList.add("quiz-error-visible");
 							}
 							this.handleFormAnswer(question.id, null); // Invalid input
 						}
