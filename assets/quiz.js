@@ -51,8 +51,8 @@ class ProductQuiz {
 				// Display a user-facing error directly in the quiz container
 				this.container.innerHTML =
 					'<div class="quiz-error quiz-critical-error">' +
-					'<h3 class="text-xl font-semibold text-red-500 mb-2">Quiz Error</h3>' +
-					'<p class="text-slate-500 mb-6">A critical component of the quiz is missing. Please ensure the page is loaded correctly or contact support.</p>' +
+					'<h3 class="quiz-subtitle quiz-error-text">Quiz Error</h3>' +
+					'<p class="quiz-text">A critical component of the quiz is missing. Please ensure the page is loaded correctly or contact support.</p>' +
 					"</div>";
 				this._isInitialized = false;
 				return;
@@ -312,9 +312,9 @@ class ProductQuiz {
 		// Add the info section if present
 		if (step.info) {
 			stepHTML += `
-				<h3 class="text-2xl font-semibold mb-2">${step.info.heading}</h3>
-				<p class="text-slate-500 mb-6">${step.info.text}</p>
-				${step.info.subtext ? `<p class="text-slate-500 text-sm mt-2 italic">${step.info.subtext}</p>` : ""}
+				<h3 class="quiz-title">${step.info.heading}</h3>
+				<p class="quiz-text">${step.info.text}</p>
+				${step.info.subtext ? `<p class="quiz-subtext">${step.info.subtext}</p>` : ""}
 			`;
 
 			// Mark this step's info as acknowledged
@@ -338,8 +338,8 @@ class ProductQuiz {
 			if (isCurrentFormStep) {
 				// For form-style steps, render all questions at once
 				stepHTML += `
-					<div class="bg-brand-50 rounded-lg p-6 mt-6">
-						${step.info && step.info.formSubHeading ? `<h4 class="text-lg font-semibold text-slate-800 mb-6">${step.info.formSubHeading}</h4>` : ""}
+					<div class="quiz-form-container">
+						${step.info && step.info.formSubHeading ? `<h4 class="quiz-heading">${step.info.formSubHeading}</h4>` : ""}
 						<div class="space-y-6">
 				`;
 
@@ -354,18 +354,18 @@ class ProductQuiz {
 						const memberIdQuestion = step.questions[i + 1];
 
 						stepHTML += `
-							<div class="grid grid-cols-2 gap-4 mb-6">
+							<div class="quiz-grid-2-form">
 								<div>
-									<label class="text-lg font-semibold text-slate-800 block mb-2" for="question-${insuranceQuestion.id}">
-										${insuranceQuestion.text}${insuranceQuestion.required ? ' <span class="text-red-500">*</span>' : ""}
-										<svg class="inline w-4 h-4 ml-1 text-slate-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+									<label class="quiz-label" for="question-${insuranceQuestion.id}">
+										${insuranceQuestion.text}${insuranceQuestion.required ? ' <span class="quiz-required-marker">*</span>' : ""}
+										<svg class="quiz-help-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
 									</label>
 									${this.renderDropdown(insuranceQuestion, this.responses.find(r => r.questionId === insuranceQuestion.id) || { answer: null })}
 								</div>
 								<div>
-									<label class="text-lg font-semibold text-slate-800 block mb-2" for="question-${memberIdQuestion.id}">
-										${memberIdQuestion.text}${memberIdQuestion.required ? ' <span class="text-red-500">*</span>' : ""}
-										<svg class="inline w-4 h-4 ml-1 text-slate-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+									<label class="quiz-label" for="question-${memberIdQuestion.id}">
+										${memberIdQuestion.text}${memberIdQuestion.required ? ' <span class="quiz-required-marker">*</span>' : ""}
+										<svg class="quiz-help-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
 									</label>
 									${this.renderTextInput(memberIdQuestion, this.responses.find(r => r.questionId === memberIdQuestion.id) || { answer: null })}
 								</div>
@@ -381,13 +381,13 @@ class ProductQuiz {
 						const lastNameQuestion = step.questions[i + 1];
 
 						stepHTML += `
-							<div class="grid grid-cols-2 gap-4 mb-6">
+							<div class="quiz-grid-2-form">
 								<div>
-									<label class="text-lg font-semibold text-slate-800 block mb-2" for="question-${firstNameQuestion.id}">${firstNameQuestion.text}${firstNameQuestion.required ? ' <span class="text-red-500">*</span>' : ""}</label>
+									<label class="quiz-label" for="question-${firstNameQuestion.id}">${firstNameQuestion.text}${firstNameQuestion.required ? ' <span class="quiz-required-marker">*</span>' : ""}</label>
 									${this.renderTextInput(firstNameQuestion, this.responses.find(r => r.questionId === firstNameQuestion.id) || { answer: null })}
 								</div>
 								<div>
-									<label class="text-lg font-semibold text-slate-800 block mb-2" for="question-${lastNameQuestion.id}">${lastNameQuestion.text}${lastNameQuestion.required ? ' <span class="text-red-500">*</span>' : ""}</label>
+									<label class="quiz-label" for="question-${lastNameQuestion.id}">${lastNameQuestion.text}${lastNameQuestion.required ? ' <span class="quiz-required-marker">*</span>' : ""}</label>
 									${this.renderTextInput(lastNameQuestion, this.responses.find(r => r.questionId === lastNameQuestion.id) || { answer: null })}
 								</div>
 							</div>
@@ -406,9 +406,9 @@ class ProductQuiz {
 						if (dayQuestion && yearQuestion && dayQuestion.type === "date-part" && dayQuestion.part === "day" && yearQuestion.type === "date-part" && yearQuestion.part === "year") {
 							// Render date group
 							stepHTML += `
-								<div class="mb-6">
-									<label class="text-lg font-semibold text-slate-800 block mb-2">${monthQuestion.text}${monthQuestion.required ? ' <span class="text-red-500">*</span>' : ""}</label>
-									<div class="grid grid-cols-3 gap-4">
+								<div class="quiz-question-section">
+									<label class="quiz-label">${monthQuestion.text}${monthQuestion.required ? ' <span class="quiz-required-marker">*</span>' : ""}</label>
+									<div class="quiz-grid-3">
 										${this.renderDatePart(monthQuestion, this.responses.find(r => r.questionId === monthQuestion.id) || { answer: null })}
 										${this.renderDatePart(dayQuestion, this.responses.find(r => r.questionId === dayQuestion.id) || { answer: null })}
 										${this.renderDatePart(yearQuestion, this.responses.find(r => r.questionId === yearQuestion.id) || { answer: null })}
@@ -422,9 +422,9 @@ class ProductQuiz {
 
 					// Regular question rendering
 					stepHTML += `
-						<div class="mb-6">
-							<label class="text-lg font-semibold text-slate-800 block mb-2" for="question-${question.id}">${question.text}${question.required ? ' <span class="text-red-500">*</span>' : ""}</label>
-							${question.helpText ? `<p class="text-slate-500 text-sm mb-2">${question.helpText}</p>` : ""}
+						<div class="quiz-question-section">
+							<label class="quiz-label" for="question-${question.id}">${question.text}${question.required ? ' <span class="quiz-required-marker">*</span>' : ""}</label>
+							${question.helpText ? `<p class="quiz-text-sm">${question.helpText}</p>` : ""}
 					`;
 
 					// Add input based on question type
@@ -445,7 +445,7 @@ class ProductQuiz {
 							stepHTML += this.renderCheckbox(question, response);
 							break;
 						default:
-							stepHTML += `<p class="text-red-500">Unsupported field type: ${question.type}</p>`;
+							stepHTML += `<p class="quiz-error-text">Unsupported field type: ${question.type}</p>`;
 					}
 
 					stepHTML += `</div>`;
@@ -463,22 +463,22 @@ class ProductQuiz {
 
 				if (!question) {
 					console.error("No question found at index", this.currentQuestionIndex, "for step", step.id);
-					stepHTML += `<p class="text-red-500">Question not found. Please try again.</p>`;
+					stepHTML += `<p class="quiz-error-text">Question not found. Please try again.</p>`;
 				} else {
 					console.log("Rendering question:", question.id, question.type);
 
 					// Add the question title and help text if they weren't already added via info
 					if (!step.info) {
 						stepHTML += `
-							<h3 class="text-2xl font-semibold mb-2">${question.text}</h3>
-							${question.helpText ? `<p class="text-slate-500 mb-6">${question.helpText}</p>` : ""}
+							<h3 class="quiz-title">${question.text}</h3>
+							${question.helpText ? `<p class="quiz-text">${question.helpText}</p>` : ""}
 						`;
 					} else {
 						// If we have both info and questions, still show the question text
 						stepHTML += `
-							<div class="mt-6 pt-4 border-t border-slate-200">
-								<h4 class="text-lg font-semibold text-slate-800 mb-2">${question.text}</h4>
-								${question.helpText ? `<p class="text-slate-500 text-sm mb-2">${question.helpText}</p>` : ""}
+							<div class="quiz-divider">
+								<h4 class="quiz-heading">${question.text}</h4>
+								${question.helpText ? `<p class="quiz-text-sm">${question.helpText}</p>` : ""}
 							</div>
 						`;
 					}
@@ -507,19 +507,19 @@ class ProductQuiz {
 							stepHTML += this.renderRating(question, response);
 							break;
 						default:
-							stepHTML += '<p class="text-red-500">Unknown question type</p>';
+							stepHTML += '<p class="quiz-error-text">Unknown question type</p>';
 					}
 				}
 			}
 		} else if (!step.info) {
 			// Neither info nor questions found
 			console.error("Step has neither info nor questions:", step.id);
-			stepHTML += `<p class="text-red-500">Step configuration error. Please contact support.</p>`;
+			stepHTML += `<p class="quiz-error-text">Step configuration error. Please contact support.</p>`;
 		}
 
 		// Add legal text if present
 		if (step.legal) {
-			stepHTML += `<p class="text-xs text-slate-500 mt-6 pt-2 border-t border-slate-200 leading-relaxed">${step.legal}</p>`;
+			stepHTML += `<p class="quiz-text-xs">${step.legal}</p>`;
 		}
 
 		stepHTML += "</div>";
@@ -558,7 +558,7 @@ class ProductQuiz {
 	}
 
 	renderMultipleChoice(question, response) {
-		let html = '<div class="grid grid-cols-2 gap-4 mt-6">';
+		let html = '<div class="quiz-grid-2">';
 
 		question.options.forEach(option => {
 			const isSelected = response.answer === option.id;
@@ -566,9 +566,9 @@ class ProductQuiz {
 				<label for="${option.id}" class="quiz-option-card cursor-pointer block">
 					<input type="radio" id="${option.id}" name="question-${question.id}" value="${option.id}" class="sr-only"
 						${isSelected ? "checked" : ""}>
-					<div class="quiz-option-button ${isSelected ? "selected" : ""} relative p-6 border-2 rounded-lg transition-all duration-200">
-						<div class="text-center">
-							<div class="text-lg font-medium text-slate-800">${option.text}</div>
+					<div class="quiz-option-button ${isSelected ? "selected" : ""}">
+						<div class="quiz-option-text">
+							<div class="quiz-option-text-content">${option.text}</div>
 						</div>
 						${isSelected ? '<div class="quiz-checkmark"><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg></div>' : ""}
 					</div>
@@ -590,7 +590,7 @@ class ProductQuiz {
 
 		if (useCardStyle) {
 			// Card-style checkboxes (similar to multiple-choice)
-			let html = '<div class="grid grid-cols-2 gap-4 mt-6">';
+			let html = '<div class="quiz-grid-2">';
 
 			question.options.forEach(option => {
 				const isSelected = selectedOptions.includes(option.id);
@@ -598,9 +598,9 @@ class ProductQuiz {
 					<label for="${option.id}" class="quiz-option-card cursor-pointer block">
 						<input type="checkbox" id="${option.id}" name="question-${question.id}" value="${option.id}" class="sr-only"
 							${isSelected ? "checked" : ""}>
-						<div class="quiz-option-button ${isSelected ? "selected" : ""} relative p-6 border-2 rounded-lg transition-all duration-200">
-							<div class="text-center">
-								<div class="text-lg font-medium text-slate-800">${option.text}</div>
+						<div class="quiz-option-button ${isSelected ? "selected" : ""}">
+							<div class="quiz-option-text">
+								<div class="quiz-option-text-content">${option.text}</div>
 							</div>
 							${isSelected ? '<div class="quiz-checkmark"><svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg></div>' : ""}
 						</div>
@@ -616,10 +616,10 @@ class ProductQuiz {
 
 			question.options.forEach(option => {
 				html += `
-					<div class="flex items-center${isConsent ? " consent-container" : ""}">
-						<input type="checkbox" id="${option.id}" name="question-${question.id}" value="${option.id}" class="mr-2 h-5 w-5 cursor-pointer${isConsent ? " consent-checkbox" : ""}"
+					<div class="quiz-checkbox-container${isConsent ? " consent-container" : ""}">
+						<input type="checkbox" id="${option.id}" name="question-${question.id}" value="${option.id}" class="quiz-checkbox-input${isConsent ? " consent-checkbox" : ""}"
 							${selectedOptions.includes(option.id) ? "checked" : ""}>
-						<label class="cursor-pointer text-base" for="${option.id}">${option.text}</label>
+						<label class="quiz-checkbox-label" for="${option.id}">${option.text}</label>
 					</div>
 				`;
 			});
@@ -635,7 +635,7 @@ class ProductQuiz {
 
 		let html = `
 			<div>
-				<select id="question-${question.id}" class="w-full p-3 text-base border border-slate-200 rounded-lg bg-white appearance-none shadow-sm focus:outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-800/10 cursor-pointer">
+				<select id="question-${question.id}" class="quiz-select">
 					<option value="">${placeholder}</option>
 		`;
 
@@ -653,24 +653,24 @@ class ProductQuiz {
 	renderTextInput(question, response) {
 		return `
 			<div>
-				<input type="text" id="question-${question.id}" class="w-full p-3 border border-slate-200 rounded-lg shadow-sm focus:outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-800/10"
+				<input type="text" id="question-${question.id}" class="quiz-input"
 					placeholder="${question.placeholder || "Type your answer here..."}"
 					value="${response.answer || ""}"
 					aria-describedby="error-${question.id}">
-				<p id="error-${question.id}" class="text-red-500 text-sm mt-1 quiz-error-hidden"></p>
+				<p id="error-${question.id}" class="quiz-error-text quiz-error-hidden"></p>
 			</div>
 		`;
 	}
 
 	renderDateInput(question, response) {
 		return `
-			<div class="mb-6">
-				<input type="date" id="question-${question.id}" class="w-full p-3 border border-slate-200 rounded-lg shadow-sm focus:outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-800/10"
+			<div class="quiz-question-section">
+				<input type="date" id="question-${question.id}" class="quiz-input"
 					placeholder="${question.helpText || "MM/DD/YYYY"}"
 					value="${response.answer || ""}"
 					aria-describedby="error-${question.id}">
-				<p id="error-${question.id}" class="text-red-500 text-sm mt-1 quiz-error-hidden"></p>
-				${question.helpText ? `<p class="text-slate-500 text-sm mt-2">${question.helpText}</p>` : ""}
+				<p id="error-${question.id}" class="quiz-error-text quiz-error-hidden"></p>
+				${question.helpText ? `<p class="quiz-text-sm">${question.helpText}</p>` : ""}
 			</div>
 		`;
 	}
@@ -712,7 +712,7 @@ class ProductQuiz {
 
 		return `
 			<div>
-				<select id="question-${question.id}" class="w-full p-3 text-base border border-slate-200 rounded-lg bg-white appearance-none shadow-sm focus:outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-800/10 cursor-pointer">
+				<select id="question-${question.id}" class="quiz-select">
 					<option value="">${placeholder}</option>
 					${options.map(option => `<option value="${option.id}" ${response.answer === option.id ? "selected" : ""}>${option.text}</option>`).join("")}
 				</select>
@@ -722,8 +722,8 @@ class ProductQuiz {
 
 	renderTextarea(question, response) {
 		return `
-			<div class="mb-6">
-				<textarea id="question-${question.id}" class="w-full p-3 border border-slate-200 rounded-lg shadow-sm focus:outline-none focus:border-slate-800 focus:ring-2 focus:ring-slate-800/10" rows="4"
+			<div class="quiz-question-section">
+				<textarea id="question-${question.id}" class="quiz-textarea" rows="4"
 					placeholder="${question.placeholder || "Type your answer here..."}">${response.answer || ""}</textarea>
 			</div>
 		`;
@@ -732,9 +732,9 @@ class ProductQuiz {
 	renderRating(question, response) {
 		return `
 			<div class="mt-6">
-				<input type="range" id="question-${question.id}" class="w-full mb-2"
+				<input type="range" id="question-${question.id}" class="quiz-range"
 					min="1" max="10" step="1" value="${response.answer || 5}">
-				<div class="flex justify-between text-sm text-slate-500">
+				<div class="quiz-range-labels">
 					<span>1</span>
 					<span>5</span>
 					<span>10</span>
@@ -1301,7 +1301,7 @@ class ProductQuiz {
 			this.submitting = true;
 			this.nextButton.disabled = true;
 			this.nextButton.innerHTML = `
-				<div class="w-4 h-4 border-2 border-white/30 border-l-white rounded-full animate-spin mr-2 inline-block"></div>
+				<div class="quiz-spinner"></div>
 				Processing...
 			`;
 
@@ -1507,36 +1507,36 @@ class ProductQuiz {
 
 			const beginDate = formatDate(eligibilityData.planBegin);
 			const endDate = formatDate(eligibilityData.planEnd);
-			coverageDates = `<p class="text-sm text-slate-500 mt-2">Coverage period: ${beginDate} to ${endDate}</p>`;
+			coverageDates = `<p class="quiz-coverage-dates">Coverage period: ${beginDate} to ${endDate}</p>`;
 		}
 
 		// Generate results content with eligibility information
 		let resultsHTML = `
-			<div class="text-center mb-8">
-				<h2 class="text-4xl font-bold mb-4 leading-tight md:text-5xl">Thanks for completing the quiz!</h2>
-				<p class="text-lg text-slate-500 max-w-xl mx-auto mb-8">We're ready to connect you with a registered dietitian who can help guide your health journey.</p>
-				${!webhookSuccess ? `<p class="text-amber-600 mb-6">There was an issue processing your submission, but you can still continue.</p>` : ""}
+			<div class="quiz-results-container">
+				<h2 class="quiz-results-title">Thanks for completing the quiz!</h2>
+				<p class="quiz-results-subtitle">We're ready to connect you with a registered dietitian who can help guide your health journey.</p>
+				${!webhookSuccess ? `<p class="quiz-warning-text">There was an issue processing your submission, but you can still continue.</p>` : ""}
 
-				<div class="bg-white rounded-lg shadow-md p-6 mb-8 max-w-xl mx-auto">
-					<h3 class="text-xl font-semibold mb-3">
+				<div class="quiz-results-card">
+					<h3 class="quiz-results-card-title">
 						${isEligible ? "✓ Insurance Coverage Verified" : "Insurance Coverage Information"}
 					</h3>
-					<p class="text-md mb-4">${message}</p>
+					<p class="quiz-results-message">${message}</p>
 
 					${
 						sessionsCovered > 0
 							? `
-					<div class="bg-slate-50 rounded p-4 mb-4">
+					<div class="quiz-coverage-details">
 						<p class="font-medium">Coverage details:</p>
-						<ul class="mt-2 text-sm text-slate-600">
-							<li class="flex justify-between py-1">
+						<ul class="quiz-coverage-list">
+							<li class="quiz-coverage-item">
 								<span>Sessions covered:</span>
 								<span class="font-medium">${sessionsCovered}</span>
 							</li>
 							${
 								deductible > 0
 									? `
-							<li class="flex justify-between py-1">
+							<li class="quiz-coverage-item">
 								<span>Deductible:</span>
 								<span class="font-medium">$${deductible}</span>
 							</li>`
@@ -1545,7 +1545,7 @@ class ProductQuiz {
 							${
 								copay > 0
 									? `
-							<li class="flex justify-between py-1">
+							<li class="quiz-coverage-item">
 								<span>Co-pay per session:</span>
 								<span class="font-medium">$${copay}</span>
 							</li>`
@@ -1559,7 +1559,7 @@ class ProductQuiz {
 				</div>
 
 				<div class="space-y-4 md:space-y-0 md:space-x-4">
-					<a href="${bookingUrl}" class="inline-flex items-center justify-center px-6 py-3 text-base font-medium rounded-lg bg-slate-800 text-white hover:bg-slate-700 transition duration-200 relative md:px-8">
+					<a href="${bookingUrl}" class="quiz-cta-button">
 						Book Your Appointment
 						<span class="ml-2 transform transition-transform duration-200">→</span>
 					</a>
