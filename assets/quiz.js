@@ -5,30 +5,39 @@
  * It loads quiz data from a JSON file and guides the user through
  * a series of questions to provide product recommendations.
  */
+
+// Configuration constants
+const QUIZ_CONFIG = {
+	AUTO_ADVANCE_DELAY: 600,
+	WEBHOOK_TIMEOUT: 8000,
+	FORM_STEP_IDS: ["step-insurance", "step-contact"],
+	QUESTION_PAIRS: {
+		INSURANCE_FIELDS: ["q3", "q4"],
+		NAME_FIELDS: ["q7", "q8"],
+		DATE_PARTS: ["q6_month", "q6_day", "q6_year"]
+	},
+	ELEMENT_SELECTORS: {
+		MAIN_CONTAINER: "#product-quiz",
+		INTRO: ".quiz-intro",
+		QUESTIONS: ".quiz-questions",
+		RESULTS: ".quiz-results",
+		ERROR: ".quiz-error",
+		LOADING: ".quiz-loading",
+		ELIGIBILITY_CHECK: ".quiz-eligibility-check",
+		PROGRESS_BAR: ".quiz-progress-bar",
+		QUESTION_CONTAINER: ".quiz-question-container",
+		NAVIGATION: ".quiz-navigation",
+		PREV_BUTTON: "#quiz-prev-button",
+		NEXT_BUTTON: "#quiz-next-button",
+		START_BUTTON: "#quiz-start-button"
+	}
+};
+
 class ProductQuiz {
 	constructor(options = {}) {
-		// DOM elements
-		this.container = document.getElementById("product-quiz");
-		if (!this.container) {
-			console.error("ProductQuiz: Main container #product-quiz not found. Quiz cannot start.");
-			this._isInitialized = false;
-			return;
-		}
-
-		// Use the specific class names we added to the HTML
-		this.intro = this.container.querySelector(".quiz-intro");
-		this.questions = this.container.querySelector(".quiz-questions");
-		this.results = this.container.querySelector(".quiz-results");
-		this.error = this.container.querySelector(".quiz-error");
-		this.loading = this.container.querySelector(".quiz-loading");
-		this.eligibilityCheck = this.container.querySelector(".quiz-eligibility-check");
-
-		this.progressBar = this.container.querySelector(".quiz-progress-bar");
-		this.questionContainer = this.container.querySelector(".quiz-question-container");
-		this.navigationButtons = this.container.querySelector(".quiz-navigation");
-		this.prevButton = this.container.querySelector("#quiz-prev-button");
-		this.nextButton = this.container.querySelector("#quiz-next-button");
-		this.startButton = this.container.querySelector("#quiz-start-button");
+		// Initialize DOM elements
+		this._initializeDOMElements();
+		if (!this._isInitialized) return;
 
 		// Comprehensive check for essential elements
 		const essentialElements = {
@@ -102,6 +111,33 @@ class ProductQuiz {
 		if (element) {
 			element.classList.add("hidden");
 		}
+	}
+
+	// Initialize DOM elements using configuration
+	_initializeDOMElements() {
+		this.container = document.querySelector(QUIZ_CONFIG.ELEMENT_SELECTORS.MAIN_CONTAINER);
+		if (!this.container) {
+			console.error("ProductQuiz: Main container not found. Quiz cannot start.");
+			this._isInitialized = false;
+			return;
+		}
+
+		// Select all DOM elements
+		const selectors = QUIZ_CONFIG.ELEMENT_SELECTORS;
+		this.intro = this.container.querySelector(selectors.INTRO);
+		this.questions = this.container.querySelector(selectors.QUESTIONS);
+		this.results = this.container.querySelector(selectors.RESULTS);
+		this.error = this.container.querySelector(selectors.ERROR);
+		this.loading = this.container.querySelector(selectors.LOADING);
+		this.eligibilityCheck = this.container.querySelector(selectors.ELIGIBILITY_CHECK);
+		this.progressBar = this.container.querySelector(selectors.PROGRESS_BAR);
+		this.questionContainer = this.container.querySelector(selectors.QUESTION_CONTAINER);
+		this.navigationButtons = this.container.querySelector(selectors.NAVIGATION);
+		this.prevButton = this.container.querySelector(selectors.PREV_BUTTON);
+		this.nextButton = this.container.querySelector(selectors.NEXT_BUTTON);
+		this.startButton = this.container.querySelector(selectors.START_BUTTON);
+
+		this._isInitialized = true;
 	}
 
 	async init() {
@@ -279,7 +315,7 @@ class ProductQuiz {
 
 	// Helper method to detect form-style steps (multiple questions shown at once)
 	isFormStep(stepId) {
-		return stepId === "step-insurance" || stepId === "step-contact";
+		return QUIZ_CONFIG.FORM_STEP_IDS.includes(stepId);
 	}
 
 	renderCurrentStep() {
@@ -289,272 +325,136 @@ class ProductQuiz {
 			return;
 		}
 
-		console.log("=== QUIZ DEBUG ===");
-		console.log("Rendering step:", step.id, step.info ? "has-info" : "", step.questions ? `has-${step.questions.length}-questions` : "");
-		console.log("Step ID:", step.id);
-		console.log("Is insurance step?", step.id === "step-insurance");
-
-		// Check if this is a multi-field form step (like insurance or contact)
-		const isFormStep = this.isFormStep(step.id);
-		console.log("isFormStep result:", isFormStep);
-		console.log("==================");
-
 		// Update progress bar
+		this._updateProgressBar();
+
+		// Generate step HTML
+		const stepHTML = this._generateStepHTML(step);
+		this.questionContainer.innerHTML = stepHTML;
+
+		// Handle step acknowledgment for info-only steps
+		this._handleStepAcknowledgment(step);
+
+		// Attach event listeners
+		this._attachStepEventListeners(step);
+
+		// Update navigation state
+		this.updateNavigation();
+	}
+
+	_updateProgressBar() {
 		const progress = ((this.currentStepIndex + 1) / this.quizData.steps.length) * 100;
 		if (this.progressBar) {
 			this.progressBar.classList.add("quiz-progress-bar-animated");
 			this.progressBar.style.width = `${progress}%`;
 		}
+	}
 
-		// Create step HTML with Tailwind classes
+	_generateStepHTML(step) {
 		let stepHTML = `<div class="animate-fade-in">`;
 
-		// Add the info section if present
-		if (step.info) {
-			stepHTML += `
-				<h3 class="quiz-title">${step.info.heading}</h3>
-				<p class="quiz-text">${step.info.text}</p>
-				${step.info.subtext ? `<p class="quiz-subtext">${step.info.subtext}</p>` : ""}
-			`;
+		// Add step info section
+		stepHTML += this._generateStepInfoHTML(step);
 
-			// Mark this step's info as acknowledged
-			const infoResponse = this.responses.find(r => r.stepId === step.id && r.questionId === step.id);
-			if (infoResponse) {
-				infoResponse.answer = "info-acknowledged";
-			} else {
-				this.responses.push({
-					stepId: step.id,
-					questionId: step.id,
-					answer: "info-acknowledged"
-				});
-			}
-		}
-
-		// Check if this is a multi-field form step (like insurance or contact)
-		const isCurrentFormStep = this.isFormStep(step.id);
-
-		// Add the questions section if present
+		// Add questions section
 		if (step.questions && step.questions.length > 0) {
-			if (isCurrentFormStep) {
-				// For form-style steps, render all questions at once
-				stepHTML += `
-					<div class="quiz-form-container">
-						${step.info && step.info.formSubHeading ? `<h4 class="quiz-heading">${step.info.formSubHeading}</h4>` : ""}
-						<div class="quiz-space-y-6">
-				`;
-
-				let i = 0;
-				while (i < step.questions.length) {
-					const question = step.questions[i];
-					const response = this.responses.find(r => r.questionId === question.id) || { answer: null };
-
-					// Check for insurance plan + member ID row
-					if (question.id === "q3" && step.questions[i + 1] && step.questions[i + 1].id === "q4") {
-						const insuranceQuestion = question;
-						const memberIdQuestion = step.questions[i + 1];
-
-						stepHTML += `
-							<div class="quiz-grid-2-form">
-								<div>
-									<label class="quiz-label" for="question-${insuranceQuestion.id}">
-										${insuranceQuestion.text}${insuranceQuestion.required ? ' <span class="quiz-required-marker">*</span>' : ""}
-										<svg class="quiz-help-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
-									</label>
-									${this.renderDropdown(insuranceQuestion, this.responses.find(r => r.questionId === insuranceQuestion.id) || { answer: null })}
-								</div>
-								<div>
-									<label class="quiz-label" for="question-${memberIdQuestion.id}">
-										${memberIdQuestion.text}${memberIdQuestion.required ? ' <span class="quiz-required-marker">*</span>' : ""}
-										<svg class="quiz-help-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
-									</label>
-									${this.renderTextInput(memberIdQuestion, this.responses.find(r => r.questionId === memberIdQuestion.id) || { answer: null })}
-								</div>
-							</div>
-						`;
-						i += 2;
-						continue;
-					}
-
-					// Check for first name + last name row
-					if (question.id === "q7" && step.questions[i + 1] && step.questions[i + 1].id === "q8") {
-						const firstNameQuestion = question;
-						const lastNameQuestion = step.questions[i + 1];
-
-						stepHTML += `
-							<div class="quiz-grid-2-form">
-								<div>
-									<label class="quiz-label" for="question-${firstNameQuestion.id}">${firstNameQuestion.text}${firstNameQuestion.required ? ' <span class="quiz-required-marker">*</span>' : ""}</label>
-									${this.renderTextInput(firstNameQuestion, this.responses.find(r => r.questionId === firstNameQuestion.id) || { answer: null })}
-								</div>
-								<div>
-									<label class="quiz-label" for="question-${lastNameQuestion.id}">${lastNameQuestion.text}${lastNameQuestion.required ? ' <span class="quiz-required-marker">*</span>' : ""}</label>
-									${this.renderTextInput(lastNameQuestion, this.responses.find(r => r.questionId === lastNameQuestion.id) || { answer: null })}
-								</div>
-							</div>
-						`;
-						i += 2;
-						continue;
-					}
-
-					// Check if this is the start of a date-part group
-					if (question.type === "date-part" && question.part === "month") {
-						// Find all date parts for this group
-						const monthQuestion = question;
-						const dayQuestion = step.questions[i + 1];
-						const yearQuestion = step.questions[i + 2];
-
-						if (dayQuestion && yearQuestion && dayQuestion.type === "date-part" && dayQuestion.part === "day" && yearQuestion.type === "date-part" && yearQuestion.part === "year") {
-							// Render date group
-							stepHTML += `
-								<div class="quiz-question-section">
-									<label class="quiz-label">${monthQuestion.text}${monthQuestion.required ? ' <span class="quiz-required-marker">*</span>' : ""}</label>
-									<div class="quiz-grid-3">
-										${this.renderDatePart(monthQuestion, this.responses.find(r => r.questionId === monthQuestion.id) || { answer: null })}
-										${this.renderDatePart(dayQuestion, this.responses.find(r => r.questionId === dayQuestion.id) || { answer: null })}
-										${this.renderDatePart(yearQuestion, this.responses.find(r => r.questionId === yearQuestion.id) || { answer: null })}
-									</div>
-								</div>
-							`;
-							i += 3; // Skip the next two questions as we've processed them
-							continue;
-						}
-					}
-
-					// Regular question rendering
-					stepHTML += `
-						<div class="quiz-question-section">
-							<label class="quiz-label" for="question-${question.id}">${question.text}${question.required ? ' <span class="quiz-required-marker">*</span>' : ""}</label>
-							${question.helpText ? `<p class="quiz-text-sm">${question.helpText}</p>` : ""}
-					`;
-
-					// Add input based on question type
-					switch (question.type) {
-						case "dropdown":
-							stepHTML += this.renderDropdown(question, response);
-							break;
-						case "text":
-							stepHTML += this.renderTextInput(question, response);
-							break;
-						case "date":
-							stepHTML += this.renderDateInput(question, response);
-							break;
-						case "date-part":
-							stepHTML += this.renderDatePart(question, response);
-							break;
-						case "checkbox":
-							stepHTML += this.renderCheckbox(question, response);
-							break;
-						default:
-							stepHTML += `<p class="quiz-error-text">Unsupported field type: ${question.type}</p>`;
-					}
-
-					stepHTML += `</div>`;
-					i++;
-				}
-
-				stepHTML += `
-						</div>
-					</div>
-				`;
+			if (this.isFormStep(step.id)) {
+				stepHTML += this._generateFormStepHTML(step);
 			} else {
-				// For wizard-style steps, render one question at a time
-				const question = step.questions[this.currentQuestionIndex];
-				const response = this.getResponseForCurrentQuestion();
-
-				if (!question) {
-					console.error("No question found at index", this.currentQuestionIndex, "for step", step.id);
-					stepHTML += `<p class="quiz-error-text">Question not found. Please try again.</p>`;
-				} else {
-					console.log("Rendering question:", question.id, question.type);
-
-					// Add the question title and help text if they weren't already added via info
-					if (!step.info) {
-						stepHTML += `
-							<h3 class="quiz-title">${question.text}</h3>
-							${question.helpText ? `<p class="quiz-text">${question.helpText}</p>` : ""}
-						`;
-					} else {
-						// If we have both info and questions, still show the question text
-						stepHTML += `
-							<div class="quiz-divider">
-								<h4 class="quiz-heading">${question.text}</h4>
-								${question.helpText ? `<p class="quiz-text-sm">${question.helpText}</p>` : ""}
-							</div>
-						`;
-					}
-
-					// Add question type specific HTML
-					switch (question.type) {
-						case "multiple-choice":
-							stepHTML += this.renderMultipleChoice(question, response);
-							break;
-						case "checkbox":
-							stepHTML += this.renderCheckbox(question, response);
-							break;
-						case "dropdown":
-							stepHTML += this.renderDropdown(question, response);
-							break;
-						case "text":
-							stepHTML += this.renderTextInput(question, response);
-							break;
-						case "date":
-							stepHTML += this.renderDateInput(question, response);
-							break;
-						case "textarea":
-							stepHTML += this.renderTextarea(question, response);
-							break;
-						case "rating":
-							stepHTML += this.renderRating(question, response);
-							break;
-						default:
-							stepHTML += '<p class="quiz-error-text">Unknown question type</p>';
-					}
-				}
+				stepHTML += this._generateWizardStepHTML(step);
 			}
 		} else if (!step.info) {
-			// Neither info nor questions found
-			console.error("Step has neither info nor questions:", step.id);
 			stepHTML += `<p class="quiz-error-text">Step configuration error. Please contact support.</p>`;
 		}
 
-		// Add legal text if present
+		// Add legal text
 		if (step.legal) {
 			stepHTML += `<p class="quiz-text-xs">${step.legal}</p>`;
 		}
 
 		stepHTML += "</div>";
+		return stepHTML;
+	}
 
-		// Set the HTML
-		console.log("=== GENERATED HTML ===");
-		console.log(stepHTML.substring(0, 500) + "...");
-		console.log("======================");
-		this.questionContainer.innerHTML = stepHTML;
+	_generateFormStepHTML(step) {
+		return `
+			<div class="quiz-form-container">
+				${step.info && step.info.formSubHeading ? `<h4 class="quiz-heading">${step.info.formSubHeading}</h4>` : ""}
+				<div class="quiz-space-y-6">
+					${this._processFormQuestions(step.questions)}
+				</div>
+			</div>
+		`;
+	}
 
-		// Add event listeners for the questions
-		if (step.questions && step.questions.length > 0) {
-			if (isCurrentFormStep) {
-				// For form steps, attach listeners to all questions
-				step.questions.forEach(question => {
-					this.attachFormQuestionListener(question);
-				});
-			} else {
-				// For wizard steps, attach listener to the current question
-				const currentQuestion = step.questions[this.currentQuestionIndex];
-				if (currentQuestion) {
-					this.attachQuestionEventListeners(currentQuestion);
-				}
-			}
+	_generateWizardStepHTML(step) {
+		const question = step.questions[this.currentQuestionIndex];
+		const response = this.getResponseForCurrentQuestion();
+
+		if (!question) {
+			return `<p class="quiz-error-text">Question not found. Please try again.</p>`;
 		}
 
-		// If this is a step with only info (no questions), enable the next button
-		if (step.info && (!step.questions || step.questions.length === 0)) {
+		let html = "";
+
+		// Add question title and help text
+		if (!step.info) {
+			html += `
+				<h3 class="quiz-title">${question.text}</h3>
+				${question.helpText ? `<p class="quiz-text">${question.helpText}</p>` : ""}
+			`;
+		} else {
+			html += `
+				<div class="quiz-divider">
+					<h4 class="quiz-heading">${question.text}</h4>
+					${question.helpText ? `<p class="quiz-text-sm">${question.helpText}</p>` : ""}
+				</div>
+			`;
+		}
+
+		// Add question-specific HTML
+		html += this._renderQuestionByType(question, response);
+
+		return html;
+	}
+
+	_handleStepAcknowledgment(step) {
+		if (!step.info) return;
+
+		const infoResponse = this.responses.find(r => r.stepId === step.id && r.questionId === step.id);
+		if (infoResponse) {
+			infoResponse.answer = "info-acknowledged";
+		} else {
+			this.responses.push({
+				stepId: step.id,
+				questionId: step.id,
+				answer: "info-acknowledged"
+			});
+		}
+
+		// Enable next button for info-only steps
+		if (!step.questions || step.questions.length === 0) {
 			setTimeout(() => {
 				this.nextButton.disabled = false;
 			}, 0);
 		}
+	}
 
-		// Always update navigation to ensure buttons are correctly enabled/disabled
-		this.updateNavigation();
+	_attachStepEventListeners(step) {
+		if (!step.questions || step.questions.length === 0) return;
+
+		if (this.isFormStep(step.id)) {
+			// Attach listeners to all form questions
+			step.questions.forEach(question => {
+				this.attachFormQuestionListener(question);
+			});
+		} else {
+			// Attach listener to current wizard question
+			const currentQuestion = step.questions[this.currentQuestionIndex];
+			if (currentQuestion) {
+				this.attachQuestionEventListeners(currentQuestion);
+			}
+		}
 	}
 
 	renderMultipleChoice(question, response) {
@@ -999,7 +899,7 @@ class ProductQuiz {
 		// Advance after showing the selection feedback
 		setTimeout(() => {
 			this.goToNextStep();
-		}, 600);
+		}, QUIZ_CONFIG.AUTO_ADVANCE_DELAY);
 	}
 
 	// Update checkbox visual state for individual checkboxes without re-rendering
@@ -1724,6 +1624,175 @@ class ProductQuiz {
 		// Note: The enabling/disabling of the next button is now solely handled by
 		// this.updateNavigation(), which should be called by the event listener
 		// after this function completes.
+	}
+
+	// Template generation methods
+	_generateStepInfoHTML(step) {
+		if (!step.info) return "";
+
+		return `
+			<h3 class="quiz-title">${step.info.heading}</h3>
+			<p class="quiz-text">${step.info.text}</p>
+			${step.info.subtext ? `<p class="quiz-subtext">${step.info.subtext}</p>` : ""}
+		`;
+	}
+
+	_generateRequiredMarker(required) {
+		return required ? ' <span class="quiz-required-marker">*</span>' : "";
+	}
+
+	_generateHelpIcon() {
+		return '<svg class="quiz-help-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>';
+	}
+
+	_generateFormFieldPair(leftQuestion, rightQuestion, leftResponse, rightResponse) {
+		const leftInput = leftQuestion.type === "dropdown" ? this.renderDropdown(leftQuestion, leftResponse) : this.renderTextInput(leftQuestion, leftResponse);
+
+		const rightInput = rightQuestion.type === "dropdown" ? this.renderDropdown(rightQuestion, rightResponse) : this.renderTextInput(rightQuestion, rightResponse);
+
+		return `
+			<div class="quiz-grid-2-form">
+				<div>
+					<label class="quiz-label" for="question-${leftQuestion.id}">
+						${leftQuestion.text}${this._generateRequiredMarker(leftQuestion.required)}
+						${leftQuestion.type === "dropdown" ? this._generateHelpIcon() : ""}
+					</label>
+					${leftInput}
+				</div>
+				<div>
+					<label class="quiz-label" for="question-${rightQuestion.id}">
+						${rightQuestion.text}${this._generateRequiredMarker(rightQuestion.required)}
+						${rightQuestion.type === "dropdown" ? this._generateHelpIcon() : ""}
+					</label>
+					${rightInput}
+				</div>
+			</div>
+		`;
+	}
+
+	_generateDateGroup(monthQ, dayQ, yearQ) {
+		const monthResponse = this.responses.find(r => r.questionId === monthQ.id) || { answer: null };
+		const dayResponse = this.responses.find(r => r.questionId === dayQ.id) || { answer: null };
+		const yearResponse = this.responses.find(r => r.questionId === yearQ.id) || { answer: null };
+
+		return `
+			<div class="quiz-question-section">
+				<label class="quiz-label">${monthQ.text}${this._generateRequiredMarker(monthQ.required)}</label>
+				<div class="quiz-grid-3">
+					${this.renderDatePart(monthQ, monthResponse)}
+					${this.renderDatePart(dayQ, dayResponse)}
+					${this.renderDatePart(yearQ, yearResponse)}
+				</div>
+			</div>
+		`;
+	}
+
+	_processFormQuestions(questions) {
+		let html = "";
+		let i = 0;
+
+		while (i < questions.length) {
+			const question = questions[i];
+			const response = this.responses.find(r => r.questionId === question.id) || { answer: null };
+
+			// Check for insurance plan + member ID pair
+			const pairs = QUIZ_CONFIG.QUESTION_PAIRS;
+			if (question.id === pairs.INSURANCE_FIELDS[0] && questions[i + 1] && questions[i + 1].id === pairs.INSURANCE_FIELDS[1]) {
+				const memberIdResponse = this.responses.find(r => r.questionId === questions[i + 1].id) || { answer: null };
+				html += this._generateFormFieldPair(question, questions[i + 1], response, memberIdResponse);
+				i += 2;
+				continue;
+			}
+
+			// Check for first name + last name pair
+			if (question.id === pairs.NAME_FIELDS[0] && questions[i + 1] && questions[i + 1].id === pairs.NAME_FIELDS[1]) {
+				const lastNameResponse = this.responses.find(r => r.questionId === questions[i + 1].id) || { answer: null };
+				html += this._generateFormFieldPair(question, questions[i + 1], response, lastNameResponse);
+				i += 2;
+				continue;
+			}
+
+			// Check for date part group
+			if (question.type === "date-part" && question.part === "month") {
+				const dayQuestion = questions[i + 1];
+				const yearQuestion = questions[i + 2];
+
+				if (dayQuestion && yearQuestion && dayQuestion.type === "date-part" && dayQuestion.part === "day" && yearQuestion.type === "date-part" && yearQuestion.part === "year") {
+					html += this._generateDateGroup(question, dayQuestion, yearQuestion);
+					i += 3;
+					continue;
+				}
+			}
+
+			// Regular single question
+			html += `
+				<div class="quiz-question-section">
+					<label class="quiz-label" for="question-${question.id}">
+						${question.text}${this._generateRequiredMarker(question.required)}
+					</label>
+					${question.helpText ? `<p class="quiz-text-sm">${question.helpText}</p>` : ""}
+					${this._renderQuestionByType(question, response)}
+				</div>
+			`;
+			i++;
+		}
+
+		return html;
+	}
+
+	_renderQuestionByType(question, response) {
+		switch (question.type) {
+			case "multiple-choice":
+				return this.renderMultipleChoice(question, response);
+			case "checkbox":
+				return this.renderCheckbox(question, response);
+			case "dropdown":
+				return this.renderDropdown(question, response);
+			case "text":
+				return this.renderTextInput(question, response);
+			case "date":
+				return this.renderDateInput(question, response);
+			case "date-part":
+				return this.renderDatePart(question, response);
+			case "textarea":
+				return this.renderTextarea(question, response);
+			case "rating":
+				return this.renderRating(question, response);
+			default:
+				return `<p class="quiz-error-text">Unsupported field type: ${question.type}</p>`;
+		}
+	}
+
+	// Validation helper method
+	_validateInput(input, question) {
+		if (!question.validation || !question.validation.pattern) {
+			this.handleFormAnswer(question.id, input.value);
+			return;
+		}
+
+		const regex = new RegExp(question.validation.pattern);
+		const errorEl = this.questionContainer.querySelector(`#error-${question.id}`);
+		const isValid = regex.test(input.value);
+
+		// Update input styling
+		input.classList.toggle("quiz-input-error", !isValid);
+		input.classList.toggle("quiz-input-valid", isValid);
+
+		// Update error message
+		if (errorEl) {
+			if (isValid) {
+				errorEl.classList.add("quiz-error-hidden");
+				errorEl.classList.remove("quiz-error-visible");
+			} else if (question.validation.message) {
+				errorEl.textContent = question.validation.message;
+				errorEl.classList.remove("quiz-error-hidden");
+				errorEl.classList.add("quiz-error-visible");
+			}
+		}
+
+		// Handle the answer
+		this.handleFormAnswer(question.id, isValid ? input.value : null);
+		this.updateNavigation();
 	}
 }
 
