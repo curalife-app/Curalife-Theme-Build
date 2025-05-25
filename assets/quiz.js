@@ -311,7 +311,7 @@ class ProductQuiz {
 		// Add the info section if present
 		if (step.info) {
 			stepHTML += `
-				<h3 class="text-2xl font-semibold mb-2 text-green-600">${step.info.heading}</h3>
+				<h3 class="text-2xl font-semibold mb-2">${step.info.heading}</h3>
 				<p class="text-slate-500 mb-6">${step.info.text}</p>
 				${step.info.subtext ? `<p class="text-slate-500 text-sm mt-2 italic">${step.info.subtext}</p>` : ""}
 			`;
@@ -1434,7 +1434,7 @@ class ProductQuiz {
 				${!webhookSuccess ? `<p class="text-amber-600 mb-6">There was an issue processing your submission, but you can still continue.</p>` : ""}
 
 				<div class="bg-white rounded-lg shadow-md p-6 mb-8 max-w-xl mx-auto">
-					<h3 class="text-xl font-semibold mb-3 ${isEligible ? "text-green-600" : "text-amber-600"}">
+					<h3 class="text-xl font-semibold mb-3">
 						${isEligible ? "✓ Insurance Coverage Verified" : "Insurance Coverage Information"}
 					</h3>
 					<p class="text-md mb-4">${message}</p>
