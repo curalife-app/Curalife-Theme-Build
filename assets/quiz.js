@@ -1619,8 +1619,19 @@ class ProductQuiz {
 		return ""; // All fields are required, no need to show asterisks
 	}
 
-	_generateHelpIcon() {
-		return '<svg class="quiz-help-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><g clip-path="url(#clip0_3657_2618)"><path d="M14.6668 8.00004C14.6668 4.31814 11.682 1.33337 8.00016 1.33337C4.31826 1.33337 1.3335 4.31814 1.3335 8.00004C1.3335 11.6819 4.31826 14.6667 8.00016 14.6667C11.682 14.6667 14.6668 11.6819 14.6668 8.00004Z" stroke="#121212"/><path d="M8.1613 11.3334V8.00004C8.1613 7.68577 8.1613 7.52864 8.06363 7.43097C7.96603 7.33337 7.8089 7.33337 7.49463 7.33337" stroke="#121212" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.99463 5.33337H8.00063" stroke="#121212" stroke-linecap="round" stroke-linejoin="round"/></g><defs><clipPath id="clip0_3657_2618"><rect width="16" height="16" fill="white"/></clipPath></defs></svg>';
+	_generateHelpIcon(questionId) {
+		const tooltipContent = this._getTooltipContent(questionId);
+		const escapedTooltip = tooltipContent.replace(/"/g, "&quot;");
+		return `<span class="quiz-help-icon-container" data-tooltip="${escapedTooltip}"><svg class="quiz-help-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><g clip-path="url(#clip0_3657_2618)"><path d="M14.6668 8.00004C14.6668 4.31814 11.682 1.33337 8.00016 1.33337C4.31826 1.33337 1.3335 4.31814 1.3335 8.00004C1.3335 11.6819 4.31826 14.6667 8.00016 14.6667C11.682 14.6667 14.6668 11.6819 14.6668 8.00004Z" stroke="#121212"/><path d="M8.1613 11.3334V8.00004C8.1613 7.68577 8.1613 7.52864 8.06363 7.43097C7.96603 7.33337 7.8089 7.33337 7.49463 7.33337" stroke="#121212" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.99463 5.33337H8.00063" stroke="#121212" stroke-linecap="round" stroke-linejoin="round"/></g><defs><clipPath id="clip0_3657_2618"><rect width="16" height="16" fill="white"/></clipPath></defs></svg></span>`;
+	}
+
+	_getTooltipContent(questionId) {
+		const tooltips = {
+			q3: "Select your primary insurance company. This helps us verify your coverage and find in-network dietitians.",
+			q4: "Enter your member ID exactly as it appears on your insurance card. This is typically found on the front of your card.",
+			q5: "Select the state where you reside. Insurance coverage may vary by state."
+		};
+		return tooltips[questionId] || "";
 	}
 
 	_generateFormFieldPair(leftQuestion, rightQuestion, leftResponse, rightResponse) {
@@ -1636,14 +1647,14 @@ class ProductQuiz {
 				<div>
 					<label class="quiz-label" for="question-${leftQuestion.id}">
 						${leftQuestion.text}${this._generateRequiredMarker(leftQuestion.required)}
-						${fieldsWithHelpIcon.includes(leftQuestion.id) ? this._generateHelpIcon() : ""}
+						${fieldsWithHelpIcon.includes(leftQuestion.id) ? this._generateHelpIcon(leftQuestion.id) : ""}
 					</label>
 					${leftInput}
 				</div>
 				<div>
 					<label class="quiz-label" for="question-${rightQuestion.id}">
 						${rightQuestion.text}${this._generateRequiredMarker(rightQuestion.required)}
-						${fieldsWithHelpIcon.includes(rightQuestion.id) ? this._generateHelpIcon() : ""}
+						${fieldsWithHelpIcon.includes(rightQuestion.id) ? this._generateHelpIcon(rightQuestion.id) : ""}
 					</label>
 					${rightInput}
 				</div>
@@ -1719,7 +1730,7 @@ class ProductQuiz {
 				<div class="quiz-question-section">
 					<label class="quiz-label" for="question-${question.id}">
 						${question.text}${this._generateRequiredMarker(question.required)}
-						${fieldsWithHelpIcon.includes(question.id) ? this._generateHelpIcon() : ""}
+						${fieldsWithHelpIcon.includes(question.id) ? this._generateHelpIcon(question.id) : ""}
 					</label>
 					${question.helpText ? `<p class="quiz-text-sm">${question.helpText}</p>` : ""}
 					${this._renderQuestionByType(question, response)}

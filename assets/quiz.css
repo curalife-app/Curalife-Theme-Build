@@ -384,12 +384,66 @@
 	margin-bottom: var(--quiz-space-sm);
 }
 
+.quiz-help-icon-container {
+	position: relative;
+	display: inline-block;
+	margin-left: var(--quiz-space-xs);
+	vertical-align: middle;
+	cursor: help;
+}
+
 .quiz-help-icon {
 	display: inline;
 	width: 16px;
 	height: 16px;
-	margin-left: var(--quiz-space-xs);
 	vertical-align: middle;
+}
+
+/* Tooltip Styles */
+.quiz-help-icon-container::before {
+	content: attr(data-tooltip);
+	position: absolute;
+	bottom: 125%;
+	left: 50%;
+	transform: translateX(-50%);
+	background-color: #2d3748;
+	color: white;
+	padding: 8px 12px;
+	border-radius: 6px;
+	font-size: 0.875rem;
+	line-height: 1.4;
+	white-space: nowrap;
+	max-width: 250px;
+	white-space: normal;
+	opacity: 0;
+	visibility: hidden;
+	transition:
+		opacity 0.3s,
+		visibility 0.3s;
+	z-index: 1000;
+	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.quiz-help-icon-container::after {
+	content: "";
+	position: absolute;
+	bottom: 115%;
+	left: 50%;
+	transform: translateX(-50%);
+	border: 5px solid transparent;
+	border-top-color: #2d3748;
+	opacity: 0;
+	visibility: hidden;
+	transition:
+		opacity 0.3s,
+		visibility 0.3s;
+	z-index: 1000;
+}
+
+.quiz-help-icon-container:hover::before,
+.quiz-help-icon-container:hover::after {
+	opacity: 1;
+	visibility: visible;
 }
 
 /* ==============================================
