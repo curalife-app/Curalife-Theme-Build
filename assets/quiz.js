@@ -333,8 +333,8 @@ class ProductQuiz {
 		// Update navigation state
 		this.updateNavigation();
 
-		// Add legal text after navigation (if it exists)
-		if (step.legal) {
+		// Add legal text after navigation (if it exists and not a form step)
+		if (step.legal && !this.isFormStep(step.id)) {
 			this._addLegalTextAfterNavigation(step.legal);
 		}
 	}
@@ -369,12 +369,32 @@ class ProductQuiz {
 	}
 
 	_generateFormStepHTML(step) {
+		const isLastStep = this.currentStepIndex === this.quizData.steps.length - 1;
+		const buttonText = isLastStep ? step.ctaText || "Finish Quiz" : step.ctaText || "Continue";
+
 		return `
 			<div class="quiz-form-container">
 				${step.info && step.info.formSubHeading ? `<h4 class="quiz-heading">${step.info.formSubHeading}</h4>` : ""}
 				<div class="quiz-space-y-6">
 					${this._processFormQuestions(step.questions)}
 				</div>
+				<button class="quiz-nav-button quiz-nav-button--primary quiz-form-button" id="quiz-form-next-button">
+					${buttonText}
+					<svg
+						class="quiz-nav-icon quiz-nav-icon--right"
+						xmlns="http://www.w3.org/2000/svg"
+						width="16"
+						height="16"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round">
+						<path d="M5 12h14M12 5l7 7-7 7"/>
+					</svg>
+				</button>
+				${step.legal ? `<p class="quiz-legal-form">${step.legal}</p>` : ""}
 			</div>
 		`;
 	}
@@ -440,6 +460,19 @@ class ProductQuiz {
 			step.questions.forEach(question => {
 				this.attachFormQuestionListener(question);
 			});
+
+			// Attach listener to the form button
+			const formButton = this.questionContainer.querySelector("#quiz-form-next-button");
+			if (formButton) {
+				formButton.removeEventListener("click", this.formButtonHandler);
+				this.formButtonHandler = e => {
+					console.log("Form button clicked");
+					if (!formButton.disabled) {
+						this.goToNextStep();
+					}
+				};
+				formButton.addEventListener("click", this.formButtonHandler);
+			}
 		} else {
 			// Attach listener to current wizard question
 			const currentQuestion = step.questions[this.currentQuestionIndex];
@@ -983,8 +1016,12 @@ class ProductQuiz {
 			this.nextButton.innerHTML = step.ctaText || "Continue";
 		}
 
-		// For form-style steps, check if all required fields have answers
+		// For form-style steps, hide external navigation and handle internal button
 		if (isFormStep && step.questions) {
+			// Hide the external navigation for form steps
+			this.navigationButtons.classList.add("quiz-navigation-hidden");
+			this.navigationButtons.classList.remove("quiz-navigation-visible");
+
 			let allRequiredAnswered = true;
 
 			// Check each required question
@@ -1019,7 +1056,12 @@ class ProductQuiz {
 			}
 
 			console.log(`Form validation result: ${allRequiredAnswered ? "ALL FIELDS VALID" : "SOME FIELDS INVALID"}`);
-			this.nextButton.disabled = !allRequiredAnswered || this.submitting;
+
+			// Update the form button state
+			const formButton = this.questionContainer.querySelector("#quiz-form-next-button");
+			if (formButton) {
+				formButton.disabled = !allRequiredAnswered || this.submitting;
+			}
 			return;
 		}
 
