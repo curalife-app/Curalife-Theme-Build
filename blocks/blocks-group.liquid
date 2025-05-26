@@ -47,6 +47,7 @@
 
 	#block-{{ block_id }} .block-flex-layout {
 		display: flex;
+		flex-direction: {{ block.settings.flex_direction | default: 'row' }};
 		flex-wrap: {% if block.settings.is_wrap_blocks %}wrap{% else %}nowrap{% endif %};
 		justify-content: space-between;
 		gap: var(--block-row-gap) var(--block-column-gap);
@@ -67,6 +68,7 @@
 	{% comment %} Mobile responsive styling {% endcomment %}
 	@media (max-width: 768px) {
 		#block-{{ block_id }} .block-flex-layout {
+			flex-direction: {{ block.settings.flex_direction_mobile | default: 'column' }};
 			flex-wrap: {% if block.settings.is_wrap_blocks_mobile %}wrap{% else %}nowrap{% endif %};
 			gap: var(--block-row-gap-mobile) var(--block-column-gap-mobile);
 		}
@@ -415,6 +417,38 @@
 				"id": "is_wrap_blocks_mobile",
 				"label": "Wrap blocks (Mobile)",
 				"default": true
+			},
+			{
+				"type": "select",
+				"id": "flex_direction",
+				"label": "Block Direction (Desktop)",
+				"options": [
+					{
+						"value": "row",
+						"label": "Horizontal (Row)"
+					},
+					{
+						"value": "column",
+						"label": "Vertical (Column)"
+					}
+				],
+				"default": "row"
+			},
+			{
+				"type": "select",
+				"id": "flex_direction_mobile",
+				"label": "Block Direction (Mobile)",
+				"options": [
+					{
+						"value": "row",
+						"label": "Horizontal (Row)"
+					},
+					{
+						"value": "column",
+						"label": "Vertical (Column)"
+					}
+				],
+				"default": "column"
 			},
 			{
 				"type": "checkbox",
