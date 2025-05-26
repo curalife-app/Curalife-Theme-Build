@@ -915,7 +915,17 @@ class ProductQuiz {
 
 	// Handle auto-advance animation for single-choice questions
 	handleSingleChoiceAutoAdvance(answer) {
-		// Apply visual feedback by showing the checkmark immediately
+		// First, clear all previous selections immediately
+		const allOptionButtons = this.questionContainer.querySelectorAll(".quiz-option-button");
+		allOptionButtons.forEach(button => {
+			button.classList.remove("selected", "processing", "auto-advance-feedback");
+			const existingCheckmark = button.querySelector(".quiz-checkmark");
+			if (existingCheckmark) {
+				existingCheckmark.remove();
+			}
+		});
+
+		// Apply visual feedback by showing the checkmark immediately for the new selection
 		const selectedElement = this.questionContainer.querySelector(`input[value="${answer}"]:checked`);
 		if (selectedElement) {
 			const optionButton = selectedElement.closest(".quiz-option-card")?.querySelector(".quiz-option-button");
@@ -923,14 +933,12 @@ class ProductQuiz {
 				// Add selected state and checkmark
 				optionButton.classList.add("selected", "processing");
 
-				// Add checkmark if not already present
-				if (!optionButton.querySelector(".quiz-checkmark")) {
-					const checkmark = document.createElement("div");
-					checkmark.className = "quiz-checkmark";
-					checkmark.innerHTML =
-						'<svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>';
-					optionButton.appendChild(checkmark);
-				}
+				// Add checkmark
+				const checkmark = document.createElement("div");
+				checkmark.className = "quiz-checkmark";
+				checkmark.innerHTML =
+					'<svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>';
+				optionButton.appendChild(checkmark);
 
 				// Add auto-advance feedback animation
 				optionButton.classList.add("auto-advance-feedback");
