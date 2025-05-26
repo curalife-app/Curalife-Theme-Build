@@ -14,7 +14,7 @@
 {% endcomment %}
 
 {% assign columns = columns | default: 2 %}
-{% assign columns_mobile = columns_mobile | default: 1 %}
+{% assign columns_mobile = columns_mobile | default: 1 | plus: 0 %}
 {% assign gap_width = gap_width | default: 2 %}
 
 {% comment %} Calculate default mobile width based on section's mobile column setting {% endcomment %}
@@ -32,13 +32,16 @@
 {% assign actual_width_desktop = width_percent | times: available_space_desktop | divided_by: 100.0 %}
 {% assign actual_width_mobile = mobile_width_percent | times: available_space_mobile | divided_by: 100.0 %}
 
-{% if width_percent %}
+{% comment %} Generate CSS if we have desktop width OR mobile needs custom styling {% endcomment %}
+{% if width_percent or mobile_width_percent != default_mobile_width or columns_mobile > 1 %}
 	<style>
+		{% if width_percent %}
 		/* Pre-calculated width accounting for gaps */
 		#block-{{ block_id }} {
 			width: {{ actual_width_desktop }}% !important;
 			flex-basis: {{ actual_width_desktop }}% !important;
 		}
+		{% endif %}
 
 		@media (max-width: 768px) {
 			#block-{{ block_id }} {

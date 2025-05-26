@@ -42,6 +42,7 @@
 		width: 100%;
 	}
 
+	{% comment %} Only remove gaps if mobile width is explicitly set to 100% {% endcomment %}
 	{% if block.settings.block_mobile_width_percent == '100' %}
 	@media (max-width: 768px) {
 		#block-{{ block_id }} {
@@ -50,6 +51,15 @@
 		}
 	}
 	{% endif %}
+
+	{% comment %} Mobile responsive styling {% endcomment %}
+	@media (max-width: 768px) {
+		{% if block.settings.margin_top_mobile != blank %}
+		#block-{{ block_id }} {
+			margin-top: {{ block.settings.margin_top_mobile }}rem !important;
+		}
+		{% endif %}
+	}
 </style>
 
 <div
