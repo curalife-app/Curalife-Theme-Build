@@ -345,10 +345,18 @@ class ProductQuiz {
 		const progress = ((this.currentStepIndex + 1) / this.quizData.steps.length) * 100;
 		if (this.progressBar) {
 			this.progressBar.classList.add("quiz-progress-bar-animated");
-			// Update the ::before pseudo-element width
 			this.progressBar.style.setProperty("--progress-width", `${progress}%`);
-			// Also update the ::after position
-			this.progressBar.style.setProperty("--progress-position", `${progress}%`);
+
+			// Update progress indicator position and visibility
+			const progressIndicator = this.container.querySelector(".quiz-progress-indicator");
+			if (progressIndicator) {
+				progressIndicator.style.setProperty("--progress-position", `${progress}%`);
+				if (progress > 0) {
+					progressIndicator.classList.add("visible");
+				} else {
+					progressIndicator.classList.remove("visible");
+				}
+			}
 		}
 	}
 
