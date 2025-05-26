@@ -137,6 +137,7 @@ class ProductQuiz {
 		this.nextButton = this.container.querySelector(selectors.NEXT_BUTTON);
 		this.startButton = this.container.querySelector(selectors.START_BUTTON);
 		this.navHeader = this.container.querySelector("#quiz-nav-header");
+		this.progressSection = this.container.querySelector("#quiz-progress-section");
 
 		this._isInitialized = true;
 	}
@@ -149,7 +150,15 @@ class ProductQuiz {
 			return;
 		}
 
-		// Back button is disabled - no event listeners needed
+		// Add back button event listener
+		if (this.navHeader) {
+			const backButton = this.navHeader.querySelector("#quiz-back-button");
+			if (backButton) {
+				backButton.addEventListener("click", () => {
+					this.goToPreviousStep();
+				});
+			}
+		}
 
 		if (this.nextButton) {
 			// First remove any existing event listeners to prevent duplicates
@@ -235,10 +244,11 @@ class ProductQuiz {
 				}
 			});
 
-			// Hide loading indicator and show questions container and nav header
+			// Hide loading indicator and show questions container, nav header, and progress section
 			this._hideElement(this.loading);
 			this._showElement(this.questions);
 			this._showElement(this.navHeader);
+			this._showElement(this.progressSection);
 
 			// Render the first step
 			this.renderCurrentStep();
@@ -350,7 +360,9 @@ class ProductQuiz {
 			// Update progress indicator position and visibility
 			const progressIndicator = this.container.querySelector(".quiz-progress-indicator");
 			if (progressIndicator) {
-				progressIndicator.style.setProperty("--progress-position", `${progress}%`);
+				// Calculate position based on progress percentage of 480px width
+				const indicatorPosition = (progress / 100) * 480 - 26; // 26px is half the indicator width
+				progressIndicator.style.left = `${indicatorPosition}px`;
 				if (progress > 0) {
 					progressIndicator.classList.add("visible");
 				} else {
@@ -1110,7 +1122,18 @@ class ProductQuiz {
 		this.nextButton.disabled = !hasAnswer || this.submitting;
 	}
 
-	// Back navigation is disabled
+	goToPreviousStep() {
+		// Don't go back if we're on the first step
+		if (this.currentStepIndex <= 0) {
+			return;
+		}
+
+		// Go back to previous step
+		this.currentStepIndex--;
+		this.currentQuestionIndex = 0; // Reset question index for the previous step
+		this.renderCurrentStep();
+		this.updateNavigation();
+	}
 
 	goToNextStep() {
 		const currentStep = this.getCurrentStep();
