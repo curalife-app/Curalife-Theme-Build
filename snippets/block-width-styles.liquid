@@ -31,9 +31,11 @@
 	{% assign should_generate_desktop = true %}
 {% endif %}
 
-{% if mobile_width_percent != blank and mobile_width_percent != '100' %}
-	{% assign should_generate_mobile = true %}
-{% endif %}
+{% comment %} Only generate mobile CSS for explicit custom widths (not 100% or blank) {% endcomment %}
+{% case mobile_width_percent %}
+	{% when '75', '66', '50', '33', '25', '20', '16' %}
+		{% assign should_generate_mobile = true %}
+{% endcase %}
 
 {% if should_generate_desktop or should_generate_mobile %}
 	<style>
