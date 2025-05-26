@@ -733,7 +733,11 @@ class ProductQuiz {
 				}
 				dropdownInput.addEventListener("change", () => {
 					this.handleAnswer(dropdownInput.value);
+					// Update dropdown color when value is selected
+					this._updateDropdownColor(dropdownInput);
 				});
+				// Set initial color state
+				this._updateDropdownColor(dropdownInput);
 				break;
 
 			case "text":
@@ -1500,7 +1504,11 @@ class ProductQuiz {
 				}
 				dropdownInput.addEventListener("change", () => {
 					this.handleFormAnswer(question.id, dropdownInput.value);
+					// Update dropdown color when value is selected
+					this._updateDropdownColor(dropdownInput);
 				});
+				// Set initial color state
+				this._updateDropdownColor(dropdownInput);
 				break;
 
 			case "text":
@@ -1804,6 +1812,17 @@ class ProductQuiz {
 				return this.renderRating(question, response);
 			default:
 				return `<p class="quiz-error-text">Unsupported field type: ${question.type}</p>`;
+		}
+	}
+
+	// Helper method to update dropdown color based on selection
+	_updateDropdownColor(dropdown) {
+		if (dropdown.value === "" || dropdown.value === dropdown.options[0].value) {
+			// No selection or placeholder selected - use placeholder color
+			dropdown.style.color = "#B0B0B0";
+		} else {
+			// Value selected - use normal text color
+			dropdown.style.color = "var(--quiz-text-primary)";
 		}
 	}
 
