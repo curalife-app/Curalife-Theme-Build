@@ -1223,7 +1223,7 @@ class ProductQuiz {
 				if (response.questionId === "q6_year") dobYear = response.answer || "";
 			});
 
-			// Construct date of birth from parts in YYYYDDMM format
+			// Construct date of birth from parts in YYYYMMDD format
 			if (dobMonth && dobDay && dobYear) {
 				dateOfBirth = `${dobYear}${dobMonth.padStart(2, "0")}${dobDay.padStart(2, "0")}`;
 			}
