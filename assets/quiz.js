@@ -136,6 +136,7 @@ class ProductQuiz {
 		this.prevButton = this.container.querySelector(selectors.PREV_BUTTON);
 		this.nextButton = this.container.querySelector(selectors.NEXT_BUTTON);
 		this.startButton = this.container.querySelector(selectors.START_BUTTON);
+		this.navHeader = this.container.querySelector("#quiz-nav-header");
 
 		this._isInitialized = true;
 	}
@@ -234,9 +235,10 @@ class ProductQuiz {
 				}
 			});
 
-			// Hide loading indicator and show questions container
+			// Hide loading indicator and show questions container and nav header
 			this._hideElement(this.loading);
 			this._showElement(this.questions);
+			this._showElement(this.navHeader);
 
 			// Render the first step
 			this.renderCurrentStep();
@@ -343,7 +345,10 @@ class ProductQuiz {
 		const progress = ((this.currentStepIndex + 1) / this.quizData.steps.length) * 100;
 		if (this.progressBar) {
 			this.progressBar.classList.add("quiz-progress-bar-animated");
-			this.progressBar.style.width = `${progress}%`;
+			// Update the ::before pseudo-element width
+			this.progressBar.style.setProperty("--progress-width", `${progress}%`);
+			// Also update the ::after position
+			this.progressBar.style.setProperty("--progress-position", `${progress}%`);
 		}
 	}
 
