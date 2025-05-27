@@ -1327,6 +1327,11 @@ class ProductQuiz {
 			const webhookUrl = this.container.getAttribute("data-n8n-webhook");
 			const bookingUrl = this.container.getAttribute("data-booking-url") || "/appointment-booking";
 
+			console.log("=== WEBHOOK CONFIGURATION ===");
+			console.log("Webhook URL:", webhookUrl);
+			console.log("Booking URL:", bookingUrl);
+			console.log("============================");
+
 			if (!webhookUrl) {
 				console.warn("No webhook URL provided - proceeding to booking URL without webhook submission");
 				this.showResults(bookingUrl);
@@ -1339,10 +1344,14 @@ class ProductQuiz {
 			let eligibilityData = null;
 
 			try {
+				console.log("=== STARTING WEBHOOK REQUEST ===");
+				console.log("Sending payload:", JSON.stringify(payload, null, 2));
+
 				// Set a timeout to avoid waiting too long
 				const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Webhook request timed out")), 8000));
 
 				// Try regular CORS request first
+				console.log("Attempting CORS request to:", webhookUrl);
 				let fetchPromise = fetch(webhookUrl, {
 					method: "POST",
 					mode: "cors",
@@ -1356,7 +1365,7 @@ class ProductQuiz {
 						data: JSON.stringify(payload) // Double wrap as some n8n workflows expect this format
 					})
 				}).catch(error => {
-					console.log("CORS request failed, trying no-cors mode:", error);
+					console.log("❌ CORS request failed, trying no-cors mode:", error);
 					// Fallback to no-cors mode if regular CORS fails
 					return fetch(webhookUrl, {
 						method: "POST",
@@ -1371,14 +1380,25 @@ class ProductQuiz {
 				});
 
 				// Race the timeout against the fetch
+				console.log("Waiting for webhook response...");
 				const webhook = await Promise.race([fetchPromise, timeoutPromise]);
+				console.log("✅ Webhook request completed");
 
 				// Check the response status - for no-cors mode, response.type will be 'opaque'
+				console.log("=== WEBHOOK RESPONSE ANALYSIS ===");
+				console.log("Response type:", webhook.type);
+				console.log("Response status:", webhook.status);
+				console.log("Response ok:", webhook.ok);
+				console.log("Response headers:", webhook.headers);
+				console.log("===============================");
+
 				if (webhook.type === "opaque") {
-					console.log("Got opaque response from no-cors request - assuming success");
+					console.log("⚠️ Got opaque response from no-cors request - cannot read response data");
+					console.log("This means the request succeeded but we can't access the response due to CORS");
 					webhookSuccess = true;
+					// For opaque responses, we can't read the data, so eligibilityData will remain null
 				} else if (webhook.ok) {
-					console.log("Webhook response ok:", webhook.status);
+					console.log("✅ Webhook response ok:", webhook.status);
 					webhookSuccess = true;
 
 					try {
@@ -1454,6 +1474,15 @@ class ProductQuiz {
 
 			// Hide eligibility check indicator
 			this._hideElement(this.eligibilityCheck);
+
+			console.log("=== FINAL RESULTS SUMMARY ===");
+			console.log("Webhook Success:", webhookSuccess);
+			console.log("Eligibility Data Found:", !!eligibilityData);
+			console.log("Error Message:", errorMessage || "none");
+			if (eligibilityData) {
+				console.log("Eligibility Data:", eligibilityData);
+			}
+			console.log("===========================");
 
 			// Show results with eligibility data
 			this.showResults(bookingUrl, webhookSuccess, eligibilityData, errorMessage);
