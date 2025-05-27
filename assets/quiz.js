@@ -1412,10 +1412,33 @@ class ProductQuiz {
 						console.log("Raw response:", webhookResponse);
 						console.log("Response keys:", Object.keys(webhookResponse || {}));
 						console.log("Response type:", typeof webhookResponse);
+						if (webhookResponse && webhookResponse.body) {
+							console.log("Body keys:", Object.keys(webhookResponse.body));
+							console.log("Body success:", webhookResponse.body.success);
+							console.log("Body error:", webhookResponse.body.error);
+						}
 						console.log("============================");
 
+						// FIRST: Check for immediate error responses
+						if (webhookResponse && webhookResponse.body && webhookResponse.body.success === false) {
+							// Handle immediate workflow error responses
+							console.error("❌ Workflow completed with error:", webhookResponse.body);
+							console.error("Error message:", webhookResponse.body.error || "Unknown error");
+
+							// Create error eligibility status
+							eligibilityData = {
+								isEligible: false,
+								sessionsCovered: 0,
+								deductible: { individual: 0 },
+								eligibilityStatus: "ERROR",
+								userMessage: `There was an error processing your request: ${webhookResponse.body.error || "Unknown error"}. Our team will contact you to manually verify your coverage.`,
+								planBegin: "",
+								planEnd: ""
+							};
+							console.log("✅ Created error eligibility data:", eligibilityData);
+						}
 						// Check if this is a Google Cloud Workflows execution response
-						if (webhookResponse && webhookResponse.execution && webhookResponse.execution.state) {
+						else if (webhookResponse && webhookResponse.execution && webhookResponse.execution.state) {
 							console.log("🔄 Detected Google Cloud Workflows execution response");
 							console.log("Execution state:", webhookResponse.execution.state);
 							console.log("Execution name:", webhookResponse.execution.name);
@@ -1444,24 +1467,6 @@ class ProductQuiz {
 								console.log("❌ Workflow failed with state:", webhookResponse.execution.state);
 								errorMessage = `Workflow failed with state: ${webhookResponse.execution.state}`;
 							}
-						}
-						// Check for error responses first
-						else if (webhookResponse && webhookResponse.body && webhookResponse.body.success === false) {
-							// Handle immediate workflow error responses
-							console.error("❌ Workflow completed with error:", webhookResponse.body);
-							console.error("Error message:", webhookResponse.body.error || "Unknown error");
-
-							// Create error eligibility status
-							eligibilityData = {
-								isEligible: false,
-								sessionsCovered: 0,
-								deductible: { individual: 0 },
-								eligibilityStatus: "ERROR",
-								userMessage: `There was an error processing your request: ${webhookResponse.body.error || "Unknown error"}. Our team will contact you to manually verify your coverage.`,
-								planBegin: "",
-								planEnd: ""
-							};
-							console.log("✅ Created error eligibility data:", eligibilityData);
 						}
 						// Extract eligibility data from the response - try multiple possible paths
 						else if (webhookResponse && webhookResponse.eligibilityData) {
