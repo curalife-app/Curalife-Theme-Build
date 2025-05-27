@@ -1409,8 +1409,27 @@ class ProductQuiz {
 						console.log("Response type:", typeof webhookResponse);
 						console.log("============================");
 
+						// Check if this is a Google Cloud Workflows execution response
+						if (webhookResponse && webhookResponse.execution && webhookResponse.execution.state) {
+							console.log("🔄 Detected Google Cloud Workflows execution response");
+							console.log("Execution state:", webhookResponse.execution.state);
+							console.log("Execution name:", webhookResponse.execution.name);
+
+							if (webhookResponse.execution.state === "ACTIVE") {
+								console.log("⏳ Workflow is still running, polling for completion...");
+								// Try to poll for the result
+								eligibilityData = await this.pollWorkflowExecution(webhookResponse.execution.name);
+							} else if (webhookResponse.execution.state === "SUCCEEDED") {
+								console.log("✅ Workflow completed successfully");
+								// Try to extract result from the execution
+								eligibilityData = this.extractResultFromExecution(webhookResponse.execution);
+							} else {
+								console.log("❌ Workflow failed with state:", webhookResponse.execution.state);
+								errorMessage = `Workflow failed with state: ${webhookResponse.execution.state}`;
+							}
+						}
 						// Extract eligibility data from the response - try multiple possible paths
-						if (webhookResponse && webhookResponse.eligibilityData) {
+						else if (webhookResponse && webhookResponse.eligibilityData) {
 							eligibilityData = webhookResponse.eligibilityData;
 							console.log("✅ Found eligibilityData at root level:", eligibilityData);
 						} else if (webhookResponse && webhookResponse.body && webhookResponse.body.eligibilityData) {
@@ -1518,6 +1537,98 @@ class ProductQuiz {
 				</svg>
 			`;
 		}
+	}
+
+	// Helper method to poll Google Cloud Workflows execution until completion
+	async pollWorkflowExecution(executionName, maxAttempts = 10, interval = 2000) {
+		console.log(`🔄 Polling workflow execution: ${executionName}`);
+
+		for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+			try {
+				console.log(`⏳ Poll attempt ${attempt}/${maxAttempts}...`);
+
+				// Wait before polling (except for first attempt)
+				if (attempt > 1) {
+					await new Promise(resolve => setTimeout(resolve, interval));
+				}
+
+				// Get execution status
+				const executionUrl = `${executionName}`;
+				const response = await fetch(executionUrl, {
+					method: "GET",
+					headers: {
+						Accept: "application/json"
+					}
+				});
+
+				if (!response.ok) {
+					console.warn(`Poll attempt ${attempt} failed with status ${response.status}`);
+					continue;
+				}
+
+				const executionData = await response.json();
+				console.log(`Poll ${attempt} response:`, executionData);
+
+				if (executionData.state === "SUCCEEDED") {
+					console.log("✅ Workflow completed successfully!");
+					return this.extractResultFromExecution(executionData);
+				} else if (executionData.state === "FAILED" || executionData.state === "CANCELLED") {
+					console.error(`❌ Workflow failed with state: ${executionData.state}`);
+					return null;
+				} else if (executionData.state === "ACTIVE") {
+					console.log(`⏳ Workflow still running (attempt ${attempt}/${maxAttempts})...`);
+					// Continue polling
+				}
+			} catch (error) {
+				console.warn(`Poll attempt ${attempt} error:`, error);
+			}
+		}
+
+		console.error("❌ Workflow polling timeout - max attempts reached");
+		return null;
+	}
+
+	// Helper method to extract result from workflow execution
+	extractResultFromExecution(execution) {
+		console.log("🔍 Extracting result from execution:", execution);
+
+		// Check if there's a result field
+		if (execution.result) {
+			console.log("✅ Found result in execution.result");
+
+			// Try to parse if it's a string
+			if (typeof execution.result === "string") {
+				try {
+					const parsed = JSON.parse(execution.result);
+					console.log("✅ Parsed result from string:", parsed);
+
+					// Look for eligibility data in various paths
+					if (parsed.eligibilityData) {
+						return parsed.eligibilityData;
+					} else if (parsed.body && parsed.body.eligibilityData) {
+						return parsed.body.eligibilityData;
+					} else if (parsed.isEligible !== undefined) {
+						return parsed;
+					}
+				} catch (parseError) {
+					console.warn("Failed to parse execution result as JSON:", parseError);
+				}
+			} else if (typeof execution.result === "object") {
+				console.log("✅ Found object result:", execution.result);
+
+				// Look for eligibility data in various paths
+				if (execution.result.eligibilityData) {
+					return execution.result.eligibilityData;
+				} else if (execution.result.body && execution.result.body.eligibilityData) {
+					return execution.result.body.eligibilityData;
+				} else if (execution.result.isEligible !== undefined) {
+					return execution.result;
+				}
+			}
+		}
+
+		console.warn("❌ No eligibility data found in workflow execution result");
+		return null;
 	}
 
 	// New method to show results with booking URL
