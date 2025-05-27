@@ -155,7 +155,12 @@ class ProductQuiz {
 			const backButton = this.navHeader.querySelector("#quiz-back-button");
 			if (backButton) {
 				backButton.addEventListener("click", () => {
-					this.goToPreviousStep();
+					// On the first step, go to telemedicine page
+					if (this.currentStepIndex === 0) {
+						window.location.href = "/pages/telemedicine";
+					} else {
+						this.goToPreviousStep();
+					}
 				});
 			}
 		}
