@@ -1445,6 +1445,24 @@ class ProductQuiz {
 								errorMessage = `Workflow failed with state: ${webhookResponse.execution.state}`;
 							}
 						}
+						// Check for error responses first
+						else if (webhookResponse && webhookResponse.body && webhookResponse.body.success === false) {
+							// Handle immediate workflow error responses
+							console.error("❌ Workflow completed with error:", webhookResponse.body);
+							console.error("Error message:", webhookResponse.body.error || "Unknown error");
+
+							// Create error eligibility status
+							eligibilityData = {
+								isEligible: false,
+								sessionsCovered: 0,
+								deductible: { individual: 0 },
+								eligibilityStatus: "ERROR",
+								userMessage: `There was an error processing your request: ${webhookResponse.body.error || "Unknown error"}. Our team will contact you to manually verify your coverage.`,
+								planBegin: "",
+								planEnd: ""
+							};
+							console.log("✅ Created error eligibility data:", eligibilityData);
+						}
 						// Extract eligibility data from the response - try multiple possible paths
 						else if (webhookResponse && webhookResponse.eligibilityData) {
 							eligibilityData = webhookResponse.eligibilityData;
@@ -1619,6 +1637,21 @@ class ProductQuiz {
 						console.log("✅ Workflow completed! Got eligibility data in body");
 						console.log("🎉 Final eligibility data:", responseData.body.eligibilityData);
 						return responseData.body.eligibilityData;
+					} else if (responseData.body && responseData.body.success === false) {
+						// Handle workflow error responses
+						console.error("❌ Workflow completed with error:", responseData.body);
+						console.error("Error message:", responseData.body.error || "Unknown error");
+
+						// Return an error eligibility status
+						return {
+							isEligible: false,
+							sessionsCovered: 0,
+							deductible: { individual: 0 },
+							eligibilityStatus: "ERROR",
+							userMessage: `There was an error processing your request: ${responseData.body.error || "Unknown error"}. Our team will contact you to manually verify your coverage.`,
+							planBegin: "",
+							planEnd: ""
+						};
 					} else if (responseData.execution) {
 						const execution = responseData.execution;
 						console.log(`📊 Execution state: ${execution.state} (attempt ${attempt})`);
