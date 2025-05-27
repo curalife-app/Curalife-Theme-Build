@@ -365,8 +365,16 @@ class ProductQuiz {
 			// Update progress indicator position and visibility
 			const progressIndicator = this.container.querySelector(".quiz-progress-indicator");
 			if (progressIndicator) {
-				// Calculate position based on progress percentage of 480px width
-				const indicatorPosition = (progress / 100) * 480 - 26; // 26px is half the indicator width
+				// Get the actual container width instead of hardcoded 480px
+				const progressContainer = this.container.querySelector(".quiz-progress-container");
+				const containerWidth = progressContainer ? progressContainer.offsetWidth : 480;
+
+				// Calculate indicator position based on actual container width
+				// Use smaller indicator width for mobile (16px vs 26px)
+				const isMobile = window.innerWidth <= 768;
+				const indicatorHalfWidth = isMobile ? 16 : 26;
+				const indicatorPosition = (progress / 100) * containerWidth - indicatorHalfWidth;
+
 				progressIndicator.style.left = `${indicatorPosition}px`;
 				if (progress > 0) {
 					progressIndicator.classList.add("visible");
