@@ -1319,6 +1319,11 @@ class ProductQuiz {
 
 			console.log("Sending payload to webhook:", payload);
 
+			// Store payload for polling use
+			this.lastPayload = {
+				data: JSON.stringify(payload)
+			};
+
 			// Hide questions and show eligibility check indicator
 			this._hideElement(this.questions);
 			this._showElement(this.eligibilityCheck);
@@ -1552,48 +1557,99 @@ class ProductQuiz {
 	}
 
 	// Helper method to poll Google Cloud Workflows execution until completion
-	async pollWorkflowExecution(executionName, maxAttempts = 6, interval = 5000) {
+	async pollWorkflowExecution(executionName, maxAttempts = 12, interval = 5000) {
 		console.log(`🔄 Workflow execution detected: ${executionName}`);
-		console.log(`⏰ Will wait ${(maxAttempts * interval) / 1000} seconds total for workflow completion`);
+		console.log(`⏰ Will poll for up to ${(maxAttempts * interval) / 1000} seconds for workflow completion`);
 
-		// Since we can't directly poll Google Cloud APIs from the browser due to CORS,
-		// we'll implement a reasonable wait period and then show a processing message
-		// This provides good UX while allowing workflows time to complete
+		// Store the original payload so we can retry the webhook call
+		const originalPayload = this.lastPayload;
+		if (!originalPayload) {
+			console.warn("❌ No original payload stored - cannot poll for completion");
+			return this.createProcessingStatus();
+		}
 
 		for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-			console.log(`⏳ Waiting for workflow completion... ${attempt}/${maxAttempts} (${(attempt * interval) / 1000}s elapsed)`);
+			console.log(`🔄 Poll attempt ${attempt}/${maxAttempts} (${(attempt * interval) / 1000}s elapsed)`);
 
 			// Update UI with progress messages
 			const loadingDesc = document.querySelector(".quiz-eligibility-description");
 			if (loadingDesc) {
-				if (attempt === 1) {
+				if (attempt <= 2) {
 					loadingDesc.textContent = "Contacting your insurance provider to verify coverage...";
-				} else if (attempt === 2) {
+				} else if (attempt <= 4) {
 					loadingDesc.textContent = "Processing your policy details and benefits information...";
-				} else if (attempt === 3) {
+				} else if (attempt <= 6) {
 					loadingDesc.textContent = "Calculating your out-of-pocket costs and session coverage...";
-				} else if (attempt === 4) {
+				} else if (attempt <= 8) {
 					loadingDesc.textContent = "Finalizing your eligibility verification - almost done...";
 				} else {
 					loadingDesc.textContent = "Complex insurance verifications can take time. We're still working on it...";
 				}
 			}
 
-			// Wait for each interval
-			await new Promise(resolve => setTimeout(resolve, interval));
+			// Wait before checking (except first attempt which waits a bit less)
+			const waitTime = attempt === 1 ? 3000 : interval;
+			await new Promise(resolve => setTimeout(resolve, waitTime));
 
-			// Log progress to user
-			if (attempt === 2) {
-				console.log("🔄 Workflow is processing your insurance information...");
-			} else if (attempt === 4) {
-				console.log("🔄 Still processing - complex eligibility checks can take time...");
+			try {
+				console.log(`🔍 Checking if workflow completed (attempt ${attempt})...`);
+
+				// Retry the same webhook call to see if workflow completed
+				const response = await fetch("https://gcloud.curalife.com/run", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						Accept: "application/json"
+					},
+					body: JSON.stringify(originalPayload),
+					mode: "cors"
+				});
+
+				if (response.ok) {
+					const responseData = await response.json();
+					console.log(`📋 Poll ${attempt} response:`, responseData);
+
+					// Check if we now get actual results instead of execution data
+					if (responseData.eligibilityData) {
+						console.log("✅ Workflow completed! Got eligibility data directly");
+						return responseData.eligibilityData;
+					} else if (responseData.body && responseData.body.eligibilityData) {
+						console.log("✅ Workflow completed! Got eligibility data in body");
+						return responseData.body.eligibilityData;
+					} else if (responseData.execution) {
+						const execution = responseData.execution;
+
+						if (execution.state === "SUCCEEDED") {
+							console.log("✅ Workflow succeeded! Extracting result...");
+							const result = this.extractResultFromExecution(execution);
+							if (result) {
+								return result;
+							}
+						} else if (execution.state === "FAILED" || execution.state === "CANCELLED") {
+							console.error(`❌ Workflow failed with state: ${execution.state}`);
+							return null;
+						} else if (execution.state === "ACTIVE") {
+							console.log(`⏳ Workflow still active (attempt ${attempt})...`);
+							// Continue polling
+						}
+					} else {
+						console.log(`⏳ No eligibility data yet (attempt ${attempt})`);
+					}
+				} else {
+					console.warn(`Poll attempt ${attempt} failed with status ${response.status}`);
+				}
+			} catch (error) {
+				console.warn(`Poll attempt ${attempt} error:`, error);
 			}
 		}
 
-		// After waiting, return processing status for good UX
-		console.log("⏱️ Reached polling timeout - showing processing status to user");
-		console.log("💡 The workflow may still complete in the background");
+		// After all attempts, return processing status
+		console.log("⏱️ Reached polling timeout - workflow may still be processing");
+		return this.createProcessingStatus();
+	}
 
+	// Helper method to create processing status
+	createProcessingStatus() {
 		return {
 			isEligible: null,
 			sessionsCovered: 0,
