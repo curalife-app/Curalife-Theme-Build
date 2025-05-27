@@ -1383,17 +1383,48 @@ class ProductQuiz {
 
 					try {
 						const webhookResponse = await webhook.json();
-						console.log("Webhook response data:", webhookResponse);
+						console.log("=== FULL WEBHOOK RESPONSE ===");
+						console.log("Raw response:", webhookResponse);
+						console.log("Response keys:", Object.keys(webhookResponse || {}));
+						console.log("Response type:", typeof webhookResponse);
+						console.log("============================");
 
-						// Extract eligibility data from the response
+						// Extract eligibility data from the response - try multiple possible paths
 						if (webhookResponse && webhookResponse.eligibilityData) {
 							eligibilityData = webhookResponse.eligibilityData;
-							console.log("Extracted eligibility data:", eligibilityData);
+							console.log("✅ Found eligibilityData at root level:", eligibilityData);
 						} else if (webhookResponse && webhookResponse.body && webhookResponse.body.eligibilityData) {
 							eligibilityData = webhookResponse.body.eligibilityData;
-							console.log("Extracted eligibility data from body:", eligibilityData);
+							console.log("✅ Found eligibilityData in body:", eligibilityData);
+						} else if (webhookResponse && webhookResponse.body && webhookResponse.body.body && webhookResponse.body.body.eligibilityData) {
+							// Sometimes responses are double-wrapped
+							eligibilityData = webhookResponse.body.body.eligibilityData;
+							console.log("✅ Found eligibilityData in body.body:", eligibilityData);
+						} else if (webhookResponse && webhookResponse.data && webhookResponse.data.eligibilityData) {
+							// Check if it's in a data field
+							eligibilityData = webhookResponse.data.eligibilityData;
+							console.log("✅ Found eligibilityData in data:", eligibilityData);
+						} else if (webhookResponse && webhookResponse.success && webhookResponse.body) {
+							// Check if the whole body is the eligibility data
+							const potentialData = webhookResponse.body;
+							if (potentialData && typeof potentialData === "object" && "isEligible" in potentialData) {
+								eligibilityData = potentialData;
+								console.log("✅ Found eligibilityData as entire body:", eligibilityData);
+							}
 						} else {
-							console.warn("No eligibility data found in webhook response");
+							console.warn("❌ No eligibility data found in webhook response");
+							console.log("Checked paths:");
+							console.log("- webhookResponse.eligibilityData:", webhookResponse?.eligibilityData);
+							console.log("- webhookResponse.body:", webhookResponse?.body);
+							console.log("- webhookResponse.body.eligibilityData:", webhookResponse?.body?.eligibilityData);
+							console.log("- webhookResponse.body.body.eligibilityData:", webhookResponse?.body?.body?.eligibilityData);
+							console.log("- webhookResponse.data.eligibilityData:", webhookResponse?.data?.eligibilityData);
+
+							// Log all possible paths in the response
+							if (webhookResponse) {
+								console.log("Available response structure:");
+								console.log(JSON.stringify(webhookResponse, null, 2));
+							}
 						}
 					} catch (jsonError) {
 						console.error("Failed to parse webhook JSON response:", jsonError);
