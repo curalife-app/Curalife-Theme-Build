@@ -1557,9 +1557,10 @@ class ProductQuiz {
 	}
 
 	// Helper method to poll Google Cloud Workflows execution until completion
-	async pollWorkflowExecution(executionName, maxAttempts = 12, interval = 5000) {
+	async pollWorkflowExecution(executionName, maxAttempts = 20, interval = 6000) {
 		console.log(`🔄 Workflow execution detected: ${executionName}`);
 		console.log(`⏰ Will poll for up to ${(maxAttempts * interval) / 1000} seconds for workflow completion`);
+		console.log(`📋 This workflow includes insurance verification AND user account creation - can take 1-2 minutes`);
 
 		// Store the original payload so we can retry the webhook call
 		const originalPayload = this.lastPayload;
@@ -1574,16 +1575,16 @@ class ProductQuiz {
 			// Update UI with progress messages
 			const loadingDesc = document.querySelector(".quiz-eligibility-description");
 			if (loadingDesc) {
-				if (attempt <= 2) {
+				if (attempt <= 3) {
 					loadingDesc.textContent = "Contacting your insurance provider to verify coverage...";
-				} else if (attempt <= 4) {
-					loadingDesc.textContent = "Processing your policy details and benefits information...";
 				} else if (attempt <= 6) {
-					loadingDesc.textContent = "Calculating your out-of-pocket costs and session coverage...";
-				} else if (attempt <= 8) {
-					loadingDesc.textContent = "Finalizing your eligibility verification - almost done...";
+					loadingDesc.textContent = "Processing your policy details and calculating benefits...";
+				} else if (attempt <= 10) {
+					loadingDesc.textContent = "Creating your personalized healthcare account...";
+				} else if (attempt <= 15) {
+					loadingDesc.textContent = "Finalizing your eligibility and account setup...";
 				} else {
-					loadingDesc.textContent = "Complex insurance verifications can take time. We're still working on it...";
+					loadingDesc.textContent = "Complex setups can take up to 2 minutes. Almost there...";
 				}
 			}
 
@@ -1607,33 +1608,45 @@ class ProductQuiz {
 
 				if (response.ok) {
 					const responseData = await response.json();
-					console.log(`📋 Poll ${attempt} response:`, responseData);
+					console.log(`📋 Poll ${attempt} response structure:`, Object.keys(responseData));
 
 					// Check if we now get actual results instead of execution data
 					if (responseData.eligibilityData) {
 						console.log("✅ Workflow completed! Got eligibility data directly");
+						console.log("🎉 Final eligibility data:", responseData.eligibilityData);
 						return responseData.eligibilityData;
 					} else if (responseData.body && responseData.body.eligibilityData) {
 						console.log("✅ Workflow completed! Got eligibility data in body");
+						console.log("🎉 Final eligibility data:", responseData.body.eligibilityData);
 						return responseData.body.eligibilityData;
 					} else if (responseData.execution) {
 						const execution = responseData.execution;
+						console.log(`📊 Execution state: ${execution.state} (attempt ${attempt})`);
 
 						if (execution.state === "SUCCEEDED") {
 							console.log("✅ Workflow succeeded! Extracting result...");
 							const result = this.extractResultFromExecution(execution);
 							if (result) {
+								console.log("🎉 Extracted result:", result);
 								return result;
 							}
 						} else if (execution.state === "FAILED" || execution.state === "CANCELLED") {
 							console.error(`❌ Workflow failed with state: ${execution.state}`);
+							if (execution.error) {
+								console.error("Error details:", execution.error);
+							}
 							return null;
 						} else if (execution.state === "ACTIVE") {
-							console.log(`⏳ Workflow still active (attempt ${attempt})...`);
-							// Continue polling
+							const elapsed = attempt * 6;
+							console.log(`⏳ Workflow still active after ${elapsed}s (attempt ${attempt}) - continuing...`);
+							// Log execution details for debugging
+							if (execution.startTime) {
+								console.log(`📅 Workflow started: ${execution.startTime}`);
+							}
 						}
 					} else {
 						console.log(`⏳ No eligibility data yet (attempt ${attempt})`);
+						console.log("📋 Response keys available:", Object.keys(responseData));
 					}
 				} else {
 					console.warn(`Poll attempt ${attempt} failed with status ${response.status}`);
@@ -1656,7 +1669,7 @@ class ProductQuiz {
 			deductible: { individual: 0 },
 			eligibilityStatus: "PROCESSING",
 			userMessage:
-				"Your eligibility check is still processing in the background. This can take up to 5 minutes for complex insurance verifications. Please proceed with booking - we'll contact you with your coverage details shortly.",
+				"Your eligibility check and account setup is still processing in the background. This can take up to 3 minutes for complex insurance verifications and account creation. Please proceed with booking - we'll contact you with your coverage details shortly.",
 			planBegin: "",
 			planEnd: ""
 		};
@@ -1873,8 +1886,8 @@ class ProductQuiz {
 											? `
 							<div style="margin-top: 16px; padding: 12px; background-color: #ffffff; border-radius: 6px;">
 								<p style="font-size: 14px; color: #4a5568; margin: 0;">
-									<strong>Your eligibility check is processing in the background.</strong><br>
-									• Complex insurance verifications can take 3-5 minutes<br>
+									<strong>Your setup is processing in the background.</strong><br>
+									• Insurance verification + account creation can take 2-3 minutes<br>
 									• Feel free to proceed with booking your appointment<br>
 									• We'll contact you with your exact coverage details<br>
 									• Most insurance plans cover dietitian sessions at $0 cost
