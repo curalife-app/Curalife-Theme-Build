@@ -1336,6 +1336,7 @@ class ProductQuiz {
 			// Try to call the webhook
 			let webhookSuccess = false;
 			let errorMessage = "";
+			let eligibilityData = null;
 
 			try {
 				// Set a timeout to avoid waiting too long
@@ -1383,8 +1384,20 @@ class ProductQuiz {
 					try {
 						const webhookResponse = await webhook.json();
 						console.log("Webhook response data:", webhookResponse);
+
+						// Extract eligibility data from the response
+						if (webhookResponse && webhookResponse.eligibilityData) {
+							eligibilityData = webhookResponse.eligibilityData;
+							console.log("Extracted eligibility data:", eligibilityData);
+						} else if (webhookResponse && webhookResponse.body && webhookResponse.body.eligibilityData) {
+							eligibilityData = webhookResponse.body.eligibilityData;
+							console.log("Extracted eligibility data from body:", eligibilityData);
+						} else {
+							console.warn("No eligibility data found in webhook response");
+						}
 					} catch (jsonError) {
-						console.warn("Could not parse webhook JSON response:", jsonError);
+						console.error("Failed to parse webhook JSON response:", jsonError);
+						errorMessage = "Failed to process server response";
 					}
 				} else {
 					errorMessage = `Server returned status ${webhook.status}`;
@@ -1392,7 +1405,8 @@ class ProductQuiz {
 
 					try {
 						const errorData = await webhook.text();
-						console.error("Error response:", errorData);
+						console.error("Error response body:", errorData);
+						errorMessage += `: ${errorData}`;
 					} catch (textError) {
 						console.warn("Could not read error response:", textError);
 					}
@@ -1400,13 +1414,18 @@ class ProductQuiz {
 			} catch (error) {
 				errorMessage = error.message || "Network error";
 				console.error("Error submitting quiz responses:", error);
+				console.error("Full error details:", {
+					message: error.message,
+					stack: error.stack,
+					name: error.name
+				});
 			}
 
 			// Hide eligibility check indicator
 			this._hideElement(this.eligibilityCheck);
 
-			// Show results
-			this.showResults(bookingUrl, webhookSuccess);
+			// Show results with eligibility data
+			this.showResults(bookingUrl, webhookSuccess, eligibilityData, errorMessage);
 
 			// Log to analytics if available
 			if (window.analytics && typeof window.analytics.track === "function") {
@@ -1418,9 +1437,17 @@ class ProductQuiz {
 			}
 		} catch (error) {
 			console.error("Error in quiz completion:", error);
+			console.error("Full error details:", {
+				message: error.message,
+				stack: error.stack,
+				name: error.name
+			});
+
 			// Hide eligibility check indicator in case of error
 			this._hideElement(this.eligibilityCheck);
-			this.showError("Unexpected Error", "There was a problem completing the quiz. Please try again later.");
+
+			// Show results with error state
+			this.showResults(bookingUrl || "/appointment-booking", false, null, error.message);
 		} finally {
 			this.submitting = false;
 			this.nextButton.disabled = false;
@@ -1434,92 +1461,178 @@ class ProductQuiz {
 	}
 
 	// New method to show results with booking URL
-	showResults(bookingUrl, webhookSuccess = true) {
+	showResults(bookingUrl, webhookSuccess = true, eligibilityData = null, errorMessage = "") {
 		// Hide questions, show results
 		this._hideElement(this.questions);
 		this._showElement(this.results);
 
-		// Check if we have eligibility data to display
-		const step = this.quizData.steps.find(s => s.id === "step-eligibility");
-		const eligibilityData = step?.eligibilityData || null;
-		const isEligible = eligibilityData?.eligible === "true";
-		const sessionsCovered = parseInt(eligibilityData?.sessionsCovered || "0", 10);
-		const deductible = parseFloat(eligibilityData?.deductible || "0").toFixed(2);
-		const copay = parseFloat(eligibilityData?.copay || "0").toFixed(2);
-		const message = eligibilityData?.message || "Your eligibility check is complete.";
+		// Log full eligibility data for debugging
+		console.log("Processing eligibility data:", eligibilityData);
 
-		// Format date strings if available
-		let coverageDates = "";
-		if (eligibilityData?.planBegin && eligibilityData?.planEnd) {
-			const formatDate = dateStr => {
-				if (!dateStr || dateStr.length !== 8) return "N/A";
-				const year = dateStr.substring(0, 4);
-				const month = dateStr.substring(4, 6);
-				const day = dateStr.substring(6, 8);
-				return `${month}/${day}/${year}`;
-			};
+		// Generate results content based on eligibility data or error
+		let resultsHTML = "";
 
-			const beginDate = formatDate(eligibilityData.planBegin);
-			const endDate = formatDate(eligibilityData.planEnd);
-			coverageDates = `<p class="quiz-coverage-dates">Coverage period: ${beginDate} to ${endDate}</p>`;
+		// Check if there was an error
+		if (!webhookSuccess || !eligibilityData) {
+			console.error("Error in eligibility check:", {
+				webhookSuccess,
+				eligibilityData,
+				errorMessage
+			});
+
+			resultsHTML = `
+				<div class="quiz-results-container">
+					<h2 class="quiz-results-title">Quiz Complete</h2>
+					<p class="quiz-results-subtitle">We've received your information.</p>
+
+					<div class="quiz-results-card" style="border-left: 4px solid #f56565; background-color: #fed7d7;">
+						<h3 class="quiz-results-card-title" style="color: #c53030;">
+							⚠️ Eligibility Check Error
+						</h3>
+						<p class="quiz-results-message" style="color: #c53030;">
+							There was an error checking your insurance eligibility. Please contact our support team for assistance.
+						</p>
+						<div style="margin-top: 16px; padding: 12px; background-color: #ffffff; border-radius: 6px;">
+							<p style="font-size: 14px; color: #4a5568; margin: 0;">
+								<strong>What to do next:</strong><br>
+								• Contact our support team<br>
+								• Have your insurance card ready<br>
+								• We'll verify your coverage manually
+							</p>
+						</div>
+					</div>
+
+					<div class="quiz-results-actions quiz-space-y-4">
+						<a href="${bookingUrl}" class="quiz-cta-button">
+							Continue to Support
+							<span class="quiz-button-spacing">→</span>
+						</a>
+					</div>
+				</div>
+			`;
+		} else {
+			// Process successful eligibility data
+			const isEligible = eligibilityData.isEligible === true;
+			const sessionsCovered = parseInt(eligibilityData.sessionsCovered || "0", 10);
+			const deductible = eligibilityData.deductible?.individual || 0;
+			const copay = eligibilityData.copay || 0;
+			const eligibilityStatus = eligibilityData.eligibilityStatus || "UNKNOWN";
+			const userMessage = eligibilityData.userMessage || "Your eligibility check is complete.";
+
+			// Format plan dates if available
+			let coverageDates = "";
+			if (eligibilityData.planBegin && eligibilityData.planEnd) {
+				const formatDate = dateStr => {
+					if (!dateStr || dateStr.length !== 8) return "N/A";
+					const year = dateStr.substring(0, 4);
+					const month = dateStr.substring(4, 6);
+					const day = dateStr.substring(6, 8);
+					return `${month}/${day}/${year}`;
+				};
+
+				const beginDate = formatDate(eligibilityData.planBegin);
+				const endDate = formatDate(eligibilityData.planEnd);
+				coverageDates = `<p class="quiz-coverage-dates">Plan coverage period: ${beginDate} to ${endDate}</p>`;
+			}
+
+			// Determine card styling based on eligibility
+			let cardStyle = "";
+			let statusIcon = "ℹ️";
+			let titleColor = "#4a5568";
+
+			if (isEligible && eligibilityStatus === "ELIGIBLE") {
+				cardStyle = "border-left: 4px solid #48bb78; background-color: #f0fff4;";
+				statusIcon = "✅";
+				titleColor = "#2f855a";
+			} else if (eligibilityStatus === "NOT_ELIGIBLE") {
+				cardStyle = "border-left: 4px solid #ed8936; background-color: #fffaf0;";
+				statusIcon = "⚠️";
+				titleColor = "#c05621";
+			} else if (eligibilityStatus === "PAYER_ERROR" || eligibilityStatus === "ERROR") {
+				cardStyle = "border-left: 4px solid #f56565; background-color: #fed7d7;";
+				statusIcon = "❌";
+				titleColor = "#c53030";
+			}
+
+			resultsHTML = `
+				<div class="quiz-results-container">
+					<h2 class="quiz-results-title">Thanks for completing the quiz!</h2>
+					<p class="quiz-results-subtitle">We're ready to connect you with a registered dietitian who can help guide your health journey.</p>
+
+					<div class="quiz-results-card" style="${cardStyle}">
+						<h3 class="quiz-results-card-title" style="color: ${titleColor};">
+							${statusIcon} Insurance Coverage Check
+						</h3>
+						<p class="quiz-results-message">${userMessage}</p>
+
+						${
+							isEligible && sessionsCovered > 0
+								? `
+							<div class="quiz-coverage-details">
+								<p class="quiz-font-medium">Your Coverage Benefits:</p>
+								<ul class="quiz-coverage-list">
+									<li class="quiz-coverage-item">
+										<span>Dietitian sessions covered:</span>
+										<span class="quiz-font-medium">${sessionsCovered} sessions</span>
+									</li>
+									${
+										deductible > 0
+											? `
+									<li class="quiz-coverage-item">
+										<span>Individual deductible:</span>
+										<span class="quiz-font-medium">$${deductible}</span>
+									</li>`
+											: ""
+									}
+									${
+										copay > 0
+											? `
+									<li class="quiz-coverage-item">
+										<span>Co-pay per session:</span>
+										<span class="quiz-font-medium">$${copay}</span>
+									</li>`
+											: `
+									<li class="quiz-coverage-item">
+										<span>Co-pay per session:</span>
+										<span class="quiz-font-medium" style="color: #2f855a;">$0</span>
+									</li>`
+									}
+								</ul>
+								${coverageDates}
+							</div>
+						`
+								: eligibilityStatus === "NOT_ELIGIBLE"
+									? `
+							<div style="margin-top: 16px; padding: 12px; background-color: #ffffff; border-radius: 6px;">
+								<p style="font-size: 14px; color: #4a5568; margin: 0;">
+									<strong>Don't worry!</strong> Even without full insurance coverage, we may still be able to help you access affordable dietitian services. Our team can discuss payment options and potential assistance programs.
+								</p>
+							</div>
+						`
+									: eligibilityStatus === "PAYER_ERROR" || eligibilityStatus === "ERROR"
+										? `
+							<div style="margin-top: 16px; padding: 12px; background-color: #ffffff; border-radius: 6px;">
+								<p style="font-size: 14px; color: #4a5568; margin: 0;">
+									<strong>Next steps:</strong><br>
+									• Our team will manually verify your coverage<br>
+									• We'll contact you within 24 hours<br>
+									• Have your insurance card ready
+								</p>
+							</div>
+						`
+										: ""
+						}
+					</div>
+
+					<div class="quiz-results-actions quiz-space-y-4">
+						<a href="${bookingUrl}" class="quiz-cta-button">
+							${isEligible ? "Book Your Appointment" : "Continue with Next Steps"}
+							<span class="quiz-button-spacing">→</span>
+						</a>
+					</div>
+				</div>
+			`;
 		}
-
-		// Generate results content with eligibility information
-		let resultsHTML = `
-			<div class="quiz-results-container">
-				<h2 class="quiz-results-title">Thanks for completing the quiz!</h2>
-				<p class="quiz-results-subtitle">We're ready to connect you with a registered dietitian who can help guide your health journey.</p>
-				${!webhookSuccess ? `<p class="quiz-warning-text">There was an issue processing your submission, but you can still continue.</p>` : ""}
-
-				<div class="quiz-results-card">
-					<h3 class="quiz-results-card-title">
-						${isEligible ? "✓ Insurance Coverage Verified" : "Insurance Coverage Information"}
-					</h3>
-					<p class="quiz-results-message">${message}</p>
-
-					${
-						sessionsCovered > 0
-							? `
-					<div class="quiz-coverage-details">
-						<p class="quiz-font-medium">Coverage details:</p>
-						<ul class="quiz-coverage-list">
-							<li class="quiz-coverage-item">
-								<span>Sessions covered:</span>
-								<span class="quiz-font-medium">${sessionsCovered}</span>
-							</li>
-							${
-								deductible > 0
-									? `
-							<li class="quiz-coverage-item">
-								<span>Deductible:</span>
-								<span class="quiz-font-medium">$${deductible}</span>
-							</li>`
-									: ""
-							}
-							${
-								copay > 0
-									? `
-							<li class="quiz-coverage-item">
-								<span>Co-pay per session:</span>
-								<span class="quiz-font-medium">$${copay}</span>
-							</li>`
-									: ""
-							}
-						</ul>
-						${coverageDates}
-					</div>`
-							: ""
-					}
-				</div>
-
-				<div class="quiz-results-actions quiz-space-y-4">
-					<a href="${bookingUrl}" class="quiz-cta-button">
-						Book Your Appointment
-						<span class="quiz-button-spacing">→</span>
-					</a>
-				</div>
-			</div>
-		`;
 
 		this.results.innerHTML = resultsHTML;
 	}
