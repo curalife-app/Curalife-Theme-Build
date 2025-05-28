@@ -2346,11 +2346,24 @@ class ProductQuiz {
 
 		return validationResult.isValid;
 	}
+
+	// Debug method for testing phone validation - can be called from browser console
+	debugPhoneValidation(phoneNumber) {
+		const question = { id: "q10", required: true, type: "text" };
+		console.log("=== DEBUGGING PHONE VALIDATION ===");
+		console.log("Phone:", phoneNumber);
+		console.log("Question:", question);
+
+		const result = this._validateFieldValue(question, phoneNumber);
+		console.log("Result:", result);
+
+		return result;
+	}
 }
 
 // Initialize the quiz when the DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
 	const quiz = new ProductQuiz();
-	// Optional: Expose quiz instance for debugging
-	// window.productQuiz = quiz;
+	// Expose quiz instance for debugging
+	window.productQuiz = quiz;
 });
