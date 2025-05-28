@@ -650,10 +650,12 @@ class ProductQuiz {
 				return { id: day, text: day };
 			});
 		} else if (part === "year") {
-			const currentYear = new Date().getFullYear();
-			const startYear = currentYear - 100;
-			options = Array.from({ length: 100 }, (_, i) => {
-				const year = String(currentYear - i);
+			// PRD requirement: Years 1920-2007 (minimum 18 years old)
+			const endYear = 2007;
+			const startYear = 1920;
+			const yearCount = endYear - startYear + 1;
+			options = Array.from({ length: yearCount }, (_, i) => {
+				const year = String(endYear - i);
 				return { id: year, text: year };
 			});
 		}
@@ -780,31 +782,21 @@ class ProductQuiz {
 				textInput._inputHandler = () => {
 					console.log(`Text input ${question.id} changed:`, textInput.value);
 
-					// If there's validation, check it
-					if (question.validation && question.validation.pattern) {
-						const regex = new RegExp(question.validation.pattern);
-						const errorEl = this.questionContainer.querySelector(`#error-${question.id}`);
+					// Use enhanced validation
+					const validationResult = this._validateFieldValue(question, textInput.value);
+					const isValid = this._updateFieldValidationState(textInput, question, validationResult);
 
-						if (regex.test(textInput.value)) {
-							textInput.classList.remove("quiz-input-error");
-							textInput.classList.add("quiz-input-valid");
-							if (errorEl) {
-								errorEl.classList.add("quiz-error-hidden");
-								errorEl.classList.remove("quiz-error-visible");
-							}
-							this.handleFormAnswer(question.id, textInput.value);
-						} else {
-							textInput.classList.remove("quiz-input-valid");
-							textInput.classList.add("quiz-input-error");
-							if (errorEl && question.validation.message) {
-								errorEl.textContent = question.validation.message;
-								errorEl.classList.remove("quiz-error-hidden");
-								errorEl.classList.add("quiz-error-visible");
-							}
-							this.handleFormAnswer(question.id, null); // Invalid input
-						}
-					} else {
+					// Handle the answer based on validation result
+					if (isValid) {
 						this.handleFormAnswer(question.id, textInput.value);
+					} else {
+						// If validation fails, pass null to indicate invalid state
+						// but for required field validation, we don't mark as null since user is still typing
+						if (validationResult.errorMessage === "This field is required") {
+							this.handleFormAnswer(question.id, textInput.value); // Keep the value
+						} else {
+							this.handleFormAnswer(question.id, null); // Mark as invalid
+						}
 					}
 					this.updateNavigation(); // Ensure navigation updates after handling answer
 				};
@@ -1894,31 +1886,21 @@ class ProductQuiz {
 				textInput._inputHandler = () => {
 					console.log(`Text input ${question.id} changed:`, textInput.value);
 
-					// If there's validation, check it
-					if (question.validation && question.validation.pattern) {
-						const regex = new RegExp(question.validation.pattern);
-						const errorEl = this.questionContainer.querySelector(`#error-${question.id}`);
+					// Use enhanced validation
+					const validationResult = this._validateFieldValue(question, textInput.value);
+					const isValid = this._updateFieldValidationState(textInput, question, validationResult);
 
-						if (regex.test(textInput.value)) {
-							textInput.classList.remove("quiz-input-error");
-							textInput.classList.add("quiz-input-valid");
-							if (errorEl) {
-								errorEl.classList.add("quiz-error-hidden");
-								errorEl.classList.remove("quiz-error-visible");
-							}
-							this.handleFormAnswer(question.id, textInput.value);
-						} else {
-							textInput.classList.remove("quiz-input-valid");
-							textInput.classList.add("quiz-input-error");
-							if (errorEl && question.validation.message) {
-								errorEl.textContent = question.validation.message;
-								errorEl.classList.remove("quiz-error-hidden");
-								errorEl.classList.add("quiz-error-visible");
-							}
-							this.handleFormAnswer(question.id, null); // Invalid input
-						}
-					} else {
+					// Handle the answer based on validation result
+					if (isValid) {
 						this.handleFormAnswer(question.id, textInput.value);
+					} else {
+						// If validation fails, pass null to indicate invalid state
+						// but for required field validation, we don't mark as null since user is still typing
+						if (validationResult.errorMessage === "This field is required") {
+							this.handleFormAnswer(question.id, textInput.value); // Keep the value
+						} else {
+							this.handleFormAnswer(question.id, null); // Mark as invalid
+						}
 					}
 					this.updateNavigation(); // Ensure navigation updates after handling answer
 				};
@@ -2194,36 +2176,130 @@ class ProductQuiz {
 		}
 	}
 
-	// Validation helper method
-	_validateInput(input, question) {
-		if (!question.validation || !question.validation.pattern) {
-			this.handleFormAnswer(question.id, input.value);
-			return;
+	// Enhanced validation method according to PRD requirements
+	_validateFieldValue(question, value) {
+		// If field is required and empty/null
+		if (question.required && (!value || (typeof value === "string" && value.trim() === ""))) {
+			return {
+				isValid: false,
+				errorMessage: "This field is required"
+			};
 		}
 
-		const regex = new RegExp(question.validation.pattern);
+		// If field is not required and empty, it's valid
+		if (!question.required && (!value || (typeof value === "string" && value.trim() === ""))) {
+			return {
+				isValid: true,
+				errorMessage: null
+			};
+		}
+
+		// If we have a value, check format validation
+		if (value && typeof value === "string" && value.trim() !== "") {
+			const trimmedValue = value.trim();
+
+			// Apply specific validation based on question ID and type
+			switch (question.id) {
+				case "q4": // Member ID
+					if (trimmedValue.length < 6) {
+						return { isValid: false, errorMessage: "Minimum 6 characters" };
+					}
+					if (trimmedValue.length > 20) {
+						return { isValid: false, errorMessage: "Maximum 20 characters" };
+					}
+					break;
+
+				case "q4_group": // Group number
+					if (trimmedValue.length > 0 && trimmedValue.length < 5) {
+						return { isValid: false, errorMessage: "Minimum 5 characters" };
+					}
+					if (trimmedValue.length > 15) {
+						return { isValid: false, errorMessage: "Maximum 15 characters" };
+					}
+					break;
+
+				case "q7": // First name
+				case "q8": // Last name
+					if (!/^[A-Za-z\s]{1,100}$/.test(trimmedValue)) {
+						return { isValid: false, errorMessage: "Use only A–Z letters and spaces" };
+					}
+					break;
+
+				case "q9": // Email
+					if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedValue)) {
+						return { isValid: false, errorMessage: "Enter valid email" };
+					}
+					break;
+
+				case "q10": // Phone
+					// Clean phone number for validation (remove spaces, dashes, parentheses)
+					const cleanPhone = trimmedValue.replace(/[\s\-\(\)\.]/g, "");
+					const phonePatterns = [
+						/^[0-9]{10}$/, // 1234567890
+						/^1[0-9]{10}$/, // 11234567890
+						/^\+1[0-9]{10}$/ // +11234567890
+					];
+
+					// Also check formatted patterns
+					const formattedPatterns = [
+						/^[0-9]{3}-[0-9]{3}-[0-9]{4}$/, // 123-456-7890
+						/^\([0-9]{3}\)\s[0-9]{3}-[0-9]{4}$/, // (123) 456-7890
+						/^[0-9]{3}\.[0-9]{3}\.[0-9]{4}$/, // 123.456.7890
+						/^[0-9]{3}\s[0-9]{3}\s[0-9]{4}$/, // 123 456 7890
+						/^\+1\s[0-9]{3}-[0-9]{3}-[0-9]{4}$/, // +1 123-456-7890
+						/^1-[0-9]{3}-[0-9]{3}-[0-9]{4}$/ // 1-123-456-7890
+					];
+
+					const isValidClean = phonePatterns.some(pattern => pattern.test(cleanPhone));
+					const isValidFormatted = formattedPatterns.some(pattern => pattern.test(trimmedValue));
+
+					if (!isValidClean && !isValidFormatted) {
+						return { isValid: false, errorMessage: "Enter valid phone" };
+					}
+					break;
+
+				default:
+					// Fall back to pattern validation if defined
+					if (question.validation && question.validation.pattern) {
+						const regex = new RegExp(question.validation.pattern);
+						if (!regex.test(trimmedValue)) {
+							return {
+								isValid: false,
+								errorMessage: question.validation.message || "Invalid format"
+							};
+						}
+					}
+			}
+		}
+
+		return {
+			isValid: true,
+			errorMessage: null
+		};
+	}
+
+	// Helper method to update field validation state
+	_updateFieldValidationState(input, question, validationResult) {
 		const errorEl = this.questionContainer.querySelector(`#error-${question.id}`);
-		const isValid = regex.test(input.value);
 
-		// Update input styling
-		input.classList.toggle("quiz-input-error", !isValid);
-		input.classList.toggle("quiz-input-valid", isValid);
-
-		// Update error message
-		if (errorEl) {
-			if (isValid) {
+		if (validationResult.isValid) {
+			input.classList.remove("quiz-input-error");
+			input.classList.add("quiz-input-valid");
+			if (errorEl) {
 				errorEl.classList.add("quiz-error-hidden");
 				errorEl.classList.remove("quiz-error-visible");
-			} else if (question.validation.message) {
-				errorEl.textContent = question.validation.message;
+			}
+		} else {
+			input.classList.remove("quiz-input-valid");
+			input.classList.add("quiz-input-error");
+			if (errorEl && validationResult.errorMessage) {
+				errorEl.textContent = validationResult.errorMessage;
 				errorEl.classList.remove("quiz-error-hidden");
 				errorEl.classList.add("quiz-error-visible");
 			}
 		}
 
-		// Handle the answer
-		this.handleFormAnswer(question.id, isValid ? input.value : null);
-		this.updateNavigation();
+		return validationResult.isValid;
 	}
 }
 
