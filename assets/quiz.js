@@ -2260,16 +2260,24 @@ class ProductQuiz {
 					break;
 
 				case "q10": // Phone
-					// Clean phone number for validation (remove spaces, dashes, parentheses)
+					// Clean phone number for validation (remove spaces, dashes, parentheses, dots)
 					const cleanPhone = trimmedValue.replace(/[\s\-\(\)\.]/g, "");
-					const phonePatterns = [
+
+					// US phone number patterns (cleaned)
+					const usPhonePatterns = [
 						/^[0-9]{10}$/, // 1234567890
 						/^1[0-9]{10}$/, // 11234567890
 						/^\+1[0-9]{10}$/ // +11234567890
 					];
 
-					// Also check formatted patterns
-					const formattedPatterns = [
+					// International phone number patterns (cleaned)
+					const internationalPhonePatterns = [
+						/^\+[1-9][0-9]{7,14}$/, // International format: +<country code><phone number> (8-15 total digits)
+						/^\+[0-9]{8,15}$/ // More flexible international format
+					];
+
+					// US formatted patterns (with formatting preserved)
+					const usFormattedPatterns = [
 						/^[0-9]{3}-[0-9]{3}-[0-9]{4}$/, // 123-456-7890
 						/^\([0-9]{3}\)\s[0-9]{3}-[0-9]{4}$/, // (123) 456-7890
 						/^[0-9]{3}\.[0-9]{3}\.[0-9]{4}$/, // 123.456.7890
@@ -2278,10 +2286,19 @@ class ProductQuiz {
 						/^1-[0-9]{3}-[0-9]{3}-[0-9]{4}$/ // 1-123-456-7890
 					];
 
-					const isValidClean = phonePatterns.some(pattern => pattern.test(cleanPhone));
-					const isValidFormatted = formattedPatterns.some(pattern => pattern.test(trimmedValue));
+					// International formatted patterns (with formatting preserved)
+					const internationalFormattedPatterns = [
+						/^\+[0-9]{1,4}\s[0-9\s\-]{7,14}$/, // +972 50 359 1552 or +972 50-359-1552
+						/^\+[0-9]{1,4}-[0-9\-]{7,14}$/, // +972-50-359-1552
+						/^\+[0-9]{8,15}$/ // +972503591552 (no spaces or dashes)
+					];
 
-					if (!isValidClean && !isValidFormatted) {
+					const isValidUsClean = usPhonePatterns.some(pattern => pattern.test(cleanPhone));
+					const isValidInternationalClean = internationalPhonePatterns.some(pattern => pattern.test(cleanPhone));
+					const isValidUsFormatted = usFormattedPatterns.some(pattern => pattern.test(trimmedValue));
+					const isValidInternationalFormatted = internationalFormattedPatterns.some(pattern => pattern.test(trimmedValue));
+
+					if (!isValidUsClean && !isValidInternationalClean && !isValidUsFormatted && !isValidInternationalFormatted) {
 						return { isValid: false, errorMessage: "Enter valid phone" };
 					}
 					break;
