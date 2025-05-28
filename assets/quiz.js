@@ -1343,11 +1343,7 @@ class ProductQuiz {
 				return;
 			}
 
-			// Add sync parameter to webhook URL to request synchronous execution
-			const syncWebhookUrl = webhookUrl + (webhookUrl.includes("?") ? "&" : "?") + "sync=true";
-			console.log("Using synchronous webhook URL:", syncWebhookUrl);
-
-			// Try to call the webhook
+			// Call the Cloud Function webhook directly
 			let webhookSuccess = false;
 			let errorMessage = "";
 			let eligibilityData = null;
@@ -1356,84 +1352,50 @@ class ProductQuiz {
 				console.log("=== STARTING WEBHOOK REQUEST ===");
 				console.log("Sending payload:", JSON.stringify(payload, null, 2));
 
-				// Set a timeout to avoid waiting too long
-				const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Webhook request timed out")), 8000));
+				// Set a timeout to avoid waiting too long (30 seconds for the Cloud Function)
+				const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Request timed out")), 35000));
 
-				// Try regular CORS request first
-				console.log("Attempting CORS request to:", syncWebhookUrl);
-				let fetchPromise = fetch(syncWebhookUrl, {
+				// Call the Cloud Function webhook
+				console.log("Calling Cloud Function webhook:", webhookUrl);
+				const fetchPromise = fetch(webhookUrl, {
 					method: "POST",
 					mode: "cors",
-					credentials: "include",
 					headers: {
 						"Content-Type": "application/json",
-						Accept: "application/json",
-						Origin: window.location.origin
+						Accept: "application/json"
 					},
-					body: JSON.stringify({
-						data: JSON.stringify(payload), // Double wrap as some n8n workflows expect this format
-						sync: true // Request synchronous execution
-					})
-				}).catch(error => {
-					console.log("❌ CORS request failed, trying no-cors mode:", error);
-					// Fallback to no-cors mode if regular CORS fails
-					return fetch(syncWebhookUrl, {
-						method: "POST",
-						mode: "no-cors",
-						headers: {
-							"Content-Type": "application/json"
-						},
-						body: JSON.stringify({
-							data: JSON.stringify(payload),
-							sync: true // Request synchronous execution
-						})
-					});
+					body: JSON.stringify(payload)
 				});
 
 				// Race the timeout against the fetch
-				console.log("Waiting for webhook response...");
-				const webhook = await Promise.race([fetchPromise, timeoutPromise]);
-				console.log("✅ Webhook request completed");
+				console.log("Waiting for Cloud Function response...");
+				const response = await Promise.race([fetchPromise, timeoutPromise]);
+				console.log("✅ Cloud Function request completed");
 
-				// Check the response status - for no-cors mode, response.type will be 'opaque'
-				console.log("=== WEBHOOK RESPONSE ANALYSIS ===");
-				console.log("Response type:", webhook.type);
-				console.log("Response status:", webhook.status);
-				console.log("Response ok:", webhook.ok);
-				console.log("Response headers:", webhook.headers);
+				// Check the response status
+				console.log("=== CLOUD FUNCTION RESPONSE ===");
+				console.log("Response status:", response.status);
+				console.log("Response ok:", response.ok);
 				console.log("===============================");
 
-				if (webhook.type === "opaque") {
-					console.log("⚠️ Got opaque response from no-cors request - cannot read response data");
-					console.log("This means the request succeeded but we can't access the response due to CORS");
-					webhookSuccess = true;
-					// For opaque responses, we can't read the data, so eligibilityData will remain null
-				} else if (webhook.ok) {
-					console.log("✅ Webhook response ok:", webhook.status);
+				if (response.ok) {
+					console.log("✅ Cloud Function response ok:", response.status);
 					webhookSuccess = true;
 
 					try {
-						const webhookResponse = await webhook.json();
-						console.log("=== FULL WEBHOOK RESPONSE ===");
-						console.log("Raw response:", webhookResponse);
-						console.log("Response keys:", Object.keys(webhookResponse || {}));
-						console.log("Response type:", typeof webhookResponse);
-						if (webhookResponse && webhookResponse.body) {
-							console.log("Body keys:", Object.keys(webhookResponse.body));
-							console.log("Body success:", webhookResponse.body.success);
-							console.log("Body eligibilityData:", !!webhookResponse.body.eligibilityData);
-						}
+						const result = await response.json();
+						console.log("=== CLOUD FUNCTION RESULT ===");
+						console.log("Raw result:", result);
+						console.log("Result keys:", Object.keys(result || {}));
 						console.log("============================");
 
-						// PRIORITY 1: Check for completed workflow with eligibility data (MOST COMMON CASE)
-						if (webhookResponse && webhookResponse.body && webhookResponse.body.success === true && webhookResponse.body.eligibilityData) {
-							eligibilityData = webhookResponse.body.eligibilityData;
-							console.log("✅ Workflow completed successfully! Found eligibilityData in body:", eligibilityData);
-						}
-						// PRIORITY 2: Check for immediate error responses
-						else if (webhookResponse && webhookResponse.body && webhookResponse.body.success === false) {
-							console.error("❌ Workflow completed with error:", webhookResponse.body);
-							console.error("Error message:", webhookResponse.body.error || "Unknown error");
+						// The Cloud Function returns the workflow result directly
+						if (result && result.success === true && result.eligibilityData) {
+							eligibilityData = result.eligibilityData;
+							console.log("✅ Found eligibilityData:", eligibilityData);
+						} else if (result && result.success === false) {
+							console.error("❌ Workflow completed with error:", result);
+							console.error("Error message:", result.error || "Unknown error");
 
 							// Create error eligibility status
 							eligibilityData = {
@@ -1441,120 +1403,67 @@ class ProductQuiz {
 								sessionsCovered: 0,
 								deductible: { individual: 0 },
 								eligibilityStatus: "ERROR",
-								userMessage: `There was an error processing your request: ${webhookResponse.body.error || "Unknown error"}. Our team will contact you to manually verify your coverage.`,
+								userMessage: `There was an error processing your request: ${result.error || "Unknown error"}. Our team will contact you to manually verify your coverage.`,
 								planBegin: "",
 								planEnd: ""
 							};
 							console.log("✅ Created error eligibility data:", eligibilityData);
-						}
-						// PRIORITY 3: Check for direct eligibility data in various paths
-						else if (webhookResponse && webhookResponse.eligibilityData) {
-							eligibilityData = webhookResponse.eligibilityData;
-							console.log("✅ Found eligibilityData at root level:", eligibilityData);
-						} else if (webhookResponse && webhookResponse.body && webhookResponse.body.body && webhookResponse.body.body.eligibilityData) {
-							eligibilityData = webhookResponse.body.body.eligibilityData;
-							console.log("✅ Found eligibilityData in body.body:", eligibilityData);
-						} else if (webhookResponse && webhookResponse.data && webhookResponse.data.eligibilityData) {
-							eligibilityData = webhookResponse.data.eligibilityData;
-							console.log("✅ Found eligibilityData in data:", eligibilityData);
-						}
-						// PRIORITY 4: Check if this is a Google Cloud Workflows execution response (workflow still running)
-						else if (webhookResponse && webhookResponse.execution && webhookResponse.execution.state) {
-							console.log("🔄 Detected Google Cloud Workflows execution response");
-							console.log("Execution state:", webhookResponse.execution.state);
-							console.log("Execution name:", webhookResponse.execution.name);
-
-							if (webhookResponse.execution.state === "ACTIVE") {
-								console.log("⏳ Workflow is still running...");
-								console.log("💡 Waiting a few seconds for workflow to complete before showing processing status...");
-
-								// Update the loading message to show we're waiting
-								const loadingTitle = this.eligibilityCheck.querySelector(".quiz-eligibility-title");
-								const loadingDesc = this.eligibilityCheck.querySelector(".quiz-eligibility-description");
-
-								if (loadingTitle) {
-									loadingTitle.textContent = "Processing Insurance Verification";
-								}
-								if (loadingDesc) {
-									loadingDesc.textContent = "Checking your insurance coverage and setting up your account. This usually takes just a few seconds...";
-								}
-
-								// Wait 3 seconds for the workflow to complete
-								// Most workflows complete in 3-4 seconds, so this should be enough
-								try {
-									await new Promise(resolve => setTimeout(resolve, 3000));
-									console.log("⏳ Workflow is taking longer than expected, showing processing status");
-									eligibilityData = this.createProcessingStatus();
-								} catch (waitError) {
-									console.log("❌ Error while waiting for workflow completion:", waitError);
-									eligibilityData = this.createProcessingStatus();
-								}
-							} else if (webhookResponse.execution.state === "SUCCEEDED") {
-								console.log("✅ Workflow completed successfully");
-								const result = this.extractResultFromExecution(webhookResponse.execution);
-								if (result) {
-									eligibilityData = result;
-									console.log("✅ Extracted result from execution:", eligibilityData);
-								} else {
-									console.warn("⚠️ Workflow succeeded but no eligibility data found in result");
-									eligibilityData = this.createProcessingStatus();
-								}
-							} else {
-								console.log("❌ Workflow failed with state:", webhookResponse.execution.state);
-								eligibilityData = {
-									isEligible: false,
-									sessionsCovered: 0,
-									deductible: { individual: 0 },
-									eligibilityStatus: "ERROR",
-									userMessage: `Workflow failed with state: ${webhookResponse.execution.state}. Our team will contact you to manually verify your coverage.`,
-									planBegin: "",
-									planEnd: ""
-								};
-							}
-						}
-						// PRIORITY 5: Check if the whole body is the eligibility data
-						else if (webhookResponse && webhookResponse.success && webhookResponse.body) {
-							const potentialData = webhookResponse.body;
-							if (potentialData && typeof potentialData === "object" && "isEligible" in potentialData) {
-								eligibilityData = potentialData;
-								console.log("✅ Found eligibilityData as entire body:", eligibilityData);
-							}
 						} else {
-							console.warn("❌ No eligibility data found in webhook response");
-							console.log("Checked paths:");
-							console.log("- webhookResponse.body.eligibilityData:", webhookResponse?.body?.eligibilityData);
-							console.log("- webhookResponse.eligibilityData:", webhookResponse?.eligibilityData);
-							console.log("- webhookResponse.body.body.eligibilityData:", webhookResponse?.body?.body?.eligibilityData);
-							console.log("- webhookResponse.data.eligibilityData:", webhookResponse?.data?.eligibilityData);
+							console.warn("❌ Unexpected response format from Cloud Function");
+							console.log("Expected: { success: true, eligibilityData: {...} }");
+							console.log("Received:", result);
 
 							// Create a fallback processing status
 							console.log("🔄 Creating fallback processing status");
 							eligibilityData = this.createProcessingStatus();
 						}
 					} catch (jsonError) {
-						console.error("Failed to parse webhook JSON response:", jsonError);
+						console.error("Failed to parse Cloud Function JSON response:", jsonError);
 						errorMessage = "Failed to process server response";
+						eligibilityData = this.createProcessingStatus();
 					}
 				} else {
-					errorMessage = `Server returned status ${webhook.status}`;
-					console.error("Webhook error:", errorMessage);
+					errorMessage = `Server returned status ${response.status}`;
+					console.error("Cloud Function error:", errorMessage);
 
 					try {
-						const errorData = await webhook.text();
+						const errorData = await response.text();
 						console.error("Error response body:", errorData);
 						errorMessage += `: ${errorData}`;
 					} catch (textError) {
 						console.warn("Could not read error response:", textError);
 					}
+
+					// Create error eligibility status for HTTP errors
+					eligibilityData = {
+						isEligible: false,
+						sessionsCovered: 0,
+						deductible: { individual: 0 },
+						eligibilityStatus: "ERROR",
+						userMessage: `Server error (${response.status}). Our team will contact you to manually verify your coverage.`,
+						planBegin: "",
+						planEnd: ""
+					};
 				}
 			} catch (error) {
 				errorMessage = error.message || "Network error";
-				console.error("Error submitting quiz responses:", error);
+				console.error("Error calling Cloud Function:", error);
 				console.error("Full error details:", {
 					message: error.message,
 					stack: error.stack,
 					name: error.name
 				});
+
+				// Create error eligibility status for network errors
+				eligibilityData = {
+					isEligible: false,
+					sessionsCovered: 0,
+					deductible: { individual: 0 },
+					eligibilityStatus: "ERROR",
+					userMessage: `Network error: ${error.message}. Please check your connection and try again, or contact our support team.`,
+					planBegin: "",
+					planEnd: ""
+				};
 			}
 
 			// Hide eligibility check indicator
