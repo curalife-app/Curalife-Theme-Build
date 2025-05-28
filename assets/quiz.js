@@ -595,6 +595,7 @@ class ProductQuiz {
 
 		html += `
 				</select>
+				<p id="error-${question.id}" class="quiz-error-text quiz-error-hidden"></p>
 			</div>
 		`;
 		return html;
@@ -786,19 +787,10 @@ class ProductQuiz {
 					const validationResult = this._validateFieldValue(question, textInput.value);
 					const isValid = this._updateFieldValidationState(textInput, question, validationResult);
 
-					// Handle the answer based on validation result
-					if (isValid) {
-						this.handleFormAnswer(question.id, textInput.value);
-					} else {
-						// If validation fails, pass null to indicate invalid state
-						// but for required field validation, we don't mark as null since user is still typing
-						if (validationResult.errorMessage === "This field is required") {
-							this.handleFormAnswer(question.id, textInput.value); // Keep the value
-						} else {
-							this.handleFormAnswer(question.id, null); // Mark as invalid
-						}
-					}
-					this.updateNavigation(); // Ensure navigation updates after handling answer
+					// Always update the response value for real-time tracking
+					this.handleFormAnswer(question.id, textInput.value);
+
+					// Note: We don't call updateNavigation here since button is always enabled
 				};
 
 				// Add both input and change handlers
@@ -1051,45 +1043,10 @@ class ProductQuiz {
 			this.navigationButtons.classList.add("quiz-navigation-hidden");
 			this.navigationButtons.classList.remove("quiz-navigation-visible");
 
-			let allRequiredAnswered = true;
-
-			// Check each required question
-			for (const q of step.questions.filter(q => q.required)) {
-				const resp = this.responses.find(r => r.questionId === q.id);
-				console.log(`Checking required field ${q.id} (${q.type}):`, resp ? resp.answer : "no response");
-
-				if (!resp || resp.answer === null) {
-					console.log(`Field ${q.id} has no response`);
-					allRequiredAnswered = false;
-					break;
-				}
-
-				// For checkboxes, check if any option is selected
-				if (q.type === "checkbox") {
-					const isValid = Array.isArray(resp.answer) && resp.answer.length > 0;
-					console.log(`Checkbox ${q.id} validation: ${isValid ? "VALID" : "INVALID"}`);
-					if (!isValid) {
-						allRequiredAnswered = false;
-						break;
-					}
-				}
-				// For text fields, ensure non-empty
-				else if (typeof resp.answer === "string") {
-					const isValid = resp.answer.trim() !== "";
-					console.log(`Text field ${q.id} validation: ${isValid ? "VALID" : "INVALID"}`);
-					if (!isValid) {
-						allRequiredAnswered = false;
-						break;
-					}
-				}
-			}
-
-			console.log(`Form validation result: ${allRequiredAnswered ? "ALL FIELDS VALID" : "SOME FIELDS INVALID"}`);
-
-			// Update the form button state
+			// Always keep the form button enabled - validation happens on click
 			const formButton = this.questionContainer.querySelector("#quiz-form-next-button");
 			if (formButton) {
-				formButton.disabled = !allRequiredAnswered || this.submitting;
+				formButton.disabled = this.submitting; // Only disable during submission
 			}
 			return;
 		}
@@ -1184,26 +1141,94 @@ class ProductQuiz {
 
 		// For form steps, special handling for next step
 		if (isFormStep) {
-			// Manual check for required fields for safety, but we'll force proceed anyway
-			let allComplete = true;
+			// Validate all form fields before proceeding
+			let hasValidationErrors = false;
+			const validationErrors = [];
 
-			// Log all responses for debugging
-			console.log("Current responses:", JSON.stringify(this.responses, null, 2));
+			// Validate each question in the form step
+			for (const q of currentStep.questions) {
+				const resp = this.responses.find(r => r.questionId === q.id);
+				const currentValue = resp ? resp.answer : null;
 
-			// Force proceed to next step - user has clicked the button
-			// and we've already tried to handle any missing fields
+				console.log(`Validating field ${q.id} (${q.type}):`, currentValue);
+
+				// Check if required field is empty
+				if (q.required) {
+					let isEmpty = false;
+
+					if (!currentValue) {
+						isEmpty = true;
+					} else if (q.type === "checkbox") {
+						isEmpty = !Array.isArray(currentValue) || currentValue.length === 0;
+					} else if (typeof currentValue === "string") {
+						isEmpty = currentValue.trim() === "";
+					}
+
+					if (isEmpty) {
+						hasValidationErrors = true;
+						validationErrors.push({
+							questionId: q.id,
+							errorMessage: "This field is required"
+						});
+						console.log(`❌ Required field ${q.id} is empty`);
+						continue;
+					}
+				}
+
+				// If field has a value, validate format for text inputs
+				if (currentValue && typeof currentValue === "string" && currentValue.trim() !== "") {
+					const validationResult = this._validateFieldValue(q, currentValue);
+					if (!validationResult.isValid) {
+						hasValidationErrors = true;
+						validationErrors.push({
+							questionId: q.id,
+							errorMessage: validationResult.errorMessage
+						});
+						console.log(`❌ Field ${q.id} has format error: ${validationResult.errorMessage}`);
+					} else {
+						console.log(`✅ Field ${q.id} is valid`);
+					}
+				}
+			}
+
+			// If there are validation errors, show them and don't proceed
+			if (hasValidationErrors) {
+				console.log("❌ Form has validation errors, showing error messages");
+
+				// Show error messages for each invalid field
+				validationErrors.forEach(error => {
+					const input = this.questionContainer.querySelector(`#question-${error.questionId}`);
+					const errorEl = this.questionContainer.querySelector(`#error-${error.questionId}`);
+
+					if (input && errorEl) {
+						// Update input styling (works for both text inputs and selects)
+						input.classList.remove("quiz-input-valid");
+						input.classList.add("quiz-input-error");
+
+						// Show error message
+						errorEl.textContent = error.errorMessage;
+						errorEl.classList.remove("quiz-error-hidden");
+						errorEl.classList.add("quiz-error-visible");
+					}
+				});
+
+				// Don't proceed to next step
+				return;
+			}
+
+			console.log("✅ All form fields are valid, proceeding to next step");
+
+			// All fields are valid, proceed to next step
 			if (this.currentStepIndex < this.quizData.steps.length - 1) {
 				console.log(`Moving to next step from ${this.currentStepIndex} to ${this.currentStepIndex + 1}`);
 				this.currentStepIndex++;
 				this.currentQuestionIndex = 0; // Reset question index for the new step
 				this.renderCurrentStep();
 				this.updateNavigation();
-			} else if (allComplete) {
+			} else {
 				// This is the last step, finish the quiz
 				console.log("Last step reached, finishing quiz");
 				this.finishQuiz();
-			} else {
-				console.warn("Cannot proceed: Not all required questions answered");
 			}
 			return;
 		}
@@ -1866,6 +1891,19 @@ class ProductQuiz {
 					this.handleFormAnswer(question.id, dropdownInput.value);
 					// Update dropdown color when value is selected
 					this._updateDropdownColor(dropdownInput);
+
+					// Clear error state if a valid option is selected
+					if (dropdownInput.value && dropdownInput.value !== "") {
+						const errorEl = this.questionContainer.querySelector(`#error-${question.id}`);
+						if (errorEl) {
+							dropdownInput.classList.remove("quiz-input-error");
+							dropdownInput.classList.add("quiz-input-valid");
+							errorEl.classList.add("quiz-error-hidden");
+							errorEl.classList.remove("quiz-error-visible");
+						}
+					}
+
+					// Note: No updateNavigation call since button is always enabled in forms
 				});
 				// Set initial color state
 				this._updateDropdownColor(dropdownInput);
@@ -1890,19 +1928,10 @@ class ProductQuiz {
 					const validationResult = this._validateFieldValue(question, textInput.value);
 					const isValid = this._updateFieldValidationState(textInput, question, validationResult);
 
-					// Handle the answer based on validation result
-					if (isValid) {
-						this.handleFormAnswer(question.id, textInput.value);
-					} else {
-						// If validation fails, pass null to indicate invalid state
-						// but for required field validation, we don't mark as null since user is still typing
-						if (validationResult.errorMessage === "This field is required") {
-							this.handleFormAnswer(question.id, textInput.value); // Keep the value
-						} else {
-							this.handleFormAnswer(question.id, null); // Mark as invalid
-						}
-					}
-					this.updateNavigation(); // Ensure navigation updates after handling answer
+					// Always update the response value for real-time tracking
+					this.handleFormAnswer(question.id, textInput.value);
+
+					// Note: We don't call updateNavigation here since button is always enabled
 				};
 
 				// Add both input and change handlers
@@ -1942,8 +1971,7 @@ class ProductQuiz {
 							this.handleFormAnswer(question.id, selectedOptions);
 						}
 
-						// Force update navigation
-						this.updateNavigation();
+						// Note: No updateNavigation call since button is always enabled in forms
 					};
 				});
 				break;
