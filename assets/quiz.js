@@ -1437,7 +1437,25 @@ class ProductQuiz {
 							};
 							console.log("✅ Created error eligibility data:", eligibilityData);
 						}
-						// Check if this is a Google Cloud Workflows execution response
+						// SECOND: Check for completed workflow with eligibility data (MOST COMMON CASE)
+						else if (webhookResponse && webhookResponse.body && webhookResponse.body.success === true && webhookResponse.body.eligibilityData) {
+							eligibilityData = webhookResponse.body.eligibilityData;
+							console.log("✅ Workflow completed successfully! Found eligibilityData in body:", eligibilityData);
+						}
+						// THIRD: Check for direct eligibility data in various paths
+						else if (webhookResponse && webhookResponse.eligibilityData) {
+							eligibilityData = webhookResponse.eligibilityData;
+							console.log("✅ Found eligibilityData at root level:", eligibilityData);
+						} else if (webhookResponse && webhookResponse.body && webhookResponse.body.body && webhookResponse.body.body.eligibilityData) {
+							// Sometimes responses are double-wrapped
+							eligibilityData = webhookResponse.body.body.eligibilityData;
+							console.log("✅ Found eligibilityData in body.body:", eligibilityData);
+						} else if (webhookResponse && webhookResponse.data && webhookResponse.data.eligibilityData) {
+							// Check if it's in a data field
+							eligibilityData = webhookResponse.data.eligibilityData;
+							console.log("✅ Found eligibilityData in data:", eligibilityData);
+						}
+						// FOURTH: Check if this is a Google Cloud Workflows execution response (ONLY if no eligibility data found above)
 						else if (webhookResponse && webhookResponse.execution && webhookResponse.execution.state) {
 							console.log("🔄 Detected Google Cloud Workflows execution response");
 							console.log("Execution state:", webhookResponse.execution.state);
@@ -1468,22 +1486,8 @@ class ProductQuiz {
 								errorMessage = `Workflow failed with state: ${webhookResponse.execution.state}`;
 							}
 						}
-						// Extract eligibility data from the response - try multiple possible paths
-						else if (webhookResponse && webhookResponse.eligibilityData) {
-							eligibilityData = webhookResponse.eligibilityData;
-							console.log("✅ Found eligibilityData at root level:", eligibilityData);
-						} else if (webhookResponse && webhookResponse.body && webhookResponse.body.eligibilityData) {
-							eligibilityData = webhookResponse.body.eligibilityData;
-							console.log("✅ Found eligibilityData in body:", eligibilityData);
-						} else if (webhookResponse && webhookResponse.body && webhookResponse.body.body && webhookResponse.body.body.eligibilityData) {
-							// Sometimes responses are double-wrapped
-							eligibilityData = webhookResponse.body.body.eligibilityData;
-							console.log("✅ Found eligibilityData in body.body:", eligibilityData);
-						} else if (webhookResponse && webhookResponse.data && webhookResponse.data.eligibilityData) {
-							// Check if it's in a data field
-							eligibilityData = webhookResponse.data.eligibilityData;
-							console.log("✅ Found eligibilityData in data:", eligibilityData);
-						} else if (webhookResponse && webhookResponse.success && webhookResponse.body) {
+						// FIFTH: Check if the whole body is the eligibility data
+						else if (webhookResponse && webhookResponse.success && webhookResponse.body) {
 							// Check if the whole body is the eligibility data
 							const potentialData = webhookResponse.body;
 							if (potentialData && typeof potentialData === "object" && "isEligible" in potentialData) {
