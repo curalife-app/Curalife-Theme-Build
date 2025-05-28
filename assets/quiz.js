@@ -1332,15 +1332,26 @@ class ProductQuiz {
 			const webhookUrl = this.container.getAttribute("data-n8n-webhook");
 			const bookingUrl = this.container.getAttribute("data-booking-url") || "/appointment-booking";
 
+			// Temporary override: Force the new Cloud Function URL
+			const actualWebhookUrl = "https://us-central1-telemedicine-458913.cloudfunctions.net/telemedicine-webhook";
+
 			console.log("=== WEBHOOK CONFIGURATION ===");
-			console.log("Webhook URL:", webhookUrl);
+			console.log("Original Webhook URL:", webhookUrl);
+			console.log("Using Webhook URL:", actualWebhookUrl);
 			console.log("Booking URL:", bookingUrl);
 			console.log("============================");
 
-			if (!webhookUrl) {
+			if (!actualWebhookUrl) {
 				console.warn("No webhook URL provided - proceeding to booking URL without webhook submission");
 				this.showResults(bookingUrl);
 				return;
+			}
+
+			// Check if we're using the old webhook URL and warn about it
+			if (webhookUrl && webhookUrl.includes("gcloud.curalife.com")) {
+				console.warn("⚠️ Section is configured with old webhook URL. Using override to new Cloud Function:");
+				console.warn("Old URL:", webhookUrl);
+				console.warn("New URL:", actualWebhookUrl);
 			}
 
 			// Call the Cloud Function webhook directly
@@ -1356,8 +1367,8 @@ class ProductQuiz {
 				const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Request timed out")), 35000));
 
 				// Call the Cloud Function webhook
-				console.log("Calling Cloud Function webhook:", webhookUrl);
-				const fetchPromise = fetch(webhookUrl, {
+				console.log("Calling Cloud Function webhook:", actualWebhookUrl);
+				const fetchPromise = fetch(actualWebhookUrl, {
 					method: "POST",
 					mode: "cors",
 					headers: {
@@ -1408,6 +1419,39 @@ class ProductQuiz {
 								planEnd: ""
 							};
 							console.log("✅ Created error eligibility data:", eligibilityData);
+						}
+						// Handle the old execution object response (fallback for old webhook URL)
+						else if (result && result.execution && result.execution.state) {
+							console.log("🔄 Detected old Google Cloud Workflows execution response");
+							console.log("Execution state:", result.execution.state);
+							console.log("Execution name:", result.execution.name);
+							console.warn("⚠️ This indicates you're using the old webhook URL. Please update to the new Cloud Function URL.");
+
+							if (result.execution.state === "SUCCEEDED") {
+								console.log("✅ Workflow completed successfully");
+								const workflowResult = this.extractResultFromExecution(result.execution);
+								if (workflowResult) {
+									eligibilityData = workflowResult;
+									console.log("✅ Extracted result from execution:", eligibilityData);
+								} else {
+									console.warn("⚠️ Workflow succeeded but no eligibility data found in result");
+									eligibilityData = this.createProcessingStatus();
+								}
+							} else if (result.execution.state === "ACTIVE") {
+								console.log("🔄 Workflow is still running - creating processing status");
+								eligibilityData = this.createProcessingStatus();
+							} else {
+								console.log("❌ Workflow failed with state:", result.execution.state);
+								eligibilityData = {
+									isEligible: false,
+									sessionsCovered: 0,
+									deductible: { individual: 0 },
+									eligibilityStatus: "ERROR",
+									userMessage: `Workflow failed with state: ${result.execution.state}. Our team will contact you to manually verify your coverage.`,
+									planBegin: "",
+									planEnd: ""
+								};
+							}
 						} else {
 							console.warn("❌ Unexpected response format from Cloud Function");
 							console.log("Expected: { success: true, eligibilityData: {...} }");
