@@ -1415,13 +1415,17 @@ class ProductQuiz {
 						if (webhookResponse && webhookResponse.body) {
 							console.log("Body keys:", Object.keys(webhookResponse.body));
 							console.log("Body success:", webhookResponse.body.success);
-							console.log("Body error:", webhookResponse.body.error);
+							console.log("Body eligibilityData:", !!webhookResponse.body.eligibilityData);
 						}
 						console.log("============================");
 
-						// FIRST: Check for immediate error responses
-						if (webhookResponse && webhookResponse.body && webhookResponse.body.success === false) {
-							// Handle immediate workflow error responses
+						// PRIORITY 1: Check for completed workflow with eligibility data (MOST COMMON CASE)
+						if (webhookResponse && webhookResponse.body && webhookResponse.body.success === true && webhookResponse.body.eligibilityData) {
+							eligibilityData = webhookResponse.body.eligibilityData;
+							console.log("✅ Workflow completed successfully! Found eligibilityData in body:", eligibilityData);
+						}
+						// PRIORITY 2: Check for immediate error responses
+						else if (webhookResponse && webhookResponse.body && webhookResponse.body.success === false) {
 							console.error("❌ Workflow completed with error:", webhookResponse.body);
 							console.error("Error message:", webhookResponse.body.error || "Unknown error");
 
@@ -1437,34 +1441,29 @@ class ProductQuiz {
 							};
 							console.log("✅ Created error eligibility data:", eligibilityData);
 						}
-						// SECOND: Check for completed workflow with eligibility data (MOST COMMON CASE)
-						else if (webhookResponse && webhookResponse.body && webhookResponse.body.success === true && webhookResponse.body.eligibilityData) {
-							eligibilityData = webhookResponse.body.eligibilityData;
-							console.log("✅ Workflow completed successfully! Found eligibilityData in body:", eligibilityData);
-						}
-						// THIRD: Check for direct eligibility data in various paths
+						// PRIORITY 3: Check for direct eligibility data in various paths
 						else if (webhookResponse && webhookResponse.eligibilityData) {
 							eligibilityData = webhookResponse.eligibilityData;
 							console.log("✅ Found eligibilityData at root level:", eligibilityData);
 						} else if (webhookResponse && webhookResponse.body && webhookResponse.body.body && webhookResponse.body.body.eligibilityData) {
-							// Sometimes responses are double-wrapped
 							eligibilityData = webhookResponse.body.body.eligibilityData;
 							console.log("✅ Found eligibilityData in body.body:", eligibilityData);
 						} else if (webhookResponse && webhookResponse.data && webhookResponse.data.eligibilityData) {
-							// Check if it's in a data field
 							eligibilityData = webhookResponse.data.eligibilityData;
 							console.log("✅ Found eligibilityData in data:", eligibilityData);
 						}
-						// FOURTH: Check if this is a Google Cloud Workflows execution response (ONLY if no eligibility data found above)
+						// PRIORITY 4: Check if this is a Google Cloud Workflows execution response (workflow still running)
 						else if (webhookResponse && webhookResponse.execution && webhookResponse.execution.state) {
 							console.log("🔄 Detected Google Cloud Workflows execution response");
 							console.log("Execution state:", webhookResponse.execution.state);
 							console.log("Execution name:", webhookResponse.execution.name);
 
 							if (webhookResponse.execution.state === "ACTIVE") {
-								console.log("⏳ Workflow is still running, polling for completion...");
+								console.log("⏳ Workflow is still running...");
+								console.log("⚠️ WARNING: This workflow is taking longer than expected.");
+								console.log("💡 For now, we'll show a processing status instead of polling to avoid creating multiple executions.");
 
-								// Update the loading message to show processing state
+								// Update the loading message
 								const loadingTitle = this.eligibilityCheck.querySelector(".quiz-eligibility-title");
 								const loadingDesc = this.eligibilityCheck.querySelector(".quiz-eligibility-description");
 
@@ -1472,23 +1471,38 @@ class ProductQuiz {
 									loadingTitle.textContent = "Processing Your Insurance Information";
 								}
 								if (loadingDesc) {
-									loadingDesc.textContent = "We're verifying your coverage details with your insurance provider. This may take a few minutes for complex policies.";
+									loadingDesc.textContent =
+										"Your request is being processed. This may take a few minutes for complex policies. You can proceed with booking and we'll contact you with your coverage details.";
 								}
 
-								// Try to poll for the result
-								eligibilityData = await this.pollWorkflowExecution(webhookResponse.execution.name);
+								// Instead of polling (which creates new executions), return a processing status
+								eligibilityData = this.createProcessingStatus();
+								console.log("✅ Created processing status for active workflow:", eligibilityData);
 							} else if (webhookResponse.execution.state === "SUCCEEDED") {
 								console.log("✅ Workflow completed successfully");
-								// Try to extract result from the execution
-								eligibilityData = this.extractResultFromExecution(webhookResponse.execution);
+								const result = this.extractResultFromExecution(webhookResponse.execution);
+								if (result) {
+									eligibilityData = result;
+									console.log("✅ Extracted result from execution:", eligibilityData);
+								} else {
+									console.warn("⚠️ Workflow succeeded but no eligibility data found in result");
+									eligibilityData = this.createProcessingStatus();
+								}
 							} else {
 								console.log("❌ Workflow failed with state:", webhookResponse.execution.state);
-								errorMessage = `Workflow failed with state: ${webhookResponse.execution.state}`;
+								eligibilityData = {
+									isEligible: false,
+									sessionsCovered: 0,
+									deductible: { individual: 0 },
+									eligibilityStatus: "ERROR",
+									userMessage: `Workflow failed with state: ${webhookResponse.execution.state}. Our team will contact you to manually verify your coverage.`,
+									planBegin: "",
+									planEnd: ""
+								};
 							}
 						}
-						// FIFTH: Check if the whole body is the eligibility data
+						// PRIORITY 5: Check if the whole body is the eligibility data
 						else if (webhookResponse && webhookResponse.success && webhookResponse.body) {
-							// Check if the whole body is the eligibility data
 							const potentialData = webhookResponse.body;
 							if (potentialData && typeof potentialData === "object" && "isEligible" in potentialData) {
 								eligibilityData = potentialData;
@@ -1497,17 +1511,14 @@ class ProductQuiz {
 						} else {
 							console.warn("❌ No eligibility data found in webhook response");
 							console.log("Checked paths:");
-							console.log("- webhookResponse.eligibilityData:", webhookResponse?.eligibilityData);
-							console.log("- webhookResponse.body:", webhookResponse?.body);
 							console.log("- webhookResponse.body.eligibilityData:", webhookResponse?.body?.eligibilityData);
+							console.log("- webhookResponse.eligibilityData:", webhookResponse?.eligibilityData);
 							console.log("- webhookResponse.body.body.eligibilityData:", webhookResponse?.body?.body?.eligibilityData);
 							console.log("- webhookResponse.data.eligibilityData:", webhookResponse?.data?.eligibilityData);
 
-							// Log all possible paths in the response
-							if (webhookResponse) {
-								console.log("Available response structure:");
-								console.log(JSON.stringify(webhookResponse, null, 2));
-							}
+							// Create a fallback processing status
+							console.log("🔄 Creating fallback processing status");
+							eligibilityData = this.createProcessingStatus();
 						}
 					} catch (jsonError) {
 						console.error("Failed to parse webhook JSON response:", jsonError);
@@ -1584,122 +1595,13 @@ class ProductQuiz {
 	}
 
 	// Helper method to poll Google Cloud Workflows execution until completion
+	// NOTE: This method was causing multiple workflow executions by making new webhook calls.
+	// It has been disabled to prevent this issue. Instead, we return a processing status immediately.
 	async pollWorkflowExecution(executionName, maxAttempts = 20, interval = 6000) {
 		console.log(`🔄 Workflow execution detected: ${executionName}`);
-		console.log(`⏰ Will poll for up to ${(maxAttempts * interval) / 1000} seconds for workflow completion`);
-		console.log(`📋 This workflow includes insurance verification AND user account creation - can take 1-2 minutes`);
+		console.log(`⚠️ POLLING DISABLED: This method was creating multiple executions. Returning processing status instead.`);
 
-		// Store the original payload so we can retry the webhook call
-		const originalPayload = this.lastPayload;
-		if (!originalPayload) {
-			console.warn("❌ No original payload stored - cannot poll for completion");
-			return this.createProcessingStatus();
-		}
-
-		for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-			console.log(`🔄 Poll attempt ${attempt}/${maxAttempts} (${(attempt * interval) / 1000}s elapsed)`);
-
-			// Update UI with progress messages
-			const loadingDesc = document.querySelector(".quiz-eligibility-description");
-			if (loadingDesc) {
-				if (attempt <= 3) {
-					loadingDesc.textContent = "Contacting your insurance provider to verify coverage...";
-				} else if (attempt <= 6) {
-					loadingDesc.textContent = "Processing your policy details and calculating benefits...";
-				} else if (attempt <= 10) {
-					loadingDesc.textContent = "Creating your personalized healthcare account...";
-				} else if (attempt <= 15) {
-					loadingDesc.textContent = "Finalizing your eligibility and account setup...";
-				} else {
-					loadingDesc.textContent = "Complex setups can take up to 2 minutes. Almost there...";
-				}
-			}
-
-			// Wait before checking (except first attempt which waits a bit less)
-			const waitTime = attempt === 1 ? 3000 : interval;
-			await new Promise(resolve => setTimeout(resolve, waitTime));
-
-			try {
-				console.log(`🔍 Checking if workflow completed (attempt ${attempt})...`);
-
-				// Retry the same webhook call to see if workflow completed
-				const response = await fetch("https://gcloud.curalife.com/run", {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						Accept: "application/json"
-					},
-					body: JSON.stringify(originalPayload),
-					mode: "cors"
-				});
-
-				if (response.ok) {
-					const responseData = await response.json();
-					console.log(`📋 Poll ${attempt} response structure:`, Object.keys(responseData));
-
-					// Check if we now get actual results instead of execution data
-					if (responseData.eligibilityData) {
-						console.log("✅ Workflow completed! Got eligibility data directly");
-						console.log("🎉 Final eligibility data:", responseData.eligibilityData);
-						return responseData.eligibilityData;
-					} else if (responseData.body && responseData.body.eligibilityData) {
-						console.log("✅ Workflow completed! Got eligibility data in body");
-						console.log("🎉 Final eligibility data:", responseData.body.eligibilityData);
-						return responseData.body.eligibilityData;
-					} else if (responseData.body && responseData.body.success === false) {
-						// Handle workflow error responses
-						console.error("❌ Workflow completed with error:", responseData.body);
-						console.error("Error message:", responseData.body.error || "Unknown error");
-
-						// Return an error eligibility status
-						return {
-							isEligible: false,
-							sessionsCovered: 0,
-							deductible: { individual: 0 },
-							eligibilityStatus: "ERROR",
-							userMessage: `There was an error processing your request: ${responseData.body.error || "Unknown error"}. Our team will contact you to manually verify your coverage.`,
-							planBegin: "",
-							planEnd: ""
-						};
-					} else if (responseData.execution) {
-						const execution = responseData.execution;
-						console.log(`📊 Execution state: ${execution.state} (attempt ${attempt})`);
-
-						if (execution.state === "SUCCEEDED") {
-							console.log("✅ Workflow succeeded! Extracting result...");
-							const result = this.extractResultFromExecution(execution);
-							if (result) {
-								console.log("🎉 Extracted result:", result);
-								return result;
-							}
-						} else if (execution.state === "FAILED" || execution.state === "CANCELLED") {
-							console.error(`❌ Workflow failed with state: ${execution.state}`);
-							if (execution.error) {
-								console.error("Error details:", execution.error);
-							}
-							return null;
-						} else if (execution.state === "ACTIVE") {
-							const elapsed = attempt * 6;
-							console.log(`⏳ Workflow still active after ${elapsed}s (attempt ${attempt}) - continuing...`);
-							// Log execution details for debugging
-							if (execution.startTime) {
-								console.log(`📅 Workflow started: ${execution.startTime}`);
-							}
-						}
-					} else {
-						console.log(`⏳ No eligibility data yet (attempt ${attempt})`);
-						console.log("📋 Response keys available:", Object.keys(responseData));
-					}
-				} else {
-					console.warn(`Poll attempt ${attempt} failed with status ${response.status}`);
-				}
-			} catch (error) {
-				console.warn(`Poll attempt ${attempt} error:`, error);
-			}
-		}
-
-		// After all attempts, return processing status
-		console.log("⏱️ Reached polling timeout - workflow may still be processing");
+		// Return processing status immediately instead of polling
 		return this.createProcessingStatus();
 	}
 
