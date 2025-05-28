@@ -1400,7 +1400,7 @@ class ProductQuiz {
 						console.log("Result keys:", Object.keys(result || {}));
 						console.log("============================");
 
-						// The Cloud Function returns the workflow result directly
+						// The Cloud Function now returns the workflow result body directly
 						if (result && result.success === true && result.eligibilityData) {
 							eligibilityData = result.eligibilityData;
 							console.log("✅ Found eligibilityData:", eligibilityData);
@@ -1419,6 +1419,32 @@ class ProductQuiz {
 								planEnd: ""
 							};
 							console.log("✅ Created error eligibility data:", eligibilityData);
+						}
+						// Handle the case where Cloud Function returns the HTTP response wrapper (before fix)
+						else if (result && result.body) {
+							console.log("🔄 Detected HTTP response wrapper, extracting body");
+							console.log("Body content:", result.body);
+
+							if (result.body.success === true && result.body.eligibilityData) {
+								eligibilityData = result.body.eligibilityData;
+								console.log("✅ Found eligibilityData in body:", eligibilityData);
+							} else if (result.body.success === false) {
+								console.error("❌ Workflow completed with error in body:", result.body);
+								eligibilityData = {
+									isEligible: false,
+									sessionsCovered: 0,
+									deductible: { individual: 0 },
+									eligibilityStatus: "ERROR",
+									userMessage: `There was an error processing your request: ${result.body.error || "Unknown error"}. Our team will contact you to manually verify your coverage.`,
+									planBegin: "",
+									planEnd: ""
+								};
+								console.log("✅ Created error eligibility data from body:", eligibilityData);
+							} else {
+								console.warn("❌ No success/eligibilityData found in body");
+								console.log("Body structure:", result.body);
+								eligibilityData = this.createProcessingStatus();
+							}
 						}
 						// Handle the old execution object response (fallback for old webhook URL)
 						else if (result && result.execution && result.execution.state) {
