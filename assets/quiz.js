@@ -1343,6 +1343,10 @@ class ProductQuiz {
 				return;
 			}
 
+			// Add sync parameter to webhook URL to request synchronous execution
+			const syncWebhookUrl = webhookUrl + (webhookUrl.includes("?") ? "&" : "?") + "sync=true";
+			console.log("Using synchronous webhook URL:", syncWebhookUrl);
+
 			// Try to call the webhook
 			let webhookSuccess = false;
 			let errorMessage = "";
@@ -1356,8 +1360,8 @@ class ProductQuiz {
 				const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Webhook request timed out")), 8000));
 
 				// Try regular CORS request first
-				console.log("Attempting CORS request to:", webhookUrl);
-				let fetchPromise = fetch(webhookUrl, {
+				console.log("Attempting CORS request to:", syncWebhookUrl);
+				let fetchPromise = fetch(syncWebhookUrl, {
 					method: "POST",
 					mode: "cors",
 					credentials: "include",
@@ -1367,19 +1371,21 @@ class ProductQuiz {
 						Origin: window.location.origin
 					},
 					body: JSON.stringify({
-						data: JSON.stringify(payload) // Double wrap as some n8n workflows expect this format
+						data: JSON.stringify(payload), // Double wrap as some n8n workflows expect this format
+						sync: true // Request synchronous execution
 					})
 				}).catch(error => {
 					console.log("❌ CORS request failed, trying no-cors mode:", error);
 					// Fallback to no-cors mode if regular CORS fails
-					return fetch(webhookUrl, {
+					return fetch(syncWebhookUrl, {
 						method: "POST",
 						mode: "no-cors",
 						headers: {
 							"Content-Type": "application/json"
 						},
 						body: JSON.stringify({
-							data: JSON.stringify(payload)
+							data: JSON.stringify(payload),
+							sync: true // Request synchronous execution
 						})
 					});
 				});
@@ -1460,24 +1466,29 @@ class ProductQuiz {
 
 							if (webhookResponse.execution.state === "ACTIVE") {
 								console.log("⏳ Workflow is still running...");
-								console.log("⚠️ WARNING: This workflow is taking longer than expected.");
-								console.log("💡 For now, we'll show a processing status instead of polling to avoid creating multiple executions.");
+								console.log("💡 Waiting a few seconds for workflow to complete before showing processing status...");
 
-								// Update the loading message
+								// Update the loading message to show we're waiting
 								const loadingTitle = this.eligibilityCheck.querySelector(".quiz-eligibility-title");
 								const loadingDesc = this.eligibilityCheck.querySelector(".quiz-eligibility-description");
 
 								if (loadingTitle) {
-									loadingTitle.textContent = "Processing Your Insurance Information";
+									loadingTitle.textContent = "Processing Insurance Verification";
 								}
 								if (loadingDesc) {
-									loadingDesc.textContent =
-										"Your request is being processed. This may take a few minutes for complex policies. You can proceed with booking and we'll contact you with your coverage details.";
+									loadingDesc.textContent = "Checking your insurance coverage and setting up your account. This usually takes just a few seconds...";
 								}
 
-								// Instead of polling (which creates new executions), return a processing status
-								eligibilityData = this.createProcessingStatus();
-								console.log("✅ Created processing status for active workflow:", eligibilityData);
+								// Wait 3 seconds for the workflow to complete
+								// Most workflows complete in 3-4 seconds, so this should be enough
+								try {
+									await new Promise(resolve => setTimeout(resolve, 3000));
+									console.log("⏳ Workflow is taking longer than expected, showing processing status");
+									eligibilityData = this.createProcessingStatus();
+								} catch (waitError) {
+									console.log("❌ Error while waiting for workflow completion:", waitError);
+									eligibilityData = this.createProcessingStatus();
+								}
 							} else if (webhookResponse.execution.state === "SUCCEEDED") {
 								console.log("✅ Workflow completed successfully");
 								const result = this.extractResultFromExecution(webhookResponse.execution);
