@@ -1174,8 +1174,6 @@ class ProductQuiz {
 				const resp = this.responses.find(r => r.questionId === q.id);
 				const currentValue = resp ? resp.answer : null;
 
-				console.log(`Validating field ${q.id} (${q.type}):`, currentValue);
-
 				// Check if required field is empty
 				if (q.required) {
 					let isEmpty = false;
@@ -1185,81 +1183,63 @@ class ProductQuiz {
 					} else if (q.type === "checkbox") {
 						isEmpty = !Array.isArray(currentValue) || currentValue.length === 0;
 					} else if (q.type === "payer-search") {
-						// For payer-search, check if it's a valid payer object
-						isEmpty = !(typeof currentValue === "object" && currentValue !== null && (currentValue.stediId || currentValue.displayName));
+						isEmpty = !currentValue || (typeof currentValue === "object" && !currentValue.stediId && !currentValue.displayName);
 					} else if (typeof currentValue === "string") {
 						isEmpty = currentValue.trim() === "";
 					}
 
 					if (isEmpty) {
 						hasValidationErrors = true;
-						validationErrors.push({
-							questionId: q.id,
-							errorMessage: q.type === "payer-search" ? "Please select an insurance plan" : "This field is required"
-						});
-						console.log(`❌ Required field ${q.id} is empty`);
+						validationErrors.push({ questionId: q.id, message: "This field is required" });
 						continue;
 					}
 				}
 
-				// If field has a value, validate format for text inputs and payer-search
-				if (currentValue) {
-					// For payer-search, use the stored object directly
-					if (q.type === "payer-search") {
-						const validationResult = this._validateFieldValue(q, currentValue);
-						if (!validationResult.isValid) {
-							hasValidationErrors = true;
-							validationErrors.push({
-								questionId: q.id,
-								errorMessage: validationResult.errorMessage
-							});
-							console.log(`❌ Field ${q.id} has validation error: ${validationResult.errorMessage}`);
-						} else {
-							console.log(`✅ Field ${q.id} (payer-search) is valid`);
-						}
-					} else if (typeof currentValue === "string" && currentValue.trim() !== "") {
-						// For text inputs, validate format
-						const validationResult = this._validateFieldValue(q, currentValue);
-						if (!validationResult.isValid) {
-							hasValidationErrors = true;
-							validationErrors.push({
-								questionId: q.id,
-								errorMessage: validationResult.errorMessage
-							});
-							console.log(`❌ Field ${q.id} has format error: ${validationResult.errorMessage}`);
-						} else {
-							console.log(`✅ Field ${q.id} is valid`);
-						}
+				// For payer-search, if we have a value and it's required, validate it's a proper object
+				if (q.type === "payer-search" && currentValue) {
+					const validationResult = this._validateFieldValue(q, currentValue);
+					if (!validationResult.isValid) {
+						hasValidationErrors = true;
+						validationErrors.push({ questionId: q.id, message: validationResult.errorMessage });
+						continue;
+					}
+				}
+
+				// For other field types, validate format
+				if (currentValue && q.type !== "payer-search") {
+					const validationResult = this._validateFieldValue(q, currentValue);
+					if (!validationResult.isValid) {
+						hasValidationErrors = true;
+						validationErrors.push({ questionId: q.id, message: validationResult.errorMessage });
+						continue;
 					}
 				}
 			}
 
-			// If there are validation errors, show them and don't proceed
 			if (hasValidationErrors) {
-				console.log("❌ Form has validation errors, showing error messages");
-
-				// Show error messages for each invalid field
+				// Show error messages for invalid fields
 				validationErrors.forEach(error => {
-					const input = this.questionContainer.querySelector(`#question-${error.questionId}`);
 					const errorEl = this.questionContainer.querySelector(`#error-${error.questionId}`);
+					const input = this.questionContainer.querySelector(`#question-${error.questionId}`);
 
-					if (input && errorEl) {
-						// Update input styling (works for both text inputs and selects)
-						input.classList.remove("quiz-input-valid");
+					if (input) {
 						input.classList.add("quiz-input-error");
+						input.classList.remove("quiz-input-valid");
+					}
 
+					if (errorEl) {
 						// Show error message
-						errorEl.textContent = error.errorMessage;
+						errorEl.textContent = error.message;
 						errorEl.classList.remove("quiz-error-hidden");
 						errorEl.classList.add("quiz-error-visible");
 					}
 				});
 
-				// Don't proceed to next step
-				return;
+				return; // Don't proceed to next step
 			}
 
-			console.log("✅ All form fields are valid, proceeding to next step");
+			// If we reach here, all validations passed
+
 
 			// All fields are valid, proceed to next step
 			if (this.currentStepIndex < this.quizData.steps.length - 1) {
@@ -1451,7 +1431,6 @@ class ProductQuiz {
 				// Race the timeout against the fetch
 				console.log("Waiting for Cloud Function response...");
 				const response = await Promise.race([fetchPromise, timeoutPromise]);
-				console.log("✅ Cloud Function request completed");
 
 				// Check the response status
 				console.log("=== CLOUD FUNCTION RESPONSE ===");
@@ -1460,7 +1439,6 @@ class ProductQuiz {
 				console.log("===============================");
 
 				if (response.ok) {
-					console.log("✅ Cloud Function response ok:", response.status);
 					webhookSuccess = true;
 
 					try {
@@ -1473,7 +1451,6 @@ class ProductQuiz {
 						// The Cloud Function now returns the workflow result body directly
 						if (result && result.success === true && result.eligibilityData) {
 							eligibilityData = result.eligibilityData;
-							console.log("✅ Found eligibilityData:", eligibilityData);
 						} else if (result && result.success === false) {
 							console.error("❌ Workflow completed with error:", result);
 							console.error("Error message:", result.error || "Unknown error");
@@ -1488,16 +1465,13 @@ class ProductQuiz {
 								planBegin: "",
 								planEnd: ""
 							};
-							console.log("✅ Created error eligibility data:", eligibilityData);
 						}
 						// Handle the case where Cloud Function returns the HTTP response wrapper (before fix)
 						else if (result && result.body) {
-							console.log("🔄 Detected HTTP response wrapper, extracting body");
 							console.log("Body content:", result.body);
 
 							if (result.body.success === true && result.body.eligibilityData) {
 								eligibilityData = result.body.eligibilityData;
-								console.log("✅ Found eligibilityData in body:", eligibilityData);
 							} else if (result.body.success === false) {
 								console.error("❌ Workflow completed with error in body:", result.body);
 								eligibilityData = {
@@ -1509,7 +1483,6 @@ class ProductQuiz {
 									planBegin: "",
 									planEnd: ""
 								};
-								console.log("✅ Created error eligibility data from body:", eligibilityData);
 							} else {
 								console.warn("❌ No success/eligibilityData found in body");
 								console.log("Body structure:", result.body);
@@ -1518,26 +1491,21 @@ class ProductQuiz {
 						}
 						// Handle the old execution object response (fallback for old webhook URL)
 						else if (result && result.execution && result.execution.state) {
-							console.log("🔄 Detected old Google Cloud Workflows execution response");
 							console.log("Execution state:", result.execution.state);
 							console.log("Execution name:", result.execution.name);
 							console.warn("⚠️ This indicates you're using the old webhook URL. Please update to the new Cloud Function URL.");
 
 							if (result.execution.state === "SUCCEEDED") {
-								console.log("✅ Workflow completed successfully");
 								const workflowResult = this.extractResultFromExecution(result.execution);
 								if (workflowResult) {
 									eligibilityData = workflowResult;
-									console.log("✅ Extracted result from execution:", eligibilityData);
 								} else {
 									console.warn("⚠️ Workflow succeeded but no eligibility data found in result");
 									eligibilityData = this.createProcessingStatus();
 								}
 							} else if (result.execution.state === "ACTIVE") {
-								console.log("🔄 Workflow is still running - creating processing status");
 								eligibilityData = this.createProcessingStatus();
 							} else {
-								console.log("❌ Workflow failed with state:", result.execution.state);
 								eligibilityData = {
 									isEligible: false,
 									sessionsCovered: 0,
@@ -1554,7 +1522,6 @@ class ProductQuiz {
 							console.log("Received:", result);
 
 							// Create a fallback processing status
-							console.log("🔄 Creating fallback processing status");
 							eligibilityData = this.createProcessingStatus();
 						}
 					} catch (jsonError) {
@@ -1658,8 +1625,6 @@ class ProductQuiz {
 	// NOTE: This method was causing multiple workflow executions by making new webhook calls.
 	// It has been disabled to prevent this issue. Instead, we return a processing status immediately.
 	async pollWorkflowExecution(executionName, maxAttempts = 20, interval = 6000) {
-		console.log(`🔄 Workflow execution detected: ${executionName}`);
-		console.log(`⚠️ POLLING DISABLED: This method was creating multiple executions. Returning processing status instead.`);
 
 		// Return processing status immediately instead of polling
 		return this.createProcessingStatus();
@@ -1681,17 +1646,14 @@ class ProductQuiz {
 
 	// Helper method to extract result from workflow execution
 	extractResultFromExecution(execution) {
-		console.log("🔍 Extracting result from execution:", execution);
 
 		// Check if there's a result field
 		if (execution.result) {
-			console.log("✅ Found result in execution.result");
 
 			// Try to parse if it's a string
 			if (typeof execution.result === "string") {
 				try {
 					const parsed = JSON.parse(execution.result);
-					console.log("✅ Parsed result from string:", parsed);
 
 					// Look for eligibility data in various paths
 					if (parsed.eligibilityData) {
@@ -1705,7 +1667,6 @@ class ProductQuiz {
 					console.warn("Failed to parse execution result as JSON:", parseError);
 				}
 			} else if (typeof execution.result === "object") {
-				console.log("✅ Found object result:", execution.result);
 
 				// Look for eligibility data in various paths
 				if (execution.result.eligibilityData) {
@@ -2166,12 +2127,9 @@ class ProductQuiz {
 			return;
 		}
 
-		console.log(`🔄 handleFormAnswer called for question ${questionId}:`, { answer, answerType: typeof answer });
 
 		// Special logging for payer-search
 		if (questionId === "q3" && typeof answer === "object" && answer !== null) {
-			console.log(`📋 Storing payer object for insurance question:`, answer);
-			console.log(`📋 Payer object details:`, {
 				stediId: answer.stediId,
 				displayName: answer.displayName,
 				primaryPayerId: answer.primaryPayerId,
@@ -2183,10 +2141,8 @@ class ProductQuiz {
 		// Find or create response for this question
 		const responseIndex = this.responses.findIndex(r => r.questionId === questionId);
 		if (responseIndex !== -1) {
-			console.log(`📝 Updating existing response for ${questionId}`);
 			this.responses[responseIndex].answer = answer;
 		} else {
-			console.log(`📝 Creating new response for ${questionId}`);
 			this.responses.push({
 				stepId: step.id,
 				questionId: questionId,
@@ -2202,7 +2158,6 @@ class ProductQuiz {
 		// Special verification for payer search
 		if (questionId === "q3") {
 			const payerResponse = this.responses.find(r => r.questionId === "q3");
-			console.log(`🔍 Payer response verification:`, {
 				found: !!payerResponse,
 				answerType: typeof payerResponse?.answer,
 				isObject: typeof payerResponse?.answer === "object" && payerResponse?.answer !== null,
@@ -2413,14 +2368,10 @@ class ProductQuiz {
 
 	// Enhanced validation method according to PRD requirements
 	_validateFieldValue(question, value) {
-		console.log(`🔍 _validateFieldValue called for ${question.id} (${question.type}):`, value);
 
 		// Special handling for payer-search type (insurance question)
 		if (question.type === "payer-search") {
-			console.log(`📋 Validating payer-search for ${question.id}:`, { required: question.required, value, valueType: typeof value });
-
 			if (question.required && (!value || (typeof value === "object" && !value.stediId && !value.displayName))) {
-				console.log(`❌ Payer-search validation failed: required field is empty or invalid`);
 				return {
 					isValid: false,
 					errorMessage: "Please select an insurance plan"
@@ -2428,7 +2379,6 @@ class ProductQuiz {
 			}
 			// If we have a valid payer object, it's valid
 			if (value && typeof value === "object" && (value.stediId || value.displayName)) {
-				console.log(`✅ Payer-search validation passed: valid payer object found`);
 				return {
 					isValid: true,
 					errorMessage: null
@@ -2436,7 +2386,6 @@ class ProductQuiz {
 			}
 			// If not required and no value, it's valid
 			if (!question.required && !value) {
-				console.log(`✅ Payer-search validation passed: not required and no value`);
 				return {
 					isValid: true,
 					errorMessage: null
@@ -2662,14 +2611,12 @@ class ProductQuiz {
 
 	// Method to attach payer search listeners for form-style questions
 	_attachPayerSearchFormListeners(question) {
-		console.log("🔧 Attaching payer search listeners for form-style question:", question.id);
 
 		// Add a small delay to ensure DOM elements are available
 		setTimeout(() => {
 			const searchInput = this.questionContainer.querySelector(`#question-${question.id}`);
 			const dropdown = this.questionContainer.querySelector(`#search-dropdown-${question.id}`);
 
-			console.log("🔍 Looking for elements:");
 			console.log("- searchInput selector: #question-" + question.id);
 			console.log("- dropdown selector: #search-dropdown-" + question.id);
 			console.log("- questionContainer:", !!this.questionContainer);
@@ -2701,47 +2648,37 @@ class ProductQuiz {
 				);
 
 				// Debug: dump the entire questionContainer HTML
-				console.log("🔍 questionContainer HTML:", this.questionContainer.innerHTML);
 				return;
 			}
 
-			console.log("✅ Found payer search elements, setting up behavior");
-			console.log("🔧 About to call _setupPayerSearchBehavior with callback");
 
 			this._setupPayerSearchBehavior(question, searchInput, dropdown, selectedPayer => {
-				console.log("🎯 Form-style payer selected callback triggered with:", selectedPayer);
 				console.log(
 					"📊 Current responses before storing payer:",
 					this.responses.map(r => ({ questionId: r.questionId, answerType: typeof r.answer, hasStediId: r.answer?.stediId, hasDisplayName: r.answer?.displayName }))
 				);
 
 				// Ensure we call handleFormAnswer with the payer object
-				console.log("🔄 About to call handleFormAnswer with:", { questionId: question.id, payer: selectedPayer });
 				this.handleFormAnswer(question.id, selectedPayer);
 
 				// Add a small delay and then log the stored response
 				setTimeout(() => {
 					const storedResponse = this.responses.find(r => r.questionId === question.id);
-					console.log("🔍 Stored response after handleFormAnswer:", storedResponse);
 					console.log(
 						"📊 All responses after payer selection:",
 						this.responses.map(r => ({ questionId: r.questionId, answerType: typeof r.answer, hasStediId: r.answer?.stediId, hasDisplayName: r.answer?.displayName }))
 					);
 
 					// Force update navigation to reflect the change
-					console.log("🔄 Updating navigation after payer selection");
 					this.updateNavigation();
 				}, 50);
 			});
 
-			console.log("✅ _setupPayerSearchBehavior completed");
 		}, 100); // 100ms delay
 	}
 
 	// Common payer search behavior setup
 	_setupPayerSearchBehavior(question, searchInput, dropdown, onSelectCallback) {
-		console.log("🔧 Setting up payer search behavior for:", question.id);
-		console.log("🔧 Callback function provided:", typeof onSelectCallback, onSelectCallback ? "✅" : "❌");
 
 		let searchTimeout;
 		let currentResults = [];
@@ -2753,28 +2690,22 @@ class ProductQuiz {
 		// Handle input changes with debouncing
 		const inputHandler = () => {
 			const query = searchInput.value.trim();
-			console.log("🔍 Search input changed:", query, "length:", query.length);
 
 			if (query.length < 2) {
-				console.log("❌ Query too short, hiding dropdown");
 				this._hidePayerSearchDropdown(dropdown);
 				return;
 			}
 
 			// Clear previous timeout
 			if (searchTimeout) {
-				console.log("⏰ Clearing previous search timeout");
 				clearTimeout(searchTimeout);
 			}
 
 			// Debounce search by 300ms
-			console.log("⏰ Setting search timeout for 300ms");
 			searchTimeout = setTimeout(() => {
-				console.log("🚀 Executing search for:", query);
 				this._searchPayers(question, query, dropdown, onSelectCallback, results => {
 					currentResults = results;
 					selectedIndex = -1;
-					console.log("✅ Search completed, found", results.length, "results");
 				});
 			}, 300);
 		};
@@ -2784,11 +2715,9 @@ class ProductQuiz {
 
 		// Add the input event listener
 		searchInput.addEventListener("input", inputHandler);
-		console.log("✅ Input event listener attached to:", searchInput);
 
 		// Handle focus event to ensure dropdown is hidden when field gets focus
 		const focusHandler = () => {
-			console.log("🎯 Search input focused");
 			// Only show dropdown if there's already a valid query
 			const query = searchInput.value.trim();
 			if (query.length < 2) {
@@ -2816,7 +2745,6 @@ class ProductQuiz {
 				case "Enter":
 					e.preventDefault();
 					if (selectedIndex >= 0 && currentResults[selectedIndex]) {
-						console.log("🎯 Enter pressed, calling _selectPayer with callback:", typeof onSelectCallback);
 						this._selectPayer(question, currentResults[selectedIndex], searchInput, dropdown, onSelectCallback);
 					}
 					break;
@@ -2841,23 +2769,19 @@ class ProductQuiz {
 				searchInput.value = "";
 				searchInput.focus();
 				// Clear the selection
-				console.log("🧹 Clear button clicked, calling callback with null");
 				onSelectCallback(null);
 				// Re-render to remove the selected payer display
 				this.renderCurrentStep();
 			});
 		}
 
-		console.log("✅ _setupPayerSearchBehavior completed for question:", question.id);
 	}
 
 	// Search payers using Stedi API
 	async _searchPayers(question, query, dropdown, onSelectCallback, onResultsCallback) {
-		console.log("🔍 _searchPayers called with:", { question: question.id, query, dropdown: !!dropdown });
 
 		try {
 			// Show loading state
-			console.log("📝 Setting loading state in dropdown");
 			dropdown.innerHTML = `
 				<div class="quiz-payer-search-loading">
 					<div class="quiz-payer-search-loading-spinner"></div>
@@ -2866,16 +2790,12 @@ class ProductQuiz {
 			`;
 			dropdown.classList.add("visible");
 			dropdown.style.display = "block";
-			console.log("✅ Loading state set, dropdown visible");
 
 			// Make API call to Stedi
 			const apiEndpoint = question.apiEndpoint || "https://healthcare.us.stedi.com/2024-04-01/payers/search";
 			const url = new URL(apiEndpoint);
 			url.searchParams.append("query", query);
 
-			console.log("🌐 API endpoint:", apiEndpoint);
-			console.log("🔗 Full URL:", url.toString());
-			console.log("🔑 Making real API call to Stedi...");
 
 			// Real API call to Stedi
 			const response = await fetch(url, {
@@ -2886,31 +2806,24 @@ class ProductQuiz {
 				}
 			});
 
-			console.log("📡 API response status:", response.status, response.statusText);
 
 			if (!response.ok) {
 				console.warn("⚠️ API request failed, falling back to demo data");
-				console.log("📊 Using demo data fallback");
 				const data = this._generateDemoPayerResults(query);
-				console.log("📊 Generated demo data:", data);
 
 				const results = data.items || [];
-				console.log("📋 Results array (demo):", results, "length:", results.length);
 
 				this._renderSearchResults(results, query, dropdown, question, onSelectCallback, onResultsCallback);
 				return;
 			}
 
 			const data = await response.json();
-			console.log("✅ Real API response data:", data);
 
 			const results = data.items || [];
-			console.log("📋 Results array (real API):", results, "length:", results.length);
 
 			this._renderSearchResults(results, query, dropdown, question, onSelectCallback, onResultsCallback);
 		} catch (error) {
 			console.error("❌ Payer search error:", error);
-			console.log("📊 Falling back to demo data due to error");
 
 			// Fallback to demo data on error
 			try {
@@ -2933,19 +2846,16 @@ class ProductQuiz {
 	// Helper method to render search results
 	_renderSearchResults(results, query, dropdown, question, onSelectCallback, onResultsCallback) {
 		if (results.length === 0) {
-			console.log("❌ No results found, showing no results message");
 			dropdown.innerHTML = `
 				<div class="quiz-payer-search-no-results">
 					No insurance plans found for "${query}". Try searching with a different term.
 				</div>
 			`;
 		} else {
-			console.log("✅ Found results, rendering them");
 			// Render results
 			const resultsHTML = results
 				.map((item, index) => {
 					const payer = item.payer;
-					console.log(`📄 Rendering result ${index}:`, payer.displayName);
 					return `
 					<div class="quiz-payer-search-item" data-index="${index}">
 						<div class="quiz-payer-search-item-name">${payer.displayName}</div>
@@ -2958,20 +2868,13 @@ class ProductQuiz {
 				})
 				.join("");
 
-			console.log("📝 Setting results HTML in dropdown");
 			dropdown.innerHTML = resultsHTML;
 
 			// Attach click listeners to results
 			const resultItems = dropdown.querySelectorAll(".quiz-payer-search-item");
-			console.log("🖱️ Attaching click listeners to", resultItems.length, "result items");
-			console.log("🖱️ onSelectCallback type:", typeof onSelectCallback, "provided:", onSelectCallback ? "✅" : "❌");
-			console.log("🖱️ onResultsCallback type:", typeof onResultsCallback, "provided:", onResultsCallback ? "✅" : "❌");
 
 			resultItems.forEach((item, index) => {
 				item.addEventListener("click", () => {
-					console.log("🖱️ Result item clicked:", index, results[index].payer.displayName);
-					console.log("🖱️ About to call _selectPayer with onSelectCallback:", typeof onSelectCallback);
-					console.log("🖱️ About to call _selectPayer with onResultsCallback:", typeof onResultsCallback);
 					this._selectPayer(question, results[index].payer, dropdown.parentElement.querySelector(".quiz-payer-search-input"), dropdown, onSelectCallback);
 				});
 			});
@@ -2979,14 +2882,11 @@ class ProductQuiz {
 
 		dropdown.classList.add("visible");
 		dropdown.style.display = "block";
-		console.log("✅ Dropdown set to visible");
 		onResultsCallback(results.map(item => item.payer));
-		console.log("✅ Callback executed with results");
 	}
 
 	// Generate demo results for testing (replace with real API in production)
 	_generateDemoPayerResults(query) {
-		console.log("🧪 _generateDemoPayerResults called with query:", query);
 
 		const allPayers = [
 			{
@@ -3082,11 +2982,9 @@ class ProductQuiz {
 			}
 		];
 
-		console.log("📊 Total demo payers available:", allPayers.length);
 
 		// Filter based on query
 		const lowerQuery = query.toLowerCase();
-		console.log("🔍 Filtering with query:", lowerQuery);
 
 		const filtered = allPayers.filter(item => {
 			const payer = item.payer;
@@ -3097,13 +2995,11 @@ class ProductQuiz {
 			const matches = displayNameMatch || stediIdMatch || aliasMatch;
 
 			if (matches) {
-				console.log(`✅ Match found: ${payer.displayName} (displayName: ${displayNameMatch}, stediId: ${stediIdMatch}, alias: ${aliasMatch})`);
 			}
 
 			return matches;
 		});
 
-		console.log("🎯 Filtered results:", filtered.length);
 		console.log(
 			"📋 Filtered payers:",
 			filtered.map(item => item.payer.displayName)
@@ -3116,18 +3012,15 @@ class ProductQuiz {
 			}
 		};
 
-		console.log("📦 Final result object:", result);
 		return result;
 	}
 
 	// Select a payer
 	_selectPayer(question, payer, searchInput, dropdown, onSelectCallback) {
-		console.log("🎯 _selectPayer called with:", { questionId: question.id, payer, hasSearchInput: !!searchInput, hasDropdown: !!dropdown });
 
 		// Update the input to show the selected payer name
 		if (searchInput) {
 			searchInput.value = payer.displayName;
-			console.log("✅ Updated search input value to:", payer.displayName);
 		}
 
 		// Hide dropdown
@@ -3138,20 +3031,16 @@ class ProductQuiz {
 		if (searchInput) {
 			searchInput.classList.remove("quiz-input-error");
 			searchInput.classList.add("quiz-input-valid");
-			console.log("✅ Removed error class and added valid class to search input");
 		}
 
 		if (errorEl) {
 			errorEl.classList.add("quiz-error-hidden");
 			errorEl.classList.remove("quiz-error-visible");
 			errorEl.textContent = "";
-			console.log("✅ Hidden error message element");
 		}
 
 		// Call the callback with the selected payer data
-		console.log("🔄 Calling onSelectCallback with payer object:", payer);
 		onSelectCallback(payer);
-		console.log("✅ Payer selection completed");
 	}
 
 	// Hide the payer search dropdown
