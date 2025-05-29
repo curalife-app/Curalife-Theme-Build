@@ -2643,14 +2643,14 @@ class ProductQuiz {
 
 	// Method to attach payer search listeners for form-style questions
 	_attachPayerSearchFormListeners(question) {
-		console.log("Attaching payer search listeners for form-style question:", question.id);
+		console.log("🔧 Attaching payer search listeners for form-style question:", question.id);
 
 		// Add a small delay to ensure DOM elements are available
 		setTimeout(() => {
 			const searchInput = this.questionContainer.querySelector(`#question-${question.id}`);
 			const dropdown = this.questionContainer.querySelector(`#search-dropdown-${question.id}`);
 
-			console.log("Looking for elements:");
+			console.log("🔍 Looking for elements:");
 			console.log("- searchInput selector: #question-" + question.id);
 			console.log("- dropdown selector: #search-dropdown-" + question.id);
 			console.log("- questionContainer:", !!this.questionContainer);
@@ -2658,29 +2658,52 @@ class ProductQuiz {
 			console.log("- dropdown found:", !!dropdown);
 
 			if (!searchInput || !dropdown) {
-				console.warn(`Payer search elements not found for question ${question.id}`);
+				console.warn(`❌ Payer search elements not found for question ${question.id}`);
 
 				// Debug: log all inputs in the container
 				const allInputs = this.questionContainer.querySelectorAll("input");
 				console.log(
-					"All inputs found:",
+					"🔍 All inputs found:",
 					Array.from(allInputs).map(input => ({ id: input.id, type: input.type, class: input.className }))
 				);
 
 				// Debug: log all divs with dropdown-like classes
 				const allDropdowns = this.questionContainer.querySelectorAll('[id*="dropdown"], .quiz-payer-search-dropdown');
 				console.log(
-					"All potential dropdowns found:",
+					"🔍 All potential dropdowns found:",
 					Array.from(allDropdowns).map(div => ({ id: div.id, class: div.className }))
 				);
 
-				return;
+				// Debug: log all inputs with payer-search class
+				const allPayerSearchInputs = this.questionContainer.querySelectorAll(".quiz-payer-search-input");
+				console.log(
+					"🔍 All payer search inputs found:",
+					Array.from(allPayerSearchInputs).map(input => ({ id: input.id, type: input.type, class: input.className }))
+				);
 			}
 
-			console.log("Found payer search elements, setting up behavior");
+			console.log("✅ Found payer search elements, setting up behavior");
 			this._setupPayerSearchBehavior(question, searchInput, dropdown, selectedPayer => {
-				console.log("Form-style payer selected:", selectedPayer);
+				console.log("🎯 Form-style payer selected callback triggered with:", selectedPayer);
+				console.log(
+					"📊 Current responses before storing payer:",
+					this.responses.map(r => ({ questionId: r.questionId, answerType: typeof r.answer, hasStediId: r.answer?.stediId, hasDisplayName: r.answer?.displayName }))
+				);
+
 				this.handleFormAnswer(question.id, selectedPayer);
+
+				// Add a small delay and then log the stored response
+				setTimeout(() => {
+					const storedResponse = this.responses.find(r => r.questionId === question.id);
+					console.log("🔍 Stored response after handleFormAnswer:", storedResponse);
+					console.log("📋 Response validation check:", {
+						hasResponse: !!storedResponse,
+						answerType: typeof storedResponse?.answer,
+						hasStediId: !!storedResponse?.answer?.stediId,
+						hasDisplayName: !!storedResponse?.answer?.displayName,
+						fullAnswer: storedResponse?.answer
+					});
+				}, 50);
 			});
 		}, 100); // 100ms delay
 	}
