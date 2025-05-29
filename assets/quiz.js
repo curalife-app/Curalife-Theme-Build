@@ -1277,6 +1277,9 @@ class ProductQuiz {
 	}
 
 	async finishQuiz() {
+		// Get booking URL early so it's available in all error handling
+		const bookingUrl = this.container.getAttribute("data-booking-url") || "/appointment-booking";
+
 		try {
 			this.submitting = true;
 			this.nextButton.disabled = true;
@@ -1412,7 +1415,6 @@ class ProductQuiz {
 
 			// Get webhook URL from data attribute
 			const webhookUrl = this.container.getAttribute("data-n8n-webhook");
-			const bookingUrl = this.container.getAttribute("data-booking-url") || "/appointment-booking";
 
 			// Temporary override: Force the new Cloud Function URL
 			const actualWebhookUrl = "https://us-central1-telemedicine-458913.cloudfunctions.net/telemedicine-webhook";
@@ -3060,8 +3062,9 @@ class ProductQuiz {
 	// Helper method to resolve primaryPayerId to displayName using demo data as fallback
 	_resolvePayerDisplayName(primaryPayerId) {
 		// Generate demo data to find the matching payer
-		const demoData = this._generateDemoPayerResults("");
-		const matchingPayer = demoData.find(item => item.payer.primaryPayerId === primaryPayerId);
+		const demoDataResult = this._generateDemoPayerResults("");
+		const demoItems = demoDataResult.items || [];
+		const matchingPayer = demoItems.find(item => item.payer.primaryPayerId === primaryPayerId);
 		return matchingPayer ? matchingPayer.payer.displayName : null;
 	}
 }
