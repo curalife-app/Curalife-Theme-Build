@@ -1293,6 +1293,7 @@ class ProductQuiz {
 			let phoneNumber = "";
 			let state = "";
 			let insurance = "";
+			let insurancePrimaryPayerId = ""; // Add this for the workflow
 			let insuranceMemberId = "";
 			let groupNumber = "";
 			let mainReasons = [];
@@ -1312,7 +1313,7 @@ class ProductQuiz {
 				if (response.questionId === "q10") phoneNumber = response.answer || "";
 				if (response.questionId === "q5") state = response.answer || "";
 				if (response.questionId === "q3") {
-					// Handle payer data - now stored as primaryPayerId but we need displayName for the insurance field
+					// Handle payer data - ensure insurance field contains displayName for workflow compatibility
 					const insuranceResponse = response.answer;
 					if (typeof insuranceResponse === "string" && insuranceResponse) {
 						// New format: primaryPayerId is stored as the answer
@@ -1321,21 +1322,36 @@ class ProductQuiz {
 						if (searchInput && searchInput.hasAttribute("data-selected-payer")) {
 							try {
 								const payerData = JSON.parse(searchInput.getAttribute("data-selected-payer"));
-								insurance = payerData.displayName || insuranceResponse;
+								insurance = payerData.displayName || "Unknown Insurance"; // Always use displayName for workflow
+								insurancePrimaryPayerId = payerData.primaryPayerId || insuranceResponse; // Store primaryPayerId separately
 							} catch (e) {
-								// Fallback to the primaryPayerId if parsing fails
-								insurance = insuranceResponse;
+								console.warn("Failed to parse stored payer data:", e);
+								// Fallback: try to get displayName from demo data or use primaryPayerId
+								insurance = insuranceResponse; // This might still cause issues but it's a fallback
+								insurancePrimaryPayerId = insuranceResponse;
 							}
 						} else {
-							// Fallback to the primaryPayerId
-							insurance = insuranceResponse;
+							console.warn("No stored payer data found, trying to resolve from demo data");
+							// Try to resolve using demo data as fallback
+							const resolvedName = this._resolvePayerDisplayName(insuranceResponse);
+							if (resolvedName) {
+								insurance = resolvedName;
+								insurancePrimaryPayerId = insuranceResponse;
+							} else {
+								console.warn("Could not resolve primaryPayerId to displayName:", insuranceResponse);
+								// Last resort fallback - use a more descriptive name
+								insurance = `Insurance Plan ${insuranceResponse}`;
+								insurancePrimaryPayerId = insuranceResponse;
+							}
 						}
 					} else if (typeof insuranceResponse === "object" && insuranceResponse !== null) {
 						// Legacy payer search format - use displayName for insurance field
-						insurance = insuranceResponse.displayName || insuranceResponse.stediId || "";
+						insurance = insuranceResponse.displayName || insuranceResponse.stediId || "Unknown Insurance";
+						insurancePrimaryPayerId = insuranceResponse.primaryPayerId || insuranceResponse.stediId || "";
 					} else {
 						// Legacy format or fallback
 						insurance = insuranceResponse || "";
+						insurancePrimaryPayerId = "";
 					}
 				}
 				if (response.questionId === "q4") insuranceMemberId = response.answer || "";
@@ -1369,6 +1385,7 @@ class ProductQuiz {
 				dateOfBirth,
 				state,
 				insurance,
+				insurancePrimaryPayerId, // Add the primaryPayerId for workflow use
 				insuranceMemberId,
 				groupNumber,
 				mainReasons,
@@ -3038,6 +3055,14 @@ class ProductQuiz {
 				item.classList.remove("keyboard-highlighted");
 			}
 		});
+	}
+
+	// Helper method to resolve primaryPayerId to displayName using demo data as fallback
+	_resolvePayerDisplayName(primaryPayerId) {
+		// Generate demo data to find the matching payer
+		const demoData = this._generateDemoPayerResults("");
+		const matchingPayer = demoData.find(item => item.payer.primaryPayerId === primaryPayerId);
+		return matchingPayer ? matchingPayer.payer.displayName : null;
 	}
 }
 
