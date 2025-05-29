@@ -2056,7 +2056,7 @@ class ProductQuiz {
 	_getTooltipContent(questionId) {
 		const tooltips = {
 			q3: "Select your primary insurance company. This helps us verify your coverage and find in-network dietitians.",
-			q4: "Enter your member ID exactly as it appears on your insurance card. This is typically found on the front of your card.",
+			q4: "This is the unique ID found on your insurance card.",
 			q5: "Select the state where you reside. Insurance coverage may vary by state."
 		};
 		return tooltips[questionId] || "";
