@@ -2771,7 +2771,7 @@ class ProductQuiz {
 			console.log("⏰ Setting search timeout for 300ms");
 			searchTimeout = setTimeout(() => {
 				console.log("🚀 Executing search for:", query);
-				this._searchPayers(question, query, dropdown, results => {
+				this._searchPayers(question, query, dropdown, onSelectCallback, results => {
 					currentResults = results;
 					selectedIndex = -1;
 					console.log("✅ Search completed, found", results.length, "results");
@@ -2852,7 +2852,7 @@ class ProductQuiz {
 	}
 
 	// Search payers using Stedi API
-	async _searchPayers(question, query, dropdown, onResultsCallback) {
+	async _searchPayers(question, query, dropdown, onSelectCallback, onResultsCallback) {
 		console.log("🔍 _searchPayers called with:", { question: question.id, query, dropdown: !!dropdown });
 
 		try {
@@ -2897,7 +2897,7 @@ class ProductQuiz {
 				const results = data.items || [];
 				console.log("📋 Results array (demo):", results, "length:", results.length);
 
-				this._renderSearchResults(results, query, dropdown, question, onResultsCallback);
+				this._renderSearchResults(results, query, dropdown, question, onSelectCallback, onResultsCallback);
 				return;
 			}
 
@@ -2907,7 +2907,7 @@ class ProductQuiz {
 			const results = data.items || [];
 			console.log("📋 Results array (real API):", results, "length:", results.length);
 
-			this._renderSearchResults(results, query, dropdown, question, onResultsCallback);
+			this._renderSearchResults(results, query, dropdown, question, onSelectCallback, onResultsCallback);
 		} catch (error) {
 			console.error("❌ Payer search error:", error);
 			console.log("📊 Falling back to demo data due to error");
@@ -2916,7 +2916,7 @@ class ProductQuiz {
 			try {
 				const data = this._generateDemoPayerResults(query);
 				const results = data.items || [];
-				this._renderSearchResults(results, query, dropdown, question, onResultsCallback);
+				this._renderSearchResults(results, query, dropdown, question, onSelectCallback, onResultsCallback);
 			} catch (demoError) {
 				console.error("❌ Demo data fallback also failed:", demoError);
 				dropdown.innerHTML = `
@@ -2931,7 +2931,7 @@ class ProductQuiz {
 	}
 
 	// Helper method to render search results
-	_renderSearchResults(results, query, dropdown, question, onResultsCallback) {
+	_renderSearchResults(results, query, dropdown, question, onSelectCallback, onResultsCallback) {
 		if (results.length === 0) {
 			console.log("❌ No results found, showing no results message");
 			dropdown.innerHTML = `
@@ -2964,13 +2964,15 @@ class ProductQuiz {
 			// Attach click listeners to results
 			const resultItems = dropdown.querySelectorAll(".quiz-payer-search-item");
 			console.log("🖱️ Attaching click listeners to", resultItems.length, "result items");
+			console.log("🖱️ onSelectCallback type:", typeof onSelectCallback, "provided:", onSelectCallback ? "✅" : "❌");
 			console.log("🖱️ onResultsCallback type:", typeof onResultsCallback, "provided:", onResultsCallback ? "✅" : "❌");
 
 			resultItems.forEach((item, index) => {
 				item.addEventListener("click", () => {
 					console.log("🖱️ Result item clicked:", index, results[index].payer.displayName);
+					console.log("🖱️ About to call _selectPayer with onSelectCallback:", typeof onSelectCallback);
 					console.log("🖱️ About to call _selectPayer with onResultsCallback:", typeof onResultsCallback);
-					this._selectPayer(question, results[index].payer, dropdown.parentElement.querySelector(".quiz-payer-search-input"), dropdown, onResultsCallback);
+					this._selectPayer(question, results[index].payer, dropdown.parentElement.querySelector(".quiz-payer-search-input"), dropdown, onSelectCallback);
 				});
 			});
 		}
