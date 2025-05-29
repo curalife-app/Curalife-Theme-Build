@@ -480,9 +480,13 @@ class ProductQuiz {
 	_attachStepEventListeners(step) {
 		if (!step.questions || step.questions.length === 0) return;
 
+		console.log("Attaching step event listeners for step:", step.id, "isFormStep:", this.isFormStep(step.id));
+
 		if (this.isFormStep(step.id)) {
+			console.log("This is a form step, attaching listeners to all questions");
 			// Attach listeners to all form questions
 			step.questions.forEach(question => {
+				console.log("Attaching form listener for question:", question.id, question.type);
 				this.attachFormQuestionListener(question);
 			});
 
@@ -499,9 +503,11 @@ class ProductQuiz {
 				formButton.addEventListener("click", this.formButtonHandler);
 			}
 		} else {
+			console.log("This is a wizard step, attaching listener to current question");
 			// Attach listener to current wizard question
 			const currentQuestion = step.questions[this.currentQuestionIndex];
 			if (currentQuestion) {
+				console.log("Attaching wizard listener for question:", currentQuestion.id, currentQuestion.type);
 				this.attachQuestionEventListeners(currentQuestion);
 			}
 		}
@@ -783,7 +789,7 @@ class ProductQuiz {
 				break;
 
 			case "payer-search":
-				this._attachPayerSearchFormListeners(question);
+				this._attachPayerSearchListeners(question);
 				break;
 
 			case "text":
@@ -2004,6 +2010,11 @@ class ProductQuiz {
 				});
 				break;
 
+			case "payer-search":
+				console.log("Attaching form payer search listeners for:", question.id);
+				this._attachPayerSearchFormListeners(question);
+				break;
+
 			default:
 				console.warn(`Unsupported form field type: ${question.type}`);
 		}
@@ -2411,6 +2422,8 @@ class ProductQuiz {
 		const selectedPayer = response.answer;
 		const placeholder = question.placeholder || "Search for your insurance plan...";
 
+		console.log("Rendering payer search for question:", question.id, "selectedPayer:", selectedPayer);
+
 		// Build the search input HTML
 		let html = `
 			<div class="quiz-payer-search-container">
@@ -2444,50 +2457,87 @@ class ProductQuiz {
 		}
 
 		html += "</div>";
+		console.log("Generated payer search HTML for question:", question.id);
 		return html;
 	}
 
 	// Method to attach payer search listeners for wizard-style questions
 	_attachPayerSearchListeners(question) {
+		console.log("Attaching payer search listeners for wizard-style question:", question.id);
 		const searchInput = this.questionContainer.querySelector(`#question-${question.id}`);
 		const dropdown = this.questionContainer.querySelector(`#search-dropdown-${question.id}`);
 
 		if (!searchInput || !dropdown) {
 			console.warn(`Payer search elements not found for question ${question.id}`);
+			console.log("searchInput:", !!searchInput, "dropdown:", !!dropdown);
 			return;
 		}
 
+		console.log("Found payer search elements, setting up behavior");
 		this._setupPayerSearchBehavior(question, searchInput, dropdown, selectedPayer => {
+			console.log("Wizard-style payer selected:", selectedPayer);
 			this.handleAnswer(selectedPayer);
 		});
 	}
 
 	// Method to attach payer search listeners for form-style questions
 	_attachPayerSearchFormListeners(question) {
-		const searchInput = this.questionContainer.querySelector(`#question-${question.id}`);
-		const dropdown = this.questionContainer.querySelector(`#search-dropdown-${question.id}`);
+		console.log("Attaching payer search listeners for form-style question:", question.id);
 
-		if (!searchInput || !dropdown) {
-			console.warn(`Payer search elements not found for question ${question.id}`);
-			return;
-		}
+		// Add a small delay to ensure DOM elements are available
+		setTimeout(() => {
+			const searchInput = this.questionContainer.querySelector(`#question-${question.id}`);
+			const dropdown = this.questionContainer.querySelector(`#search-dropdown-${question.id}`);
 
-		this._setupPayerSearchBehavior(question, searchInput, dropdown, selectedPayer => {
-			this.handleFormAnswer(question.id, selectedPayer);
-		});
+			console.log("Looking for elements:");
+			console.log("- searchInput selector: #question-" + question.id);
+			console.log("- dropdown selector: #search-dropdown-" + question.id);
+			console.log("- questionContainer:", !!this.questionContainer);
+			console.log("- searchInput found:", !!searchInput);
+			console.log("- dropdown found:", !!dropdown);
+
+			if (!searchInput || !dropdown) {
+				console.warn(`Payer search elements not found for question ${question.id}`);
+
+				// Debug: log all inputs in the container
+				const allInputs = this.questionContainer.querySelectorAll("input");
+				console.log(
+					"All inputs found:",
+					Array.from(allInputs).map(input => ({ id: input.id, type: input.type, class: input.className }))
+				);
+
+				// Debug: log all divs with dropdown-like classes
+				const allDropdowns = this.questionContainer.querySelectorAll('[id*="dropdown"], .quiz-payer-search-dropdown');
+				console.log(
+					"All potential dropdowns found:",
+					Array.from(allDropdowns).map(div => ({ id: div.id, class: div.className }))
+				);
+
+				return;
+			}
+
+			console.log("Found payer search elements, setting up behavior");
+			this._setupPayerSearchBehavior(question, searchInput, dropdown, selectedPayer => {
+				console.log("Form-style payer selected:", selectedPayer);
+				this.handleFormAnswer(question.id, selectedPayer);
+			});
+		}, 100); // 100ms delay
 	}
 
 	// Common payer search behavior setup
 	_setupPayerSearchBehavior(question, searchInput, dropdown, onSelectCallback) {
+		console.log("Setting up payer search behavior for:", question.id);
 		let searchTimeout;
 		let currentResults = [];
 		let selectedIndex = -1;
 
 		// Handle input changes with debouncing
-		searchInput.addEventListener("input", () => {
+		const inputHandler = () => {
 			const query = searchInput.value.trim();
+			console.log("Search input changed:", query);
 
 			if (query.length < 2) {
+				console.log("Query too short, hiding dropdown");
 				this._hidePayerSearchDropdown(dropdown);
 				return;
 			}
@@ -2497,12 +2547,21 @@ class ProductQuiz {
 
 			// Debounce search by 300ms
 			searchTimeout = setTimeout(() => {
+				console.log("Executing search for:", query);
 				this._searchPayers(question, query, dropdown, results => {
 					currentResults = results;
 					selectedIndex = -1;
+					console.log("Search completed, found", results.length, "results");
 				});
 			}, 300);
-		});
+		};
+
+		// Remove any existing event listeners to prevent duplicates
+		searchInput.removeEventListener("input", inputHandler);
+
+		// Add the input event listener
+		searchInput.addEventListener("input", inputHandler);
+		console.log("Input event listener attached to:", searchInput);
 
 		// Handle keyboard navigation
 		searchInput.addEventListener("keydown", e => {
