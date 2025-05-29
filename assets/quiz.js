@@ -2534,24 +2534,28 @@ class ProductQuiz {
 		// Handle input changes with debouncing
 		const inputHandler = () => {
 			const query = searchInput.value.trim();
-			console.log("Search input changed:", query);
+			console.log("🔍 Search input changed:", query, "length:", query.length);
 
 			if (query.length < 2) {
-				console.log("Query too short, hiding dropdown");
+				console.log("❌ Query too short, hiding dropdown");
 				this._hidePayerSearchDropdown(dropdown);
 				return;
 			}
 
 			// Clear previous timeout
-			clearTimeout(searchTimeout);
+			if (searchTimeout) {
+				console.log("⏰ Clearing previous search timeout");
+				clearTimeout(searchTimeout);
+			}
 
 			// Debounce search by 300ms
+			console.log("⏰ Setting search timeout for 300ms");
 			searchTimeout = setTimeout(() => {
-				console.log("Executing search for:", query);
+				console.log("🚀 Executing search for:", query);
 				this._searchPayers(question, query, dropdown, results => {
 					currentResults = results;
 					selectedIndex = -1;
-					console.log("Search completed, found", results.length, "results");
+					console.log("✅ Search completed, found", results.length, "results");
 				});
 			}, 300);
 		};
@@ -2561,7 +2565,14 @@ class ProductQuiz {
 
 		// Add the input event listener
 		searchInput.addEventListener("input", inputHandler);
-		console.log("Input event listener attached to:", searchInput);
+		console.log("✅ Input event listener attached to:", searchInput);
+
+		// Test the event listener immediately
+		console.log("🧪 Testing input event listener...");
+		const testEvent = new Event("input", { bubbles: true });
+		searchInput.value = "test";
+		searchInput.dispatchEvent(testEvent);
+		searchInput.value = ""; // Clear test value
 
 		// Handle keyboard navigation
 		searchInput.addEventListener("keydown", e => {
@@ -2614,8 +2625,11 @@ class ProductQuiz {
 
 	// Search payers using Stedi API
 	async _searchPayers(question, query, dropdown, onResultsCallback) {
+		console.log("🔍 _searchPayers called with:", { question: question.id, query, dropdown: !!dropdown });
+
 		try {
 			// Show loading state
+			console.log("📝 Setting loading state in dropdown");
 			dropdown.innerHTML = `
 				<div class="quiz-payer-search-loading">
 					<div class="quiz-payer-search-loading-spinner"></div>
@@ -2623,53 +2637,38 @@ class ProductQuiz {
 				</div>
 			`;
 			dropdown.classList.add("visible");
+			console.log("✅ Loading state set, dropdown visible");
 
 			// Make API call to Stedi
 			const apiEndpoint = question.apiEndpoint || "https://healthcare.us.stedi.com/2024-04-01/payers/search";
 			const url = new URL(apiEndpoint);
 			url.searchParams.append("query", query);
 
-			console.log("Searching payers with query:", query);
-
-			// Note: This is a demo implementation. In production, you would need:
-			// 1. A proper API key for Stedi
-			// 2. A backend proxy to hide the API key
-			// 3. Error handling for rate limits, etc.
-
-			// For demo purposes, we'll simulate the API response
-			// In production, uncomment the real API call below:
-			/*
-			const response = await fetch(url, {
-				method: 'GET',
-				headers: {
-					'Authorization': 'YOUR_STEDI_API_KEY',
-					'Accept': 'application/json'
-				}
-			});
-
-			if (!response.ok) {
-				throw new Error(`API request failed: ${response.status}`);
-			}
-
-			const data = await response.json();
-			*/
+			console.log("🌐 API endpoint:", apiEndpoint);
+			console.log("🔗 Full URL would be:", url.toString());
+			console.log("🧪 Using demo data instead of real API call");
 
 			// Demo data based on Stedi API response format
 			const data = this._generateDemoPayerResults(query);
+			console.log("📊 Generated demo data:", data);
 
 			const results = data.items || [];
+			console.log("📋 Results array:", results, "length:", results.length);
 
 			if (results.length === 0) {
+				console.log("❌ No results found, showing no results message");
 				dropdown.innerHTML = `
 					<div class="quiz-payer-search-no-results">
 						No insurance plans found for "${query}". Try searching with a different term.
 					</div>
 				`;
 			} else {
+				console.log("✅ Found results, rendering them");
 				// Render results
 				const resultsHTML = results
 					.map((item, index) => {
 						const payer = item.payer;
+						console.log(`📄 Rendering result ${index}:`, payer.displayName);
 						return `
 						<div class="quiz-payer-search-item" data-index="${index}">
 							<div class="quiz-payer-search-item-name">${payer.displayName}</div>
@@ -2682,21 +2681,26 @@ class ProductQuiz {
 					})
 					.join("");
 
+				console.log("📝 Setting results HTML in dropdown");
 				dropdown.innerHTML = resultsHTML;
 
 				// Attach click listeners to results
 				const resultItems = dropdown.querySelectorAll(".quiz-payer-search-item");
+				console.log("🖱️ Attaching click listeners to", resultItems.length, "result items");
 				resultItems.forEach((item, index) => {
 					item.addEventListener("click", () => {
+						console.log("🖱️ Result item clicked:", index, results[index].payer.displayName);
 						this._selectPayer(question, results[index].payer, dropdown.parentElement.querySelector(".quiz-payer-search-input"), dropdown, onResultsCallback);
 					});
 				});
 			}
 
 			dropdown.classList.add("visible");
+			console.log("✅ Dropdown set to visible");
 			onResultsCallback(results.map(item => item.payer));
+			console.log("✅ Callback executed with results");
 		} catch (error) {
-			console.error("Payer search error:", error);
+			console.error("❌ Payer search error:", error);
 			dropdown.innerHTML = `
 				<div class="quiz-payer-search-error">
 					Error searching for insurance plans. Please try again.
@@ -2709,6 +2713,8 @@ class ProductQuiz {
 
 	// Generate demo results for testing (replace with real API in production)
 	_generateDemoPayerResults(query) {
+		console.log("🧪 _generateDemoPayerResults called with query:", query);
+
 		const allPayers = [
 			{
 				payer: {
@@ -2803,19 +2809,42 @@ class ProductQuiz {
 			}
 		];
 
+		console.log("📊 Total demo payers available:", allPayers.length);
+
 		// Filter based on query
 		const lowerQuery = query.toLowerCase();
+		console.log("🔍 Filtering with query:", lowerQuery);
+
 		const filtered = allPayers.filter(item => {
 			const payer = item.payer;
-			return payer.displayName.toLowerCase().includes(lowerQuery) || payer.stediId.toLowerCase().includes(lowerQuery) || payer.aliases.some(alias => alias.toLowerCase().includes(lowerQuery));
+			const displayNameMatch = payer.displayName.toLowerCase().includes(lowerQuery);
+			const stediIdMatch = payer.stediId.toLowerCase().includes(lowerQuery);
+			const aliasMatch = payer.aliases.some(alias => alias.toLowerCase().includes(lowerQuery));
+
+			const matches = displayNameMatch || stediIdMatch || aliasMatch;
+
+			if (matches) {
+				console.log(`✅ Match found: ${payer.displayName} (displayName: ${displayNameMatch}, stediId: ${stediIdMatch}, alias: ${aliasMatch})`);
+			}
+
+			return matches;
 		});
 
-		return {
+		console.log("🎯 Filtered results:", filtered.length);
+		console.log(
+			"📋 Filtered payers:",
+			filtered.map(item => item.payer.displayName)
+		);
+
+		const result = {
 			items: filtered.slice(0, 5), // Limit to 5 results
 			stats: {
 				total: filtered.length
 			}
 		};
+
+		console.log("📦 Final result object:", result);
+		return result;
 	}
 
 	// Select a payer
