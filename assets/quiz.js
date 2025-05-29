@@ -2645,70 +2645,108 @@ class ProductQuiz {
 			url.searchParams.append("query", query);
 
 			console.log("🌐 API endpoint:", apiEndpoint);
-			console.log("🔗 Full URL would be:", url.toString());
-			console.log("🧪 Using demo data instead of real API call");
+			console.log("🔗 Full URL:", url.toString());
+			console.log("🔑 Making real API call to Stedi...");
 
-			// Demo data based on Stedi API response format
-			const data = this._generateDemoPayerResults(query);
-			console.log("📊 Generated demo data:", data);
+			// Real API call to Stedi
+			const response = await fetch(url, {
+				method: "GET",
+				headers: {
+					Authorization: "test_fsWwDEq.XvSAryFi2OujuV0n3mNPhFfE",
+					Accept: "application/json"
+				}
+			});
 
-			const results = data.items || [];
-			console.log("📋 Results array:", results, "length:", results.length);
+			console.log("📡 API response status:", response.status, response.statusText);
 
-			if (results.length === 0) {
-				console.log("❌ No results found, showing no results message");
-				dropdown.innerHTML = `
-					<div class="quiz-payer-search-no-results">
-						No insurance plans found for "${query}". Try searching with a different term.
-					</div>
-				`;
-			} else {
-				console.log("✅ Found results, rendering them");
-				// Render results
-				const resultsHTML = results
-					.map((item, index) => {
-						const payer = item.payer;
-						console.log(`📄 Rendering result ${index}:`, payer.displayName);
-						return `
-						<div class="quiz-payer-search-item" data-index="${index}">
-							<div class="quiz-payer-search-item-name">${payer.displayName}</div>
-							<div class="quiz-payer-search-item-details">
-								<span class="quiz-payer-search-item-id">${payer.stediId}</span>
-								${payer.aliases && payer.aliases.length > 0 ? `• ${payer.aliases.slice(0, 2).join(", ")}` : ""}
-							</div>
-						</div>
-					`;
-					})
-					.join("");
+			if (!response.ok) {
+				console.warn("⚠️ API request failed, falling back to demo data");
+				console.log("📊 Using demo data fallback");
+				const data = this._generateDemoPayerResults(query);
+				console.log("📊 Generated demo data:", data);
 
-				console.log("📝 Setting results HTML in dropdown");
-				dropdown.innerHTML = resultsHTML;
+				const results = data.items || [];
+				console.log("📋 Results array (demo):", results, "length:", results.length);
 
-				// Attach click listeners to results
-				const resultItems = dropdown.querySelectorAll(".quiz-payer-search-item");
-				console.log("🖱️ Attaching click listeners to", resultItems.length, "result items");
-				resultItems.forEach((item, index) => {
-					item.addEventListener("click", () => {
-						console.log("🖱️ Result item clicked:", index, results[index].payer.displayName);
-						this._selectPayer(question, results[index].payer, dropdown.parentElement.querySelector(".quiz-payer-search-input"), dropdown, onResultsCallback);
-					});
-				});
+				this._renderSearchResults(results, query, dropdown, question, onResultsCallback);
+				return;
 			}
 
-			dropdown.classList.add("visible");
-			console.log("✅ Dropdown set to visible");
-			onResultsCallback(results.map(item => item.payer));
-			console.log("✅ Callback executed with results");
+			const data = await response.json();
+			console.log("✅ Real API response data:", data);
+
+			const results = data.items || [];
+			console.log("📋 Results array (real API):", results, "length:", results.length);
+
+			this._renderSearchResults(results, query, dropdown, question, onResultsCallback);
 		} catch (error) {
 			console.error("❌ Payer search error:", error);
+			console.log("📊 Falling back to demo data due to error");
+
+			// Fallback to demo data on error
+			try {
+				const data = this._generateDemoPayerResults(query);
+				const results = data.items || [];
+				this._renderSearchResults(results, query, dropdown, question, onResultsCallback);
+			} catch (demoError) {
+				console.error("❌ Demo data fallback also failed:", demoError);
+				dropdown.innerHTML = `
+					<div class="quiz-payer-search-error">
+						Error searching for insurance plans. Please try again.
+					</div>
+				`;
+				dropdown.classList.add("visible");
+				onResultsCallback([]);
+			}
+		}
+	}
+
+	// Helper method to render search results
+	_renderSearchResults(results, query, dropdown, question, onResultsCallback) {
+		if (results.length === 0) {
+			console.log("❌ No results found, showing no results message");
 			dropdown.innerHTML = `
-				<div class="quiz-payer-search-error">
-					Error searching for insurance plans. Please try again.
+				<div class="quiz-payer-search-no-results">
+					No insurance plans found for "${query}". Try searching with a different term.
 				</div>
 			`;
-			dropdown.classList.add("visible");
-			onResultsCallback([]);
+		} else {
+			console.log("✅ Found results, rendering them");
+			// Render results
+			const resultsHTML = results
+				.map((item, index) => {
+					const payer = item.payer;
+					console.log(`📄 Rendering result ${index}:`, payer.displayName);
+					return `
+					<div class="quiz-payer-search-item" data-index="${index}">
+						<div class="quiz-payer-search-item-name">${payer.displayName}</div>
+						<div class="quiz-payer-search-item-details">
+							<span class="quiz-payer-search-item-id">${payer.stediId}</span>
+							${payer.aliases && payer.aliases.length > 0 ? `• ${payer.aliases.slice(0, 2).join(", ")}` : ""}
+						</div>
+					</div>
+				`;
+				})
+				.join("");
+
+			console.log("📝 Setting results HTML in dropdown");
+			dropdown.innerHTML = resultsHTML;
+
+			// Attach click listeners to results
+			const resultItems = dropdown.querySelectorAll(".quiz-payer-search-item");
+			console.log("🖱️ Attaching click listeners to", resultItems.length, "result items");
+			resultItems.forEach((item, index) => {
+				item.addEventListener("click", () => {
+					console.log("🖱️ Result item clicked:", index, results[index].payer.displayName);
+					this._selectPayer(question, results[index].payer, dropdown.parentElement.querySelector(".quiz-payer-search-input"), dropdown, onResultsCallback);
+				});
+			});
 		}
+
+		dropdown.classList.add("visible");
+		console.log("✅ Dropdown set to visible");
+		onResultsCallback(results.map(item => item.payer));
+		console.log("✅ Callback executed with results");
 	}
 
 	// Generate demo results for testing (replace with real API in production)
