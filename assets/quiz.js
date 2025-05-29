@@ -754,18 +754,36 @@ class ProductQuiz {
 				break;
 
 			case "dropdown":
+			case "date-part":
 				const dropdownInput = this.questionContainer.querySelector(`#question-${question.id}`);
 				if (!dropdownInput) {
 					console.warn(`Dropdown input not found for question ${question.id}`);
 					return;
 				}
 				dropdownInput.addEventListener("change", () => {
-					this.handleAnswer(dropdownInput.value);
+					this.handleFormAnswer(question.id, dropdownInput.value);
 					// Update dropdown color when value is selected
 					this._updateDropdownColor(dropdownInput);
+
+					// Clear error state if a valid option is selected
+					if (dropdownInput.value && dropdownInput.value !== "") {
+						const errorEl = this.questionContainer.querySelector(`#error-${question.id}`);
+						if (errorEl) {
+							dropdownInput.classList.remove("quiz-input-error");
+							dropdownInput.classList.add("quiz-input-valid");
+							errorEl.classList.add("quiz-error-hidden");
+							errorEl.classList.remove("quiz-error-visible");
+						}
+					}
+
+					// Note: No updateNavigation call since button is always enabled in forms
 				});
 				// Set initial color state
 				this._updateDropdownColor(dropdownInput);
+				break;
+
+			case "payer-search":
+				this._attachPayerSearchFormListeners(question);
 				break;
 
 			case "text":
@@ -1289,7 +1307,17 @@ class ProductQuiz {
 				if (response.questionId === "q8") lastName = response.answer || "";
 				if (response.questionId === "q10") phoneNumber = response.answer || "";
 				if (response.questionId === "q5") state = response.answer || "";
-				if (response.questionId === "q3") insurance = response.answer || "";
+				if (response.questionId === "q3") {
+					// Handle payer object from search or legacy string value
+					const insuranceResponse = response.answer;
+					if (typeof insuranceResponse === "object" && insuranceResponse !== null) {
+						// New payer search format - use displayName for insurance field
+						insurance = insuranceResponse.displayName || insuranceResponse.stediId || "";
+					} else {
+						// Legacy format or fallback
+						insurance = insuranceResponse || "";
+					}
+				}
 				if (response.questionId === "q4") insuranceMemberId = response.answer || "";
 				if (response.questionId === "q4_group") groupNumber = response.answer || "";
 				if (response.questionId === "q1") mainReasons = response.answer || [];
@@ -2178,6 +2206,8 @@ class ProductQuiz {
 				return this.renderCheckbox(question, response);
 			case "dropdown":
 				return this.renderDropdown(question, response);
+			case "payer-search":
+				return this.renderPayerSearch(question, response);
 			case "text":
 				return this.renderTextInput(question, response);
 			case "date":
@@ -2206,6 +2236,23 @@ class ProductQuiz {
 
 	// Enhanced validation method according to PRD requirements
 	_validateFieldValue(question, value) {
+		// Special handling for payer-search type (insurance question)
+		if (question.type === "payer-search") {
+			if (question.required && (!value || (typeof value === "object" && !value.stediId && !value.displayName))) {
+				return {
+					isValid: false,
+					errorMessage: "Please select an insurance plan"
+				};
+			}
+			// If we have a valid payer object, it's valid
+			if (value && typeof value === "object" && (value.stediId || value.displayName)) {
+				return {
+					isValid: true,
+					errorMessage: null
+				};
+			}
+		}
+
 		// If field is required and empty/null
 		if (question.required && (!value || (typeof value === "string" && value.trim() === ""))) {
 			return {
@@ -2358,6 +2405,398 @@ class ProductQuiz {
 		console.log("Result:", result);
 
 		return result;
+	}
+
+	renderPayerSearch(question, response) {
+		const selectedPayer = response.answer;
+		const placeholder = question.placeholder || "Search for your insurance plan...";
+
+		// Build the search input HTML
+		let html = `
+			<div class="quiz-payer-search-container">
+				<input
+					type="text"
+					id="question-${question.id}"
+					class="quiz-payer-search-input"
+					placeholder="${placeholder}"
+					value=""
+					autocomplete="off"
+					aria-describedby="error-${question.id}"
+				>
+				<div class="quiz-payer-search-dropdown" id="search-dropdown-${question.id}">
+					<!-- Search results will be populated here -->
+				</div>
+				<p id="error-${question.id}" class="quiz-error-text quiz-error-hidden"></p>
+		`;
+
+		// If there's a selected payer, show it
+		if (selectedPayer && typeof selectedPayer === "object") {
+			html += `
+				<div class="quiz-payer-search-selected">
+					<div class="quiz-payer-search-selected-name">${selectedPayer.displayName}</div>
+					<div class="quiz-payer-search-selected-details">
+						ID: ${selectedPayer.stediId || selectedPayer.primaryPayerId}
+						${selectedPayer.aliases && selectedPayer.aliases.length > 0 ? ` • Aliases: ${selectedPayer.aliases.slice(0, 3).join(", ")}` : ""}
+					</div>
+					<button type="button" class="quiz-payer-search-clear">Change selection</button>
+				</div>
+			`;
+		}
+
+		html += "</div>";
+		return html;
+	}
+
+	// Method to attach payer search listeners for wizard-style questions
+	_attachPayerSearchListeners(question) {
+		const searchInput = this.questionContainer.querySelector(`#question-${question.id}`);
+		const dropdown = this.questionContainer.querySelector(`#search-dropdown-${question.id}`);
+
+		if (!searchInput || !dropdown) {
+			console.warn(`Payer search elements not found for question ${question.id}`);
+			return;
+		}
+
+		this._setupPayerSearchBehavior(question, searchInput, dropdown, selectedPayer => {
+			this.handleAnswer(selectedPayer);
+		});
+	}
+
+	// Method to attach payer search listeners for form-style questions
+	_attachPayerSearchFormListeners(question) {
+		const searchInput = this.questionContainer.querySelector(`#question-${question.id}`);
+		const dropdown = this.questionContainer.querySelector(`#search-dropdown-${question.id}`);
+
+		if (!searchInput || !dropdown) {
+			console.warn(`Payer search elements not found for question ${question.id}`);
+			return;
+		}
+
+		this._setupPayerSearchBehavior(question, searchInput, dropdown, selectedPayer => {
+			this.handleFormAnswer(question.id, selectedPayer);
+		});
+	}
+
+	// Common payer search behavior setup
+	_setupPayerSearchBehavior(question, searchInput, dropdown, onSelectCallback) {
+		let searchTimeout;
+		let currentResults = [];
+		let selectedIndex = -1;
+
+		// Handle input changes with debouncing
+		searchInput.addEventListener("input", () => {
+			const query = searchInput.value.trim();
+
+			if (query.length < 2) {
+				this._hidePayerSearchDropdown(dropdown);
+				return;
+			}
+
+			// Clear previous timeout
+			clearTimeout(searchTimeout);
+
+			// Debounce search by 300ms
+			searchTimeout = setTimeout(() => {
+				this._searchPayers(question, query, dropdown, results => {
+					currentResults = results;
+					selectedIndex = -1;
+				});
+			}, 300);
+		});
+
+		// Handle keyboard navigation
+		searchInput.addEventListener("keydown", e => {
+			if (currentResults.length === 0) return;
+
+			switch (e.key) {
+				case "ArrowDown":
+					e.preventDefault();
+					selectedIndex = Math.min(selectedIndex + 1, currentResults.length - 1);
+					this._updateKeyboardSelection(dropdown, selectedIndex);
+					break;
+				case "ArrowUp":
+					e.preventDefault();
+					selectedIndex = Math.max(selectedIndex - 1, -1);
+					this._updateKeyboardSelection(dropdown, selectedIndex);
+					break;
+				case "Enter":
+					e.preventDefault();
+					if (selectedIndex >= 0 && currentResults[selectedIndex]) {
+						this._selectPayer(question, currentResults[selectedIndex], searchInput, dropdown, onSelectCallback);
+					}
+					break;
+				case "Escape":
+					this._hidePayerSearchDropdown(dropdown);
+					searchInput.blur();
+					break;
+			}
+		});
+
+		// Hide dropdown when clicking outside
+		document.addEventListener("click", e => {
+			if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+				this._hidePayerSearchDropdown(dropdown);
+			}
+		});
+
+		// Handle clear button if present
+		const clearButton = this.questionContainer.querySelector(".quiz-payer-search-clear");
+		if (clearButton) {
+			clearButton.addEventListener("click", () => {
+				searchInput.value = "";
+				searchInput.focus();
+				// Clear the selection
+				onSelectCallback(null);
+				// Re-render to remove the selected payer display
+				this.renderCurrentStep();
+			});
+		}
+	}
+
+	// Search payers using Stedi API
+	async _searchPayers(question, query, dropdown, onResultsCallback) {
+		try {
+			// Show loading state
+			dropdown.innerHTML = `
+				<div class="quiz-payer-search-loading">
+					<div class="quiz-payer-search-loading-spinner"></div>
+					Searching...
+				</div>
+			`;
+			dropdown.classList.add("visible");
+
+			// Make API call to Stedi
+			const apiEndpoint = question.apiEndpoint || "https://healthcare.us.stedi.com/2024-04-01/payers/search";
+			const url = new URL(apiEndpoint);
+			url.searchParams.append("query", query);
+
+			console.log("Searching payers with query:", query);
+
+			// Note: This is a demo implementation. In production, you would need:
+			// 1. A proper API key for Stedi
+			// 2. A backend proxy to hide the API key
+			// 3. Error handling for rate limits, etc.
+
+			// For demo purposes, we'll simulate the API response
+			// In production, uncomment the real API call below:
+			/*
+			const response = await fetch(url, {
+				method: 'GET',
+				headers: {
+					'Authorization': 'YOUR_STEDI_API_KEY',
+					'Accept': 'application/json'
+				}
+			});
+
+			if (!response.ok) {
+				throw new Error(`API request failed: ${response.status}`);
+			}
+
+			const data = await response.json();
+			*/
+
+			// Demo data based on Stedi API response format
+			const data = this._generateDemoPayerResults(query);
+
+			const results = data.items || [];
+
+			if (results.length === 0) {
+				dropdown.innerHTML = `
+					<div class="quiz-payer-search-no-results">
+						No insurance plans found for "${query}". Try searching with a different term.
+					</div>
+				`;
+			} else {
+				// Render results
+				const resultsHTML = results
+					.map((item, index) => {
+						const payer = item.payer;
+						return `
+						<div class="quiz-payer-search-item" data-index="${index}">
+							<div class="quiz-payer-search-item-name">${payer.displayName}</div>
+							<div class="quiz-payer-search-item-details">
+								<span class="quiz-payer-search-item-id">${payer.stediId}</span>
+								${payer.aliases && payer.aliases.length > 0 ? `• ${payer.aliases.slice(0, 2).join(", ")}` : ""}
+							</div>
+						</div>
+					`;
+					})
+					.join("");
+
+				dropdown.innerHTML = resultsHTML;
+
+				// Attach click listeners to results
+				const resultItems = dropdown.querySelectorAll(".quiz-payer-search-item");
+				resultItems.forEach((item, index) => {
+					item.addEventListener("click", () => {
+						this._selectPayer(question, results[index].payer, dropdown.parentElement.querySelector(".quiz-payer-search-input"), dropdown, onResultsCallback);
+					});
+				});
+			}
+
+			dropdown.classList.add("visible");
+			onResultsCallback(results.map(item => item.payer));
+		} catch (error) {
+			console.error("Payer search error:", error);
+			dropdown.innerHTML = `
+				<div class="quiz-payer-search-error">
+					Error searching for insurance plans. Please try again.
+				</div>
+			`;
+			dropdown.classList.add("visible");
+			onResultsCallback([]);
+		}
+	}
+
+	// Generate demo results for testing (replace with real API in production)
+	_generateDemoPayerResults(query) {
+		const allPayers = [
+			{
+				payer: {
+					stediId: "AETNA",
+					displayName: "Aetna",
+					primaryPayerId: "AETNA",
+					aliases: ["AETNA", "60054", "AETNA_BETTER_HEALTH"],
+					transactionSupport: {
+						eligibilityCheck: "SUPPORTED",
+						claimStatus: "SUPPORTED"
+					}
+				},
+				score: 5.0
+			},
+			{
+				payer: {
+					stediId: "ANTHEM",
+					displayName: "Anthem Blue Cross Blue Shield",
+					primaryPayerId: "ANTHEM",
+					aliases: ["ANTHEM", "BCBS", "BLUE_CROSS"],
+					transactionSupport: {
+						eligibilityCheck: "SUPPORTED",
+						claimStatus: "SUPPORTED"
+					}
+				},
+				score: 4.8
+			},
+			{
+				payer: {
+					stediId: "CIGNA",
+					displayName: "Cigna Health",
+					primaryPayerId: "CIGNA",
+					aliases: ["CIGNA", "62308", "CIGNA_HEALTHCARE"],
+					transactionSupport: {
+						eligibilityCheck: "SUPPORTED",
+						claimStatus: "SUPPORTED"
+					}
+				},
+				score: 4.9
+			},
+			{
+				payer: {
+					stediId: "UPICO",
+					displayName: "Blue Cross Blue Shield of North Carolina",
+					primaryPayerId: "BCSNC",
+					aliases: ["1411", "560894904", "61473", "BCBS-NC", "BCSNC"],
+					transactionSupport: {
+						eligibilityCheck: "SUPPORTED",
+						claimStatus: "SUPPORTED"
+					}
+				},
+				score: 4.7
+			},
+			{
+				payer: {
+					stediId: "HUMANA",
+					displayName: "Humana Inc",
+					primaryPayerId: "HUMANA",
+					aliases: ["HUMANA", "HUMANA_INC", "84977"],
+					transactionSupport: {
+						eligibilityCheck: "SUPPORTED",
+						claimStatus: "SUPPORTED"
+					}
+				},
+				score: 4.6
+			},
+			{
+				payer: {
+					stediId: "KAISER",
+					displayName: "Kaiser Permanente",
+					primaryPayerId: "KAISER",
+					aliases: ["KAISER", "KP", "KAISER_PERM"],
+					transactionSupport: {
+						eligibilityCheck: "SUPPORTED",
+						claimStatus: "SUPPORTED"
+					}
+				},
+				score: 4.5
+			},
+			{
+				payer: {
+					stediId: "UNITED",
+					displayName: "UnitedHealthcare",
+					primaryPayerId: "UNITED",
+					aliases: ["UHC", "UNITED", "UNITED_HEALTHCARE"],
+					transactionSupport: {
+						eligibilityCheck: "SUPPORTED",
+						claimStatus: "SUPPORTED"
+					}
+				},
+				score: 4.4
+			}
+		];
+
+		// Filter based on query
+		const lowerQuery = query.toLowerCase();
+		const filtered = allPayers.filter(item => {
+			const payer = item.payer;
+			return payer.displayName.toLowerCase().includes(lowerQuery) || payer.stediId.toLowerCase().includes(lowerQuery) || payer.aliases.some(alias => alias.toLowerCase().includes(lowerQuery));
+		});
+
+		return {
+			items: filtered.slice(0, 5), // Limit to 5 results
+			stats: {
+				total: filtered.length
+			}
+		};
+	}
+
+	// Select a payer
+	_selectPayer(question, payer, searchInput, dropdown, onSelectCallback) {
+		console.log("Selected payer:", payer);
+
+		// Update the input to show the selected payer name
+		searchInput.value = payer.displayName;
+
+		// Hide dropdown
+		this._hidePayerSearchDropdown(dropdown);
+
+		// Clear any error states
+		const errorEl = this.questionContainer.querySelector(`#error-${question.id}`);
+		if (errorEl) {
+			searchInput.classList.remove("quiz-input-error");
+			searchInput.classList.add("quiz-input-valid");
+			errorEl.classList.add("quiz-error-hidden");
+			errorEl.classList.remove("quiz-error-visible");
+		}
+
+		// Call the callback with the selected payer data
+		onSelectCallback(payer);
+	}
+
+	// Hide the payer search dropdown
+	_hidePayerSearchDropdown(dropdown) {
+		dropdown.classList.remove("visible");
+	}
+
+	// Update keyboard selection highlighting
+	_updateKeyboardSelection(dropdown, selectedIndex) {
+		const items = dropdown.querySelectorAll(".quiz-payer-search-item");
+		items.forEach((item, index) => {
+			if (index === selectedIndex) {
+				item.classList.add("keyboard-highlighted");
+			} else {
+				item.classList.remove("keyboard-highlighted");
+			}
+		});
 	}
 }
 
