@@ -1183,7 +1183,7 @@ class ProductQuiz {
 					} else if (q.type === "checkbox") {
 						isEmpty = !Array.isArray(currentValue) || currentValue.length === 0;
 					} else if (q.type === "payer-search") {
-						isEmpty = !currentValue || (typeof currentValue === "object" && !currentValue.stediId && !currentValue.displayName);
+						isEmpty = !currentValue || (typeof currentValue === "string" && currentValue.trim() === "");
 					} else if (typeof currentValue === "string") {
 						isEmpty = currentValue.trim() === "";
 					}
@@ -1239,7 +1239,6 @@ class ProductQuiz {
 			}
 
 			// If we reach here, all validations passed
-
 
 			// All fields are valid, proceed to next step
 			if (this.currentStepIndex < this.quizData.steps.length - 1) {
@@ -1313,10 +1312,26 @@ class ProductQuiz {
 				if (response.questionId === "q10") phoneNumber = response.answer || "";
 				if (response.questionId === "q5") state = response.answer || "";
 				if (response.questionId === "q3") {
-					// Handle payer object from search or legacy string value
+					// Handle payer data - now stored as primaryPayerId but we need displayName for the insurance field
 					const insuranceResponse = response.answer;
-					if (typeof insuranceResponse === "object" && insuranceResponse !== null) {
-						// New payer search format - use displayName for insurance field
+					if (typeof insuranceResponse === "string" && insuranceResponse) {
+						// New format: primaryPayerId is stored as the answer
+						// Get the full payer data from the input's data attribute
+						const searchInput = this.questionContainer.querySelector(`#question-q3`);
+						if (searchInput && searchInput.hasAttribute("data-selected-payer")) {
+							try {
+								const payerData = JSON.parse(searchInput.getAttribute("data-selected-payer"));
+								insurance = payerData.displayName || insuranceResponse;
+							} catch (e) {
+								// Fallback to the primaryPayerId if parsing fails
+								insurance = insuranceResponse;
+							}
+						} else {
+							// Fallback to the primaryPayerId
+							insurance = insuranceResponse;
+						}
+					} else if (typeof insuranceResponse === "object" && insuranceResponse !== null) {
+						// Legacy payer search format - use displayName for insurance field
 						insurance = insuranceResponse.displayName || insuranceResponse.stediId || "";
 					} else {
 						// Legacy format or fallback
@@ -1625,7 +1640,6 @@ class ProductQuiz {
 	// NOTE: This method was causing multiple workflow executions by making new webhook calls.
 	// It has been disabled to prevent this issue. Instead, we return a processing status immediately.
 	async pollWorkflowExecution(executionName, maxAttempts = 20, interval = 6000) {
-
 		// Return processing status immediately instead of polling
 		return this.createProcessingStatus();
 	}
@@ -1646,10 +1660,8 @@ class ProductQuiz {
 
 	// Helper method to extract result from workflow execution
 	extractResultFromExecution(execution) {
-
 		// Check if there's a result field
 		if (execution.result) {
-
 			// Try to parse if it's a string
 			if (typeof execution.result === "string") {
 				try {
@@ -1667,7 +1679,6 @@ class ProductQuiz {
 					console.warn("Failed to parse execution result as JSON:", parseError);
 				}
 			} else if (typeof execution.result === "object") {
-
 				// Look for eligibility data in various paths
 				if (execution.result.eligibilityData) {
 					return execution.result.eligibilityData;
@@ -2127,17 +2138,6 @@ class ProductQuiz {
 			return;
 		}
 
-
-		// Special logging for payer-search
-		if (questionId === "q3" && typeof answer === "object" && answer !== null) {
-				stediId: answer.stediId,
-				displayName: answer.displayName,
-				primaryPayerId: answer.primaryPayerId,
-				hasStediId: !!answer.stediId,
-				hasDisplayName: !!answer.displayName
-			});
-		}
-
 		// Find or create response for this question
 		const responseIndex = this.responses.findIndex(r => r.questionId === questionId);
 		if (responseIndex !== -1) {
@@ -2149,28 +2149,6 @@ class ProductQuiz {
 				answer: answer
 			});
 		}
-
-		console.log(
-			`✅ Current response for ${questionId}:`,
-			this.responses.find(r => r.questionId === questionId)
-		);
-
-		// Special verification for payer search
-		if (questionId === "q3") {
-			const payerResponse = this.responses.find(r => r.questionId === "q3");
-				found: !!payerResponse,
-				answerType: typeof payerResponse?.answer,
-				isObject: typeof payerResponse?.answer === "object" && payerResponse?.answer !== null,
-				hasStediId: !!payerResponse?.answer?.stediId,
-				hasDisplayName: !!payerResponse?.answer?.displayName,
-				fullAnswer: payerResponse?.answer
-			});
-		}
-
-		console.log(
-			`📊 All current responses:`,
-			this.responses.map(r => ({ stepId: r.stepId, questionId: r.questionId, answer: r.answer }))
-		);
 	}
 
 	// Helper method to add legal text after navigation
@@ -2368,17 +2346,16 @@ class ProductQuiz {
 
 	// Enhanced validation method according to PRD requirements
 	_validateFieldValue(question, value) {
-
 		// Special handling for payer-search type (insurance question)
 		if (question.type === "payer-search") {
-			if (question.required && (!value || (typeof value === "object" && !value.stediId && !value.displayName))) {
+			if (question.required && (!value || (typeof value === "string" && value.trim() === ""))) {
 				return {
 					isValid: false,
 					errorMessage: "Please select an insurance plan"
 				};
 			}
-			// If we have a valid payer object, it's valid
-			if (value && typeof value === "object" && (value.stediId || value.displayName)) {
+			// If we have a valid primaryPayerId string, it's valid
+			if (value && typeof value === "string" && value.trim() !== "") {
 				return {
 					isValid: true,
 					errorMessage: null
@@ -2611,7 +2588,6 @@ class ProductQuiz {
 
 	// Method to attach payer search listeners for form-style questions
 	_attachPayerSearchFormListeners(question) {
-
 		// Add a small delay to ensure DOM elements are available
 		setTimeout(() => {
 			const searchInput = this.questionContainer.querySelector(`#question-${question.id}`);
@@ -2651,7 +2627,6 @@ class ProductQuiz {
 				return;
 			}
 
-
 			this._setupPayerSearchBehavior(question, searchInput, dropdown, selectedPayer => {
 				console.log(
 					"📊 Current responses before storing payer:",
@@ -2673,13 +2648,11 @@ class ProductQuiz {
 					this.updateNavigation();
 				}, 50);
 			});
-
 		}, 100); // 100ms delay
 	}
 
 	// Common payer search behavior setup
 	_setupPayerSearchBehavior(question, searchInput, dropdown, onSelectCallback) {
-
 		let searchTimeout;
 		let currentResults = [];
 		let selectedIndex = -1;
@@ -2691,12 +2664,22 @@ class ProductQuiz {
 		const inputHandler = () => {
 			const query = searchInput.value.trim();
 
+			// Clear any previous selection when user types
+			if (searchInput.hasAttribute("data-selected-payer")) {
+				searchInput.removeAttribute("data-selected-payer");
+				searchInput.classList.remove("quiz-input-valid");
+				// Clear the stored response so validation fails until new selection
+				this.handleFormAnswer(question.id, null);
+			}
+
 			if (query.length < 2) {
 				this._hidePayerSearchDropdown(dropdown);
+				currentResults = [];
+				selectedIndex = -1;
 				return;
 			}
 
-			// Clear previous timeout
+			// Clear any previous timeout
 			if (searchTimeout) {
 				clearTimeout(searchTimeout);
 			}
@@ -2774,12 +2757,10 @@ class ProductQuiz {
 				this.renderCurrentStep();
 			});
 		}
-
 	}
 
 	// Search payers using Stedi API
 	async _searchPayers(question, query, dropdown, onSelectCallback, onResultsCallback) {
-
 		try {
 			// Show loading state
 			dropdown.innerHTML = `
@@ -2796,7 +2777,6 @@ class ProductQuiz {
 			const url = new URL(apiEndpoint);
 			url.searchParams.append("query", query);
 
-
 			// Real API call to Stedi
 			const response = await fetch(url, {
 				method: "GET",
@@ -2805,7 +2785,6 @@ class ProductQuiz {
 					Accept: "application/json"
 				}
 			});
-
 
 			if (!response.ok) {
 				console.warn("⚠️ API request failed, falling back to demo data");
@@ -2887,7 +2866,6 @@ class ProductQuiz {
 
 	// Generate demo results for testing (replace with real API in production)
 	_generateDemoPayerResults(query) {
-
 		const allPayers = [
 			{
 				payer: {
@@ -2982,7 +2960,6 @@ class ProductQuiz {
 			}
 		];
 
-
 		// Filter based on query
 		const lowerQuery = query.toLowerCase();
 
@@ -3017,10 +2994,11 @@ class ProductQuiz {
 
 	// Select a payer
 	_selectPayer(question, payer, searchInput, dropdown, onSelectCallback) {
-
 		// Update the input to show the selected payer name
 		if (searchInput) {
 			searchInput.value = payer.displayName;
+			// Store the selected payer data as a data attribute for reference
+			searchInput.setAttribute("data-selected-payer", JSON.stringify(payer));
 		}
 
 		// Hide dropdown
@@ -3033,14 +3011,15 @@ class ProductQuiz {
 			searchInput.classList.add("quiz-input-valid");
 		}
 
+		// Hide error message
 		if (errorEl) {
 			errorEl.classList.add("quiz-error-hidden");
 			errorEl.classList.remove("quiz-error-visible");
 			errorEl.textContent = "";
 		}
 
-		// Call the callback with the selected payer data
-		onSelectCallback(payer);
+		// Call the callback with the primaryPayerId (not the full payer object)
+		onSelectCallback(payer.primaryPayerId);
 	}
 
 	// Hide the payer search dropdown
