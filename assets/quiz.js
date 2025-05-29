@@ -2680,9 +2680,15 @@ class ProductQuiz {
 					"🔍 All payer search inputs found:",
 					Array.from(allPayerSearchInputs).map(input => ({ id: input.id, type: input.type, class: input.className }))
 				);
+
+				// Debug: dump the entire questionContainer HTML
+				console.log("🔍 questionContainer HTML:", this.questionContainer.innerHTML);
+				return;
 			}
 
 			console.log("✅ Found payer search elements, setting up behavior");
+			console.log("🔧 About to call _setupPayerSearchBehavior with callback");
+
 			this._setupPayerSearchBehavior(question, searchInput, dropdown, selectedPayer => {
 				console.log("🎯 Form-style payer selected callback triggered with:", selectedPayer);
 				console.log(
@@ -2705,12 +2711,16 @@ class ProductQuiz {
 					});
 				}, 50);
 			});
+
+			console.log("✅ _setupPayerSearchBehavior completed");
 		}, 100); // 100ms delay
 	}
 
 	// Common payer search behavior setup
 	_setupPayerSearchBehavior(question, searchInput, dropdown, onSelectCallback) {
-		console.log("Setting up payer search behavior for:", question.id);
+		console.log("🔧 Setting up payer search behavior for:", question.id);
+		console.log("🔧 Callback function provided:", typeof onSelectCallback, onSelectCallback ? "✅" : "❌");
+
 		let searchTimeout;
 		let currentResults = [];
 		let selectedIndex = -1;
@@ -2784,6 +2794,7 @@ class ProductQuiz {
 				case "Enter":
 					e.preventDefault();
 					if (selectedIndex >= 0 && currentResults[selectedIndex]) {
+						console.log("🎯 Enter pressed, calling _selectPayer with callback:", typeof onSelectCallback);
 						this._selectPayer(question, currentResults[selectedIndex], searchInput, dropdown, onSelectCallback);
 					}
 					break;
@@ -2808,11 +2819,14 @@ class ProductQuiz {
 				searchInput.value = "";
 				searchInput.focus();
 				// Clear the selection
+				console.log("🧹 Clear button clicked, calling callback with null");
 				onSelectCallback(null);
 				// Re-render to remove the selected payer display
 				this.renderCurrentStep();
 			});
 		}
+
+		console.log("✅ _setupPayerSearchBehavior completed for question:", question.id);
 	}
 
 	// Search payers using Stedi API
@@ -2928,9 +2942,12 @@ class ProductQuiz {
 			// Attach click listeners to results
 			const resultItems = dropdown.querySelectorAll(".quiz-payer-search-item");
 			console.log("🖱️ Attaching click listeners to", resultItems.length, "result items");
+			console.log("🖱️ onResultsCallback type:", typeof onResultsCallback, "provided:", onResultsCallback ? "✅" : "❌");
+
 			resultItems.forEach((item, index) => {
 				item.addEventListener("click", () => {
 					console.log("🖱️ Result item clicked:", index, results[index].payer.displayName);
+					console.log("🖱️ About to call _selectPayer with onResultsCallback:", typeof onResultsCallback);
 					this._selectPayer(question, results[index].payer, dropdown.parentElement.querySelector(".quiz-payer-search-input"), dropdown, onResultsCallback);
 				});
 			});
