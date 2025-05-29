@@ -1184,6 +1184,9 @@ class ProductQuiz {
 						isEmpty = true;
 					} else if (q.type === "checkbox") {
 						isEmpty = !Array.isArray(currentValue) || currentValue.length === 0;
+					} else if (q.type === "payer-search") {
+						// For payer-search, check if it's a valid payer object
+						isEmpty = !(typeof currentValue === "object" && currentValue !== null && (currentValue.stediId || currentValue.displayName));
 					} else if (typeof currentValue === "string") {
 						isEmpty = currentValue.trim() === "";
 					}
@@ -1192,25 +1195,41 @@ class ProductQuiz {
 						hasValidationErrors = true;
 						validationErrors.push({
 							questionId: q.id,
-							errorMessage: "This field is required"
+							errorMessage: q.type === "payer-search" ? "Please select an insurance plan" : "This field is required"
 						});
 						console.log(`❌ Required field ${q.id} is empty`);
 						continue;
 					}
 				}
 
-				// If field has a value, validate format for text inputs
-				if (currentValue && typeof currentValue === "string" && currentValue.trim() !== "") {
-					const validationResult = this._validateFieldValue(q, currentValue);
-					if (!validationResult.isValid) {
-						hasValidationErrors = true;
-						validationErrors.push({
-							questionId: q.id,
-							errorMessage: validationResult.errorMessage
-						});
-						console.log(`❌ Field ${q.id} has format error: ${validationResult.errorMessage}`);
-					} else {
-						console.log(`✅ Field ${q.id} is valid`);
+				// If field has a value, validate format for text inputs and payer-search
+				if (currentValue) {
+					// For payer-search, use the stored object directly
+					if (q.type === "payer-search") {
+						const validationResult = this._validateFieldValue(q, currentValue);
+						if (!validationResult.isValid) {
+							hasValidationErrors = true;
+							validationErrors.push({
+								questionId: q.id,
+								errorMessage: validationResult.errorMessage
+							});
+							console.log(`❌ Field ${q.id} has validation error: ${validationResult.errorMessage}`);
+						} else {
+							console.log(`✅ Field ${q.id} (payer-search) is valid`);
+						}
+					} else if (typeof currentValue === "string" && currentValue.trim() !== "") {
+						// For text inputs, validate format
+						const validationResult = this._validateFieldValue(q, currentValue);
+						if (!validationResult.isValid) {
+							hasValidationErrors = true;
+							validationErrors.push({
+								questionId: q.id,
+								errorMessage: validationResult.errorMessage
+							});
+							console.log(`❌ Field ${q.id} has format error: ${validationResult.errorMessage}`);
+						} else {
+							console.log(`✅ Field ${q.id} is valid`);
+						}
 					}
 				}
 			}
@@ -2147,13 +2166,20 @@ class ProductQuiz {
 			return;
 		}
 
-		console.log(`Handling form answer for question ${questionId}:`, answer);
+		console.log(`🔄 handleFormAnswer called for question ${questionId}:`, { answer, answerType: typeof answer });
+
+		// Special logging for payer-search
+		if (questionId === "q3" && typeof answer === "object" && answer !== null) {
+			console.log(`📋 Storing payer object for insurance question:`, answer);
+		}
 
 		// Find or create response for this question
 		const responseIndex = this.responses.findIndex(r => r.questionId === questionId);
 		if (responseIndex !== -1) {
+			console.log(`📝 Updating existing response for ${questionId}`);
 			this.responses[responseIndex].answer = answer;
 		} else {
+			console.log(`➕ Creating new response for ${questionId}`);
 			this.responses.push({
 				stepId: step.id,
 				questionId: questionId,
@@ -2161,8 +2187,12 @@ class ProductQuiz {
 			});
 		}
 
+		// Log current state of the specific response
+		const currentResponse = this.responses.find(r => r.questionId === questionId);
+		console.log(`✅ Current response for ${questionId}:`, currentResponse);
+
 		// Log all current responses for debugging
-		console.log("Current responses:", JSON.stringify(this.responses, null, 2));
+		console.log("📊 All current responses:", JSON.stringify(this.responses, null, 2));
 
 		// Note: The enabling/disabling of the next button is now solely handled by
 		// this.updateNavigation(), which should be called by the event listener
@@ -2364,9 +2394,14 @@ class ProductQuiz {
 
 	// Enhanced validation method according to PRD requirements
 	_validateFieldValue(question, value) {
+		console.log(`🔍 _validateFieldValue called for ${question.id} (${question.type}):`, value);
+
 		// Special handling for payer-search type (insurance question)
 		if (question.type === "payer-search") {
+			console.log(`📋 Validating payer-search for ${question.id}:`, { required: question.required, value, valueType: typeof value });
+
 			if (question.required && (!value || (typeof value === "object" && !value.stediId && !value.displayName))) {
+				console.log(`❌ Payer-search validation failed: required field is empty or invalid`);
 				return {
 					isValid: false,
 					errorMessage: "Please select an insurance plan"
@@ -2374,6 +2409,15 @@ class ProductQuiz {
 			}
 			// If we have a valid payer object, it's valid
 			if (value && typeof value === "object" && (value.stediId || value.displayName)) {
+				console.log(`✅ Payer-search validation passed: valid payer object found`);
+				return {
+					isValid: true,
+					errorMessage: null
+				};
+			}
+			// If not required and no value, it's valid
+			if (!question.required && !value) {
+				console.log(`✅ Payer-search validation passed: not required and no value`);
 				return {
 					isValid: true,
 					errorMessage: null
@@ -3014,25 +3058,36 @@ class ProductQuiz {
 
 	// Select a payer
 	_selectPayer(question, payer, searchInput, dropdown, onSelectCallback) {
-		console.log("Selected payer:", payer);
+		console.log("🎯 _selectPayer called with:", { questionId: question.id, payer, hasSearchInput: !!searchInput, hasDropdown: !!dropdown });
 
 		// Update the input to show the selected payer name
-		searchInput.value = payer.displayName;
+		if (searchInput) {
+			searchInput.value = payer.displayName;
+			console.log("✅ Updated search input value to:", payer.displayName);
+		}
 
 		// Hide dropdown
 		this._hidePayerSearchDropdown(dropdown);
 
-		// Clear any error states
+		// Clear any error states and add valid state
 		const errorEl = this.questionContainer.querySelector(`#error-${question.id}`);
-		if (errorEl) {
+		if (searchInput) {
 			searchInput.classList.remove("quiz-input-error");
 			searchInput.classList.add("quiz-input-valid");
+			console.log("✅ Removed error class and added valid class to search input");
+		}
+
+		if (errorEl) {
 			errorEl.classList.add("quiz-error-hidden");
 			errorEl.classList.remove("quiz-error-visible");
+			errorEl.textContent = "";
+			console.log("✅ Hidden error message element");
 		}
 
 		// Call the callback with the selected payer data
+		console.log("🔄 Calling onSelectCallback with payer object:", payer);
 		onSelectCallback(payer);
+		console.log("✅ Payer selection completed");
 	}
 
 	// Hide the payer search dropdown
