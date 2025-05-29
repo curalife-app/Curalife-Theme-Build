@@ -2171,6 +2171,13 @@ class ProductQuiz {
 		// Special logging for payer-search
 		if (questionId === "q3" && typeof answer === "object" && answer !== null) {
 			console.log(`📋 Storing payer object for insurance question:`, answer);
+			console.log(`📋 Payer object details:`, {
+				stediId: answer.stediId,
+				displayName: answer.displayName,
+				primaryPayerId: answer.primaryPayerId,
+				hasStediId: !!answer.stediId,
+				hasDisplayName: !!answer.displayName
+			});
 		}
 
 		// Find or create response for this question
@@ -2179,24 +2186,36 @@ class ProductQuiz {
 			console.log(`📝 Updating existing response for ${questionId}`);
 			this.responses[responseIndex].answer = answer;
 		} else {
-			console.log(`➕ Creating new response for ${questionId}`);
+			console.log(`📝 Creating new response for ${questionId}`);
 			this.responses.push({
 				stepId: step.id,
 				questionId: questionId,
-				answer
+				answer: answer
 			});
 		}
 
-		// Log current state of the specific response
-		const currentResponse = this.responses.find(r => r.questionId === questionId);
-		console.log(`✅ Current response for ${questionId}:`, currentResponse);
+		console.log(
+			`✅ Current response for ${questionId}:`,
+			this.responses.find(r => r.questionId === questionId)
+		);
 
-		// Log all current responses for debugging
-		console.log("📊 All current responses:", JSON.stringify(this.responses, null, 2));
+		// Special verification for payer search
+		if (questionId === "q3") {
+			const payerResponse = this.responses.find(r => r.questionId === "q3");
+			console.log(`🔍 Payer response verification:`, {
+				found: !!payerResponse,
+				answerType: typeof payerResponse?.answer,
+				isObject: typeof payerResponse?.answer === "object" && payerResponse?.answer !== null,
+				hasStediId: !!payerResponse?.answer?.stediId,
+				hasDisplayName: !!payerResponse?.answer?.displayName,
+				fullAnswer: payerResponse?.answer
+			});
+		}
 
-		// Note: The enabling/disabling of the next button is now solely handled by
-		// this.updateNavigation(), which should be called by the event listener
-		// after this function completes.
+		console.log(
+			`📊 All current responses:`,
+			this.responses.map(r => ({ stepId: r.stepId, questionId: r.questionId, answer: r.answer }))
+		);
 	}
 
 	// Helper method to add legal text after navigation
@@ -2696,19 +2715,22 @@ class ProductQuiz {
 					this.responses.map(r => ({ questionId: r.questionId, answerType: typeof r.answer, hasStediId: r.answer?.stediId, hasDisplayName: r.answer?.displayName }))
 				);
 
+				// Ensure we call handleFormAnswer with the payer object
+				console.log("🔄 About to call handleFormAnswer with:", { questionId: question.id, payer: selectedPayer });
 				this.handleFormAnswer(question.id, selectedPayer);
 
 				// Add a small delay and then log the stored response
 				setTimeout(() => {
 					const storedResponse = this.responses.find(r => r.questionId === question.id);
 					console.log("🔍 Stored response after handleFormAnswer:", storedResponse);
-					console.log("📋 Response validation check:", {
-						hasResponse: !!storedResponse,
-						answerType: typeof storedResponse?.answer,
-						hasStediId: !!storedResponse?.answer?.stediId,
-						hasDisplayName: !!storedResponse?.answer?.displayName,
-						fullAnswer: storedResponse?.answer
-					});
+					console.log(
+						"📊 All responses after payer selection:",
+						this.responses.map(r => ({ questionId: r.questionId, answerType: typeof r.answer, hasStediId: r.answer?.stediId, hasDisplayName: r.answer?.displayName }))
+					);
+
+					// Force update navigation to reflect the change
+					console.log("🔄 Updating navigation after payer selection");
+					this.updateNavigation();
 				}, 50);
 			});
 
