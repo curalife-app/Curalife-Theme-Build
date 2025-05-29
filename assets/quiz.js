@@ -1723,36 +1723,7 @@ class ProductQuiz {
 				errorMessage
 			});
 
-			resultsHTML = `
-				<div class="quiz-results-container">
-					<h2 class="quiz-results-title">Quiz Complete</h2>
-					<p class="quiz-results-subtitle">We've received your information.</p>
-
-					<div class="quiz-results-card" style="border-left: 4px solid #f56565; background-color: #fed7d7;">
-						<h3 class="quiz-results-card-title" style="color: #c53030;">
-							⚠️ Eligibility Check Error
-						</h3>
-						<p class="quiz-results-message" style="color: #c53030;">
-							There was an error checking your insurance eligibility. Please contact our support team for assistance.
-						</p>
-						<div style="margin-top: 16px; padding: 12px; background-color: #ffffff; border-radius: 6px;">
-							<p style="font-size: 14px; color: #4a5568; margin: 0;">
-								<strong>What to do next:</strong><br>
-								• Contact our support team<br>
-								• Have your insurance card ready<br>
-								• We'll verify your coverage manually
-							</p>
-						</div>
-					</div>
-
-					<div class="quiz-results-actions quiz-space-y-4">
-						<a href="${bookingUrl}" class="quiz-cta-button">
-							Continue to Support
-							<span class="quiz-button-spacing">→</span>
-						</a>
-					</div>
-				</div>
-			`;
+			resultsHTML = this._generateErrorResultsHTML(bookingUrl, errorMessage);
 		} else {
 			// Process successful eligibility data
 			const isEligible = eligibilityData.isEligible === true;
@@ -1760,140 +1731,286 @@ class ProductQuiz {
 			const deductible = eligibilityData.deductible?.individual || 0;
 			const copay = eligibilityData.copay || 0;
 			const eligibilityStatus = eligibilityData.eligibilityStatus || "UNKNOWN";
-			const userMessage = eligibilityData.userMessage || "Your eligibility check is complete.";
 
-			// Format plan dates if available
-			let coverageDates = "";
-			if (eligibilityData.planBegin && eligibilityData.planEnd) {
-				const formatDate = dateStr => {
-					if (!dateStr || dateStr.length !== 8) return "N/A";
-					const year = dateStr.substring(0, 4);
-					const month = dateStr.substring(4, 6);
-					const day = dateStr.substring(6, 8);
-					return `${month}/${day}/${year}`;
-				};
-
-				const beginDate = formatDate(eligibilityData.planBegin);
-				const endDate = formatDate(eligibilityData.planEnd);
-				coverageDates = `<p class="quiz-coverage-dates">Plan coverage period: ${beginDate} to ${endDate}</p>`;
-			}
-
-			// Determine card styling based on eligibility
-			let cardStyle = "";
-			let statusIcon = "ℹ️";
-			let titleColor = "#4a5568";
-
+			// Generate appropriate results based on eligibility status
 			if (isEligible && eligibilityStatus === "ELIGIBLE") {
-				cardStyle = "border-left: 4px solid #48bb78; background-color: #f0fff4;";
-				statusIcon = "✅";
-				titleColor = "#2f855a";
-			} else if (eligibilityStatus === "NOT_ELIGIBLE") {
-				cardStyle = "border-left: 4px solid #ed8936; background-color: #fffaf0;";
-				statusIcon = "⚠️";
-				titleColor = "#c05621";
-			} else if (eligibilityStatus === "PAYER_ERROR" || eligibilityStatus === "ERROR") {
-				cardStyle = "border-left: 4px solid #f56565; background-color: #fed7d7;";
-				statusIcon = "❌";
-				titleColor = "#c53030";
-			} else if (eligibilityStatus === "PROCESSING") {
-				cardStyle = "border-left: 4px solid #3182ce; background-color: #ebf8ff;";
-				statusIcon = "🔄";
-				titleColor = "#2c5282";
+				resultsHTML = this._generateFullCoverageHTML(sessionsCovered, copay, deductible, eligibilityData, bookingUrl);
+			} else {
+				resultsHTML = this._generatePartialOrNoEligibilityHTML(eligibilityData, bookingUrl, eligibilityStatus);
 			}
-
-			resultsHTML = `
-				<div class="quiz-results-container">
-					<h2 class="quiz-results-title">Thanks for completing the quiz!</h2>
-					<p class="quiz-results-subtitle">We're ready to connect you with a registered dietitian who can help guide your health journey.</p>
-
-					<div class="quiz-results-card" style="${cardStyle}">
-						<h3 class="quiz-results-card-title" style="color: ${titleColor};">
-							${statusIcon} Insurance Coverage Check
-						</h3>
-						<p class="quiz-results-message">${userMessage}</p>
-
-						${
-							isEligible && sessionsCovered > 0
-								? `
-							<div class="quiz-coverage-details">
-								<p class="quiz-font-medium">Your Coverage Benefits:</p>
-								<ul class="quiz-coverage-list">
-									<li class="quiz-coverage-item">
-										<span>Dietitian sessions covered:</span>
-										<span class="quiz-font-medium">${sessionsCovered} sessions</span>
-									</li>
-									${
-										deductible > 0
-											? `
-									<li class="quiz-coverage-item">
-										<span>Individual deductible:</span>
-										<span class="quiz-font-medium">$${deductible}</span>
-									</li>`
-											: ""
-									}
-									${
-										copay > 0
-											? `
-									<li class="quiz-coverage-item">
-										<span>Co-pay per session:</span>
-										<span class="quiz-font-medium">$${copay}</span>
-									</li>`
-											: `
-									<li class="quiz-coverage-item">
-										<span>Co-pay per session:</span>
-										<span class="quiz-font-medium" style="color: #2f855a;">$0</span>
-									</li>`
-									}
-								</ul>
-								${coverageDates}
-							</div>
-						`
-								: eligibilityStatus === "NOT_ELIGIBLE"
-									? `
-							<div style="margin-top: 16px; padding: 12px; background-color: #ffffff; border-radius: 6px;">
-								<p style="font-size: 14px; color: #4a5568; margin: 0;">
-									<strong>Don't worry!</strong> Even without full insurance coverage, we may still be able to help you access affordable dietitian services. Our team can discuss payment options and potential assistance programs.
-								</p>
-							</div>
-						`
-									: eligibilityStatus === "PAYER_ERROR" || eligibilityStatus === "ERROR"
-										? `
-							<div style="margin-top: 16px; padding: 12px; background-color: #ffffff; border-radius: 6px;">
-								<p style="font-size: 14px; color: #4a5568; margin: 0;">
-									<strong>Next steps:</strong><br>
-									• Our team will manually verify your coverage<br>
-									• We'll contact you within 24 hours<br>
-									• Have your insurance card ready
-								</p>
-							</div>
-						`
-										: eligibilityStatus === "PROCESSING"
-											? `
-							<div style="margin-top: 16px; padding: 12px; background-color: #ffffff; border-radius: 6px;">
-								<p style="font-size: 14px; color: #4a5568; margin: 0;">
-									<strong>Your setup is processing in the background.</strong><br>
-									• Insurance verification + account creation can take 2-3 minutes<br>
-									• Feel free to proceed with booking your appointment<br>
-									• We'll contact you with your exact coverage details<br>
-									• Most insurance plans cover dietitian sessions at $0 cost
-								</p>
-							</div>
-						`
-											: ""
-						}
-					</div>
-
-					<div class="quiz-results-actions quiz-space-y-4">
-						<a href="${bookingUrl}" class="quiz-cta-button">
-							${eligibilityStatus === "PROCESSING" ? "Continue - We'll Process in Background" : isEligible ? "Book Your Appointment" : "Continue with Next Steps"}
-							<span class="quiz-button-spacing">→</span>
-						</a>
-					</div>
-				</div>
-			`;
 		}
 
 		this.results.innerHTML = resultsHTML;
+
+		// Attach FAQ toggle functionality
+		this._attachFAQListeners();
+	}
+
+	_generateErrorResultsHTML(bookingUrl, errorMessage) {
+		return `
+			<div class="quiz-results-container">
+				<div class="quiz-results-header">
+					<h2 class="quiz-results-title">Quiz Complete</h2>
+					<p class="quiz-results-subtitle">We've received your information.</p>
+				</div>
+
+				<div class="quiz-coverage-card" style="border-left: 4px solid #f56565; background-color: #fed7d7;">
+					<h3 class="quiz-coverage-card-title" style="color: #c53030;">
+						⚠️ Eligibility Check Error
+					</h3>
+					<p style="color: #c53030; font-size: 18px; margin-bottom: 16px;">
+						There was an error checking your insurance eligibility. Please contact our support team for assistance.
+					</p>
+					<div style="margin-top: 16px; padding: 12px; background-color: #ffffff; border-radius: 6px;">
+						<p style="font-size: 14px; color: #4a5568; margin: 0;">
+							<strong>What to do next:</strong><br>
+							• Contact our support team<br>
+							• Have your insurance card ready<br>
+							• We'll verify your coverage manually
+						</p>
+					</div>
+				</div>
+
+				<a href="${bookingUrl}" class="quiz-booking-button">
+					Continue to Support
+				</a>
+			</div>
+		`;
+	}
+
+	_generateFullCoverageHTML(sessionsCovered, copay, deductible, eligibilityData, bookingUrl) {
+		// Format plan dates if available
+		let coverageExpiry = "Dec 31, 2025"; // Default
+		if (eligibilityData.planEnd) {
+			const endDate = eligibilityData.planEnd;
+			if (endDate.length === 8) {
+				const year = endDate.substring(0, 4);
+				const month = endDate.substring(4, 6);
+				const day = endDate.substring(6, 8);
+				const monthNames = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+				coverageExpiry = `${monthNames[parseInt(month)]} ${parseInt(day)}, ${year}`;
+			}
+		}
+
+		return `
+			<div class="quiz-results-container">
+				<div class="quiz-results-header">
+					<h2 class="quiz-results-title">Great news! You're covered</h2>
+					<p class="quiz-results-subtitle">As of today, your insurance fully covers your online dietitian consultations*</p>
+				</div>
+
+				<div class="quiz-coverage-card">
+					<h3 class="quiz-coverage-card-title">Here's Your Offer</h3>
+
+					<div class="quiz-coverage-pricing">
+						<div class="quiz-coverage-services">
+							<div class="quiz-coverage-service">Initial consultation – 60 minutes</div>
+							<div class="quiz-coverage-service">Follow-up consultation – 30 minutes</div>
+						</div>
+						<div class="quiz-coverage-costs">
+							<div class="quiz-coverage-cost">
+								<span class="quiz-coverage-copay">Co-pay: $${copay}*</span>
+								<span class="quiz-coverage-original-price">$100</span>
+							</div>
+							<div class="quiz-coverage-cost">
+								<span class="quiz-coverage-copay">Co-pay: $${copay}*</span>
+								<span class="quiz-coverage-original-price">$50</span>
+							</div>
+						</div>
+					</div>
+
+					<div class="quiz-coverage-divider"></div>
+
+					<div class="quiz-coverage-benefits">
+						<div class="quiz-coverage-benefit">
+							<svg class="quiz-coverage-benefit-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<path d="M7.08301 1.66663C7.08301 1.66663 10.833 1.66663 10.833 5.41663" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+								<path d="M3.33301 1.66663V18.3333" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+								<path d="M10 7.5L16.667 7.5" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+							</svg>
+							<span class="quiz-coverage-benefit-text">${sessionsCovered} covered sessions remaining</span>
+						</div>
+						<div class="quiz-coverage-benefit">
+							<svg class="quiz-coverage-benefit-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<path d="M10.833 11.6666H17.5" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+								<path d="M6.25 1.66663V5.41663" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+								<path d="M2.5 3.33329V18.3333" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+								<path d="M2.5 8.33329V18.3333" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+							</svg>
+							<span class="quiz-coverage-benefit-text">Coverage expires ${coverageExpiry}</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="quiz-action-section">
+					<div class="quiz-action-content">
+						<div class="quiz-action-header">
+							<h3 class="quiz-action-title">Schedule your initial online consultation now</h3>
+						</div>
+
+						<div class="quiz-action-details">
+							<div class="quiz-action-info">
+								<svg class="quiz-action-info-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M4.58301 4.16663C4.58301 4.16663 10.833 1.66663 10.833 16.25" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+									<path d="M2.08301 1.66663V13.75" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+									<path d="M8.33301 16.25V2.08329" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<span class="quiz-action-info-text">Our dietitians usually recommend minimum 6 consultations over 6 months, Today, just book your first.</span>
+							</div>
+
+							<div class="quiz-action-feature">
+								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M1.66699 2.5H18.3337" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+									<path d="M13.3337 1.66663V5.41663" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+									<path d="M6.66699 10.4166V18.3333" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<span class="quiz-action-feature-text">Free cancellation up to 24h before</span>
+							</div>
+						</div>
+
+						<a href="${bookingUrl}" class="quiz-booking-button">
+							Proceed to booking
+						</a>
+					</div>
+				</div>
+
+				${this._generateFAQHTML()}
+			</div>
+		`;
+	}
+
+	_generatePartialOrNoEligibilityHTML(eligibilityData, bookingUrl, eligibilityStatus) {
+		const userMessage = eligibilityData.userMessage || "Your eligibility check is complete.";
+
+		// Determine styling based on status
+		let cardStyle = "";
+		let statusIcon = "ℹ️";
+		let titleColor = "#4a5568";
+
+		if (eligibilityStatus === "NOT_ELIGIBLE") {
+			cardStyle = "border-left: 4px solid #ed8936; background-color: #fffaf0;";
+			statusIcon = "⚠️";
+			titleColor = "#c05621";
+		} else if (eligibilityStatus === "PAYER_ERROR" || eligibilityStatus === "ERROR") {
+			cardStyle = "border-left: 4px solid #f56565; background-color: #fed7d7;";
+			statusIcon = "❌";
+			titleColor = "#c53030";
+		} else if (eligibilityStatus === "PROCESSING") {
+			cardStyle = "border-left: 4px solid #3182ce; background-color: #ebf8ff;";
+			statusIcon = "🔄";
+			titleColor = "#2c5282";
+		}
+
+		return `
+			<div class="quiz-results-container">
+				<div class="quiz-results-header">
+					<h2 class="quiz-results-title">Thanks for completing the quiz!</h2>
+					<p class="quiz-results-subtitle">We're ready to connect you with a registered dietitian who can help guide your health journey.</p>
+				</div>
+
+				<div class="quiz-coverage-card" style="${cardStyle}">
+					<h3 class="quiz-coverage-card-title" style="color: ${titleColor};">
+						${statusIcon} Insurance Coverage Check
+					</h3>
+					<p style="font-size: 18px; margin-bottom: 16px;">${userMessage}</p>
+				</div>
+
+				<a href="${bookingUrl}" class="quiz-booking-button">
+					${eligibilityStatus === "PROCESSING" ? "Continue - We'll Process in Background" : "Continue with Next Steps"}
+				</a>
+			</div>
+		`;
+	}
+
+	_generateFAQHTML() {
+		return `
+			<div class="quiz-faq-section">
+				<div class="quiz-faq-divider"></div>
+
+				<div class="quiz-faq-item expanded" data-faq="credit-card">
+					<div style="flex: 1;">
+						<div class="quiz-faq-question">Why do I need to provide my credit card?</div>
+						<div class="quiz-faq-answer">
+							You'll be able to attend your consultation right away, while the co-pay will be charged later, only after your insurance is billed. We require your card for this purpose. If you cancel or reschedule with less than 24 hours' notice, or miss your appointment, your card will be charged the full consultation fee.
+						</div>
+					</div>
+					<div class="quiz-faq-toggle">
+						<svg class="quiz-faq-toggle-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+							<path d="M4 12H20" stroke="#121212" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+						</svg>
+					</div>
+				</div>
+
+				<div class="quiz-faq-divider"></div>
+
+				<div class="quiz-faq-item" data-faq="coverage-change">
+					<div class="quiz-faq-question-collapsed">Can my coverage or co-pay change after booking?</div>
+					<div class="quiz-faq-toggle">
+						<svg class="quiz-faq-toggle-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+							<path d="M4 12H20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+							<path d="M12 4V20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+						</svg>
+					</div>
+				</div>
+
+				<div class="quiz-faq-divider"></div>
+			</div>
+		`;
+	}
+
+	_attachFAQListeners() {
+		const faqItems = this.results.querySelectorAll(".quiz-faq-item");
+
+		faqItems.forEach(item => {
+			item.addEventListener("click", () => {
+				const isExpanded = item.classList.contains("expanded");
+
+				// Collapse all other items
+				faqItems.forEach(otherItem => {
+					if (otherItem !== item) {
+						otherItem.classList.remove("expanded");
+						// Update question styling
+						const question = otherItem.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
+						if (question) {
+							question.className = "quiz-faq-question-collapsed";
+						}
+						// Update icon
+						const icon = otherItem.querySelector(".quiz-faq-toggle-icon");
+						if (icon) {
+							icon.innerHTML =
+								'<path d="M4 12H20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 4V20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+						}
+					}
+				});
+
+				if (!isExpanded) {
+					// Expand this item
+					item.classList.add("expanded");
+					const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
+					if (question) {
+						question.className = "quiz-faq-question";
+					}
+					// Update icon to minus
+					const icon = item.querySelector(".quiz-faq-toggle-icon");
+					if (icon) {
+						icon.innerHTML = '<path d="M4 12H20" stroke="#121212" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+					}
+				} else {
+					// Collapse this item
+					item.classList.remove("expanded");
+					const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
+					if (question) {
+						question.className = "quiz-faq-question-collapsed";
+					}
+					// Update icon to plus
+					const icon = item.querySelector(".quiz-faq-toggle-icon");
+					if (icon) {
+						icon.innerHTML =
+							'<path d="M4 12H20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 4V20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+					}
+				}
+			});
+		});
 	}
 
 	showError(title, message) {
