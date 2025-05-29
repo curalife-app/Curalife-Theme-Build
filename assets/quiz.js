@@ -1316,45 +1316,21 @@ class ProductQuiz {
 				if (response.questionId === "q10") phoneNumber = response.answer || "";
 				if (response.questionId === "q5") state = response.answer || "";
 				if (response.questionId === "q3") {
-					// Handle payer data - ensure insurance field contains displayName for workflow compatibility
+					// Handle payer data - send primaryPayerId directly to workflow
 					const insuranceResponse = response.answer;
 					if (typeof insuranceResponse === "string" && insuranceResponse) {
 						// New format: primaryPayerId is stored as the answer
-						// Get the full payer data from the input's data attribute
-						const searchInput = this.questionContainer.querySelector(`#question-q3`);
-						if (searchInput && searchInput.hasAttribute("data-selected-payer")) {
-							try {
-								const payerData = JSON.parse(searchInput.getAttribute("data-selected-payer"));
-								insurance = payerData.displayName || "Unknown Insurance"; // Always use displayName for workflow
-								insurancePrimaryPayerId = payerData.primaryPayerId || insuranceResponse; // Store primaryPayerId separately
-							} catch (e) {
-								console.warn("Failed to parse stored payer data:", e);
-								// Fallback: try to get displayName from demo data or use primaryPayerId
-								insurance = insuranceResponse; // This might still cause issues but it's a fallback
-								insurancePrimaryPayerId = insuranceResponse;
-							}
-						} else {
-							console.warn("No stored payer data found, trying to resolve from demo data");
-							// Try to resolve using demo data as fallback
-							const resolvedName = this._resolvePayerDisplayName(insuranceResponse);
-							if (resolvedName) {
-								insurance = resolvedName;
-								insurancePrimaryPayerId = insuranceResponse;
-							} else {
-								console.warn("Could not resolve primaryPayerId to displayName:", insuranceResponse);
-								// Last resort fallback - use a more descriptive name
-								insurance = `Insurance Plan ${insuranceResponse}`;
-								insurancePrimaryPayerId = insuranceResponse;
-							}
-						}
+						// Send the primaryPayerId directly as the insurance value
+						insurance = insuranceResponse; // This is the primaryPayerId
+						insurancePrimaryPayerId = insuranceResponse;
 					} else if (typeof insuranceResponse === "object" && insuranceResponse !== null) {
-						// Legacy payer search format - use displayName for insurance field
-						insurance = insuranceResponse.displayName || insuranceResponse.stediId || "Unknown Insurance";
+						// Legacy payer search format - extract primaryPayerId
+						insurance = insuranceResponse.primaryPayerId || insuranceResponse.stediId || "";
 						insurancePrimaryPayerId = insuranceResponse.primaryPayerId || insuranceResponse.stediId || "";
 					} else {
 						// Legacy format or fallback
 						insurance = insuranceResponse || "";
-						insurancePrimaryPayerId = "";
+						insurancePrimaryPayerId = insuranceResponse || "";
 					}
 				}
 				if (response.questionId === "q4") insuranceMemberId = response.answer || "";
@@ -2890,7 +2866,7 @@ class ProductQuiz {
 				payer: {
 					stediId: "AETNA",
 					displayName: "Aetna",
-					primaryPayerId: "AETNA",
+					primaryPayerId: "60054",
 					aliases: ["AETNA", "60054", "AETNA_BETTER_HEALTH"],
 					transactionSupport: {
 						eligibilityCheck: "SUPPORTED",
@@ -2903,8 +2879,8 @@ class ProductQuiz {
 				payer: {
 					stediId: "ANTHEM",
 					displayName: "Anthem Blue Cross Blue Shield",
-					primaryPayerId: "ANTHEM",
-					aliases: ["ANTHEM", "BCBS", "BLUE_CROSS"],
+					primaryPayerId: "040",
+					aliases: ["ANTHEM", "BCBS", "BLUE_CROSS", "040"],
 					transactionSupport: {
 						eligibilityCheck: "SUPPORTED",
 						claimStatus: "SUPPORTED"
@@ -2916,7 +2892,7 @@ class ProductQuiz {
 				payer: {
 					stediId: "CIGNA",
 					displayName: "Cigna Health",
-					primaryPayerId: "CIGNA",
+					primaryPayerId: "62308",
 					aliases: ["CIGNA", "62308", "CIGNA_HEALTHCARE"],
 					transactionSupport: {
 						eligibilityCheck: "SUPPORTED",
@@ -2968,8 +2944,8 @@ class ProductQuiz {
 				payer: {
 					stediId: "UNITED",
 					displayName: "UnitedHealthcare",
-					primaryPayerId: "UNITED",
-					aliases: ["UHC", "UNITED", "UNITED_HEALTHCARE"],
+					primaryPayerId: "52133",
+					aliases: ["UHC", "UNITED", "UNITED_HEALTHCARE", "52133"],
 					transactionSupport: {
 						eligibilityCheck: "SUPPORTED",
 						claimStatus: "SUPPORTED"
