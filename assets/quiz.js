@@ -2436,7 +2436,7 @@ class ProductQuiz {
 					autocomplete="off"
 					aria-describedby="error-${question.id}"
 				>
-				<div class="quiz-payer-search-dropdown" id="search-dropdown-${question.id}">
+				<div class="quiz-payer-search-dropdown" id="search-dropdown-${question.id}" style="display: none;">
 					<!-- Search results will be populated here -->
 				</div>
 				<p id="error-${question.id}" class="quiz-error-text quiz-error-hidden"></p>
@@ -2531,6 +2531,9 @@ class ProductQuiz {
 		let currentResults = [];
 		let selectedIndex = -1;
 
+		// Ensure dropdown starts hidden
+		this._hidePayerSearchDropdown(dropdown);
+
 		// Handle input changes with debouncing
 		const inputHandler = () => {
 			const query = searchInput.value.trim();
@@ -2567,12 +2570,17 @@ class ProductQuiz {
 		searchInput.addEventListener("input", inputHandler);
 		console.log("✅ Input event listener attached to:", searchInput);
 
-		// Test the event listener immediately
-		console.log("🧪 Testing input event listener...");
-		const testEvent = new Event("input", { bubbles: true });
-		searchInput.value = "test";
-		searchInput.dispatchEvent(testEvent);
-		searchInput.value = ""; // Clear test value
+		// Handle focus event to ensure dropdown is hidden when field gets focus
+		const focusHandler = () => {
+			console.log("🎯 Search input focused");
+			// Only show dropdown if there's already a valid query
+			const query = searchInput.value.trim();
+			if (query.length < 2) {
+				this._hidePayerSearchDropdown(dropdown);
+			}
+		};
+
+		searchInput.addEventListener("focus", focusHandler);
 
 		// Handle keyboard navigation
 		searchInput.addEventListener("keydown", e => {
@@ -2637,6 +2645,7 @@ class ProductQuiz {
 				</div>
 			`;
 			dropdown.classList.add("visible");
+			dropdown.style.display = "block";
 			console.log("✅ Loading state set, dropdown visible");
 
 			// Make API call to Stedi
@@ -2744,6 +2753,7 @@ class ProductQuiz {
 		}
 
 		dropdown.classList.add("visible");
+		dropdown.style.display = "block";
 		console.log("✅ Dropdown set to visible");
 		onResultsCallback(results.map(item => item.payer));
 		console.log("✅ Callback executed with results");
@@ -2911,6 +2921,7 @@ class ProductQuiz {
 	// Hide the payer search dropdown
 	_hidePayerSearchDropdown(dropdown) {
 		dropdown.classList.remove("visible");
+		dropdown.style.display = "none";
 	}
 
 	// Update keyboard selection highlighting
