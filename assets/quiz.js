@@ -249,6 +249,9 @@ class ProductQuiz {
 				}
 			});
 
+			// Check for test mode and populate test data if enabled
+			this._checkAndApplyTestData();
+
 			// Hide loading indicator and show questions container, nav header, and progress section
 			this._hideElement(this.loading);
 			this._showElement(this.questions);
@@ -1458,6 +1461,20 @@ class ProductQuiz {
 						console.log("Result keys:", Object.keys(result || {}));
 						console.log("============================");
 
+						// Add detailed structure debugging
+						if (result && result.body) {
+							console.log("=== BODY STRUCTURE DEBUG ===");
+							console.log("Body keys:", Object.keys(result.body || {}));
+							if (result.body.details) {
+								console.log("Details keys:", Object.keys(result.body.details || {}));
+								if (result.body.details.eligibilityData) {
+									console.log("EligibilityData keys:", Object.keys(result.body.details.eligibilityData || {}));
+									console.log("EligibilityData content:", result.body.details.eligibilityData);
+								}
+							}
+							console.log("===========================");
+						}
+
 						// The Cloud Function now returns the workflow result body directly
 						if (result && result.success === true && result.eligibilityData) {
 							eligibilityData = result.eligibilityData;
@@ -2571,14 +2588,36 @@ class ProductQuiz {
 				<p id="error-${question.id}" class="quiz-error-text quiz-error-hidden"></p>
 		`;
 
-		// If there's a selected payer, show it
+		// Handle different types of selected payer data
+		let payerDisplayInfo = null;
+
 		if (selectedPayer && typeof selectedPayer === "object") {
+			// Full payer object from search selection
+			payerDisplayInfo = {
+				displayName: selectedPayer.displayName,
+				id: selectedPayer.stediId || selectedPayer.primaryPayerId,
+				aliases: selectedPayer.aliases
+			};
+		} else if (selectedPayer && typeof selectedPayer === "string") {
+			// Test data or primaryPayerId string - resolve to display name
+			const resolvedDisplayName = this._resolvePayerDisplayName(selectedPayer);
+			if (resolvedDisplayName) {
+				payerDisplayInfo = {
+					displayName: resolvedDisplayName,
+					id: selectedPayer,
+					aliases: []
+				};
+			}
+		}
+
+		// If we have payer display info, show the selected payer
+		if (payerDisplayInfo) {
 			html += `
 				<div class="quiz-payer-search-selected">
-					<div class="quiz-payer-search-selected-name">${selectedPayer.displayName}</div>
+					<div class="quiz-payer-search-selected-name">${payerDisplayInfo.displayName}</div>
 					<div class="quiz-payer-search-selected-details">
-						ID: ${selectedPayer.stediId || selectedPayer.primaryPayerId}
-						${selectedPayer.aliases && selectedPayer.aliases.length > 0 ? ` • Aliases: ${selectedPayer.aliases.slice(0, 3).join(", ")}` : ""}
+						ID: ${payerDisplayInfo.id}
+						${payerDisplayInfo.aliases && payerDisplayInfo.aliases.length > 0 ? ` • Aliases: ${payerDisplayInfo.aliases.slice(0, 3).join(", ")}` : ""}
 					</div>
 					<button type="button" class="quiz-payer-search-clear">Change selection</button>
 				</div>
@@ -3070,6 +3109,102 @@ class ProductQuiz {
 		const demoItems = demoDataResult.items || [];
 		const matchingPayer = demoItems.find(item => item.payer.primaryPayerId === primaryPayerId);
 		return matchingPayer ? matchingPayer.payer.displayName : null;
+	}
+
+	// Helper method to check URL parameters for test mode
+	_checkUrlParameter(paramName) {
+		const urlParams = new URLSearchParams(window.location.search);
+		return urlParams.get(paramName);
+	}
+
+	// Helper method to check for test mode and apply test data
+	_checkAndApplyTestData() {
+		const testMode = this._checkUrlParameter("test");
+
+		if (testMode === "true") {
+			console.log("%c🧪 TEST MODE ENABLED 🧪", "background: #4CAF50; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold; font-size: 14px;");
+			console.log("%cTest data will be automatically filled in all form fields", "color: #4CAF50; font-weight: bold;");
+			this._applyTestData();
+
+			// Add visual indicator on page if in development
+			if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+				this._addTestModeIndicator();
+			}
+		}
+	}
+
+	// Apply test data to responses for easier testing
+	_applyTestData() {
+		const testData = {
+			// Multiple choice questions (goals)
+			q1: ["opt1"], // Main reasons - select first option
+
+			// Checkbox questions (medical conditions)
+			q2: ["med2", "med4"], // Medical conditions - select diabetes and high blood pressure
+
+			// Insurance information
+			q3: "52133", // Insurance - UnitedHealthcare primaryPayerId
+			q4: "404404404", // Member ID
+			q4_group: "", // Group number (empty)
+			q5: "DC", // State - District of Columbia
+
+			// Date of birth parts
+			q6_month: "06",
+			q6_day: "28",
+			q6_year: "1969",
+
+			// Contact information
+			q7: "Beaver", // First name
+			q8: "Dent", // Last name
+			q9: "beaver.dent@example.com", // Email
+			q10: "(555) 123-4567" // Phone
+		};
+
+		// Apply test data to responses
+		Object.keys(testData).forEach(questionId => {
+			const responseIndex = this.responses.findIndex(r => r.questionId === questionId);
+			if (responseIndex !== -1) {
+				this.responses[responseIndex].answer = testData[questionId];
+				console.log(`✅ Applied test data for ${questionId}:`, testData[questionId]);
+			} else {
+				console.warn(`⚠️  Could not find response for question ${questionId}`);
+			}
+		});
+
+		console.log("🧪 Test data applied to all questions");
+	}
+
+	// Add visual test mode indicator
+	_addTestModeIndicator() {
+		// Only add if not already present
+		if (document.querySelector(".quiz-test-mode-indicator")) return;
+
+		const indicator = document.createElement("div");
+		indicator.className = "quiz-test-mode-indicator";
+		indicator.innerHTML = "🧪 TEST MODE";
+		indicator.style.cssText = `
+			position: fixed;
+			top: 10px;
+			right: 10px;
+			background: #4CAF50;
+			color: white;
+			padding: 8px 12px;
+			border-radius: 4px;
+			font-weight: bold;
+			font-size: 12px;
+			z-index: 9999;
+			box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+		`;
+
+		document.body.appendChild(indicator);
+
+		// Auto-remove after 5 seconds
+		setTimeout(() => {
+			if (indicator.parentNode) {
+				indicator.parentNode.removeChild(indicator);
+			}
+		}, 5000);
 	}
 }
 
