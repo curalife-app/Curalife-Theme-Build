@@ -1958,8 +1958,8 @@ class ProductQuiz {
 			<div class="quiz-faq-section">
 				<div class="quiz-faq-divider"></div>
 
-				<div class="quiz-faq-item expanded" data-faq="credit-card">
-					<div style="flex: 1;">
+				<div class="quiz-faq-item expanded" data-faq="credit-card" tabindex="0" role="button" aria-expanded="true">
+					<div class="quiz-faq-content">
 						<div class="quiz-faq-question">Why do I need to provide my credit card?</div>
 						<div class="quiz-faq-answer">
 							You'll be able to attend your consultation right away, while the co-pay will be charged later, only after your insurance is billed. We require your card for this purpose. If you cancel or reschedule with less than 24 hours' notice, or miss your appointment, your card will be charged the full consultation fee.
@@ -1974,8 +1974,30 @@ class ProductQuiz {
 
 				<div class="quiz-faq-divider"></div>
 
-				<div class="quiz-faq-item" data-faq="coverage-change">
-					<div class="quiz-faq-question-collapsed">Can my coverage or co-pay change after booking?</div>
+				<div class="quiz-faq-item" data-faq="coverage-change" tabindex="0" role="button" aria-expanded="false">
+					<div class="quiz-faq-content">
+						<div class="quiz-faq-question-collapsed">Can my coverage or co-pay change after booking?</div>
+						<div class="quiz-faq-answer">
+							Coverage details are verified at the time of booking and are generally locked in for your scheduled appointment. However, if there are changes to your insurance plan or if we receive updated information from your insurance provider, we'll notify you immediately of any changes to your co-pay or coverage status.
+						</div>
+					</div>
+					<div class="quiz-faq-toggle">
+						<svg class="quiz-faq-toggle-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+							<path d="M4 12H20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+							<path d="M12 4V20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+						</svg>
+					</div>
+				</div>
+
+				<div class="quiz-faq-divider"></div>
+
+				<div class="quiz-faq-item" data-faq="what-expect" tabindex="0" role="button" aria-expanded="false">
+					<div class="quiz-faq-content">
+						<div class="quiz-faq-question-collapsed">What should I expect during my consultation?</div>
+						<div class="quiz-faq-answer">
+							Your dietitian will conduct a comprehensive health assessment, review your medical history and goals, and create a personalized nutrition plan. You'll receive practical meal planning guidance, dietary recommendations, and ongoing support to help you achieve your health objectives.
+						</div>
+					</div>
 					<div class="quiz-faq-toggle">
 						<svg class="quiz-faq-toggle-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 							<path d="M4 12H20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -1992,56 +2014,147 @@ class ProductQuiz {
 	_attachFAQListeners() {
 		const faqItems = this.results.querySelectorAll(".quiz-faq-item");
 
-		faqItems.forEach(item => {
-			item.addEventListener("click", () => {
+		if (faqItems.length === 0) {
+			console.warn("No FAQ items found");
+			return;
+		}
+
+		faqItems.forEach((item, index) => {
+			// Make items focusable for keyboard navigation
+			item.setAttribute("tabindex", "0");
+			item.setAttribute("role", "button");
+			item.setAttribute("aria-expanded", item.classList.contains("expanded") ? "true" : "false");
+
+			// Handle click events
+			const handleToggle = e => {
+				e.preventDefault();
+				e.stopPropagation();
+
 				const isExpanded = item.classList.contains("expanded");
 
-				// Collapse all other items
+				// Add visual feedback
+				item.style.transform = "scale(0.98)";
+				setTimeout(() => {
+					item.style.transform = "scale(1)";
+				}, 150);
+
+				// Collapse all other items with smooth transition
 				faqItems.forEach(otherItem => {
-					if (otherItem !== item) {
-						otherItem.classList.remove("expanded");
-						// Update question styling
-						const question = otherItem.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
-						if (question) {
-							question.className = "quiz-faq-question-collapsed";
-						}
-						// Update icon
-						const icon = otherItem.querySelector(".quiz-faq-toggle-icon");
-						if (icon) {
-							icon.innerHTML =
-								'<path d="M4 12H20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 4V20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
-						}
+					if (otherItem !== item && otherItem.classList.contains("expanded")) {
+						this._collapseFAQItem(otherItem);
 					}
 				});
 
+				// Toggle current item
 				if (!isExpanded) {
-					// Expand this item
-					item.classList.add("expanded");
-					const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
-					if (question) {
-						question.className = "quiz-faq-question";
-					}
-					// Update icon to minus
-					const icon = item.querySelector(".quiz-faq-toggle-icon");
-					if (icon) {
-						icon.innerHTML = '<path d="M4 12H20" stroke="#121212" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
-					}
+					this._expandFAQItem(item);
 				} else {
-					// Collapse this item
-					item.classList.remove("expanded");
-					const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
-					if (question) {
-						question.className = "quiz-faq-question-collapsed";
-					}
-					// Update icon to plus
-					const icon = item.querySelector(".quiz-faq-toggle-icon");
-					if (icon) {
-						icon.innerHTML =
-							'<path d="M4 12H20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 4V20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
-					}
+					this._collapseFAQItem(item);
+				}
+			};
+
+			// Add click and keyboard event listeners
+			item.addEventListener("click", handleToggle);
+			item.addEventListener("keydown", e => {
+				if (e.key === "Enter" || e.key === " ") {
+					handleToggle(e);
 				}
 			});
+
+			// Add hover effects for icons
+			const toggle = item.querySelector(".quiz-faq-toggle");
+			if (toggle) {
+				toggle.addEventListener("mouseenter", () => {
+					toggle.style.transform = "scale(1.1)";
+				});
+
+				toggle.addEventListener("mouseleave", () => {
+					toggle.style.transform = "scale(1)";
+				});
+			}
 		});
+	}
+
+	// Helper method to expand FAQ item with smooth animation
+	_expandFAQItem(item) {
+		item.classList.add("expanded");
+		item.setAttribute("aria-expanded", "true");
+
+		const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
+		const answer = item.querySelector(".quiz-faq-answer");
+		const icon = item.querySelector(".quiz-faq-toggle-icon");
+
+		// Update question styling
+		if (question) {
+			question.className = "quiz-faq-question";
+		}
+
+		// Animate answer expansion
+		if (answer) {
+			// Get the natural height
+			answer.style.maxHeight = "none";
+			const height = answer.scrollHeight;
+			answer.style.maxHeight = "0px";
+
+			// Force reflow
+			answer.offsetHeight;
+
+			// Animate to natural height
+			answer.style.maxHeight = height + "px";
+			answer.style.opacity = "1";
+
+			// Clean up after animation
+			setTimeout(() => {
+				answer.style.maxHeight = "none";
+			}, 400);
+		}
+
+		// Update icon with smooth rotation
+		if (icon) {
+			icon.style.transform = "rotate(90deg)";
+			icon.innerHTML = '<path d="M4 12H20" stroke="#121212" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+			setTimeout(() => {
+				icon.style.transform = "rotate(0deg)";
+			}, 200);
+		}
+	}
+
+	// Helper method to collapse FAQ item with smooth animation
+	_collapseFAQItem(item) {
+		item.classList.remove("expanded");
+		item.setAttribute("aria-expanded", "false");
+
+		const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
+		const answer = item.querySelector(".quiz-faq-answer");
+		const icon = item.querySelector(".quiz-faq-toggle-icon");
+
+		// Update question styling
+		if (question) {
+			question.className = "quiz-faq-question-collapsed";
+		}
+
+		// Animate answer collapse
+		if (answer) {
+			const height = answer.scrollHeight;
+			answer.style.maxHeight = height + "px";
+
+			// Force reflow
+			answer.offsetHeight;
+
+			// Animate to 0
+			answer.style.maxHeight = "0px";
+			answer.style.opacity = "0";
+		}
+
+		// Update icon with smooth rotation
+		if (icon) {
+			icon.style.transform = "rotate(-90deg)";
+			icon.innerHTML =
+				'<path d="M4 12H20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 4V20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+			setTimeout(() => {
+				icon.style.transform = "rotate(0deg)";
+			}, 200);
+		}
 	}
 
 	showError(title, message) {

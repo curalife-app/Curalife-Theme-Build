@@ -1264,7 +1264,7 @@ body {
 .quiz-faq-section {
 	display: flex;
 	flex-direction: column;
-	gap: 16px;
+	gap: 0;
 	align-self: stretch;
 }
 
@@ -1278,14 +1278,28 @@ body {
 .quiz-faq-item {
 	display: flex;
 	justify-content: space-between;
-	align-items: center;
-	padding: 0;
+	align-items: flex-start;
+	padding: 16px 0;
 	background: none;
 	border: none;
 	cursor: pointer;
 	width: 100%;
 	text-align: left;
 	align-self: stretch;
+	transition: all 0.3s ease;
+	position: relative;
+}
+
+.quiz-faq-item:hover {
+	background-color: rgba(241, 248, 244, 0.5);
+	margin: 0 -8px;
+	padding: 16px 8px;
+	border-radius: 8px;
+}
+
+.quiz-faq-content {
+	flex: 1;
+	padding-right: 16px;
 }
 
 .quiz-faq-question {
@@ -1294,8 +1308,9 @@ body {
 	font-weight: 700;
 	line-height: 1.4444444444444444em;
 	color: #121212;
-	flex: 1;
 	text-align: left;
+	margin-bottom: 0;
+	transition: all 0.3s ease;
 }
 
 .quiz-faq-question-collapsed {
@@ -1304,8 +1319,9 @@ body {
 	font-weight: 400;
 	line-height: 1.5em;
 	color: #454545;
-	flex: 1;
 	text-align: left;
+	margin-bottom: 0;
+	transition: all 0.3s ease;
 }
 
 .quiz-faq-toggle {
@@ -1315,11 +1331,19 @@ body {
 	align-items: center;
 	justify-content: center;
 	flex-shrink: 0;
+	border-radius: 50%;
+	transition: all 0.3s ease;
+	background-color: transparent;
+}
+
+.quiz-faq-toggle:hover {
+	background-color: rgba(48, 110, 81, 0.1);
 }
 
 .quiz-faq-toggle-icon {
 	width: 24px;
 	height: 24px;
+	transition: all 0.3s ease;
 }
 
 .quiz-faq-answer {
@@ -1328,22 +1352,62 @@ body {
 	font-weight: 400;
 	line-height: 1.4444444444444444em;
 	color: #454545;
-	margin-top: 8px;
-	padding-right: 40px;
 	text-align: left;
+	max-height: 0;
+	overflow: hidden;
+	opacity: 0;
+	transition: all 0.4s ease;
+	margin-top: 0;
+	padding-right: 0;
 }
 
 .quiz-faq-item.expanded .quiz-faq-question {
 	font-weight: 700;
 	color: #121212;
-}
-
-.quiz-faq-item:not(.expanded) .quiz-faq-answer {
-	display: none;
+	font-size: 18px;
 }
 
 .quiz-faq-item.expanded .quiz-faq-answer {
-	display: block;
+	max-height: 200px;
+	opacity: 1;
+	margin-top: 8px;
+	padding-right: 40px;
+}
+
+.quiz-faq-item:not(.expanded) .quiz-faq-answer {
+	max-height: 0;
+	opacity: 0;
+	margin-top: 0;
+}
+
+/* Animation for the toggle icons */
+.quiz-faq-item.expanded .quiz-faq-toggle-icon {
+	transform: rotate(0deg);
+}
+
+.quiz-faq-item:not(.expanded) .quiz-faq-toggle-icon {
+	transform: rotate(0deg);
+}
+
+/* Enhanced hover states */
+.quiz-faq-item:hover .quiz-faq-question-collapsed {
+	color: #306e51;
+}
+
+.quiz-faq-item:hover .quiz-faq-toggle-icon path {
+	stroke: #306e51;
+}
+
+/* Better focus states for accessibility */
+.quiz-faq-item:focus {
+	outline: 2px solid #306e51;
+	outline-offset: 2px;
+	border-radius: 8px;
+}
+
+.quiz-faq-item:focus-visible {
+	outline: 2px solid #306e51;
+	outline-offset: 2px;
 }
 
 /* Icon styles for coverage benefits */
