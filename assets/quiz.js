@@ -1389,8 +1389,17 @@ class ProductQuiz {
 			};
 
 			// Hide questions and show eligibility check indicator
-			this._hideElement(this.questions);
-			this._showElement(this.eligibilityCheck);
+			// Instead of hiding questions completely, replace content with loading state
+			// This keeps the header and progress bar stable
+			this.questionContainer.innerHTML = `
+				<div class="quiz-eligibility-check">
+					<div class="quiz-loading-spinner"></div>
+					<div class="quiz-loading-text">Checking your eligibility and coverage details...</div>
+				</div>
+			`;
+
+			// Keep questions container visible but hide navigation
+			this._hideElement(this.navigation);
 
 			// Get webhook URL from data attribute
 			const webhookUrl = this.container.getAttribute("data-n8n-webhook");
@@ -1736,9 +1745,9 @@ class ProductQuiz {
 
 	// New method to show results with booking URL
 	showResults(bookingUrl, webhookSuccess = true, eligibilityData = null, errorMessage = "") {
-		// Hide questions, show results
-		this._hideElement(this.questions);
-		this._showElement(this.results);
+		// Instead of hiding questions and showing results container,
+		// replace the question content with results content
+		// This keeps the header and progress bar stable
 
 		// Log full eligibility data for debugging
 		console.log("Processing eligibility data:", eligibilityData);
@@ -1771,7 +1780,8 @@ class ProductQuiz {
 			}
 		}
 
-		this.results.innerHTML = resultsHTML;
+		// Replace question container content with results
+		this.questionContainer.innerHTML = resultsHTML;
 
 		// Attach FAQ toggle functionality
 		this._attachFAQListeners();
