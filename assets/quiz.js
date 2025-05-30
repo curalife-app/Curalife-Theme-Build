@@ -1954,122 +1954,25 @@ class ProductQuiz {
 	}
 
 	_generateFAQHTML() {
+		// Use the existing FAQ snippet instead of custom implementation
+		const faqItems = [
+			"Why do I need to provide my credit card?:You'll be able to attend your consultation right away, while the co-pay will be charged later, only after your insurance is billed. We require your card for this purpose. If you cancel or reschedule with less than 24 hours' notice, or miss your appointment, your card will be charged the full consultation fee.",
+			"Can my coverage or co-pay change after booking?:Coverage details are verified at the time of booking and are generally locked in for your scheduled appointment. However, if there are changes to your insurance plan or if we receive updated information from your insurance provider, we'll notify you immediately of any changes to your co-pay or coverage status.",
+			"What should I expect during my consultation?:Your dietitian will conduct a comprehensive health assessment, review your medical history and goals, and create a personalized nutrition plan. You'll receive practical meal planning guidance, dietary recommendations, and ongoing support to help you achieve your health objectives."
+		];
+
 		return `
-			<div class="quiz-faq-section">
-				<div class="quiz-faq-divider"></div>
-
-				<div class="quiz-faq-item expanded" data-faq="credit-card" tabindex="0" role="button" aria-expanded="true">
-					<div class="quiz-faq-content">
-						<div class="quiz-faq-question">Why do I need to provide my credit card?</div>
-						<div class="quiz-faq-answer">
-							You'll be able to attend your consultation right away, while the co-pay will be charged later, only after your insurance is billed. We require your card for this purpose. If you cancel or reschedule with less than 24 hours' notice, or miss your appointment, your card will be charged the full consultation fee.
-						</div>
-					</div>
-					<div class="quiz-faq-toggle">
-						<svg class="quiz-faq-toggle-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="M4 12H20" stroke="#121212" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-						</svg>
-					</div>
-				</div>
-
-				<div class="quiz-faq-divider"></div>
-
-				<div class="quiz-faq-item" data-faq="coverage-change" tabindex="0" role="button" aria-expanded="false">
-					<div class="quiz-faq-content">
-						<div class="quiz-faq-question-collapsed">Can my coverage or co-pay change after booking?</div>
-						<div class="quiz-faq-answer">
-							Coverage details are verified at the time of booking and are generally locked in for your scheduled appointment. However, if there are changes to your insurance plan or if we receive updated information from your insurance provider, we'll notify you immediately of any changes to your co-pay or coverage status.
-						</div>
-					</div>
-					<div class="quiz-faq-toggle">
-						<svg class="quiz-faq-toggle-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="M4 12H20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-							<path d="M12 4V20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-						</svg>
-					</div>
-				</div>
-
-				<div class="quiz-faq-divider"></div>
-
-				<div class="quiz-faq-item" data-faq="what-expect" tabindex="0" role="button" aria-expanded="false">
-					<div class="quiz-faq-content">
-						<div class="quiz-faq-question-collapsed">What should I expect during my consultation?</div>
-						<div class="quiz-faq-answer">
-							Your dietitian will conduct a comprehensive health assessment, review your medical history and goals, and create a personalized nutrition plan. You'll receive practical meal planning guidance, dietary recommendations, and ongoing support to help you achieve your health objectives.
-						</div>
-					</div>
-					<div class="quiz-faq-toggle">
-						<svg class="quiz-faq-toggle-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="M4 12H20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-							<path d="M12 4V20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-						</svg>
-					</div>
-				</div>
-
-				<div class="quiz-faq-divider"></div>
-			</div>
+			{% assign faqItems = '${faqItems.join("|")}' | split: '|' %}
+			{% assign titleVersion = 'light' %}
+			{% assign isAllowOneOpen = true %}
+			{% render 'components/faq-section', faqItems: faqItems, titleVersion: titleVersion, isAllowOneOpen: isAllowOneOpen %}
 		`;
 	}
 
 	_attachFAQListeners() {
-		const faqItems = this.results.querySelectorAll(".quiz-faq-item");
-
-		if (faqItems.length === 0) {
-			console.warn("No FAQ items found");
-			return;
-		}
-
-		faqItems.forEach(item => {
-			item.addEventListener("click", () => {
-				const isExpanded = item.classList.contains("expanded");
-
-				// Collapse all other items
-				faqItems.forEach(otherItem => {
-					if (otherItem !== item) {
-						otherItem.classList.remove("expanded");
-						// Update question styling
-						const question = otherItem.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
-						if (question) {
-							question.className = "quiz-faq-question-collapsed";
-						}
-						// Update icon
-						const icon = otherItem.querySelector(".quiz-faq-toggle-icon");
-						if (icon) {
-							icon.innerHTML =
-								'<path d="M4 12H20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 4V20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
-						}
-					}
-				});
-
-				// Toggle current item
-				if (!isExpanded) {
-					// Expand this item
-					item.classList.add("expanded");
-					const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
-					if (question) {
-						question.className = "quiz-faq-question";
-					}
-					// Update icon to minus
-					const icon = item.querySelector(".quiz-faq-toggle-icon");
-					if (icon) {
-						icon.innerHTML = '<path d="M4 12H20" stroke="#121212" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
-					}
-				} else {
-					// Collapse this item
-					item.classList.remove("expanded");
-					const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
-					if (question) {
-						question.className = "quiz-faq-question-collapsed";
-					}
-					// Update icon to plus
-					const icon = item.querySelector(".quiz-faq-toggle-icon");
-					if (icon) {
-						icon.innerHTML =
-							'<path d="M4 12H20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 4V20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
-					}
-				}
-			});
-		});
+		// No longer needed since the FAQ snippet handles its own JavaScript
+		// The faq-section snippet includes its own accordion functionality
+		return;
 	}
 
 	showError(title, message) {
