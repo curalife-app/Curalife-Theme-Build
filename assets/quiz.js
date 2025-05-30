@@ -115,10 +115,10 @@ class ProductQuiz {
 	}
 
 	_initializeDOMElements() {
-		// Get container
-		this.container = document.querySelector(".quiz-container");
+		// Get container using the correct selector from configuration
+		this.container = document.querySelector(QUIZ_CONFIG.ELEMENT_SELECTORS.MAIN_CONTAINER);
 		if (!this.container) {
-			console.error("ProductQuiz: No quiz container found");
+			console.error("ProductQuiz: No quiz container found. Looking for:", QUIZ_CONFIG.ELEMENT_SELECTORS.MAIN_CONTAINER);
 			return;
 		}
 
