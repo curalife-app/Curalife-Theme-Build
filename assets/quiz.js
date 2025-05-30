@@ -123,7 +123,16 @@ class ProductQuiz {
 		}
 
 		// Get data URL from container or use default
-		this.dataUrl = this.dataUrl || this.container.getAttribute("data-quiz-url") || "/assets/dietitian-quiz.json";
+		const containerUrl = this.container.getAttribute("data-quiz-url");
+		this.dataUrl = this.dataUrl || containerUrl || "/assets/dietitian-quiz.json";
+
+		console.log("Quiz data URL configuration:", {
+			containerAttribute: containerUrl,
+			finalUrl: this.dataUrl,
+			constructorUrl: this.dataUrl !== containerUrl ? this.dataUrl : null,
+			allDataAttributes: this.container.dataset,
+			containerHTML: this.container.outerHTML.substring(0, 200) + "..."
+		});
 
 		// Get quiz elements using selectors
 		const selectors = QUIZ_CONFIG.ELEMENT_SELECTORS;
@@ -283,28 +292,62 @@ class ProductQuiz {
 	}
 
 	async loadQuizData() {
-		try {
-			const response = await fetch(this.dataUrl);
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
+		// Try multiple URL options in order of preference
+		const urlsToTry = [
+			this.dataUrl // Primary URL from container attribute or constructor
+		];
 
-			const text = await response.text();
-			console.log("Raw JSON response:", text.substring(0, 100) + "...");
-
-			try {
-				this.quizData = JSON.parse(text);
-				console.log("Quiz data loaded successfully:", this.quizData.id, this.quizData.title);
-				return this.quizData;
-			} catch (parseError) {
-				console.error("JSON parse error:", parseError);
-				console.error("Invalid JSON received, first 200 characters:", text.substring(0, 200));
-				throw new Error("Failed to parse quiz data: " + parseError.message);
-			}
-		} catch (error) {
-			console.error("Failed to load quiz data:", error);
-			throw error;
+		// Add Shopify CDN patterns if we're in a Shopify environment
+		if (window.location.hostname.includes("shopify") || window.location.hostname.includes("myshopify")) {
+			// Try common Shopify CDN patterns
+			urlsToTry.push(`${window.location.origin}/cdn/shop/files/dietitian-quiz.json`, `${window.location.origin}/files/dietitian-quiz.json`);
 		}
+
+		// Add standard fallbacks
+		urlsToTry.push(
+			"/assets/dietitian-quiz.json", // Standard assets path
+			window.location.origin + "/assets/dietitian-quiz.json", // Full URL
+			// For local development/testing
+			"./src/assets/dietitian-quiz.json",
+			"../assets/dietitian-quiz.json"
+		);
+
+		console.log("Attempting to load quiz data from URLs:", urlsToTry);
+		console.log("Current hostname:", window.location.hostname);
+		console.log("Primary data URL from container:", this.dataUrl);
+
+		for (let i = 0; i < urlsToTry.length; i++) {
+			const url = urlsToTry[i];
+			try {
+				console.log(`Trying URL ${i + 1}/${urlsToTry.length}: ${url}`);
+
+				const response = await fetch(url);
+				if (!response.ok) {
+					console.warn(`URL ${url} returned ${response.status}: ${response.statusText}`);
+					continue; // Try next URL
+				}
+
+				const text = await response.text();
+				console.log(`✅ Successfully loaded quiz data from: ${url}`);
+				console.log("Raw JSON response:", text.substring(0, 100) + "...");
+
+				try {
+					this.quizData = JSON.parse(text);
+					console.log("Quiz data loaded successfully:", this.quizData.id, this.quizData.title);
+					return this.quizData;
+				} catch (parseError) {
+					console.error("JSON parse error:", parseError);
+					console.error("Invalid JSON received, first 200 characters:", text.substring(0, 200));
+					continue; // Try next URL in case this one has corrupted data
+				}
+			} catch (fetchError) {
+				console.warn(`Failed to fetch from ${url}:`, fetchError.message);
+				continue; // Try next URL
+			}
+		}
+
+		// If we get here, all URLs failed
+		throw new Error(`Failed to load quiz data from any of the attempted URLs: ${urlsToTry.join(", ")}`);
 	}
 
 	// Get the current step
