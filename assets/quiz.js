@@ -35,6 +35,19 @@ const QUIZ_CONFIG = {
 
 class ProductQuiz {
 	constructor(options = {}) {
+		// Configuration
+		this.dataUrl = options.dataUrl || "/assets/dietitian-quiz.json";
+		this.debug = options.debug || false;
+
+		// State variables
+		this.currentStepIndex = 0;
+		this.currentQuestionIndex = 0;
+		this.responses = [];
+		this.quizData = null;
+		this.submitting = false;
+		this.showingResults = false; // Track if we're currently showing results
+		this._isInitialized = false;
+
 		// Initialize DOM elements
 		this._initializeDOMElements();
 		if (!this._isInitialized) return;
@@ -85,44 +98,34 @@ class ProductQuiz {
 			startButton: !!this.startButton
 		});
 
-		// Options
-		this.dataUrl = options.dataUrl || this.container.getAttribute("data-quiz-url") || "/apps/product-quiz/data.json";
-
-		// State
-		this.quizData = null;
-		this.currentStepIndex = 0;
-		this.currentQuestionIndex = 0; // For steps with multiple questions
-		this.responses = [];
-		this.submitting = false;
-
 		// Initialize
 		this.init();
 	}
 
-	// Helper method to show an element
 	_showElement(element) {
 		if (element) {
 			element.classList.remove("hidden");
 		}
 	}
 
-	// Helper method to hide an element
 	_hideElement(element) {
 		if (element) {
 			element.classList.add("hidden");
 		}
 	}
 
-	// Initialize DOM elements using configuration
 	_initializeDOMElements() {
-		this.container = document.querySelector(QUIZ_CONFIG.ELEMENT_SELECTORS.MAIN_CONTAINER);
+		// Get container
+		this.container = document.querySelector(".quiz-container");
 		if (!this.container) {
-			console.error("ProductQuiz: Main container not found. Quiz cannot start.");
-			this._isInitialized = false;
+			console.error("ProductQuiz: No quiz container found");
 			return;
 		}
 
-		// Select all DOM elements
+		// Get data URL from container or use default
+		this.dataUrl = this.dataUrl || this.container.getAttribute("data-quiz-url") || "/assets/dietitian-quiz.json";
+
+		// Get quiz elements using selectors
 		const selectors = QUIZ_CONFIG.ELEMENT_SELECTORS;
 		this.intro = this.container.querySelector(selectors.INTRO);
 		this.questions = this.container.querySelector(selectors.QUESTIONS);
@@ -155,6 +158,17 @@ class ProductQuiz {
 			const backButton = this.navHeader.querySelector("#quiz-back-button");
 			if (backButton) {
 				backButton.addEventListener("click", () => {
+					// If we're showing results, go back to the last step
+					if (this.showingResults) {
+						this.showingResults = false;
+						this.currentStepIndex = this.quizData.steps.length - 1; // Go to last step
+						this.currentQuestionIndex = 0;
+						this._showElement(this.navigationButtons);
+						this.renderCurrentStep();
+						this.updateNavigation();
+						return;
+					}
+
 					// On the first step, go to telemedicine page
 					if (this.currentStepIndex === 0) {
 						window.location.href = "/pages/telemedicine";
@@ -1128,6 +1142,10 @@ class ProductQuiz {
 		// Go back to previous step
 		this.currentStepIndex--;
 		this.currentQuestionIndex = 0; // Reset question index for the previous step
+
+		// Ensure navigation is visible when returning to quiz steps
+		this._showElement(this.navigationButtons);
+
 		this.renderCurrentStep();
 		this.updateNavigation();
 	}
@@ -1749,6 +1767,9 @@ class ProductQuiz {
 		// replace the question content with results content
 		// This keeps the header and progress bar stable
 
+		// Set flag to indicate we're showing results
+		this.showingResults = true;
+
 		// Hide navigation buttons since results page doesn't need them
 		this._hideElement(this.navigationButtons);
 
@@ -2025,7 +2046,8 @@ class ProductQuiz {
 	}
 
 	_attachFAQListeners() {
-		const faqItems = this.results.querySelectorAll(".quiz-faq-item");
+		// Since results are now displayed within questionContainer, search there instead of this.results
+		const faqItems = this.questionContainer.querySelectorAll(".quiz-faq-item");
 
 		if (faqItems.length === 0) {
 			console.warn("No FAQ items found");
