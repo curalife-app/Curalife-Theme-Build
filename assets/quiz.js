@@ -1954,25 +1954,72 @@ class ProductQuiz {
 	}
 
 	_generateFAQHTML() {
-		// Use the existing FAQ snippet instead of custom implementation
+		// Generate HTML structure matching the existing faq-section snippet
 		const faqItems = [
-			"Why do I need to provide my credit card?:You'll be able to attend your consultation right away, while the co-pay will be charged later, only after your insurance is billed. We require your card for this purpose. If you cancel or reschedule with less than 24 hours' notice, or miss your appointment, your card will be charged the full consultation fee.",
-			"Can my coverage or co-pay change after booking?:Coverage details are verified at the time of booking and are generally locked in for your scheduled appointment. However, if there are changes to your insurance plan or if we receive updated information from your insurance provider, we'll notify you immediately of any changes to your co-pay or coverage status.",
-			"What should I expect during my consultation?:Your dietitian will conduct a comprehensive health assessment, review your medical history and goals, and create a personalized nutrition plan. You'll receive practical meal planning guidance, dietary recommendations, and ongoing support to help you achieve your health objectives."
+			{
+				question: "Why do I need to provide my credit card?",
+				answer:
+					"You'll be able to attend your consultation right away, while the co-pay will be charged later, only after your insurance is billed. We require your card for this purpose. If you cancel or reschedule with less than 24 hours' notice, or miss your appointment, your card will be charged the full consultation fee."
+			},
+			{
+				question: "Can my coverage or co-pay change after booking?",
+				answer:
+					"Coverage details are verified at the time of booking and are generally locked in for your scheduled appointment. However, if there are changes to your insurance plan or if we receive updated information from your insurance provider, we'll notify you immediately of any changes to your co-pay or coverage status."
+			},
+			{
+				question: "What should I expect during my consultation?",
+				answer:
+					"Your dietitian will conduct a comprehensive health assessment, review your medical history and goals, and create a personalized nutrition plan. You'll receive practical meal planning guidance, dietary recommendations, and ongoing support to help you achieve your health objectives."
+			}
 		];
 
 		return `
-			{% assign faqItems = '${faqItems.join("|")}' | split: '|' %}
-			{% assign titleVersion = 'light' %}
-			{% assign isAllowOneOpen = true %}
-			{% render 'components/faq-section', faqItems: faqItems, titleVersion: titleVersion, isAllowOneOpen: isAllowOneOpen %}
+			<section class="faq-section">
+				<div class="container">
+					<div class="titles">
+						<h2>Frequently Asked Questions</h2>
+					</div>
+					<div class="faq">
+						${faqItems
+							.map(
+								item => `
+							<div class="faq-item">
+								<h3 class="question h5" name="faq-question">${item.question}</h3>
+								<div class="answer">
+									<p>${item.answer}</p>
+								</div>
+							</div>
+						`
+							)
+							.join("")}
+					</div>
+				</div>
+			</section>
 		`;
 	}
 
 	_attachFAQListeners() {
-		// No longer needed since the FAQ snippet handles its own JavaScript
-		// The faq-section snippet includes its own accordion functionality
-		return;
+		// Implement the same accordion functionality as the faq-section snippet
+		const accordionItemHeaders = this.results.querySelectorAll(".question");
+
+		accordionItemHeaders.forEach(accordionItemHeader => {
+			accordionItemHeader.addEventListener("click", event => {
+				// Allow only one open (matching isAllowOneOpen: true)
+				const currentlyActiveAccordionItemHeader = this.results.querySelector(".question.active");
+				if (currentlyActiveAccordionItemHeader && currentlyActiveAccordionItemHeader !== accordionItemHeader) {
+					currentlyActiveAccordionItemHeader.classList.toggle("active");
+					currentlyActiveAccordionItemHeader.nextElementSibling.style.maxHeight = 0;
+				}
+
+				accordionItemHeader.classList.toggle("active");
+				const accordionItemBody = accordionItemHeader.nextElementSibling;
+				if (accordionItemHeader.classList.contains("active")) {
+					accordionItemBody.style.maxHeight = accordionItemBody.scrollHeight + "px";
+				} else {
+					accordionItemBody.style.maxHeight = 0;
+				}
+			});
+		});
 	}
 
 	showError(title, message) {
