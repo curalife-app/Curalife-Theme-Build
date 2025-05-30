@@ -2019,142 +2019,57 @@ class ProductQuiz {
 			return;
 		}
 
-		faqItems.forEach((item, index) => {
-			// Make items focusable for keyboard navigation
-			item.setAttribute("tabindex", "0");
-			item.setAttribute("role", "button");
-			item.setAttribute("aria-expanded", item.classList.contains("expanded") ? "true" : "false");
-
-			// Handle click events
-			const handleToggle = e => {
-				e.preventDefault();
-				e.stopPropagation();
-
+		faqItems.forEach(item => {
+			item.addEventListener("click", () => {
 				const isExpanded = item.classList.contains("expanded");
 
-				// Add visual feedback
-				item.style.transform = "scale(0.98)";
-				setTimeout(() => {
-					item.style.transform = "scale(1)";
-				}, 150);
-
-				// Collapse all other items with smooth transition
+				// Collapse all other items
 				faqItems.forEach(otherItem => {
-					if (otherItem !== item && otherItem.classList.contains("expanded")) {
-						this._collapseFAQItem(otherItem);
+					if (otherItem !== item) {
+						otherItem.classList.remove("expanded");
+						// Update question styling
+						const question = otherItem.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
+						if (question) {
+							question.className = "quiz-faq-question-collapsed";
+						}
+						// Update icon
+						const icon = otherItem.querySelector(".quiz-faq-toggle-icon");
+						if (icon) {
+							icon.innerHTML =
+								'<path d="M4 12H20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 4V20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+						}
 					}
 				});
 
 				// Toggle current item
 				if (!isExpanded) {
-					this._expandFAQItem(item);
+					// Expand this item
+					item.classList.add("expanded");
+					const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
+					if (question) {
+						question.className = "quiz-faq-question";
+					}
+					// Update icon to minus
+					const icon = item.querySelector(".quiz-faq-toggle-icon");
+					if (icon) {
+						icon.innerHTML = '<path d="M4 12H20" stroke="#121212" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+					}
 				} else {
-					this._collapseFAQItem(item);
-				}
-			};
-
-			// Add click and keyboard event listeners
-			item.addEventListener("click", handleToggle);
-			item.addEventListener("keydown", e => {
-				if (e.key === "Enter" || e.key === " ") {
-					handleToggle(e);
+					// Collapse this item
+					item.classList.remove("expanded");
+					const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
+					if (question) {
+						question.className = "quiz-faq-question-collapsed";
+					}
+					// Update icon to plus
+					const icon = item.querySelector(".quiz-faq-toggle-icon");
+					if (icon) {
+						icon.innerHTML =
+							'<path d="M4 12H20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 4V20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+					}
 				}
 			});
-
-			// Add hover effects for icons
-			const toggle = item.querySelector(".quiz-faq-toggle");
-			if (toggle) {
-				toggle.addEventListener("mouseenter", () => {
-					toggle.style.transform = "scale(1.1)";
-				});
-
-				toggle.addEventListener("mouseleave", () => {
-					toggle.style.transform = "scale(1)";
-				});
-			}
 		});
-	}
-
-	// Helper method to expand FAQ item with smooth animation
-	_expandFAQItem(item) {
-		item.classList.add("expanded");
-		item.setAttribute("aria-expanded", "true");
-
-		const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
-		const answer = item.querySelector(".quiz-faq-answer");
-		const icon = item.querySelector(".quiz-faq-toggle-icon");
-
-		// Update question styling
-		if (question) {
-			question.className = "quiz-faq-question";
-		}
-
-		// Animate answer expansion
-		if (answer) {
-			// Get the natural height
-			answer.style.maxHeight = "none";
-			const height = answer.scrollHeight;
-			answer.style.maxHeight = "0px";
-
-			// Force reflow
-			answer.offsetHeight;
-
-			// Animate to natural height
-			answer.style.maxHeight = height + "px";
-			answer.style.opacity = "1";
-
-			// Clean up after animation
-			setTimeout(() => {
-				answer.style.maxHeight = "none";
-			}, 400);
-		}
-
-		// Update icon with smooth rotation
-		if (icon) {
-			icon.style.transform = "rotate(90deg)";
-			icon.innerHTML = '<path d="M4 12H20" stroke="#121212" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
-			setTimeout(() => {
-				icon.style.transform = "rotate(0deg)";
-			}, 200);
-		}
-	}
-
-	// Helper method to collapse FAQ item with smooth animation
-	_collapseFAQItem(item) {
-		item.classList.remove("expanded");
-		item.setAttribute("aria-expanded", "false");
-
-		const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
-		const answer = item.querySelector(".quiz-faq-answer");
-		const icon = item.querySelector(".quiz-faq-toggle-icon");
-
-		// Update question styling
-		if (question) {
-			question.className = "quiz-faq-question-collapsed";
-		}
-
-		// Animate answer collapse
-		if (answer) {
-			const height = answer.scrollHeight;
-			answer.style.maxHeight = height + "px";
-
-			// Force reflow
-			answer.offsetHeight;
-
-			// Animate to 0
-			answer.style.maxHeight = "0px";
-			answer.style.opacity = "0";
-		}
-
-		// Update icon with smooth rotation
-		if (icon) {
-			icon.style.transform = "rotate(-90deg)";
-			icon.innerHTML =
-				'<path d="M4 12H20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 4V20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
-			setTimeout(() => {
-				icon.style.transform = "rotate(0deg)";
-			}, 200);
-		}
 	}
 
 	showError(title, message) {
