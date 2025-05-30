@@ -2025,7 +2025,8 @@ class ProductQuiz {
 	}
 
 	_attachFAQListeners() {
-		const faqItems = this.results.querySelectorAll(".quiz-faq-item");
+		// Since results are now displayed within questionContainer, search there instead of this.results
+		const faqItems = this.questionContainer.querySelectorAll(".quiz-faq-item");
 
 		if (faqItems.length === 0) {
 			console.warn("No FAQ items found");
