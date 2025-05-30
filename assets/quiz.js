@@ -1749,6 +1749,9 @@ class ProductQuiz {
 		// replace the question content with results content
 		// This keeps the header and progress bar stable
 
+		// Hide navigation buttons since results page doesn't need them
+		this._hideElement(this.navigationButtons);
+
 		// Log full eligibility data for debugging
 		console.log("Processing eligibility data:", eligibilityData);
 
