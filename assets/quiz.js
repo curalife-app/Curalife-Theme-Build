@@ -35,19 +35,6 @@ const QUIZ_CONFIG = {
 
 class ProductQuiz {
 	constructor(options = {}) {
-		// Configuration
-		this.dataUrl = options.dataUrl || "/assets/dietitian-quiz.json";
-		this.debug = options.debug || false;
-
-		// State variables
-		this.currentStepIndex = 0;
-		this.currentQuestionIndex = 0;
-		this.responses = [];
-		this.quizData = null;
-		this.submitting = false;
-		this.showingResults = false; // Track if we're currently showing results
-		this._isInitialized = false;
-
 		// Initialize DOM elements
 		this._initializeDOMElements();
 		if (!this._isInitialized) return;
@@ -98,43 +85,44 @@ class ProductQuiz {
 			startButton: !!this.startButton
 		});
 
+		// Options
+		this.dataUrl = options.dataUrl || this.container.getAttribute("data-quiz-url") || "/apps/product-quiz/data.json";
+
+		// State
+		this.quizData = null;
+		this.currentStepIndex = 0;
+		this.currentQuestionIndex = 0; // For steps with multiple questions
+		this.responses = [];
+		this.submitting = false;
+
 		// Initialize
 		this.init();
 	}
 
+	// Helper method to show an element
 	_showElement(element) {
 		if (element) {
 			element.classList.remove("hidden");
 		}
 	}
 
+	// Helper method to hide an element
 	_hideElement(element) {
 		if (element) {
 			element.classList.add("hidden");
 		}
 	}
 
+	// Initialize DOM elements using configuration
 	_initializeDOMElements() {
-		// Get container using the correct selector from configuration
 		this.container = document.querySelector(QUIZ_CONFIG.ELEMENT_SELECTORS.MAIN_CONTAINER);
 		if (!this.container) {
-			console.error("ProductQuiz: No quiz container found. Looking for:", QUIZ_CONFIG.ELEMENT_SELECTORS.MAIN_CONTAINER);
+			console.error("ProductQuiz: Main container not found. Quiz cannot start.");
+			this._isInitialized = false;
 			return;
 		}
 
-		// Get data URL from container or use default
-		const containerUrl = this.container.getAttribute("data-quiz-url");
-		this.dataUrl = this.dataUrl || containerUrl || "/assets/dietitian-quiz.json";
-
-		console.log("Quiz data URL configuration:", {
-			containerAttribute: containerUrl,
-			finalUrl: this.dataUrl,
-			constructorUrl: this.dataUrl !== containerUrl ? this.dataUrl : null,
-			allDataAttributes: this.container.dataset,
-			containerHTML: this.container.outerHTML.substring(0, 200) + "..."
-		});
-
-		// Get quiz elements using selectors
+		// Select all DOM elements
 		const selectors = QUIZ_CONFIG.ELEMENT_SELECTORS;
 		this.intro = this.container.querySelector(selectors.INTRO);
 		this.questions = this.container.querySelector(selectors.QUESTIONS);
@@ -167,17 +155,6 @@ class ProductQuiz {
 			const backButton = this.navHeader.querySelector("#quiz-back-button");
 			if (backButton) {
 				backButton.addEventListener("click", () => {
-					// If we're showing results, go back to the last step
-					if (this.showingResults) {
-						this.showingResults = false;
-						this.currentStepIndex = this.quizData.steps.length - 1; // Go to last step
-						this.currentQuestionIndex = 0;
-						this._showElement(this.navigationButtons);
-						this.renderCurrentStep();
-						this.updateNavigation();
-						return;
-					}
-
 					// On the first step, go to telemedicine page
 					if (this.currentStepIndex === 0) {
 						window.location.href = "/pages/telemedicine";
@@ -292,62 +269,28 @@ class ProductQuiz {
 	}
 
 	async loadQuizData() {
-		// Try multiple URL options in order of preference
-		const urlsToTry = [
-			this.dataUrl // Primary URL from container attribute or constructor
-		];
-
-		// Add Shopify CDN patterns if we're in a Shopify environment
-		if (window.location.hostname.includes("shopify") || window.location.hostname.includes("myshopify")) {
-			// Try common Shopify CDN patterns
-			urlsToTry.push(`${window.location.origin}/cdn/shop/files/dietitian-quiz.json`, `${window.location.origin}/files/dietitian-quiz.json`);
-		}
-
-		// Add standard fallbacks
-		urlsToTry.push(
-			"/assets/dietitian-quiz.json", // Standard assets path
-			window.location.origin + "/assets/dietitian-quiz.json", // Full URL
-			// For local development/testing
-			"./src/assets/dietitian-quiz.json",
-			"../assets/dietitian-quiz.json"
-		);
-
-		console.log("Attempting to load quiz data from URLs:", urlsToTry);
-		console.log("Current hostname:", window.location.hostname);
-		console.log("Primary data URL from container:", this.dataUrl);
-
-		for (let i = 0; i < urlsToTry.length; i++) {
-			const url = urlsToTry[i];
-			try {
-				console.log(`Trying URL ${i + 1}/${urlsToTry.length}: ${url}`);
-
-				const response = await fetch(url);
-				if (!response.ok) {
-					console.warn(`URL ${url} returned ${response.status}: ${response.statusText}`);
-					continue; // Try next URL
-				}
-
-				const text = await response.text();
-				console.log(`✅ Successfully loaded quiz data from: ${url}`);
-				console.log("Raw JSON response:", text.substring(0, 100) + "...");
-
-				try {
-					this.quizData = JSON.parse(text);
-					console.log("Quiz data loaded successfully:", this.quizData.id, this.quizData.title);
-					return this.quizData;
-				} catch (parseError) {
-					console.error("JSON parse error:", parseError);
-					console.error("Invalid JSON received, first 200 characters:", text.substring(0, 200));
-					continue; // Try next URL in case this one has corrupted data
-				}
-			} catch (fetchError) {
-				console.warn(`Failed to fetch from ${url}:`, fetchError.message);
-				continue; // Try next URL
+		try {
+			const response = await fetch(this.dataUrl);
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
 			}
-		}
 
-		// If we get here, all URLs failed
-		throw new Error(`Failed to load quiz data from any of the attempted URLs: ${urlsToTry.join(", ")}`);
+			const text = await response.text();
+			console.log("Raw JSON response:", text.substring(0, 100) + "...");
+
+			try {
+				this.quizData = JSON.parse(text);
+				console.log("Quiz data loaded successfully:", this.quizData.id, this.quizData.title);
+				return this.quizData;
+			} catch (parseError) {
+				console.error("JSON parse error:", parseError);
+				console.error("Invalid JSON received, first 200 characters:", text.substring(0, 200));
+				throw new Error("Failed to parse quiz data: " + parseError.message);
+			}
+		} catch (error) {
+			console.error("Failed to load quiz data:", error);
+			throw error;
+		}
 	}
 
 	// Get the current step
@@ -1185,10 +1128,6 @@ class ProductQuiz {
 		// Go back to previous step
 		this.currentStepIndex--;
 		this.currentQuestionIndex = 0; // Reset question index for the previous step
-
-		// Ensure navigation is visible when returning to quiz steps
-		this._showElement(this.navigationButtons);
-
 		this.renderCurrentStep();
 		this.updateNavigation();
 	}
@@ -1810,9 +1749,6 @@ class ProductQuiz {
 		// replace the question content with results content
 		// This keeps the header and progress bar stable
 
-		// Set flag to indicate we're showing results
-		this.showingResults = true;
-
 		// Hide navigation buttons since results page doesn't need them
 		this._hideElement(this.navigationButtons);
 
@@ -2089,8 +2025,7 @@ class ProductQuiz {
 	}
 
 	_attachFAQListeners() {
-		// Since results are now displayed within questionContainer, search there instead of this.results
-		const faqItems = this.questionContainer.querySelectorAll(".quiz-faq-item");
+		const faqItems = this.results.querySelectorAll(".quiz-faq-item");
 
 		if (faqItems.length === 0) {
 			console.warn("No FAQ items found");
