@@ -1981,6 +1981,7 @@ class ProductQuiz {
 					<div class="quiz-faq-toggle">
 						<svg class="quiz-faq-toggle-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 							<path d="M4 12H20" stroke="#121212" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+							<path d="M12 4V20" stroke="#121212" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 						</svg>
 					</div>
 				</div>
@@ -2037,7 +2038,7 @@ class ProductQuiz {
 			item.addEventListener("click", () => {
 				const isExpanded = item.classList.contains("expanded");
 
-				// Collapse all other items
+				// Collapse all other items with smooth animation
 				faqItems.forEach(otherItem => {
 					if (otherItem !== item) {
 						otherItem.classList.remove("expanded");
@@ -2046,16 +2047,11 @@ class ProductQuiz {
 						if (question) {
 							question.className = "quiz-faq-question-collapsed";
 						}
-						// Update icon
-						const icon = otherItem.querySelector(".quiz-faq-toggle-icon");
-						if (icon) {
-							icon.innerHTML =
-								'<path d="M4 12H20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 4V20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
-						}
+						// Icon rotation is now handled by CSS
 					}
 				});
 
-				// Toggle current item
+				// Toggle current item with smooth animation
 				if (!isExpanded) {
 					// Expand this item
 					item.classList.add("expanded");
@@ -2063,11 +2059,7 @@ class ProductQuiz {
 					if (question) {
 						question.className = "quiz-faq-question";
 					}
-					// Update icon to minus
-					const icon = item.querySelector(".quiz-faq-toggle-icon");
-					if (icon) {
-						icon.innerHTML = '<path d="M4 12H20" stroke="#121212" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
-					}
+					// Icon rotation is now handled by CSS
 				} else {
 					// Collapse this item
 					item.classList.remove("expanded");
@@ -2075,12 +2067,7 @@ class ProductQuiz {
 					if (question) {
 						question.className = "quiz-faq-question-collapsed";
 					}
-					// Update icon to plus
-					const icon = item.querySelector(".quiz-faq-toggle-icon");
-					if (icon) {
-						icon.innerHTML =
-							'<path d="M4 12H20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 4V20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
-					}
+					// Icon rotation is now handled by CSS
 				}
 			});
 		});
