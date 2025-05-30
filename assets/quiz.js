@@ -1954,69 +1954,119 @@ class ProductQuiz {
 	}
 
 	_generateFAQHTML() {
-		// Generate HTML structure matching the existing faq-section snippet
-		const faqItems = [
-			{
-				question: "Why do I need to provide my credit card?",
-				answer:
-					"You'll be able to attend your consultation right away, while the co-pay will be charged later, only after your insurance is billed. We require your card for this purpose. If you cancel or reschedule with less than 24 hours' notice, or miss your appointment, your card will be charged the full consultation fee."
-			},
-			{
-				question: "Can my coverage or co-pay change after booking?",
-				answer:
-					"Coverage details are verified at the time of booking and are generally locked in for your scheduled appointment. However, if there are changes to your insurance plan or if we receive updated information from your insurance provider, we'll notify you immediately of any changes to your co-pay or coverage status."
-			},
-			{
-				question: "What should I expect during my consultation?",
-				answer:
-					"Your dietitian will conduct a comprehensive health assessment, review your medical history and goals, and create a personalized nutrition plan. You'll receive practical meal planning guidance, dietary recommendations, and ongoing support to help you achieve your health objectives."
-			}
-		];
-
 		return `
-			<section class="faq-section">
-				<div class="container">
-					<div class="titles">
-						<h2>Frequently Asked Questions</h2>
+			<div class="quiz-faq-section">
+				<div class="quiz-faq-divider"></div>
+
+				<div class="quiz-faq-item expanded" data-faq="credit-card" tabindex="0" role="button" aria-expanded="true">
+					<div class="quiz-faq-content">
+						<div class="quiz-faq-question">Why do I need to provide my credit card?</div>
+						<div class="quiz-faq-answer">
+							You'll be able to attend your consultation right away, while the co-pay will be charged later, only after your insurance is billed. We require your card for this purpose. If you cancel or reschedule with less than 24 hours' notice, or miss your appointment, your card will be charged the full consultation fee.
+						</div>
 					</div>
-					<div class="faq">
-						${faqItems
-							.map(
-								item => `
-							<div class="faq-item">
-								<h3 class="question h5" name="faq-question">${item.question}</h3>
-								<div class="answer">
-									<p>${item.answer}</p>
-								</div>
-							</div>
-						`
-							)
-							.join("")}
+					<div class="quiz-faq-toggle">
+						<svg class="quiz-faq-toggle-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+							<path d="M4 12H20" stroke="#121212" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+						</svg>
 					</div>
 				</div>
-			</section>
+
+				<div class="quiz-faq-divider"></div>
+
+				<div class="quiz-faq-item" data-faq="coverage-change" tabindex="0" role="button" aria-expanded="false">
+					<div class="quiz-faq-content">
+						<div class="quiz-faq-question-collapsed">Can my coverage or co-pay change after booking?</div>
+						<div class="quiz-faq-answer">
+							Coverage details are verified at the time of booking and are generally locked in for your scheduled appointment. However, if there are changes to your insurance plan or if we receive updated information from your insurance provider, we'll notify you immediately of any changes to your co-pay or coverage status.
+						</div>
+					</div>
+					<div class="quiz-faq-toggle">
+						<svg class="quiz-faq-toggle-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+							<path d="M4 12H20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+							<path d="M12 4V20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+						</svg>
+					</div>
+				</div>
+
+				<div class="quiz-faq-divider"></div>
+
+				<div class="quiz-faq-item" data-faq="what-expect" tabindex="0" role="button" aria-expanded="false">
+					<div class="quiz-faq-content">
+						<div class="quiz-faq-question-collapsed">What should I expect during my consultation?</div>
+						<div class="quiz-faq-answer">
+							Your dietitian will conduct a comprehensive health assessment, review your medical history and goals, and create a personalized nutrition plan. You'll receive practical meal planning guidance, dietary recommendations, and ongoing support to help you achieve your health objectives.
+						</div>
+					</div>
+					<div class="quiz-faq-toggle">
+						<svg class="quiz-faq-toggle-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+							<path d="M4 12H20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+							<path d="M12 4V20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+						</svg>
+					</div>
+				</div>
+
+				<div class="quiz-faq-divider"></div>
+			</div>
 		`;
 	}
 
 	_attachFAQListeners() {
-		// Implement the same accordion functionality as the faq-section snippet
-		const accordionItemHeaders = this.results.querySelectorAll(".question");
+		const faqItems = this.results.querySelectorAll(".quiz-faq-item");
 
-		accordionItemHeaders.forEach(accordionItemHeader => {
-			accordionItemHeader.addEventListener("click", event => {
-				// Allow only one open (matching isAllowOneOpen: true)
-				const currentlyActiveAccordionItemHeader = this.results.querySelector(".question.active");
-				if (currentlyActiveAccordionItemHeader && currentlyActiveAccordionItemHeader !== accordionItemHeader) {
-					currentlyActiveAccordionItemHeader.classList.toggle("active");
-					currentlyActiveAccordionItemHeader.nextElementSibling.style.maxHeight = 0;
-				}
+		if (faqItems.length === 0) {
+			console.warn("No FAQ items found");
+			return;
+		}
 
-				accordionItemHeader.classList.toggle("active");
-				const accordionItemBody = accordionItemHeader.nextElementSibling;
-				if (accordionItemHeader.classList.contains("active")) {
-					accordionItemBody.style.maxHeight = accordionItemBody.scrollHeight + "px";
+		faqItems.forEach(item => {
+			item.addEventListener("click", () => {
+				const isExpanded = item.classList.contains("expanded");
+
+				// Collapse all other items
+				faqItems.forEach(otherItem => {
+					if (otherItem !== item) {
+						otherItem.classList.remove("expanded");
+						// Update question styling
+						const question = otherItem.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
+						if (question) {
+							question.className = "quiz-faq-question-collapsed";
+						}
+						// Update icon
+						const icon = otherItem.querySelector(".quiz-faq-toggle-icon");
+						if (icon) {
+							icon.innerHTML =
+								'<path d="M4 12H20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 4V20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+						}
+					}
+				});
+
+				// Toggle current item
+				if (!isExpanded) {
+					// Expand this item
+					item.classList.add("expanded");
+					const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
+					if (question) {
+						question.className = "quiz-faq-question";
+					}
+					// Update icon to minus
+					const icon = item.querySelector(".quiz-faq-toggle-icon");
+					if (icon) {
+						icon.innerHTML = '<path d="M4 12H20" stroke="#121212" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+					}
 				} else {
-					accordionItemBody.style.maxHeight = 0;
+					// Collapse this item
+					item.classList.remove("expanded");
+					const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
+					if (question) {
+						question.className = "quiz-faq-question-collapsed";
+					}
+					// Update icon to plus
+					const icon = item.querySelector(".quiz-faq-toggle-icon");
+					if (icon) {
+						icon.innerHTML =
+							'<path d="M4 12H20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 4V20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+					}
 				}
 			});
 		});
