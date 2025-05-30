@@ -1493,9 +1493,37 @@ class ProductQuiz {
 									planBegin: "",
 									planEnd: ""
 								};
+							}
+							// Handle the nested details structure from the current Cloud Function
+							else if (result.body.details && result.body.details.success === true && result.body.details.eligibilityData) {
+								console.log("✅ Found eligibility data in body.details structure");
+								eligibilityData = result.body.details.eligibilityData;
+							}
+							// Handle the case where details exists but with error
+							else if (result.body.details && result.body.details.success === false) {
+								console.error("❌ Workflow completed with error in body.details:", result.body.details);
+								eligibilityData = {
+									isEligible: false,
+									sessionsCovered: 0,
+									deductible: { individual: 0 },
+									eligibilityStatus: "ERROR",
+									userMessage: `There was an error processing your request: ${result.body.error || "Unknown error"}. Our team will contact you to manually verify your coverage.`,
+									planBegin: "",
+									planEnd: ""
+								};
 							} else {
 								console.warn("❌ No success/eligibilityData found in body");
 								console.log("Body structure:", result.body);
+
+								// Additional debugging for the current structure
+								if (result.body.details) {
+									console.log("Details structure found:", result.body.details);
+									console.log("Details keys:", Object.keys(result.body.details));
+									if (result.body.details.eligibilityData) {
+										console.log("EligibilityData found in details:", result.body.details.eligibilityData);
+									}
+								}
+
 								eligibilityData = this.createProcessingStatus();
 							}
 						}
