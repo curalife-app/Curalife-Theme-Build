@@ -1012,8 +1012,9 @@ body {
 .quiz-coverage-pricing {
 	display: flex;
 	align-items: center;
-	gap: 36px;
+	gap: 32px;
 	margin-bottom: 16px;
+	width: fit-content;
 }
 
 .quiz-coverage-services {
@@ -1021,7 +1022,6 @@ body {
 	flex-direction: column;
 	gap: 8px;
 	flex: 1;
-	width: 312px;
 }
 
 .quiz-coverage-service {
@@ -1238,7 +1238,7 @@ body {
 
 .quiz-faq-question {
 	font-family: "DM Sans", sans-serif;
-	font-size: 18px;
+	font-size: 16px;
 	font-weight: 700;
 	line-height: 1.4444444444444444em;
 	color: #121212;
@@ -1263,22 +1263,34 @@ body {
 }
 
 .quiz-faq-toggle {
-	width: 32px;
-	height: 32px;
+	width: 35px;
+	height: 35px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	flex-shrink: 0;
+	position: relative;
 }
 
+.quiz-faq-toggle::after {
+	content: "\f067"; /* Font Awesome plus icon */
+	font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome;
+	font-weight: 900;
+	font-size: 14px;
+	color: #454545;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.quiz-faq-item.expanded .quiz-faq-toggle::after {
+	content: "\f068"; /* Font Awesome minus icon */
+}
+
+/* Hide the SVG icon since we're using Font Awesome now */
 .quiz-faq-toggle-icon {
-	width: 24px;
-	height: 24px;
-	transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.quiz-faq-item.expanded .quiz-faq-toggle-icon {
-	transform: rotate(45deg);
+	display: none;
 }
 
 .quiz-faq-answer {
@@ -1500,15 +1512,9 @@ body {
 	}
 
 	.quiz-faq-toggle {
-		/* Mobile: keep 32x32 toggle size */
-		width: 32px;
-		height: 32px;
-	}
-
-	.quiz-faq-toggle-icon {
-		/* Mobile: keep 24x24 icon size */
-		width: 24px;
-		height: 24px;
+		/* Mobile: keep 35x35 toggle size to match desktop */
+		width: 35px;
+		height: 35px;
 	}
 
 	/* Header mobile adjustments */
