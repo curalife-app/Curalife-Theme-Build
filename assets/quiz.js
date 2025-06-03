@@ -2937,7 +2937,6 @@ class ProductQuiz {
 					e.preventDefault();
 					if (selectedIndex >= 0 && currentResults[selectedIndex]) {
 						this._selectPayer(question, currentResults[selectedIndex], searchTrigger, dropdown, onSelectCallback);
-						this._closePayerSearchDropdown(dropdown, container, searchTrigger);
 						isOpen = false;
 					}
 					break;
@@ -3116,7 +3115,6 @@ class ProductQuiz {
 			resultItems.forEach((item, index) => {
 				item.addEventListener("click", () => {
 					this._selectPayer(question, results[index].payer, searchTrigger, dropdown, onSelectCallback);
-					this._closePayerSearchDropdown(dropdown, container, searchTrigger);
 				});
 			});
 		}
@@ -3358,8 +3356,16 @@ class ProductQuiz {
 			searchTrigger.classList.remove("placeholder");
 		}
 
-		// Hide dropdown
-		this._hidePayerSearchDropdown(dropdown);
+		// Get container for proper dropdown closing
+		const container = searchTrigger ? searchTrigger.closest(".quiz-payer-search-container") : null;
+
+		// Close dropdown properly with all state cleanup
+		if (container) {
+			this._closePayerSearchDropdown(dropdown, container, searchTrigger);
+		} else {
+			// Fallback to old method if container not found
+			this._hidePayerSearchDropdown(dropdown);
+		}
 
 		// Clear any error states and add valid state
 		const errorEl = this.questionContainer.querySelector(`#error-${question.id}`);
