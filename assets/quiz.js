@@ -2107,17 +2107,7 @@ class ProductQuiz {
 					}, 400);
 				}
 
-				// Collapse all other items immediately (no rotation for other items)
-				faqItems.forEach(otherItem => {
-					if (otherItem !== item) {
-						otherItem.classList.remove("expanded");
-						// Update question styling
-						const question = otherItem.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
-						if (question) {
-							question.className = "quiz-faq-question-collapsed";
-						}
-					}
-				});
+				// Removed accordion behavior - allowing multiple items to be expanded simultaneously
 			});
 		});
 	}
