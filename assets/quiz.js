@@ -1897,7 +1897,7 @@ class ProductQuiz {
 		return `
 			<div class="quiz-results-container">
 				<div class="quiz-results-header">
-					<h2 class="quiz-results-title">Great news! You're covered</h2>
+					<h2 class="quiz-results-title">Great news! <br class="mobile"> You're covered</h2>
 					<p class="quiz-results-subtitle">As of today, your insurance fully covers your online dietitian consultations*</p>
 				</div>
 
@@ -1905,15 +1905,15 @@ class ProductQuiz {
 					<h3 class="quiz-coverage-card-title">Here's Your Offer</h3>
 
 					<div class="quiz-coverage-pricing">
-						<div class="quiz-coverage-services">
+						<div class="quiz-coverage-service-item">
 							<div class="quiz-coverage-service">Initial consultation – 60 minutes</div>
-							<div class="quiz-coverage-service">Follow-up consultation – 30 minutes</div>
-						</div>
-						<div class="quiz-coverage-costs">
 							<div class="quiz-coverage-cost">
 								<span class="quiz-coverage-copay">Co-pay: $${copay}*</span>
 								<span class="quiz-coverage-original-price">$100</span>
 							</div>
+						</div>
+						<div class="quiz-coverage-service-item">
+							<div class="quiz-coverage-service">Follow-up consultation – 30 minutes</div>
 							<div class="quiz-coverage-cost">
 								<span class="quiz-coverage-copay">Co-pay: $${copay}*</span>
 								<span class="quiz-coverage-original-price">$50</span>
