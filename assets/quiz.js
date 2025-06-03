@@ -2069,26 +2069,36 @@ class ProductQuiz {
 				const isExpanded = item.classList.contains("expanded");
 				const toggle = item.querySelector(".quiz-faq-toggle");
 
-				// Add rotating class for animation
+				// Add rotating class for animation ONLY on the clicked item
 				if (toggle) {
 					toggle.classList.add("rotating");
-					// Remove rotating class after animation completes
+
+					// After rotation completes, remove rotating class and update content
 					setTimeout(() => {
 						toggle.classList.remove("rotating");
+
+						// Now handle the state change after rotation is complete
+						if (!isExpanded) {
+							// Expand this item
+							item.classList.add("expanded");
+							const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
+							if (question) {
+								question.className = "quiz-faq-question";
+							}
+						} else {
+							// Collapse this item
+							item.classList.remove("expanded");
+							const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
+							if (question) {
+								question.className = "quiz-faq-question-collapsed";
+							}
+						}
 					}, 400);
 				}
 
-				// Collapse all other items with smooth animation
+				// Collapse all other items immediately (no rotation for other items)
 				faqItems.forEach(otherItem => {
 					if (otherItem !== item) {
-						const otherToggle = otherItem.querySelector(".quiz-faq-toggle");
-						if (otherToggle) {
-							otherToggle.classList.add("rotating");
-							setTimeout(() => {
-								otherToggle.classList.remove("rotating");
-							}, 400);
-						}
-
 						otherItem.classList.remove("expanded");
 						// Update question styling
 						const question = otherItem.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
@@ -2097,23 +2107,6 @@ class ProductQuiz {
 						}
 					}
 				});
-
-				// Toggle current item with smooth animation
-				if (!isExpanded) {
-					// Expand this item
-					item.classList.add("expanded");
-					const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
-					if (question) {
-						question.className = "quiz-faq-question";
-					}
-				} else {
-					// Collapse this item
-					item.classList.remove("expanded");
-					const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
-					if (question) {
-						question.className = "quiz-faq-question-collapsed";
-					}
-				}
 			});
 		});
 	}
