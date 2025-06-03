@@ -2988,13 +2988,16 @@ class ProductQuiz {
 	// Show initial payer list with most common insurance plans
 	async _showInitialPayerList(question, dropdown, onSelectCallback, onResultsCallback) {
 		try {
-			// Show loading state briefly
-			dropdown.innerHTML = `
-				<div class="quiz-payer-search-loading">
-					<div class="quiz-payer-search-loading-spinner"></div>
-					Loading insurance plans...
-				</div>
-			`;
+			// Find the results container and show loading state
+			const resultsContainer = dropdown.querySelector(".quiz-payer-search-results");
+			if (resultsContainer) {
+				resultsContainer.innerHTML = `
+					<div class="quiz-payer-search-loading">
+						<div class="quiz-payer-search-loading-spinner"></div>
+						Loading insurance plans...
+					</div>
+				`;
+			}
 			dropdown.classList.add("visible");
 			dropdown.style.display = "block";
 
@@ -3005,11 +3008,14 @@ class ProductQuiz {
 			this._renderSearchResults(results, "", dropdown, question, onSelectCallback, onResultsCallback);
 		} catch (error) {
 			console.error("❌ Error showing initial payer list:", error);
-			dropdown.innerHTML = `
-				<div class="quiz-payer-search-error">
-					Error loading insurance plans. Please try typing to search.
-				</div>
-			`;
+			const resultsContainer = dropdown.querySelector(".quiz-payer-search-results");
+			if (resultsContainer) {
+				resultsContainer.innerHTML = `
+					<div class="quiz-payer-search-error">
+						Error loading insurance plans. Please try typing to search.
+					</div>
+				`;
+			}
 			dropdown.classList.add("visible");
 			onResultsCallback([]);
 		}
@@ -3018,13 +3024,16 @@ class ProductQuiz {
 	// Search payers using Stedi API
 	async _searchPayers(question, query, dropdown, onSelectCallback, onResultsCallback) {
 		try {
-			// Show loading state
-			dropdown.innerHTML = `
-				<div class="quiz-payer-search-loading">
-					<div class="quiz-payer-search-loading-spinner"></div>
-					Searching...
-				</div>
-			`;
+			// Show loading state in results container
+			const resultsContainer = dropdown.querySelector(".quiz-payer-search-results");
+			if (resultsContainer) {
+				resultsContainer.innerHTML = `
+					<div class="quiz-payer-search-loading">
+						<div class="quiz-payer-search-loading-spinner"></div>
+						Searching...
+					</div>
+				`;
+			}
 			dropdown.classList.add("visible");
 			dropdown.style.display = "block";
 
@@ -3067,11 +3076,14 @@ class ProductQuiz {
 				this._renderSearchResults(results, query, dropdown, question, onSelectCallback, onResultsCallback);
 			} catch (demoError) {
 				console.error("❌ Demo data fallback also failed:", demoError);
-				dropdown.innerHTML = `
-					<div class="quiz-payer-search-error">
-						Error searching for insurance plans. Please try again.
-					</div>
-				`;
+				const resultsContainer = dropdown.querySelector(".quiz-payer-search-results");
+				if (resultsContainer) {
+					resultsContainer.innerHTML = `
+						<div class="quiz-payer-search-error">
+							Error searching for insurance plans. Please try again.
+						</div>
+					`;
+				}
 				dropdown.classList.add("visible");
 				onResultsCallback([]);
 			}
