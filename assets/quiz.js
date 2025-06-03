@@ -1227,13 +1227,18 @@ class ProductQuiz {
 
 			if (hasValidationErrors) {
 				// Show error messages for invalid fields
-				validationErrors.forEach(error => {
+				let firstInvalidField = null;
+				validationErrors.forEach((error, index) => {
 					const errorEl = this.questionContainer.querySelector(`#error-${error.questionId}`);
 					const input = this.questionContainer.querySelector(`#question-${error.questionId}`);
 
 					if (input) {
 						input.classList.add("quiz-input-error");
 						input.classList.remove("quiz-input-valid");
+						// Store reference to first invalid field for scrolling
+						if (index === 0) {
+							firstInvalidField = input;
+						}
 					}
 
 					if (errorEl) {
@@ -1243,6 +1248,11 @@ class ProductQuiz {
 						errorEl.classList.add("quiz-error-visible");
 					}
 				});
+
+				// Scroll to first invalid field on mobile
+				if (firstInvalidField) {
+					this._scrollToInvalidField(firstInvalidField);
+				}
 
 				return; // Don't proceed to next step
 			}
@@ -2631,6 +2641,39 @@ class ProductQuiz {
 		console.log("Result:", result);
 
 		return result;
+	}
+
+	// Scroll to the first invalid field when validation fails
+	_scrollToInvalidField(fieldElement) {
+		if (!fieldElement) return;
+
+		// Check if we're on mobile (768px or less)
+		const isMobile = window.innerWidth <= 768;
+
+		if (isMobile) {
+			// Calculate scroll position with some offset for mobile
+			const fieldRect = fieldElement.getBoundingClientRect();
+			const offset = 100; // Offset from top to account for header and breathing room
+
+			// Get the current scroll position
+			const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
+
+			// Calculate the target scroll position
+			const targetScrollY = currentScrollY + fieldRect.top - offset;
+
+			// Smooth scroll to the field
+			window.scrollTo({
+				top: Math.max(0, targetScrollY), // Ensure we don't scroll above the page
+				behavior: "smooth"
+			});
+
+			// Optional: Focus the field after scrolling with a small delay
+			setTimeout(() => {
+				if (fieldElement.focus) {
+					fieldElement.focus();
+				}
+			}, 300); // Wait for scroll animation to complete
+		}
 	}
 
 	renderPayerSearch(question, response) {
