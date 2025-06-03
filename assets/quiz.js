@@ -2680,24 +2680,37 @@ class ProductQuiz {
 
 	renderPayerSearch(question, response) {
 		const selectedPayer = response.answer;
-		const placeholder = question.placeholder || "Search for your insurance plan...";
+		const placeholder = question.placeholder || "Select your insurance plan...";
 
 		console.log("Rendering payer search for question:", question.id, "selectedPayer:", selectedPayer);
 
-		// Build the search input HTML
+		// Build the dropdown trigger HTML
 		let html = `
 			<div class="quiz-payer-search-container">
-				<input
-					type="text"
+				<button
+					type="button"
 					id="question-${question.id}"
-					class="quiz-payer-search-input"
-					placeholder="${placeholder}"
-					value=""
-					autocomplete="off"
+					class="quiz-payer-search-trigger placeholder"
 					aria-describedby="error-${question.id}"
+					aria-expanded="false"
 				>
+					<span class="quiz-payer-search-trigger-text">${placeholder}</span>
+					<svg class="quiz-payer-search-dropdown-icon" width="12" height="7" viewBox="0 0 12 7" fill="none" xmlns="http://www.w3.org/2000/svg">
+						<path d="M1.03888 0.294581C1.42815 -0.0946914 2.05918 -0.0950353 2.44888 0.293813L5.62716 3.46517C6.01751 3.85467 6.64948 3.85467 7.03983 3.46517L10.2181 0.293812C10.6078 -0.0950355 11.2388 -0.0946913 11.6281 0.294581C12.0177 0.684154 12.0177 1.31578 11.6281 1.70535L7.0406 6.29286C6.65008 6.68338 6.01691 6.68338 5.62639 6.29286L1.03888 1.70535C0.649308 1.31578 0.649307 0.684154 1.03888 0.294581Z" fill="#4F4F4F"/>
+					</svg>
+				</button>
 				<div class="quiz-payer-search-dropdown" id="search-dropdown-${question.id}" style="display: none;">
-					<!-- Search results will be populated here -->
+					<div class="quiz-payer-search-input-container">
+						<input
+							type="text"
+							class="quiz-payer-search-internal-input"
+							placeholder="Search for your insurance plan..."
+							autocomplete="off"
+						>
+					</div>
+					<div class="quiz-payer-search-results">
+						<!-- Search results will be populated here -->
+					</div>
 				</div>
 				<p id="error-${question.id}" class="quiz-error-text quiz-error-hidden"></p>
 		`;
@@ -2724,8 +2737,14 @@ class ProductQuiz {
 			}
 		}
 
-		// If we have payer display info, show the selected payer
+		// If we have payer display info, update the trigger text and show selected state
 		if (payerDisplayInfo) {
+			// Update the trigger to show selected payer
+			html = html.replace('class="quiz-payer-search-trigger placeholder"', 'class="quiz-payer-search-trigger quiz-input-valid"');
+			html = html.replace("Select your insurance plan...", payerDisplayInfo.displayName);
+			// Also add the data attribute with the selected payer
+			html = html.replace('aria-expanded="false"', `aria-expanded="false" data-selected-payer='${JSON.stringify(selectedPayer)}'`);
+
 			html += `
 				<div class="quiz-payer-search-selected">
 					<div class="quiz-payer-search-selected-name">${payerDisplayInfo.displayName}</div>
@@ -2746,17 +2765,17 @@ class ProductQuiz {
 	// Method to attach payer search listeners for wizard-style questions
 	_attachPayerSearchListeners(question) {
 		console.log("Attaching payer search listeners for wizard-style question:", question.id);
-		const searchInput = this.questionContainer.querySelector(`#question-${question.id}`);
+		const searchTrigger = this.questionContainer.querySelector(`#question-${question.id}`);
 		const dropdown = this.questionContainer.querySelector(`#search-dropdown-${question.id}`);
 
-		if (!searchInput || !dropdown) {
+		if (!searchTrigger || !dropdown) {
 			console.warn(`Payer search elements not found for question ${question.id}`);
-			console.log("searchInput:", !!searchInput, "dropdown:", !!dropdown);
+			console.log("searchTrigger:", !!searchTrigger, "dropdown:", !!dropdown);
 			return;
 		}
 
 		console.log("Found payer search elements, setting up behavior");
-		this._setupPayerSearchBehavior(question, searchInput, dropdown, selectedPayer => {
+		this._setupPayerSearchBehavior(question, searchTrigger, dropdown, selectedPayer => {
 			console.log("Wizard-style payer selected:", selectedPayer);
 			this.handleAnswer(selectedPayer);
 		});
@@ -2766,23 +2785,23 @@ class ProductQuiz {
 	_attachPayerSearchFormListeners(question) {
 		// Add a small delay to ensure DOM elements are available
 		setTimeout(() => {
-			const searchInput = this.questionContainer.querySelector(`#question-${question.id}`);
+			const searchTrigger = this.questionContainer.querySelector(`#question-${question.id}`);
 			const dropdown = this.questionContainer.querySelector(`#search-dropdown-${question.id}`);
 
-			console.log("- searchInput selector: #question-" + question.id);
+			console.log("- searchTrigger selector: #question-" + question.id);
 			console.log("- dropdown selector: #search-dropdown-" + question.id);
 			console.log("- questionContainer:", !!this.questionContainer);
-			console.log("- searchInput found:", !!searchInput);
+			console.log("- searchTrigger found:", !!searchTrigger);
 			console.log("- dropdown found:", !!dropdown);
 
-			if (!searchInput || !dropdown) {
+			if (!searchTrigger || !dropdown) {
 				console.warn(`❌ Payer search elements not found for question ${question.id}`);
 
-				// Debug: log all inputs in the container
-				const allInputs = this.questionContainer.querySelectorAll("input");
+				// Debug: log all trigger buttons in the container
+				const allTriggers = this.questionContainer.querySelectorAll("button");
 				console.log(
-					"🔍 All inputs found:",
-					Array.from(allInputs).map(input => ({ id: input.id, type: input.type, class: input.className }))
+					"🔍 All buttons found:",
+					Array.from(allTriggers).map(button => ({ id: button.id, type: button.type, class: button.className }))
 				);
 
 				// Debug: log all divs with dropdown-like classes
@@ -2792,18 +2811,18 @@ class ProductQuiz {
 					Array.from(allDropdowns).map(div => ({ id: div.id, class: div.className }))
 				);
 
-				// Debug: log all inputs with payer-search class
-				const allPayerSearchInputs = this.questionContainer.querySelectorAll(".quiz-payer-search-input");
+				// Debug: log all triggers with payer-search class
+				const allPayerSearchTriggers = this.questionContainer.querySelectorAll(".quiz-payer-search-trigger");
 				console.log(
-					"🔍 All payer search inputs found:",
-					Array.from(allPayerSearchInputs).map(input => ({ id: input.id, type: input.type, class: input.className }))
+					"🔍 All payer search triggers found:",
+					Array.from(allPayerSearchTriggers).map(trigger => ({ id: trigger.id, type: trigger.type, class: trigger.className }))
 				);
 
 				// Debug: dump the entire questionContainer HTML
 				return;
 			}
 
-			this._setupPayerSearchBehavior(question, searchInput, dropdown, selectedPayer => {
+			this._setupPayerSearchBehavior(question, searchTrigger, dropdown, selectedPayer => {
 				console.log(
 					"📊 Current responses before storing payer:",
 					this.responses.map(r => ({ questionId: r.questionId, answerType: typeof r.answer, hasStediId: r.answer?.stediId, hasDisplayName: r.answer?.displayName }))
@@ -2828,23 +2847,46 @@ class ProductQuiz {
 	}
 
 	// Common payer search behavior setup
-	_setupPayerSearchBehavior(question, searchInput, dropdown, onSelectCallback) {
+	_setupPayerSearchBehavior(question, searchTrigger, dropdown, onSelectCallback) {
 		let searchTimeout;
 		let currentResults = [];
 		let selectedIndex = -1;
-		let hasShownInitialList = false;
+		let isOpen = false;
+
+		// Get the internal search input and results container
+		const internalSearchInput = dropdown.querySelector(".quiz-payer-search-internal-input");
+		const resultsContainer = dropdown.querySelector(".quiz-payer-search-results");
+		const container = searchTrigger.closest(".quiz-payer-search-container");
 
 		// Ensure dropdown starts hidden
 		this._hidePayerSearchDropdown(dropdown);
 
-		// Handle input changes with debouncing
+		// Handle dropdown trigger click
+		const triggerClickHandler = () => {
+			if (isOpen) {
+				this._closePayerSearchDropdown(dropdown, container, searchTrigger);
+				isOpen = false;
+			} else {
+				this._openPayerSearchDropdown(dropdown, container, searchTrigger);
+				isOpen = true;
+				// Load initial results when opening
+				this._showInitialPayerList(question, resultsContainer, onSelectCallback, results => {
+					currentResults = results;
+					selectedIndex = -1;
+				});
+				// Focus the internal search input
+				setTimeout(() => internalSearchInput.focus(), 50);
+			}
+		};
+
+		// Handle internal search input changes with debouncing
 		const inputHandler = () => {
-			const query = searchInput.value.trim();
+			const query = internalSearchInput.value.trim();
 
 			// Clear any previous selection when user types
-			if (searchInput.hasAttribute("data-selected-payer")) {
-				searchInput.removeAttribute("data-selected-payer");
-				searchInput.classList.remove("quiz-input-valid");
+			if (searchTrigger.hasAttribute("data-selected-payer")) {
+				searchTrigger.removeAttribute("data-selected-payer");
+				searchTrigger.classList.remove("quiz-input-valid");
 				// Clear the stored response so validation fails until new selection
 				this.handleFormAnswer(question.id, null);
 			}
@@ -2858,81 +2900,77 @@ class ProductQuiz {
 
 				// Debounce search by 300ms
 				searchTimeout = setTimeout(() => {
-					this._searchPayers(question, query, dropdown, onSelectCallback, results => {
+					this._searchPayers(question, query, resultsContainer, onSelectCallback, results => {
 						currentResults = results;
 						selectedIndex = -1;
 					});
 				}, 300);
-			} else if (hasShownInitialList) {
-				// If user clears the input but we've already shown the initial list, show it again
-				this._showInitialPayerList(question, dropdown, onSelectCallback, results => {
-					currentResults = results;
-					selectedIndex = -1;
-				});
 			} else {
-				// Hide dropdown if no input and haven't shown initial list yet
-				this._hidePayerSearchDropdown(dropdown);
-				currentResults = [];
-				selectedIndex = -1;
-			}
-		};
-
-		// Remove any existing event listeners to prevent duplicates
-		searchInput.removeEventListener("input", inputHandler);
-
-		// Add the input event listener
-		searchInput.addEventListener("input", inputHandler);
-
-		// Handle focus/click event to show initial list
-		const focusHandler = () => {
-			const query = searchInput.value.trim();
-
-			// If input is empty or no selection made yet, show initial list
-			if (query.length === 0 || !searchInput.hasAttribute("data-selected-payer")) {
-				hasShownInitialList = true;
-				this._showInitialPayerList(question, dropdown, onSelectCallback, results => {
+				// Show initial list when input is cleared
+				this._showInitialPayerList(question, resultsContainer, onSelectCallback, results => {
 					currentResults = results;
 					selectedIndex = -1;
 				});
 			}
 		};
 
-		searchInput.addEventListener("focus", focusHandler);
-		searchInput.addEventListener("click", focusHandler);
+		// Add event listeners
+		searchTrigger.addEventListener("click", triggerClickHandler);
+		internalSearchInput.addEventListener("input", inputHandler);
 
-		// Handle keyboard navigation
-		searchInput.addEventListener("keydown", e => {
+		// Handle keyboard navigation within dropdown
+		internalSearchInput.addEventListener("keydown", e => {
 			if (currentResults.length === 0) return;
 
 			switch (e.key) {
 				case "ArrowDown":
 					e.preventDefault();
 					selectedIndex = Math.min(selectedIndex + 1, currentResults.length - 1);
-					this._updateKeyboardSelection(dropdown, selectedIndex);
+					this._updateKeyboardSelection(resultsContainer, selectedIndex);
 					break;
 				case "ArrowUp":
 					e.preventDefault();
 					selectedIndex = Math.max(selectedIndex - 1, -1);
-					this._updateKeyboardSelection(dropdown, selectedIndex);
+					this._updateKeyboardSelection(resultsContainer, selectedIndex);
 					break;
 				case "Enter":
 					e.preventDefault();
 					if (selectedIndex >= 0 && currentResults[selectedIndex]) {
-						this._selectPayer(question, currentResults[selectedIndex], searchInput, dropdown, onSelectCallback);
+						this._selectPayer(question, currentResults[selectedIndex], searchTrigger, dropdown, onSelectCallback);
+						this._closePayerSearchDropdown(dropdown, container, searchTrigger);
+						isOpen = false;
 					}
 					break;
 				case "Escape":
-					this._hidePayerSearchDropdown(dropdown);
-					searchInput.blur();
+					this._closePayerSearchDropdown(dropdown, container, searchTrigger);
+					isOpen = false;
+					searchTrigger.focus();
+					break;
+			}
+		});
+
+		// Handle trigger keyboard navigation
+		searchTrigger.addEventListener("keydown", e => {
+			switch (e.key) {
+				case "Enter":
+				case " ":
+					e.preventDefault();
+					triggerClickHandler();
+					break;
+				case "Escape":
+					if (isOpen) {
+						this._closePayerSearchDropdown(dropdown, container, searchTrigger);
+						isOpen = false;
+					}
 					break;
 			}
 		});
 
 		// Hide dropdown when clicking outside
 		document.addEventListener("click", e => {
-			if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
-				this._hidePayerSearchDropdown(dropdown);
-				hasShownInitialList = false; // Reset flag when dropdown is hidden
+			if (!container.contains(e.target)) {
+				this._closePayerSearchDropdown(dropdown, container, searchTrigger);
+				isOpen = false;
 			}
 		});
 
@@ -2940,8 +2978,6 @@ class ProductQuiz {
 		const clearButton = this.questionContainer.querySelector(".quiz-payer-search-clear");
 		if (clearButton) {
 			clearButton.addEventListener("click", () => {
-				searchInput.value = "";
-				searchInput.focus();
 				// Clear the selection
 				onSelectCallback(null);
 				// Re-render to remove the selected payer display
@@ -3053,13 +3089,14 @@ class ProductQuiz {
 				</div>
 			`;
 		} else {
-			// Render results
+			// Render results with highlighting
 			const resultsHTML = results
 				.map((item, index) => {
 					const payer = item.payer;
+					const highlightedName = this._highlightSearchTerm(payer.displayName, query);
 					return `
 					<div class="quiz-payer-search-item" data-index="${index}">
-						<div class="quiz-payer-search-item-name">${payer.displayName}</div>
+						<div class="quiz-payer-search-item-name">${highlightedName}</div>
 						<div class="quiz-payer-search-item-details">
 							<span class="quiz-payer-search-item-id">${payer.stediId}</span>
 							${payer.aliases && payer.aliases.length > 0 ? `• ${payer.aliases.slice(0, 2).join(", ")}` : ""}
@@ -3069,26 +3106,17 @@ class ProductQuiz {
 				})
 				.join("");
 
-			// Add search hint for initial list
-			const searchHint = !query
-				? `
-				<div class="quiz-payer-search-hint">
-					<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-						<path d="M7.333 12.667A5.333 5.333 0 1 0 7.333 2a5.333 5.333 0 0 0 0 10.667ZM14 14l-2.9-2.9" stroke="#64748b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-					</svg>
-					Start typing to search for more plans...
-				</div>
-			`
-				: "";
-
-			dropdown.innerHTML = resultsHTML + searchHint;
+			dropdown.innerHTML = resultsHTML;
 
 			// Attach click listeners to results
 			const resultItems = dropdown.querySelectorAll(".quiz-payer-search-item");
+			const container = dropdown.closest(".quiz-payer-search-container");
+			const searchTrigger = container.querySelector(".quiz-payer-search-trigger");
 
 			resultItems.forEach((item, index) => {
 				item.addEventListener("click", () => {
-					this._selectPayer(question, results[index].payer, dropdown.parentElement.querySelector(".quiz-payer-search-input"), dropdown, onSelectCallback);
+					this._selectPayer(question, results[index].payer, searchTrigger, dropdown, onSelectCallback);
+					this._closePayerSearchDropdown(dropdown, container, searchTrigger);
 				});
 			});
 		}
@@ -3318,12 +3346,16 @@ class ProductQuiz {
 	}
 
 	// Select a payer
-	_selectPayer(question, payer, searchInput, dropdown, onSelectCallback) {
-		// Update the input to show the selected payer name
-		if (searchInput) {
-			searchInput.value = payer.displayName;
+	_selectPayer(question, payer, searchTrigger, dropdown, onSelectCallback) {
+		// Update the trigger to show the selected payer name
+		if (searchTrigger) {
+			const triggerText = searchTrigger.querySelector(".quiz-payer-search-trigger-text");
+			if (triggerText) {
+				triggerText.textContent = payer.displayName;
+			}
 			// Store the selected payer data as a data attribute for reference
-			searchInput.setAttribute("data-selected-payer", JSON.stringify(payer));
+			searchTrigger.setAttribute("data-selected-payer", JSON.stringify(payer));
+			searchTrigger.classList.remove("placeholder");
 		}
 
 		// Hide dropdown
@@ -3331,9 +3363,9 @@ class ProductQuiz {
 
 		// Clear any error states and add valid state
 		const errorEl = this.questionContainer.querySelector(`#error-${question.id}`);
-		if (searchInput) {
-			searchInput.classList.remove("quiz-input-error");
-			searchInput.classList.add("quiz-input-valid");
+		if (searchTrigger) {
+			searchTrigger.classList.remove("quiz-input-error");
+			searchTrigger.classList.add("quiz-input-valid");
 		}
 
 		// Hide error message
@@ -3351,6 +3383,34 @@ class ProductQuiz {
 	_hidePayerSearchDropdown(dropdown) {
 		dropdown.classList.remove("visible");
 		dropdown.style.display = "none";
+	}
+
+	_openPayerSearchDropdown(dropdown, container, searchTrigger) {
+		dropdown.classList.add("visible");
+		dropdown.style.display = "block";
+		container.classList.add("open");
+		searchTrigger.setAttribute("aria-expanded", "true");
+		searchTrigger.classList.remove("placeholder");
+	}
+
+	_closePayerSearchDropdown(dropdown, container, searchTrigger) {
+		dropdown.classList.remove("visible");
+		dropdown.style.display = "none";
+		container.classList.remove("open");
+		searchTrigger.setAttribute("aria-expanded", "false");
+		// Clear the internal search input
+		const internalInput = dropdown.querySelector(".quiz-payer-search-internal-input");
+		if (internalInput) {
+			internalInput.value = "";
+		}
+	}
+
+	// Highlight search terms in text
+	_highlightSearchTerm(text, searchTerm) {
+		if (!searchTerm || !text) return text;
+
+		const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
+		return text.replace(regex, '<span class="quiz-payer-search-highlight">$1</span>');
 	}
 
 	// Update keyboard selection highlighting
