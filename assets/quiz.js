@@ -419,8 +419,9 @@ class ProductQuiz {
 		const buttonText = isLastStep ? step.ctaText || "Finish Quiz" : step.ctaText || "Continue";
 
 		return `
+			${step.info && step.info.formSubHeading ? `<h4 class="quiz-heading quiz-heading-mobile-outside">${step.info.formSubHeading}</h4>` : ""}
 			<div class="quiz-form-container">
-				${step.info && step.info.formSubHeading ? `<h4 class="quiz-heading">${step.info.formSubHeading}</h4>` : ""}
+				${step.info && step.info.formSubHeading ? `<h4 class="quiz-heading quiz-heading-desktop-inside">${step.info.formSubHeading}</h4>` : ""}
 				<div class="quiz-space-y-6">
 					${this._processFormQuestions(step.questions)}
 				</div>
