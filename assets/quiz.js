@@ -337,6 +337,11 @@ class ProductQuiz {
 			return;
 		}
 
+		// Add step-specific classes to the question container
+		this.questionContainer.className = "quiz-question-container";
+		this.questionContainer.classList.add(`quiz-step-${this.currentStepIndex + 1}`);
+		this.questionContainer.classList.add(`quiz-step-${step.id}`);
+
 		// Update progress bar
 		this._updateProgressBar();
 
