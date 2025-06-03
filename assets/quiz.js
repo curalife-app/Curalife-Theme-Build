@@ -2049,23 +2049,6 @@ class ProductQuiz {
 				</div>
 
 				<div class="quiz-faq-divider"></div>
-
-				<div class="quiz-faq-item" data-faq="what-expect" tabindex="0" role="button" aria-expanded="false">
-					<div class="quiz-faq-content">
-						<div class="quiz-faq-question-collapsed">What should I expect during my consultation?</div>
-						<div class="quiz-faq-answer">
-							Your dietitian will conduct a comprehensive health assessment, review your medical history and goals, and create a personalized nutrition plan. You'll receive practical meal planning guidance, dietary recommendations, and ongoing support to help you achieve your health objectives.
-						</div>
-					</div>
-					<div class="quiz-faq-toggle">
-						<svg class="quiz-faq-toggle-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="M4 12H20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-							<path d="M12 4V20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-						</svg>
-					</div>
-				</div>
-
-				<div class="quiz-faq-divider"></div>
 			</div>
 		`;
 	}
