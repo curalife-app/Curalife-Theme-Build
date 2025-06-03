@@ -3345,6 +3345,8 @@ class ProductQuiz {
 
 	// Select a payer
 	_selectPayer(question, payer, searchTrigger, dropdown, onSelectCallback) {
+		console.log("🔍 _selectPayer called with:", { payer: payer.displayName, searchTrigger: !!searchTrigger, dropdown: !!dropdown });
+
 		// Update the trigger to show the selected payer name
 		if (searchTrigger) {
 			const triggerText = searchTrigger.querySelector(".quiz-payer-search-trigger-text");
@@ -3358,11 +3360,14 @@ class ProductQuiz {
 
 		// Get container for proper dropdown closing
 		const container = searchTrigger ? searchTrigger.closest(".quiz-payer-search-container") : null;
+		console.log("🔍 Container found:", !!container);
 
 		// Close dropdown properly with all state cleanup
 		if (container) {
+			console.log("🔍 Calling _closePayerSearchDropdown");
 			this._closePayerSearchDropdown(dropdown, container, searchTrigger);
 		} else {
+			console.log("🔍 Fallback to _hidePayerSearchDropdown");
 			// Fallback to old method if container not found
 			this._hidePayerSearchDropdown(dropdown);
 		}
@@ -3400,15 +3405,26 @@ class ProductQuiz {
 	}
 
 	_closePayerSearchDropdown(dropdown, container, searchTrigger) {
+		console.log("🔍 _closePayerSearchDropdown called");
+		console.log("🔍 Before closing - dropdown visible:", dropdown.classList.contains("visible"));
+		console.log("🔍 Before closing - container open:", container.classList.contains("open"));
+
 		dropdown.classList.remove("visible");
 		dropdown.style.display = "none";
 		container.classList.remove("open");
 		searchTrigger.setAttribute("aria-expanded", "false");
+
 		// Clear the internal search input
 		const internalInput = dropdown.querySelector(".quiz-payer-search-internal-input");
+		console.log("🔍 Internal input found:", !!internalInput);
 		if (internalInput) {
 			internalInput.value = "";
+			console.log("🔍 Cleared internal input value");
 		}
+
+		console.log("🔍 After closing - dropdown visible:", dropdown.classList.contains("visible"));
+		console.log("🔍 After closing - container open:", container.classList.contains("open"));
+		console.log("🔍 After closing - dropdown display:", dropdown.style.display);
 	}
 
 	// Highlight search terms in text
