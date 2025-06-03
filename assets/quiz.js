@@ -2870,7 +2870,7 @@ class ProductQuiz {
 				this._openPayerSearchDropdown(dropdown, container, searchTrigger);
 				isOpen = true;
 				// Load initial results when opening
-				this._showInitialPayerList(question, resultsContainer, onSelectCallback, results => {
+				this._showInitialPayerList(question, dropdown, onSelectCallback, results => {
 					currentResults = results;
 					selectedIndex = -1;
 				});
@@ -2900,14 +2900,14 @@ class ProductQuiz {
 
 				// Debounce search by 300ms
 				searchTimeout = setTimeout(() => {
-					this._searchPayers(question, query, resultsContainer, onSelectCallback, results => {
+					this._searchPayers(question, query, dropdown, onSelectCallback, results => {
 						currentResults = results;
 						selectedIndex = -1;
 					});
 				}, 300);
 			} else {
 				// Show initial list when input is cleared
-				this._showInitialPayerList(question, resultsContainer, onSelectCallback, results => {
+				this._showInitialPayerList(question, dropdown, onSelectCallback, results => {
 					currentResults = results;
 					selectedIndex = -1;
 				});
