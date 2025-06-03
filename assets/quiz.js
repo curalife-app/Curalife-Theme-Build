@@ -3080,9 +3080,17 @@ class ProductQuiz {
 
 	// Helper method to render search results
 	_renderSearchResults(results, query, dropdown, question, onSelectCallback, onResultsCallback) {
+		// Find the results container within the dropdown
+		const resultsContainer = dropdown.querySelector(".quiz-payer-search-results");
+
+		if (!resultsContainer) {
+			console.error("Results container not found in dropdown");
+			return;
+		}
+
 		if (results.length === 0) {
 			const noResultsMessage = query ? `No insurance plans found for "${query}". Try searching with a different term.` : "No insurance plans available.";
-			dropdown.innerHTML = `
+			resultsContainer.innerHTML = `
 				<div class="quiz-payer-search-no-results">
 					${noResultsMessage}
 				</div>
@@ -3105,10 +3113,10 @@ class ProductQuiz {
 				})
 				.join("");
 
-			dropdown.innerHTML = resultsHTML;
+			resultsContainer.innerHTML = resultsHTML;
 
 			// Attach click listeners to results
-			const resultItems = dropdown.querySelectorAll(".quiz-payer-search-item");
+			const resultItems = resultsContainer.querySelectorAll(".quiz-payer-search-item");
 			const container = dropdown.closest(".quiz-payer-search-container");
 			const searchTrigger = container.querySelector(".quiz-payer-search-trigger");
 
@@ -3345,8 +3353,6 @@ class ProductQuiz {
 
 	// Select a payer
 	_selectPayer(question, payer, searchTrigger, dropdown, onSelectCallback) {
-		console.log("🔍 _selectPayer called with:", { payer: payer.displayName, searchTrigger: !!searchTrigger, dropdown: !!dropdown });
-
 		// Update the trigger to show the selected payer name
 		if (searchTrigger) {
 			const triggerText = searchTrigger.querySelector(".quiz-payer-search-trigger-text");
@@ -3360,14 +3366,11 @@ class ProductQuiz {
 
 		// Get container for proper dropdown closing
 		const container = searchTrigger ? searchTrigger.closest(".quiz-payer-search-container") : null;
-		console.log("🔍 Container found:", !!container);
 
 		// Close dropdown properly with all state cleanup
 		if (container) {
-			console.log("🔍 Calling _closePayerSearchDropdown");
 			this._closePayerSearchDropdown(dropdown, container, searchTrigger);
 		} else {
-			console.log("🔍 Fallback to _hidePayerSearchDropdown");
 			// Fallback to old method if container not found
 			this._hidePayerSearchDropdown(dropdown);
 		}
@@ -3405,10 +3408,6 @@ class ProductQuiz {
 	}
 
 	_closePayerSearchDropdown(dropdown, container, searchTrigger) {
-		console.log("🔍 _closePayerSearchDropdown called");
-		console.log("🔍 Before closing - dropdown visible:", dropdown.classList.contains("visible"));
-		console.log("🔍 Before closing - container open:", container.classList.contains("open"));
-
 		dropdown.classList.remove("visible");
 		dropdown.style.display = "none";
 		container.classList.remove("open");
@@ -3416,15 +3415,9 @@ class ProductQuiz {
 
 		// Clear the internal search input
 		const internalInput = dropdown.querySelector(".quiz-payer-search-internal-input");
-		console.log("🔍 Internal input found:", !!internalInput);
 		if (internalInput) {
 			internalInput.value = "";
-			console.log("🔍 Cleared internal input value");
 		}
-
-		console.log("🔍 After closing - dropdown visible:", dropdown.classList.contains("visible"));
-		console.log("🔍 After closing - container open:", container.classList.contains("open"));
-		console.log("🔍 After closing - dropdown display:", dropdown.style.display);
 	}
 
 	// Highlight search terms in text
@@ -3436,8 +3429,8 @@ class ProductQuiz {
 	}
 
 	// Update keyboard selection highlighting
-	_updateKeyboardSelection(dropdown, selectedIndex) {
-		const items = dropdown.querySelectorAll(".quiz-payer-search-item");
+	_updateKeyboardSelection(resultsContainer, selectedIndex) {
+		const items = resultsContainer.querySelectorAll(".quiz-payer-search-item");
 		items.forEach((item, index) => {
 			if (index === selectedIndex) {
 				item.classList.add("keyboard-highlighted");
