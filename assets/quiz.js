@@ -1067,7 +1067,19 @@ class ProductQuiz {
 		if (isLastStep && isLastQuestionInStep) {
 			this.nextButton.innerHTML = step.ctaText || "Finish Quiz";
 		} else {
-			this.nextButton.innerHTML = step.ctaText || "Continue";
+			// Special case for step-medical: show "Skip" if no answers selected
+			if (step.id === "step-medical") {
+				const question = step.questions[this.currentQuestionIndex];
+				if (question && question.type === "checkbox") {
+					const response = this.responses.find(r => r.questionId === question.id);
+					const hasSelection = response && Array.isArray(response.answer) && response.answer.length > 0;
+					this.nextButton.innerHTML = hasSelection ? step.ctaText || "Continue" : "Skip";
+				} else {
+					this.nextButton.innerHTML = step.ctaText || "Continue";
+				}
+			} else {
+				this.nextButton.innerHTML = step.ctaText || "Continue";
+			}
 		}
 
 		// For form-style steps, hide external navigation and handle internal button
