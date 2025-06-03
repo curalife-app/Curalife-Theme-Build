@@ -2327,7 +2327,7 @@ class ProductQuiz {
 		const rightInput = rightQuestion.type === "dropdown" ? this.renderDropdown(rightQuestion, rightResponse) : this.renderTextInput(rightQuestion, rightResponse);
 
 		// Fields that should have help icons
-		const fieldsWithHelpIcon = ["q3", "q4", "q5"]; // insurance plan, member id, state
+		const fieldsWithHelpIcon = ["q4"]; // member id only
 
 		return `
 			<div class="quiz-grid-2-form">
@@ -2412,7 +2412,7 @@ class ProductQuiz {
 			}
 
 			// Regular single question
-			const fieldsWithHelpIcon = ["q3", "q4", "q5"]; // insurance plan, member id, state
+			const fieldsWithHelpIcon = ["q4"]; // member id only
 			html += `
 				<div class="quiz-question-section">
 					<label class="quiz-label" for="question-${question.id}">
