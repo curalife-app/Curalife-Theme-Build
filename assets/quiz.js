@@ -2029,17 +2029,17 @@ class ProductQuiz {
 			<div class="quiz-faq-section">
 				<div class="quiz-faq-divider"></div>
 
-				<div class="quiz-faq-item expanded" data-faq="credit-card" tabindex="0" role="button" aria-expanded="true">
+				<div class="quiz-faq-item" data-faq="credit-card" tabindex="0" role="button" aria-expanded="false">
 					<div class="quiz-faq-content">
-						<div class="quiz-faq-question">Why do I need to provide my credit card?</div>
+						<div class="quiz-faq-question-collapsed">Why do I need to provide my credit card?</div>
 						<div class="quiz-faq-answer">
 							You'll be able to attend your consultation right away, while the co-pay will be charged later, only after your insurance is billed. We require your card for this purpose. If you cancel or reschedule with less than 24 hours' notice, or miss your appointment, your card will be charged the full consultation fee.
 						</div>
 					</div>
 					<div class="quiz-faq-toggle">
 						<svg class="quiz-faq-toggle-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="M4 12H20" stroke="#121212" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-							<path d="M12 4V20" stroke="#121212" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+							<path d="M4 12H20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+							<path d="M12 4V20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 						</svg>
 					</div>
 				</div>
