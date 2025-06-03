@@ -1440,8 +1440,9 @@ class ProductQuiz {
 			// Start dynamic loading experience
 			this._startDynamicLoader();
 
-			// Keep questions container visible but hide navigation
+			// Keep questions container visible but hide navigation and progress section
 			this._hideElement(this.navigation);
+			this._hideElement(this.progressSection);
 
 			// Get webhook URL from data attribute
 			const webhookUrl = this.container.getAttribute("data-n8n-webhook");
