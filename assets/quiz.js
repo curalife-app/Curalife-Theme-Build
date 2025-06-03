@@ -2067,17 +2067,34 @@ class ProductQuiz {
 		faqItems.forEach(item => {
 			item.addEventListener("click", () => {
 				const isExpanded = item.classList.contains("expanded");
+				const toggle = item.querySelector(".quiz-faq-toggle");
+
+				// Add rotating class for animation
+				if (toggle) {
+					toggle.classList.add("rotating");
+					// Remove rotating class after animation completes
+					setTimeout(() => {
+						toggle.classList.remove("rotating");
+					}, 400);
+				}
 
 				// Collapse all other items with smooth animation
 				faqItems.forEach(otherItem => {
 					if (otherItem !== item) {
+						const otherToggle = otherItem.querySelector(".quiz-faq-toggle");
+						if (otherToggle) {
+							otherToggle.classList.add("rotating");
+							setTimeout(() => {
+								otherToggle.classList.remove("rotating");
+							}, 400);
+						}
+
 						otherItem.classList.remove("expanded");
 						// Update question styling
 						const question = otherItem.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
 						if (question) {
 							question.className = "quiz-faq-question-collapsed";
 						}
-						// Icon rotation is now handled by CSS
 					}
 				});
 
@@ -2089,7 +2106,6 @@ class ProductQuiz {
 					if (question) {
 						question.className = "quiz-faq-question";
 					}
-					// Icon rotation is now handled by CSS
 				} else {
 					// Collapse this item
 					item.classList.remove("expanded");
@@ -2097,7 +2113,6 @@ class ProductQuiz {
 					if (question) {
 						question.className = "quiz-faq-question-collapsed";
 					}
-					// Icon rotation is now handled by CSS
 				}
 			});
 		});
