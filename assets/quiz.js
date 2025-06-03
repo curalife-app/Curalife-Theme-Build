@@ -1284,6 +1284,50 @@ class ProductQuiz {
 		this.updateNavigation();
 	}
 
+	_startDynamicLoader() {
+		// Array of loading messages to cycle through
+		const loadingMessages = [
+			"Checking your insurance coverage...",
+			"Analyzing your benefits...",
+			"Searching for in-network dietitians...",
+			"Calculating your estimated costs...",
+			"Verifying eligibility details...",
+			"Finding your perfect match...",
+			"Almost ready with your results..."
+		];
+
+		let currentMessageIndex = 0;
+
+		// Set initial loader
+		this.questionContainer.innerHTML = `
+			<div class="quiz-eligibility-check">
+				<div class="quiz-loading-spinner"></div>
+				<div class="quiz-loading-text" id="dynamic-loading-text">${loadingMessages[currentMessageIndex]}</div>
+			</div>
+		`;
+
+		// Start cycling through messages
+		this.loadingInterval = setInterval(() => {
+			currentMessageIndex = (currentMessageIndex + 1) % loadingMessages.length;
+			const textElement = document.getElementById("dynamic-loading-text");
+			if (textElement) {
+				// Add fade effect
+				textElement.style.opacity = "0.5";
+				setTimeout(() => {
+					textElement.textContent = loadingMessages[currentMessageIndex];
+					textElement.style.opacity = "1";
+				}, 200);
+			}
+		}, 2500); // Change message every 2.5 seconds
+	}
+
+	_stopDynamicLoader() {
+		if (this.loadingInterval) {
+			clearInterval(this.loadingInterval);
+			this.loadingInterval = null;
+		}
+	}
+
 	async finishQuiz() {
 		// Get booking URL early so it's available in all error handling
 		const bookingUrl = this.container.getAttribute("data-booking-url") || "/appointment-booking";
@@ -1393,15 +1437,8 @@ class ProductQuiz {
 				data: JSON.stringify(payload)
 			};
 
-			// Hide questions and show eligibility check indicator
-			// Instead of hiding questions completely, replace content with loading state
-			// This keeps the header and progress bar stable
-			this.questionContainer.innerHTML = `
-				<div class="quiz-eligibility-check">
-					<div class="quiz-loading-spinner"></div>
-					<div class="quiz-loading-text">Checking your eligibility and coverage details...</div>
-				</div>
-			`;
+			// Start dynamic loading experience
+			this._startDynamicLoader();
 
 			// Keep questions container visible but hide navigation
 			this._hideElement(this.navigation);
@@ -1750,6 +1787,9 @@ class ProductQuiz {
 
 	// New method to show results with booking URL
 	showResults(bookingUrl, webhookSuccess = true, eligibilityData = null, errorMessage = "") {
+		// Stop the dynamic loader
+		this._stopDynamicLoader();
+
 		// Instead of hiding questions and showing results container,
 		// replace the question content with results content
 		// This keeps the header and progress bar stable
@@ -2079,6 +2119,9 @@ class ProductQuiz {
 	}
 
 	showError(title, message) {
+		// Stop the dynamic loader if it's running
+		this._stopDynamicLoader();
+
 		this._hideElement(this.questions);
 		this._showElement(this.error);
 
