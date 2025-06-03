@@ -2745,6 +2745,7 @@ class ProductQuiz {
 		let searchTimeout;
 		let currentResults = [];
 		let selectedIndex = -1;
+		let hasShownInitialList = false;
 
 		// Ensure dropdown starts hidden
 		this._hidePayerSearchDropdown(dropdown);
@@ -2761,25 +2762,32 @@ class ProductQuiz {
 				this.handleFormAnswer(question.id, null);
 			}
 
-			if (query.length < 2) {
-				this._hidePayerSearchDropdown(dropdown);
-				currentResults = [];
-				selectedIndex = -1;
-				return;
-			}
+			// If user has typed something, filter the results
+			if (query.length > 0) {
+				// Clear any previous timeout
+				if (searchTimeout) {
+					clearTimeout(searchTimeout);
+				}
 
-			// Clear any previous timeout
-			if (searchTimeout) {
-				clearTimeout(searchTimeout);
-			}
-
-			// Debounce search by 300ms
-			searchTimeout = setTimeout(() => {
-				this._searchPayers(question, query, dropdown, onSelectCallback, results => {
+				// Debounce search by 300ms
+				searchTimeout = setTimeout(() => {
+					this._searchPayers(question, query, dropdown, onSelectCallback, results => {
+						currentResults = results;
+						selectedIndex = -1;
+					});
+				}, 300);
+			} else if (hasShownInitialList) {
+				// If user clears the input but we've already shown the initial list, show it again
+				this._showInitialPayerList(question, dropdown, onSelectCallback, results => {
 					currentResults = results;
 					selectedIndex = -1;
 				});
-			}, 300);
+			} else {
+				// Hide dropdown if no input and haven't shown initial list yet
+				this._hidePayerSearchDropdown(dropdown);
+				currentResults = [];
+				selectedIndex = -1;
+			}
 		};
 
 		// Remove any existing event listeners to prevent duplicates
@@ -2788,16 +2796,22 @@ class ProductQuiz {
 		// Add the input event listener
 		searchInput.addEventListener("input", inputHandler);
 
-		// Handle focus event to ensure dropdown is hidden when field gets focus
+		// Handle focus/click event to show initial list
 		const focusHandler = () => {
-			// Only show dropdown if there's already a valid query
 			const query = searchInput.value.trim();
-			if (query.length < 2) {
-				this._hidePayerSearchDropdown(dropdown);
+
+			// If input is empty or no selection made yet, show initial list
+			if (query.length === 0 || !searchInput.hasAttribute("data-selected-payer")) {
+				hasShownInitialList = true;
+				this._showInitialPayerList(question, dropdown, onSelectCallback, results => {
+					currentResults = results;
+					selectedIndex = -1;
+				});
 			}
 		};
 
 		searchInput.addEventListener("focus", focusHandler);
+		searchInput.addEventListener("click", focusHandler);
 
 		// Handle keyboard navigation
 		searchInput.addEventListener("keydown", e => {
@@ -2831,6 +2845,7 @@ class ProductQuiz {
 		document.addEventListener("click", e => {
 			if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
 				this._hidePayerSearchDropdown(dropdown);
+				hasShownInitialList = false; // Reset flag when dropdown is hidden
 			}
 		});
 
@@ -2845,6 +2860,36 @@ class ProductQuiz {
 				// Re-render to remove the selected payer display
 				this.renderCurrentStep();
 			});
+		}
+	}
+
+	// Show initial payer list with most common insurance plans
+	async _showInitialPayerList(question, dropdown, onSelectCallback, onResultsCallback) {
+		try {
+			// Show loading state briefly
+			dropdown.innerHTML = `
+				<div class="quiz-payer-search-loading">
+					<div class="quiz-payer-search-loading-spinner"></div>
+					Loading insurance plans...
+				</div>
+			`;
+			dropdown.classList.add("visible");
+			dropdown.style.display = "block";
+
+			// Generate initial list using demo data (most common plans)
+			const data = this._generateInitialPayerList();
+			const results = data.items || [];
+
+			this._renderSearchResults(results, "", dropdown, question, onSelectCallback, onResultsCallback);
+		} catch (error) {
+			console.error("❌ Error showing initial payer list:", error);
+			dropdown.innerHTML = `
+				<div class="quiz-payer-search-error">
+					Error loading insurance plans. Please try typing to search.
+				</div>
+			`;
+			dropdown.classList.add("visible");
+			onResultsCallback([]);
 		}
 	}
 
@@ -2914,9 +2959,10 @@ class ProductQuiz {
 	// Helper method to render search results
 	_renderSearchResults(results, query, dropdown, question, onSelectCallback, onResultsCallback) {
 		if (results.length === 0) {
+			const noResultsMessage = query ? `No insurance plans found for "${query}". Try searching with a different term.` : "No insurance plans available.";
 			dropdown.innerHTML = `
 				<div class="quiz-payer-search-no-results">
-					No insurance plans found for "${query}". Try searching with a different term.
+					${noResultsMessage}
 				</div>
 			`;
 		} else {
@@ -2954,6 +3000,97 @@ class ProductQuiz {
 	}
 
 	// Generate demo results for testing (replace with real API in production)
+	// Generate initial list of most common insurance plans (no filtering)
+	_generateInitialPayerList() {
+		const commonPayers = [
+			{
+				payer: {
+					stediId: "AETNA",
+					displayName: "Aetna",
+					primaryPayerId: "60054",
+					aliases: ["AETNA", "60054", "AETNA_BETTER_HEALTH"],
+					transactionSupport: {
+						eligibilityCheck: "SUPPORTED",
+						claimStatus: "SUPPORTED"
+					}
+				},
+				score: 5.0
+			},
+			{
+				payer: {
+					stediId: "ANTHEM",
+					displayName: "Anthem Blue Cross Blue Shield",
+					primaryPayerId: "040",
+					aliases: ["ANTHEM", "BCBS", "BLUE_CROSS", "040"],
+					transactionSupport: {
+						eligibilityCheck: "SUPPORTED",
+						claimStatus: "SUPPORTED"
+					}
+				},
+				score: 4.8
+			},
+			{
+				payer: {
+					stediId: "UNITED",
+					displayName: "UnitedHealthcare",
+					primaryPayerId: "52133",
+					aliases: ["UHC", "UNITED", "UNITED_HEALTHCARE", "52133"],
+					transactionSupport: {
+						eligibilityCheck: "SUPPORTED",
+						claimStatus: "SUPPORTED"
+					}
+				},
+				score: 4.9
+			},
+			{
+				payer: {
+					stediId: "CIGNA",
+					displayName: "Cigna Health",
+					primaryPayerId: "62308",
+					aliases: ["CIGNA", "62308", "CIGNA_HEALTHCARE"],
+					transactionSupport: {
+						eligibilityCheck: "SUPPORTED",
+						claimStatus: "SUPPORTED"
+					}
+				},
+				score: 4.7
+			},
+			{
+				payer: {
+					stediId: "HUMANA",
+					displayName: "Humana Inc",
+					primaryPayerId: "HUMANA",
+					aliases: ["HUMANA", "HUMANA_INC", "84977"],
+					transactionSupport: {
+						eligibilityCheck: "SUPPORTED",
+						claimStatus: "SUPPORTED"
+					}
+				},
+				score: 4.6
+			},
+			{
+				payer: {
+					stediId: "KAISER",
+					displayName: "Kaiser Permanente",
+					primaryPayerId: "KAISER",
+					aliases: ["KAISER", "KP", "KAISER_PERM"],
+					transactionSupport: {
+						eligibilityCheck: "SUPPORTED",
+						claimStatus: "SUPPORTED"
+					}
+				},
+				score: 4.5
+			}
+		];
+
+		return {
+			items: commonPayers,
+			stats: {
+				total: commonPayers.length
+			}
+		};
+	}
+
 	_generateDemoPayerResults(query) {
 		const allPayers = [
 			{
