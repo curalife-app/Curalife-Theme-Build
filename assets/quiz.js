@@ -1897,7 +1897,7 @@ class ProductQuiz {
 		return `
 			<div class="quiz-results-container">
 				<div class="quiz-results-header">
-					<h2 class="quiz-results-title">Great news! <br class="mobile"> You're covered</h2>
+					<h2 class="quiz-results-title">Great news! <br class="mobile."> You're covered</h2>
 					<p class="quiz-results-subtitle">As of today, your insurance fully covers your online dietitian consultations*</p>
 				</div>
 
