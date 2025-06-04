@@ -1886,6 +1886,17 @@ class ModularQuiz {
 	_generateIneligibleInsuranceResultsHTML(eligibilityData, resultUrl) {
 		const messages = this.quizData.ui?.resultMessages?.notEligible || {};
 		const userMessage = eligibilityData.userMessage || "Your eligibility check is complete.";
+		const error = eligibilityData.error || {};
+		const errorCode = error.code || "Unknown";
+		const errorMessage = error.message || "";
+		const errorDetails = error.details || "";
+
+		// Check if this is actually an error scenario that needs detailed display
+		const hasDetailedError = error.code || error.message || error.details;
+		const isErrorScenario = eligibilityData.eligibilityStatus === "PAYER_ERROR" || hasDetailedError;
+
+		// Generate detailed error information if available
+		const errorDetailsHTML = hasDetailedError ? this._generateErrorDetailsHTML(error, errorCode, errorMessage, errorDetails, false) : "";
 
 		return `
 			<div class="quiz-results-container">
@@ -1893,9 +1904,20 @@ class ModularQuiz {
                     <h2 class="quiz-results-title">${messages.title || "Thanks for completing the quiz!"}</h2>
                     <p class="quiz-results-subtitle">${messages.subtitle || "We're ready to help you."}</p>
 				</div>
-                <div class="quiz-coverage-card">
-                    <h3 class="quiz-coverage-card-title">Insurance Coverage Check</h3>
-                    <p>${userMessage}</p>
+                <div class="quiz-coverage-card" ${isErrorScenario ? 'style="border-left: 4px solid #f59e0b; background-color: #fffbeb;"' : ""}>
+                    <h3 class="quiz-coverage-card-title" ${isErrorScenario ? 'style="color: #92400e;"' : ""}>${isErrorScenario ? "⚠️ " : ""}Insurance Coverage Check${errorCode !== "Unknown" ? ` (Error ${errorCode})` : ""}</h3>
+
+					${
+						isErrorScenario && errorMessage
+							? `
+						<div style="margin-bottom: 16px;">
+							<p style="color: #92400e; font-weight: 500; margin-bottom: 8px;">${errorMessage}</p>
+							<p style="color: #92400e;">${userMessage}</p>
+						</div>
+						${errorDetailsHTML}
+					`
+							: `<p>${userMessage}</p>`
+					}
 				</div>
 				<div class="quiz-action-section">
 					<div class="quiz-action-content">
@@ -1931,10 +1953,21 @@ class ModularQuiz {
 	}
 
 	_generateAAAErrorResultsHTML(eligibilityData, resultUrl) {
-		const errorCode = eligibilityData.aaaErrorCode || "Unknown";
-		const errorTitle = eligibilityData.errorTitle || "Insurance Verification Issue";
-		const actionTitle = eligibilityData.actionTitle || "Manual Verification";
-		const actionText = eligibilityData.actionText || "Our team will manually verify your coverage.";
+		// Extract comprehensive error information from the response
+		const error = eligibilityData.error || {};
+		const errorCode = error.code || eligibilityData.aaaErrorCode || "Unknown";
+		const errorMessage = error.message || "Unknown error occurred";
+		const errorDetails = error.details || "";
+		const totalErrors = error.totalErrors || 0;
+		const hasMultipleErrors = totalErrors > 1;
+
+		// Use enhanced error titles and messaging if available
+		const errorTitle = eligibilityData.errorTitle || this._getErrorTitle(errorCode);
+		const actionTitle = eligibilityData.actionTitle || "Manual Verification Required";
+		const actionText = eligibilityData.actionText || "Our team will manually verify your coverage and contact you with results.";
+
+		// Generate detailed error information display
+		const errorDetailsHTML = this._generateErrorDetailsHTML(error, errorCode, errorMessage, errorDetails, hasMultipleErrors);
 
 		return `
 			<div class="quiz-results-container">
@@ -1942,10 +1975,20 @@ class ModularQuiz {
                     <h2 class="quiz-results-title">${errorTitle}</h2>
                     <p class="quiz-results-subtitle">We encountered an issue verifying your insurance coverage automatically.</p>
 				</div>
+
+				<!-- Enhanced Error Details Card -->
 				<div class="quiz-coverage-card" style="border-left: 4px solid #f59e0b; background-color: #fffbeb;">
-                    <h3 class="quiz-coverage-card-title" style="color: #92400e;">⚠️ Verification Issue (Error ${errorCode})</h3>
-                    <p style="color: #92400e;">${eligibilityData.userMessage}</p>
+                    <h3 class="quiz-coverage-card-title" style="color: #92400e;">⚠️ Verification Issue${errorCode !== "Unknown" ? ` (Error ${errorCode})` : ""}</h3>
+
+					<!-- Main Error Message -->
+					<div style="margin-bottom: 16px;">
+						<p style="color: #92400e; font-weight: 500; margin-bottom: 8px;">${errorMessage}</p>
+						${eligibilityData.userMessage ? `<p style="color: #92400e;">${eligibilityData.userMessage}</p>` : ""}
+					</div>
+
+					${errorDetailsHTML}
 				</div>
+
 				<div class="quiz-action-section">
 					<div class="quiz-action-content">
 						<div class="quiz-action-header">
@@ -1978,6 +2021,77 @@ class ModularQuiz {
 				${this._generateFAQHTML()}
 			</div>
 		`;
+	}
+
+	_generateErrorDetailsHTML(error, errorCode, errorMessage, errorDetails, hasMultipleErrors) {
+		let detailsHTML = "";
+
+		// Add technical details if available
+		if (errorDetails && errorDetails !== errorMessage) {
+			detailsHTML += `
+				<div style="margin-bottom: 12px;">
+					<p style="color: #92400e; font-size: 14px; margin-bottom: 4px;"><strong>Technical Details:</strong></p>
+					<p style="color: #92400e; font-size: 14px;">${errorDetails}</p>
+				</div>
+			`;
+		}
+
+		// Add error metadata if available
+		const metadata = [];
+		if (error.isAAAError) metadata.push("AAA Error Type");
+		if (error.hasStandardErrors) metadata.push("Standard Error Present");
+		if (error.hasAAAErrors) metadata.push("AAA Error Present");
+		if (hasMultipleErrors) metadata.push(`${error.totalErrors} Total Errors`);
+
+		if (metadata.length > 0) {
+			detailsHTML += `
+				<div style="margin-bottom: 12px;">
+					<p style="color: #92400e; font-size: 14px; margin-bottom: 4px;"><strong>Error Classification:</strong></p>
+					<div style="display: flex; flex-wrap: wrap; gap: 8px;">
+						${metadata.map(item => `<span style="background: #fde68a; color: #92400e; padding: 2px 8px; border-radius: 12px; font-size: 12px;">${item}</span>`).join("")}
+					</div>
+				</div>
+			`;
+		}
+
+		// Add specific guidance based on error code
+		const guidance = this._getErrorGuidance(errorCode);
+		if (guidance) {
+			detailsHTML += `
+				<div style="border-top: 1px solid #fde68a; padding-top: 12px; margin-top: 12px;">
+					<p style="color: #92400e; font-size: 14px; margin-bottom: 4px;"><strong>What This Means:</strong></p>
+					<p style="color: #92400e; font-size: 14px;">${guidance}</p>
+				</div>
+			`;
+		}
+
+		return detailsHTML;
+	}
+
+	_getErrorTitle(errorCode) {
+		const errorTitles = {
+			42: "Service Temporarily Unavailable",
+			43: "Provider Registration Issue",
+			72: "Member ID Verification Needed",
+			73: "Name Verification Needed",
+			75: "Subscriber Not Found",
+			79: "System Connection Issue"
+		};
+
+		return errorTitles[errorCode] || "Insurance Verification Issue";
+	}
+
+	_getErrorGuidance(errorCode) {
+		const errorGuidance = {
+			42: "Your insurance company's system is temporarily down for maintenance. This is usually resolved within a few hours.",
+			43: "Your insurance plan requires our provider to be specifically registered. We'll handle this registration process for you.",
+			72: "The member ID entered doesn't match records. Please verify the ID exactly as shown on your insurance card, including any letters or special characters.",
+			73: "The name entered doesn't match your insurance records. Make sure the name matches exactly as it appears on your insurance card.",
+			75: "Your insurance information wasn't found in the system. This could be due to a recent plan change, new enrollment, or data sync delay.",
+			79: "There's a temporary technical issue connecting with your insurance provider's verification system. This is typically resolved quickly."
+		};
+
+		return errorGuidance[errorCode] || null;
 	}
 
 	_generateFAQHTML() {
