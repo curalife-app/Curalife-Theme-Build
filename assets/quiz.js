@@ -36,8 +36,7 @@ class ModularQuiz {
 
 		if (!this._validateEssentialElements()) return;
 
-		// Configuration
-		this.dataUrl = options.dataUrl || this.container.getAttribute("data-quiz-url") || "/apps/quiz/data.json";
+		// Configuration will be set in _initializeDOMElements after container is found
 
 		// State
 		this.quizData = null;
@@ -56,12 +55,22 @@ class ModularQuiz {
 	// =============================================================================
 
 	_initializeDOMElements() {
+		console.log("Looking for container:", ELEMENT_SELECTORS.MAIN_CONTAINER);
 		this.container = document.querySelector(ELEMENT_SELECTORS.MAIN_CONTAINER);
 		if (!this.container) {
 			console.error("ModularQuiz: Main container not found. Quiz cannot start.");
+			console.error(
+				"Available elements with 'quiz' in ID:",
+				Array.from(document.querySelectorAll('[id*="quiz"]')).map(el => el.id)
+			);
 			this._isInitialized = false;
 			return;
 		}
+		console.log("Container found successfully");
+
+		// Set configuration
+		this.dataUrl = this.container.getAttribute("data-quiz-url") || "/apps/quiz/data.json";
+		console.log("Data URL will be:", this.dataUrl);
 
 		// Select all DOM elements
 		Object.keys(ELEMENT_SELECTORS).forEach(key => {
@@ -170,12 +179,15 @@ class ModularQuiz {
 	// =============================================================================
 
 	async loadQuizData() {
+		console.log("Loading quiz data from:", this.dataUrl);
 		const response = await fetch(this.dataUrl);
 		if (!response.ok) {
+			console.error(`Failed to fetch quiz data: ${response.status} ${response.statusText}`);
 			throw new Error(`HTTP error! status: ${response.status}`);
 		}
 
 		const text = await response.text();
+		console.log("Quiz data loaded successfully");
 		this.quizData = JSON.parse(text);
 		this.config = this.quizData.config || {};
 
