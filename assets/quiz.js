@@ -85,7 +85,7 @@ class ProductQuiz {
 	}
 
 	_validateEssentialElements() {
-		const essentialElements = ["intro", "questions", "results", "error", "loading", "progressBar", "questionContainer", "navigation", "prevButton", "nextButton"];
+		const essentialElements = ["intro", "questions", "results", "error", "loading", "progressBar", "questionContainer", "navigationButtons", "prevButton", "nextButton"];
 
 		for (const element of essentialElements) {
 			if (!this[element]) {
@@ -342,7 +342,7 @@ class ProductQuiz {
 				<div class="quiz-space-y-6">
 					${this._processFormQuestions(step.questions)}
 				</div>
-				<button class="quiz-form-button" id="quiz-form-next-button">
+				<button class="quiz-nav-button quiz-nav-button--primary quiz-form-button" id="quiz-form-next-button">
 					${buttonText}
 				</button>
 				${step.legal ? `<p class="quiz-legal-form">${step.legal}</p>` : ""}
@@ -678,12 +678,12 @@ class ProductQuiz {
 
 		// Hide navigation for auto-advance questions
 		if (isCurrentQuestionAutoAdvance && !isFormStep) {
-			this.navigation.classList.add("quiz-navigation-hidden");
-			this.navigation.classList.remove("quiz-navigation-visible");
+			this.navigationButtons.classList.add("quiz-navigation-hidden");
+			this.navigationButtons.classList.remove("quiz-navigation-visible");
 			return;
 		} else {
-			this.navigation.classList.remove("quiz-navigation-hidden");
-			this.navigation.classList.add("quiz-navigation-visible");
+			this.navigationButtons.classList.remove("quiz-navigation-hidden");
+			this.navigationButtons.classList.add("quiz-navigation-visible");
 		}
 
 		// Hide back button
@@ -703,7 +703,7 @@ class ProductQuiz {
 
 		// Handle form step navigation
 		if (isFormStep && step.questions) {
-			this.navigation.classList.add("quiz-navigation-hidden");
+			this.navigationButtons.classList.add("quiz-navigation-hidden");
 			const formButton = this.questionContainer.querySelector("#quiz-form-next-button");
 			if (formButton) {
 				formButton.disabled = this.submitting;
@@ -1542,7 +1542,7 @@ class ProductQuiz {
 
 	showResults(bookingUrl, webhookSuccess = true, eligibilityData = null, errorMessage = "") {
 		this._stopDynamicLoader();
-		this._hideElement(this.navigation);
+		this._hideElement(this.navigationButtons);
 		this._hideElement(this.progressSection);
 
 		let resultsHTML = "";
@@ -1703,43 +1703,43 @@ class ProductQuiz {
 
 	renderPayerSearch(question, response) {
 		const selectedPayer = response.answer;
-		const placeholder = question.placeholder || "Search for your insurance plan...";
+		const placeholder = question.placeholder || "Select your insurance plan...";
 
-		// Resolve display name if we have a selected payer
-		let displayValue = "";
-		if (selectedPayer && typeof selectedPayer === "string") {
-			const resolvedDisplayName = this._resolvePayerDisplayName(selectedPayer);
-			if (resolvedDisplayName) {
-				displayValue = resolvedDisplayName;
-			}
-		}
-
-		return `
+		let html = `
 			<div class="quiz-payer-search-container">
-                <input type="text"
-					id="question-${question.id}"
-                       class="quiz-payer-search-input ${displayValue ? "quiz-input-valid" : ""}"
-					placeholder="${placeholder}"
-                       value="${displayValue}"
-					autocomplete="off"
-                       aria-describedby="error-${question.id}">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
-  <path d="M14.1667 14.1667L17.5 17.5M15.8333 9.16667C15.8333 5.48477 12.8486 2.5 9.16667 2.5C5.48477 2.5 2.5 5.48477 2.5 9.16667C2.5 12.8486 5.48477 15.8333 9.16667 15.8333C12.8486 15.8333 15.8333 12.8486 15.8333 9.16667Z" stroke="#121212" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>
+                <button type="button" id="question-${question.id}" class="quiz-payer-search-trigger placeholder" aria-describedby="error-${question.id}" aria-expanded="false">
+                    <span class="quiz-payer-search-trigger-text">${placeholder}</span>
+                    <svg class="quiz-payer-search-dropdown-icon" width="12" height="7" viewBox="0 0 12 7" fill="none">
+                        <path d="M1.03888 0.294581C1.42815 -0.0946914 2.05918 -0.0950353 2.44888 0.293813L5.62716 3.46517C6.01751 3.85467 6.64948 3.85467 7.03983 3.46517L10.2181 0.293812C10.6078 -0.0950355 11.2388 -0.0946913 11.6281 0.294581C12.0177 0.684154 12.0177 1.31578 11.6281 1.70535L7.0406 6.29286C6.65008 6.68338 6.01691 6.68338 5.62639 6.29286L1.03888 1.70535C0.649308 1.31578 0.649307 0.684154 1.03888 0.294581Z" fill="#4F4F4F"/>
+                    </svg>
+                </button>
 				<div class="quiz-payer-search-dropdown" id="search-dropdown-${question.id}" style="display: none;">
+                    <div class="quiz-payer-search-input-container">
+                        <input type="text" class="quiz-payer-search-internal-input" placeholder="Search for your insurance plan..." autocomplete="off">
+                    </div>
                     <div class="quiz-payer-search-results"></div>
 				</div>
 				<p id="error-${question.id}" class="quiz-error-text quiz-error-hidden"></p>
-				</div>
-			`;
+            </div>
+        `;
+
+		if (selectedPayer && typeof selectedPayer === "string") {
+			const resolvedDisplayName = this._resolvePayerDisplayName(selectedPayer);
+			if (resolvedDisplayName) {
+				html = html.replace('class="quiz-payer-search-trigger placeholder"', 'class="quiz-payer-search-trigger quiz-input-valid"');
+				html = html.replace(placeholder, resolvedDisplayName);
+			}
+		}
+
+		return html;
 	}
 
 	_attachPayerSearchListeners(question) {
-		const searchInput = this.questionContainer.querySelector(`#question-${question.id}`);
+		const searchTrigger = this.questionContainer.querySelector(`#question-${question.id}`);
 		const dropdown = this.questionContainer.querySelector(`#search-dropdown-${question.id}`);
 
-		if (searchInput && dropdown) {
-			this._setupPayerSearchBehavior(question, searchInput, dropdown, selectedPayer => {
+		if (searchTrigger && dropdown) {
+			this._setupPayerSearchBehavior(question, searchTrigger, dropdown, selectedPayer => {
 				this.handleAnswer(selectedPayer);
 			});
 		}
@@ -1747,11 +1747,11 @@ class ProductQuiz {
 
 	_attachPayerSearchFormListeners(question) {
 		setTimeout(() => {
-			const searchInput = this.questionContainer.querySelector(`#question-${question.id}`);
+			const searchTrigger = this.questionContainer.querySelector(`#question-${question.id}`);
 			const dropdown = this.questionContainer.querySelector(`#search-dropdown-${question.id}`);
 
-			if (searchInput && dropdown) {
-				this._setupPayerSearchBehavior(question, searchInput, dropdown, selectedPayer => {
+			if (searchTrigger && dropdown) {
+				this._setupPayerSearchBehavior(question, searchTrigger, dropdown, selectedPayer => {
 					this.handleFormAnswer(question.id, selectedPayer);
 					this.updateNavigation();
 				});
@@ -1759,69 +1759,42 @@ class ProductQuiz {
 		}, 100);
 	}
 
-	_setupPayerSearchBehavior(question, searchInput, dropdown, onSelectCallback) {
-		const container = searchInput.closest(".quiz-payer-search-container");
-		let searchTimeout = null;
+	_setupPayerSearchBehavior(question, searchTrigger, dropdown, onSelectCallback) {
+		let isOpen = false;
+		const internalSearchInput = dropdown.querySelector(".quiz-payer-search-internal-input");
+		const container = searchTrigger.closest(".quiz-payer-search-container");
 
-		// Show dropdown on focus
-		searchInput.addEventListener("focus", () => {
-			this._openPayerSearchDropdown(dropdown, container, searchInput);
-			const query = searchInput.value.trim();
+		searchTrigger.addEventListener("click", () => {
+			if (isOpen) {
+				this._closePayerSearchDropdown(dropdown, container, searchTrigger);
+				isOpen = false;
+			} else {
+				this._openPayerSearchDropdown(dropdown, container, searchTrigger);
+				isOpen = true;
+				this._showInitialPayerList(dropdown, onSelectCallback);
+				setTimeout(() => internalSearchInput.focus(), 50);
+			}
+		});
+
+		internalSearchInput.addEventListener("input", () => {
+			const query = internalSearchInput.value.trim();
 			if (query.length > 0) {
-				this._searchPayers(query, dropdown, onSelectCallback);
+				setTimeout(() => this._searchPayers(query, dropdown, onSelectCallback), 300);
 			} else {
 				this._showInitialPayerList(dropdown, onSelectCallback);
 			}
 		});
 
-		// Handle input changes
-		searchInput.addEventListener("input", () => {
-			this._openPayerSearchDropdown(dropdown, container, searchInput);
-
-			// Clear previous timeout
-			if (searchTimeout) {
-				clearTimeout(searchTimeout);
-			}
-
-			const query = searchInput.value.trim();
-			if (query.length > 0) {
-				// Debounce search
-				searchTimeout = setTimeout(() => {
-					this._searchPayers(query, dropdown, onSelectCallback);
-				}, 300);
-			} else {
-				this._showInitialPayerList(dropdown, onSelectCallback);
-			}
-		});
-
-		// Close dropdown when clicking outside
 		document.addEventListener("click", e => {
 			if (!container.contains(e.target)) {
-				this._closePayerSearchDropdown(dropdown, container, searchInput);
-			}
-		});
-
-		// Close dropdown on escape key
-		searchInput.addEventListener("keydown", e => {
-			if (e.key === "Escape") {
-				this._closePayerSearchDropdown(dropdown, container, searchInput);
-				searchInput.blur();
+				this._closePayerSearchDropdown(dropdown, container, searchTrigger);
+				isOpen = false;
 			}
 		});
 	}
 
 	_showInitialPayerList(dropdown, onSelectCallback) {
-		const commonPayers = this.quizData?.commonPayers || [];
-
-		// If no common payers data, show a loading message
-		if (commonPayers.length === 0) {
-			const resultsContainer = dropdown.querySelector(".quiz-payer-search-results");
-			if (resultsContainer) {
-				resultsContainer.innerHTML = `<div class="quiz-payer-search-loading">Loading insurance plans...</div>`;
-			}
-			return;
-		}
-
+		const commonPayers = this.quizData.commonPayers || [];
 		const results = commonPayers.map(payer => ({ payer }));
 		this._renderSearchResults(results, "", dropdown, onSelectCallback);
 	}
@@ -1840,17 +1813,12 @@ class ProductQuiz {
 	}
 
 	_filterCommonPayers(query) {
-		const commonPayers = this.quizData?.commonPayers || [];
-
-		if (commonPayers.length === 0) {
-			return [];
-		}
-
+		const commonPayers = this.quizData.commonPayers || [];
 		const lowerQuery = query.toLowerCase();
 
 		return commonPayers
 			.filter(payer => {
-				return payer.displayName?.toLowerCase().includes(lowerQuery) || payer.stediId?.toLowerCase().includes(lowerQuery) || payer.aliases?.some(alias => alias.toLowerCase().includes(lowerQuery));
+				return payer.displayName.toLowerCase().includes(lowerQuery) || payer.stediId.toLowerCase().includes(lowerQuery) || payer.aliases.some(alias => alias.toLowerCase().includes(lowerQuery));
 			})
 			.map(payer => ({ payer }))
 			.slice(0, 5);
@@ -1883,11 +1851,11 @@ class ProductQuiz {
 
 			const resultItems = resultsContainer.querySelectorAll(".quiz-payer-search-item");
 			const container = dropdown.closest(".quiz-payer-search-container");
-			const searchInput = container.querySelector(".quiz-payer-search-input");
+			const searchTrigger = container.querySelector(".quiz-payer-search-trigger");
 
 			resultItems.forEach((item, index) => {
 				item.addEventListener("click", () => {
-					this._selectPayer(results[index].payer, searchInput, dropdown, onSelectCallback);
+					this._selectPayer(results[index].payer, searchTrigger, dropdown, onSelectCallback);
 				});
 			});
 		}
@@ -1896,27 +1864,38 @@ class ProductQuiz {
 		dropdown.style.display = "block";
 	}
 
-	_selectPayer(payer, searchInput, dropdown, onSelectCallback) {
-		// Set the input value to the selected payer's display name
-		searchInput.value = payer.displayName;
-		searchInput.classList.add("quiz-input-valid");
+	_selectPayer(payer, searchTrigger, dropdown, onSelectCallback) {
+		const triggerText = searchTrigger.querySelector(".quiz-payer-search-trigger-text");
+		if (triggerText) {
+			triggerText.textContent = payer.displayName;
+		}
 
-		const container = searchInput.closest(".quiz-payer-search-container");
-		this._closePayerSearchDropdown(dropdown, container, searchInput);
+		searchTrigger.classList.remove("placeholder");
+		searchTrigger.classList.add("quiz-input-valid");
+
+		const container = searchTrigger.closest(".quiz-payer-search-container");
+		this._closePayerSearchDropdown(dropdown, container, searchTrigger);
 
 		onSelectCallback(payer.primaryPayerId);
 	}
 
-	_openPayerSearchDropdown(dropdown, container, searchInput) {
+	_openPayerSearchDropdown(dropdown, container, searchTrigger) {
 		dropdown.classList.add("visible");
 		dropdown.style.display = "block";
 		container.classList.add("open");
+		searchTrigger.setAttribute("aria-expanded", "true");
 	}
 
-	_closePayerSearchDropdown(dropdown, container, searchInput) {
+	_closePayerSearchDropdown(dropdown, container, searchTrigger) {
 		dropdown.classList.remove("visible");
 		dropdown.style.display = "none";
 		container.classList.remove("open");
+		searchTrigger.setAttribute("aria-expanded", "false");
+
+		const internalInput = dropdown.querySelector(".quiz-payer-search-internal-input");
+		if (internalInput) {
+			internalInput.value = "";
+		}
 	}
 
 	_highlightSearchTerm(text, searchTerm) {
@@ -2055,7 +2034,7 @@ class ProductQuiz {
 	}
 
 	_addLegalTextAfterNavigation(legalText) {
-		const navContainer = this.navigation;
+		const navContainer = this.navigationButtons;
 		if (!navContainer) return;
 
 		const existingLegal = navContainer.querySelector(".quiz-legal-after-nav");
@@ -2087,12 +2066,6 @@ class ProductQuiz {
 // =============================================================================
 
 document.addEventListener("DOMContentLoaded", () => {
-	// Prevent multiple instances
-	if (window.productQuiz) {
-		console.warn("ProductQuiz already initialized");
-		return;
-	}
-
 	const quiz = new ProductQuiz();
 	window.productQuiz = quiz; // For debugging
 });
