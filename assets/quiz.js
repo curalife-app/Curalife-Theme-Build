@@ -105,7 +105,13 @@ class ModularQuiz {
 		const backButton = this.navHeader.querySelector("#quiz-back-button");
 		if (backButton) {
 			backButton.addEventListener("click", () => {
-				if (this.currentStepIndex === 0) {
+				// If we're showing results, go back to the last step
+				if (this.questionContainer.querySelector(".quiz-results-container")) {
+					this.currentStepIndex = this.quizData.steps.length - 1;
+					this.currentQuestionIndex = 0;
+					this.renderCurrentStep();
+					this.updateNavigation();
+				} else if (this.currentStepIndex === 0) {
 					window.location.href = "/pages/telemedicine";
 				} else {
 					this.goToPreviousStep();
@@ -618,9 +624,7 @@ class ModularQuiz {
 		const currentQuestion = step.questions?.[this.currentQuestionIndex];
 		const isCurrentQuestionAutoAdvance = currentQuestion && this._shouldAutoAdvance(currentQuestion);
 
-		// Show navigation if it's not auto-advance, OR if it's auto-advance but already has an answer
-		const hasExistingAnswer = currentQuestion && this._hasValidAnswer(step);
-		const shouldShowNavigation = !isCurrentQuestionAutoAdvance || isFormStep || hasExistingAnswer;
+		const shouldShowNavigation = !(isCurrentQuestionAutoAdvance && !isFormStep);
 		this._setNavigationVisibility(shouldShowNavigation);
 
 		if (!shouldShowNavigation) return;
@@ -1365,6 +1369,9 @@ class ModularQuiz {
 		this._stopLoadingMessages();
 		this._toggleElement(this.navigationButtons, false);
 		this._toggleElement(this.progressSection, false);
+
+		// Keep nav header visible for back button functionality
+		this._toggleElement(this.navHeader, true);
 
 		const quizType = this.quizData?.type || "general";
 		const resultsHTML = webhookSuccess ? this._generateResultsHTML(quizType, resultData, resultUrl) : this._generateErrorResultsHTML(resultUrl, errorMessage);
