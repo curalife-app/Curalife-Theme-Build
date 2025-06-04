@@ -1284,43 +1284,21 @@ body {
 	align-self: start;
 }
 
-.quiz-faq-toggle::after {
-	content: "+";
-	font-family: "Lato";
-	font-weight: 100;
-	font-size: 36px;
-	color: #454545;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	transition: transform 0.3s ease-in-out;
-}
-
-.quiz-faq-toggle.rotating::after {
-	animation: rapidRotate 0.4s ease-in-out;
-}
-
-.quiz-faq-item.expanded .quiz-faq-toggle:not(.rotating)::after {
-	content: "−"; /* Minus symbol when open - but only when not rotating */
-	transform: rotate(180deg);
-}
-
-.quiz-faq-item:not(.expanded) .quiz-faq-toggle:not(.rotating)::after {
-	content: "+"; /* Plus symbol when closed - but only when not rotating */
-	transform: rotate(0deg);
-}
-
-@keyframes rapidRotate {
-	0% {
-		transform: rotate(0deg);
-	}
-	100% {
-		transform: rotate(180deg);
-	}
-}
-
-/* Hide the SVG icon since we're using Font Awesome now */
+/* Use SVG icon instead of text symbols for smoother animation */
 .quiz-faq-toggle-icon {
+	width: 24px;
+	height: 24px;
+	transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+	transform-origin: center;
+}
+
+/* Smooth rotation when expanded */
+.quiz-faq-item.expanded .quiz-faq-toggle-icon {
+	transform: rotate(45deg);
+}
+
+/* Hide the text-based toggle */
+.quiz-faq-toggle::after {
 	display: none;
 }
 

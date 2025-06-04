@@ -1802,22 +1802,16 @@ class ProductQuiz {
 		faqItems.forEach(item => {
 			item.addEventListener("click", () => {
 				const isExpanded = item.classList.contains("expanded");
-				const toggle = item.querySelector(".quiz-faq-toggle");
 
-				if (toggle) {
-					toggle.classList.add("rotating");
-					setTimeout(() => {
-						toggle.classList.remove("rotating");
-						if (!isExpanded) {
-							item.classList.add("expanded");
-							const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
-							if (question) question.className = "quiz-faq-question";
-						} else {
-							item.classList.remove("expanded");
-							const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
-							if (question) question.className = "quiz-faq-question-collapsed";
-						}
-					}, 400);
+				// Toggle expanded state immediately for smooth animation
+				if (!isExpanded) {
+					item.classList.add("expanded");
+					const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
+					if (question) question.className = "quiz-faq-question";
+				} else {
+					item.classList.remove("expanded");
+					const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
+					if (question) question.className = "quiz-faq-question-collapsed";
 				}
 			});
 		});
