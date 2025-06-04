@@ -618,7 +618,9 @@ class ModularQuiz {
 		const currentQuestion = step.questions?.[this.currentQuestionIndex];
 		const isCurrentQuestionAutoAdvance = currentQuestion && this._shouldAutoAdvance(currentQuestion);
 
-		const shouldShowNavigation = !(isCurrentQuestionAutoAdvance && !isFormStep);
+		// Show navigation if it's not auto-advance, OR if it's auto-advance but already has an answer
+		const hasExistingAnswer = currentQuestion && this._hasValidAnswer(step);
+		const shouldShowNavigation = !isCurrentQuestionAutoAdvance || isFormStep || hasExistingAnswer;
 		this._setNavigationVisibility(shouldShowNavigation);
 
 		if (!shouldShowNavigation) return;
