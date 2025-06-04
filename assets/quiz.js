@@ -1904,15 +1904,15 @@ class ModularQuiz {
                     <h2 class="quiz-results-title">${messages.title || "Thanks for completing the quiz!"}</h2>
                     <p class="quiz-results-subtitle">${messages.subtitle || "We're ready to help you."}</p>
 				</div>
-                <div class="quiz-coverage-card" ${isErrorScenario ? 'style="border-left: 4px solid #f59e0b; background-color: #fffbeb;"' : ""}>
-                    <h3 class="quiz-coverage-card-title" ${isErrorScenario ? 'style="color: #92400e;"' : ""}>${isErrorScenario ? "⚠️ " : ""}Insurance Coverage Check${errorCode !== "Unknown" ? ` (Error ${errorCode})` : ""}</h3>
+                <div class="quiz-coverage-card ${isErrorScenario ? "quiz-error-card" : ""}">
+                    <h3 class="quiz-coverage-card-title ${isErrorScenario ? "quiz-error-card-title" : ""}">${isErrorScenario ? "⚠️ " : ""}Insurance Coverage Check${errorCode !== "Unknown" ? ` (Error ${errorCode})` : ""}</h3>
 
 					${
 						isErrorScenario && errorMessage
 							? `
-						<div style="margin-bottom: 16px;">
-							<p style="color: #92400e; font-weight: 500; margin-bottom: 8px;">${errorMessage}</p>
-							<p style="color: #92400e;">${userMessage}</p>
+						<div class="quiz-error-main-message">
+							<p class="quiz-error-primary-text">${errorMessage}</p>
+							<p class="quiz-error-secondary-text">${userMessage}</p>
 						</div>
 						${errorDetailsHTML}
 					`
@@ -1977,13 +1977,13 @@ class ModularQuiz {
 				</div>
 
 				<!-- Enhanced Error Details Card -->
-				<div class="quiz-coverage-card" style="border-left: 4px solid #f59e0b; background-color: #fffbeb;">
-                    <h3 class="quiz-coverage-card-title" style="color: #92400e;">⚠️ Verification Issue${errorCode !== "Unknown" ? ` (Error ${errorCode})` : ""}</h3>
+				<div class="quiz-coverage-card quiz-error-card">
+                    <h3 class="quiz-coverage-card-title quiz-error-card-title">⚠️ Verification Issue${errorCode !== "Unknown" ? ` (Error ${errorCode})` : ""}</h3>
 
 					<!-- Main Error Message -->
-					<div style="margin-bottom: 16px;">
-						<p style="color: #92400e; font-weight: 500; margin-bottom: 8px;">${errorMessage}</p>
-						${eligibilityData.userMessage ? `<p style="color: #92400e;">${eligibilityData.userMessage}</p>` : ""}
+					<div class="quiz-error-main-message">
+						<p class="quiz-error-primary-text">${errorMessage}</p>
+						${eligibilityData.userMessage ? `<p class="quiz-error-secondary-text">${eligibilityData.userMessage}</p>` : ""}
 					</div>
 
 					${errorDetailsHTML}
@@ -2029,9 +2029,9 @@ class ModularQuiz {
 		// Add technical details if available
 		if (errorDetails && errorDetails !== errorMessage) {
 			detailsHTML += `
-				<div style="margin-bottom: 12px;">
-					<p style="color: #92400e; font-size: 14px; margin-bottom: 4px;"><strong>Technical Details:</strong></p>
-					<p style="color: #92400e; font-size: 14px;">${errorDetails}</p>
+				<div class="quiz-error-technical-section">
+					<p class="quiz-error-section-title"><strong>Technical Details:</strong></p>
+					<p class="quiz-error-details-text">${errorDetails}</p>
 				</div>
 			`;
 		}
@@ -2045,10 +2045,10 @@ class ModularQuiz {
 
 		if (metadata.length > 0) {
 			detailsHTML += `
-				<div style="margin-bottom: 12px;">
-					<p style="color: #92400e; font-size: 14px; margin-bottom: 4px;"><strong>Error Classification:</strong></p>
-					<div style="display: flex; flex-wrap: wrap; gap: 8px;">
-						${metadata.map(item => `<span style="background: #fde68a; color: #92400e; padding: 2px 8px; border-radius: 12px; font-size: 12px;">${item}</span>`).join("")}
+				<div class="quiz-error-metadata-section">
+					<p class="quiz-error-section-title"><strong>Error Classification:</strong></p>
+					<div class="quiz-error-metadata-badges">
+						${metadata.map(item => `<span class="quiz-error-badge">${item}</span>`).join("")}
 					</div>
 				</div>
 			`;
@@ -2058,9 +2058,9 @@ class ModularQuiz {
 		const guidance = this._getErrorGuidance(errorCode);
 		if (guidance) {
 			detailsHTML += `
-				<div style="border-top: 1px solid #fde68a; padding-top: 12px; margin-top: 12px;">
-					<p style="color: #92400e; font-size: 14px; margin-bottom: 4px;"><strong>What This Means:</strong></p>
-					<p style="color: #92400e; font-size: 14px;">${guidance}</p>
+				<div class="quiz-error-guidance-section">
+					<p class="quiz-error-section-title"><strong>What This Means:</strong></p>
+					<p class="quiz-error-guidance-text">${guidance}</p>
 				</div>
 			`;
 		}
