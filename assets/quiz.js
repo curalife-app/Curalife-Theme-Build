@@ -171,23 +171,39 @@ class ModularQuiz {
 
 	_applyTestDataIfEnabled() {
 		const testMode = new URLSearchParams(window.location.search).get("test");
-		if (testMode === "true" && this.quizData.testData) {
-			Object.keys(this.quizData.testData).forEach(questionId => {
-				const responseIndex = this.responses.findIndex(r => r.questionId === questionId);
-				if (responseIndex !== -1) {
-					this.responses[responseIndex].answer = this.quizData.testData[questionId];
-				}
-			});
-			this._addTestModeIndicator();
+
+		if (testMode && this.quizData.testData) {
+			let testDataKey = "default";
+
+			// Support different test scenarios
+			if (testMode === "true") {
+				testDataKey = "default";
+			} else if (testMode === "not-covered") {
+				testDataKey = "notCovered";
+			} else if (this.quizData.testData[testMode]) {
+				testDataKey = testMode;
+			}
+
+			const testData = this.quizData.testData[testDataKey] || this.quizData.testData.default || this.quizData.testData;
+
+			if (testData) {
+				Object.keys(testData).forEach(questionId => {
+					const responseIndex = this.responses.findIndex(r => r.questionId === questionId);
+					if (responseIndex !== -1) {
+						this.responses[responseIndex].answer = testData[questionId];
+					}
+				});
+				this._addTestModeIndicator(`TEST MODE - ${testMode.toUpperCase()}`);
+			}
 		}
 	}
 
-	_addTestModeIndicator() {
+	_addTestModeIndicator(text = "🧪 TEST MODE") {
 		if (document.querySelector(".quiz-test-mode-indicator")) return;
 
 		const indicator = document.createElement("div");
 		indicator.className = "quiz-test-mode-indicator";
-		indicator.innerHTML = "🧪 TEST MODE";
+		indicator.innerHTML = text;
 		indicator.style.cssText = `
             position: fixed; top: 10px; right: 10px; background: #4CAF50;
             color: white; padding: 8px 12px; border-radius: 4px; font-weight: bold;
@@ -1547,6 +1563,8 @@ class ModularQuiz {
 
 		if (isEligible && eligibilityStatus === "ELIGIBLE") {
 			return this._generateEligibleInsuranceResultsHTML(resultData, resultUrl);
+		} else if (resultData.isEligible === false && eligibilityStatus === "NOT_COVERED") {
+			return this._generateNotCoveredInsuranceResultsHTML(resultData, resultUrl);
 		} else {
 			return this._generateIneligibleInsuranceResultsHTML(resultData, resultUrl);
 		}
@@ -1655,6 +1673,70 @@ class ModularQuiz {
 								<path d="M2.5 8.33337H17.5" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
 							</svg>
 							<span class="quiz-coverage-benefit-text">Coverage expires ${coverageExpiry}</span>
+						</div>
+					</div>
+				</div>
+				<div class="quiz-action-section">
+					<div class="quiz-action-content">
+						<div class="quiz-action-header">
+							<h3 class="quiz-action-title">Schedule your initial online consultation now</h3>
+						</div>
+
+						<div class="quiz-action-details">
+							<div class="quiz-action-info">
+								<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+									<path d="M12.4214 14.5583C12.4709 14.3109 12.6316 14.1021 12.8477 13.972C14.3893 13.0437 15.4163 11.5305 15.4163 9.58378C15.4163 6.59224 12.9913 4.16711 9.99967 4.16711C7.00813 4.16711 4.58301 6.59224 4.58301 9.58378C4.58301 11.5305 5.60997 13.0437 7.15168 13.972C7.36778 14.1021 7.52844 14.3109 7.57791 14.5583L7.78236 15.5805C7.86027 15.97 8.20227 16.2504 8.59951 16.2504H11.3998C11.7971 16.2504 12.1391 15.97 12.217 15.5805L12.4214 14.5583Z" stroke="#418865" stroke-width="1.25" stroke-linejoin="round"/>
+									<path d="M17.4997 9.58378H17.9163M2.08301 9.58378H2.49967M15.3024 4.28048L15.597 3.98586M4.16634 15.4171L4.58301 15.0004M15.4163 15.0004L15.833 15.4171M4.40234 3.98644L4.69697 4.28106M9.99967 2.08378V1.66711" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+									<path d="M11.6663 16.25V17.5C11.6663 17.9602 11.2933 18.3333 10.833 18.3333H9.16634C8.70609 18.3333 8.33301 17.9602 8.33301 17.5V16.25" stroke="#418865" stroke-width="1.25" stroke-linejoin="round"/>
+								</svg>
+								<span class="quiz-action-info-text">Our dietitians usually recommend minimum 6 consultations over 6 months, Today, just book your first.</span>
+							</div>
+
+							<div class="quiz-action-feature">
+								<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+									<path d="M10.417 2.5031C9.67107 2.49199 8.92091 2.51074 8.19149 2.55923C4.70565 2.79094 1.929 5.60698 1.70052 9.14225C1.65582 9.83408 1.65582 10.5506 1.70052 11.2424C1.78374 12.53 2.35318 13.7222 3.02358 14.7288C3.41283 15.4336 3.15594 16.3132 2.7505 17.0815C2.45817 17.6355 2.312 17.9125 2.42936 18.1126C2.54672 18.3127 2.80887 18.3191 3.33318 18.3318C4.37005 18.3571 5.06922 18.0631 5.62422 17.6538C5.93899 17.4218 6.09638 17.3057 6.20486 17.2923C6.31332 17.279 6.5268 17.3669 6.95367 17.5427C7.33732 17.7007 7.78279 17.7982 8.19149 17.8254C9.37832 17.9043 10.6199 17.9045 11.8092 17.8254C15.295 17.5937 18.0717 14.7777 18.3002 11.2424C18.3354 10.6967 18.3428 10.1356 18.3225 9.58333" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+									<path d="M18.333 6.66663L13.333 1.66663M18.333 1.66663L13.333 6.66663" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+									<path d="M9.99658 10.4166H10.004M13.3262 10.4166H13.3337M6.66699 10.4166H6.67447" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<span class="quiz-action-feature-text">Free cancellation up to 24h before</span>
+							</div>
+						</div>
+
+						<a href="${resultUrl}" class="quiz-booking-button">
+							Proceed to booking
+						</a>
+					</div>
+				</div>
+				${this._generateFAQHTML()}
+			</div>
+		`;
+	}
+
+	_generateNotCoveredInsuranceResultsHTML(eligibilityData, resultUrl) {
+		const messages = this.quizData.ui?.resultMessages?.notCovered || {};
+
+		return `
+			<div class="quiz-results-container">
+				<div class="quiz-results-header">
+                    <h2 class="quiz-results-title">${messages.title || "You're not covered, but we've got a deal for you"}</h2>
+                    <p class="quiz-results-subtitle">${messages.subtitle || "Get expert dietitian support at a special discounted rate"}</p>
+				</div>
+				<div class="quiz-coverage-card">
+					<h3 class="quiz-coverage-card-title">Here's Your Offer</h3>
+					<div class="quiz-coverage-pricing">
+						<div class="quiz-coverage-service-item">
+							<div class="quiz-coverage-service">Initial consultation – 60 minutes</div>
+							<div class="quiz-coverage-cost">
+								<span class="quiz-coverage-copay">Co-pay: $80*</span>
+								<span class="quiz-coverage-original-price">$100</span>
+							</div>
+						</div>
+						<div class="quiz-coverage-service-item">
+							<div class="quiz-coverage-service">Follow-up consultation – 30 minutes</div>
+							<div class="quiz-coverage-cost">
+								<span class="quiz-coverage-copay">Co-pay: $20*</span>
+								<span class="quiz-coverage-original-price">$50</span>
+							</div>
 						</div>
 					</div>
 				</div>
