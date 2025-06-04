@@ -179,29 +179,29 @@ class ModularQuiz {
 			// Support different test scenarios
 			if (testMode === "true") {
 				testDataKey = "default";
-				displayName = "DEFAULT (UHC Eligible)";
+				displayName = "REAL API - UHC Test Data";
 			} else if (testMode === "not-covered") {
 				testDataKey = "notCovered";
-				displayName = "NOT COVERED";
+				displayName = "REAL API - Not Covered Test";
 			} else if (this.quizData.testData[testMode]) {
 				testDataKey = testMode;
 				// Create display names for better UX
 				const displayNames = {
-					default: "UHC ELIGIBLE",
-					notCovered: "NOT COVERED",
-					aetna_dependent: "AETNA DEPENDENT",
-					anthem_dependent: "ANTHEM DEPENDENT",
-					bcbstx_dependent: "BCBS TX DEPENDENT",
-					cigna_dependent: "CIGNA DEPENDENT",
-					oscar_dependent: "OSCAR DEPENDENT",
-					error_42: "ERROR 42 - Unable to Respond",
-					error_43: "ERROR 43 - Invalid Provider",
-					error_72: "ERROR 72 - Invalid Member ID",
-					error_73: "ERROR 73 - Invalid Name",
-					error_75: "ERROR 75 - Subscriber Not Found",
-					error_79: "ERROR 79 - Invalid Participant"
+					default: "REAL API - UHC Test Data",
+					notCovered: "REAL API - Not Covered Test",
+					aetna_dependent: "REAL API - Aetna Test Data",
+					anthem_dependent: "REAL API - Anthem Test Data",
+					bcbstx_dependent: "REAL API - BCBS TX Test Data",
+					cigna_dependent: "REAL API - Cigna Test Data",
+					oscar_dependent: "REAL API - Oscar Test Data",
+					error_42: "REAL API - Error 42 Test Data",
+					error_43: "REAL API - Error 43 Test Data",
+					error_72: "REAL API - Error 72 Test Data",
+					error_73: "REAL API - Error 73 Test Data",
+					error_75: "REAL API - Error 75 Test Data",
+					error_79: "REAL API - Error 79 Test Data"
 				};
-				displayName = displayNames[testMode] || testMode.toUpperCase();
+				displayName = displayNames[testMode] || `REAL API - ${testMode.toUpperCase()}`;
 			}
 
 			const testData = this.quizData.testData[testDataKey] || this.quizData.testData.default || this.quizData.testData;
@@ -213,7 +213,7 @@ class ModularQuiz {
 						this.responses[responseIndex].answer = testData[questionId];
 					}
 				});
-				this._addTestModeIndicator(`🧪 ${displayName}`);
+				this._addTestModeIndicator(`🔬 ${displayName}`);
 			}
 		}
 	}
@@ -1222,11 +1222,8 @@ class ModularQuiz {
 			const webhookUrl = this.container.getAttribute("data-webhook-url") || this.quizData.config?.webhookUrl;
 			let resultData = null;
 
-			// Check for test mode and simulate responses
-			const testMode = new URLSearchParams(window.location.search).get("test");
-			if (testMode && this.quizData.testData) {
-				resultData = this._generateTestModeResponse(testMode, payload);
-			} else if (webhookUrl) {
+			// Always call real webhook/API if configured
+			if (webhookUrl) {
 				resultData = await this._submitToWebhook(webhookUrl, payload);
 			}
 
@@ -1314,138 +1311,6 @@ class ModularQuiz {
 		}
 
 		return data;
-	}
-
-	_generateTestModeResponse(testMode, payload) {
-		// Simulate different response types based on test mode
-		const testModeResponses = {
-			default: {
-				success: true,
-				eligibilityData: {
-					isEligible: true,
-					sessionsCovered: 8,
-					copay: 15,
-					deductible: { individual: 500 },
-					eligibilityStatus: "ELIGIBLE",
-					userMessage: "Great news! Your insurance covers dietitian consultations.",
-					planBegin: "20240101",
-					planEnd: "20241231"
-				}
-			},
-			notCovered: {
-				success: true,
-				eligibilityData: {
-					isEligible: false,
-					sessionsCovered: 0,
-					copay: 0,
-					deductible: { individual: 0 },
-					eligibilityStatus: "NOT_COVERED",
-					userMessage: "Your plan doesn't cover dietitian services, but we have affordable options."
-				}
-			},
-			aetna_dependent: {
-				success: true,
-				eligibilityData: {
-					isEligible: true,
-					sessionsCovered: 6,
-					copay: 20,
-					deductible: { individual: 250 },
-					eligibilityStatus: "ELIGIBLE",
-					userMessage: "Aetna covers your dietitian consultations.",
-					planBegin: "20240101",
-					planEnd: "20241231"
-				}
-			},
-			anthem_dependent: {
-				success: true,
-				eligibilityData: {
-					isEligible: true,
-					sessionsCovered: 12,
-					copay: 10,
-					deductible: { individual: 1000 },
-					eligibilityStatus: "ELIGIBLE",
-					userMessage: "Anthem Blue Cross covers your dietitian consultations.",
-					planBegin: "20240101",
-					planEnd: "20241231"
-				}
-			},
-			bcbstx_dependent: {
-				success: true,
-				eligibilityData: {
-					isEligible: true,
-					sessionsCovered: 4,
-					copay: 25,
-					deductible: { individual: 750 },
-					eligibilityStatus: "ELIGIBLE",
-					userMessage: "Blue Cross Blue Shield of Texas covers your dietitian consultations.",
-					planBegin: "20240101",
-					planEnd: "20241231"
-				}
-			},
-			cigna_dependent: {
-				success: true,
-				eligibilityData: {
-					isEligible: true,
-					sessionsCovered: 10,
-					copay: 0,
-					deductible: { individual: 0 },
-					eligibilityStatus: "ELIGIBLE",
-					userMessage: "Cigna covers your dietitian consultations with no copay.",
-					planBegin: "20240101",
-					planEnd: "20241231"
-				}
-			},
-			oscar_dependent: {
-				success: true,
-				eligibilityData: {
-					isEligible: true,
-					sessionsCovered: 8,
-					copay: 5,
-					deductible: { individual: 500 },
-					eligibilityStatus: "ELIGIBLE",
-					userMessage: "Oscar Health covers your dietitian consultations.",
-					planBegin: "20240101",
-					planEnd: "20241231"
-				}
-			},
-			error_42: {
-				success: false,
-				aaaError: "42",
-				error: "Unable to respond at current time - payer system temporarily unavailable"
-			},
-			error_43: {
-				success: false,
-				aaaError: "43",
-				error: "Invalid/Missing Provider Identification"
-			},
-			error_72: {
-				success: false,
-				aaaError: "72",
-				error: "Invalid/Missing Subscriber/Insured ID"
-			},
-			error_73: {
-				success: false,
-				aaaError: "73",
-				error: "Invalid/Missing Subscriber/Insured Name"
-			},
-			error_75: {
-				success: false,
-				aaaError: "75",
-				error: "Subscriber/Insured Not Found"
-			},
-			error_79: {
-				success: false,
-				aaaError: "79",
-				error: "Invalid Participant Identification"
-			}
-		};
-
-		// Get the appropriate response or fall back to default
-		let testDataKey = testMode === "true" ? "default" : testMode;
-		const mockResponse = testModeResponses[testDataKey] || testModeResponses["default"];
-
-		// Process the mock response through the normal result processing
-		return this._processWebhookResult(mockResponse);
 	}
 
 	async _submitToWebhook(webhookUrl, payload) {
