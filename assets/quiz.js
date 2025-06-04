@@ -1343,9 +1343,24 @@ class ModularQuiz {
 
 	_processWebhookResult(result) {
 		if (result?.success === true && result.eligibilityData) {
-			return result.eligibilityData;
+			// Check if this is an AAA error from the workflow response
+			const eligibilityData = result.eligibilityData;
+
+			// Handle AAA_ERROR status from workflow
+			if (eligibilityData.eligibilityStatus === "AAA_ERROR") {
+				const errorCode = eligibilityData.error?.code;
+				return this._createAAAErrorEligibilityData(errorCode, eligibilityData.userMessage);
+			}
+
+			// Handle PAYER_ERROR status - check if it's actually an AAA error
+			if (eligibilityData.eligibilityStatus === "PAYER_ERROR" && eligibilityData.error?.isAAAError) {
+				const errorCode = eligibilityData.error?.code;
+				return this._createAAAErrorEligibilityData(errorCode, eligibilityData.userMessage);
+			}
+
+			return eligibilityData;
 		} else if (result?.success === false) {
-			// Handle AAA errors specifically
+			// Handle legacy AAA errors specifically (for backwards compatibility)
 			if (result.aaaError) {
 				return this._createAAAErrorEligibilityData(result.aaaError, result.error);
 			}
@@ -1653,6 +1668,9 @@ class ModularQuiz {
 		} else if (resultData.isEligible === false && eligibilityStatus === "NOT_COVERED") {
 			return this._generateNotCoveredInsuranceResultsHTML(resultData, resultUrl);
 		} else if (eligibilityStatus === "AAA_ERROR") {
+			return this._generateAAAErrorResultsHTML(resultData, resultUrl);
+		} else if (eligibilityStatus === "PAYER_ERROR" && resultData.error?.isAAAError) {
+			// Handle PAYER_ERROR that contains AAA error information
 			return this._generateAAAErrorResultsHTML(resultData, resultUrl);
 		} else {
 			return this._generateIneligibleInsuranceResultsHTML(resultData, resultUrl);
