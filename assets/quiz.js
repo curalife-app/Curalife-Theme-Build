@@ -85,7 +85,7 @@ class ProductQuiz {
 	}
 
 	_validateEssentialElements() {
-		const essentialElements = ["intro", "questions", "results", "error", "loading", "progressBar", "questionContainer", "navigationButtons", "prevButton", "nextButton"];
+		const essentialElements = ["intro", "questions", "results", "error", "loading", "progressBar", "questionContainer", "navigation", "prevButton", "nextButton"];
 
 		for (const element of essentialElements) {
 			if (!this[element]) {
@@ -678,12 +678,12 @@ class ProductQuiz {
 
 		// Hide navigation for auto-advance questions
 		if (isCurrentQuestionAutoAdvance && !isFormStep) {
-			this.navigationButtons.classList.add("quiz-navigation-hidden");
-			this.navigationButtons.classList.remove("quiz-navigation-visible");
+			this.navigation.classList.add("quiz-navigation-hidden");
+			this.navigation.classList.remove("quiz-navigation-visible");
 			return;
 		} else {
-			this.navigationButtons.classList.remove("quiz-navigation-hidden");
-			this.navigationButtons.classList.add("quiz-navigation-visible");
+			this.navigation.classList.remove("quiz-navigation-hidden");
+			this.navigation.classList.add("quiz-navigation-visible");
 		}
 
 		// Hide back button
@@ -703,7 +703,7 @@ class ProductQuiz {
 
 		// Handle form step navigation
 		if (isFormStep && step.questions) {
-			this.navigationButtons.classList.add("quiz-navigation-hidden");
+			this.navigation.classList.add("quiz-navigation-hidden");
 			const formButton = this.questionContainer.querySelector("#quiz-form-next-button");
 			if (formButton) {
 				formButton.disabled = this.submitting;
@@ -1542,7 +1542,7 @@ class ProductQuiz {
 
 	showResults(bookingUrl, webhookSuccess = true, eligibilityData = null, errorMessage = "") {
 		this._stopDynamicLoader();
-		this._hideElement(this.navigationButtons);
+		this._hideElement(this.navigation);
 		this._hideElement(this.progressSection);
 
 		let resultsHTML = "";
@@ -2040,7 +2040,7 @@ class ProductQuiz {
 	}
 
 	_addLegalTextAfterNavigation(legalText) {
-		const navContainer = this.navigationButtons;
+		const navContainer = this.navigation;
 		if (!navContainer) return;
 
 		const existingLegal = navContainer.querySelector(".quiz-legal-after-nav");
