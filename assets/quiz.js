@@ -704,6 +704,7 @@ class ProductQuiz {
 		// Handle form step navigation
 		if (isFormStep && step.questions) {
 			this.navigationButtons.classList.add("quiz-navigation-hidden");
+			this.navigationButtons.classList.remove("quiz-navigation-visible");
 			const formButton = this.questionContainer.querySelector("#quiz-form-next-button");
 			if (formButton) {
 				formButton.disabled = this.submitting;
