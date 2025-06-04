@@ -164,24 +164,9 @@ class ModularQuiz {
 	}
 
 	_initializeResponses() {
-		this.responses = [];
-		this.quizData.steps.forEach(step => {
-			if (step.questions) {
-				step.questions.forEach(question => {
-					this.responses.push({
-						stepId: step.id,
-						questionId: question.id,
-						answer: null
-					});
-				});
-			} else {
-				this.responses.push({
-					stepId: step.id,
-					questionId: step.id,
-					answer: null
-				});
-			}
-		});
+		this.responses = this.quizData.steps.flatMap(step =>
+			step.questions ? step.questions.map(question => ({ stepId: step.id, questionId: question.id, answer: null })) : [{ stepId: step.id, questionId: step.id, answer: null }]
+		);
 	}
 
 	_applyTestDataIfEnabled() {
@@ -861,211 +846,162 @@ class ModularQuiz {
 	_attachQuestionEventListeners(question) {
 		if (!question) return;
 
-		switch (question.type) {
-			case "multiple-choice":
-				this._attachRadioListeners(question);
-				break;
-			case "checkbox":
-				this._attachCheckboxListeners(question);
-				break;
-			case "dropdown":
-			case "date-part":
-				this._attachDropdownListeners(question);
-				break;
-			case "text":
-			case "date":
-				this._attachTextInputListeners(question);
-				break;
-			case "textarea":
-				this._attachTextareaListeners(question);
-				break;
-			case "rating":
-				this._attachRatingListeners(question);
-				break;
-			case "payer-search":
-				this._attachPayerSearchListeners(question);
-				break;
-		}
+		const handlers = {
+			"multiple-choice": () => this._attachInputGroupListeners(question, "change", input => this.handleAnswer(input.value)),
+			checkbox: () => this._attachCheckboxListeners(question),
+			dropdown: () => this._attachDropdownListeners(question),
+			"date-part": () => this._attachDropdownListeners(question),
+			text: () => this._attachTextInputListeners(question),
+			date: () => this._attachTextInputListeners(question),
+			textarea: () => this._attachSingleInputListener(question, "input", input => this.handleAnswer(input.value)),
+			rating: () => this._attachSingleInputListener(question, "input", input => this.handleAnswer(parseInt(input.value, 10))),
+			"payer-search": () => this._attachPayerSearchListeners(question)
+		};
+
+		handlers[question.type]?.();
 	}
 
-	_attachRadioListeners(question) {
-		const radioInputs = this.questionContainer.querySelectorAll(`input[name="question-${question.id}"]`);
-		radioInputs.forEach(input => {
-			input.addEventListener("change", () => {
-				this.handleAnswer(input.value);
-			});
-		});
+	_attachInputGroupListeners(question, eventType, callback) {
+		const inputs = this.questionContainer.querySelectorAll(`input[name="question-${question.id}"]`);
+		inputs.forEach(input => input.addEventListener(eventType, () => callback(input)));
+	}
+
+	_attachSingleInputListener(question, eventType, callback) {
+		const input = this.questionContainer.querySelector(`#question-${question.id}`);
+		if (input) input.addEventListener(eventType, () => callback(input));
 	}
 
 	_attachCheckboxListeners(question) {
 		const checkboxInputs = this.questionContainer.querySelectorAll(`input[name="question-${question.id}"]`);
+		const getSelectedValues = () =>
+			Array.from(checkboxInputs)
+				.filter(cb => cb.checked)
+				.map(cb => cb.value);
+
 		checkboxInputs.forEach(input => {
 			input.removeEventListener("change", input._changeHandler);
-			input._changeHandler = () => {
-				const selectedOptions = Array.from(checkboxInputs)
-					.filter(cb => cb.checked)
-					.map(cb => cb.value);
-				this.handleAnswer(selectedOptions);
-			};
+			input._changeHandler = () => this.handleAnswer(getSelectedValues());
 			input.addEventListener("change", input._changeHandler);
 		});
 	}
 
 	_attachDropdownListeners(question) {
-		const dropdownInput = this.questionContainer.querySelector(`#question-${question.id}`);
-		if (!dropdownInput) return;
+		const dropdown = this.questionContainer.querySelector(`#question-${question.id}`);
+		if (!dropdown) return;
 
-		dropdownInput.addEventListener("change", () => {
-			this.handleFormAnswer(question.id, dropdownInput.value);
-			this._updateDropdownColor(dropdownInput);
-			this._clearFieldError(question.id, dropdownInput);
+		dropdown.addEventListener("change", () => {
+			this.handleFormAnswer(question.id, dropdown.value);
+			this._updateDropdownColor(dropdown);
+			this._clearFieldError(question.id, dropdown);
 		});
-		this._updateDropdownColor(dropdownInput);
+		this._updateDropdownColor(dropdown);
 	}
 
 	_attachTextInputListeners(question) {
 		const textInput = this.questionContainer.querySelector(`#question-${question.id}`);
 		if (!textInput) return;
 
-		textInput.removeEventListener("input", textInput._inputHandler);
-		textInput.removeEventListener("blur", textInput._blurHandler);
-		textInput.removeEventListener("change", textInput._changeHandler);
-
-		textInput._inputHandler = () => {
-			this.handleFormAnswer(question.id, textInput.value);
-		};
-
-		textInput._blurHandler = () => {
+		const validate = () => {
 			const validationResult = this._validateFieldValue(question, textInput.value);
 			this._updateFieldValidationState(textInput, question, validationResult);
 		};
 
-		textInput._changeHandler = () => {
-			const validationResult = this._validateFieldValue(question, textInput.value);
-			this._updateFieldValidationState(textInput, question, validationResult);
-		};
-		textInput.addEventListener("input", textInput._inputHandler);
-		textInput.addEventListener("blur", textInput._blurHandler);
-		textInput.addEventListener("change", textInput._changeHandler);
+		this._removeExistingHandlers(textInput, ["input", "blur", "change"]);
+
+		textInput._inputHandler = () => this.handleFormAnswer(question.id, textInput.value);
+		textInput._blurHandler = validate;
+		textInput._changeHandler = validate;
+
+		["input", "blur", "change"].forEach((event, i) => {
+			const handler = [textInput._inputHandler, textInput._blurHandler, textInput._changeHandler][i];
+			textInput.addEventListener(event, handler);
+		});
 	}
 
-	_attachTextareaListeners(question) {
-		const textareaInput = this.questionContainer.querySelector(`#question-${question.id}`);
-		if (textareaInput) {
-			textareaInput.addEventListener("input", () => {
-				this.handleAnswer(textareaInput.value);
-			});
-		}
-	}
-
-	_attachRatingListeners(question) {
-		const ratingInput = this.questionContainer.querySelector(`#question-${question.id}`);
-		if (ratingInput) {
-			ratingInput.addEventListener("input", () => {
-				this.handleAnswer(Number.parseInt(ratingInput.value, 10));
-			});
-		}
+	_removeExistingHandlers(element, events) {
+		events.forEach(event => element.removeEventListener(event, element[`_${event}Handler`]));
 	}
 
 	_attachFormQuestionListener(question) {
-		switch (question.type) {
-			case "dropdown":
-			case "date-part":
-				this._attachDropdownListeners(question);
-				break;
-			case "text":
-			case "date":
-				this._attachTextInputListeners(question);
-				break;
-			case "checkbox":
-				this._attachFormCheckboxListeners(question);
-				break;
-			case "payer-search":
-				this._attachPayerSearchFormListeners(question);
-				break;
-		}
+		const formHandlers = {
+			dropdown: () => this._attachDropdownListeners(question),
+			"date-part": () => this._attachDropdownListeners(question),
+			text: () => this._attachTextInputListeners(question),
+			date: () => this._attachTextInputListeners(question),
+			checkbox: () => this._attachFormCheckboxListeners(question),
+			"payer-search": () => this._attachPayerSearchFormListeners(question)
+		};
+
+		formHandlers[question.type]?.();
 	}
 
 	_attachFormCheckboxListeners(question) {
 		const checkboxInputs = this.questionContainer.querySelectorAll(`input[name="question-${question.id}"]`);
-		checkboxInputs.forEach(input => {
-			input.onclick = () => {
-				if (question.options.length === 1) {
-					this.handleFormAnswer(question.id, input.checked ? [input.value] : []);
-				} else {
-					const selectedOptions = Array.from(checkboxInputs)
+		const getFormValue = input =>
+			question.options.length === 1
+				? input.checked
+					? [input.value]
+					: []
+				: Array.from(checkboxInputs)
 						.filter(cb => cb.checked)
 						.map(cb => cb.value);
-					this.handleFormAnswer(question.id, selectedOptions);
-				}
-			};
+
+		checkboxInputs.forEach(input => {
+			input.onclick = () => this.handleFormAnswer(question.id, getFormValue(input));
 		});
 	}
 
 	_validateFormStep(step) {
-		let hasValidationErrors = false;
-		const validationErrors = [];
+		const validationErrors = step.questions.map(question => this._validateQuestionInForm(question)).filter(error => error);
 
-		for (const question of step.questions) {
-			const response = this.responses.find(r => r.questionId === question.id);
-			const currentValue = response ? response.answer : null;
-
-			if (question.required) {
-				let isEmpty = false;
-
-				if (!currentValue) {
-					isEmpty = true;
-				} else if (question.type === "checkbox") {
-					isEmpty = !Array.isArray(currentValue) || currentValue.length === 0;
-				} else if (question.type === "payer-search") {
-					isEmpty = !currentValue || (typeof currentValue === "string" && currentValue.trim() === "");
-				} else if (typeof currentValue === "string") {
-					isEmpty = currentValue.trim() === "";
-				}
-
-				if (isEmpty) {
-					hasValidationErrors = true;
-					validationErrors.push({
-						questionId: question.id,
-						message: this.quizData.ui?.errorMessages?.validationRequired || "This field is required"
-					});
-					continue;
-				}
-			}
-
-			if (currentValue && question.type !== "payer-search") {
-				const validationResult = this._validateFieldValue(question, currentValue);
-				if (!validationResult.isValid) {
-					hasValidationErrors = true;
-					validationErrors.push({
-						questionId: question.id,
-						message: validationResult.errorMessage
-					});
-				}
-			}
-		}
-
-		if (hasValidationErrors) {
+		if (validationErrors.length > 0) {
 			this._displayValidationErrors(validationErrors);
 			return false;
 		}
-
 		return true;
+	}
+
+	_validateQuestionInForm(question) {
+		const response = this.responses.find(r => r.questionId === question.id);
+		const currentValue = response?.answer;
+
+		if (question.required && this._isEmptyValue(currentValue, question.type)) {
+			return {
+				questionId: question.id,
+				message: this.quizData.ui?.errorMessages?.validationRequired || "This field is required"
+			};
+		}
+
+		if (currentValue && question.type !== "payer-search") {
+			const validationResult = this._validateFieldValue(question, currentValue);
+			if (!validationResult.isValid) {
+				return {
+					questionId: question.id,
+					message: validationResult.errorMessage
+				};
+			}
+		}
+
+		return null;
+	}
+
+	_isEmptyValue(value, questionType) {
+		if (!value) return true;
+		if (questionType === "checkbox") return !Array.isArray(value) || value.length === 0;
+		if (typeof value === "string") return value.trim() === "";
+		return false;
 	}
 
 	_displayValidationErrors(validationErrors) {
 		let firstInvalidField = null;
 
 		validationErrors.forEach((error, index) => {
-			const errorEl = this.questionContainer.querySelector(`#error-${error.questionId}`);
-			const input = this.questionContainer.querySelector(`#question-${error.questionId}`);
+			const { input, errorEl } = this._getValidationElements(error.questionId);
 
 			if (input) {
 				input.classList.add("quiz-input-error");
 				input.classList.remove("quiz-input-valid");
-				if (index === 0) {
-					firstInvalidField = input;
-				}
+				if (index === 0) firstInvalidField = input;
 			}
 
 			if (errorEl) {
@@ -1078,6 +1014,13 @@ class ModularQuiz {
 		if (firstInvalidField) {
 			this._scrollToInvalidField(firstInvalidField);
 		}
+	}
+
+	_getValidationElements(questionId) {
+		return {
+			input: this.questionContainer.querySelector(`#question-${questionId}`),
+			errorEl: this.questionContainer.querySelector(`#error-${questionId}`)
+		};
 	}
 
 	_validateFieldValue(question, value) {
@@ -1273,6 +1216,19 @@ class ModularQuiz {
 	}
 
 	_extractResponseData() {
+		const fieldMapping = {
+			q9: "customerEmail",
+			q7: "firstName",
+			q8: "lastName",
+			q10: "phoneNumber",
+			q5: "state",
+			q3: ["insurance", "insurancePrimaryPayerId"],
+			q4: "insuranceMemberId",
+			q4_group: "groupNumber",
+			q1: "mainReasons",
+			q2: "medicalConditions"
+		};
+
 		const data = {
 			customerEmail: "",
 			firstName: "",
@@ -1289,57 +1245,20 @@ class ModularQuiz {
 			consent: true
 		};
 
-		let dobMonth = "",
-			dobDay = "",
-			dobYear = "";
+		const dobParts = {};
 
 		this.responses.forEach(response => {
-			switch (response.questionId) {
-				case "q9":
-					data.customerEmail = response.answer || "";
-					break;
-				case "q7":
-					data.firstName = response.answer || "";
-					break;
-				case "q8":
-					data.lastName = response.answer || "";
-					break;
-				case "q10":
-					data.phoneNumber = response.answer || "";
-					break;
-				case "q5":
-					data.state = response.answer || "";
-					break;
-				case "q3":
-					data.insurance = response.answer || "";
-					data.insurancePrimaryPayerId = response.answer || "";
-					break;
-				case "q4":
-					data.insuranceMemberId = response.answer || "";
-					break;
-				case "q4_group":
-					data.groupNumber = response.answer || "";
-					break;
-				case "q1":
-					data.mainReasons = response.answer || [];
-					break;
-				case "q2":
-					data.medicalConditions = response.answer || [];
-					break;
-				case "q6_month":
-					dobMonth = response.answer || "";
-					break;
-				case "q6_day":
-					dobDay = response.answer || "";
-					break;
-				case "q6_year":
-					dobYear = response.answer || "";
-					break;
+			const mapping = fieldMapping[response.questionId];
+			if (mapping) {
+				const fields = Array.isArray(mapping) ? mapping : [mapping];
+				fields.forEach(field => (data[field] = response.answer || (Array.isArray(data[field]) ? [] : "")));
+			} else if (response.questionId.startsWith("q6_")) {
+				dobParts[response.questionId.split("_")[1]] = response.answer || "";
 			}
 		});
 
-		if (dobMonth && dobDay && dobYear) {
-			data.dateOfBirth = `${dobYear}${dobMonth.padStart(2, "0")}${dobDay.padStart(2, "0")}`;
+		if (dobParts.month && dobParts.day && dobParts.year) {
+			data.dateOfBirth = `${dobParts.year}${dobParts.month.padStart(2, "0")}${dobParts.day.padStart(2, "0")}`;
 		}
 
 		return data;
@@ -2182,85 +2101,100 @@ class ModularQuiz {
 		let i = 0;
 
 		while (i < questions.length) {
-			const question = questions[i];
-			const response = this.responses.find(r => r.questionId === question.id) || { answer: null };
-
-			const pairs = this.config.questionPairs || {};
-
-			if (question.id === pairs.memberIdFields?.[0] && questions[i + 1]?.id === pairs.memberIdFields?.[1]) {
-				const groupNumberResponse = this.responses.find(r => r.questionId === questions[i + 1].id) || { answer: null };
-				html += this._generateFormFieldPair(question, questions[i + 1], response, groupNumberResponse);
-				i += 2;
-				continue;
+			const processed = this._tryProcessQuestionGroup(questions, i);
+			if (processed.html) {
+				html += processed.html;
+				i += processed.skip;
+			} else {
+				html += this._generateSingleFormQuestion(questions[i]);
+				i++;
 			}
-
-			if (question.id === pairs.nameFields?.[0] && questions[i + 1]?.id === pairs.nameFields?.[1]) {
-				const lastNameResponse = this.responses.find(r => r.questionId === questions[i + 1].id) || { answer: null };
-				html += this._generateFormFieldPair(question, questions[i + 1], response, lastNameResponse);
-				i += 2;
-				continue;
-			}
-
-			if (question.id === pairs.contactFields?.[0] && questions[i + 1]?.id === pairs.contactFields?.[1]) {
-				const phoneResponse = this.responses.find(r => r.questionId === questions[i + 1].id) || { answer: null };
-				html += this._generateFormFieldPair(question, questions[i + 1], response, phoneResponse);
-				i += 2;
-				continue;
-			}
-
-			if (question.type === "date-part" && question.part === "month") {
-				const dayQuestion = questions[i + 1];
-				const yearQuestion = questions[i + 2];
-
-				if (dayQuestion?.type === "date-part" && dayQuestion.part === "day" && yearQuestion?.type === "date-part" && yearQuestion.part === "year") {
-					html += this._generateDateGroup(question, dayQuestion, yearQuestion);
-					i += 3;
-					continue;
-				}
-			}
-
-			const tooltips = this.quizData.validation?.tooltips || {};
-			const helpIcon = tooltips[question.id] ? this._generateHelpIcon(question.id, tooltips[question.id]) : "";
-
-			html += `
-                <div class="quiz-question-section">
-                    <label class="quiz-label" for="question-${question.id}">
-                        ${question.text}${helpIcon}
-                    </label>
-                    ${question.helpText ? `<p class="quiz-text-sm">${question.helpText}</p>` : ""}
-                    ${this._renderQuestionByType(question, response)}
-                </div>
-            `;
-			i++;
 		}
 
 		return html;
 	}
 
-	_generateFormFieldPair(leftQuestion, rightQuestion, leftResponse, rightResponse) {
-		const leftInput = this._renderQuestionByType(leftQuestion, leftResponse);
-		const rightInput = this._renderQuestionByType(rightQuestion, rightResponse);
+	_tryProcessQuestionGroup(questions, index) {
+		const question = questions[index];
+		const pairs = this.config.questionPairs || {};
+		const getResponse = q => this.responses.find(r => r.questionId === q.id) || { answer: null };
 
-		const tooltips = this.quizData.validation?.tooltips || {};
-		const leftHelpIcon = tooltips[leftQuestion.id] ? this._generateHelpIcon(leftQuestion.id, tooltips[leftQuestion.id]) : "";
-		const rightHelpIcon = tooltips[rightQuestion.id] ? this._generateHelpIcon(rightQuestion.id, tooltips[rightQuestion.id]) : "";
+		// Check for paired fields
+		const pairChecks = [
+			{ fields: pairs.memberIdFields, skip: 2 },
+			{ fields: pairs.nameFields, skip: 2 },
+			{ fields: pairs.contactFields, skip: 2 }
+		];
+
+		for (const pair of pairChecks) {
+			if (question.id === pair.fields?.[0] && questions[index + 1]?.id === pair.fields[1]) {
+				return {
+					html: this._generateFormFieldPair(question, questions[index + 1], getResponse(question), getResponse(questions[index + 1])),
+					skip: pair.skip
+				};
+			}
+		}
+
+		// Check for date group
+		if (question.type === "date-part" && question.part === "month") {
+			const [dayQ, yearQ] = [questions[index + 1], questions[index + 2]];
+			if (dayQ?.type === "date-part" && dayQ.part === "day" && yearQ?.type === "date-part" && yearQ.part === "year") {
+				return {
+					html: this._generateDateGroup(question, dayQ, yearQ),
+					skip: 3
+				};
+			}
+		}
+
+		return { html: null, skip: 0 };
+	}
+
+	_generateSingleFormQuestion(question) {
+		const response = this.responses.find(r => r.questionId === question.id) || { answer: null };
+		const helpIcon = this._getHelpIcon(question.id);
+
+		return `
+            <div class="quiz-question-section">
+                <label class="quiz-label" for="question-${question.id}">
+                    ${question.text}${helpIcon}
+                </label>
+                ${question.helpText ? `<p class="quiz-text-sm">${question.helpText}</p>` : ""}
+                ${this._renderQuestionByType(question, response)}
+            </div>
+        `;
+	}
+
+	_generateFormFieldPair(leftQuestion, rightQuestion, leftResponse, rightResponse) {
+		const generateField = (question, response) => ({
+			input: this._renderQuestionByType(question, response),
+			helpIcon: this._getHelpIcon(question.id),
+			label: question.text,
+			id: question.id
+		});
+
+		const [left, right] = [generateField(leftQuestion, leftResponse), generateField(rightQuestion, rightResponse)];
 
 		return `
             <div class="quiz-grid-2-form">
-                <div>
-                    <label class="quiz-label" for="question-${leftQuestion.id}">
-                        ${leftQuestion.text}${leftHelpIcon}
-                    </label>
-                    ${leftInput}
-                </div>
-                <div>
-                    <label class="quiz-label" for="question-${rightQuestion.id}">
-                        ${rightQuestion.text}${rightHelpIcon}
-                    </label>
-                    ${rightInput}
-                </div>
+                ${[left, right]
+									.map(
+										field => `
+                    <div>
+                        <label class="quiz-label" for="question-${field.id}">
+                            ${field.label}${field.helpIcon}
+                        </label>
+                        ${field.input}
+                    </div>
+                `
+									)
+									.join("")}
             </div>
         `;
+	}
+
+	_getHelpIcon(questionId) {
+		const tooltip = this.quizData.validation?.tooltips?.[questionId];
+		return tooltip ? this._generateHelpIcon(questionId, tooltip) : "";
 	}
 
 	_generateDateGroup(monthQ, dayQ, yearQ) {
