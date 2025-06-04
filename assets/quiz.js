@@ -337,17 +337,17 @@ class ProductQuiz {
 
 		return `
             ${step.info?.formSubHeading ? `<h4 class="quiz-heading quiz-heading-mobile-outside">${step.info.formSubHeading}</h4>` : ""}
-            <div class="quiz-form-container">
+			<div class="quiz-form-container">
                 ${step.info?.formSubHeading ? `<h4 class="quiz-heading quiz-heading-desktop-inside">${step.info.formSubHeading}</h4>` : ""}
-                <div class="quiz-space-y-6">
-                    ${this._processFormQuestions(step.questions)}
-                </div>
-                <button class="quiz-nav-button quiz-nav-button--primary quiz-form-button" id="quiz-form-next-button">
-                    ${buttonText}
-                </button>
-                ${step.legal ? `<p class="quiz-legal-form">${step.legal}</p>` : ""}
-            </div>
-        `;
+				<div class="quiz-space-y-6">
+					${this._processFormQuestions(step.questions)}
+				</div>
+				<button class="quiz-nav-button quiz-nav-button--primary quiz-form-button" id="quiz-form-next-button">
+					${buttonText}
+				</button>
+				${step.legal ? `<p class="quiz-legal-form">${step.legal}</p>` : ""}
+			</div>
+		`;
 	}
 
 	_generateWizardStepHTML(step) {
@@ -362,16 +362,16 @@ class ProductQuiz {
 
 		if (!step.info) {
 			html += `
-                <h3 class="quiz-title">${question.text}</h3>
-                ${question.helpText ? `<p class="quiz-text">${question.helpText}</p>` : ""}
-            `;
+				<h3 class="quiz-title">${question.text}</h3>
+				${question.helpText ? `<p class="quiz-text">${question.helpText}</p>` : ""}
+			`;
 		} else {
 			html += `
-                <div class="quiz-divider">
-                    <h4 class="quiz-heading">${question.text}</h4>
-                    ${question.helpText ? `<p class="quiz-text-sm">${question.helpText}</p>` : ""}
-                </div>
-            `;
+				<div class="quiz-divider">
+					<h4 class="quiz-heading">${question.text}</h4>
+					${question.helpText ? `<p class="quiz-text-sm">${question.helpText}</p>` : ""}
+				</div>
+			`;
 		}
 
 		html += this._renderQuestionByType(question, response);
@@ -424,16 +424,16 @@ class ProductQuiz {
 		question.options.forEach(option => {
 			const isSelected = response.answer === option.id;
 			html += `
-                <label for="${option.id}" class="quiz-option-card">
+				<label for="${option.id}" class="quiz-option-card">
                     <input type="radio" id="${option.id}" name="question-${question.id}" value="${option.id}" class="quiz-sr-only" ${isSelected ? "checked" : ""}>
-                    <div class="quiz-option-button ${isSelected ? "selected" : ""}">
-                        <div class="quiz-option-text">
-                            <div class="quiz-option-text-content">${option.text}</div>
-                        </div>
+					<div class="quiz-option-button ${isSelected ? "selected" : ""}">
+						<div class="quiz-option-text">
+							<div class="quiz-option-text-content">${option.text}</div>
+						</div>
                         ${isSelected ? this._getCheckmarkSVG() : ""}
-                    </div>
-                </label>
-            `;
+					</div>
+				</label>
+			`;
 		});
 		return html + "</div>";
 	}
@@ -447,16 +447,16 @@ class ProductQuiz {
 			question.options.forEach(option => {
 				const isSelected = selectedOptions.includes(option.id);
 				html += `
-                    <label for="${option.id}" class="quiz-option-card">
+					<label for="${option.id}" class="quiz-option-card">
                         <input type="checkbox" id="${option.id}" name="question-${question.id}" value="${option.id}" class="quiz-sr-only" ${isSelected ? "checked" : ""}>
-                        <div class="quiz-option-button ${isSelected ? "selected" : ""}">
-                            <div class="quiz-option-text">
-                                <div class="quiz-option-text-content">${option.text}</div>
-                            </div>
+						<div class="quiz-option-button ${isSelected ? "selected" : ""}">
+							<div class="quiz-option-text">
+								<div class="quiz-option-text-content">${option.text}</div>
+							</div>
                             ${isSelected ? this._getCheckmarkSVG() : ""}
-                        </div>
-                    </label>
-                `;
+						</div>
+					</label>
+				`;
 			});
 			return html + "</div>";
 		} else {
@@ -465,9 +465,9 @@ class ProductQuiz {
 				html += `
                     <div class="quiz-checkbox-container">
                         <input type="checkbox" id="${option.id}" name="question-${question.id}" value="${option.id}" class="quiz-checkbox-input" ${selectedOptions.includes(option.id) ? "checked" : ""}>
-                        <label class="quiz-checkbox-label" for="${option.id}">${option.text}</label>
-                    </div>
-                `;
+						<label class="quiz-checkbox-label" for="${option.id}">${option.text}</label>
+					</div>
+				`;
 			});
 			return html + "</div>";
 		}
@@ -478,10 +478,10 @@ class ProductQuiz {
 		const placeholder = question.placeholder || "Select an option";
 
 		let html = `
-            <div>
-                <select id="question-${question.id}" class="quiz-select">
-                    <option value="">${placeholder}</option>
-        `;
+			<div>
+				<select id="question-${question.id}" class="quiz-select">
+					<option value="">${placeholder}</option>
+		`;
 
 		options.forEach(option => {
 			html += `<option value="${option.id}" ${response.answer === option.id ? "selected" : ""}>${option.text}</option>`;
@@ -490,23 +490,23 @@ class ProductQuiz {
 		return (
 			html +
 			`
-                </select>
-                <p id="error-${question.id}" class="quiz-error-text quiz-error-hidden"></p>
-            </div>
+				</select>
+				<p id="error-${question.id}" class="quiz-error-text quiz-error-hidden"></p>
+			</div>
         `
 		);
 	}
 
 	renderTextInput(question, response) {
 		return `
-            <div>
-                <input type="text" id="question-${question.id}" class="quiz-input"
-                    placeholder="${question.placeholder || "Type your answer here..."}"
-                    value="${response.answer || ""}"
-                    aria-describedby="error-${question.id}">
-                <p id="error-${question.id}" class="quiz-error-text quiz-error-hidden"></p>
-            </div>
-        `;
+			<div>
+				<input type="text" id="question-${question.id}" class="quiz-input"
+					placeholder="${question.placeholder || "Type your answer here..."}"
+					value="${response.answer || ""}"
+					aria-describedby="error-${question.id}">
+				<p id="error-${question.id}" class="quiz-error-text quiz-error-hidden"></p>
+			</div>
+		`;
 	}
 
 	renderDatePart(question, response) {
@@ -520,8 +520,8 @@ class ProductQuiz {
                     <option value="">${placeholder}</option>
                     ${options.map(option => `<option value="${option.id}" ${response.answer === option.id ? "selected" : ""}>${option.text}</option>`).join("")}
                 </select>
-            </div>
-        `;
+			</div>
+		`;
 	}
 
 	_getDatePartOptions(part) {
@@ -559,23 +559,23 @@ class ProductQuiz {
 
 	renderTextarea(question, response) {
 		return `
-            <div class="quiz-question-section">
-                <textarea id="question-${question.id}" class="quiz-textarea" rows="4"
-                    placeholder="${question.placeholder || "Type your answer here..."}">${response.answer || ""}</textarea>
-            </div>
-        `;
+			<div class="quiz-question-section">
+				<textarea id="question-${question.id}" class="quiz-textarea" rows="4"
+					placeholder="${question.placeholder || "Type your answer here..."}">${response.answer || ""}</textarea>
+			</div>
+		`;
 	}
 
 	renderRating(question, response) {
 		return `
-            <div class="quiz-spacing-container">
-                <input type="range" id="question-${question.id}" class="quiz-range"
-                    min="1" max="10" step="1" value="${response.answer || 5}">
-                <div class="quiz-range-labels">
+			<div class="quiz-spacing-container">
+				<input type="range" id="question-${question.id}" class="quiz-range"
+					min="1" max="10" step="1" value="${response.answer || 5}">
+				<div class="quiz-range-labels">
                     <span>1</span><span>5</span><span>10</span>
-                </div>
-            </div>
-        `;
+				</div>
+			</div>
+		`;
 	}
 
 	renderDateInput(question, response) {
@@ -1566,18 +1566,18 @@ class ProductQuiz {
 
 	_generateErrorResultsHTML(bookingUrl, errorMessage) {
 		return `
-            <div class="quiz-results-container">
-                <div class="quiz-results-header">
-                    <h2 class="quiz-results-title">Quiz Complete</h2>
-                    <p class="quiz-results-subtitle">We've received your information.</p>
-                </div>
-                <div class="quiz-coverage-card" style="border-left: 4px solid #f56565; background-color: #fed7d7;">
+			<div class="quiz-results-container">
+				<div class="quiz-results-header">
+					<h2 class="quiz-results-title">Quiz Complete</h2>
+					<p class="quiz-results-subtitle">We've received your information.</p>
+				</div>
+				<div class="quiz-coverage-card" style="border-left: 4px solid #f56565; background-color: #fed7d7;">
                     <h3 class="quiz-coverage-card-title" style="color: #c53030;">⚠️ Eligibility Check Error</h3>
                     <p style="color: #c53030;">There was an error checking your insurance eligibility.</p>
-                </div>
+					</div>
                 <a href="${bookingUrl}" class="quiz-booking-button">Continue to Support</a>
-            </div>
-        `;
+			</div>
+		`;
 	}
 
 	_generateEligibleResultsHTML(eligibilityData, bookingUrl) {
@@ -1586,40 +1586,40 @@ class ProductQuiz {
 		const copay = eligibilityData.copay || 0;
 
 		return `
-            <div class="quiz-results-container">
-                <div class="quiz-results-header">
+			<div class="quiz-results-container">
+				<div class="quiz-results-header">
                     <h2 class="quiz-results-title">${messages.title || "Great news! You're covered"}</h2>
                     <p class="quiz-results-subtitle">${messages.subtitle || "Your insurance covers your consultations"}</p>
-                </div>
-                <div class="quiz-coverage-card">
-                    <h3 class="quiz-coverage-card-title">Here's Your Offer</h3>
-                    <div class="quiz-coverage-pricing">
-                        <div class="quiz-coverage-service-item">
-                            <div class="quiz-coverage-service">Initial consultation – 60 minutes</div>
-                            <div class="quiz-coverage-cost">
-                                <span class="quiz-coverage-copay">Co-pay: $${copay}*</span>
-                                <span class="quiz-coverage-original-price">$100</span>
-                            </div>
-                        </div>
-                        <div class="quiz-coverage-service-item">
-                            <div class="quiz-coverage-service">Follow-up consultation – 30 minutes</div>
-                            <div class="quiz-coverage-cost">
-                                <span class="quiz-coverage-copay">Co-pay: $${copay}*</span>
-                                <span class="quiz-coverage-original-price">$50</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="quiz-coverage-divider"></div>
-                    <div class="quiz-coverage-benefits">
-                        <div class="quiz-coverage-benefit">
-                            <span class="quiz-coverage-benefit-text">${sessionsCovered} covered sessions remaining</span>
-                        </div>
-                    </div>
-                </div>
+				</div>
+				<div class="quiz-coverage-card">
+					<h3 class="quiz-coverage-card-title">Here's Your Offer</h3>
+					<div class="quiz-coverage-pricing">
+						<div class="quiz-coverage-service-item">
+							<div class="quiz-coverage-service">Initial consultation – 60 minutes</div>
+							<div class="quiz-coverage-cost">
+								<span class="quiz-coverage-copay">Co-pay: $${copay}*</span>
+								<span class="quiz-coverage-original-price">$100</span>
+							</div>
+						</div>
+						<div class="quiz-coverage-service-item">
+							<div class="quiz-coverage-service">Follow-up consultation – 30 minutes</div>
+							<div class="quiz-coverage-cost">
+								<span class="quiz-coverage-copay">Co-pay: $${copay}*</span>
+								<span class="quiz-coverage-original-price">$50</span>
+							</div>
+						</div>
+					</div>
+					<div class="quiz-coverage-divider"></div>
+					<div class="quiz-coverage-benefits">
+						<div class="quiz-coverage-benefit">
+							<span class="quiz-coverage-benefit-text">${sessionsCovered} covered sessions remaining</span>
+						</div>
+						</div>
+					</div>
                 <a href="${bookingUrl}" class="quiz-booking-button">Proceed to booking</a>
-                ${this._generateFAQHTML()}
-            </div>
-        `;
+				${this._generateFAQHTML()}
+			</div>
+		`;
 	}
 
 	_generateIneligibleResultsHTML(eligibilityData, bookingUrl) {
@@ -1627,18 +1627,18 @@ class ProductQuiz {
 		const userMessage = eligibilityData.userMessage || "Your eligibility check is complete.";
 
 		return `
-            <div class="quiz-results-container">
-                <div class="quiz-results-header">
+			<div class="quiz-results-container">
+				<div class="quiz-results-header">
                     <h2 class="quiz-results-title">${messages.title || "Thanks for completing the quiz!"}</h2>
                     <p class="quiz-results-subtitle">${messages.subtitle || "We're ready to help you."}</p>
-                </div>
+				</div>
                 <div class="quiz-coverage-card">
                     <h3 class="quiz-coverage-card-title">Insurance Coverage Check</h3>
                     <p>${userMessage}</p>
-                </div>
+				</div>
                 <a href="${bookingUrl}" class="quiz-booking-button">Continue with Next Steps</a>
-            </div>
-        `;
+			</div>
+		`;
 	}
 
 	_generateFAQHTML() {
@@ -1646,29 +1646,29 @@ class ProductQuiz {
 		if (faqData.length === 0) return "";
 
 		return `
-            <div class="quiz-faq-section">
-                <div class="quiz-faq-divider"></div>
+			<div class="quiz-faq-section">
+				<div class="quiz-faq-divider"></div>
                 ${faqData
 									.map(
 										faq => `
                     <div class="quiz-faq-item" data-faq="${faq.id}" tabindex="0" role="button" aria-expanded="false">
-                        <div class="quiz-faq-content">
+					<div class="quiz-faq-content">
                             <div class="quiz-faq-question-collapsed">${faq.question}</div>
                             <div class="quiz-faq-answer">${faq.answer}</div>
-                        </div>
-                        <div class="quiz-faq-toggle">
+					</div>
+					<div class="quiz-faq-toggle">
                             <svg class="quiz-faq-toggle-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                <path d="M4 12H20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M12 4V20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="quiz-faq-divider"></div>
+							<path d="M4 12H20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+							<path d="M12 4V20" stroke="#454545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+						</svg>
+					</div>
+				</div>
+				<div class="quiz-faq-divider"></div>
                 `
 									)
 									.join("")}
-            </div>
-        `;
+			</div>
+		`;
 	}
 
 	_attachFAQListeners() {
@@ -1715,23 +1715,23 @@ class ProductQuiz {
 		}
 
 		return `
-            <div class="quiz-payer-search-container">
+			<div class="quiz-payer-search-container">
                 <input type="text"
-                       id="question-${question.id}"
+					id="question-${question.id}"
                        class="quiz-payer-search-input ${displayValue ? "quiz-input-valid" : ""}"
-                       placeholder="${placeholder}"
+					placeholder="${placeholder}"
                        value="${displayValue}"
-                       autocomplete="off"
+					autocomplete="off"
                        aria-describedby="error-${question.id}">
                 <svg class="quiz-payer-search-search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path d="M7.333 12.667A5.333 5.333 0 1 0 7.333 2a5.333 5.333 0 0 0 0 10.667ZM14 14l-2.9-2.9" stroke="currentColor" stroke-width="1.33" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                <div class="quiz-payer-search-dropdown" id="search-dropdown-${question.id}" style="display: none;">
+				<div class="quiz-payer-search-dropdown" id="search-dropdown-${question.id}" style="display: none;">
                     <div class="quiz-payer-search-results"></div>
-                </div>
-                <p id="error-${question.id}" class="quiz-error-text quiz-error-hidden"></p>
-            </div>
-        `;
+				</div>
+				<p id="error-${question.id}" class="quiz-error-text quiz-error-hidden"></p>
+				</div>
+			`;
 	}
 
 	_attachPayerSearchListeners(question) {
@@ -1811,7 +1811,17 @@ class ProductQuiz {
 	}
 
 	_showInitialPayerList(dropdown, onSelectCallback) {
-		const commonPayers = this.quizData.commonPayers || [];
+		const commonPayers = this.quizData?.commonPayers || [];
+
+		// If no common payers data, show a loading message
+		if (commonPayers.length === 0) {
+			const resultsContainer = dropdown.querySelector(".quiz-payer-search-results");
+			if (resultsContainer) {
+				resultsContainer.innerHTML = `<div class="quiz-payer-search-loading">Loading insurance plans...</div>`;
+			}
+			return;
+		}
+
 		const results = commonPayers.map(payer => ({ payer }));
 		this._renderSearchResults(results, "", dropdown, onSelectCallback);
 	}
@@ -1830,12 +1840,17 @@ class ProductQuiz {
 	}
 
 	_filterCommonPayers(query) {
-		const commonPayers = this.quizData.commonPayers || [];
+		const commonPayers = this.quizData?.commonPayers || [];
+
+		if (commonPayers.length === 0) {
+			return [];
+		}
+
 		const lowerQuery = query.toLowerCase();
 
 		return commonPayers
 			.filter(payer => {
-				return payer.displayName.toLowerCase().includes(lowerQuery) || payer.stediId.toLowerCase().includes(lowerQuery) || payer.aliases.some(alias => alias.toLowerCase().includes(lowerQuery));
+				return payer.displayName?.toLowerCase().includes(lowerQuery) || payer.stediId?.toLowerCase().includes(lowerQuery) || payer.aliases?.some(alias => alias.toLowerCase().includes(lowerQuery));
 			})
 			.map(payer => ({ payer }))
 			.slice(0, 5);
@@ -1853,14 +1868,14 @@ class ProductQuiz {
 					const payer = item.payer;
 					const highlightedName = this._highlightSearchTerm(payer.displayName, query);
 					return `
-                    <div class="quiz-payer-search-item" data-index="${index}">
+					<div class="quiz-payer-search-item" data-index="${index}">
                         <div class="quiz-payer-search-item-name">${highlightedName}</div>
-                        <div class="quiz-payer-search-item-details">
-                            <span class="quiz-payer-search-item-id">${payer.stediId}</span>
+						<div class="quiz-payer-search-item-details">
+							<span class="quiz-payer-search-item-id">${payer.stediId}</span>
                             ${payer.aliases?.length > 0 ? `• ${payer.aliases.slice(0, 2).join(", ")}` : ""}
-                        </div>
-                    </div>
-                `;
+						</div>
+					</div>
+				`;
 				})
 				.join("");
 
@@ -2072,6 +2087,12 @@ class ProductQuiz {
 // =============================================================================
 
 document.addEventListener("DOMContentLoaded", () => {
+	// Prevent multiple instances
+	if (window.productQuiz) {
+		console.warn("ProductQuiz already initialized");
+		return;
+	}
+
 	const quiz = new ProductQuiz();
 	window.productQuiz = quiz; // For debugging
 });
