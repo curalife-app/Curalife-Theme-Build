@@ -1289,8 +1289,10 @@ class ProductQuiz {
 	_updateDropdownColor(dropdown) {
 		if (dropdown.value === "" || dropdown.value === dropdown.options[0].value) {
 			dropdown.style.color = "#B0B0B0";
+			dropdown.classList.remove("quiz-dropdown-selected");
 		} else {
 			dropdown.style.color = "var(--quiz-text-primary)";
+			dropdown.classList.add("quiz-dropdown-selected");
 		}
 	}
 
