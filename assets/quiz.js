@@ -1223,8 +1223,8 @@ class ModularQuiz {
 
 			const payload = this._buildSubmissionPayload();
 
-			this._hideElement(this.navigation);
-			this._hideElement(this.progressSection);
+			this._toggleElement(this.navigationButtons, false);
+			this._toggleElement(this.progressSection, false);
 			this._startLoadingMessages();
 
 			// Check if quiz has webhook processing
@@ -1236,13 +1236,14 @@ class ModularQuiz {
 			}
 
 			this._stopLoadingMessages();
-			this.showResults(resultUrl, !!resultData, resultData);
+			const webhookSuccess = !resultData || resultData.eligibilityStatus !== "ERROR";
+			this.showResults(resultUrl, webhookSuccess, resultData);
 
 			if (window.analytics?.track) {
 				window.analytics.track("Quiz Completed", {
 					quizId: this.quizData?.id || "quiz",
 					quizType: this.quizData?.type || "general",
-					successfullySubmitted: !!resultData
+					successfullySubmitted: webhookSuccess
 				});
 			}
 		} catch (error) {
