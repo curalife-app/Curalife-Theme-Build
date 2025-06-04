@@ -4,7 +4,6 @@
 
 const ELEMENT_SELECTORS = {
 	MAIN_CONTAINER: "#quiz-container",
-	INTRO: ".quiz-intro",
 	QUESTIONS: ".quiz-questions",
 	RESULTS: ".quiz-results",
 	ERROR: ".quiz-error",
@@ -13,9 +12,7 @@ const ELEMENT_SELECTORS = {
 	PROGRESS_BAR: ".quiz-progress-bar",
 	QUESTION_CONTAINER: ".quiz-question-container",
 	NAVIGATION_BUTTONS: ".quiz-navigation",
-	PREV_BUTTON: "#quiz-prev-button",
-	NEXT_BUTTON: "#quiz-next-button",
-	START_BUTTON: "#quiz-start-button"
+	NEXT_BUTTON: "#quiz-next-button"
 };
 
 class ModularQuiz {
@@ -24,8 +21,6 @@ class ModularQuiz {
 		if (!this._isInitialized) return;
 
 		if (!this._validateEssentialElements()) return;
-
-		// Configuration will be set in _initializeDOMElements after container is found
 
 		// State
 		this.quizData = null;
@@ -70,7 +65,7 @@ class ModularQuiz {
 	}
 
 	_validateEssentialElements() {
-		const essentialElements = ["intro", "questions", "results", "error", "loading", "progressBar", "questionContainer", "navigationButtons", "prevButton", "nextButton"];
+		const essentialElements = ["questions", "results", "error", "loading", "progressBar", "questionContainer", "navigationButtons", "nextButton"];
 
 		for (const element of essentialElements) {
 			if (!this[element]) {
@@ -133,7 +128,6 @@ class ModularQuiz {
 	}
 
 	async _loadAndDisplayFirstStep() {
-		this._toggleElement(this.intro, false);
 		this._toggleElement(this.questions, false);
 		this._toggleElement(this.loading, true);
 
@@ -632,9 +626,6 @@ class ModularQuiz {
 
 		if (!shouldShowNavigation) return;
 
-		if (this.prevButton) {
-			this.prevButton.style.display = "none";
-		}
 		const isLastStep = this.currentStepIndex === this.quizData.steps.length - 1;
 		const isLastQuestionInStep = isFormStep ? true : step.questions ? this.currentQuestionIndex === step.questions.length - 1 : true;
 
