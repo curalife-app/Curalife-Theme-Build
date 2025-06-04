@@ -19,7 +19,7 @@ const ELEMENT_SELECTORS = {
 	ELIGIBILITY_CHECK: ".quiz-eligibility-check",
 	PROGRESS_BAR: ".quiz-progress-bar",
 	QUESTION_CONTAINER: ".quiz-question-container",
-	NAVIGATION: ".quiz-navigation",
+	NAVIGATION_BUTTONS: ".quiz-navigation",
 	PREV_BUTTON: "#quiz-prev-button",
 	NEXT_BUTTON: "#quiz-next-button",
 	START_BUTTON: "#quiz-start-button"
