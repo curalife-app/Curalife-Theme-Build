@@ -1672,6 +1672,8 @@ class ModularQuiz {
 		} else if (eligibilityStatus === "PAYER_ERROR" && resultData.error?.isAAAError) {
 			// Handle PAYER_ERROR that contains AAA error information
 			return this._generateAAAErrorResultsHTML(resultData, resultUrl);
+		} else if (eligibilityStatus === "TEST_DATA_ERROR") {
+			return this._generateTestDataErrorResultsHTML(resultData, resultUrl);
 		} else {
 			return this._generateIneligibleInsuranceResultsHTML(resultData, resultUrl);
 		}
@@ -1948,6 +1950,87 @@ class ModularQuiz {
 						<a href="${resultUrl}" class="quiz-booking-button">Continue with Next Steps</a>
 					</div>
 				</div>
+			</div>
+		`;
+	}
+
+	_generateTestDataErrorResultsHTML(resultData, resultUrl) {
+		const error = resultData.error || {};
+		const errorCode = error.code || "33";
+		const errorMessage = error.message || "Test data validation failed";
+		const errorDetails = error.details || "";
+		const errorField = error.field || "";
+
+		return `
+			<div class="quiz-results-container">
+				<div class="quiz-results-header">
+                    <h2 class="quiz-results-title">Test Data Issue Detected</h2>
+                    <p class="quiz-results-subtitle">We noticed you're using test data that needs to be adjusted.</p>
+				</div>
+
+				<div class="quiz-coverage-card quiz-error-card">
+                    <h3 class="quiz-coverage-card-title quiz-error-card-title">🧪 Test Data Error (Code ${errorCode})</h3>
+
+					<div class="quiz-error-main-message">
+						<p class="quiz-error-primary-text">${errorMessage}</p>
+						<p class="quiz-error-secondary-text">${resultData.userMessage}</p>
+					</div>
+
+					${
+						errorDetails
+							? `
+						<div class="quiz-error-guidance-section">
+							<p class="quiz-error-section-title"><strong>How to Fix:</strong></p>
+							<p class="quiz-error-guidance-text">${errorDetails}</p>
+						</div>
+					`
+							: ""
+					}
+
+					${
+						errorField
+							? `
+						<div class="quiz-error-metadata-section">
+							<p class="quiz-error-section-title"><strong>Field with Issue:</strong></p>
+							<div class="quiz-error-metadata-badges">
+								<span class="quiz-error-badge">${errorField}</span>
+							</div>
+						</div>
+					`
+							: ""
+					}
+				</div>
+
+				<div class="quiz-action-section">
+					<div class="quiz-action-content">
+						<div class="quiz-action-header">
+							<h3 class="quiz-action-title">Testing Options</h3>
+						</div>
+						<div class="quiz-action-details">
+							<div class="quiz-action-info">
+								<svg class="quiz-action-info-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M10 18.3333C14.6023 18.3333 18.3333 14.6023 18.3333 9.99996C18.3333 5.39759 14.6023 1.66663 10 1.66663C5.39762 1.66663 1.66666 5.39759 1.66666 9.99996C1.66666 14.6023 5.39762 18.3333 10 18.3333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+									<path d="M7.5 9.99996L9.16667 11.6666L12.5 8.33329" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-info-text">For testing the eligibility system, please use "John" as the first name with the test insurance data provided.</div>
+							</div>
+							<div class="quiz-action-feature">
+								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M18.3333 14.1667C18.3333 15.0871 17.5871 15.8333 16.6667 15.8333H5.83333L1.66666 20V3.33333C1.66666 2.41286 2.41285 1.66667 3.33333 1.66667H16.6667C17.5871 1.66667 18.3333 2.41286 18.3333 3.33333V14.1667Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-feature-text">Contact support to set up live testing with real insurance data</div>
+							</div>
+							<div class="quiz-action-feature">
+								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M6.66666 2.5V5.83333M13.3333 2.5V5.83333M2.5 9.16667H17.5M4.16666 3.33333H15.8333C16.7538 3.33333 17.5 4.07952 17.5 5V16.6667C17.5 17.5871 16.7538 18.3333 15.8333 18.3333H4.16666C3.24619 18.3333 2.5 17.5871 2.5 16.6667V5C2.5 4.07952 3.24619 3.33333 4.16666 3.33333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-feature-text">Try again with the correct test data format</div>
+							</div>
+						</div>
+						<a href="${resultUrl}" class="quiz-booking-button">Continue</a>
+					</div>
+				</div>
+				${this._generateFAQHTML()}
 			</div>
 		`;
 	}
