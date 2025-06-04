@@ -1704,43 +1704,39 @@ class ProductQuiz {
 
 	renderPayerSearch(question, response) {
 		const selectedPayer = response.answer;
-		const placeholder = question.placeholder || "Select your insurance plan...";
+		const placeholder = question.placeholder || "Start typing to search for your insurance plan...";
+		let selectedDisplayName = "";
 
-		let html = `
+		if (selectedPayer && typeof selectedPayer === "string") {
+			selectedDisplayName = this._resolvePayerDisplayName(selectedPayer) || "";
+		}
+
+		return `
 			<div class="quiz-payer-search-container">
-                <button type="button" id="question-${question.id}" class="quiz-payer-search-trigger placeholder" aria-describedby="error-${question.id}" aria-expanded="false">
-                    <span class="quiz-payer-search-trigger-text">${placeholder}</span>
-                    <svg class="quiz-payer-search-dropdown-icon" width="12" height="7" viewBox="0 0 12 7" fill="none">
-                        <path d="M1.03888 0.294581C1.42815 -0.0946914 2.05918 -0.0950353 2.44888 0.293813L5.62716 3.46517C6.01751 3.85467 6.64948 3.85467 7.03983 3.46517L10.2181 0.293812C10.6078 -0.0950355 11.2388 -0.0946913 11.6281 0.294581C12.0177 0.684154 12.0177 1.31578 11.6281 1.70535L7.0406 6.29286C6.65008 6.68338 6.01691 6.68338 5.62639 6.29286L1.03888 1.70535C0.649308 1.31578 0.649307 0.684154 1.03888 0.294581Z" fill="#4F4F4F"/>
+                <div class="quiz-payer-search-input-wrapper">
+                    <input type="text" id="question-${question.id}" class="quiz-payer-search-input"
+                           placeholder="${placeholder}"
+                           value="${selectedDisplayName}"
+                           autocomplete="off"
+                           aria-describedby="error-${question.id}">
+                    <svg class="quiz-payer-search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M15 15L11.5 11.5M13 7C13 10.3137 10.3137 13 7 13C3.68629 13 1 10.3137 1 7C1 3.68629 3.68629 1 7 1C10.3137 1 13 3.68629 13 7Z" stroke="#B0B0B0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-                </button>
+                </div>
 				<div class="quiz-payer-search-dropdown" id="search-dropdown-${question.id}" style="display: none;">
-                    <div class="quiz-payer-search-input-container">
-                        <input type="text" class="quiz-payer-search-internal-input" placeholder="Search for your insurance plan..." autocomplete="off">
-                    </div>
                     <div class="quiz-payer-search-results"></div>
 				</div>
 				<p id="error-${question.id}" class="quiz-error-text quiz-error-hidden"></p>
             </div>
         `;
-
-		if (selectedPayer && typeof selectedPayer === "string") {
-			const resolvedDisplayName = this._resolvePayerDisplayName(selectedPayer);
-			if (resolvedDisplayName) {
-				html = html.replace('class="quiz-payer-search-trigger placeholder"', 'class="quiz-payer-search-trigger quiz-input-valid"');
-				html = html.replace(placeholder, resolvedDisplayName);
-			}
-		}
-
-		return html;
 	}
 
 	_attachPayerSearchListeners(question) {
-		const searchTrigger = this.questionContainer.querySelector(`#question-${question.id}`);
+		const searchInput = this.questionContainer.querySelector(`#question-${question.id}`);
 		const dropdown = this.questionContainer.querySelector(`#search-dropdown-${question.id}`);
 
-		if (searchTrigger && dropdown) {
-			this._setupPayerSearchBehavior(question, searchTrigger, dropdown, selectedPayer => {
+		if (searchInput && dropdown) {
+			this._setupPayerSearchBehavior(question, searchInput, dropdown, selectedPayer => {
 				this.handleAnswer(selectedPayer);
 			});
 		}
@@ -1748,11 +1744,11 @@ class ProductQuiz {
 
 	_attachPayerSearchFormListeners(question) {
 		setTimeout(() => {
-			const searchTrigger = this.questionContainer.querySelector(`#question-${question.id}`);
+			const searchInput = this.questionContainer.querySelector(`#question-${question.id}`);
 			const dropdown = this.questionContainer.querySelector(`#search-dropdown-${question.id}`);
 
-			if (searchTrigger && dropdown) {
-				this._setupPayerSearchBehavior(question, searchTrigger, dropdown, selectedPayer => {
+			if (searchInput && dropdown) {
+				this._setupPayerSearchBehavior(question, searchInput, dropdown, selectedPayer => {
 					this.handleFormAnswer(question.id, selectedPayer);
 					this.updateNavigation();
 				});
@@ -1760,25 +1756,35 @@ class ProductQuiz {
 		}, 100);
 	}
 
-	_setupPayerSearchBehavior(question, searchTrigger, dropdown, onSelectCallback) {
+	_setupPayerSearchBehavior(question, searchInput, dropdown, onSelectCallback) {
 		let isOpen = false;
-		const internalSearchInput = dropdown.querySelector(".quiz-payer-search-internal-input");
-		const container = searchTrigger.closest(".quiz-payer-search-container");
+		const container = searchInput.closest(".quiz-payer-search-container");
 
-		searchTrigger.addEventListener("click", () => {
-			if (isOpen) {
-				this._closePayerSearchDropdown(dropdown, container, searchTrigger);
-				isOpen = false;
-			} else {
-				this._openPayerSearchDropdown(dropdown, container, searchTrigger);
+		// Show dropdown when input is focused or clicked
+		searchInput.addEventListener("focus", () => {
+			if (!isOpen) {
+				this._openPayerSearchDropdown(dropdown, container, searchInput);
 				isOpen = true;
 				this._showInitialPayerList(dropdown, onSelectCallback);
-				setTimeout(() => internalSearchInput.focus(), 50);
 			}
 		});
 
-		internalSearchInput.addEventListener("input", () => {
-			const query = internalSearchInput.value.trim();
+		searchInput.addEventListener("click", () => {
+			if (!isOpen) {
+				this._openPayerSearchDropdown(dropdown, container, searchInput);
+				isOpen = true;
+				this._showInitialPayerList(dropdown, onSelectCallback);
+			}
+		});
+
+		// Handle typing in search input
+		searchInput.addEventListener("input", () => {
+			if (!isOpen) {
+				this._openPayerSearchDropdown(dropdown, container, searchInput);
+				isOpen = true;
+			}
+
+			const query = searchInput.value.trim();
 			if (query.length > 0) {
 				setTimeout(() => this._searchPayers(query, dropdown, onSelectCallback), 300);
 			} else {
@@ -1786,9 +1792,10 @@ class ProductQuiz {
 			}
 		});
 
+		// Close dropdown when clicking outside
 		document.addEventListener("click", e => {
 			if (!container.contains(e.target)) {
-				this._closePayerSearchDropdown(dropdown, container, searchTrigger);
+				this._closePayerSearchDropdown(dropdown, container, searchInput);
 				isOpen = false;
 			}
 		});
@@ -1852,11 +1859,11 @@ class ProductQuiz {
 
 			const resultItems = resultsContainer.querySelectorAll(".quiz-payer-search-item");
 			const container = dropdown.closest(".quiz-payer-search-container");
-			const searchTrigger = container.querySelector(".quiz-payer-search-trigger");
+			const searchInput = container.querySelector(".quiz-payer-search-input");
 
 			resultItems.forEach((item, index) => {
 				item.addEventListener("click", () => {
-					this._selectPayer(results[index].payer, searchTrigger, dropdown, onSelectCallback);
+					this._selectPayer(results[index].payer, searchInput, dropdown, onSelectCallback);
 				});
 			});
 		}
@@ -1865,38 +1872,27 @@ class ProductQuiz {
 		dropdown.style.display = "block";
 	}
 
-	_selectPayer(payer, searchTrigger, dropdown, onSelectCallback) {
-		const triggerText = searchTrigger.querySelector(".quiz-payer-search-trigger-text");
-		if (triggerText) {
-			triggerText.textContent = payer.displayName;
-		}
+	_selectPayer(payer, searchInput, dropdown, onSelectCallback) {
+		// Update the search input with the selected payer name
+		searchInput.value = payer.displayName;
+		searchInput.classList.add("quiz-input-valid");
 
-		searchTrigger.classList.remove("placeholder");
-		searchTrigger.classList.add("quiz-input-valid");
-
-		const container = searchTrigger.closest(".quiz-payer-search-container");
-		this._closePayerSearchDropdown(dropdown, container, searchTrigger);
+		const container = searchInput.closest(".quiz-payer-search-container");
+		this._closePayerSearchDropdown(dropdown, container, searchInput);
 
 		onSelectCallback(payer.primaryPayerId);
 	}
 
-	_openPayerSearchDropdown(dropdown, container, searchTrigger) {
+	_openPayerSearchDropdown(dropdown, container, searchInput) {
 		dropdown.classList.add("visible");
 		dropdown.style.display = "block";
 		container.classList.add("open");
-		searchTrigger.setAttribute("aria-expanded", "true");
 	}
 
-	_closePayerSearchDropdown(dropdown, container, searchTrigger) {
+	_closePayerSearchDropdown(dropdown, container, searchInput) {
 		dropdown.classList.remove("visible");
 		dropdown.style.display = "none";
 		container.classList.remove("open");
-		searchTrigger.setAttribute("aria-expanded", "false");
-
-		const internalInput = dropdown.querySelector(".quiz-payer-search-internal-input");
-		if (internalInput) {
-			internalInput.value = "";
-		}
 	}
 
 	_highlightSearchTerm(text, searchTerm) {
