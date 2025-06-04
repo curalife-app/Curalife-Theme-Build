@@ -191,11 +191,15 @@ class ModularQuiz {
 		this.quizData = JSON.parse(text);
 		this.config = this.quizData.config || {};
 
-		// Check for external API configuration if needed by quiz type
-		if (this.quizData.config?.features?.payerSearch && this.quizData.config?.apiConfig?.stediApiKey) {
-			console.log("External API configured for payer search");
-		} else if (this.quizData.config?.features?.payerSearch) {
-			console.log("Using local payer search only - add stediApiKey to config.apiConfig for full search");
+		// Check for external API configuration for payer search
+		const hasPayerSearchQuestions = this.quizData.steps?.some(step => step.questions?.some(q => q.type === "payer-search"));
+
+		if (hasPayerSearchQuestions) {
+			if (this.quizData.config?.apiConfig?.stediApiKey) {
+				console.log("External API configured for payer search");
+			} else {
+				console.log("Using local payer search only - add stediApiKey to config.apiConfig for full search");
+			}
 		}
 
 		return this.quizData;
@@ -991,9 +995,7 @@ class ModularQuiz {
 				this._attachRatingListeners(question);
 				break;
 			case "payer-search":
-				if (this.quizData.config?.features?.payerSearch) {
-					this._attachPayerSearchListeners(question);
-				}
+				this._attachPayerSearchListeners(question);
 				break;
 		}
 	}
@@ -1096,9 +1098,7 @@ class ModularQuiz {
 				this._attachFormCheckboxListeners(question);
 				break;
 			case "payer-search":
-				if (this.quizData.config?.features?.payerSearch) {
-					this._attachPayerSearchFormListeners(question);
-				}
+				this._attachPayerSearchFormListeners(question);
 				break;
 		}
 	}
