@@ -73,11 +73,6 @@ class ProductQuiz {
 
 		this.navHeader = this.container.querySelector("#quiz-nav-header");
 		this.progressSection = this.container.querySelector("#quiz-progress-section");
-
-		// Debug navigation elements
-		const allNavElements = document.querySelectorAll(".quiz-navigation");
-		console.log("Found navigation elements:", allNavElements.length, allNavElements);
-
 		this._isInitialized = true;
 	}
 
@@ -347,7 +342,7 @@ class ProductQuiz {
 				<div class="quiz-space-y-6">
 					${this._processFormQuestions(step.questions)}
 				</div>
-				<button class="quiz-nav-button quiz-nav-button--primary quiz-form-button" id="quiz-form-next-button">
+				<button class="quiz-form-button" id="quiz-form-next-button">
 					${buttonText}
 				</button>
 				${step.legal ? `<p class="quiz-legal-form">${step.legal}</p>` : ""}
@@ -2092,10 +2087,6 @@ class ProductQuiz {
 // =============================================================================
 
 document.addEventListener("DOMContentLoaded", () => {
-	// Debug all quiz containers
-	const allQuizContainers = document.querySelectorAll("#product-quiz");
-	console.log("Found quiz containers:", allQuizContainers.length, allQuizContainers);
-
 	// Prevent multiple instances
 	if (window.productQuiz) {
 		console.warn("ProductQuiz already initialized");
