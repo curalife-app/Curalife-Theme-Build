@@ -1737,6 +1737,7 @@ class ProductQuiz {
                 </div>
 				<div class="quiz-payer-search-dropdown" id="search-dropdown-${question.id}" style="display: none;">
                     <div class="quiz-payer-search-dropdown-header">
+                        <span class="quiz-payer-search-dropdown-title">Suggestions</span>
                         <button class="quiz-payer-search-close-btn" type="button" aria-label="Close dropdown">
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M12 4L4 12M4 4L12 12" stroke="#6B7280" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -2049,6 +2050,22 @@ class ProductQuiz {
 		dropdown.classList.add("visible");
 		dropdown.style.display = "block";
 		container.classList.add("open");
+
+		// On mobile, scroll the search input to the top so dropdown is visible
+		const isMobile = window.innerWidth <= 768;
+		if (isMobile) {
+			setTimeout(() => {
+				const inputRect = searchInput.getBoundingClientRect();
+				const offset = 20; // Small offset from top
+				const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
+				const targetScrollY = currentScrollY + inputRect.top - offset;
+
+				window.scrollTo({
+					top: Math.max(0, targetScrollY),
+					behavior: "smooth"
+				});
+			}, 100); // Small delay to ensure dropdown is visible
+		}
 	}
 
 	_closePayerSearchDropdown(dropdown, container, searchInput) {
