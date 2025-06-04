@@ -1743,23 +1743,35 @@ class ProductQuiz {
 		const searchInput = this.questionContainer.querySelector(`#question-${question.id}`);
 		const dropdown = this.questionContainer.querySelector(`#search-dropdown-${question.id}`);
 
+		console.log("Debug - Attaching payer search listeners");
+		console.log("Debug - Search input found:", !!searchInput);
+		console.log("Debug - Dropdown found:", !!dropdown);
+
 		if (searchInput && dropdown) {
 			this._setupPayerSearchBehavior(question, searchInput, dropdown, selectedPayer => {
 				this.handleAnswer(selectedPayer);
 			});
+		} else {
+			console.error("Debug - Missing elements for payer search");
 		}
 	}
 
 	_attachPayerSearchFormListeners(question) {
+		console.log("Debug - Setting up form payer search listeners with delay");
 		setTimeout(() => {
 			const searchInput = this.questionContainer.querySelector(`#question-${question.id}`);
 			const dropdown = this.questionContainer.querySelector(`#search-dropdown-${question.id}`);
+
+			console.log("Debug - Form search input found:", !!searchInput);
+			console.log("Debug - Form dropdown found:", !!dropdown);
 
 			if (searchInput && dropdown) {
 				this._setupPayerSearchBehavior(question, searchInput, dropdown, selectedPayer => {
 					this.handleFormAnswer(question.id, selectedPayer);
 					this.updateNavigation();
 				});
+			} else {
+				console.error("Debug - Missing form elements for payer search");
 			}
 		}, 100);
 	}
@@ -1768,8 +1780,12 @@ class ProductQuiz {
 		let isOpen = false;
 		const container = searchInput.closest(".quiz-payer-search-container");
 
+		console.log("Debug - Setting up payer search behavior");
+		console.log("Debug - Container found:", !!container);
+
 		// Show dropdown when input is focused or clicked
 		searchInput.addEventListener("focus", () => {
+			console.log("Debug - Focus event triggered");
 			if (!isOpen) {
 				this._openPayerSearchDropdown(dropdown, container, searchInput);
 				isOpen = true;
@@ -1778,6 +1794,7 @@ class ProductQuiz {
 		});
 
 		searchInput.addEventListener("click", () => {
+			console.log("Debug - Click event triggered");
 			if (!isOpen) {
 				this._openPayerSearchDropdown(dropdown, container, searchInput);
 				isOpen = true;
@@ -1787,12 +1804,14 @@ class ProductQuiz {
 
 		// Handle typing in search input
 		searchInput.addEventListener("input", () => {
+			console.log("Debug - Input event triggered, value:", searchInput.value);
 			if (!isOpen) {
 				this._openPayerSearchDropdown(dropdown, container, searchInput);
 				isOpen = true;
 			}
 
 			const query = searchInput.value.trim();
+			console.log("Debug - Search query:", query);
 			if (query.length > 0) {
 				setTimeout(() => this._searchPayers(query, dropdown, onSelectCallback), 300);
 			} else {
