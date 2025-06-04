@@ -1367,6 +1367,7 @@ class ModularQuiz {
 
 	async finishQuiz() {
 		const resultUrl = this.container.getAttribute("data-result-url") || this.container.getAttribute("data-booking-url") || "/quiz-complete";
+		console.log("Quiz finishing - result URL:", resultUrl);
 
 		try {
 			this.submitting = true;
@@ -1374,6 +1375,7 @@ class ModularQuiz {
 			this.nextButton.innerHTML = `<div class="quiz-spinner"></div>Processing...`;
 
 			const payload = this._buildSubmissionPayload();
+			console.log("Payload built:", payload);
 
 			this._hideElement(this.navigation);
 			this._hideElement(this.progressSection);
@@ -1381,13 +1383,19 @@ class ModularQuiz {
 
 			// Check if quiz has webhook processing
 			const webhookUrl = this.container.getAttribute("data-webhook-url") || this.quizData.config?.webhookUrl;
+			console.log("Webhook URL:", webhookUrl);
 			let resultData = null;
 
 			if (webhookUrl) {
+				console.log("Submitting to webhook...");
 				resultData = await this._submitToWebhook(webhookUrl, payload);
+				console.log("Webhook result:", resultData);
+			} else {
+				console.log("No webhook URL configured - showing generic results");
 			}
 
 			this._stopLoadingMessages();
+			console.log("Showing results with:", { resultUrl, hasResultData: !!resultData, resultData });
 			this.showResults(resultUrl, !!resultData, resultData);
 
 			if (window.analytics?.track) {
@@ -1598,10 +1606,13 @@ class ModularQuiz {
 
 		let resultsHTML = "";
 		const quizType = this.quizData?.type || "general";
+		console.log("Showing results:", { webhookSuccess, quizType, resultData, errorMessage });
 
 		if (!webhookSuccess) {
+			console.log("Generating error results");
 			resultsHTML = this._generateErrorResultsHTML(resultUrl, errorMessage);
 		} else {
+			console.log("Generating results for quiz type:", quizType);
 			resultsHTML = this._generateResultsHTML(quizType, resultData, resultUrl);
 		}
 
