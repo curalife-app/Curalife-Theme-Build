@@ -179,6 +179,12 @@ class ProductQuiz {
 		this.quizData = JSON.parse(text);
 		this.config = this.quizData.config || {};
 
+		console.log("Debug - Quiz data loaded:", this.dataUrl);
+		console.log("Debug - Common payers in data:", this.quizData.commonPayers?.length || 0);
+		if (this.quizData.commonPayers?.length > 0) {
+			console.log("Debug - First payer structure:", this.quizData.commonPayers[0]);
+		}
+
 		return this.quizData;
 	}
 
@@ -1805,6 +1811,8 @@ class ProductQuiz {
 
 	_showInitialPayerList(dropdown, onSelectCallback) {
 		const commonPayers = this.quizData.commonPayers || [];
+		console.log("Debug - Initial payer list:", commonPayers.length, "payers available");
+		console.log("Debug - Sample payer:", commonPayers[0]);
 		const results = commonPayers.map(payer => ({ payer }));
 		this._renderSearchResults(results, "", dropdown, onSelectCallback);
 	}
@@ -1826,12 +1834,21 @@ class ProductQuiz {
 		const commonPayers = this.quizData.commonPayers || [];
 		const lowerQuery = query.toLowerCase();
 
-		return commonPayers
+		console.log("Debug - Searching for:", query);
+		console.log("Debug - Available payers:", commonPayers.length);
+		console.log("Debug - First few payers:", commonPayers.slice(0, 3));
+
+		const filtered = commonPayers
 			.filter(payer => {
-				return payer.displayName.toLowerCase().includes(lowerQuery) || payer.stediId.toLowerCase().includes(lowerQuery) || payer.aliases.some(alias => alias.toLowerCase().includes(lowerQuery));
+				const matches =
+					payer.displayName.toLowerCase().includes(lowerQuery) || payer.stediId.toLowerCase().includes(lowerQuery) || payer.aliases?.some(alias => alias.toLowerCase().includes(lowerQuery));
+				return matches;
 			})
 			.map(payer => ({ payer }))
 			.slice(0, 5);
+
+		console.log("Debug - Filtered results:", filtered.length);
+		return filtered;
 	}
 
 	_renderSearchResults(results, query, dropdown, onSelectCallback) {
