@@ -174,14 +174,34 @@ class ModularQuiz {
 
 		if (testMode && this.quizData.testData) {
 			let testDataKey = "default";
+			let displayName = testMode;
 
 			// Support different test scenarios
 			if (testMode === "true") {
 				testDataKey = "default";
+				displayName = "DEFAULT (UHC Eligible)";
 			} else if (testMode === "not-covered") {
 				testDataKey = "notCovered";
+				displayName = "NOT COVERED";
 			} else if (this.quizData.testData[testMode]) {
 				testDataKey = testMode;
+				// Create display names for better UX
+				const displayNames = {
+					default: "UHC ELIGIBLE",
+					notCovered: "NOT COVERED",
+					aetna_dependent: "AETNA DEPENDENT",
+					anthem_dependent: "ANTHEM DEPENDENT",
+					bcbstx_dependent: "BCBS TX DEPENDENT",
+					cigna_dependent: "CIGNA DEPENDENT",
+					oscar_dependent: "OSCAR DEPENDENT",
+					error_42: "ERROR 42 - Unable to Respond",
+					error_43: "ERROR 43 - Invalid Provider",
+					error_72: "ERROR 72 - Invalid Member ID",
+					error_73: "ERROR 73 - Invalid Name",
+					error_75: "ERROR 75 - Subscriber Not Found",
+					error_79: "ERROR 79 - Invalid Participant"
+				};
+				displayName = displayNames[testMode] || testMode.toUpperCase();
 			}
 
 			const testData = this.quizData.testData[testDataKey] || this.quizData.testData.default || this.quizData.testData;
@@ -193,7 +213,7 @@ class ModularQuiz {
 						this.responses[responseIndex].answer = testData[questionId];
 					}
 				});
-				this._addTestModeIndicator(`TEST MODE - ${testMode.toUpperCase()}`);
+				this._addTestModeIndicator(`🧪 ${displayName}`);
 			}
 		}
 	}
@@ -1202,7 +1222,11 @@ class ModularQuiz {
 			const webhookUrl = this.container.getAttribute("data-webhook-url") || this.quizData.config?.webhookUrl;
 			let resultData = null;
 
-			if (webhookUrl) {
+			// Check for test mode and simulate responses
+			const testMode = new URLSearchParams(window.location.search).get("test");
+			if (testMode && this.quizData.testData) {
+				resultData = this._generateTestModeResponse(testMode, payload);
+			} else if (webhookUrl) {
 				resultData = await this._submitToWebhook(webhookUrl, payload);
 			}
 
@@ -1292,6 +1316,138 @@ class ModularQuiz {
 		return data;
 	}
 
+	_generateTestModeResponse(testMode, payload) {
+		// Simulate different response types based on test mode
+		const testModeResponses = {
+			default: {
+				success: true,
+				eligibilityData: {
+					isEligible: true,
+					sessionsCovered: 8,
+					copay: 15,
+					deductible: { individual: 500 },
+					eligibilityStatus: "ELIGIBLE",
+					userMessage: "Great news! Your insurance covers dietitian consultations.",
+					planBegin: "20240101",
+					planEnd: "20241231"
+				}
+			},
+			notCovered: {
+				success: true,
+				eligibilityData: {
+					isEligible: false,
+					sessionsCovered: 0,
+					copay: 0,
+					deductible: { individual: 0 },
+					eligibilityStatus: "NOT_COVERED",
+					userMessage: "Your plan doesn't cover dietitian services, but we have affordable options."
+				}
+			},
+			aetna_dependent: {
+				success: true,
+				eligibilityData: {
+					isEligible: true,
+					sessionsCovered: 6,
+					copay: 20,
+					deductible: { individual: 250 },
+					eligibilityStatus: "ELIGIBLE",
+					userMessage: "Aetna covers your dietitian consultations.",
+					planBegin: "20240101",
+					planEnd: "20241231"
+				}
+			},
+			anthem_dependent: {
+				success: true,
+				eligibilityData: {
+					isEligible: true,
+					sessionsCovered: 12,
+					copay: 10,
+					deductible: { individual: 1000 },
+					eligibilityStatus: "ELIGIBLE",
+					userMessage: "Anthem Blue Cross covers your dietitian consultations.",
+					planBegin: "20240101",
+					planEnd: "20241231"
+				}
+			},
+			bcbstx_dependent: {
+				success: true,
+				eligibilityData: {
+					isEligible: true,
+					sessionsCovered: 4,
+					copay: 25,
+					deductible: { individual: 750 },
+					eligibilityStatus: "ELIGIBLE",
+					userMessage: "Blue Cross Blue Shield of Texas covers your dietitian consultations.",
+					planBegin: "20240101",
+					planEnd: "20241231"
+				}
+			},
+			cigna_dependent: {
+				success: true,
+				eligibilityData: {
+					isEligible: true,
+					sessionsCovered: 10,
+					copay: 0,
+					deductible: { individual: 0 },
+					eligibilityStatus: "ELIGIBLE",
+					userMessage: "Cigna covers your dietitian consultations with no copay.",
+					planBegin: "20240101",
+					planEnd: "20241231"
+				}
+			},
+			oscar_dependent: {
+				success: true,
+				eligibilityData: {
+					isEligible: true,
+					sessionsCovered: 8,
+					copay: 5,
+					deductible: { individual: 500 },
+					eligibilityStatus: "ELIGIBLE",
+					userMessage: "Oscar Health covers your dietitian consultations.",
+					planBegin: "20240101",
+					planEnd: "20241231"
+				}
+			},
+			error_42: {
+				success: false,
+				aaaError: "42",
+				error: "Unable to respond at current time - payer system temporarily unavailable"
+			},
+			error_43: {
+				success: false,
+				aaaError: "43",
+				error: "Invalid/Missing Provider Identification"
+			},
+			error_72: {
+				success: false,
+				aaaError: "72",
+				error: "Invalid/Missing Subscriber/Insured ID"
+			},
+			error_73: {
+				success: false,
+				aaaError: "73",
+				error: "Invalid/Missing Subscriber/Insured Name"
+			},
+			error_75: {
+				success: false,
+				aaaError: "75",
+				error: "Subscriber/Insured Not Found"
+			},
+			error_79: {
+				success: false,
+				aaaError: "79",
+				error: "Invalid Participant Identification"
+			}
+		};
+
+		// Get the appropriate response or fall back to default
+		let testDataKey = testMode === "true" ? "default" : testMode;
+		const mockResponse = testModeResponses[testDataKey] || testModeResponses["default"];
+
+		// Process the mock response through the normal result processing
+		return this._processWebhookResult(mockResponse);
+	}
+
 	async _submitToWebhook(webhookUrl, payload) {
 		try {
 			const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Request timed out")), 35000));
@@ -1324,6 +1480,10 @@ class ModularQuiz {
 		if (result?.success === true && result.eligibilityData) {
 			return result.eligibilityData;
 		} else if (result?.success === false) {
+			// Handle AAA errors specifically
+			if (result.aaaError) {
+				return this._createAAAErrorEligibilityData(result.aaaError, result.error);
+			}
 			return this._createErrorEligibilityData(result.error || "Processing error");
 		}
 
@@ -1337,6 +1497,68 @@ class ModularQuiz {
 			deductible: { individual: 0 },
 			eligibilityStatus: "ERROR",
 			userMessage: message,
+			planBegin: "",
+			planEnd: ""
+		};
+	}
+
+	_createAAAErrorEligibilityData(aaaError, errorMessage) {
+		const aaaErrorMappings = {
+			42: {
+				title: "Service Temporarily Unavailable",
+				message: "Your insurance company's system is temporarily unavailable. Please try again in a few minutes, or we can manually verify your coverage.",
+				actionTitle: "Alternative Options",
+				actionText: "Our team can verify your coverage manually while the system is down."
+			},
+			43: {
+				title: "Provider Registration Issue",
+				message: "Your insurance plan requires additional provider verification. Our team will contact you to complete the eligibility check.",
+				actionTitle: "Manual Verification Required",
+				actionText: "We'll verify your provider status and coverage details manually."
+			},
+			72: {
+				title: "Member ID Verification Needed",
+				message: "We couldn't verify your member ID. Please double-check the information on your insurance card, or our team can help verify manually.",
+				actionTitle: "Verification Support",
+				actionText: "Our team can help verify your member ID and check your coverage details."
+			},
+			73: {
+				title: "Name Verification Needed",
+				message: "We couldn't match the name provided with your insurance records. Please verify the name matches exactly as shown on your insurance card.",
+				actionTitle: "Name Verification Support",
+				actionText: "Our team can help verify your information and check your coverage details."
+			},
+			75: {
+				title: "Subscriber Not Found",
+				message: "We couldn't find your insurance information in the system. This might be due to a recent plan change or data entry issue.",
+				actionTitle: "Manual Coverage Verification",
+				actionText: "Our team will manually verify your coverage and help get you connected with a dietitian."
+			},
+			79: {
+				title: "System Connection Issue",
+				message: "There's a technical issue connecting with your insurance provider. Our team will manually verify your coverage.",
+				actionTitle: "Technical Support",
+				actionText: "We'll resolve this technical issue and verify your coverage manually."
+			}
+		};
+
+		const errorInfo = aaaErrorMappings[aaaError] || {
+			title: `Insurance Verification Error (${aaaError})`,
+			message: errorMessage || "There was an issue verifying your insurance coverage.",
+			actionTitle: "Coverage Verification",
+			actionText: "Our team will manually verify your coverage and contact you with the results."
+		};
+
+		return {
+			isEligible: false,
+			sessionsCovered: 0,
+			deductible: { individual: 0 },
+			eligibilityStatus: "AAA_ERROR",
+			aaaErrorCode: aaaError,
+			userMessage: errorInfo.message,
+			errorTitle: errorInfo.title,
+			actionTitle: errorInfo.actionTitle,
+			actionText: errorInfo.actionText,
 			planBegin: "",
 			planEnd: ""
 		};
@@ -1565,6 +1787,8 @@ class ModularQuiz {
 			return this._generateEligibleInsuranceResultsHTML(resultData, resultUrl);
 		} else if (resultData.isEligible === false && eligibilityStatus === "NOT_COVERED") {
 			return this._generateNotCoveredInsuranceResultsHTML(resultData, resultUrl);
+		} else if (eligibilityStatus === "AAA_ERROR") {
+			return this._generateAAAErrorResultsHTML(resultData, resultUrl);
 		} else {
 			return this._generateIneligibleInsuranceResultsHTML(resultData, resultUrl);
 		}
@@ -1819,6 +2043,56 @@ class ModularQuiz {
 						<a href="${resultUrl}" class="quiz-booking-button">Continue with Next Steps</a>
 					</div>
 				</div>
+			</div>
+		`;
+	}
+
+	_generateAAAErrorResultsHTML(eligibilityData, resultUrl) {
+		const errorCode = eligibilityData.aaaErrorCode || "Unknown";
+		const errorTitle = eligibilityData.errorTitle || "Insurance Verification Issue";
+		const actionTitle = eligibilityData.actionTitle || "Manual Verification";
+		const actionText = eligibilityData.actionText || "Our team will manually verify your coverage.";
+
+		return `
+			<div class="quiz-results-container">
+				<div class="quiz-results-header">
+                    <h2 class="quiz-results-title">${errorTitle}</h2>
+                    <p class="quiz-results-subtitle">We encountered an issue verifying your insurance coverage automatically.</p>
+				</div>
+				<div class="quiz-coverage-card" style="border-left: 4px solid #f59e0b; background-color: #fffbeb;">
+                    <h3 class="quiz-coverage-card-title" style="color: #92400e;">⚠️ Verification Issue (Error ${errorCode})</h3>
+                    <p style="color: #92400e;">${eligibilityData.userMessage}</p>
+				</div>
+				<div class="quiz-action-section">
+					<div class="quiz-action-content">
+						<div class="quiz-action-header">
+							<h3 class="quiz-action-title">${actionTitle}</h3>
+						</div>
+						<div class="quiz-action-details">
+							<div class="quiz-action-info">
+								<svg class="quiz-action-info-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M10 18.3333C14.6023 18.3333 18.3333 14.6023 18.3333 9.99996C18.3333 5.39759 14.6023 1.66663 10 1.66663C5.39762 1.66663 1.66666 5.39759 1.66666 9.99996C1.66666 14.6023 5.39762 18.3333 10 18.3333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+									<path d="M7.5 9.99996L9.16667 11.6666L12.5 8.33329" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-info-text">${actionText}</div>
+							</div>
+							<div class="quiz-action-feature">
+								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M18.3333 14.1667C18.3333 15.0871 17.5871 15.8333 16.6667 15.8333H5.83333L1.66666 20V3.33333C1.66666 2.41286 2.41285 1.66667 3.33333 1.66667H16.6667C17.5871 1.66667 18.3333 2.41286 18.3333 3.33333V14.1667Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-feature-text">We'll contact you within 24 hours with your coverage details</div>
+							</div>
+							<div class="quiz-action-feature">
+								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M6.66666 2.5V5.83333M13.3333 2.5V5.83333M2.5 9.16667H17.5M4.16666 3.33333H15.8333C16.7538 3.33333 17.5 4.07952 17.5 5V16.6667C17.5 17.5871 16.7538 18.3333 15.8333 18.3333H4.16666C3.24619 18.3333 2.5 17.5871 2.5 16.6667V5C2.5 4.07952 3.24619 3.33333 4.16666 3.33333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-feature-text">You can still proceed with booking a consultation</div>
+							</div>
+						</div>
+						<a href="${resultUrl}" class="quiz-booking-button">Continue to Booking</a>
+					</div>
+				</div>
+				${this._generateFAQHTML()}
 			</div>
 		`;
 	}
