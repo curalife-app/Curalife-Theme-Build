@@ -180,10 +180,10 @@ class ProductQuiz {
 		this.config = this.quizData.config || {};
 
 		// API configuration validation
-		if (this.quizData.apiConfig?.stediApiKey) {
+		if (this.quizData.config?.apiConfig?.stediApiKey) {
 			console.log("Stedi API configured for payer search");
 		} else {
-			console.log("Using local payer search only - add stediApiKey to apiConfig for full search");
+			console.log("Using local payer search only - add stediApiKey to config.apiConfig for full search");
 		}
 
 		return this.quizData;
@@ -1887,7 +1887,7 @@ class ProductQuiz {
 	}
 
 	async _searchPayersAPI(query) {
-		const config = this.quizData.apiConfig || {};
+		const config = this.quizData.config?.apiConfig || {};
 		const apiKey = config.stediApiKey;
 
 		console.log("Debug - Full apiConfig:", config);
