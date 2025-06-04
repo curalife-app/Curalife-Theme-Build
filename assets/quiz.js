@@ -1,8 +1,8 @@
 /**
- * Product Quiz for Shopify - Reorganized
+ * Modular Quiz System for Shopify
  *
- * This script handles the product quiz functionality with improved organization
- * and dynamic configuration from JSON data file.
+ * This script handles modular quiz functionality with configurable
+ * result types and question flows from JSON data file.
  */
 
 // =============================================================================
@@ -10,13 +10,13 @@
 // =============================================================================
 
 const ELEMENT_SELECTORS = {
-	MAIN_CONTAINER: "#product-quiz",
+	MAIN_CONTAINER: "#quiz-container",
 	INTRO: ".quiz-intro",
 	QUESTIONS: ".quiz-questions",
 	RESULTS: ".quiz-results",
 	ERROR: ".quiz-error",
 	LOADING: ".quiz-loading",
-	ELIGIBILITY_CHECK: ".quiz-eligibility-check",
+	STATUS_CHECK: ".quiz-status-check",
 	PROGRESS_BAR: ".quiz-progress-bar",
 	QUESTION_CONTAINER: ".quiz-question-container",
 	NAVIGATION_BUTTONS: ".quiz-navigation",
@@ -29,7 +29,7 @@ const ELEMENT_SELECTORS = {
 // MAIN QUIZ CLASS
 // =============================================================================
 
-class ProductQuiz {
+class ModularQuiz {
 	constructor(options = {}) {
 		this._initializeDOMElements();
 		if (!this._isInitialized) return;
@@ -37,7 +37,7 @@ class ProductQuiz {
 		if (!this._validateEssentialElements()) return;
 
 		// Configuration
-		this.dataUrl = options.dataUrl || this.container.getAttribute("data-quiz-url") || "/apps/product-quiz/data.json";
+		this.dataUrl = options.dataUrl || this.container.getAttribute("data-quiz-url") || "/apps/quiz/data.json";
 
 		// State
 		this.quizData = null;
@@ -58,7 +58,7 @@ class ProductQuiz {
 	_initializeDOMElements() {
 		this.container = document.querySelector(ELEMENT_SELECTORS.MAIN_CONTAINER);
 		if (!this.container) {
-			console.error("ProductQuiz: Main container not found. Quiz cannot start.");
+			console.error("ModularQuiz: Main container not found. Quiz cannot start.");
 			this._isInitialized = false;
 			return;
 		}
@@ -179,10 +179,10 @@ class ProductQuiz {
 		this.quizData = JSON.parse(text);
 		this.config = this.quizData.config || {};
 
-		// API configuration validation
-		if (this.quizData.config?.apiConfig?.stediApiKey) {
-			console.log("Stedi API configured for payer search");
-		} else {
+		// Check for external API configuration if needed by quiz type
+		if (this.quizData.config?.features?.payerSearch && this.quizData.config?.apiConfig?.stediApiKey) {
+			console.log("External API configured for payer search");
+		} else if (this.quizData.config?.features?.payerSearch) {
 			console.log("Using local payer search only - add stediApiKey to config.apiConfig for full search");
 		}
 
@@ -979,7 +979,9 @@ class ProductQuiz {
 				this._attachRatingListeners(question);
 				break;
 			case "payer-search":
-				this._attachPayerSearchListeners(question);
+				if (this.quizData.config?.features?.payerSearch) {
+					this._attachPayerSearchListeners(question);
+				}
 				break;
 		}
 	}
@@ -1082,7 +1084,9 @@ class ProductQuiz {
 				this._attachFormCheckboxListeners(question);
 				break;
 			case "payer-search":
-				this._attachPayerSearchFormListeners(question);
+				if (this.quizData.config?.features?.payerSearch) {
+					this._attachPayerSearchFormListeners(question);
+				}
 				break;
 		}
 	}
@@ -1350,7 +1354,7 @@ class ProductQuiz {
 	// =============================================================================
 
 	async finishQuiz() {
-		const bookingUrl = this.container.getAttribute("data-booking-url") || "/appointment-booking";
+		const resultUrl = this.container.getAttribute("data-result-url") || this.container.getAttribute("data-booking-url") || "/quiz-complete";
 
 		try {
 			this.submitting = true;
@@ -1361,23 +1365,29 @@ class ProductQuiz {
 
 			this._hideElement(this.navigation);
 			this._hideElement(this.progressSection);
-			this._startDynamicLoader();
+			this._startLoadingMessages();
 
-			const webhookUrl = "https://us-central1-telemedicine-458913.cloudfunctions.net/telemedicine-webhook";
-			let eligibilityData = await this._submitToWebhook(webhookUrl, payload);
+			// Check if quiz has webhook processing
+			const webhookUrl = this.container.getAttribute("data-webhook-url") || this.quizData.config?.webhookUrl;
+			let resultData = null;
 
-			this._stopDynamicLoader();
-			this.showResults(bookingUrl, true, eligibilityData);
+			if (webhookUrl) {
+				resultData = await this._submitToWebhook(webhookUrl, payload);
+			}
+
+			this._stopLoadingMessages();
+			this.showResults(resultUrl, !!resultData, resultData);
 
 			if (window.analytics?.track) {
 				window.analytics.track("Quiz Completed", {
-					quizId: this.quizData?.id || "dietitian-quiz",
-					successfullySubmitted: true
+					quizId: this.quizData?.id || "quiz",
+					quizType: this.quizData?.type || "general",
+					successfullySubmitted: !!resultData
 				});
 			}
 		} catch (error) {
-			this._stopDynamicLoader();
-			this.showResults(bookingUrl, false, null, error.message);
+			this._stopLoadingMessages();
+			this.showResults(resultUrl, false, null, error.message);
 		} finally {
 			this.submitting = false;
 			this.nextButton.disabled = false;
@@ -1537,21 +1547,21 @@ class ProductQuiz {
 		};
 	}
 
-	_startDynamicLoader() {
+	_startLoadingMessages() {
 		const loadingMessages = this.quizData.ui?.loadingMessages || ["Processing your request...", "Please wait..."];
 
 		let currentMessageIndex = 0;
 
 		this.questionContainer.innerHTML = `
-            <div class="quiz-eligibility-check">
+            <div class="quiz-status-check">
                 <div class="quiz-loading-spinner"></div>
-                <div class="quiz-loading-text" id="dynamic-loading-text">${loadingMessages[currentMessageIndex]}</div>
+                <div class="quiz-loading-text" id="loading-messages-text">${loadingMessages[currentMessageIndex]}</div>
             </div>
         `;
 
 		this.loadingInterval = setInterval(() => {
 			currentMessageIndex = (currentMessageIndex + 1) % loadingMessages.length;
-			const textElement = document.getElementById("dynamic-loading-text");
+			const textElement = document.getElementById("loading-messages-text");
 			if (textElement) {
 				textElement.style.opacity = "0.5";
 				setTimeout(() => {
@@ -1562,38 +1572,168 @@ class ProductQuiz {
 		}, 2500);
 	}
 
-	_stopDynamicLoader() {
+	_stopLoadingMessages() {
 		if (this.loadingInterval) {
 			clearInterval(this.loadingInterval);
 			this.loadingInterval = null;
 		}
 	}
 
-	showResults(bookingUrl, webhookSuccess = true, eligibilityData = null, errorMessage = "") {
-		this._stopDynamicLoader();
+	showResults(resultUrl, webhookSuccess = true, resultData = null, errorMessage = "") {
+		this._stopLoadingMessages();
 		this._hideElement(this.navigationButtons);
 		this._hideElement(this.progressSection);
 
 		let resultsHTML = "";
+		const quizType = this.quizData?.type || "general";
 
-		if (!webhookSuccess || !eligibilityData) {
-			resultsHTML = this._generateErrorResultsHTML(bookingUrl, errorMessage);
+		if (!webhookSuccess) {
+			resultsHTML = this._generateErrorResultsHTML(resultUrl, errorMessage);
 		} else {
-			const isEligible = eligibilityData.isEligible === true;
-			const eligibilityStatus = eligibilityData.eligibilityStatus || "UNKNOWN";
-
-			if (isEligible && eligibilityStatus === "ELIGIBLE") {
-				resultsHTML = this._generateEligibleResultsHTML(eligibilityData, bookingUrl);
-			} else {
-				resultsHTML = this._generateIneligibleResultsHTML(eligibilityData, bookingUrl);
-			}
+			resultsHTML = this._generateResultsHTML(quizType, resultData, resultUrl);
 		}
 
 		this.questionContainer.innerHTML = resultsHTML;
 		this._attachFAQListeners();
 	}
 
-	_generateErrorResultsHTML(bookingUrl, errorMessage) {
+	_generateResultsHTML(quizType, resultData, resultUrl) {
+		switch (quizType) {
+			case "eligibility":
+			case "insurance":
+				return this._generateInsuranceResultsHTML(resultData, resultUrl);
+			case "assessment":
+			case "health":
+				return this._generateAssessmentResultsHTML(resultData, resultUrl);
+			case "recommendation":
+				return this._generateRecommendationResultsHTML(resultData, resultUrl);
+			default:
+				return this._generateGenericResultsHTML(resultData, resultUrl);
+		}
+	}
+
+	_generateGenericResultsHTML(resultData, resultUrl) {
+		const messages = this.quizData.ui?.resultMessages?.complete || {};
+
+		return `
+			<div class="quiz-results-container">
+				<div class="quiz-results-header">
+					<h2 class="quiz-results-title">${messages.title || "Quiz Complete!"}</h2>
+					<p class="quiz-results-subtitle">${messages.subtitle || "Thank you for completing the quiz."}</p>
+				</div>
+				<div class="quiz-action-section">
+					<div class="quiz-action-content">
+						<div class="quiz-action-header">
+							<h3 class="quiz-action-title">${messages.actionTitle || "What's next?"}</h3>
+						</div>
+						<div class="quiz-action-details">
+							<div class="quiz-action-info">
+								<svg class="quiz-action-info-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M10 18.3333C14.6023 18.3333 18.3333 14.6023 18.3333 9.99996C18.3333 5.39759 14.6023 1.66663 10 1.66663C5.39762 1.66663 1.66666 5.39759 1.66666 9.99996C1.66666 14.6023 5.39762 18.3333 10 18.3333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+									<path d="M7.5 9.99996L9.16667 11.6666L12.5 8.33329" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-info-text">${messages.actionText || "We'll be in touch with your personalized results soon."}</div>
+							</div>
+						</div>
+						<a href="${resultUrl}" class="quiz-booking-button">${messages.buttonText || "Continue"}</a>
+					</div>
+				</div>
+				${this._generateFAQHTML()}
+			</div>
+		`;
+	}
+
+	_generateAssessmentResultsHTML(resultData, resultUrl) {
+		const messages = this.quizData.ui?.resultMessages?.assessment || {};
+		const score = resultData?.score || 0;
+		const level = resultData?.level || "intermediate";
+
+		return `
+			<div class="quiz-results-container">
+				<div class="quiz-results-header">
+					<h2 class="quiz-results-title">${messages.title || "Your Assessment Results"}</h2>
+					<p class="quiz-results-subtitle">${messages.subtitle || "Here's your personalized assessment."}</p>
+				</div>
+				<div class="quiz-coverage-card">
+					<h3 class="quiz-coverage-card-title">Your Score: ${score}%</h3>
+					<p>Assessment Level: <strong>${level.charAt(0).toUpperCase() + level.slice(1)}</strong></p>
+					${resultData?.feedback ? `<p>${resultData.feedback}</p>` : ""}
+				</div>
+				<div class="quiz-action-section">
+					<div class="quiz-action-content">
+						<div class="quiz-action-header">
+							<h3 class="quiz-action-title">${messages.actionTitle || "Next Steps"}</h3>
+						</div>
+						<a href="${resultUrl}" class="quiz-booking-button">${messages.buttonText || "View Detailed Results"}</a>
+					</div>
+				</div>
+				${this._generateFAQHTML()}
+			</div>
+		`;
+	}
+
+	_generateRecommendationResultsHTML(resultData, resultUrl) {
+		const messages = this.quizData.ui?.resultMessages?.recommendation || {};
+		const recommendations = resultData?.recommendations || [];
+
+		return `
+			<div class="quiz-results-container">
+				<div class="quiz-results-header">
+					<h2 class="quiz-results-title">${messages.title || "Your Recommendations"}</h2>
+					<p class="quiz-results-subtitle">${messages.subtitle || "Based on your responses, here are our recommendations."}</p>
+				</div>
+				${
+					recommendations.length > 0
+						? `
+					<div class="quiz-coverage-card">
+						<h3 class="quiz-coverage-card-title">Recommended for You</h3>
+						<div class="quiz-coverage-benefits">
+							${recommendations
+								.map(
+									rec => `
+								<div class="quiz-coverage-benefit">
+									<svg class="quiz-coverage-benefit-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+										<path d="M7.5 9.99996L9.16667 11.6666L12.5 8.33329" stroke="#418865" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+									</svg>
+									<span class="quiz-coverage-benefit-text">${rec}</span>
+								</div>
+							`
+								)
+								.join("")}
+						</div>
+					</div>
+				`
+						: ""
+				}
+				<div class="quiz-action-section">
+					<div class="quiz-action-content">
+						<div class="quiz-action-header">
+							<h3 class="quiz-action-title">${messages.actionTitle || "Get Started"}</h3>
+						</div>
+						<a href="${resultUrl}" class="quiz-booking-button">${messages.buttonText || "Continue"}</a>
+					</div>
+				</div>
+				${this._generateFAQHTML()}
+			</div>
+		`;
+	}
+
+	_generateInsuranceResultsHTML(resultData, resultUrl) {
+		if (!resultData) {
+			return this._generateGenericResultsHTML(resultData, resultUrl);
+		}
+
+		const isEligible = resultData.isEligible === true;
+		const eligibilityStatus = resultData.eligibilityStatus || "UNKNOWN";
+
+		if (isEligible && eligibilityStatus === "ELIGIBLE") {
+			return this._generateEligibleInsuranceResultsHTML(resultData, resultUrl);
+		} else {
+			return this._generateIneligibleInsuranceResultsHTML(resultData, resultUrl);
+		}
+	}
+
+	_generateErrorResultsHTML(resultUrl, errorMessage) {
 		return `
 			<div class="quiz-results-container">
 				<div class="quiz-results-header">
@@ -1630,14 +1770,14 @@ class ProductQuiz {
 								<div class="quiz-action-feature-text">Quick resolution to get you scheduled with a dietitian</div>
 							</div>
 						</div>
-						<a href="${bookingUrl}" class="quiz-booking-button">Continue to Support</a>
+						<a href="${resultUrl}" class="quiz-booking-button">Continue to Support</a>
 					</div>
 				</div>
 			</div>
 		`;
 	}
 
-	_generateEligibleResultsHTML(eligibilityData, bookingUrl) {
+	_generateEligibleInsuranceResultsHTML(eligibilityData, resultUrl) {
 		const messages = this.quizData.ui?.resultMessages?.eligible || {};
 		const sessionsCovered = parseInt(eligibilityData.sessionsCovered || "0", 10);
 		const copay = eligibilityData.copay || 0;
@@ -1726,7 +1866,7 @@ class ProductQuiz {
 							</div>
 						</div>
 
-						<a href="${bookingUrl}" class="quiz-booking-button">
+						<a href="${resultUrl}" class="quiz-booking-button">
 							Proceed to booking
 						</a>
 					</div>
@@ -1736,7 +1876,7 @@ class ProductQuiz {
 		`;
 	}
 
-	_generateIneligibleResultsHTML(eligibilityData, bookingUrl) {
+	_generateIneligibleInsuranceResultsHTML(eligibilityData, resultUrl) {
 		const messages = this.quizData.ui?.resultMessages?.notEligible || {};
 		const userMessage = eligibilityData.userMessage || "Your eligibility check is complete.";
 
@@ -1776,7 +1916,7 @@ class ProductQuiz {
 								<div class="quiz-action-feature-text">Flexible scheduling that works with your availability</div>
 							</div>
 						</div>
-						<a href="${bookingUrl}" class="quiz-booking-button">Continue with Next Steps</a>
+						<a href="${resultUrl}" class="quiz-booking-button">Continue with Next Steps</a>
 					</div>
 				</div>
 			</div>
@@ -2347,7 +2487,7 @@ class ProductQuiz {
 	}
 
 	showError(title, message) {
-		this._stopDynamicLoader();
+		this._stopLoadingMessages();
 		this._hideElement(this.questions);
 		this._showElement(this.error);
 
@@ -2364,6 +2504,6 @@ class ProductQuiz {
 // =============================================================================
 
 document.addEventListener("DOMContentLoaded", () => {
-	const quiz = new ProductQuiz();
+	const quiz = new ModularQuiz();
 	window.productQuiz = quiz; // For debugging
 });
