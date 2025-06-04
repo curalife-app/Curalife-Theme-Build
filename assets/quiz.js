@@ -2006,7 +2006,6 @@ class ProductQuiz {
 					<div class="quiz-payer-search-item" data-index="${index}">
                         <div class="quiz-payer-search-item-name">
 							${highlightedName}
-							${isApiResult ? `<span class="quiz-api-result-indicator">✓</span>` : ""}
 						</div>
 						<div class="quiz-payer-search-item-details">
 							<span class="quiz-payer-search-item-id">${payer.stediId}</span>
