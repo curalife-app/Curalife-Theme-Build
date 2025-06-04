@@ -1,13 +1,6 @@
 /**
  * Modular Quiz System for Shopify
- *
- * This script handles modular quiz functionality with configurable
- * result types and question flows from JSON data file.
  */
-
-// =============================================================================
-// CONFIGURATION & CONSTANTS
-// =============================================================================
 
 const ELEMENT_SELECTORS = {
 	MAIN_CONTAINER: "#quiz-container",
@@ -24,10 +17,6 @@ const ELEMENT_SELECTORS = {
 	NEXT_BUTTON: "#quiz-next-button",
 	START_BUTTON: "#quiz-start-button"
 };
-
-// =============================================================================
-// MAIN QUIZ CLASS
-// =============================================================================
 
 class ModularQuiz {
 	constructor(options = {}) {
@@ -50,29 +39,16 @@ class ModularQuiz {
 		this.init();
 	}
 
-	// =============================================================================
-	// INITIALIZATION METHODS
-	// =============================================================================
-
 	_initializeDOMElements() {
-		console.log("Looking for container:", ELEMENT_SELECTORS.MAIN_CONTAINER);
 		this.container = document.querySelector(ELEMENT_SELECTORS.MAIN_CONTAINER);
 		if (!this.container) {
 			console.error("ModularQuiz: Main container not found. Quiz cannot start.");
-			console.error(
-				"Available elements with 'quiz' in ID:",
-				Array.from(document.querySelectorAll('[id*="quiz"]')).map(el => el.id)
-			);
 			this._isInitialized = false;
 			return;
 		}
-		console.log("Container found successfully");
 
-		// Set configuration
 		this.dataUrl = this.container.getAttribute("data-quiz-url") || "/apps/quiz/data.json";
-		console.log("Data URL will be:", this.dataUrl);
 
-		// Select all DOM elements
 		Object.keys(ELEMENT_SELECTORS).forEach(key => {
 			if (key !== "MAIN_CONTAINER") {
 				const selector = ELEMENT_SELECTORS[key];
@@ -151,56 +127,38 @@ class ModularQuiz {
 	}
 
 	async _loadAndDisplayFirstStep() {
-		this._hideElement(this.intro);
-		this._hideElement(this.questions);
-		this._showElement(this.loading);
+		this._toggleElement(this.intro, false);
+		this._toggleElement(this.questions, false);
+		this._toggleElement(this.loading, true);
 
 		try {
 			await this.loadQuizData();
 			this._initializeResponses();
 			this._applyTestDataIfEnabled();
 
-			this._hideElement(this.loading);
-			this._showElement(this.questions);
-			this._showElement(this.navHeader);
-			this._showElement(this.progressSection);
+			this._toggleElement(this.loading, false);
+			this._toggleElement(this.questions, true);
+			this._toggleElement(this.navHeader, true);
+			this._toggleElement(this.progressSection, true);
 
 			this.renderCurrentStep();
 			this.updateNavigation();
 		} catch (error) {
 			console.error("Failed to load quiz:", error);
-			this._hideElement(this.loading);
-			this._showElement(this.error);
+			this._toggleElement(this.loading, false);
+			this._toggleElement(this.error, true);
 		}
 	}
 
-	// =============================================================================
-	// DATA LOADING & MANAGEMENT
-	// =============================================================================
-
 	async loadQuizData() {
-		console.log("Loading quiz data from:", this.dataUrl);
 		const response = await fetch(this.dataUrl);
 		if (!response.ok) {
-			console.error(`Failed to fetch quiz data: ${response.status} ${response.statusText}`);
 			throw new Error(`HTTP error! status: ${response.status}`);
 		}
 
 		const text = await response.text();
-		console.log("Quiz data loaded successfully");
 		this.quizData = JSON.parse(text);
 		this.config = this.quizData.config || {};
-
-		// Check for external API configuration for payer search
-		const hasPayerSearchQuestions = this.quizData.steps?.some(step => step.questions?.some(q => q.type === "payer-search"));
-
-		if (hasPayerSearchQuestions) {
-			if (this.quizData.config?.apiConfig?.stediApiKey) {
-				console.log("External API configured for payer search");
-			} else {
-				console.log("Using local payer search only - add stediApiKey to config.apiConfig for full search");
-			}
-		}
 
 		return this.quizData;
 	}
@@ -254,10 +212,6 @@ class ModularQuiz {
 		setTimeout(() => indicator.remove(), 5000);
 	}
 
-	// =============================================================================
-	// STEP & QUESTION MANAGEMENT
-	// =============================================================================
-
 	getCurrentStep() {
 		return this.quizData?.steps?.[this.currentStepIndex] || null;
 	}
@@ -284,10 +238,6 @@ class ModularQuiz {
 		return this.config.formSteps?.includes(stepId) || false;
 	}
 
-	// =============================================================================
-	// RENDERING METHODS
-	// =============================================================================
-
 	renderCurrentStep() {
 		const step = this.getCurrentStep();
 		if (!step) return;
@@ -309,7 +259,6 @@ class ModularQuiz {
 			this._addLegalTextAfterNavigation(step.legal);
 		}
 
-		// Scroll to top when rendering a new step
 		window.scrollTo({ top: 0, behavior: "smooth" });
 	}
 
@@ -404,21 +353,21 @@ class ModularQuiz {
 		return html;
 	}
 
-	// =============================================================================
-	// UTILITY METHODS
-	// =============================================================================
-
-	_showElement(element) {
-		element?.classList.remove("hidden");
+	_toggleElement(element, show) {
+		element?.classList.toggle("hidden", !show);
 	}
 
-	_hideElement(element) {
-		element?.classList.add("hidden");
-	}
+	_setNavigationVisibility(visible) {
+		if (!this.navigationButtons) return;
 
-	// =============================================================================
-	// QUESTION RENDERING METHODS
-	// =============================================================================
+		if (visible) {
+			this.navigationButtons.classList.remove("quiz-navigation-hidden");
+			this.navigationButtons.classList.add("quiz-navigation-visible");
+		} else {
+			this.navigationButtons.classList.add("quiz-navigation-hidden");
+			this.navigationButtons.classList.remove("quiz-navigation-visible");
+		}
+	}
 
 	_renderQuestionByType(question, response) {
 		switch (question.type) {
@@ -446,17 +395,33 @@ class ModularQuiz {
 	}
 
 	renderMultipleChoice(question, response) {
+		return this._renderCardOptions(question, response, "radio");
+	}
+
+	renderCheckbox(question, response) {
+		const selectedOptions = Array.isArray(response.answer) ? response.answer : [];
+
+		if (question.id === "consent") {
+			return this._renderSimpleCheckboxes(question, selectedOptions);
+		}
+		return this._renderCardOptions(question, response, "checkbox");
+	}
+
+	_renderCardOptions(question, response, inputType) {
+		const selectedOptions = inputType === "checkbox" ? (Array.isArray(response.answer) ? response.answer : []) : null;
+		const isSelected = option => (inputType === "checkbox" ? selectedOptions.includes(option.id) : response.answer === option.id);
+
 		let html = '<div class="quiz-grid-2">';
 		question.options.forEach(option => {
-			const isSelected = response.answer === option.id;
+			const selected = isSelected(option);
 			html += `
 				<label for="${option.id}" class="quiz-option-card">
-                    <input type="radio" id="${option.id}" name="question-${question.id}" value="${option.id}" class="quiz-sr-only" ${isSelected ? "checked" : ""}>
-					<div class="quiz-option-button ${isSelected ? "selected" : ""}">
+					<input type="${inputType}" id="${option.id}" name="question-${question.id}" value="${option.id}" class="quiz-sr-only" ${selected ? "checked" : ""}>
+					<div class="quiz-option-button ${selected ? "selected" : ""}">
 						<div class="quiz-option-text">
 							<div class="quiz-option-text-content">${option.text}</div>
 						</div>
-                        ${isSelected ? this._getCheckmarkSVG() : ""}
+						${selected ? this._getCheckmarkSVG() : ""}
 					</div>
 				</label>
 			`;
@@ -464,63 +429,33 @@ class ModularQuiz {
 		return html + "</div>";
 	}
 
-	renderCheckbox(question, response) {
-		const selectedOptions = Array.isArray(response.answer) ? response.answer : [];
-		const useCardStyle = question.id !== "consent";
-
-		if (useCardStyle) {
-			let html = '<div class="quiz-grid-2">';
-			question.options.forEach(option => {
-				const isSelected = selectedOptions.includes(option.id);
-				html += `
-					<label for="${option.id}" class="quiz-option-card">
-                        <input type="checkbox" id="${option.id}" name="question-${question.id}" value="${option.id}" class="quiz-sr-only" ${isSelected ? "checked" : ""}>
-						<div class="quiz-option-button ${isSelected ? "selected" : ""}">
-							<div class="quiz-option-text">
-								<div class="quiz-option-text-content">${option.text}</div>
-							</div>
-                            ${isSelected ? this._getCheckmarkSVG() : ""}
-						</div>
-					</label>
-				`;
-			});
-			return html + "</div>";
-		} else {
-			let html = '<div class="quiz-space-y-3 quiz-spacing-container">';
-			question.options.forEach(option => {
-				html += `
-                    <div class="quiz-checkbox-container">
-                        <input type="checkbox" id="${option.id}" name="question-${question.id}" value="${option.id}" class="quiz-checkbox-input" ${selectedOptions.includes(option.id) ? "checked" : ""}>
-						<label class="quiz-checkbox-label" for="${option.id}">${option.text}</label>
-					</div>
-				`;
-			});
-			return html + "</div>";
-		}
+	_renderSimpleCheckboxes(question, selectedOptions) {
+		let html = '<div class="quiz-space-y-3 quiz-spacing-container">';
+		question.options.forEach(option => {
+			html += `
+				<div class="quiz-checkbox-container">
+					<input type="checkbox" id="${option.id}" name="question-${question.id}" value="${option.id}" class="quiz-checkbox-input" ${selectedOptions.includes(option.id) ? "checked" : ""}>
+					<label class="quiz-checkbox-label" for="${option.id}">${option.text}</label>
+				</div>
+			`;
+		});
+		return html + "</div>";
 	}
 
 	renderDropdown(question, response) {
 		const options = question.options || [];
 		const placeholder = question.placeholder || "Select an option";
+		const optionsHTML = options.map(option => `<option value="${option.id}" ${response.answer === option.id ? "selected" : ""}>${option.text}</option>`).join("");
 
-		let html = `
+		return `
 			<div>
 				<select id="question-${question.id}" class="quiz-select">
 					<option value="">${placeholder}</option>
-		`;
-
-		options.forEach(option => {
-			html += `<option value="${option.id}" ${response.answer === option.id ? "selected" : ""}>${option.text}</option>`;
-		});
-
-		return (
-			html +
-			`
+					${optionsHTML}
 				</select>
-				<p id="error-${question.id}" class="quiz-error-text quiz-error-hidden"></p>
+				${this._getErrorElement(question.id)}
 			</div>
-        `
-		);
+        `;
 	}
 
 	renderTextInput(question, response) {
@@ -530,9 +465,13 @@ class ModularQuiz {
 					placeholder="${question.placeholder || "Type your answer here..."}"
 					value="${response.answer || ""}"
 					aria-describedby="error-${question.id}">
-				<p id="error-${question.id}" class="quiz-error-text quiz-error-hidden"></p>
+				${this._getErrorElement(question.id)}
 			</div>
 		`;
+	}
+
+	_getErrorElement(questionId) {
+		return `<p id="error-${questionId}" class="quiz-error-text quiz-error-hidden"></p>`;
 	}
 
 	renderDatePart(question, response) {
@@ -611,7 +550,7 @@ class ModularQuiz {
                     placeholder="${question.helpText || "MM/DD/YYYY"}"
                     value="${response.answer || ""}"
                     aria-describedby="error-${question.id}">
-                <p id="error-${question.id}" class="quiz-error-text quiz-error-hidden"></p>
+                ${this._getErrorElement(question.id)}
                 ${question.helpText ? `<p class="quiz-text-sm">${question.helpText}</p>` : ""}
             </div>
         `;
@@ -624,10 +563,6 @@ class ModularQuiz {
             </svg>
         </div>`;
 	}
-
-	// =============================================================================
-	// NAVIGATION & EVENT HANDLING
-	// =============================================================================
 
 	goToPreviousStep() {
 		if (this.currentStepIndex <= 0) return;
@@ -644,7 +579,6 @@ class ModularQuiz {
 
 		this.nextButton.disabled = false;
 
-		// Info-only steps
 		if (currentStep.info && (!currentStep.questions || currentStep.questions.length === 0)) {
 			if (this.currentStepIndex < this.quizData.steps.length - 1) {
 				this.currentStepIndex++;
@@ -657,7 +591,6 @@ class ModularQuiz {
 			return;
 		}
 
-		// Form steps
 		if (this.isFormStep(currentStep.id)) {
 			if (!this._validateFormStep(currentStep)) return;
 
@@ -672,7 +605,6 @@ class ModularQuiz {
 			return;
 		}
 
-		// Wizard steps
 		if (currentStep.questions && this.currentQuestionIndex < currentStep.questions.length - 1) {
 			this.currentQuestionIndex++;
 			this.renderCurrentStep();
@@ -680,7 +612,6 @@ class ModularQuiz {
 			return;
 		}
 
-		// Last step or move to next
 		if (this.currentStepIndex === this.quizData.steps.length - 1) {
 			this.finishQuiz();
 		} else {
@@ -702,22 +633,14 @@ class ModularQuiz {
 		const currentQuestion = step.questions?.[this.currentQuestionIndex];
 		const isCurrentQuestionAutoAdvance = currentQuestion && this._shouldAutoAdvance(currentQuestion);
 
-		// Hide navigation for auto-advance questions
-		if (isCurrentQuestionAutoAdvance && !isFormStep) {
-			this.navigationButtons.classList.add("quiz-navigation-hidden");
-			this.navigationButtons.classList.remove("quiz-navigation-visible");
-			return;
-		} else {
-			this.navigationButtons.classList.remove("quiz-navigation-hidden");
-			this.navigationButtons.classList.add("quiz-navigation-visible");
-		}
+		const shouldShowNavigation = !(isCurrentQuestionAutoAdvance && !isFormStep);
+		this._setNavigationVisibility(shouldShowNavigation);
 
-		// Hide back button
+		if (!shouldShowNavigation) return;
+
 		if (this.prevButton) {
 			this.prevButton.style.display = "none";
 		}
-
-		// Update button text
 		const isLastStep = this.currentStepIndex === this.quizData.steps.length - 1;
 		const isLastQuestionInStep = isFormStep ? true : step.questions ? this.currentQuestionIndex === step.questions.length - 1 : true;
 
@@ -727,10 +650,8 @@ class ModularQuiz {
 			this.nextButton.innerHTML = this._getStepButtonText(step);
 		}
 
-		// Handle form step navigation
 		if (isFormStep && step.questions) {
-			this.navigationButtons.classList.add("quiz-navigation-hidden");
-			this.navigationButtons.classList.remove("quiz-navigation-visible");
+			this._setNavigationVisibility(false);
 			const formButton = this.questionContainer.querySelector("#quiz-form-next-button");
 			if (formButton) {
 				formButton.disabled = this.submitting;
@@ -738,7 +659,6 @@ class ModularQuiz {
 			return;
 		}
 
-		// Enable/disable based on answers
 		const hasAnswer = this._hasValidAnswer(step);
 		this.nextButton.disabled = !hasAnswer || this.submitting;
 	}
@@ -789,10 +709,6 @@ class ModularQuiz {
 		return question.type === "multiple-choice" || question.type === "dropdown";
 	}
 
-	// =============================================================================
-	// ANSWER HANDLING
-	// =============================================================================
-
 	handleAnswer(answer) {
 		if (!this.quizData) return;
 
@@ -803,38 +719,17 @@ class ModularQuiz {
 			const question = step.questions[this.currentQuestionIndex];
 			if (!question) return;
 
-			const responseIndex = this.responses.findIndex(r => r.questionId === question.id);
-			if (responseIndex !== -1) {
-				this.responses[responseIndex].answer = answer;
-			} else {
-				this.responses.push({
-					stepId: step.id,
-					questionId: question.id,
-					answer
-				});
-			}
+			this._updateResponse(question.id, answer, step.id);
 
 			if (this._shouldAutoAdvance(question)) {
 				this._handleAutoAdvance(answer);
+			} else if (question.type === "checkbox") {
+				this._updateCheckboxVisualState(question, answer);
 			} else {
-				if (question.type === "checkbox") {
-					this._updateCheckboxVisualState(question, answer);
-				} else {
-					this.renderCurrentStep();
-				}
+				this.renderCurrentStep();
 			}
-			return;
 		} else if (step.info) {
-			const responseIndex = this.responses.findIndex(r => r.stepId === step.id);
-			if (responseIndex !== -1) {
-				this.responses[responseIndex].answer = answer || "info-acknowledged";
-			} else {
-				this.responses.push({
-					stepId: step.id,
-					questionId: step.id,
-					answer: answer || "info-acknowledged"
-				});
-			}
+			this._updateResponse(step.id, answer || "info-acknowledged", step.id);
 			this.nextButton.disabled = false;
 		}
 
@@ -843,22 +738,21 @@ class ModularQuiz {
 
 	handleFormAnswer(questionId, answer) {
 		const step = this.getCurrentStep();
-		if (!step?.questions) return;
+		if (step?.questions) {
+			this._updateResponse(questionId, answer, step.id);
+		}
+	}
 
+	_updateResponse(questionId, answer, stepId) {
 		const responseIndex = this.responses.findIndex(r => r.questionId === questionId);
 		if (responseIndex !== -1) {
 			this.responses[responseIndex].answer = answer;
 		} else {
-			this.responses.push({
-				stepId: step.id,
-				questionId: questionId,
-				answer: answer
-			});
+			this.responses.push({ stepId, questionId, answer });
 		}
 	}
 
 	_handleAutoAdvance(answer) {
-		// Clear all previous selections
 		const allOptionButtons = this.questionContainer.querySelectorAll(".quiz-option-button");
 		allOptionButtons.forEach(button => {
 			button.classList.remove("selected", "processing", "auto-advance-feedback");
@@ -868,7 +762,6 @@ class ModularQuiz {
 			}
 		});
 
-		// Show selection feedback
 		const selectedElement = this.questionContainer.querySelector(`input[value="${answer}"]:checked`);
 		if (selectedElement) {
 			const optionButton = selectedElement.closest(".quiz-option-card")?.querySelector(".quiz-option-button");
@@ -879,7 +772,6 @@ class ModularQuiz {
 			}
 		}
 
-		// Advance after delay
 		setTimeout(() => {
 			this.goToNextStep();
 		}, this.config.autoAdvanceDelay || 600);
@@ -918,10 +810,6 @@ class ModularQuiz {
 
 		this.updateNavigation();
 	}
-
-	// =============================================================================
-	// EVENT LISTENERS & STEP MANAGEMENT
-	// =============================================================================
 
 	_handleStepAcknowledgment(step) {
 		if (!step.info) return;
@@ -1039,17 +927,14 @@ class ModularQuiz {
 		const textInput = this.questionContainer.querySelector(`#question-${question.id}`);
 		if (!textInput) return;
 
-		// Remove existing event listeners
 		textInput.removeEventListener("input", textInput._inputHandler);
 		textInput.removeEventListener("blur", textInput._blurHandler);
 		textInput.removeEventListener("change", textInput._changeHandler);
 
-		// Handle input without validation (just store the value)
 		textInput._inputHandler = () => {
 			this.handleFormAnswer(question.id, textInput.value);
 		};
 
-		// Handle validation on blur/change
 		textInput._blurHandler = () => {
 			const validationResult = this._validateFieldValue(question, textInput.value);
 			this._updateFieldValidationState(textInput, question, validationResult);
@@ -1059,8 +944,6 @@ class ModularQuiz {
 			const validationResult = this._validateFieldValue(question, textInput.value);
 			this._updateFieldValidationState(textInput, question, validationResult);
 		};
-
-		// Attach event listeners
 		textInput.addEventListener("input", textInput._inputHandler);
 		textInput.addEventListener("blur", textInput._blurHandler);
 		textInput.addEventListener("change", textInput._changeHandler);
@@ -1118,10 +1001,6 @@ class ModularQuiz {
 			};
 		});
 	}
-
-	// =============================================================================
-	// VALIDATION METHODS
-	// =============================================================================
 
 	_validateFormStep(step) {
 		let hasValidationErrors = false;
@@ -1205,69 +1084,48 @@ class ModularQuiz {
 		const errorMessages = this.quizData.ui?.errorMessages || {};
 
 		if (question.type === "payer-search") {
-			if (question.required && (!value || (typeof value === "string" && value.trim() === ""))) {
-				return {
-					isValid: false,
-					errorMessage: errorMessages.validationInsurance || "Please select an insurance plan"
-				};
-			}
+			return this._validateRequired(question, value) ? { isValid: true, errorMessage: null } : { isValid: false, errorMessage: errorMessages.validationInsurance || "Please select an insurance plan" };
+		}
+
+		if (question.required && !this._hasValue(value)) {
+			return { isValid: false, errorMessage: errorMessages.validationRequired || "This field is required" };
+		}
+
+		if (!this._hasValue(value)) {
 			return { isValid: true, errorMessage: null };
 		}
 
-		if (question.required && (!value || (typeof value === "string" && value.trim() === ""))) {
-			return {
-				isValid: false,
-				errorMessage: errorMessages.validationRequired || "This field is required"
-			};
+		return this._validateFieldFormat(question, value.trim(), errorMessages);
+	}
+
+	_hasValue(value) {
+		return value && (typeof value !== "string" || value.trim() !== "");
+	}
+
+	_validateRequired(question, value) {
+		return !question.required || this._hasValue(value);
+	}
+
+	_validateFieldFormat(question, trimmedValue, errorMessages) {
+		const patterns = this.quizData.validation?.patterns || {};
+		const validations = {
+			q4: { pattern: patterns.memberId || "^.{6,20}$", message: errorMessages.validationMemberId || "Minimum 6 characters" },
+			q4_group: { pattern: patterns.groupNumber || "^$|^.{5,15}$", message: errorMessages.validationGroupNumber || "Minimum 5 characters" },
+			q7: { pattern: patterns.name || "^[A-Za-z\\s]{1,100}$", message: errorMessages.validationName || "Use only A–Z letters and spaces" },
+			q8: { pattern: patterns.name || "^[A-Za-z\\s]{1,100}$", message: errorMessages.validationName || "Use only A–Z letters and spaces" },
+			q9: { pattern: patterns.email || "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$", message: errorMessages.validationEmail || "Enter valid email" },
+			q10: { custom: () => this._validatePhoneNumber(trimmedValue), message: errorMessages.validationPhone || "Enter valid phone" }
+		};
+
+		const validation = validations[question.id];
+		if (validation) {
+			const isValid = validation.custom ? validation.custom() : new RegExp(validation.pattern).test(trimmedValue);
+			return isValid ? { isValid: true, errorMessage: null } : { isValid: false, errorMessage: validation.message };
 		}
 
-		if (!question.required && (!value || (typeof value === "string" && value.trim() === ""))) {
-			return { isValid: true, errorMessage: null };
-		}
-
-		if (value && typeof value === "string" && value.trim() !== "") {
-			const trimmedValue = value.trim();
-			const patterns = this.quizData.validation?.patterns || {};
-
-			// Use patterns from JSON data
-			switch (question.id) {
-				case "q4": // Member ID
-					if (!new RegExp(patterns.memberId || "^.{6,20}$").test(trimmedValue)) {
-						return { isValid: false, errorMessage: errorMessages.validationMemberId || "Minimum 6 characters" };
-					}
-					break;
-				case "q4_group": // Group number
-					if (!new RegExp(patterns.groupNumber || "^$|^.{5,15}$").test(trimmedValue)) {
-						return { isValid: false, errorMessage: errorMessages.validationGroupNumber || "Minimum 5 characters" };
-					}
-					break;
-				case "q7": // First name
-				case "q8": // Last name
-					if (!new RegExp(patterns.name || "^[A-Za-z\\s]{1,100}$").test(trimmedValue)) {
-						return { isValid: false, errorMessage: errorMessages.validationName || "Use only A–Z letters and spaces" };
-					}
-					break;
-				case "q9": // Email
-					if (!new RegExp(patterns.email || "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$").test(trimmedValue)) {
-						return { isValid: false, errorMessage: errorMessages.validationEmail || "Enter valid email" };
-					}
-					break;
-				case "q10": // Phone
-					if (!this._validatePhoneNumber(trimmedValue)) {
-						return { isValid: false, errorMessage: errorMessages.validationPhone || "Enter valid phone" };
-					}
-					break;
-				default:
-					if (question.validation?.pattern) {
-						const regex = new RegExp(question.validation.pattern);
-						if (!regex.test(trimmedValue)) {
-							return {
-								isValid: false,
-								errorMessage: question.validation.message || "Invalid format"
-							};
-						}
-					}
-			}
+		if (question.validation?.pattern) {
+			const isValid = new RegExp(question.validation.pattern).test(trimmedValue);
+			return isValid ? { isValid: true, errorMessage: null } : { isValid: false, errorMessage: question.validation.message || "Invalid format" };
 		}
 
 		return { isValid: true, errorMessage: null };
@@ -1295,25 +1153,23 @@ class ModularQuiz {
 
 	_updateFieldValidationState(input, question, validationResult) {
 		const errorEl = this.questionContainer.querySelector(`#error-${question.id}`);
+		const isValid = validationResult.isValid;
 
-		if (validationResult.isValid) {
-			input.classList.remove("quiz-input-error");
-			input.classList.add("quiz-input-valid");
-			if (errorEl) {
+		input.classList.toggle("quiz-input-error", !isValid);
+		input.classList.toggle("quiz-input-valid", isValid);
+
+		if (errorEl) {
+			if (isValid) {
 				errorEl.classList.add("quiz-error-hidden");
 				errorEl.classList.remove("quiz-error-visible");
-			}
-		} else {
-			input.classList.remove("quiz-input-valid");
-			input.classList.add("quiz-input-error");
-			if (errorEl && validationResult.errorMessage) {
+			} else if (validationResult.errorMessage) {
 				errorEl.textContent = validationResult.errorMessage;
 				errorEl.classList.remove("quiz-error-hidden");
 				errorEl.classList.add("quiz-error-visible");
 			}
 		}
 
-		return validationResult.isValid;
+		return isValid;
 	}
 
 	_clearFieldError(questionId, input) {
@@ -1329,13 +1185,9 @@ class ModularQuiz {
 	}
 
 	_updateDropdownColor(dropdown) {
-		if (dropdown.value === "" || dropdown.value === dropdown.options[0].value) {
-			dropdown.style.color = "#B0B0B0";
-			dropdown.classList.remove("quiz-dropdown-selected");
-		} else {
-			dropdown.style.color = "var(--quiz-text-primary)";
-			dropdown.classList.add("quiz-dropdown-selected");
-		}
+		const hasSelection = dropdown.value && dropdown.value !== dropdown.options[0].value;
+		dropdown.style.color = hasSelection ? "var(--quiz-text-primary)" : "#B0B0B0";
+		dropdown.classList.toggle("quiz-dropdown-selected", hasSelection);
 	}
 
 	_scrollToInvalidField(fieldElement) {
@@ -1360,10 +1212,6 @@ class ModularQuiz {
 			}, 300);
 		}
 	}
-
-	// =============================================================================
-	// QUIZ COMPLETION & RESULTS
-	// =============================================================================
 
 	async finishQuiz() {
 		const resultUrl = this.container.getAttribute("data-result-url") || this.container.getAttribute("data-booking-url") || "/quiz-complete";
@@ -1593,24 +1441,17 @@ class ModularQuiz {
 
 	showResults(resultUrl, webhookSuccess = true, resultData = null, errorMessage = "") {
 		this._stopLoadingMessages();
-		this._hideElement(this.navigationButtons);
-		this._hideElement(this.progressSection);
+		this._toggleElement(this.navigationButtons, false);
+		this._toggleElement(this.progressSection, false);
 
-		let resultsHTML = "";
 		const quizType = this.quizData?.type || "general";
-
-		if (!webhookSuccess) {
-			resultsHTML = this._generateErrorResultsHTML(resultUrl, errorMessage);
-		} else {
-			resultsHTML = this._generateResultsHTML(quizType, resultData, resultUrl);
-		}
+		const resultsHTML = webhookSuccess ? this._generateResultsHTML(quizType, resultData, resultUrl) : this._generateErrorResultsHTML(resultUrl, errorMessage);
 
 		this.questionContainer.innerHTML = resultsHTML;
 		this._attachFAQListeners();
 	}
 
 	_generateResultsHTML(quizType, resultData, resultUrl) {
-		// Auto-detect if it's an insurance/eligibility quiz for backward compatibility
 		const isEligibilityQuiz = this._isEligibilityQuiz(quizType, resultData);
 
 		if (isEligibilityQuiz) {
@@ -1632,12 +1473,10 @@ class ModularQuiz {
 	}
 
 	_isEligibilityQuiz(quizType, resultData) {
-		// Check if explicit type is set
 		if (quizType === "eligibility" || quizType === "insurance") {
 			return true;
 		}
 
-		// Check if resultData has eligibility-specific fields
 		if (
 			resultData &&
 			(resultData.hasOwnProperty("isEligible") || resultData.hasOwnProperty("eligibilityStatus") || resultData.hasOwnProperty("sessionsCovered") || resultData.hasOwnProperty("copay"))
@@ -1645,12 +1484,10 @@ class ModularQuiz {
 			return true;
 		}
 
-		// Check if quiz has payer search feature (indicates insurance quiz)
 		if (this.quizData?.config?.features?.payerSearch === true) {
 			return true;
 		}
 
-		// Check if quiz has payer-search questions
 		const hasPayerSearch = this.quizData?.steps?.some(step => step.questions?.some(q => q.type === "payer-search"));
 		if (hasPayerSearch) {
 			return true;
@@ -1829,8 +1666,7 @@ class ModularQuiz {
 		const sessionsCovered = parseInt(eligibilityData.sessionsCovered || "0", 10);
 		const copay = eligibilityData.copay || 0;
 
-		// Format plan dates if available
-		let coverageExpiry = "Dec 31, 2025"; // Default
+		let coverageExpiry = "Dec 31, 2025";
 		if (eligibilityData.planEnd) {
 			const endDate = eligibilityData.planEnd;
 			if (endDate.length === 8) {
@@ -2020,10 +1856,6 @@ class ModularQuiz {
 		});
 	}
 
-	// =============================================================================
-	// PAYER SEARCH FUNCTIONALITY
-	// =============================================================================
-
 	renderPayerSearch(question, response) {
 		const selectedPayer = response.answer;
 		const placeholder = question.placeholder || "Start typing to search for your insurance plan...";
@@ -2065,35 +1897,23 @@ class ModularQuiz {
 		const searchInput = this.questionContainer.querySelector(`#question-${question.id}`);
 		const dropdown = this.questionContainer.querySelector(`#search-dropdown-${question.id}`);
 
-		console.log("Debug - Attaching payer search listeners");
-		console.log("Debug - Search input found:", !!searchInput);
-		console.log("Debug - Dropdown found:", !!dropdown);
-
 		if (searchInput && dropdown) {
 			this._setupPayerSearchBehavior(question, searchInput, dropdown, selectedPayer => {
 				this.handleAnswer(selectedPayer);
 			});
-		} else {
-			console.error("Debug - Missing elements for payer search");
 		}
 	}
 
 	_attachPayerSearchFormListeners(question) {
-		console.log("Debug - Setting up form payer search listeners with delay");
 		setTimeout(() => {
 			const searchInput = this.questionContainer.querySelector(`#question-${question.id}`);
 			const dropdown = this.questionContainer.querySelector(`#search-dropdown-${question.id}`);
-
-			console.log("Debug - Form search input found:", !!searchInput);
-			console.log("Debug - Form dropdown found:", !!dropdown);
 
 			if (searchInput && dropdown) {
 				this._setupPayerSearchBehavior(question, searchInput, dropdown, selectedPayer => {
 					this.handleFormAnswer(question.id, selectedPayer);
 					this.updateNavigation();
 				});
-			} else {
-				console.error("Debug - Missing form elements for payer search");
 			}
 		}, 100);
 	}
@@ -2103,12 +1923,7 @@ class ModularQuiz {
 		let searchTimeout = null;
 		const container = searchInput.closest(".quiz-payer-search-container");
 
-		console.log("Debug - Setting up payer search behavior");
-		console.log("Debug - Container found:", !!container);
-
-		// Show dropdown when input is focused or clicked
 		searchInput.addEventListener("focus", () => {
-			console.log("Debug - Focus event triggered");
 			if (!isOpen) {
 				this._openPayerSearchDropdown(dropdown, container, searchInput);
 				isOpen = true;
@@ -2117,7 +1932,6 @@ class ModularQuiz {
 		});
 
 		searchInput.addEventListener("click", () => {
-			console.log("Debug - Click event triggered");
 			if (!isOpen) {
 				this._openPayerSearchDropdown(dropdown, container, searchInput);
 				isOpen = true;
@@ -2125,24 +1939,19 @@ class ModularQuiz {
 			}
 		});
 
-		// Handle typing in search input
 		searchInput.addEventListener("input", () => {
-			console.log("Debug - Input event triggered, value:", searchInput.value);
 			if (!isOpen) {
 				this._openPayerSearchDropdown(dropdown, container, searchInput);
 				isOpen = true;
 			}
 
 			const query = searchInput.value.trim();
-			console.log("Debug - Search query:", query);
 
-			// Clear previous timeout
 			if (searchTimeout) {
 				clearTimeout(searchTimeout);
 			}
 
 			if (query.length > 0) {
-				// Use current query value, not the one from when timeout was set
 				searchTimeout = setTimeout(() => {
 					const currentQuery = searchInput.value.trim();
 					this._searchPayers(currentQuery, dropdown, onSelectCallback);
@@ -2174,8 +1983,6 @@ class ModularQuiz {
 
 	_showInitialPayerList(dropdown, onSelectCallback) {
 		const commonPayers = this.quizData.commonPayers || [];
-		console.log("Debug - Initial payer list:", commonPayers.length, "payers available");
-		console.log("Debug - Sample payer:", commonPayers[0]);
 		const results = commonPayers.map(payer => ({ payer }));
 		this._renderSearchResults(results, "", dropdown, onSelectCallback);
 	}
@@ -2193,22 +2000,15 @@ class ModularQuiz {
 		`;
 
 		try {
-			// Try API search first
-			console.log("Debug - Attempting API search for:", query);
 			const apiResults = await this._searchPayersAPI(query);
-			console.log("Debug - API search returned:", apiResults?.length || 0, "results");
 			if (apiResults && apiResults.length > 0) {
-				console.log("Debug - Using API results");
 				this._renderSearchResults(apiResults, query, dropdown, onSelectCallback);
 				return;
-			} else {
-				console.log("Debug - API returned no results, falling back to local");
 			}
 		} catch (error) {
 			console.warn("API search failed, falling back to local search:", error);
 		}
 
-		// Fallback to local search
 		try {
 			const localResults = this._filterCommonPayers(query);
 			this._renderSearchResults(localResults, query, dropdown, onSelectCallback);
@@ -2221,10 +2021,6 @@ class ModularQuiz {
 	async _searchPayersAPI(query) {
 		const config = this.quizData.config?.apiConfig || {};
 		const apiKey = config.stediApiKey;
-
-		console.log("Debug - Full apiConfig:", config);
-		console.log("Debug - API key value:", apiKey);
-		console.log("Debug - API key length:", apiKey?.length);
 
 		if (!apiKey || apiKey.trim() === "") {
 			console.warn("Stedi API key not configured or empty, using local search only");
@@ -2239,8 +2035,6 @@ class ModularQuiz {
 		});
 
 		const url = `${baseUrl}?${params}`;
-		console.log("Debug - Making API request to:", url);
-		console.log("Debug - Using API key (first 10 chars):", apiKey.substring(0, 10) + "...");
 
 		const response = await fetch(url, {
 			method: "GET",
@@ -2250,20 +2044,13 @@ class ModularQuiz {
 			}
 		});
 
-		console.log("Debug - API response status:", response.status);
-		console.log("Debug - API response ok:", response.ok);
-
 		if (!response.ok) {
 			const errorText = await response.text();
-			console.error("Debug - API error response:", errorText);
 			throw new Error(`API request failed: ${response.status} - ${errorText}`);
 		}
 
 		const data = await response.json();
-		console.log("Debug - API response data:", data);
-		console.log("Debug - API items count:", data.items?.length || 0);
 
-		// Transform API response to match our expected format
 		const transformedResults =
 			data.items?.map(item => ({
 				payer: {
@@ -2275,16 +2062,12 @@ class ModularQuiz {
 				}
 			})) || [];
 
-		console.log("Debug - Transformed results:", transformedResults.length, "items");
 		return transformedResults;
 	}
 
 	_filterCommonPayers(query) {
 		const commonPayers = this.quizData.commonPayers || [];
 		const lowerQuery = query.toLowerCase();
-
-		console.log("Debug - Local search for:", query);
-		console.log("Debug - Available payers:", commonPayers.length);
 
 		const filtered = commonPayers
 			.filter(payer => {
@@ -2295,7 +2078,6 @@ class ModularQuiz {
 			.map(payer => ({ payer }))
 			.slice(0, 5);
 
-		console.log("Debug - Local filtered results:", filtered.length);
 		return filtered;
 	}
 
@@ -2360,7 +2142,6 @@ class ModularQuiz {
 		dropdown.style.display = "block";
 		container.classList.add("open");
 
-		// On mobile, scroll the search input to the top so dropdown is visible
 		const isMobile = window.innerWidth <= 768;
 		if (isMobile) {
 			setTimeout(() => {
@@ -2373,7 +2154,7 @@ class ModularQuiz {
 					top: Math.max(0, targetScrollY),
 					behavior: "smooth"
 				});
-			}, 100); // Small delay to ensure dropdown is visible
+			}, 100);
 		}
 	}
 
@@ -2395,10 +2176,6 @@ class ModularQuiz {
 		return matchingPayer?.displayName || null;
 	}
 
-	// =============================================================================
-	// FORM PROCESSING HELPERS
-	// =============================================================================
-
 	_processFormQuestions(questions) {
 		let html = "";
 		let i = 0;
@@ -2409,7 +2186,6 @@ class ModularQuiz {
 
 			const pairs = this.config.questionPairs || {};
 
-			// Check for member ID + group number pair
 			if (question.id === pairs.memberIdFields?.[0] && questions[i + 1]?.id === pairs.memberIdFields?.[1]) {
 				const groupNumberResponse = this.responses.find(r => r.questionId === questions[i + 1].id) || { answer: null };
 				html += this._generateFormFieldPair(question, questions[i + 1], response, groupNumberResponse);
@@ -2417,7 +2193,6 @@ class ModularQuiz {
 				continue;
 			}
 
-			// Check for name pair
 			if (question.id === pairs.nameFields?.[0] && questions[i + 1]?.id === pairs.nameFields?.[1]) {
 				const lastNameResponse = this.responses.find(r => r.questionId === questions[i + 1].id) || { answer: null };
 				html += this._generateFormFieldPair(question, questions[i + 1], response, lastNameResponse);
@@ -2425,7 +2200,6 @@ class ModularQuiz {
 				continue;
 			}
 
-			// Check for contact pair
 			if (question.id === pairs.contactFields?.[0] && questions[i + 1]?.id === pairs.contactFields?.[1]) {
 				const phoneResponse = this.responses.find(r => r.questionId === questions[i + 1].id) || { answer: null };
 				html += this._generateFormFieldPair(question, questions[i + 1], response, phoneResponse);
@@ -2433,7 +2207,6 @@ class ModularQuiz {
 				continue;
 			}
 
-			// Check for date part group
 			if (question.type === "date-part" && question.part === "month") {
 				const dayQuestion = questions[i + 1];
 				const yearQuestion = questions[i + 2];
@@ -2445,7 +2218,6 @@ class ModularQuiz {
 				}
 			}
 
-			// Regular single question
 			const tooltips = this.quizData.validation?.tooltips || {};
 			const helpIcon = tooltips[question.id] ? this._generateHelpIcon(question.id, tooltips[question.id]) : "";
 
@@ -2535,8 +2307,8 @@ class ModularQuiz {
 
 	showError(title, message) {
 		this._stopLoadingMessages();
-		this._hideElement(this.questions);
-		this._showElement(this.error);
+		this._toggleElement(this.questions, false);
+		this._toggleElement(this.error, true);
 
 		const errorTitle = this.error.querySelector("h3");
 		const errorMessage = this.error.querySelector("p");
@@ -2546,11 +2318,7 @@ class ModularQuiz {
 	}
 }
 
-// =============================================================================
-// INITIALIZATION
-// =============================================================================
-
 document.addEventListener("DOMContentLoaded", () => {
 	const quiz = new ModularQuiz();
-	window.productQuiz = quiz; // For debugging
+	window.productQuiz = quiz;
 });
