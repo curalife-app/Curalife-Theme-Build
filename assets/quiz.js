@@ -1736,6 +1736,13 @@ class ProductQuiz {
 </svg>
                 </div>
 				<div class="quiz-payer-search-dropdown" id="search-dropdown-${question.id}" style="display: none;">
+                    <div class="quiz-payer-search-dropdown-header">
+                        <button class="quiz-payer-search-close-btn" type="button" aria-label="Close dropdown">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 4L4 12M4 4L12 12" stroke="#6B7280" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </div>
                     <div class="quiz-payer-search-results"></div>
 				</div>
 				<p id="error-${question.id}" class="quiz-error-text quiz-error-hidden"></p>
@@ -1833,6 +1840,17 @@ class ProductQuiz {
 				this._showInitialPayerList(dropdown, onSelectCallback);
 			}
 		});
+
+		// Handle close button click
+		const closeButton = dropdown.querySelector(".quiz-payer-search-close-btn");
+		if (closeButton) {
+			closeButton.addEventListener("click", e => {
+				e.preventDefault();
+				e.stopPropagation();
+				this._closePayerSearchDropdown(dropdown, container, searchInput);
+				isOpen = false;
+			});
+		}
 
 		// Close dropdown when clicking outside
 		document.addEventListener("click", e => {
