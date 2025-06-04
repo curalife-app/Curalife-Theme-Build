@@ -1719,9 +1719,9 @@ class ProductQuiz {
                            value="${selectedDisplayName}"
                            autocomplete="off"
                            aria-describedby="error-${question.id}">
-                    <svg class="quiz-payer-search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <path d="M15 15L11.5 11.5M13 7C13 10.3137 10.3137 13 7 13C3.68629 13 1 10.3137 1 7C1 3.68629 3.68629 1 7 1C10.3137 1 13 3.68629 13 7Z" stroke="#121212" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" fill="none">
+  <path d="M13.1667 13.1667L16.5 16.5M14.8333 8.16667C14.8333 4.48477 11.8486 1.5 8.16667 1.5C4.48477 1.5 1.5 4.48477 1.5 8.16667C1.5 11.8486 4.48477 14.8333 8.16667 14.8333C11.8486 14.8333 14.8333 11.8486 14.8333 8.16667Z" stroke="#121212" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
                 </div>
 				<div class="quiz-payer-search-dropdown" id="search-dropdown-${question.id}" style="display: none;">
                     <div class="quiz-payer-search-results"></div>
