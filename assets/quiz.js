@@ -1098,6 +1098,18 @@ class ModularQuiz {
 	}
 
 	_validateFieldFormat(question, trimmedValue, errorMessages) {
+		// Check for Stedi API character restrictions first
+		const characterRestrictions = this.quizData.config?.characterRestrictions;
+		if (characterRestrictions && this._isRestrictedField(question.id)) {
+			const hasRestrictedChars = this._hasRestrictedCharacters(trimmedValue, characterRestrictions.disallowed);
+			if (hasRestrictedChars) {
+				return {
+					isValid: false,
+					errorMessage: `Cannot contain these characters: ${characterRestrictions.disallowed.join(" ")}`
+				};
+			}
+		}
+
 		const patterns = this.quizData.validation?.patterns || {};
 		const validations = {
 			q4: { pattern: patterns.memberId || "^.{6,20}$", message: errorMessages.validationMemberId || "Minimum 6 characters" },
@@ -1140,6 +1152,25 @@ class ModularQuiz {
 		];
 
 		return patterns.some(pattern => pattern.test(cleanPhone)) || patterns.some(pattern => pattern.test(phone));
+	}
+
+	_isRestrictedField(questionId) {
+		// Fields that need to comply with Stedi API character restrictions
+		return ["q4", "q7", "q8"].includes(questionId);
+	}
+
+	_hasRestrictedCharacters(value, restrictedChars) {
+		if (!value || !restrictedChars) return false;
+		return restrictedChars.some(char => value.includes(char));
+	}
+
+	_cleanRestrictedCharacters(value, restrictedChars) {
+		if (!value || !restrictedChars) return value;
+		let cleaned = value;
+		restrictedChars.forEach(char => {
+			cleaned = cleaned.replace(new RegExp(`\\${char}`, "g"), "");
+		});
+		return cleaned;
 	}
 
 	_updateFieldValidationState(input, question, validationResult) {
@@ -1725,6 +1756,11 @@ class ModularQuiz {
 		const messages = this.quizData.ui?.resultMessages?.eligible || {};
 		const sessionsCovered = parseInt(eligibilityData.sessionsCovered || "0", 10);
 		const copay = eligibilityData.copay || 0;
+		const deductible = eligibilityData.deductible?.individual || 0;
+		const coinsurance = eligibilityData.coinsurance || 0;
+		const outOfPocketMax = eligibilityData.outOfPocketMax || 0;
+		const inNetwork = eligibilityData.inNetwork !== false;
+		const coverageLevel = eligibilityData.coverageLevel || "IND";
 
 		let coverageExpiry = "Dec 31, 2025";
 		if (eligibilityData.planEnd) {
@@ -1748,20 +1784,21 @@ class ModularQuiz {
 					<h3 class="quiz-coverage-card-title">Here's Your Offer</h3>
 					<div class="quiz-coverage-pricing">
 						<div class="quiz-coverage-service-item">
-							<div class="quiz-coverage-service">Initial consultation – 60 minutes</div>
+							<div class="quiz-coverage-service">Initial consultation – 60 minutes${!inNetwork ? " (Out-of-network)" : ""}</div>
 							<div class="quiz-coverage-cost">
-								<span class="quiz-coverage-copay">Co-pay: $${copay}*</span>
+								${this._generateCostDisplay(copay, coinsurance, deductible, true)}
 								<span class="quiz-coverage-original-price">$100</span>
 							</div>
 						</div>
 						<div class="quiz-coverage-service-item">
-							<div class="quiz-coverage-service">Follow-up consultation – 30 minutes</div>
+							<div class="quiz-coverage-service">Follow-up consultation – 30 minutes${!inNetwork ? " (Out-of-network)" : ""}</div>
 							<div class="quiz-coverage-cost">
-								<span class="quiz-coverage-copay">Co-pay: $${copay}*</span>
+								${this._generateCostDisplay(copay, coinsurance, deductible, false)}
 								<span class="quiz-coverage-original-price">$50</span>
 							</div>
 						</div>
 					</div>
+					${this._generateBenefitSummaryHTML(deductible, outOfPocketMax, coinsurance, coverageLevel, inNetwork)}
 					<div class="quiz-coverage-divider"></div>
 					<div class="quiz-coverage-benefits">
 						<div class="quiz-coverage-benefit">
@@ -2092,6 +2129,70 @@ class ModularQuiz {
 		};
 
 		return errorGuidance[errorCode] || null;
+	}
+
+	_generateCostDisplay(copay, coinsurance, deductible, isInitial) {
+		// Prioritize display based on what's most relevant to the user
+		if (copay > 0) {
+			return `<span class="quiz-coverage-copay">Co-pay: $${copay}*</span>`;
+		}
+
+		if (coinsurance > 0) {
+			return `<span class="quiz-coverage-copay">Coinsurance: ${coinsurance}%*</span>`;
+		}
+
+		if (deductible > 0) {
+			const serviceCost = isInitial ? 100 : 50;
+			const estimatedCost = Math.min(serviceCost, deductible);
+			return `<span class="quiz-coverage-copay">After deductible: ~$${estimatedCost}*</span>`;
+		}
+
+		return `<span class="quiz-coverage-copay">Covered*</span>`;
+	}
+
+	_generateBenefitSummaryHTML(deductible, outOfPocketMax, coinsurance, coverageLevel, inNetwork) {
+		if (deductible === 0 && outOfPocketMax === 0 && coinsurance === 0) {
+			return "";
+		}
+
+		const levelText = coverageLevel === "FAM" ? "Family" : "Individual";
+		const networkText = inNetwork ? "in-network" : "out-of-network";
+
+		let summaryItems = [];
+
+		if (deductible > 0) {
+			summaryItems.push(`${levelText} deductible: $${deductible.toLocaleString()} (${networkText})`);
+		}
+
+		if (outOfPocketMax > 0) {
+			summaryItems.push(`${levelText} out-of-pocket max: $${outOfPocketMax.toLocaleString()} (${networkText})`);
+		}
+
+		if (coinsurance > 0) {
+			summaryItems.push(`Coinsurance: ${coinsurance}% (${networkText})`);
+		}
+
+		if (summaryItems.length === 0) return "";
+
+		return `
+			<div class="quiz-benefit-summary">
+				<h4 class="quiz-benefit-summary-title">Your ${levelText} Benefits Summary</h4>
+				<div class="quiz-benefit-summary-items">
+					${summaryItems
+						.map(
+							item => `
+						<div class="quiz-benefit-summary-item">
+							<svg class="quiz-benefit-summary-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+								<path d="M13.3333 4L6 11.3333L2.66666 8" stroke="#418865" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+							</svg>
+							<span>${item}</span>
+						</div>
+					`
+						)
+						.join("")}
+				</div>
+			</div>
+		`;
 	}
 
 	_generateFAQHTML() {
