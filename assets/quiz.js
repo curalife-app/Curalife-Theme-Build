@@ -352,10 +352,10 @@ class ModularQuiz {
 		if (!this.navigationButtons) return;
 
 		if (visible) {
-			this.navigationButtons.classList.remove("quiz-navigation-hidden");
+			this.navigationButtons.classList.remove("quiz-navigation-hidden", "hidden");
 			this.navigationButtons.classList.add("quiz-navigation-visible");
 		} else {
-			this.navigationButtons.classList.add("quiz-navigation-hidden");
+			this.navigationButtons.classList.add("quiz-navigation-hidden", "hidden");
 			this.navigationButtons.classList.remove("quiz-navigation-visible");
 		}
 	}
