@@ -1862,10 +1862,15 @@ class ProductQuiz {
 
 		try {
 			// Try API search first
+			console.log("Debug - Attempting API search for:", query);
 			const apiResults = await this._searchPayersAPI(query);
+			console.log("Debug - API search returned:", apiResults?.length || 0, "results");
 			if (apiResults && apiResults.length > 0) {
+				console.log("Debug - Using API results");
 				this._renderSearchResults(apiResults, query, dropdown, onSelectCallback);
 				return;
+			} else {
+				console.log("Debug - API returned no results, falling back to local");
 			}
 		} catch (error) {
 			console.warn("API search failed, falling back to local search:", error);
@@ -1885,8 +1890,12 @@ class ProductQuiz {
 		const config = this.quizData.apiConfig || {};
 		const apiKey = config.stediApiKey;
 
-		if (!apiKey) {
-			console.warn("Stedi API key not configured, using local search only");
+		console.log("Debug - Full apiConfig:", config);
+		console.log("Debug - API key value:", apiKey);
+		console.log("Debug - API key length:", apiKey?.length);
+
+		if (!apiKey || apiKey.trim() === "") {
+			console.warn("Stedi API key not configured or empty, using local search only");
 			return null;
 		}
 
@@ -1897,7 +1906,11 @@ class ProductQuiz {
 			eligibilityCheck: "SUPPORTED" // Filter for payers that support eligibility checks
 		});
 
-		const response = await fetch(`${baseUrl}?${params}`, {
+		const url = `${baseUrl}?${params}`;
+		console.log("Debug - Making API request to:", url);
+		console.log("Debug - Using API key (first 10 chars):", apiKey.substring(0, 10) + "...");
+
+		const response = await fetch(url, {
 			method: "GET",
 			headers: {
 				Authorization: apiKey,
@@ -1905,14 +1918,21 @@ class ProductQuiz {
 			}
 		});
 
+		console.log("Debug - API response status:", response.status);
+		console.log("Debug - API response ok:", response.ok);
+
 		if (!response.ok) {
-			throw new Error(`API request failed: ${response.status}`);
+			const errorText = await response.text();
+			console.error("Debug - API error response:", errorText);
+			throw new Error(`API request failed: ${response.status} - ${errorText}`);
 		}
 
 		const data = await response.json();
+		console.log("Debug - API response data:", data);
+		console.log("Debug - API items count:", data.items?.length || 0);
 
 		// Transform API response to match our expected format
-		return (
+		const transformedResults =
 			data.items?.map(item => ({
 				payer: {
 					stediId: item.payer.stediId,
@@ -1921,8 +1941,10 @@ class ProductQuiz {
 					aliases: item.payer.aliases || [],
 					score: item.score
 				}
-			})) || []
-		);
+			})) || [];
+
+		console.log("Debug - Transformed results:", transformedResults.length, "items");
+		return transformedResults;
 	}
 
 	_filterCommonPayers(query) {
