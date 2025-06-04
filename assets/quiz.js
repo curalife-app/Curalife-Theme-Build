@@ -179,10 +179,11 @@ class ProductQuiz {
 		this.quizData = JSON.parse(text);
 		this.config = this.quizData.config || {};
 
-		console.log("Debug - Quiz data loaded:", this.dataUrl);
-		console.log("Debug - Common payers in data:", this.quizData.commonPayers?.length || 0);
-		if (this.quizData.commonPayers?.length > 0) {
-			console.log("Debug - First payer structure:", this.quizData.commonPayers[0]);
+		// API configuration validation
+		if (this.quizData.apiConfig?.stediApiKey) {
+			console.log("Stedi API configured for payer search");
+		} else {
+			console.log("Using local payer search only - add stediApiKey to apiConfig for full search");
 		}
 
 		return this.quizData;
@@ -1778,6 +1779,7 @@ class ProductQuiz {
 
 	_setupPayerSearchBehavior(question, searchInput, dropdown, onSelectCallback) {
 		let isOpen = false;
+		let searchTimeout = null;
 		const container = searchInput.closest(".quiz-payer-search-container");
 
 		console.log("Debug - Setting up payer search behavior");
@@ -1812,8 +1814,18 @@ class ProductQuiz {
 
 			const query = searchInput.value.trim();
 			console.log("Debug - Search query:", query);
+
+			// Clear previous timeout
+			if (searchTimeout) {
+				clearTimeout(searchTimeout);
+			}
+
 			if (query.length > 0) {
-				setTimeout(() => this._searchPayers(query, dropdown, onSelectCallback), 300);
+				// Use current query value, not the one from when timeout was set
+				searchTimeout = setTimeout(() => {
+					const currentQuery = searchInput.value.trim();
+					this._searchPayers(currentQuery, dropdown, onSelectCallback);
+				}, 300);
 			} else {
 				this._showInitialPayerList(dropdown, onSelectCallback);
 			}
@@ -1837,25 +1849,88 @@ class ProductQuiz {
 	}
 
 	async _searchPayers(query, dropdown, onSelectCallback) {
+		const resultsContainer = dropdown.querySelector(".quiz-payer-search-results");
+		if (!resultsContainer) return;
+
+		// Show loading state
+		resultsContainer.innerHTML = `
+			<div class="quiz-payer-search-loading">
+				<div class="quiz-payer-search-loading-spinner"></div>
+				Searching insurance plans...
+			</div>
+		`;
+
 		try {
-			const results = this._filterCommonPayers(query);
-			this._renderSearchResults(results, query, dropdown, onSelectCallback);
+			// Try API search first
+			const apiResults = await this._searchPayersAPI(query);
+			if (apiResults && apiResults.length > 0) {
+				this._renderSearchResults(apiResults, query, dropdown, onSelectCallback);
+				return;
+			}
+		} catch (error) {
+			console.warn("API search failed, falling back to local search:", error);
+		}
+
+		// Fallback to local search
+		try {
+			const localResults = this._filterCommonPayers(query);
+			this._renderSearchResults(localResults, query, dropdown, onSelectCallback);
 		} catch (error) {
 			console.error("Payer search error:", error);
-			const resultsContainer = dropdown.querySelector(".quiz-payer-search-results");
-			if (resultsContainer) {
-				resultsContainer.innerHTML = `<div class="quiz-payer-search-error">Error searching. Please try again.</div>`;
-			}
+			resultsContainer.innerHTML = `<div class="quiz-payer-search-error">Error searching. Please try again.</div>`;
 		}
+	}
+
+	async _searchPayersAPI(query) {
+		const config = this.quizData.apiConfig || {};
+		const apiKey = config.stediApiKey;
+
+		if (!apiKey) {
+			console.warn("Stedi API key not configured, using local search only");
+			return null;
+		}
+
+		const baseUrl = "https://healthcare.us.stedi.com/2024-04-01/payers/search";
+		const params = new URLSearchParams({
+			query: query,
+			pageSize: "10",
+			eligibilityCheck: "SUPPORTED" // Filter for payers that support eligibility checks
+		});
+
+		const response = await fetch(`${baseUrl}?${params}`, {
+			method: "GET",
+			headers: {
+				Authorization: apiKey,
+				Accept: "application/json"
+			}
+		});
+
+		if (!response.ok) {
+			throw new Error(`API request failed: ${response.status}`);
+		}
+
+		const data = await response.json();
+
+		// Transform API response to match our expected format
+		return (
+			data.items?.map(item => ({
+				payer: {
+					stediId: item.payer.stediId,
+					displayName: item.payer.displayName,
+					primaryPayerId: item.payer.primaryPayerId,
+					aliases: item.payer.aliases || [],
+					score: item.score
+				}
+			})) || []
+		);
 	}
 
 	_filterCommonPayers(query) {
 		const commonPayers = this.quizData.commonPayers || [];
 		const lowerQuery = query.toLowerCase();
 
-		console.log("Debug - Searching for:", query);
+		console.log("Debug - Local search for:", query);
 		console.log("Debug - Available payers:", commonPayers.length);
-		console.log("Debug - First few payers:", commonPayers.slice(0, 3));
 
 		const filtered = commonPayers
 			.filter(payer => {
@@ -1866,7 +1941,7 @@ class ProductQuiz {
 			.map(payer => ({ payer }))
 			.slice(0, 5);
 
-		console.log("Debug - Filtered results:", filtered.length);
+		console.log("Debug - Local filtered results:", filtered.length);
 		return filtered;
 	}
 
@@ -1875,18 +1950,24 @@ class ProductQuiz {
 		if (!resultsContainer) return;
 
 		if (results.length === 0) {
-			resultsContainer.innerHTML = `<div class="quiz-payer-search-no-results">No insurance plans found.</div>`;
+			resultsContainer.innerHTML = `<div class="quiz-payer-search-no-results">No insurance plans found. Try a different search term.</div>`;
 		} else {
 			const resultsHTML = results
 				.map((item, index) => {
 					const payer = item.payer;
 					const highlightedName = this._highlightSearchTerm(payer.displayName, query);
+					const isApiResult = payer.score !== undefined;
+
 					return `
 					<div class="quiz-payer-search-item" data-index="${index}">
-                        <div class="quiz-payer-search-item-name">${highlightedName}</div>
+                        <div class="quiz-payer-search-item-name">
+							${highlightedName}
+							${isApiResult ? `<span class="quiz-api-result-indicator">✓</span>` : ""}
+						</div>
 						<div class="quiz-payer-search-item-details">
 							<span class="quiz-payer-search-item-id">${payer.stediId}</span>
                             ${payer.aliases?.length > 0 ? `• ${payer.aliases.slice(0, 2).join(", ")}` : ""}
+							${isApiResult && payer.score ? `• Score: ${payer.score.toFixed(1)}` : ""}
 						</div>
 					</div>
 				`;
