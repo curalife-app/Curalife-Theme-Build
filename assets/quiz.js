@@ -624,7 +624,11 @@ class ModularQuiz {
 		const currentQuestion = step.questions?.[this.currentQuestionIndex];
 		const isCurrentQuestionAutoAdvance = currentQuestion && this._shouldAutoAdvance(currentQuestion);
 
-		const shouldShowNavigation = !(isCurrentQuestionAutoAdvance && !isFormStep);
+		// Check if this question already has an answer
+		const hasExistingAnswer = currentQuestion && this.responses.find(r => r.questionId === currentQuestion.id)?.answer;
+
+		// Show navigation if: not auto-advance, OR is form step, OR already has an answer
+		const shouldShowNavigation = !isCurrentQuestionAutoAdvance || isFormStep || hasExistingAnswer;
 		this._setNavigationVisibility(shouldShowNavigation);
 
 		if (!shouldShowNavigation) return;
@@ -655,14 +659,22 @@ class ModularQuiz {
 	}
 
 	_getStepButtonText(step) {
-		if (step.id === "step-medical") {
-			const question = step.questions[this.currentQuestionIndex];
-			if (question?.type === "checkbox") {
-				const response = this.responses.find(r => r.questionId === question.id);
-				const hasSelection = response && Array.isArray(response.answer) && response.answer.length > 0;
-				return hasSelection ? step.ctaText || "Continue" : "Skip";
-			}
+		const question = step.questions[this.currentQuestionIndex];
+
+		// Handle multiple choice questions that are not required
+		if (question?.type === "multiple-choice" && !question.required) {
+			const response = this.responses.find(r => r.questionId === question.id);
+			const hasSelection = response && response.answer;
+			return hasSelection ? step.ctaText || "Continue" : "Skip";
 		}
+
+		// Handle checkbox questions (like medical step)
+		if (question?.type === "checkbox") {
+			const response = this.responses.find(r => r.questionId === question.id);
+			const hasSelection = response && Array.isArray(response.answer) && response.answer.length > 0;
+			return hasSelection ? step.ctaText || "Continue" : "Skip";
+		}
+
 		return step.ctaText || "Continue";
 	}
 
@@ -697,6 +709,10 @@ class ModularQuiz {
 	}
 
 	_shouldAutoAdvance(question) {
+		// Don't auto-advance multiple choice if it's not required
+		if (question.type === "multiple-choice" && !question.required) {
+			return false;
+		}
 		return question.type === "multiple-choice" || question.type === "dropdown";
 	}
 
