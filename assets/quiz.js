@@ -1023,15 +1023,31 @@ class ProductQuiz {
 		const textInput = this.questionContainer.querySelector(`#question-${question.id}`);
 		if (!textInput) return;
 
+		// Remove existing event listeners
 		textInput.removeEventListener("input", textInput._inputHandler);
+		textInput.removeEventListener("blur", textInput._blurHandler);
+		textInput.removeEventListener("change", textInput._changeHandler);
+
+		// Handle input without validation (just store the value)
 		textInput._inputHandler = () => {
-			const validationResult = this._validateFieldValue(question, textInput.value);
-			this._updateFieldValidationState(textInput, question, validationResult);
 			this.handleFormAnswer(question.id, textInput.value);
 		};
 
+		// Handle validation on blur/change
+		textInput._blurHandler = () => {
+			const validationResult = this._validateFieldValue(question, textInput.value);
+			this._updateFieldValidationState(textInput, question, validationResult);
+		};
+
+		textInput._changeHandler = () => {
+			const validationResult = this._validateFieldValue(question, textInput.value);
+			this._updateFieldValidationState(textInput, question, validationResult);
+		};
+
+		// Attach event listeners
 		textInput.addEventListener("input", textInput._inputHandler);
-		textInput.addEventListener("change", textInput._inputHandler);
+		textInput.addEventListener("blur", textInput._blurHandler);
+		textInput.addEventListener("change", textInput._changeHandler);
 	}
 
 	_attachTextareaListeners(question) {
