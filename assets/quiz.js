@@ -622,13 +622,12 @@ class ModularQuiz {
 
 		const isFormStep = this.isFormStep(step.id);
 		const currentQuestion = step.questions?.[this.currentQuestionIndex];
+
+		// Always show navigation for non-required multiple choice questions
+		const isNonRequiredMultipleChoice = currentQuestion?.type === "multiple-choice" && !currentQuestion.required;
 		const isCurrentQuestionAutoAdvance = currentQuestion && this._shouldAutoAdvance(currentQuestion);
 
-		// Check if this question already has an answer
-		const hasExistingAnswer = currentQuestion && this.responses.find(r => r.questionId === currentQuestion.id)?.answer;
-
-		// Show navigation if: not auto-advance, OR is form step, OR already has an answer
-		const shouldShowNavigation = !isCurrentQuestionAutoAdvance || isFormStep || hasExistingAnswer;
+		const shouldShowNavigation = isNonRequiredMultipleChoice || !isCurrentQuestionAutoAdvance || isFormStep;
 		this._setNavigationVisibility(shouldShowNavigation);
 
 		if (!shouldShowNavigation) return;
