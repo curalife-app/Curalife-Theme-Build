@@ -73,6 +73,11 @@ class ProductQuiz {
 
 		this.navHeader = this.container.querySelector("#quiz-nav-header");
 		this.progressSection = this.container.querySelector("#quiz-progress-section");
+
+		// Debug navigation elements
+		const allNavElements = document.querySelectorAll(".quiz-navigation");
+		console.log("Found navigation elements:", allNavElements.length, allNavElements);
+
 		this._isInitialized = true;
 	}
 
@@ -2087,6 +2092,10 @@ class ProductQuiz {
 // =============================================================================
 
 document.addEventListener("DOMContentLoaded", () => {
+	// Debug all quiz containers
+	const allQuizContainers = document.querySelectorAll("#product-quiz");
+	console.log("Found quiz containers:", allQuizContainers.length, allQuizContainers);
+
 	// Prevent multiple instances
 	if (window.productQuiz) {
 		console.warn("ProductQuiz already initialized");
