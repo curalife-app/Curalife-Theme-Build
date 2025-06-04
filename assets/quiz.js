@@ -292,6 +292,9 @@ class ProductQuiz {
 		if (step.legal && !this.isFormStep(step.id)) {
 			this._addLegalTextAfterNavigation(step.legal);
 		}
+
+		// Scroll to top when rendering a new step
+		window.scrollTo({ top: 0, behavior: "smooth" });
 	}
 
 	_updateProgressBar() {
