@@ -3142,6 +3142,295 @@ class ModularQuiz {
 		if (errorTitle) errorTitle.textContent = title;
 		if (errorMessage) errorMessage.textContent = message;
 	}
+
+	_processWebhookResult(result) {
+		console.log("Processing webhook result:", {
+			result,
+			hasSuccess: "success" in result,
+			hasBody: "body" in result,
+			hasEligibilityData: result?.eligibilityData || result?.body?.eligibilityData,
+			resultKeys: Object.keys(result || {}),
+			bodyKeys: result?.body ? Object.keys(result.body) : "no body"
+		});
+
+		// Handle nested response format (like from Google Cloud Function)
+		if (result?.body && typeof result.body === "object") {
+			console.log("Processing nested response format with body");
+			const bodyResult = result.body;
+
+			if (bodyResult?.success === true && bodyResult.eligibilityData) {
+				const eligibilityData = bodyResult.eligibilityData;
+
+				// Handle AAA_ERROR status from workflow
+				if (eligibilityData.eligibilityStatus === "AAA_ERROR") {
+					// Try multiple ways to extract the error code
+					const errorCode = eligibilityData.error?.code || eligibilityData.aaaErrorCode || eligibilityData.error?.allErrors?.[0]?.code || "Unknown";
+
+					console.log("Processing AAA_ERROR with code:", errorCode, "from eligibilityData:", eligibilityData);
+					return this._createAAAErrorEligibilityData(errorCode, eligibilityData.userMessage);
+				}
+
+				return eligibilityData;
+			}
+		}
+
+		// Handle direct response format
+		if (result?.success === true && result.eligibilityData) {
+			// Check if this is an AAA error from the workflow response
+			const eligibilityData = result.eligibilityData;
+
+			// Handle AAA_ERROR status from workflow
+			if (eligibilityData.eligibilityStatus === "AAA_ERROR") {
+				// Try multiple ways to extract the error code
+				const errorCode = eligibilityData.error?.code || eligibilityData.aaaErrorCode || eligibilityData.error?.allErrors?.[0]?.code || "Unknown";
+
+				console.log("Processing AAA_ERROR with code:", errorCode, "from eligibilityData:", eligibilityData);
+				return this._createAAAErrorEligibilityData(errorCode, eligibilityData.userMessage);
+			}
+
+			return eligibilityData;
+		}
+
+		// Handle error cases
+		if (result?.success === false) {
+			const errorMessage = result.error || result.message || "Unknown error from eligibility service";
+			return this._createErrorEligibilityData(errorMessage);
+		}
+
+		// Fallback for unknown formats
+		console.warn("Unknown webhook result format:", result);
+		return this._createProcessingEligibilityData();
+	}
+
+	_createErrorEligibilityData(message) {
+		return {
+			isEligible: false,
+			sessionsCovered: 0,
+			deductible: { individual: 0 },
+			eligibilityStatus: "ERROR",
+			userMessage: message || "There was an error checking your eligibility. Please contact customer support.",
+			planBegin: "",
+			planEnd: ""
+		};
+	}
+
+	_createAAAErrorEligibilityData(aaaError, errorMessage) {
+		const aaaErrorMappings = {
+			42: {
+				title: "Service Temporarily Unavailable",
+				message: "Your insurance company's system is temporarily unavailable. Please try again in a few minutes, or we can manually verify your coverage.",
+				actionTitle: "Alternative Options",
+				actionText: "Our team can verify your coverage manually while the system is down."
+			},
+			43: {
+				title: "Provider Registration Issue",
+				message: "Your insurance plan requires additional provider verification. Our team will contact you to complete the eligibility check.",
+				actionTitle: "Manual Verification Required",
+				actionText: "We'll verify your provider status and coverage details manually."
+			},
+			72: {
+				title: "Member ID Not Found",
+				message: "The member ID provided does not match our records. Please verify your member ID and try again.",
+				actionTitle: "ID Verification Required",
+				actionText: "Double-check your member ID matches exactly what's on your insurance card."
+			},
+			73: {
+				title: "Name Mismatch",
+				message: "The name provided doesn't match our records. Please verify the name matches exactly as shown on your insurance card.",
+				actionTitle: "Name Verification Required",
+				actionText: "Ensure the name matches exactly as it appears on your insurance card."
+			},
+			75: {
+				title: "Member Not Found",
+				message: "We couldn't find your insurance information in our system. This might be due to a recent plan change.",
+				actionTitle: "Manual Verification Required",
+				actionText: "Our team will manually verify your current insurance status."
+			},
+			76: {
+				title: "Duplicate Member ID",
+				message: "We found a duplicate member ID in the insurance database. This might be due to multiple plan records.",
+				actionTitle: "Account Verification Required",
+				actionText: "Our team will verify your current coverage status and resolve any account duplicates."
+			},
+			79: {
+				title: "System Connection Issue",
+				message: "There's a technical issue connecting with your insurance provider. Our team will manually verify your coverage.",
+				actionTitle: "Manual Verification",
+				actionText: "We'll process your eligibility manually and contact you with results."
+			}
+		};
+
+		// Convert error code to number for lookup
+		const numericErrorCode = parseInt(aaaError) || aaaError;
+		const errorInfo = aaaErrorMappings[numericErrorCode] || aaaErrorMappings[String(numericErrorCode)];
+
+		const finalMessage = errorMessage || errorInfo?.message || "There was an issue verifying your insurance coverage automatically. Our team will manually verify your coverage.";
+
+		return {
+			isEligible: false,
+			sessionsCovered: 0,
+			deductible: { individual: 0 },
+			eligibilityStatus: "AAA_ERROR",
+			userMessage: finalMessage,
+			planBegin: "",
+			planEnd: "",
+			aaaErrorCode: String(aaaError),
+			error: {
+				code: String(aaaError),
+				message: finalMessage,
+				isAAAError: true,
+				...errorInfo
+			}
+		};
+	}
+
+	_createProcessingEligibilityData() {
+		const processingMessages = this.quizData?.ui?.statusMessages?.processing || {};
+
+		return {
+			isEligible: null,
+			sessionsCovered: 0,
+			deductible: { individual: 0 },
+			eligibilityStatus: "PROCESSING",
+			userMessage:
+				processingMessages.userMessage ||
+				"Your eligibility check and account setup is still processing in the background. This can take up to 3 minutes for complex insurance verifications and account creation. Please proceed with booking - we'll contact you with your coverage details shortly.",
+			planBegin: "",
+			planEnd: ""
+		};
+	}
+
+	showResults(resultUrl, webhookSuccess = true, resultData = null, errorMessage = "") {
+		console.log("showResults called with:", {
+			webhookSuccess,
+			resultData,
+			eligibilityStatus: resultData?.eligibilityStatus,
+			isEligible: resultData?.isEligible,
+			errorMessage
+		});
+
+		this._stopLoadingMessages();
+		this._toggleElement(this.navigationButtons, false);
+		this._toggleElement(this.progressSection, false);
+
+		// Keep nav header visible for back button functionality
+		this._toggleElement(this.navHeader, true);
+
+		const quizType = this.quizData?.type || "general";
+		const resultsHTML = webhookSuccess ? this._generateResultsHTML(quizType, resultData, resultUrl) : this._generateErrorResultsHTML(resultUrl, errorMessage);
+
+		this.questionContainer.innerHTML = resultsHTML;
+		this._attachFAQListeners();
+
+		// Scroll to top of results
+		window.scrollTo({ top: 0, behavior: "smooth" });
+	}
+
+	_stopLoadingMessages() {
+		// Clear any loading intervals
+		if (this.loadingInterval) {
+			clearInterval(this.loadingInterval);
+			this.loadingInterval = null;
+		}
+	}
+
+	_generateResultsHTML(quizType, resultData, resultUrl) {
+		// Determine if this quiz should show insurance results
+		if (this._isEligibilityQuiz(quizType, resultData)) {
+			return this._generateInsuranceResultsHTML(resultData, resultUrl);
+		}
+
+		// For other quiz types, generate appropriate results
+		switch (quizType) {
+			case "assessment":
+				return this._generateAssessmentResultsHTML(resultData, resultUrl);
+			case "recommendation":
+				return this._generateRecommendationResultsHTML(resultData, resultUrl);
+			default:
+				return this._generateGenericResultsHTML(resultData, resultUrl);
+		}
+	}
+
+	_isEligibilityQuiz(quizType, resultData) {
+		// Check if this quiz has eligibility data or is specifically an eligibility quiz
+		return !!(resultData?.eligibilityStatus || resultData?.isEligible !== undefined || quizType === "eligibility" || this.quizData?.features?.eligibilityCheck);
+	}
+
+	_generateInsuranceResultsHTML(resultData, resultUrl) {
+		console.log("_generateInsuranceResultsHTML called with:", {
+			resultData,
+			isEligible: resultData?.isEligible,
+			eligibilityStatus: resultData?.eligibilityStatus,
+			hasError: !!resultData?.error
+		});
+
+		if (!resultData) {
+			console.log("No resultData, using generic results");
+			return this._generateGenericResultsHTML(resultData, resultUrl);
+		}
+
+		const isEligible = resultData.isEligible === true;
+		const eligibilityStatus = resultData.eligibilityStatus || "UNKNOWN";
+
+		console.log("Processing eligibility status:", eligibilityStatus, "isEligible:", isEligible);
+
+		if (isEligible && eligibilityStatus === "ELIGIBLE") {
+			console.log("Generating eligible insurance results");
+			return this._generateEligibleInsuranceResultsHTML(resultData, resultUrl);
+		}
+
+		if (eligibilityStatus === "AAA_ERROR") {
+			console.log("Generating AAA error results");
+			return this._generateAAAErrorResultsHTML(resultData, resultUrl);
+		}
+
+		if (eligibilityStatus === "TEST_DATA_ERROR") {
+			console.log("Generating test data error results");
+			return this._generateTestDataErrorResultsHTML(resultData, resultUrl);
+		}
+
+		if (eligibilityStatus === "NOT_COVERED" || (resultData.isEligible === false && eligibilityStatus === "ELIGIBLE")) {
+			console.log("Generating not covered insurance results");
+			return this._generateNotCoveredInsuranceResultsHTML(resultData, resultUrl);
+		}
+
+		console.log("Generating ineligible insurance results (fallback)");
+		return this._generateIneligibleInsuranceResultsHTML(resultData, resultUrl);
+	}
+
+	_generateGenericResultsHTML(resultData, resultUrl) {
+		return `
+			<div class="quiz-results-container">
+				<div class="quiz-results-header">
+					<h2 class="quiz-results-title">Quiz Complete</h2>
+					<p class="quiz-results-subtitle">Thank you for completing the assessment.</p>
+				</div>
+				<div class="quiz-action-section">
+					<div class="quiz-action-content">
+						<div class="quiz-action-header">
+							<h3 class="quiz-action-title">Next Steps</h3>
+						</div>
+						<div class="quiz-action-details">
+							<div class="quiz-action-info">
+								<div class="quiz-action-info-text">We've received your information and will be in touch soon with your personalized recommendations.</div>
+							</div>
+						</div>
+						<a href="${resultUrl}" class="quiz-booking-button">Continue</a>
+					</div>
+				</div>
+			</div>
+		`;
+	}
+
+	_generateAssessmentResultsHTML(resultData, resultUrl) {
+		// Implementation for assessment results
+		return this._generateGenericResultsHTML(resultData, resultUrl);
+	}
+
+	_generateRecommendationResultsHTML(resultData, resultUrl) {
+		// Implementation for recommendation results
+		return this._generateGenericResultsHTML(resultData, resultUrl);
+	}
 }
 
 document.addEventListener("DOMContentLoaded", () => {
