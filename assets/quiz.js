@@ -1407,25 +1407,25 @@ class ModularQuiz {
 		this._showLoadingScreen();
 
 		const loadingSteps = [
-			{ icon: "📝", title: "Processing Your Answers", description: "Analyzing your health information..." },
-			{ icon: "🔍", title: "Checking Insurance Coverage", description: "Verifying your benefits..." },
-			{ icon: "👩‍⚕️", title: "Finding Your Dietitian", description: "Matching you with the right expert..." },
-			{ icon: "📅", title: "Preparing Your Results", description: "Finalizing your personalized plan..." }
+			{ title: "Processing Your Answers", description: "Analyzing your health information..." },
+			{ title: "Checking Insurance Coverage", description: "Verifying your benefits..." },
+			{ title: "Finding Your Dietitian", description: "Matching you with the right expert..." },
+			{ title: "Preparing Your Results", description: "Finalizing your personalized plan..." }
 		];
 
 		for (let i = 0; i < loadingSteps.length; i++) {
 			const step = loadingSteps[i];
-			this._updateLoadingStep(step, i + 1, loadingSteps.length);
+			this._updateLoadingStep(step);
 
 			// Wait between steps for realistic loading feel
-			await new Promise(resolve => setTimeout(resolve, 800));
+			await new Promise(resolve => setTimeout(resolve, 900));
 		}
 
 		// Final completion step
-		this._updateLoadingStep({ icon: "✨", title: "Almost Ready!", description: "Preparing your personalized results..." }, loadingSteps.length, loadingSteps.length);
+		this._updateLoadingStep({ title: "Almost Ready!", description: "Preparing your personalized results..." });
 
 		// Final wait before showing results
-		await new Promise(resolve => setTimeout(resolve, 500));
+		await new Promise(resolve => setTimeout(resolve, 800));
 	}
 
 	_showLoadingScreen() {
@@ -1443,15 +1443,8 @@ class ModularQuiz {
 							<div class="quiz-loading-spinner-large"></div>
 						</div>
 						<div class="quiz-loading-step">
-							<div class="quiz-loading-step-icon">📝</div>
 							<h3 class="quiz-loading-step-title">Starting...</h3>
 							<p class="quiz-loading-step-description">Preparing to process your information</p>
-						</div>
-						<div class="quiz-loading-progress">
-							<div class="quiz-loading-progress-bar">
-								<div class="quiz-loading-progress-fill" style="width: 0%"></div>
-							</div>
-							<div class="quiz-loading-progress-text">Step 1 of 4</div>
 						</div>
 					</div>
 				</div>
@@ -1463,39 +1456,24 @@ class ModularQuiz {
 		}
 	}
 
-	_updateLoadingStep(step, currentStep, totalSteps) {
-		const iconElement = document.querySelector(".quiz-loading-step-icon");
+	_updateLoadingStep(step) {
 		const titleElement = document.querySelector(".quiz-loading-step-title");
 		const descriptionElement = document.querySelector(".quiz-loading-step-description");
-		const progressFill = document.querySelector(".quiz-loading-progress-fill");
-		const progressText = document.querySelector(".quiz-loading-progress-text");
 
-		if (iconElement && titleElement && descriptionElement) {
+		if (titleElement && descriptionElement) {
 			// Animate out
-			iconElement.style.opacity = "0";
 			titleElement.style.opacity = "0";
 			descriptionElement.style.opacity = "0";
 
 			setTimeout(() => {
 				// Update content
-				iconElement.textContent = step.icon;
 				titleElement.textContent = step.title;
 				descriptionElement.textContent = step.description;
 
-				// Update progress
-				const progress = (currentStep / totalSteps) * 100;
-				if (progressFill) {
-					progressFill.style.width = `${progress}%`;
-				}
-				if (progressText) {
-					progressText.textContent = `Step ${currentStep} of ${totalSteps}`;
-				}
-
 				// Animate in
-				iconElement.style.opacity = "1";
 				titleElement.style.opacity = "1";
 				descriptionElement.style.opacity = "1";
-			}, 200);
+			}, 300);
 		}
 	}
 
@@ -3466,6 +3444,10 @@ class ModularQuiz {
 		});
 
 		this._stopLoadingMessages();
+
+		// Hide loading screen and show results
+		this._toggleElement(this.loading, false);
+		this._toggleElement(this.questions, true);
 		this._toggleElement(this.navigationButtons, false);
 		this._toggleElement(this.progressSection, false);
 
