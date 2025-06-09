@@ -1299,29 +1299,24 @@ class ModularQuiz {
 		try {
 			this.submitting = true;
 			this.nextButton.disabled = true;
-			this.nextButton.innerHTML = `<div class="quiz-spinner"></div>Processing...`;
 
 			this._toggleElement(this.navigationButtons, false);
 			this._toggleElement(this.progressSection, false);
 
-			// Show processing message and ensure minimum loading time for UX
-			this._showBackgroundProcessNotification("🔄 Finalizing your results...", "info");
-
-			// Ensure minimum loading time of 2 seconds for better UX
-			const minLoadingTime = new Promise(resolve => setTimeout(resolve, 2000));
+			// Start the comprehensive loading sequence
+			await this._showComprehensiveLoadingSequence();
 
 			// Check if eligibility workflow is complete
 			let eligibilityResult = null;
 			if (this.eligibilityWorkflowPromise) {
 				if (this.eligibilityWorkflowResult) {
-					// Already completed - still wait for minimum loading time
+					// Already completed
 					eligibilityResult = this.eligibilityWorkflowResult;
 					console.log("Using cached eligibility result:", eligibilityResult);
-					await minLoadingTime; // Ensure user sees loading state
 				} else {
 					// Still running - wait for it
 					try {
-						eligibilityResult = await Promise.race([this.eligibilityWorkflowPromise, minLoadingTime.then(() => this.eligibilityWorkflowPromise)]);
+						eligibilityResult = await this.eligibilityWorkflowPromise;
 						console.log("Waited for eligibility result:", eligibilityResult);
 					} catch (error) {
 						console.error("Eligibility workflow failed:", error);
@@ -1330,7 +1325,6 @@ class ModularQuiz {
 				}
 			} else {
 				// No eligibility check was triggered - use default processing status
-				await minLoadingTime; // Still show loading for consistency
 				eligibilityResult = this._createProcessingEligibilityData();
 				console.log("No eligibility workflow, using processing status");
 			}
@@ -1404,6 +1398,104 @@ class ModularQuiz {
 			}
 
 			this.showResults(resultUrl, false, null, error.message);
+		}
+	}
+
+	// Comprehensive loading sequence with animated status updates
+	async _showComprehensiveLoadingSequence() {
+		// Show the loading screen with progress steps
+		this._showLoadingScreen();
+
+		const loadingSteps = [
+			{ icon: "📝", title: "Processing Your Answers", description: "Analyzing your health information..." },
+			{ icon: "🔍", title: "Checking Insurance Coverage", description: "Verifying your benefits..." },
+			{ icon: "👩‍⚕️", title: "Finding Your Dietitian", description: "Matching you with the right expert..." },
+			{ icon: "📅", title: "Preparing Your Results", description: "Finalizing your personalized plan..." }
+		];
+
+		for (let i = 0; i < loadingSteps.length; i++) {
+			const step = loadingSteps[i];
+			this._updateLoadingStep(step, i + 1, loadingSteps.length);
+
+			// Wait between steps for realistic loading feel
+			await new Promise(resolve => setTimeout(resolve, 800));
+		}
+
+		// Final completion step
+		this._updateLoadingStep({ icon: "✨", title: "Almost Ready!", description: "Preparing your personalized results..." }, loadingSteps.length, loadingSteps.length);
+
+		// Final wait before showing results
+		await new Promise(resolve => setTimeout(resolve, 500));
+	}
+
+	_showLoadingScreen() {
+		// Hide quiz content and show loading screen
+		this._toggleElement(this.questionsContainer, false);
+		this._toggleElement(this.resultsContainer, false);
+		this._toggleElement(this.errorContainer, false);
+
+		// Show loading container
+		if (this.loadingContainer) {
+			this.loadingContainer.innerHTML = `
+				<div class="quiz-comprehensive-loading">
+					<div class="quiz-loading-content">
+						<div class="quiz-loading-icon">
+							<div class="quiz-loading-spinner-large"></div>
+						</div>
+						<div class="quiz-loading-step">
+							<div class="quiz-loading-step-icon">📝</div>
+							<h3 class="quiz-loading-step-title">Starting...</h3>
+							<p class="quiz-loading-step-description">Preparing to process your information</p>
+						</div>
+						<div class="quiz-loading-progress">
+							<div class="quiz-loading-progress-bar">
+								<div class="quiz-loading-progress-fill" style="width: 0%"></div>
+							</div>
+							<div class="quiz-loading-progress-text">Step 1 of 4</div>
+						</div>
+					</div>
+				</div>
+			`;
+			this._toggleElement(this.loadingContainer, true);
+		} else {
+			// Fallback: update next button
+			this.nextButton.innerHTML = `<div class="quiz-spinner"></div>Processing...`;
+		}
+	}
+
+	_updateLoadingStep(step, currentStep, totalSteps) {
+		const iconElement = document.querySelector(".quiz-loading-step-icon");
+		const titleElement = document.querySelector(".quiz-loading-step-title");
+		const descriptionElement = document.querySelector(".quiz-loading-step-description");
+		const progressFill = document.querySelector(".quiz-loading-progress-fill");
+		const progressText = document.querySelector(".quiz-loading-progress-text");
+
+		if (iconElement && titleElement && descriptionElement) {
+			// Animate out
+			iconElement.style.opacity = "0";
+			titleElement.style.opacity = "0";
+			descriptionElement.style.opacity = "0";
+
+			setTimeout(() => {
+				// Update content
+				iconElement.textContent = step.icon;
+				titleElement.textContent = step.title;
+				descriptionElement.textContent = step.description;
+
+				// Update progress
+				const progress = (currentStep / totalSteps) * 100;
+				if (progressFill) {
+					progressFill.style.width = `${progress}%`;
+				}
+				if (progressText) {
+					progressText.textContent = `Step ${currentStep} of ${totalSteps}`;
+				}
+
+				// Animate in
+				iconElement.style.opacity = "1";
+				titleElement.style.opacity = "1";
+				descriptionElement.style.opacity = "1";
+			}, 200);
 		}
 	}
 
