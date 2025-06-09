@@ -1573,34 +1573,58 @@ class ModularQuiz {
 						if (this.isTestMode) {
 							const commonIssues = [];
 
-							// Analyze common 500 error causes
+							// Analyze common error causes
 							if (error.status === 500) {
-								commonIssues.push("• Server-side workflow execution error");
+								// Parse the error text to understand the root cause
+								if (error.message.includes("409") || error.message.includes("CONFLICT")) {
+									commonIssues.push("🔄 HubSpot Contact Already Exists");
+									commonIssues.push("• This is expected when re-running the quiz");
+									commonIssues.push("• The workflow has handling for this (lines 355-380)");
+									commonIssues.push("• Issue: Error thrown before handling logic");
+									commonIssues.push("• Fix: Modify workflow to catch HTTP 409 properly");
+									commonIssues.push("• Current: Error in 'createHubSpotContact' step");
+									commonIssues.push("• Solution: Add try/except around HTTP call");
+								} else if (error.message.includes("Shopify")) {
+									commonIssues.push("🛒 Shopify API Issue");
+									commonIssues.push("• Check Shopify customer creation");
+									commonIssues.push("• Verify API permissions");
+								} else if (error.message.includes("HTTP server responded with error code")) {
+									const httpCode = error.message.match(/error code (\d+)/)?.[1];
+									commonIssues.push(`🌐 HTTP Error ${httpCode || "Unknown"}`);
+									commonIssues.push("• External API call failed");
+									commonIssues.push("• Check API credentials and endpoints");
+								} else {
+									commonIssues.push("• Server-side workflow execution error");
 
-								// Check for potential data issues
-								if (!userPayload.customerEmail?.includes("@")) {
-									commonIssues.push("• Invalid email format in payload");
-								}
-								if (!userPayload.allResponses || userPayload.allResponses.length === 0) {
-									commonIssues.push("• Missing allResponses array");
-								}
-								if (!userPayload.eligibilityData) {
-									commonIssues.push("• Missing eligibilityData object");
+									// Check for potential data issues
+									if (!userPayload.customerEmail?.includes("@")) {
+										commonIssues.push("• Invalid email format in payload");
+									}
+									if (!userPayload.allResponses || userPayload.allResponses.length === 0) {
+										commonIssues.push("• Missing allResponses array");
+									}
+									if (!userPayload.eligibilityData) {
+										commonIssues.push("• Missing eligibilityData object");
+									}
 								}
 
 								commonIssues.push("• Check Google Cloud Function logs");
 								commonIssues.push("• Check user creation workflow YAML");
 							}
 
+							// Determine notification type based on error severity
+							const notificationType = error.message.includes("CONFLICT") || error.message.includes("409") ? "info" : "error";
+							const statusIcon = notificationType === "info" ? "🔄" : "❌";
+
 							this._showBackgroundProcessNotification(
 								`
-								🧪 TEST MODE - User Creation Server Error<br>
-								❌ ${error.status} ${error.statusText}<br>
-								• Error: ${error.message.substring(0, 200)}${error.message.length > 200 ? "..." : ""}<br>
-								<br>Potential causes:<br>
+								🧪 TEST MODE - User Creation Analysis<br>
+								${statusIcon} ${response.status} ${response.statusText}<br>
+								• Error: ${errorText.substring(0, 300)}${errorText.length > 300 ? "..." : ""}<br>
+								<br>Analysis:<br>
 								${commonIssues.join("<br>")}
 							`,
-								"error"
+								notificationType
 							);
 						}
 					});
