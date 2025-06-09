@@ -1276,19 +1276,30 @@ class ModularQuiz {
 				if (this.eligibilityWorkflowResult) {
 					// Already completed
 					eligibilityResult = this.eligibilityWorkflowResult;
+					console.log("Using cached eligibility result:", eligibilityResult);
 				} else {
 					// Still running, show loading and wait
 					this._startLoadingMessages();
 					try {
 						eligibilityResult = await this.eligibilityWorkflowPromise;
 						this.eligibilityWorkflowResult = eligibilityResult;
+						console.log("Received fresh eligibility result:", eligibilityResult);
 					} catch (error) {
+						console.error("Eligibility workflow failed:", error);
 						this.eligibilityWorkflowError = error;
 						eligibilityResult = this._createErrorEligibilityData(error.message);
 					}
 					this._stopLoadingMessages();
 				}
 			}
+
+			// Debug the eligibility result processing
+			console.log("Processing eligibility result in finishQuiz:", {
+				eligibilityResult,
+				status: eligibilityResult?.eligibilityStatus,
+				isEligible: eligibilityResult?.isEligible,
+				hasError: !!eligibilityResult?.error
+			});
 
 			// Show results immediately - always prioritize eligibility results like telemedicine-workflow
 			const webhookSuccess = !eligibilityResult || eligibilityResult.eligibilityStatus !== "ERROR";
@@ -1299,6 +1310,12 @@ class ModularQuiz {
 				userCreationSuccess: this.userCreationWorkflowPromise ? null : false, // Will be updated when user creation completes
 				userCreationDetails: null
 			};
+
+			console.log("Showing results with data:", {
+				resultData,
+				webhookSuccess,
+				eligibilityStatus: resultData?.eligibilityStatus
+			});
 
 			this.showResults(resultUrl, webhookSuccess, resultData);
 
@@ -1312,6 +1329,7 @@ class ModularQuiz {
 				});
 			}
 		} catch (error) {
+			console.error("Error in finishQuiz:", error);
 			this._stopLoadingMessages();
 			this.showResults(resultUrl, false, null, error.message);
 		} finally {
@@ -1617,16 +1635,21 @@ class ModularQuiz {
 
 			// Handle AAA_ERROR status from workflow
 			if (eligibilityData.eligibilityStatus === "AAA_ERROR") {
-				const errorCode = eligibilityData.error?.code;
+				// Try multiple ways to extract the error code
+				const errorCode = eligibilityData.error?.code || eligibilityData.aaaErrorCode || eligibilityData.error?.allErrors?.[0]?.code || "Unknown";
+
+				console.log("Processing AAA_ERROR with code:", errorCode, "from eligibilityData:", eligibilityData);
 				return this._createAAAErrorEligibilityData(errorCode, eligibilityData.userMessage);
 			}
 
 			// Handle PAYER_ERROR status - check if it's actually an AAA error
 			if (eligibilityData.eligibilityStatus === "PAYER_ERROR" && eligibilityData.error?.isAAAError) {
-				const errorCode = eligibilityData.error?.code;
+				const errorCode = eligibilityData.error?.code || "Unknown";
+				console.log("Processing PAYER_ERROR with AAA characteristics, code:", errorCode);
 				return this._createAAAErrorEligibilityData(errorCode, eligibilityData.userMessage);
 			}
 
+			// For any other successful workflow response, return the eligibility data as-is
 			return eligibilityData;
 		} else if (result?.success === false) {
 			// Handle legacy AAA errors specifically (for backwards compatibility)
@@ -1683,6 +1706,12 @@ class ModularQuiz {
 				actionTitle: "Manual Coverage Verification",
 				actionText: "Our team will manually verify your coverage and help get you connected with a dietitian."
 			},
+			76: {
+				title: "Duplicate Member ID Found",
+				message: "We found a duplicate member ID in the insurance database. This might be due to multiple plan records.",
+				actionTitle: "Member ID Verification",
+				actionText: "Our team will verify your current coverage status and help resolve any duplicate records."
+			},
 			79: {
 				title: "System Connection Issue",
 				message: "There's a technical issue connecting with your insurance provider. Our team will manually verify your coverage.",
@@ -1691,12 +1720,18 @@ class ModularQuiz {
 			}
 		};
 
-		const errorInfo = aaaErrorMappings[aaaError] || {
+		// Convert error code to number for lookup (handle both string and number inputs)
+		const numericErrorCode = parseInt(aaaError, 10);
+		const errorCode = isNaN(numericErrorCode) ? aaaError : numericErrorCode;
+
+		const errorInfo = aaaErrorMappings[errorCode] || {
 			title: `Insurance Verification Error (${aaaError})`,
 			message: errorMessage || "There was an issue verifying your insurance coverage.",
 			actionTitle: "Coverage Verification",
 			actionText: "Our team will manually verify your coverage and contact you with the results."
 		};
+
+		console.log("Creating AAA error data for code:", aaaError, "->", errorCode, "with info:", errorInfo);
 
 		return {
 			isEligible: false,
@@ -1763,6 +1798,14 @@ class ModularQuiz {
 	}
 
 	showResults(resultUrl, webhookSuccess = true, resultData = null, errorMessage = "") {
+		console.log("showResults called with:", {
+			webhookSuccess,
+			resultData,
+			eligibilityStatus: resultData?.eligibilityStatus,
+			isEligible: resultData?.isEligible,
+			errorMessage
+		});
+
 		this._stopLoadingMessages();
 		this._toggleElement(this.navigationButtons, false);
 		this._toggleElement(this.progressSection, false);
@@ -1929,25 +1972,41 @@ class ModularQuiz {
 	}
 
 	_generateInsuranceResultsHTML(resultData, resultUrl) {
+		console.log("_generateInsuranceResultsHTML called with:", {
+			resultData,
+			isEligible: resultData?.isEligible,
+			eligibilityStatus: resultData?.eligibilityStatus,
+			hasError: !!resultData?.error
+		});
+
 		if (!resultData) {
+			console.log("No resultData, using generic results");
 			return this._generateGenericResultsHTML(resultData, resultUrl);
 		}
 
 		const isEligible = resultData.isEligible === true;
 		const eligibilityStatus = resultData.eligibilityStatus || "UNKNOWN";
 
+		console.log("Processing eligibility status:", eligibilityStatus, "isEligible:", isEligible);
+
 		if (isEligible && eligibilityStatus === "ELIGIBLE") {
+			console.log("Generating eligible insurance results");
 			return this._generateEligibleInsuranceResultsHTML(resultData, resultUrl);
 		} else if (resultData.isEligible === false && eligibilityStatus === "NOT_COVERED") {
+			console.log("Generating not covered insurance results");
 			return this._generateNotCoveredInsuranceResultsHTML(resultData, resultUrl);
 		} else if (eligibilityStatus === "AAA_ERROR") {
+			console.log("Generating AAA error results");
 			return this._generateAAAErrorResultsHTML(resultData, resultUrl);
 		} else if (eligibilityStatus === "PAYER_ERROR" && resultData.error?.isAAAError) {
 			// Handle PAYER_ERROR that contains AAA error information
+			console.log("Generating AAA error results for PAYER_ERROR");
 			return this._generateAAAErrorResultsHTML(resultData, resultUrl);
 		} else if (eligibilityStatus === "TEST_DATA_ERROR") {
+			console.log("Generating test data error results");
 			return this._generateTestDataErrorResultsHTML(resultData, resultUrl);
 		} else {
+			console.log("Generating ineligible insurance results (fallback)");
 			return this._generateIneligibleInsuranceResultsHTML(resultData, resultUrl);
 		}
 	}
