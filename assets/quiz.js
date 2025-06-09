@@ -31,6 +31,12 @@ class ModularQuiz {
 		this.submitting = false;
 		this.loadingInterval = null;
 
+		// New state for background processing
+		this.eligibilityWorkflowPromise = null;
+		this.eligibilityWorkflowResult = null;
+		this.eligibilityWorkflowError = null;
+		this.userCreationWorkflowPromise = null;
+
 		this.init();
 	}
 
@@ -231,6 +237,43 @@ class ModularQuiz {
         `;
 		document.body.appendChild(indicator);
 		setTimeout(() => indicator.remove(), 5000);
+	}
+
+	_showBackgroundProcessNotification(text, type = "info") {
+		// Remove any existing background process notifications
+		const existing = document.querySelector(".quiz-background-process-notification");
+		if (existing) existing.remove();
+
+		const notification = document.createElement("div");
+		notification.className = "quiz-background-process-notification";
+		notification.innerHTML = text;
+
+		const backgroundColor = type === "success" ? "#4CAF50" : type === "error" ? "#f56565" : "#2196F3";
+		notification.style.cssText = `
+            position: fixed; top: 70px; right: 10px; background: ${backgroundColor};
+            color: white; padding: 12px 16px; border-radius: 8px; font-weight: 500;
+            font-size: 13px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            max-width: 300px; opacity: 0; transform: translateX(100%);
+            transition: all 0.3s ease-in-out;
+        `;
+
+		document.body.appendChild(notification);
+
+		// Animate in
+		setTimeout(() => {
+			notification.style.opacity = "1";
+			notification.style.transform = "translateX(0)";
+		}, 100);
+
+		// Animate out and remove
+		setTimeout(
+			() => {
+				notification.style.opacity = "0";
+				notification.style.transform = "translateX(100%)";
+				setTimeout(() => notification.remove(), 300);
+			},
+			type === "success" ? 3000 : 4000
+		);
 	}
 
 	getCurrentStep() {
@@ -614,6 +657,18 @@ class ModularQuiz {
 
 		if (this.isFormStep(currentStep.id)) {
 			if (!this._validateFormStep(currentStep)) return;
+
+			// Check if this is the insurance step completion
+			if (currentStep.id === "step-insurance") {
+				this._triggerEligibilityWorkflow();
+			}
+
+			// Check if this is the contact step completion
+			if (currentStep.id === "step-contact") {
+				this._triggerUserCreationWorkflow();
+				this.finishQuiz();
+				return;
+			}
 
 			if (this.currentStepIndex < this.quizData.steps.length - 1) {
 				this.currentStepIndex++;
@@ -1212,30 +1267,48 @@ class ModularQuiz {
 			this.nextButton.disabled = true;
 			this.nextButton.innerHTML = `<div class="quiz-spinner"></div>Processing...`;
 
-			const payload = this._buildSubmissionPayload();
-
 			this._toggleElement(this.navigationButtons, false);
 			this._toggleElement(this.progressSection, false);
-			this._startLoadingMessages();
 
-			// Check if quiz has webhook processing
-			const webhookUrl = this.container.getAttribute("data-webhook-url") || this.quizData.config?.webhookUrl;
-			let resultData = null;
-
-			// Always call real webhook/API if configured
-			if (webhookUrl) {
-				resultData = await this._submitToWebhook(webhookUrl, payload);
+			// Check if eligibility workflow is complete
+			let eligibilityResult = null;
+			if (this.eligibilityWorkflowPromise) {
+				if (this.eligibilityWorkflowResult) {
+					// Already completed
+					eligibilityResult = this.eligibilityWorkflowResult;
+				} else {
+					// Still running, show loading and wait
+					this._startLoadingMessages();
+					try {
+						eligibilityResult = await this.eligibilityWorkflowPromise;
+						this.eligibilityWorkflowResult = eligibilityResult;
+					} catch (error) {
+						this.eligibilityWorkflowError = error;
+						eligibilityResult = this._createErrorEligibilityData(error.message);
+					}
+					this._stopLoadingMessages();
+				}
 			}
 
-			this._stopLoadingMessages();
-			const webhookSuccess = !resultData || resultData.eligibilityStatus !== "ERROR";
+			// Show results immediately - always prioritize eligibility results like telemedicine-workflow
+			const webhookSuccess = !eligibilityResult || eligibilityResult.eligibilityStatus !== "ERROR";
+
+			// Prepare result data with user creation status (matches telemedicine-workflow response format)
+			const resultData = {
+				...eligibilityResult,
+				userCreationSuccess: this.userCreationWorkflowPromise ? null : false, // Will be updated when user creation completes
+				userCreationDetails: null
+			};
+
 			this.showResults(resultUrl, webhookSuccess, resultData);
 
 			if (window.analytics?.track) {
 				window.analytics.track("Quiz Completed", {
 					quizId: this.quizData?.id || "quiz",
 					quizType: this.quizData?.type || "general",
-					successfullySubmitted: webhookSuccess
+					successfullySubmitted: webhookSuccess,
+					hadBackgroundEligibilityCheck: !!this.eligibilityWorkflowPromise,
+					userCreationTriggered: !!this.userCreationWorkflowPromise
 				});
 			}
 		} catch (error) {
@@ -1246,6 +1319,142 @@ class ModularQuiz {
 			this.nextButton.disabled = false;
 			this.nextButton.innerHTML = "Next";
 		}
+	}
+
+	_triggerEligibilityWorkflow() {
+		try {
+			const eligibilityPayload = this._buildEligibilityPayload();
+			const webhookUrl = this.container.getAttribute("data-webhook-url") || this.quizData.config?.webhookUrl;
+
+			if (webhookUrl) {
+				console.log("🔍 Starting eligibility check in background...", {
+					firstName: eligibilityPayload.customerInfo?.firstName,
+					lastName: eligibilityPayload.customerInfo?.lastName,
+					insurance: eligibilityPayload.insuranceInfo?.primaryPayerId
+				});
+
+				// Show brief notification
+				this._showBackgroundProcessNotification("🔍 Checking your insurance coverage in the background...");
+
+				this.eligibilityWorkflowPromise = this._submitEligibilityToWebhook(webhookUrl, eligibilityPayload);
+
+				// Handle completion in background
+				this.eligibilityWorkflowPromise
+					.then(result => {
+						console.log("✅ Eligibility check completed in background", {
+							success: result?.success,
+							eligibilityStatus: result?.eligibilityStatus,
+							isEligible: result?.isEligible
+						});
+						this.eligibilityWorkflowResult = result;
+						this._showBackgroundProcessNotification("✅ Insurance coverage check complete!", "success");
+					})
+					.catch(error => {
+						console.error("❌ Eligibility check failed in background", error);
+						this.eligibilityWorkflowError = error;
+						// Don't show error notification here - user will see it in results
+					});
+			} else {
+				console.warn("No webhook URL configured for eligibility check");
+			}
+		} catch (error) {
+			console.error("Failed to trigger eligibility workflow:", error);
+		}
+	}
+
+	_triggerUserCreationWorkflow() {
+		try {
+			// Wait for eligibility to complete before starting user creation
+			// This maintains the dependency while still being non-blocking for UI
+			if (this.eligibilityWorkflowPromise) {
+				this.eligibilityWorkflowPromise
+					.then(eligibilityResult => {
+						this._startUserCreationWithEligibilityData(eligibilityResult);
+					})
+					.catch(error => {
+						console.error("❌ Eligibility failed, starting user creation without eligibility data", error);
+						this._startUserCreationWithEligibilityData(null);
+					});
+			} else {
+				// No eligibility workflow running, start user creation without eligibility data
+				this._startUserCreationWithEligibilityData(null);
+			}
+		} catch (error) {
+			console.error("Failed to trigger user creation workflow:", error);
+		}
+	}
+
+	_startUserCreationWithEligibilityData(eligibilityData) {
+		try {
+			const userPayload = this._buildUserCreationPayload(eligibilityData);
+			const userCreationUrl =
+				this.container.getAttribute("data-user-creation-url") ||
+				(this.container.getAttribute("data-webhook-url") && this.container.getAttribute("data-webhook-url").replace("/eligibility", "/user-creation"));
+
+			if (userCreationUrl) {
+				console.log("👤 Starting user creation with eligibility data...", {
+					hasEligibilityData: !!eligibilityData,
+					eligibilityStatus: eligibilityData?.eligibilityStatus || "none"
+				});
+
+				this.userCreationWorkflowPromise = this._submitUserCreationToWebhook(userCreationUrl, userPayload);
+
+				// Handle completion in background (optional - doesn't block UI)
+				this.userCreationWorkflowPromise
+					.then(result => {
+						console.log("✅ User creation completed in background", result);
+					})
+					.catch(error => {
+						console.error("❌ User creation failed in background", error);
+						// User creation failure doesn't affect UI - user already sees eligibility results
+					});
+			}
+		} catch (error) {
+			console.error("Failed to start user creation with eligibility data:", error);
+		}
+	}
+
+	_buildEligibilityPayload() {
+		const extractedData = this._extractResponseData();
+
+		return {
+			quizId: this.quizData.id,
+			quizTitle: this.quizData.title,
+			workflowType: "eligibility",
+			triggeredAt: new Date().toISOString(),
+			// Only include data needed for eligibility
+			customerEmail: extractedData.customerEmail,
+			firstName: extractedData.firstName,
+			lastName: extractedData.lastName,
+			phoneNumber: extractedData.phoneNumber,
+			state: extractedData.state,
+			insurance: extractedData.insurance,
+			insurancePrimaryPayerId: extractedData.insurancePrimaryPayerId,
+			insuranceMemberId: extractedData.insuranceMemberId,
+			groupNumber: extractedData.groupNumber,
+			dateOfBirth: extractedData.dateOfBirth,
+			mainReasons: extractedData.mainReasons,
+			medicalConditions: extractedData.medicalConditions
+		};
+	}
+
+	_buildUserCreationPayload(eligibilityData = null) {
+		const extractedData = this._extractResponseData();
+
+		return {
+			quizId: this.quizData.id,
+			quizTitle: this.quizData.title,
+			workflowType: "user_creation",
+			triggeredAt: new Date().toISOString(),
+			...extractedData,
+			allResponses: this.responses.map(r => ({
+				stepId: r.stepId,
+				questionId: r.questionId,
+				answer: r.answer
+			})),
+			// Include eligibility data if available - this maintains the dependency
+			eligibilityData: eligibilityData
+		};
 	}
 
 	_buildSubmissionPayload() {
@@ -1311,6 +1520,66 @@ class ModularQuiz {
 		}
 
 		return data;
+	}
+
+	async _submitEligibilityToWebhook(webhookUrl, payload) {
+		try {
+			const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Eligibility request timed out")), 45000));
+
+			const fetchPromise = fetch(webhookUrl, {
+				method: "POST",
+				mode: "cors",
+				headers: {
+					"Content-Type": "application/json",
+					Accept: "application/json",
+					"X-Workflow-Type": "eligibility"
+				},
+				body: JSON.stringify(payload)
+			});
+
+			const response = await Promise.race([fetchPromise, timeoutPromise]);
+
+			if (response.ok) {
+				const result = await response.json();
+				return this._processWebhookResult(result);
+			} else {
+				throw new Error(`Eligibility server returned status ${response.status}`);
+			}
+		} catch (error) {
+			const errorMessages = this.quizData.ui?.errorMessages || {};
+			return this._createErrorEligibilityData(
+				error.message.includes("timeout") ? errorMessages.networkError || "Eligibility check timed out" : errorMessages.serverError || "Eligibility server error"
+			);
+		}
+	}
+
+	async _submitUserCreationToWebhook(webhookUrl, payload) {
+		try {
+			const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("User creation request timed out")), 30000));
+
+			const fetchPromise = fetch(webhookUrl, {
+				method: "POST",
+				mode: "cors",
+				headers: {
+					"Content-Type": "application/json",
+					Accept: "application/json",
+					"X-Workflow-Type": "user_creation"
+				},
+				body: JSON.stringify(payload)
+			});
+
+			const response = await Promise.race([fetchPromise, timeoutPromise]);
+
+			if (response.ok) {
+				const result = await response.json();
+				return result;
+			} else {
+				throw new Error(`User creation server returned status ${response.status}`);
+			}
+		} catch (error) {
+			console.error("User creation webhook error:", error);
+			throw error;
+		}
 	}
 
 	async _submitToWebhook(webhookUrl, payload) {
@@ -1462,10 +1731,14 @@ class ModularQuiz {
 
 		let currentMessageIndex = 0;
 
+		// Add context about what's happening
+		const contextMessage = this.eligibilityWorkflowPromise && !this.eligibilityWorkflowResult ? "Finalizing your insurance eligibility check..." : "Processing your request...";
+
 		this.questionContainer.innerHTML = `
             <div class="quiz-status-check">
                 <div class="quiz-loading-spinner"></div>
-                <div class="quiz-loading-text" id="loading-messages-text">${loadingMessages[currentMessageIndex]}</div>
+                <div class="quiz-loading-text" id="loading-messages-text">${contextMessage}</div>
+                <div class="quiz-loading-subtext">This usually takes just a few seconds</div>
             </div>
         `;
 
