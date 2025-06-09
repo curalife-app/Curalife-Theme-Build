@@ -1557,6 +1557,11 @@ class ModularQuiz {
 
 	async _submitEligibilityToWebhook(webhookUrl, payload) {
 		try {
+			console.log("Submitting eligibility payload to webhook:", {
+				url: webhookUrl,
+				payload
+			});
+
 			const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Eligibility request timed out")), 45000));
 
 			const fetchPromise = fetch(webhookUrl, {
@@ -1572,13 +1577,27 @@ class ModularQuiz {
 
 			const response = await Promise.race([fetchPromise, timeoutPromise]);
 
+			console.log("Raw webhook response:", {
+				ok: response.ok,
+				status: response.status,
+				statusText: response.statusText,
+				headers: Object.fromEntries(response.headers.entries())
+			});
+
 			if (response.ok) {
 				const result = await response.json();
-				return this._processWebhookResult(result);
+				console.log("Parsed webhook response:", result);
+
+				const processedResult = this._processWebhookResult(result);
+				console.log("Processed webhook result:", processedResult);
+
+				return processedResult;
 			} else {
+				console.error("Webhook request failed:", response.status, response.statusText);
 				throw new Error(`Eligibility server returned status ${response.status}`);
 			}
 		} catch (error) {
+			console.error("Webhook submission error:", error);
 			const errorMessages = this.quizData.ui?.errorMessages || {};
 			return this._createErrorEligibilityData(
 				error.message.includes("timeout") ? errorMessages.networkError || "Eligibility check timed out" : errorMessages.serverError || "Eligibility server error"
@@ -1644,9 +1663,56 @@ class ModularQuiz {
 	}
 
 	_processWebhookResult(result) {
+		console.log("Processing webhook result:", {
+			result,
+			hasSuccess: "success" in result,
+			hasBody: "body" in result,
+			hasEligibilityData: result?.eligibilityData || result?.body?.eligibilityData,
+			resultKeys: Object.keys(result || {}),
+			bodyKeys: result?.body ? Object.keys(result.body) : "no body"
+		});
+
+		// Handle nested response format (like from Google Cloud Function)
+		if (result?.body && typeof result.body === "object") {
+			console.log("Processing nested response format with body");
+			const bodyResult = result.body;
+
+			if (bodyResult?.success === true && bodyResult.eligibilityData) {
+				const eligibilityData = bodyResult.eligibilityData;
+				console.log("Found eligibilityData in body:", eligibilityData);
+
+				// Handle AAA_ERROR status from workflow
+				if (eligibilityData.eligibilityStatus === "AAA_ERROR") {
+					// Try multiple ways to extract the error code
+					const errorCode = eligibilityData.error?.code || eligibilityData.aaaErrorCode || eligibilityData.error?.allErrors?.[0]?.code || "Unknown";
+
+					console.log("Processing AAA_ERROR with code:", errorCode, "from eligibilityData:", eligibilityData);
+					return this._createAAAErrorEligibilityData(errorCode, eligibilityData.userMessage);
+				}
+
+				// Handle PAYER_ERROR status - check if it's actually an AAA error
+				if (eligibilityData.eligibilityStatus === "PAYER_ERROR" && eligibilityData.error?.isAAAError) {
+					const errorCode = eligibilityData.error?.code || "Unknown";
+					console.log("Processing PAYER_ERROR with AAA characteristics, code:", errorCode);
+					return this._createAAAErrorEligibilityData(errorCode, eligibilityData.userMessage);
+				}
+
+				return eligibilityData;
+			} else if (bodyResult?.success === false) {
+				console.log("Body indicates failure:", bodyResult);
+				// Handle legacy AAA errors specifically (for backwards compatibility)
+				if (bodyResult.aaaError) {
+					return this._createAAAErrorEligibilityData(bodyResult.aaaError, bodyResult.error);
+				}
+				return this._createErrorEligibilityData(bodyResult.error || "Processing error");
+			}
+		}
+
+		// Handle flat response format
 		if (result?.success === true && result.eligibilityData) {
 			// Check if this is an AAA error from the workflow response
 			const eligibilityData = result.eligibilityData;
+			console.log("Found eligibilityData in flat format:", eligibilityData);
 
 			// Handle AAA_ERROR status from workflow
 			if (eligibilityData.eligibilityStatus === "AAA_ERROR") {
@@ -1667,6 +1733,7 @@ class ModularQuiz {
 			// For any other successful workflow response, return the eligibility data as-is
 			return eligibilityData;
 		} else if (result?.success === false) {
+			console.log("Flat format indicates failure:", result);
 			// Handle legacy AAA errors specifically (for backwards compatibility)
 			if (result.aaaError) {
 				return this._createAAAErrorEligibilityData(result.aaaError, result.error);
@@ -1674,6 +1741,8 @@ class ModularQuiz {
 			return this._createErrorEligibilityData(result.error || "Processing error");
 		}
 
+		// If we get here, create processing status
+		console.log("No valid result format found, defaulting to processing");
 		return this._createProcessingEligibilityData();
 	}
 
