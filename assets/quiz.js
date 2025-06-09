@@ -1328,7 +1328,24 @@ class ModularQuiz {
 			}
 
 			// Process the result consistently
-			const finalResult = eligibilityResult ? this._processWebhookResult(eligibilityResult) : this._createProcessingEligibilityData();
+			let finalResult;
+			if (eligibilityResult) {
+				// Check if this is already processed eligibility data or a raw webhook response
+				if (eligibilityResult.eligibilityStatus && typeof eligibilityResult.eligibilityStatus === "string") {
+					// This is already processed eligibility data - use it directly
+					finalResult = eligibilityResult;
+					console.log("Using eligibility result directly (already processed):", finalResult);
+				} else {
+					// This is a raw webhook response - process it
+					finalResult = this._processWebhookResult(eligibilityResult);
+					console.log("Processed webhook result:", finalResult);
+				}
+			} else {
+				// No eligibility check was run - use default processing status
+				finalResult = this._createProcessingEligibilityData();
+				console.log("No eligibility result, using processing status");
+			}
+
 			console.log("Processing eligibility result in finishQuiz:", {
 				eligibilityResult: finalResult,
 				hasError: !!finalResult?.error,
@@ -3185,6 +3202,14 @@ class ModularQuiz {
 			if (bodyResult?.success === true && bodyResult.eligibilityData) {
 				const eligibilityData = bodyResult.eligibilityData;
 
+				// Handle generic ERROR status first
+				if (eligibilityData.eligibilityStatus === "ERROR") {
+					const errorMessage =
+						eligibilityData.userMessage || eligibilityData.error?.message || eligibilityData.error || "There was an error checking your eligibility. Please contact customer support.";
+					console.log("Processing generic ERROR status with message:", errorMessage);
+					return this._createErrorEligibilityData(errorMessage);
+				}
+
 				// Handle AAA_ERROR status from workflow
 				if (eligibilityData.eligibilityStatus === "AAA_ERROR") {
 					// Try multiple ways to extract the error code
@@ -3202,6 +3227,13 @@ class ModularQuiz {
 		if (result?.success === true && result.eligibilityData) {
 			// Check if this is an AAA error from the workflow response
 			const eligibilityData = result.eligibilityData;
+
+			// Handle generic ERROR status first
+			if (eligibilityData.eligibilityStatus === "ERROR") {
+				const errorMessage = eligibilityData.userMessage || eligibilityData.error?.message || eligibilityData.error || "There was an error checking your eligibility. Please contact customer support.";
+				console.log("Processing generic ERROR status with message:", errorMessage);
+				return this._createErrorEligibilityData(errorMessage);
+			}
 
 			// Handle AAA_ERROR status from workflow
 			if (eligibilityData.eligibilityStatus === "AAA_ERROR") {
