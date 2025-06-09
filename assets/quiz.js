@@ -2546,8 +2546,7 @@ class ModularQuiz {
 
 					<!-- Main Error Message -->
 					<div class="quiz-error-main-message">
-						<p class="quiz-error-primary-text">${errorMessage}</p>
-						${eligibilityData.userMessage ? `<p class="quiz-error-secondary-text">${eligibilityData.userMessage}</p>` : ""}
+						<p class="quiz-error-primary-text">${eligibilityData.userMessage || errorMessage}</p>
 					</div>
 
 					${errorDetailsHTML}
@@ -2602,15 +2601,14 @@ class ModularQuiz {
 
 		// Add error metadata if available
 		const metadata = [];
-		if (error.isAAAError) metadata.push("AAA Error Type");
-		if (error.hasStandardErrors) metadata.push("Standard Error Present");
-		if (error.hasAAAErrors) metadata.push("AAA Error Present");
-		if (hasMultipleErrors) metadata.push(`${error.totalErrors} Total Errors`);
+		if (error.isAAAError) metadata.push("Verification Issue");
+		if (hasMultipleErrors) metadata.push(`Multiple Issues (${error.totalErrors})`);
+		if (errorCode && errorCode !== "Unknown") metadata.push(`Error Code: ${errorCode}`);
 
 		if (metadata.length > 0) {
 			detailsHTML += `
 				<div class="quiz-error-metadata-section">
-					<p class="quiz-error-section-title"><strong>Error Classification:</strong></p>
+					<p class="quiz-error-section-title"><strong>Issue Details:</strong></p>
 					<div class="quiz-error-metadata-badges">
 						${metadata.map(item => `<span class="quiz-error-badge">${item}</span>`).join("")}
 					</div>
@@ -2639,6 +2637,7 @@ class ModularQuiz {
 			72: "Member ID Verification Needed",
 			73: "Name Verification Needed",
 			75: "Subscriber Not Found",
+			76: "Duplicate Member ID Found",
 			79: "System Connection Issue"
 		};
 
@@ -2652,6 +2651,7 @@ class ModularQuiz {
 			72: "The member ID entered doesn't match records. Please verify the ID exactly as shown on your insurance card, including any letters or special characters.",
 			73: "The name entered doesn't match your insurance records. Make sure the name matches exactly as it appears on your insurance card.",
 			75: "Your insurance information wasn't found in the system. This could be due to a recent plan change, new enrollment, or data sync delay.",
+			76: "Your member ID appears multiple times in the insurance database. This often happens when you have multiple plan types or recent changes. Our team will identify your current active plan.",
 			79: "There's a temporary technical issue connecting with your insurance provider's verification system. This is typically resolved quickly."
 		};
 
