@@ -1430,13 +1430,13 @@ class ModularQuiz {
 
 	_showLoadingScreen() {
 		// Hide quiz content and show loading screen
-		this._toggleElement(this.questionsContainer, false);
-		this._toggleElement(this.resultsContainer, false);
-		this._toggleElement(this.errorContainer, false);
+		this._toggleElement(this.questions, false);
+		this._toggleElement(this.results, false);
+		this._toggleElement(this.error, false);
 
-		// Show loading container
-		if (this.loadingContainer) {
-			this.loadingContainer.innerHTML = `
+		// Show loading container (using the correct property name 'loading')
+		if (this.loading) {
+			this.loading.innerHTML = `
 				<div class="quiz-comprehensive-loading">
 					<div class="quiz-loading-content">
 						<div class="quiz-loading-icon">
@@ -1456,7 +1456,7 @@ class ModularQuiz {
 					</div>
 				</div>
 			`;
-			this._toggleElement(this.loadingContainer, true);
+			this._toggleElement(this.loading, true);
 		} else {
 			// Fallback: update next button
 			this.nextButton.innerHTML = `<div class="quiz-spinner"></div>Processing...`;
