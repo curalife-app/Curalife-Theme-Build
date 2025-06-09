@@ -1835,7 +1835,7 @@ class ModularQuiz {
 				const answer = response.answer;
 
 				// Handle date of birth parts
-				if (questionId && (questionId.startsWith("q11_") || questionId.includes("birth") || questionId.includes("dob"))) {
+				if (questionId && (questionId.startsWith("q6_") || questionId.startsWith("q11_") || questionId.includes("birth") || questionId.includes("dob"))) {
 					if (questionId.includes("month")) dobParts.month = answer;
 					if (questionId.includes("day")) dobParts.day = answer;
 					if (questionId.includes("year")) dobParts.year = answer;
