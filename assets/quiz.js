@@ -1571,12 +1571,34 @@ class ModularQuiz {
 
 						// Test mode error notification
 						if (this.isTestMode) {
+							const commonIssues = [];
+
+							// Analyze common 500 error causes
+							if (error.status === 500) {
+								commonIssues.push("• Server-side workflow execution error");
+
+								// Check for potential data issues
+								if (!userPayload.customerEmail?.includes("@")) {
+									commonIssues.push("• Invalid email format in payload");
+								}
+								if (!userPayload.allResponses || userPayload.allResponses.length === 0) {
+									commonIssues.push("• Missing allResponses array");
+								}
+								if (!userPayload.eligibilityData) {
+									commonIssues.push("• Missing eligibilityData object");
+								}
+
+								commonIssues.push("• Check Google Cloud Function logs");
+								commonIssues.push("• Check user creation workflow YAML");
+							}
+
 							this._showBackgroundProcessNotification(
 								`
-								🧪 TEST MODE - User Creation Error<br>
-								❌ ${error.message}<br>
-								• Check console for details<br>
-								• This doesn't affect quiz completion
+								🧪 TEST MODE - User Creation Server Error<br>
+								❌ ${error.status} ${error.statusText}<br>
+								• Error: ${error.message.substring(0, 200)}${error.message.length > 200 ? "..." : ""}<br>
+								<br>Potential causes:<br>
+								${commonIssues.join("<br>")}
 							`,
 								"error"
 							);
@@ -1587,10 +1609,10 @@ class ModularQuiz {
 				if (this.isTestMode) {
 					this._showBackgroundProcessNotification(
 						`
-						🧪 TEST MODE - User Creation Config Error<br>
-						❌ No user creation URL found<br>
-						• Check data-user-creation-url attribute
-					`,
+							🧪 TEST MODE - User Creation Config Error<br>
+							❌ No user creation URL found<br>
+							• Check data-user-creation-url attribute
+						`,
 						"error"
 					);
 				}
@@ -1641,21 +1663,63 @@ class ModularQuiz {
 
 	_buildUserCreationPayload(eligibilityData = null) {
 		const extractedData = this._extractResponseData();
+		const allResponses =
+			this.responses?.map(response => ({
+				questionId: response.questionId,
+				answer: response.answer,
+				value: response.answer
+			})) || [];
 
-		return {
-			quizId: this.quizData.id,
-			quizTitle: this.quizData.title,
-			workflowType: "user_creation",
-			triggeredAt: new Date().toISOString(),
+		const payload = {
+			...this._buildSubmissionPayload(),
 			...extractedData,
-			allResponses: this.responses.map(r => ({
-				stepId: r.stepId,
-				questionId: r.questionId,
-				answer: r.answer
-			})),
-			// Include eligibility data if available - this maintains the dependency
-			eligibilityData: eligibilityData
+			allResponses,
+			eligibilityData: eligibilityData || this._createProcessingEligibilityData(),
+			completedAt: new Date().toISOString(),
+			workflowType: "user_creation"
 		};
+
+		// Test mode payload validation
+		if (this.isTestMode) {
+			const issues = [];
+
+			// Check required fields
+			if (!payload.customerEmail || !payload.customerEmail.includes("@")) {
+				issues.push("❌ Invalid email");
+			}
+			if (!payload.firstName) issues.push("❌ Missing firstName");
+			if (!payload.lastName) issues.push("❌ Missing lastName");
+			if (!payload.quizId) issues.push("❌ Missing quizId");
+
+			// Check payload structure
+			if (!Array.isArray(payload.allResponses)) {
+				issues.push("❌ allResponses not array");
+			}
+			if (!payload.eligibilityData || typeof payload.eligibilityData !== "object") {
+				issues.push("❌ Invalid eligibilityData");
+			}
+
+			// Check for invalid characters that might cause JSON issues
+			const jsonString = JSON.stringify(payload);
+			if (jsonString.includes("\u0000")) {
+				issues.push("❌ Contains null characters");
+			}
+
+			this._showBackgroundProcessNotification(
+				`
+				🧪 TEST MODE - User Creation Payload Validation<br>
+				• Total size: ${jsonString.length} chars<br>
+				• Email: ${payload.customerEmail}<br>
+				• Name: ${payload.firstName} ${payload.lastName}<br>
+				• Responses: ${payload.allResponses?.length || 0} items<br>
+				• Eligibility Status: ${payload.eligibilityData?.eligibilityStatus}<br>
+				${issues.length > 0 ? `• Issues: ${issues.join(", ")}` : "• ✅ All validations passed"}
+			`,
+				issues.length > 0 ? "error" : "info"
+			);
+		}
+
+		return payload;
 	}
 
 	_buildSubmissionPayload() {
@@ -1903,7 +1967,27 @@ class ModularQuiz {
 
 	async _submitUserCreationToWebhook(webhookUrl, payload) {
 		try {
-			const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("User creation request timed out")), 30000));
+			console.log("Submitting user creation payload to webhook:", {
+				url: webhookUrl,
+				payloadKeys: Object.keys(payload),
+				payloadSize: JSON.stringify(payload).length
+			});
+
+			// Test mode notification
+			if (this.isTestMode) {
+				this._showBackgroundProcessNotification(
+					`
+					🧪 TEST MODE - Sending User Creation Request<br>
+					• URL: ${webhookUrl}<br>
+					• Payload size: ${JSON.stringify(payload).length} chars<br>
+					• Customer: ${payload.customerEmail}<br>
+					• Has eligibility data: ${!!payload.eligibilityData}
+				`,
+					"info"
+				);
+			}
+
+			const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("User creation request timed out")), 45000));
 
 			const fetchPromise = fetch(webhookUrl, {
 				method: "POST",
@@ -1918,477 +2002,121 @@ class ModularQuiz {
 
 			const response = await Promise.race([fetchPromise, timeoutPromise]);
 
+			console.log("User creation webhook response:", {
+				ok: response.ok,
+				status: response.status,
+				statusText: response.statusText,
+				headers: Object.fromEntries(response.headers.entries())
+			});
+
 			if (response.ok) {
 				const result = await response.json();
+				console.log("User creation webhook success:", result);
+
+				// Test mode success notification
+				if (this.isTestMode) {
+					const success = result?.success;
+					const shopifyId = result?.body?.shopifyCustomerId || result?.shopifyCustomerId;
+					const hubspotId = result?.body?.hubspotContactId || result?.hubspotContactId;
+
+					this._showBackgroundProcessNotification(
+						`
+						🧪 TEST MODE - User Creation Success<br>
+						✅ Status: ${response.status}<br>
+						• Success: ${success}<br>
+						• Shopify ID: ${shopifyId || "Not created"}<br>
+						• HubSpot ID: ${hubspotId || "Not created"}
+					`,
+						"success"
+					);
+				}
+
 				return result;
 			} else {
-				throw new Error(`User creation server returned status ${response.status}`);
+				// Enhanced error handling for server errors
+				let errorBody = null;
+				let errorText = "";
+
+				try {
+					// Try to get the error response body
+					errorBody = await response.json();
+					errorText = errorBody?.error || errorBody?.message || JSON.stringify(errorBody);
+				} catch (e) {
+					// If JSON parsing fails, try to get text
+					try {
+						errorText = await response.text();
+					} catch (e2) {
+						errorText = `HTTP ${response.status} ${response.statusText}`;
+					}
+				}
+
+				console.error("User creation webhook error details:", {
+					status: response.status,
+					statusText: response.statusText,
+					errorBody,
+					errorText
+				});
+
+				// Test mode detailed error notification
+				if (this.isTestMode) {
+					const commonIssues = [];
+
+					// Analyze common 500 error causes
+					if (response.status === 500) {
+						commonIssues.push("• Server-side workflow execution error");
+
+						// Check for potential data issues
+						if (!payload.customerEmail?.includes("@")) {
+							commonIssues.push("• Invalid email format in payload");
+						}
+						if (!payload.allResponses || payload.allResponses.length === 0) {
+							commonIssues.push("• Missing allResponses array");
+						}
+						if (!payload.eligibilityData) {
+							commonIssues.push("• Missing eligibilityData object");
+						}
+
+						commonIssues.push("• Check Google Cloud Function logs");
+						commonIssues.push("• Check user creation workflow YAML");
+					}
+
+					this._showBackgroundProcessNotification(
+						`
+						🧪 TEST MODE - User Creation Server Error<br>
+						❌ ${response.status} ${response.statusText}<br>
+						• Error: ${errorText.substring(0, 200)}${errorText.length > 200 ? "..." : ""}<br>
+						<br>Potential causes:<br>
+						${commonIssues.join("<br>")}
+					`,
+						"error"
+					);
+				}
+
+				throw new Error(`User creation server returned status ${response.status}: ${errorText}`);
 			}
 		} catch (error) {
 			console.error("User creation webhook error:", error);
+
+			// Test mode error notification
+			if (this.isTestMode) {
+				this._showBackgroundProcessNotification(
+					`
+					🧪 TEST MODE - User Creation Request Error<br>
+					❌ ${error.message}<br>
+					• Check network and server status
+				`,
+					"error"
+				);
+			}
+
 			throw error;
 		}
 	}
 
 	async _submitToWebhook(webhookUrl, payload) {
-		try {
-			const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Request timed out")), 35000));
-
-			const fetchPromise = fetch(webhookUrl, {
-				method: "POST",
-				mode: "cors",
-				headers: {
-					"Content-Type": "application/json",
-					Accept: "application/json"
-				},
-				body: JSON.stringify(payload)
-			});
-
-			const response = await Promise.race([fetchPromise, timeoutPromise]);
-
-			if (response.ok) {
-				const result = await response.json();
-				return this._processWebhookResult(result);
-			} else {
-				throw new Error(`Server returned status ${response.status}`);
-			}
-		} catch (error) {
-			const errorMessages = this.quizData.ui?.errorMessages || {};
-			return this._createErrorEligibilityData(error.message.includes("timeout") ? errorMessages.networkError || "Network timeout" : errorMessages.serverError || "Server error");
-		}
-	}
-
-	_processWebhookResult(result) {
-		console.log("Processing webhook result:", {
-			result,
-			hasSuccess: "success" in result,
-			hasBody: "body" in result,
-			hasEligibilityData: result?.eligibilityData || result?.body?.eligibilityData,
-			resultKeys: Object.keys(result || {}),
-			bodyKeys: result?.body ? Object.keys(result.body) : "no body"
-		});
-
-		// Handle nested response format (like from Google Cloud Function)
-		if (result?.body && typeof result.body === "object") {
-			console.log("Processing nested response format with body");
-			const bodyResult = result.body;
-
-			if (bodyResult?.success === true && bodyResult.eligibilityData) {
-				const eligibilityData = bodyResult.eligibilityData;
-				console.log("Found eligibilityData in body:", eligibilityData);
-
-				// Handle AAA_ERROR status from workflow
-				if (eligibilityData.eligibilityStatus === "AAA_ERROR") {
-					// Try multiple ways to extract the error code
-					const errorCode = eligibilityData.error?.code || eligibilityData.aaaErrorCode || eligibilityData.error?.allErrors?.[0]?.code || "Unknown";
-
-					console.log("Processing AAA_ERROR with code:", errorCode, "from eligibilityData:", eligibilityData);
-					return this._createAAAErrorEligibilityData(errorCode, eligibilityData.userMessage);
-				}
-
-				// Handle PAYER_ERROR status - check if it's actually an AAA error
-				if (eligibilityData.eligibilityStatus === "PAYER_ERROR" && eligibilityData.error?.isAAAError) {
-					const errorCode = eligibilityData.error?.code || "Unknown";
-					console.log("Processing PAYER_ERROR with AAA characteristics, code:", errorCode);
-					return this._createAAAErrorEligibilityData(errorCode, eligibilityData.userMessage);
-				}
-
-				return eligibilityData;
-			} else if (bodyResult?.success === false) {
-				console.log("Body indicates failure:", bodyResult);
-				// Handle legacy AAA errors specifically (for backwards compatibility)
-				if (bodyResult.aaaError) {
-					return this._createAAAErrorEligibilityData(bodyResult.aaaError, bodyResult.error);
-				}
-				return this._createErrorEligibilityData(bodyResult.error || "Processing error");
-			}
-		}
-
-		// Handle flat response format
-		if (result?.success === true && result.eligibilityData) {
-			// Check if this is an AAA error from the workflow response
-			const eligibilityData = result.eligibilityData;
-			console.log("Found eligibilityData in flat format:", eligibilityData);
-
-			// Handle AAA_ERROR status from workflow
-			if (eligibilityData.eligibilityStatus === "AAA_ERROR") {
-				// Try multiple ways to extract the error code
-				const errorCode = eligibilityData.error?.code || eligibilityData.aaaErrorCode || eligibilityData.error?.allErrors?.[0]?.code || "Unknown";
-
-				console.log("Processing AAA_ERROR with code:", errorCode, "from eligibilityData:", eligibilityData);
-				return this._createAAAErrorEligibilityData(errorCode, eligibilityData.userMessage);
-			}
-
-			// Handle PAYER_ERROR status - check if it's actually an AAA error
-			if (eligibilityData.eligibilityStatus === "PAYER_ERROR" && eligibilityData.error?.isAAAError) {
-				const errorCode = eligibilityData.error?.code || "Unknown";
-				console.log("Processing PAYER_ERROR with AAA characteristics, code:", errorCode);
-				return this._createAAAErrorEligibilityData(errorCode, eligibilityData.userMessage);
-			}
-
-			// For any other successful workflow response, return the eligibility data as-is
-			return eligibilityData;
-		} else if (result?.success === false) {
-			console.log("Flat format indicates failure:", result);
-			// Handle legacy AAA errors specifically (for backwards compatibility)
-			if (result.aaaError) {
-				return this._createAAAErrorEligibilityData(result.aaaError, result.error);
-			}
-			return this._createErrorEligibilityData(result.error || "Processing error");
-		}
-
-		// If we get here, create processing status
-		console.log("No valid result format found, defaulting to processing");
-		return this._createProcessingEligibilityData();
-	}
-
-	_createErrorEligibilityData(message) {
-		return {
-			isEligible: false,
-			sessionsCovered: 0,
-			deductible: { individual: 0 },
-			eligibilityStatus: "ERROR",
-			userMessage: message,
-			planBegin: "",
-			planEnd: ""
-		};
-	}
-
-	_createAAAErrorEligibilityData(aaaError, errorMessage) {
-		const aaaErrorMappings = {
-			42: {
-				title: "Service Temporarily Unavailable",
-				message: "Your insurance company's system is temporarily unavailable. Please try again in a few minutes, or we can manually verify your coverage.",
-				actionTitle: "Alternative Options",
-				actionText: "Our team can verify your coverage manually while the system is down."
-			},
-			43: {
-				title: "Provider Registration Issue",
-				message: "Your insurance plan requires additional provider verification. Our team will contact you to complete the eligibility check.",
-				actionTitle: "Manual Verification Required",
-				actionText: "We'll verify your provider status and coverage details manually."
-			},
-			72: {
-				title: "Member ID Verification Needed",
-				message: "We couldn't verify your member ID. Please double-check the information on your insurance card, or our team can help verify manually.",
-				actionTitle: "Verification Support",
-				actionText: "Our team can help verify your member ID and check your coverage details."
-			},
-			73: {
-				title: "Name Verification Needed",
-				message: "We couldn't match the name provided with your insurance records. Please verify the name matches exactly as shown on your insurance card.",
-				actionTitle: "Name Verification Support",
-				actionText: "Our team can help verify your information and check your coverage details."
-			},
-			75: {
-				title: "Subscriber Not Found",
-				message: "We couldn't find your insurance information in the system. This might be due to a recent plan change or data entry issue.",
-				actionTitle: "Manual Coverage Verification",
-				actionText: "Our team will manually verify your coverage and help get you connected with a dietitian."
-			},
-			76: {
-				title: "Duplicate Member ID Found",
-				message: "We found a duplicate member ID in the insurance database. This might be due to multiple plan records.",
-				actionTitle: "Member ID Verification",
-				actionText: "Our team will verify your current coverage status and help resolve any duplicate records."
-			},
-			79: {
-				title: "System Connection Issue",
-				message: "There's a technical issue connecting with your insurance provider. Our team will manually verify your coverage.",
-				actionTitle: "Technical Support",
-				actionText: "We'll resolve this technical issue and verify your coverage manually."
-			}
-		};
-
-		// Convert error code to number for lookup (handle both string and number inputs)
-		const numericErrorCode = parseInt(aaaError, 10);
-		const errorCode = isNaN(numericErrorCode) ? aaaError : numericErrorCode;
-
-		const errorInfo = aaaErrorMappings[errorCode] || {
-			title: `Insurance Verification Error (${aaaError})`,
-			message: errorMessage || "There was an issue verifying your insurance coverage.",
-			actionTitle: "Coverage Verification",
-			actionText: "Our team will manually verify your coverage and contact you with the results."
-		};
-
-		console.log("Creating AAA error data for code:", aaaError, "->", errorCode, "with info:", errorInfo);
-
-		return {
-			isEligible: false,
-			sessionsCovered: 0,
-			deductible: { individual: 0 },
-			eligibilityStatus: "AAA_ERROR",
-			aaaErrorCode: aaaError,
-			userMessage: errorInfo.message,
-			errorTitle: errorInfo.title,
-			actionTitle: errorInfo.actionTitle,
-			actionText: errorInfo.actionText,
-			planBegin: "",
-			planEnd: ""
-		};
-	}
-
-	_createProcessingEligibilityData() {
-		const messages = this.quizData.ui?.resultMessages?.processing || {};
-		return {
-			isEligible: null,
-			sessionsCovered: 0,
-			deductible: { individual: 0 },
-			eligibilityStatus: "PROCESSING",
-			userMessage: messages.message || "Processing your request...",
-			planBegin: "",
-			planEnd: ""
-		};
-	}
-
-	_startLoadingMessages() {
-		const loadingMessages = this.quizData.ui?.loadingMessages || ["Processing your request...", "Please wait..."];
-
-		let currentMessageIndex = 0;
-
-		// Add context about what's happening
-		const contextMessage = this.eligibilityWorkflowPromise && !this.eligibilityWorkflowResult ? "Finalizing your insurance eligibility check..." : "Processing your request...";
-
-		this.questionContainer.innerHTML = `
-            <div class="quiz-status-check">
-                <div class="quiz-loading-spinner"></div>
-                <div class="quiz-loading-text" id="loading-messages-text">${contextMessage}</div>
-                <div class="quiz-loading-subtext">This usually takes just a few seconds</div>
-            </div>
-        `;
-
-		this.loadingInterval = setInterval(() => {
-			currentMessageIndex = (currentMessageIndex + 1) % loadingMessages.length;
-			const textElement = document.getElementById("loading-messages-text");
-			if (textElement) {
-				textElement.style.opacity = "0.5";
-				setTimeout(() => {
-					textElement.textContent = loadingMessages[currentMessageIndex];
-					textElement.style.opacity = "1";
-				}, 200);
-			}
-		}, 2500);
-	}
-
-	_stopLoadingMessages() {
-		if (this.loadingInterval) {
-			clearInterval(this.loadingInterval);
-			this.loadingInterval = null;
-		}
-	}
-
-	showResults(resultUrl, webhookSuccess = true, resultData = null, errorMessage = "") {
-		console.log("showResults called with:", {
-			webhookSuccess,
-			resultData,
-			eligibilityStatus: resultData?.eligibilityStatus,
-			isEligible: resultData?.isEligible,
-			errorMessage
-		});
-
-		this._stopLoadingMessages();
-		this._toggleElement(this.navigationButtons, false);
-		this._toggleElement(this.progressSection, false);
-
-		// Keep nav header visible for back button functionality
-		this._toggleElement(this.navHeader, true);
-
-		const quizType = this.quizData?.type || "general";
-		const resultsHTML = webhookSuccess ? this._generateResultsHTML(quizType, resultData, resultUrl) : this._generateErrorResultsHTML(resultUrl, errorMessage);
-
-		this.questionContainer.innerHTML = resultsHTML;
-		this._attachFAQListeners();
-	}
-
-	_generateResultsHTML(quizType, resultData, resultUrl) {
-		const isEligibilityQuiz = this._isEligibilityQuiz(quizType, resultData);
-
-		if (isEligibilityQuiz) {
-			return this._generateInsuranceResultsHTML(resultData, resultUrl);
-		}
-
-		switch (quizType) {
-			case "eligibility":
-			case "insurance":
-				return this._generateInsuranceResultsHTML(resultData, resultUrl);
-			case "assessment":
-			case "health":
-				return this._generateAssessmentResultsHTML(resultData, resultUrl);
-			case "recommendation":
-				return this._generateRecommendationResultsHTML(resultData, resultUrl);
-			default:
-				return this._generateGenericResultsHTML(resultData, resultUrl);
-		}
-	}
-
-	_isEligibilityQuiz(quizType, resultData) {
-		if (quizType === "eligibility" || quizType === "insurance") {
-			return true;
-		}
-
-		if (
-			resultData &&
-			(resultData.hasOwnProperty("isEligible") || resultData.hasOwnProperty("eligibilityStatus") || resultData.hasOwnProperty("sessionsCovered") || resultData.hasOwnProperty("copay"))
-		) {
-			return true;
-		}
-
-		if (this.quizData?.config?.features?.payerSearch === true) {
-			return true;
-		}
-
-		const hasPayerSearch = this.quizData?.steps?.some(step => step.questions?.some(q => q.type === "payer-search"));
-		if (hasPayerSearch) {
-			return true;
-		}
-
-		return false;
-	}
-
-	_generateGenericResultsHTML(resultData, resultUrl) {
-		const messages = this.quizData.ui?.resultMessages?.complete || {};
-
-		return `
-			<div class="quiz-results-container">
-				<div class="quiz-results-header">
-					<h2 class="quiz-results-title">${messages.title || "Quiz Complete!"}</h2>
-					<p class="quiz-results-subtitle">${messages.subtitle || "Thank you for completing the quiz."}</p>
-				</div>
-				<div class="quiz-action-section">
-					<div class="quiz-action-content">
-						<div class="quiz-action-header">
-							<h3 class="quiz-action-title">${messages.actionTitle || "What's next?"}</h3>
-						</div>
-						<div class="quiz-action-details">
-							<div class="quiz-action-info">
-								<svg class="quiz-action-info-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-									<path d="M10 18.3333C14.6023 18.3333 18.3333 14.6023 18.3333 9.99996C18.3333 5.39759 14.6023 1.66663 10 1.66663C5.39762 1.66663 1.66666 5.39759 1.66666 9.99996C1.66666 14.6023 5.39762 18.3333 10 18.3333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-									<path d="M7.5 9.99996L9.16667 11.6666L12.5 8.33329" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-								</svg>
-								<div class="quiz-action-info-text">${messages.actionText || "We'll be in touch with your personalized results soon."}</div>
-							</div>
-						</div>
-						<a href="${resultUrl}" class="quiz-booking-button">${messages.buttonText || "Continue"}</a>
-					</div>
-				</div>
-				${this._generateFAQHTML()}
-			</div>
-		`;
-	}
-
-	_generateAssessmentResultsHTML(resultData, resultUrl) {
-		const messages = this.quizData.ui?.resultMessages?.assessment || {};
-		const score = resultData?.score || 0;
-		const level = resultData?.level || "intermediate";
-
-		return `
-			<div class="quiz-results-container">
-				<div class="quiz-results-header">
-					<h2 class="quiz-results-title">${messages.title || "Your Assessment Results"}</h2>
-					<p class="quiz-results-subtitle">${messages.subtitle || "Here's your personalized assessment."}</p>
-				</div>
-				<div class="quiz-coverage-card">
-					<h3 class="quiz-coverage-card-title">Your Score: ${score}%</h3>
-					<p>Assessment Level: <strong>${level.charAt(0).toUpperCase() + level.slice(1)}</strong></p>
-					${resultData?.feedback ? `<p>${resultData.feedback}</p>` : ""}
-				</div>
-				<div class="quiz-action-section">
-					<div class="quiz-action-content">
-						<div class="quiz-action-header">
-							<h3 class="quiz-action-title">${messages.actionTitle || "Next Steps"}</h3>
-						</div>
-						<a href="${resultUrl}" class="quiz-booking-button">${messages.buttonText || "View Detailed Results"}</a>
-					</div>
-				</div>
-				${this._generateFAQHTML()}
-			</div>
-		`;
-	}
-
-	_generateRecommendationResultsHTML(resultData, resultUrl) {
-		const messages = this.quizData.ui?.resultMessages?.recommendation || {};
-		const recommendations = resultData?.recommendations || [];
-
-		return `
-			<div class="quiz-results-container">
-				<div class="quiz-results-header">
-					<h2 class="quiz-results-title">${messages.title || "Your Recommendations"}</h2>
-					<p class="quiz-results-subtitle">${messages.subtitle || "Based on your responses, here are our recommendations."}</p>
-				</div>
-				${
-					recommendations.length > 0
-						? `
-					<div class="quiz-coverage-card">
-						<h3 class="quiz-coverage-card-title">Recommended for You</h3>
-						<div class="quiz-coverage-benefits">
-							${recommendations
-								.map(
-									rec => `
-								<div class="quiz-coverage-benefit">
-									<svg class="quiz-coverage-benefit-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
-										<path d="M7.5 9.99996L9.16667 11.6666L12.5 8.33329" stroke="#418865" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-									</svg>
-									<span class="quiz-coverage-benefit-text">${rec}</span>
-								</div>
-							`
-								)
-								.join("")}
-						</div>
-					</div>
-				`
-						: ""
-				}
-				<div class="quiz-action-section">
-					<div class="quiz-action-content">
-						<div class="quiz-action-header">
-							<h3 class="quiz-action-title">${messages.actionTitle || "Get Started"}</h3>
-						</div>
-						<a href="${resultUrl}" class="quiz-booking-button">${messages.buttonText || "Continue"}</a>
-					</div>
-				</div>
-				${this._generateFAQHTML()}
-			</div>
-		`;
-	}
-
-	_generateInsuranceResultsHTML(resultData, resultUrl) {
-		console.log("_generateInsuranceResultsHTML called with:", {
-			resultData,
-			isEligible: resultData?.isEligible,
-			eligibilityStatus: resultData?.eligibilityStatus,
-			hasError: !!resultData?.error
-		});
-
-		if (!resultData) {
-			console.log("No resultData, using generic results");
-			return this._generateGenericResultsHTML(resultData, resultUrl);
-		}
-
-		const isEligible = resultData.isEligible === true;
-		const eligibilityStatus = resultData.eligibilityStatus || "UNKNOWN";
-
-		console.log("Processing eligibility status:", eligibilityStatus, "isEligible:", isEligible);
-
-		if (isEligible && eligibilityStatus === "ELIGIBLE") {
-			console.log("Generating eligible insurance results");
-			return this._generateEligibleInsuranceResultsHTML(resultData, resultUrl);
-		} else if (resultData.isEligible === false && eligibilityStatus === "NOT_COVERED") {
-			console.log("Generating not covered insurance results");
-			return this._generateNotCoveredInsuranceResultsHTML(resultData, resultUrl);
-		} else if (eligibilityStatus === "AAA_ERROR") {
-			console.log("Generating AAA error results");
-			return this._generateAAAErrorResultsHTML(resultData, resultUrl);
-		} else if (eligibilityStatus === "PAYER_ERROR" && resultData.error?.isAAAError) {
-			// Handle PAYER_ERROR that contains AAA error information
-			console.log("Generating AAA error results for PAYER_ERROR");
-			return this._generateAAAErrorResultsHTML(resultData, resultUrl);
-		} else if (eligibilityStatus === "TEST_DATA_ERROR") {
-			console.log("Generating test data error results");
-			return this._generateTestDataErrorResultsHTML(resultData, resultUrl);
-		} else {
-			console.log("Generating ineligible insurance results (fallback)");
-			return this._generateIneligibleInsuranceResultsHTML(resultData, resultUrl);
-		}
+		// This method is deprecated - use specific webhook methods instead
+		console.warn("_submitToWebhook is deprecated. Use _submitEligibilityToWebhook or _submitUserCreationToWebhook instead.");
+		throw new Error("Method deprecated");
 	}
 
 	_generateErrorResultsHTML(resultUrl, errorMessage) {
