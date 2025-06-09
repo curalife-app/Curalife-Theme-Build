@@ -240,24 +240,53 @@ class ModularQuiz {
 	}
 
 	_showBackgroundProcessNotification(text, type = "info") {
-		// Remove any existing background process notifications
-		const existing = document.querySelector(".quiz-background-process-notification");
-		if (existing) existing.remove();
+		// Only show notifications if we have a container
+		if (!this.questionContainer) return;
 
+		// Create or get notification container
+		let notificationContainer = document.querySelector(".quiz-background-notifications");
+		if (!notificationContainer) {
+			notificationContainer = document.createElement("div");
+			notificationContainer.className = "quiz-background-notifications";
+			notificationContainer.style.cssText = `
+				position: fixed;
+				top: 20px;
+				right: 20px;
+				z-index: 1000;
+				max-width: 400px;
+				pointer-events: none;
+			`;
+			document.body.appendChild(notificationContainer);
+		}
+
+		// Create notification element
 		const notification = document.createElement("div");
-		notification.className = "quiz-background-process-notification";
+		notification.className = `quiz-notification quiz-notification-${type}`;
+		notification.style.cssText = `
+			background: ${type === "success" ? "#10b981" : type === "error" ? "#ef4444" : "#3b82f6"};
+			color: white;
+			padding: 12px 16px;
+			margin-bottom: 8px;
+			border-radius: 8px;
+			box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+			font-size: 14px;
+			line-height: 1.4;
+			opacity: 0;
+			transform: translateX(100%);
+			transition: all 0.3s ease;
+			pointer-events: auto;
+			cursor: pointer;
+		`;
 		notification.innerHTML = text;
 
-		const backgroundColor = type === "success" ? "#4CAF50" : type === "error" ? "#f56565" : "#2196F3";
-		notification.style.cssText = `
-            position: fixed; top: 70px; right: 10px; background: ${backgroundColor};
-            color: white; padding: 12px 16px; border-radius: 8px; font-weight: 500;
-            font-size: 13px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            max-width: 300px; opacity: 0; transform: translateX(100%);
-            transition: all 0.3s ease-in-out;
-        `;
+		// Add click to dismiss
+		notification.addEventListener("click", () => {
+			notification.style.opacity = "0";
+			notification.style.transform = "translateX(100%)";
+			setTimeout(() => notification.remove(), 300);
+		});
 
-		document.body.appendChild(notification);
+		notificationContainer.appendChild(notification);
 
 		// Animate in
 		setTimeout(() => {
@@ -265,15 +294,19 @@ class ModularQuiz {
 			notification.style.transform = "translateX(0)";
 		}, 100);
 
-		// Animate out and remove
-		setTimeout(
-			() => {
-				notification.style.opacity = "0";
-				notification.style.transform = "translateX(100%)";
-				setTimeout(() => notification.remove(), 300);
-			},
-			type === "success" ? 3000 : 4000
-		);
+		// Auto remove after delay (except for persistent test mode notifications)
+		if (!text.includes("TEST MODE")) {
+			setTimeout(
+				() => {
+					if (notification.parentNode) {
+						notification.style.opacity = "0";
+						notification.style.transform = "translateX(100%)";
+						setTimeout(() => notification.remove(), 300);
+					}
+				},
+				type === "error" ? 8000 : 4000
+			);
+		}
 	}
 
 	getCurrentStep() {
@@ -1279,64 +1312,73 @@ class ModularQuiz {
 					eligibilityResult = this.eligibilityWorkflowResult;
 					console.log("Using cached eligibility result:", eligibilityResult);
 				} else {
-					// Still running, show loading and wait
-					this._startLoadingMessages();
+					// Still running - wait for it
 					try {
 						eligibilityResult = await this.eligibilityWorkflowPromise;
-						this.eligibilityWorkflowResult = eligibilityResult;
-						console.log("Received fresh eligibility result:", eligibilityResult);
+						console.log("Waited for eligibility result:", eligibilityResult);
 					} catch (error) {
 						console.error("Eligibility workflow failed:", error);
-						this.eligibilityWorkflowError = error;
-						eligibilityResult = this._createErrorEligibilityData(error.message);
+						eligibilityResult = this._createErrorEligibilityData("Eligibility check failed");
 					}
-					this._stopLoadingMessages();
 				}
+			} else {
+				// No eligibility check was triggered - use default processing status
+				eligibilityResult = this._createProcessingEligibilityData();
+				console.log("No eligibility workflow, using processing status");
 			}
 
-			// Debug the eligibility result processing
+			// Process the result consistently
+			const finalResult = eligibilityResult ? this._processWebhookResult(eligibilityResult) : this._createProcessingEligibilityData();
 			console.log("Processing eligibility result in finishQuiz:", {
-				eligibilityResult,
-				status: eligibilityResult?.eligibilityStatus,
-				isEligible: eligibilityResult?.isEligible,
-				hasError: !!eligibilityResult?.error
+				eligibilityResult: finalResult,
+				hasError: !!finalResult?.error,
+				status: finalResult?.eligibilityStatus,
+				isEligible: finalResult?.isEligible
 			});
 
-			// Show results immediately - always prioritize eligibility results like telemedicine-workflow
-			const webhookSuccess = !eligibilityResult || eligibilityResult.eligibilityStatus !== "ERROR";
+			// Test mode comprehensive finish notification
+			if (this.isTestMode) {
+				const workflowStatus = this.eligibilityWorkflowPromise ? (this.eligibilityWorkflowResult ? "✅ Completed" : "⏳ In Progress") : "❌ Not Started";
 
-			// Prepare result data with user creation status (matches telemedicine-workflow response format)
-			const resultData = {
-				...eligibilityResult,
-				userCreationSuccess: this.userCreationWorkflowPromise ? null : false, // Will be updated when user creation completes
-				userCreationDetails: null
-			};
+				const userCreationStatus = this.userCreationWorkflowPromise ? "✅ Started" : "❌ Not Started";
+
+				this._showBackgroundProcessNotification(
+					`
+					🧪 TEST MODE - Quiz Completion Status<br>
+					• Eligibility Workflow: ${workflowStatus}<br>
+					• User Creation: ${userCreationStatus}<br>
+					• Final Status: ${finalResult?.eligibilityStatus || "Unknown"}<br>
+					• Is Eligible: ${finalResult?.isEligible}<br>
+					• Result URL: ${resultUrl}<br>
+					• Total Responses: ${this.responses?.length || 0}
+				`,
+					"info"
+				);
+			}
 
 			console.log("Showing results with data:", {
-				resultData,
-				webhookSuccess,
-				eligibilityStatus: resultData?.eligibilityStatus
+				resultData: finalResult,
+				eligibilityStatus: finalResult?.eligibilityStatus,
+				webhookSuccess: true
 			});
 
-			this.showResults(resultUrl, webhookSuccess, resultData);
-
-			if (window.analytics?.track) {
-				window.analytics.track("Quiz Completed", {
-					quizId: this.quizData?.id || "quiz",
-					quizType: this.quizData?.type || "general",
-					successfullySubmitted: webhookSuccess,
-					hadBackgroundEligibilityCheck: !!this.eligibilityWorkflowPromise,
-					userCreationTriggered: !!this.userCreationWorkflowPromise
-				});
-			}
+			this.showResults(resultUrl, true, finalResult);
 		} catch (error) {
-			console.error("Error in finishQuiz:", error);
-			this._stopLoadingMessages();
+			console.error("Error finishing quiz:", error);
+
+			// Test mode error notification
+			if (this.isTestMode) {
+				this._showBackgroundProcessNotification(
+					`
+					🧪 TEST MODE - Quiz Finish Error<br>
+					❌ ${error.message}<br>
+					• Check console for details
+				`,
+					"error"
+				);
+			}
+
 			this.showResults(resultUrl, false, null, error.message);
-		} finally {
-			this.submitting = false;
-			this.nextButton.disabled = false;
-			this.nextButton.innerHTML = "Next";
 		}
 	}
 
@@ -1354,8 +1396,23 @@ class ModularQuiz {
 					fullPayload: eligibilityPayload
 				});
 
-				// Show brief notification
+				// Show notifications
 				this._showBackgroundProcessNotification("🔍 Checking your insurance coverage in the background...");
+
+				// Test mode detailed notification
+				if (this.isTestMode) {
+					this._showBackgroundProcessNotification(
+						`
+						🧪 TEST MODE - Eligibility Workflow Started<br>
+						• URL: ${webhookUrl}<br>
+						• Name: ${eligibilityPayload.firstName} ${eligibilityPayload.lastName}<br>
+						• Insurance: ${eligibilityPayload.insurance}<br>
+						• Member ID: ${eligibilityPayload.insuranceMemberId}<br>
+						• Responses: ${this.responses?.length || 0} collected
+					`,
+						"info"
+					);
+				}
 
 				this.eligibilityWorkflowPromise = this._submitEligibilityToWebhook(webhookUrl, eligibilityPayload);
 
@@ -1368,18 +1425,68 @@ class ModularQuiz {
 							isEligible: result?.isEligible
 						});
 						this.eligibilityWorkflowResult = result;
+
+						const statusIcon = result?.eligibilityStatus === "AAA_ERROR" ? "⚠️" : result?.eligibilityStatus === "ELIGIBLE" ? "✅" : result?.eligibilityStatus === "NOT_COVERED" ? "❌" : "⏳";
+
 						this._showBackgroundProcessNotification("✅ Insurance coverage check complete!", "success");
+
+						// Test mode detailed result notification
+						if (this.isTestMode) {
+							this._showBackgroundProcessNotification(
+								`
+								🧪 TEST MODE - Eligibility Result<br>
+								${statusIcon} Status: ${result?.eligibilityStatus || "Unknown"}<br>
+								• Eligible: ${result?.isEligible}<br>
+								• Sessions: ${result?.sessionsCovered || 0}<br>
+								• Error Code: ${result?.error?.code || result?.aaaErrorCode || "None"}<br>
+								• Message: ${(result?.userMessage || "").substring(0, 100)}${result?.userMessage?.length > 100 ? "..." : ""}
+							`,
+								result?.eligibilityStatus === "AAA_ERROR" ? "error" : "success"
+							);
+						}
 					})
 					.catch(error => {
 						console.error("❌ Eligibility check failed in background", error);
 						this.eligibilityWorkflowError = error;
-						// Don't show error notification here - user will see it in results
+
+						this._showBackgroundProcessNotification("❌ Eligibility check failed", "error");
+
+						// Test mode error notification
+						if (this.isTestMode) {
+							this._showBackgroundProcessNotification(
+								`
+								🧪 TEST MODE - Eligibility Error<br>
+								❌ ${error.message}<br>
+								• Check console for details
+							`,
+								"error"
+							);
+						}
 					});
 			} else {
 				console.warn("No webhook URL configured for eligibility check");
+				if (this.isTestMode) {
+					this._showBackgroundProcessNotification(
+						`
+						🧪 TEST MODE - Configuration Error<br>
+						❌ No webhook URL found<br>
+						• Check data-webhook-url attribute
+					`,
+						"error"
+					);
+				}
 			}
 		} catch (error) {
 			console.error("Failed to trigger eligibility workflow:", error);
+			if (this.isTestMode) {
+				this._showBackgroundProcessNotification(
+					`
+					🧪 TEST MODE - Trigger Error<br>
+					❌ ${error.message}
+				`,
+					"error"
+				);
+			}
 		}
 	}
 
@@ -1418,20 +1525,87 @@ class ModularQuiz {
 					eligibilityStatus: eligibilityData?.eligibilityStatus || "none"
 				});
 
+				// Test mode detailed notification
+				if (this.isTestMode) {
+					this._showBackgroundProcessNotification(
+						`
+						🧪 TEST MODE - User Creation Started<br>
+						• URL: ${userCreationUrl}<br>
+						• Customer: ${userPayload.customerEmail}<br>
+						• Eligibility Status: ${eligibilityData?.eligibilityStatus || "None"}<br>
+						• Payload Size: ${JSON.stringify(userPayload).length} chars<br>
+						• All Responses: ${userPayload.allResponses?.length || 0} items
+					`,
+						"info"
+					);
+				}
+
 				this.userCreationWorkflowPromise = this._submitUserCreationToWebhook(userCreationUrl, userPayload);
 
 				// Handle completion in background (optional - doesn't block UI)
 				this.userCreationWorkflowPromise
 					.then(result => {
 						console.log("✅ User creation completed in background", result);
+
+						// Test mode detailed result notification
+						if (this.isTestMode) {
+							const success = result?.success;
+							const shopifyId = result?.body?.shopifyCustomerId || result?.shopifyCustomerId;
+							const hubspotId = result?.body?.hubspotContactId || result?.hubspotContactId;
+
+							this._showBackgroundProcessNotification(
+								`
+								🧪 TEST MODE - User Creation Result<br>
+								${success ? "✅" : "❌"} Success: ${success}<br>
+								• Shopify ID: ${shopifyId || "Not created"}<br>
+								• HubSpot ID: ${hubspotId || "Not created"}<br>
+								• Execution: ${result?.executionName ? "✅ Complete" : "❌ Failed"}<br>
+								• Status Code: ${result?.statusCode || "Unknown"}
+							`,
+								success ? "success" : "error"
+							);
+						}
 					})
 					.catch(error => {
 						console.error("❌ User creation failed in background", error);
-						// User creation failure doesn't affect UI - user already sees eligibility results
+
+						// Test mode error notification
+						if (this.isTestMode) {
+							this._showBackgroundProcessNotification(
+								`
+								🧪 TEST MODE - User Creation Error<br>
+								❌ ${error.message}<br>
+								• Check console for details<br>
+								• This doesn't affect quiz completion
+							`,
+								"error"
+							);
+						}
 					});
+			} else {
+				console.warn("No user creation URL configured");
+				if (this.isTestMode) {
+					this._showBackgroundProcessNotification(
+						`
+						🧪 TEST MODE - User Creation Config Error<br>
+						❌ No user creation URL found<br>
+						• Check data-user-creation-url attribute
+					`,
+						"error"
+					);
+				}
 			}
 		} catch (error) {
 			console.error("Failed to start user creation with eligibility data:", error);
+			if (this.isTestMode) {
+				this._showBackgroundProcessNotification(
+					`
+					🧪 TEST MODE - User Creation Trigger Error<br>
+					❌ ${error.message}
+				`,
+					"error"
+				);
+			}
 		}
 	}
 
@@ -1532,29 +1706,78 @@ class ModularQuiz {
 
 		const dobParts = {};
 
-		console.log("Extracting response data from responses:", {
-			responsesCount: this.responses?.length || 0,
-			responses: this.responses,
-			fieldMapping
-		});
+		console.log("Extracting response data from responses:", this.responses);
 
-		this.responses.forEach(response => {
-			const mapping = fieldMapping[response.questionId];
-			if (mapping) {
-				const fields = Array.isArray(mapping) ? mapping : [mapping];
-				fields.forEach(field => (data[field] = response.answer || (Array.isArray(data[field]) ? [] : "")));
-				console.log(`Mapped ${response.questionId} -> ${fields.join(", ")}: ${response.answer}`);
-			} else if (response.questionId.startsWith("q6_")) {
-				dobParts[response.questionId.split("_")[1]] = response.answer || "";
-				console.log(`DOB part ${response.questionId}: ${response.answer}`);
-			}
-		});
+		// Test mode detailed extraction notification
+		if (this.isTestMode) {
+			const responsesSummary = this.responses?.map(r => `${r.questionId}: ${Array.isArray(r.answer) ? r.answer.join(",") : r.answer}`).join("<br>• ") || "None";
 
-		if (dobParts.month && dobParts.day && dobParts.year) {
-			data.dateOfBirth = `${dobParts.year}${dobParts.month.padStart(2, "0")}${dobParts.day.padStart(2, "0")}`;
+			this._showBackgroundProcessNotification(
+				`
+				🧪 TEST MODE - Data Extraction<br>
+				• Total responses: ${this.responses?.length || 0}<br>
+				• Expected questions: ${Object.keys(fieldMapping).join(", ")}<br>
+				• Responses:<br>• ${responsesSummary}
+			`,
+				"info"
+			);
 		}
 
-		console.log("Final extracted data:", data);
+		// Process responses
+		if (this.responses && Array.isArray(this.responses)) {
+			for (const response of this.responses) {
+				const questionId = response.questionId;
+				const answer = response.answer;
+
+				// Handle date of birth parts
+				if (questionId && (questionId.startsWith("q11_") || questionId.includes("birth") || questionId.includes("dob"))) {
+					if (questionId.includes("month")) dobParts.month = answer;
+					if (questionId.includes("day")) dobParts.day = answer;
+					if (questionId.includes("year")) dobParts.year = answer;
+					continue;
+				}
+
+				// Handle mapped fields
+				const fieldName = fieldMapping[questionId];
+				if (fieldName) {
+					if (Array.isArray(fieldName)) {
+						// Handle payer search (q3) mapping to both insurance and insurancePrimaryPayerId
+						data[fieldName[0]] = answer;
+						data[fieldName[1]] = answer;
+					} else {
+						data[fieldName] = answer;
+					}
+				}
+			}
+		}
+
+		// Construct date of birth
+		if (dobParts.month && dobParts.day && dobParts.year) {
+			const month = String(dobParts.month).padStart(2, "0");
+			const day = String(dobParts.day).padStart(2, "0");
+			data.dateOfBirth = `${dobParts.year}${month}${day}`;
+		}
+
+		console.log("Extracted response data:", data);
+
+		// Test mode extraction result notification
+		if (this.isTestMode) {
+			const missingFields = Object.entries(data)
+				.filter(([key, value]) => !value && !["mainReasons", "medicalConditions", "consent"].includes(key))
+				.map(([key]) => key);
+
+			this._showBackgroundProcessNotification(
+				`
+				🧪 TEST MODE - Extraction Result<br>
+				• Email: ${data.customerEmail || "❌ Missing"}<br>
+				• Name: ${data.firstName} ${data.lastName}<br>
+				• Insurance: ${data.insurance || "❌ Missing"}<br>
+				• Member ID: ${data.insuranceMemberId || "❌ Missing"}<br>
+				• Missing fields: ${missingFields.length ? missingFields.join(", ") : "None"}
+			`,
+				missingFields.length > 0 ? "error" : "success"
+			);
+		}
 
 		return data;
 	}
@@ -1565,6 +1788,18 @@ class ModularQuiz {
 				url: webhookUrl,
 				payload
 			});
+
+			// Test mode notification
+			if (this.isTestMode) {
+				this._showBackgroundProcessNotification(
+					`
+					🧪 TEST MODE - Sending Eligibility Request<br>
+					• Payload keys: ${Object.keys(payload).join(", ")}<br>
+					• Request timeout: 45s
+				`,
+					"info"
+				);
+			}
 
 			const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Eligibility request timed out")), 45000));
 
@@ -1592,16 +1827,73 @@ class ModularQuiz {
 				const result = await response.json();
 				console.log("Parsed webhook response:", result);
 
+				// Test mode response structure notification
+				if (this.isTestMode) {
+					const hasBody = "body" in result;
+					const hasEligibilityData = result?.eligibilityData || result?.body?.eligibilityData;
+					const status = hasEligibilityData ? (hasBody ? result.body.eligibilityData.eligibilityStatus : result.eligibilityData.eligibilityStatus) : "No eligibility data";
+
+					this._showBackgroundProcessNotification(
+						`
+						🧪 TEST MODE - Response Structure<br>
+						• Status: ${response.status} ${response.statusText}<br>
+						• Has body: ${hasBody}<br>
+						• Has eligibilityData: ${!!hasEligibilityData}<br>
+						• Eligibility Status: ${status}<br>
+						• Top-level keys: ${Object.keys(result).join(", ")}
+					`,
+						"info"
+					);
+				}
+
 				const processedResult = this._processWebhookResult(result);
 				console.log("Processed webhook result:", processedResult);
+
+				// Test mode processing result notification
+				if (this.isTestMode) {
+					this._showBackgroundProcessNotification(
+						`
+						🧪 TEST MODE - Processing Result<br>
+						• Final status: ${processedResult?.eligibilityStatus || "Unknown"}<br>
+						• Is eligible: ${processedResult?.isEligible}<br>
+						• Has error: ${!!processedResult?.error}<br>
+						• Error code: ${processedResult?.error?.code || processedResult?.aaaErrorCode || "None"}
+					`,
+						processedResult?.eligibilityStatus === "AAA_ERROR" ? "error" : "info"
+					);
+				}
 
 				return processedResult;
 			} else {
 				console.error("Webhook request failed:", response.status, response.statusText);
+
+				if (this.isTestMode) {
+					this._showBackgroundProcessNotification(
+						`
+						🧪 TEST MODE - HTTP Error<br>
+						❌ ${response.status} ${response.statusText}<br>
+						• Check server logs for details
+					`,
+						"error"
+					);
+				}
+
 				throw new Error(`Eligibility server returned status ${response.status}`);
 			}
 		} catch (error) {
 			console.error("Webhook submission error:", error);
+
+			if (this.isTestMode) {
+				this._showBackgroundProcessNotification(
+					`
+					🧪 TEST MODE - Request Failed<br>
+					❌ ${error.message}<br>
+					• Network or timeout issue
+				`,
+					"error"
+				);
+			}
+
 			const errorMessages = this.quizData.ui?.errorMessages || {};
 			return this._createErrorEligibilityData(
 				error.message.includes("timeout") ? errorMessages.networkError || "Eligibility check timed out" : errorMessages.serverError || "Eligibility server error"
