@@ -658,13 +658,10 @@ class ModularQuiz {
 		if (this.isFormStep(currentStep.id)) {
 			if (!this._validateFormStep(currentStep)) return;
 
-			// Check if this is the insurance step completion
-			if (currentStep.id === "step-insurance") {
-				this._triggerEligibilityWorkflow();
-			}
-
 			// Check if this is the contact step completion
 			if (currentStep.id === "step-contact") {
+				// Trigger eligibility workflow now that we have all required data
+				this._triggerEligibilityWorkflow();
 				this._triggerUserCreationWorkflow();
 				this.finishQuiz();
 				return;
