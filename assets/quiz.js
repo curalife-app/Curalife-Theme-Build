@@ -1304,17 +1304,24 @@ class ModularQuiz {
 			this._toggleElement(this.navigationButtons, false);
 			this._toggleElement(this.progressSection, false);
 
+			// Show processing message and ensure minimum loading time for UX
+			this._showBackgroundProcessNotification("🔄 Finalizing your results...", "info");
+
+			// Ensure minimum loading time of 2 seconds for better UX
+			const minLoadingTime = new Promise(resolve => setTimeout(resolve, 2000));
+
 			// Check if eligibility workflow is complete
 			let eligibilityResult = null;
 			if (this.eligibilityWorkflowPromise) {
 				if (this.eligibilityWorkflowResult) {
-					// Already completed
+					// Already completed - still wait for minimum loading time
 					eligibilityResult = this.eligibilityWorkflowResult;
 					console.log("Using cached eligibility result:", eligibilityResult);
+					await minLoadingTime; // Ensure user sees loading state
 				} else {
 					// Still running - wait for it
 					try {
-						eligibilityResult = await this.eligibilityWorkflowPromise;
+						eligibilityResult = await Promise.race([this.eligibilityWorkflowPromise, minLoadingTime.then(() => this.eligibilityWorkflowPromise)]);
 						console.log("Waited for eligibility result:", eligibilityResult);
 					} catch (error) {
 						console.error("Eligibility workflow failed:", error);
@@ -1323,6 +1330,7 @@ class ModularQuiz {
 				}
 			} else {
 				// No eligibility check was triggered - use default processing status
+				await minLoadingTime; // Still show loading for consistency
 				eligibilityResult = this._createProcessingEligibilityData();
 				console.log("No eligibility workflow, using processing status");
 			}
