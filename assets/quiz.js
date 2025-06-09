@@ -3445,6 +3445,11 @@ class ModularQuiz {
 			return this._generateTestDataErrorResultsHTML(resultData, resultUrl);
 		}
 
+		if (eligibilityStatus === "ERROR") {
+			console.log("Generating generic error results");
+			return this._generateErrorResultsHTML(resultUrl, resultData.userMessage || resultData.error || "There was an error checking your eligibility. Please contact customer support.");
+		}
+
 		if (eligibilityStatus === "NOT_COVERED" || (resultData.isEligible === false && eligibilityStatus === "ELIGIBLE")) {
 			console.log("Generating not covered insurance results");
 			return this._generateNotCoveredInsuranceResultsHTML(resultData, resultUrl);
