@@ -1346,9 +1346,11 @@ class ModularQuiz {
 
 			if (webhookUrl) {
 				console.log("🔍 Starting eligibility check in background...", {
-					firstName: eligibilityPayload.customerInfo?.firstName,
-					lastName: eligibilityPayload.customerInfo?.lastName,
-					insurance: eligibilityPayload.insuranceInfo?.primaryPayerId
+					firstName: eligibilityPayload.firstName,
+					lastName: eligibilityPayload.lastName,
+					insurance: eligibilityPayload.insurance,
+					insuranceMemberId: eligibilityPayload.insuranceMemberId,
+					fullPayload: eligibilityPayload
 				});
 
 				// Show brief notification
@@ -1434,6 +1436,12 @@ class ModularQuiz {
 
 	_buildEligibilityPayload() {
 		const extractedData = this._extractResponseData();
+
+		console.log("Building eligibility payload with extracted data:", {
+			extractedData,
+			responsesCount: this.responses?.length || 0,
+			responses: this.responses
+		});
 
 		return {
 			quizId: this.quizData.id,
@@ -1523,19 +1531,29 @@ class ModularQuiz {
 
 		const dobParts = {};
 
+		console.log("Extracting response data from responses:", {
+			responsesCount: this.responses?.length || 0,
+			responses: this.responses,
+			fieldMapping
+		});
+
 		this.responses.forEach(response => {
 			const mapping = fieldMapping[response.questionId];
 			if (mapping) {
 				const fields = Array.isArray(mapping) ? mapping : [mapping];
 				fields.forEach(field => (data[field] = response.answer || (Array.isArray(data[field]) ? [] : "")));
+				console.log(`Mapped ${response.questionId} -> ${fields.join(", ")}: ${response.answer}`);
 			} else if (response.questionId.startsWith("q6_")) {
 				dobParts[response.questionId.split("_")[1]] = response.answer || "";
+				console.log(`DOB part ${response.questionId}: ${response.answer}`);
 			}
 		});
 
 		if (dobParts.month && dobParts.day && dobParts.year) {
 			data.dateOfBirth = `${dobParts.year}${dobParts.month.padStart(2, "0")}${dobParts.day.padStart(2, "0")}`;
 		}
+
+		console.log("Final extracted data:", data);
 
 		return data;
 	}
