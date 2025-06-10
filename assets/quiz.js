@@ -3491,64 +3491,140 @@ class ModularQuiz {
 
 		return `
 			<div class="quiz-results-container">
-				<div class="quiz-results-header">
-					<h2 class="quiz-results-title">🎉 You're all set!</h2>
-					<p class="quiz-results-subtitle">Your appointment request has been successfully submitted.</p>
+				<!-- Success Header with Animation -->
+				<div class="quiz-scheduling-success-header">
+					<div class="quiz-scheduling-success-icon">
+						<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+							<circle cx="40" cy="40" r="40" fill="#10B981" fill-opacity="0.1"/>
+							<circle cx="40" cy="40" r="30" fill="#10B981" fill-opacity="0.2"/>
+							<path d="M25 40L35 50L55 30" stroke="#10B981" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+						</svg>
+					</div>
+					<h2 class="quiz-results-title">Appointment Request Submitted!</h2>
+					<p class="quiz-results-subtitle">Great news! Your request has been successfully processed and your dietitian appointment is ready to be scheduled.</p>
 				</div>
 
-				<div class="quiz-action-section">
+				<!-- Main Action Section -->
+				<div class="quiz-action-section quiz-scheduling-main-action">
 					<div class="quiz-action-content">
+						<div class="quiz-scheduling-step-indicator">
+							<div class="quiz-scheduling-step completed">
+								<div class="quiz-scheduling-step-icon">✓</div>
+								<div class="quiz-scheduling-step-text">Request Submitted</div>
+							</div>
+							<div class="quiz-scheduling-step-arrow">→</div>
+							<div class="quiz-scheduling-step current">
+								<div class="quiz-scheduling-step-icon">📅</div>
+								<div class="quiz-scheduling-step-text">Choose Time</div>
+							</div>
+							<div class="quiz-scheduling-step-arrow">→</div>
+							<div class="quiz-scheduling-step">
+								<div class="quiz-scheduling-step-icon">🥗</div>
+								<div class="quiz-scheduling-step-text">Meet Dietitian</div>
+							</div>
+						</div>
+
 						<div class="quiz-action-header">
-							<h3 class="quiz-action-title">Next Steps</h3>
+							<h3 class="quiz-action-title">Next: Choose Your Appointment Time</h3>
 						</div>
-						<div class="quiz-action-details">
-							<div class="quiz-action-info">
-								<div class="quiz-action-info-text">
-									Click the button below to access your personalized scheduling portal and choose your preferred appointment time.
-								</div>
-							</div>
-							<div class="quiz-action-feature">
-								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-									<path d="M6.66666 2.5V5.83333M13.3333 2.5V5.83333M2.5 9.16667H17.5M4.16666 3.33333H15.8333C16.7538 3.33333 17.5 4.07952 17.5 5V16.6667C17.5 17.5871 16.7538 18.3333 15.8333 18.3333H4.16666C3.24619 18.3333 2.5 17.5871 2.5 16.6667V5C2.5 4.07952 3.24619 3.33333 4.16666 3.33333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+						<div class="quiz-scheduling-main-cta">
+							<p class="quiz-scheduling-cta-text">
+								Click below to access your personalized scheduling portal where you can select from available appointment times that work best for your schedule.
+							</p>
+							<a href="${scheduleLink}" target="_blank" class="quiz-booking-button quiz-scheduling-primary-btn">
+								<svg class="quiz-booking-button-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M6.66666 2.5V5.83333M13.3333 2.5V5.83333M2.5 9.16667H17.5M4.16666 3.33333H15.8333C16.7538 3.33333 17.5 4.07952 17.5 5V16.6667C17.5 17.5871 16.7538 18.3333 15.8333 18.3333H4.16666C3.24619 18.3333 2.5 17.5871 2.5 16.6667V5C2.5 4.07952 3.24619 3.33333 4.16666 3.33333Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 								</svg>
-								<div class="quiz-action-feature-text">Choose from available appointment times</div>
-							</div>
-							<div class="quiz-action-feature">
-								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-									<path d="M18.3333 14.1667C18.3333 15.0871 17.5871 15.8333 16.6667 15.8333H5.83333L1.66666 20V3.33333C1.66666 2.41286 2.41285 1.66667 3.33333 1.66667H16.6667C17.5871 1.66667 18.3333 2.41286 18.3333 3.33333V14.1667Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-								</svg>
-								<div class="quiz-action-feature-text">Meet with a registered dietitian</div>
-							</div>
-							<div class="quiz-action-feature">
-								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-									<path d="M16.6667 17.5L10 10.8333L3.33334 17.5" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-									<path d="M16.6667 2.5L10 9.16667L3.33334 2.5" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-								</svg>
-								<div class="quiz-action-feature-text">Get personalized nutrition guidance</div>
-							</div>
+								Schedule Your Appointment
+							</a>
+							${masterId ? `<p class="quiz-scheduling-reference">Reference ID: ${masterId}</p>` : ""}
 						</div>
-						<a href="${scheduleLink}" target="_blank" class="quiz-booking-button">
-							Schedule Your Appointment
-						</a>
-						${masterId ? `<p class="quiz-text-xs" style="margin-top: 16px; color: #666;">Reference ID: ${masterId}</p>` : ""}
 					</div>
 				</div>
 
-				<div class="quiz-action-section" style="background-color: #f8f9fa;">
+				<!-- What to Expect Section -->
+				<div class="quiz-action-section quiz-scheduling-expectations">
 					<div class="quiz-action-content">
 						<div class="quiz-action-header">
-							<h3 class="quiz-action-title">Need Help?</h3>
+							<h3 class="quiz-action-title">What to Expect</h3>
 						</div>
-						<div class="quiz-action-details">
-							<div class="quiz-action-info">
-								<div class="quiz-action-info-text">
-									If you have any questions or need assistance with scheduling, our support team is here to help.
+						<div class="quiz-scheduling-expectations-grid">
+							<div class="quiz-scheduling-expectation-item">
+								<div class="quiz-scheduling-expectation-icon">
+									<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+										<path d="M12 8V12L15 15" stroke="#306E51" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+										<circle cx="12" cy="12" r="9" stroke="#306E51" stroke-width="2"/>
+									</svg>
+								</div>
+								<div class="quiz-scheduling-expectation-content">
+									<h4>30-60 Minutes</h4>
+									<p>Comprehensive nutrition consultation tailored to your specific health goals</p>
+								</div>
+							</div>
+							<div class="quiz-scheduling-expectation-item">
+								<div class="quiz-scheduling-expectation-icon">
+									<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+										<path d="M17 3V0M12 3V0M7 3V0M3 7H21M5 21H19C20.1046 21 21 20.1046 21 19V7C21 5.89543 20.1046 5 19 5H5C3.89543 5 3 5.89543 3 7V19C3 20.1046 3.89543 21 5 21Z" stroke="#306E51" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+									</svg>
+								</div>
+								<div class="quiz-scheduling-expectation-content">
+									<h4>Flexible Scheduling</h4>
+									<p>Choose from morning, afternoon, or evening slots that fit your lifestyle</p>
+								</div>
+							</div>
+							<div class="quiz-scheduling-expectation-item">
+								<div class="quiz-scheduling-expectation-icon">
+									<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+										<path d="M9 12L11 14L22 3M21 12V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V5C3 3.89543 3.89543 3 5 3H16" stroke="#306E51" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+									</svg>
+								</div>
+								<div class="quiz-scheduling-expectation-content">
+									<h4>Personalized Plan</h4>
+									<p>Receive a custom nutrition plan based on your quiz responses and health profile</p>
+								</div>
+							</div>
+							<div class="quiz-scheduling-expectation-item">
+								<div class="quiz-scheduling-expectation-icon">
+									<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+										<path d="M8 12H16M12 8V16M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="#306E51" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+									</svg>
+								</div>
+								<div class="quiz-scheduling-expectation-content">
+									<h4>Ongoing Support</h4>
+									<p>Follow-up resources and support to help you achieve your health goals</p>
 								</div>
 							</div>
 						</div>
-						<a href="mailto:support@curalife.com" class="quiz-booking-button" style="background-color: #6c757d;">
-							Contact Support
-						</a>
+					</div>
+				</div>
+
+				<!-- Support Section -->
+				<div class="quiz-action-section quiz-scheduling-support">
+					<div class="quiz-action-content">
+						<div class="quiz-action-header">
+							<h3 class="quiz-action-title">Need Assistance?</h3>
+						</div>
+						<div class="quiz-scheduling-support-content">
+							<p class="quiz-scheduling-support-text">
+								Our support team is here to help if you have any questions about scheduling or preparing for your appointment.
+							</p>
+							<div class="quiz-scheduling-support-options">
+								<a href="mailto:support@curalife.com" class="quiz-scheduling-support-btn">
+									<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+										<path d="M18.3333 5.83333L10 11.6667L1.66666 5.83333" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+										<path d="M1.66666 5.83333H18.3333V15C18.3333 15.442 18.1577 15.866 17.8452 16.1785C17.5327 16.491 17.1087 16.6667 16.6667 16.6667H3.33333C2.89131 16.6667 2.46738 16.491 2.15482 16.1785C1.84226 15.866 1.66666 15.442 1.66666 15V5.83333Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+									</svg>
+									Email Support
+								</a>
+								<a href="tel:+1-800-CURALIFE" class="quiz-scheduling-support-btn">
+									<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+										<path d="M18.3081 14.2233C17.1569 14.2233 16.0346 14.0397 14.9845 13.6971C14.6449 13.5878 14.2705 13.6971 14.0579 13.9427L12.8372 15.6772C10.3023 14.4477 8.55814 12.7138 7.32326 10.1581L9.10465 8.89535C9.34884 8.68372 9.45814 8.30233 9.34884 7.96279C9.00581 6.91628 8.82209 5.79186 8.82209 4.64535C8.82209 4.28953 8.53256 4 8.17674 4H4.64535C4.28953 4 4 4.28953 4 4.64535C4 12.1715 10.1831 18.3953 17.6628 18.3953C18.0186 18.3953 18.3081 18.1058 18.3081 17.75V14.2233Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+									</svg>
+									Call Us
+								</a>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -3559,72 +3635,255 @@ class ModularQuiz {
 		const errorStatus = schedulingData?.status || "ERROR";
 		const isValidationError = errorStatus === "VALIDATION_ERROR";
 		const isDuplicateError = errorStatus === "DUPLICATE_ERROR";
+		const isAuthError = errorStatus === "AUTH_ERROR";
+		const isServerError = errorStatus === "SERVER_ERROR";
+		const isConfigError = errorStatus === "CONFIG_ERROR";
+
+		// Determine error type and messaging
+		let errorIcon, errorTitle, errorDescription, errorColor, actionContent;
+
+		if (isDuplicateError) {
+			errorIcon = `
+				<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+					<circle cx="40" cy="40" r="40" fill="#F59E0B" fill-opacity="0.1"/>
+					<circle cx="40" cy="40" r="30" fill="#F59E0B" fill-opacity="0.2"/>
+					<path d="M40 25V40M40 50H40.02" stroke="#F59E0B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+				</svg>
+			`;
+			errorTitle = "Appointment Already Exists";
+			errorDescription = "Good news! You already have an appointment scheduled with our dietitian.";
+			errorColor = "#F59E0B";
+
+			actionContent = `
+				<div class="quiz-scheduling-duplicate-info">
+					<div class="quiz-scheduling-info-card">
+						<div class="quiz-scheduling-info-icon">
+							<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<path d="M18 5.83333L10 11.6667L2 5.83333" stroke="#306E51" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+								<path d="M2 5.83333H18V15C18 15.442 17.824 15.866 17.512 16.1785C17.199 16.491 16.775 16.6667 16.333 16.6667H3.667C3.225 16.6667 2.801 16.491 2.488 16.1785C2.176 15.866 2 15.442 2 15V5.83333Z" stroke="#306E51" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+							</svg>
+						</div>
+						<div class="quiz-scheduling-info-content">
+							<h4>Check Your Email</h4>
+							<p>Your appointment confirmation and scheduling details have been sent to your email address.</p>
+						</div>
+					</div>
+
+					<div class="quiz-scheduling-info-card">
+						<div class="quiz-scheduling-info-icon">
+							<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<path d="M8 2V6M16 2V6M3.5 10H20.5M5 4H19C20.105 4 21 4.895 21 6V20C21 21.105 20.105 22 19 22H5C3.895 22 3 21.105 3 20V6C3 4.895 3.895 4 5 4Z" stroke="#306E51" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+							</svg>
+						</div>
+						<div class="quiz-scheduling-info-content">
+							<h4>Reschedule if Needed</h4>
+							<p>If you need to change your appointment time, use the link in your confirmation email.</p>
+						</div>
+					</div>
+				</div>
+			`;
+		} else if (isValidationError) {
+			errorIcon = `
+				<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+					<circle cx="40" cy="40" r="40" fill="#EF4444" fill-opacity="0.1"/>
+					<circle cx="40" cy="40" r="30" fill="#EF4444" fill-opacity="0.2"/>
+					<path d="M25 25L55 55M55 25L25 55" stroke="#EF4444" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+				</svg>
+			`;
+			errorTitle = "Information Needs Review";
+			errorDescription = errorMessage;
+			errorColor = "#EF4444";
+
+			actionContent = `
+				<div class="quiz-scheduling-validation-help">
+					<div class="quiz-scheduling-help-section">
+						<h4>Common Issues & Solutions:</h4>
+						<div class="quiz-scheduling-help-grid">
+							<div class="quiz-scheduling-help-item">
+								<span class="quiz-scheduling-help-icon">📞</span>
+								<div class="quiz-scheduling-help-content">
+									<strong>Phone Number:</strong> Use 10-digit format (e.g., 5551234567)
+								</div>
+							</div>
+							<div class="quiz-scheduling-help-item">
+								<span class="quiz-scheduling-help-icon">📅</span>
+								<div class="quiz-scheduling-help-content">
+									<strong>Date of Birth:</strong> Ensure month/day/year are correct
+								</div>
+							</div>
+							<div class="quiz-scheduling-help-item">
+								<span class="quiz-scheduling-help-icon">🏠</span>
+								<div class="quiz-scheduling-help-content">
+									<strong>Address:</strong> Include street number and name
+								</div>
+							</div>
+							<div class="quiz-scheduling-help-item">
+								<span class="quiz-scheduling-help-icon">📍</span>
+								<div class="quiz-scheduling-help-content">
+									<strong>ZIP Code:</strong> Use 5-digit format (e.g., 12345)
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="quiz-scheduling-retry-section">
+						<button onclick="window.location.reload()" class="quiz-booking-button quiz-scheduling-retry-btn">
+							<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<path d="M1.66666 10H5L3.33333 8.33333M3.33333 8.33333L1.66666 6.66667M3.33333 8.33333C4.09938 6.54467 5.40818 5.06585 7.07084 4.10926C8.7335 3.15266 10.6668 2.76579 12.5729 3.00632C14.479 3.24685 16.2671 4.10239 17.6527 5.43174C19.0382 6.76109 19.9501 8.50173 20.2612 10.3889C20.5723 12.2761 20.2661 14.2137 19.3884 15.9271C18.5107 17.6405 17.1075 19.0471 15.3804 19.9429C13.6533 20.8388 11.6875 21.1795 9.76666 20.9204C7.84586 20.6613 6.06666 19.8167 4.66666 18.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+							</svg>
+							Try Again
+						</button>
+						<p class="quiz-scheduling-retry-note">Go back and double-check your information</p>
+					</div>
+				</div>
+			`;
+		} else if (isAuthError || isConfigError) {
+			errorIcon = `
+				<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+					<circle cx="40" cy="40" r="40" fill="#8B5CF6" fill-opacity="0.1"/>
+					<circle cx="40" cy="40" r="30" fill="#8B5CF6" fill-opacity="0.2"/>
+					<path d="M40 25V40M40 50H40.02" stroke="#8B5CF6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+				</svg>
+			`;
+			errorTitle = "Service Temporarily Unavailable";
+			errorDescription = "We're experiencing a temporary issue with our scheduling system.";
+			errorColor = "#8B5CF6";
+
+			actionContent = `
+				<div class="quiz-scheduling-service-error">
+					<div class="quiz-scheduling-service-promise">
+						<div class="quiz-scheduling-promise-icon">
+							<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<circle cx="24" cy="24" r="22" stroke="#306E51" stroke-width="4"/>
+								<path d="M16 24L22 30L32 18" stroke="#306E51" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+							</svg>
+						</div>
+						<div class="quiz-scheduling-promise-content">
+							<h4>We've Got You Covered</h4>
+							<p>Your request has been recorded and our team will personally contact you within <strong>24 hours</strong> to schedule your appointment.</p>
+						</div>
+					</div>
+
+					<div class="quiz-scheduling-what-happens-next">
+						<h4>What Happens Next:</h4>
+						<div class="quiz-scheduling-timeline">
+							<div class="quiz-scheduling-timeline-item">
+								<div class="quiz-scheduling-timeline-marker">1</div>
+								<div class="quiz-scheduling-timeline-content">
+									<h5>Within 4 Hours</h5>
+									<p>You'll receive a confirmation email with your request details</p>
+								</div>
+							</div>
+							<div class="quiz-scheduling-timeline-item">
+								<div class="quiz-scheduling-timeline-marker">2</div>
+								<div class="quiz-scheduling-timeline-content">
+									<h5>Within 24 Hours</h5>
+									<p>A team member will call to schedule your appointment</p>
+								</div>
+							</div>
+							<div class="quiz-scheduling-timeline-item">
+								<div class="quiz-scheduling-timeline-marker">3</div>
+								<div class="quiz-scheduling-timeline-content">
+									<h5>Your Appointment</h5>
+									<p>Meet with your registered dietitian at the scheduled time</p>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			`;
+		} else {
+			errorIcon = `
+				<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+					<circle cx="40" cy="40" r="40" fill="#6B7280" fill-opacity="0.1"/>
+					<circle cx="40" cy="40" r="30" fill="#6B7280" fill-opacity="0.2"/>
+					<path d="M40 25V40M40 50H40.02" stroke="#6B7280" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+				</svg>
+			`;
+			errorTitle = "Scheduling Assistance Needed";
+			errorDescription = "We encountered an unexpected issue, but we're here to help.";
+			errorColor = "#6B7280";
+
+			actionContent = `
+				<div class="quiz-scheduling-manual-help">
+					<div class="quiz-scheduling-manual-promise">
+						<h4>Personal Assistance Guaranteed</h4>
+						<p>Our support team will personally handle your scheduling within 24 hours. You won't fall through the cracks!</p>
+					</div>
+
+					<div class="quiz-scheduling-contact-options">
+						<h4>Need Immediate Help?</h4>
+						<div class="quiz-scheduling-contact-grid">
+							<a href="mailto:support@curalife.com" class="quiz-scheduling-contact-option">
+								<div class="quiz-scheduling-contact-icon">
+									<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+										<path d="M21 5.83333L12 12L3 5.83333" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+										<path d="M3 5.83333H21V17C21 17.442 20.824 17.866 20.512 18.1785C20.199 18.491 19.775 18.6667 19.333 18.6667H4.667C4.225 18.6667 3.801 18.491 3.488 18.1785C3.176 17.866 3 17.442 3 17V5.83333Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+									</svg>
+								</div>
+								<div class="quiz-scheduling-contact-content">
+									<h5>Email Support</h5>
+									<p>Response within 4 hours</p>
+								</div>
+							</a>
+
+							<a href="tel:+1-800-CURALIFE" class="quiz-scheduling-contact-option">
+								<div class="quiz-scheduling-contact-icon">
+									<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+										<path d="M21.97 18.33C21.97 18.69 21.89 19.06 21.72 19.42C21.55 19.78 21.33 20.12 21.04 20.44C20.55 20.98 20.01 21.37 19.4 21.62C18.8 21.87 18.15 22 17.45 22C16.43 22 15.34 21.76 14.19 21.27C13.04 20.78 11.89 20.12 10.75 19.29C9.6 18.45 8.51 17.52 7.47 16.49C6.44 15.45 5.51 14.36 4.68 13.22C3.86 12.08 3.2 10.94 2.72 9.81C2.24 8.67 2 7.58 2 6.54C2 5.86 2.12 5.21 2.36 4.61C2.6 4 2.98 3.44 3.51 2.94C4.15 2.31 4.85 2 5.59 2C5.87 2 6.15 2.06 6.4 2.18C6.66 2.3 6.89 2.48 7.07 2.74L9.39 6.01C9.57 6.26 9.7 6.49 9.79 6.71C9.88 6.92 9.93 7.13 9.93 7.32C9.93 7.56 9.86 7.8 9.72 8.03C9.59 8.26 9.4 8.5 9.16 8.74L8.4 9.53C8.29 9.64 8.24 9.77 8.24 9.93C8.24 10.01 8.25 10.08 8.27 10.16C8.3 10.24 8.33 10.3 8.35 10.36C8.53 10.69 8.84 11.12 9.28 11.64C9.73 12.16 10.21 12.69 10.73 13.22C11.27 13.75 11.79 14.24 12.32 14.69C12.84 15.13 13.27 15.43 13.61 15.61C13.66 15.63 13.72 15.66 13.79 15.69C13.87 15.72 13.95 15.73 14.04 15.73C14.21 15.73 14.34 15.67 14.45 15.56L15.21 14.81C15.46 14.56 15.7 14.37 15.93 14.25C16.16 14.11 16.39 14.04 16.64 14.04C16.83 14.04 17.03 14.08 17.25 14.17C17.47 14.26 17.7 14.39 17.95 14.56L21.26 16.91C21.52 17.09 21.7 17.3 21.81 17.55C21.91 17.8 21.97 18.05 21.97 18.33Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+									</svg>
+								</div>
+								<div class="quiz-scheduling-contact-content">
+									<h5>Call Us</h5>
+									<p>Immediate assistance</p>
+								</div>
+							</a>
+						</div>
+					</div>
+				</div>
+			`;
+		}
 
 		return `
 			<div class="quiz-results-container">
-				<div class="quiz-results-header">
-					<h2 class="quiz-results-title">${isDuplicateError ? "Already Scheduled" : "Scheduling Issue"}</h2>
-					<p class="quiz-results-subtitle">${errorMessage}</p>
+				<!-- Error Header -->
+				<div class="quiz-scheduling-error-header">
+					<div class="quiz-scheduling-error-icon">
+						${errorIcon}
+					</div>
+					<h2 class="quiz-results-title">${errorTitle}</h2>
+					<p class="quiz-results-subtitle">${errorDescription}</p>
 				</div>
 
-				<div class="quiz-action-section">
+				<!-- Main Error Content -->
+				<div class="quiz-action-section quiz-scheduling-error-content">
 					<div class="quiz-action-content">
-						<div class="quiz-action-header">
-							<h3 class="quiz-action-title">${isDuplicateError ? "What's Next?" : "How to Proceed"}</h3>
+						${actionContent}
+					</div>
+				</div>
+
+				<!-- Support Section -->
+				<div class="quiz-action-section quiz-scheduling-error-support">
+					<div class="quiz-action-content">
+						<div class="quiz-scheduling-support-footer">
+							<h4>Questions? We're Here to Help</h4>
+							<p>Our support team is available Monday-Friday, 9 AM - 6 PM EST</p>
+							<div class="quiz-scheduling-support-buttons">
+								<a href="mailto:support@curalife.com" class="quiz-scheduling-support-btn">
+									<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+										<path d="M18.3333 5.83333L10 11.6667L1.66666 5.83333" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+										<path d="M1.66666 5.83333H18.3333V15C18.3333 15.442 18.1577 15.866 17.8452 16.1785C17.5327 16.491 17.1087 16.6667 16.6667 16.6667H3.33333C2.89131 16.6667 2.46738 16.491 2.15482 16.1785C1.84226 15.866 1.66666 15.442 1.66666 15V5.83333Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+									</svg>
+									Email Support
+								</a>
+								<a href="tel:+1-800-CURALIFE" class="quiz-scheduling-support-btn quiz-scheduling-support-btn-secondary">
+									<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+										<path d="M18.3081 14.2233C17.1569 14.2233 16.0346 14.0397 14.9845 13.6971C14.6449 13.5878 14.2705 13.6971 14.0579 13.9427L12.8372 15.6772C10.3023 14.4477 8.55814 12.7138 7.32326 10.1581L9.10465 8.89535C9.34884 8.68372 9.45814 8.30233 9.34884 7.96279C9.00581 6.91628 8.82209 5.79186 8.82209 4.64535C8.82209 4.28953 8.53256 4 8.17674 4H4.64535C4.28953 4 4 4.28953 4 4.64535C4 12.1715 10.1831 18.3953 17.6628 18.3953C18.0186 18.3953 18.3081 18.1058 18.3081 17.75V14.2233Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+									</svg>
+									Call Now
+								</a>
+							</div>
 						</div>
-						<div class="quiz-action-details">
-							${
-								isValidationError
-									? `
-								<div class="quiz-action-info">
-									<div class="quiz-action-info-text">
-										Please review your information and try again, or contact our support team for assistance.
-									</div>
-								</div>
-								<div class="quiz-action-feature">
-									<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-										<path d="M10 18.3333C14.6024 18.3333 18.3333 14.6024 18.3333 10C18.3333 5.39763 14.6024 1.66667 10 1.66667C5.39763 1.66667 1.66667 5.39763 1.66667 10C1.66667 14.6024 5.39763 18.3333 10 18.3333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-										<path d="M7.5 10L10 12.5L12.5 10" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-									</svg>
-									<div class="quiz-action-feature-text">Check your form information</div>
-								</div>
-								<button onclick="window.location.reload()" class="quiz-booking-button">
-									Try Again
-								</button>
-							`
-									: isDuplicateError
-										? `
-								<div class="quiz-action-info">
-									<div class="quiz-action-info-text">
-										It looks like you already have an appointment scheduled. Check your email for scheduling details.
-									</div>
-								</div>
-								<div class="quiz-action-feature">
-									<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-										<path d="M18.3333 5.83333L10 11.6667L1.66666 5.83333" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-										<path d="M1.66666 5.83333H18.3333V15C18.3333 15.442 18.1577 15.866 17.8452 16.1785C17.5327 16.491 17.1087 16.6667 16.6667 16.6667H3.33333C2.89131 16.6667 2.46738 16.491 2.15482 16.1785C1.84226 15.866 1.66666 15.442 1.66666 15V5.83333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-									</svg>
-									<div class="quiz-action-feature-text">Check your email for existing appointment details</div>
-								</div>
-							`
-										: `
-								<div class="quiz-action-info">
-									<div class="quiz-action-info-text">
-										Our team will contact you within 24 hours to manually schedule your appointment.
-									</div>
-								</div>
-								<div class="quiz-action-feature">
-									<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-										<path d="M18.3333 14.1667C18.3333 15.0871 17.5871 15.8333 16.6667 15.8333H5.83333L1.66666 20V3.33333C1.66666 2.41286 2.41285 1.66667 3.33333 1.66667H16.6667C17.5871 1.66667 18.3333 2.41286 18.3333 3.33333V14.1667Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-									</svg>
-									<div class="quiz-action-feature-text">We'll contact you within 24 hours</div>
-								</div>
-							`
-							}
-						</div>
-						<a href="mailto:support@curalife.com" class="quiz-booking-button" style="background-color: #6c757d;">
-							Contact Support
-						</a>
 					</div>
 				</div>
 			</div>
