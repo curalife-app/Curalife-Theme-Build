@@ -629,19 +629,21 @@
     backdrop-filter: blur(15px) saturate(1.1);
     letter-spacing: .01em;
     box-sizing: border-box;
-    border: 1px solid #ffffff40;
-    border-radius: 12px;
+    perspective: 1000px;
     width: 100%;
     max-width: 100%;
+    transform-style: preserve-3d;
+    border: 1px solid #ffffff40;
+    border-radius: 12px;
     margin-bottom: 12px;
     padding: 16px 18px;
     font-size: 14px;
     font-weight: 500;
     line-height: 1.5;
-    transition: opacity .4s cubic-bezier(.23, 1, .32, 1), transform .4s cubic-bezier(.23, 1, .32, 1), box-shadow .3s cubic-bezier(.23, 1, .32, 1), background .3s, filter .3s;
+    transition: opacity .6s cubic-bezier(.23, 1, .32, 1), transform .6s cubic-bezier(.23, 1, .32, 1), box-shadow .4s cubic-bezier(.23, 1, .32, 1), background .3s, filter .3s;
     position: relative;
     overflow: hidden;
-    transform: translateX(100%);
+    transform: translateX(120%)scale(.85)rotateY(15deg);
     box-shadow: 0 8px 25px #00000026, 0 4px 12px #0000001a, 0 2px 6px #00000014, inset 0 1px #ffffff26;
   }
 
@@ -666,62 +668,111 @@
 
   .notification.animate-in {
     opacity: 1;
-    animation: .5s cubic-bezier(.23, 1, .32, 1) notificationSlideIn;
-    transform: translateX(0);
+    animation: .8s cubic-bezier(.23, 1, .32, 1) notificationReveal;
+    transform: translateX(0)scale(1)rotateY(0);
   }
 
-  @keyframes notificationSlideIn {
+  @keyframes notificationReveal {
     0% {
       opacity: 0;
-      transform: translateX(100%)scale(.95);
+      filter: blur(8px) brightness(.5);
+      transform: translateX(120%)scale(.85)rotateY(15deg);
     }
 
-    60% {
-      transform: translateX(-4px)scale(1.01);
+    25% {
+      opacity: .3;
+      filter: blur(4px) brightness(.7);
+      transform: translateX(60%)scale(.92)rotateY(8deg);
+    }
+
+    50% {
+      opacity: .7;
+      filter: blur(2px) brightness(.9);
+      transform: translateX(20%)scale(.98)rotateY(3deg);
+    }
+
+    75% {
+      opacity: .9;
+      filter: blur() brightness(1.05);
+      transform: translateX(-8px)scale(1.02)rotateY(-1deg);
     }
 
     100% {
       opacity: 1;
-      transform: translateX(0)scale(1);
+      filter: blur() brightness();
+      transform: translateX(0)scale(1)rotateY(0);
     }
   }
 
   .notification.animate-in .notification-shimmer {
-    animation: 1.2s ease-out shimmerEffect;
+    animation: 1.5s ease-out .3s enhancedShimmer;
     left: 100%;
   }
 
-  @keyframes shimmerEffect {
+  @keyframes enhancedShimmer {
     0% {
       opacity: 0;
-      left: -100%;
+      left: -120%;
+      transform: skewX(-20deg)scale(.8);
+    }
+
+    25% {
+      opacity: .3;
+      transform: skewX(-15deg)scale(.9);
     }
 
     50% {
       opacity: 1;
+      transform: skewX(-10deg)scale(1);
+    }
+
+    75% {
+      opacity: .7;
+      transform: skewX(-5deg)scale(1.05);
     }
 
     100% {
       opacity: 0;
-      left: 100%;
+      left: 120%;
+      transform: skewX(0)scale(1);
     }
   }
 
   .notification.animate-out {
     opacity: 0;
-    animation: .4s cubic-bezier(.55, 0, .74, .2) notificationSlideOut;
-    transform: translateX(120%)scale(.92)rotate(1deg);
+    animation: .6s cubic-bezier(.55, 0, .74, .2) notificationHide;
+    transform: translateX(150%)scale(.8)rotateY(-20deg);
   }
 
-  @keyframes notificationSlideOut {
+  @keyframes notificationHide {
     0% {
       opacity: 1;
-      transform: translateX(0)rotate(0)scale(1);
+      filter: blur() brightness();
+      transform: translateX(0)scale(1)rotateY(0);
+    }
+
+    25% {
+      opacity: .8;
+      filter: blur(1px) brightness(1.1);
+      transform: translateX(20%)scale(.98)rotateY(-3deg);
+    }
+
+    50% {
+      opacity: .5;
+      filter: blur(3px) brightness(1.2);
+      transform: translateX(60%)scale(.92)rotateY(-8deg);
+    }
+
+    75% {
+      opacity: .2;
+      filter: blur(6px) brightness(.8);
+      transform: translateX(100%)scale(.85)rotateY(-15deg);
     }
 
     100% {
       opacity: 0;
-      transform: translateX(120%)scale(.92)rotate(1deg);
+      filter: blur(10px) brightness(.3);
+      transform: translateX(150%)scale(.8)rotateY(-20deg);
     }
   }
 

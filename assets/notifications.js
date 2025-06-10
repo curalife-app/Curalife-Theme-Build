@@ -47,6 +47,11 @@ export class NotificationManager {
 		this.eventListeners = new WeakMap();
 		this.isDestroyed = false;
 
+		// Track notification queue for staggered animations
+		this.notificationQueue = [];
+		this.isProcessingQueue = false;
+		this.staggerDelay = 150; // milliseconds between notifications
+
 		this.init();
 	}
 
@@ -90,7 +95,7 @@ export class NotificationManager {
 
 		try {
 			const notification = this.createNotification(text, type, priority, duration);
-			this.addNotification(notification);
+			this.queueNotification(notification);
 			return notification;
 		} catch (error) {
 			console.error("Failed to show notification:", error);
@@ -316,16 +321,55 @@ export class NotificationManager {
 		}
 	}
 
-	addNotification(notification) {
+	queueNotification(notification) {
+		if (this.isDestroyed) return;
+
+		this.notificationQueue.push(notification);
+		this.processNotificationQueue();
+	}
+
+	processNotificationQueue() {
+		if (this.isDestroyed || this.isProcessingQueue || this.notificationQueue.length === 0) return;
+
+		this.isProcessingQueue = true;
+		const notification = this.notificationQueue.shift();
+
+		this.addNotificationImmediate(notification);
+
+		// Process next notification after delay
+		if (this.notificationQueue.length > 0) {
+			const timeoutId = setTimeout(() => {
+				this.isProcessingQueue = false;
+				this.processNotificationQueue();
+				this.timeouts.delete(timeoutId);
+			}, this.staggerDelay);
+			this.timeouts.add(timeoutId);
+		} else {
+			this.isProcessingQueue = false;
+		}
+	}
+
+	addNotificationImmediate(notification) {
 		if (this.isDestroyed || !this.container) return;
 
 		this.notifications.push(notification);
 		this.container.appendChild(notification);
 
-		// Trigger animation
+		// Add entrance animation with enhanced effects
 		requestAnimationFrame(() => {
 			if (this.isDestroyed) return;
-			notification.classList.add("animate-in");
+
+			// Add a micro-delay for better visual effect
+			const timeoutId = setTimeout(() => {
+				if (!this.isDestroyed && notification.parentNode) {
+					notification.classList.add("animate-in");
+
+					// Add a subtle bounce effect to surrounding notifications
+					this.addInteractiveEffects(notification);
+				}
+				this.timeouts.delete(timeoutId);
+			}, 50);
+			this.timeouts.add(timeoutId);
 		});
 
 		// Manage notification count
@@ -336,6 +380,35 @@ export class NotificationManager {
 
 		// Apply current filter
 		this.applyNotificationFilter(this.currentFilter);
+	}
+
+	addInteractiveEffects(newNotification) {
+		if (this.isDestroyed) return;
+
+		// Add subtle ripple effect to surrounding notifications
+		const existingNotifications = this.notifications.filter(n => n !== newNotification && n.parentNode);
+		existingNotifications.forEach((notification, index) => {
+			if (this.isDestroyed) return;
+
+			const delay = index * 30; // Stagger the ripple effect
+			const timeoutId = setTimeout(() => {
+				if (!this.isDestroyed && notification.parentNode) {
+					notification.style.transform = "translateX(-2px) scale(1.01)";
+					notification.style.transition = "transform 0.2s ease-out";
+
+					const resetTimeoutId = setTimeout(() => {
+						if (!this.isDestroyed && notification.parentNode) {
+							notification.style.transform = "";
+							notification.style.transition = "";
+						}
+						this.timeouts.delete(resetTimeoutId);
+					}, 200);
+					this.timeouts.add(resetTimeoutId);
+				}
+				this.timeouts.delete(timeoutId);
+			}, delay);
+			this.timeouts.add(timeoutId);
+		});
 	}
 
 	removeNotification(notification, updateArray = true) {
@@ -352,7 +425,11 @@ export class NotificationManager {
 			this.eventListeners.delete(notification);
 		}
 
+		// Add exit animation with enhanced effects
 		notification.classList.add("animate-out");
+
+		// Add ripple effect to remaining notifications
+		this.addRemovalEffects(notification);
 
 		const timeoutId = setTimeout(() => {
 			if (notification.parentNode && !this.isDestroyed) {
@@ -365,8 +442,37 @@ export class NotificationManager {
 				}
 			}
 			this.timeouts.delete(timeoutId);
-		}, 300);
+		}, 600); // Updated to match longer hide animation
 		this.timeouts.add(timeoutId);
+	}
+
+	addRemovalEffects(removingNotification) {
+		if (this.isDestroyed) return;
+
+		// Add subtle shift effect to remaining notifications
+		const remainingNotifications = this.notifications.filter(n => n !== removingNotification && n.parentNode);
+		remainingNotifications.forEach((notification, index) => {
+			if (this.isDestroyed) return;
+
+			const delay = index * 20; // Stagger the shift effect
+			const timeoutId = setTimeout(() => {
+				if (!this.isDestroyed && notification.parentNode) {
+					notification.style.transform = "translateY(-5px) scale(0.99)";
+					notification.style.transition = "transform 0.3s ease-out";
+
+					const resetTimeoutId = setTimeout(() => {
+						if (!this.isDestroyed && notification.parentNode) {
+							notification.style.transform = "";
+							notification.style.transition = "";
+						}
+						this.timeouts.delete(resetTimeoutId);
+					}, 300);
+					this.timeouts.add(resetTimeoutId);
+				}
+				this.timeouts.delete(timeoutId);
+			}, delay);
+			this.timeouts.add(timeoutId);
+		});
 	}
 
 	addControlButtons() {
@@ -868,6 +974,8 @@ export class NotificationManager {
 		// Clear references
 		this.container = null;
 		this.notifications = [];
+		this.notificationQueue = [];
+		this.isProcessingQueue = false;
 	}
 }
 
