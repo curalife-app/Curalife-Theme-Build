@@ -6,7 +6,7 @@
 export class NotificationManager {
 	constructor(options = {}) {
 		this.options = {
-			containerSelector: ".quiz-background-notifications",
+			containerSelector: ".notification-container",
 			position: "top-right",
 			autoCollapse: true,
 			maxNotifications: 50,
@@ -16,26 +16,26 @@ export class NotificationManager {
 			...options
 		};
 
-		// CSS class configuration - allows customization while maintaining defaults
+		// CSS class configuration - generic names, customizable for any component
 		this.cssClasses = {
-			container: "quiz-background-notifications",
-			notification: "quiz-notification",
-			success: "quiz-notification-success",
-			error: "quiz-notification-error",
-			info: "quiz-notification-info",
-			warning: "quiz-notification-warning",
-			header: "quiz-notification-header",
-			content: "quiz-notification-content",
-			icon: "quiz-notification-icon",
-			title: "quiz-notification-title",
-			toggle: "quiz-notification-toggle",
-			details: "quiz-notification-details",
-			detailsContent: "quiz-notification-details-content",
-			close: "quiz-notification-close",
-			shimmer: "quiz-notification-shimmer",
-			simple: "quiz-notification-simple",
-			simpleIcon: "quiz-notification-simple-icon",
-			simpleText: "quiz-notification-simple-text",
+			container: "notification-container",
+			notification: "notification",
+			success: "notification-success",
+			error: "notification-error",
+			info: "notification-info",
+			warning: "notification-warning",
+			header: "notification-header",
+			content: "notification-content",
+			icon: "notification-icon",
+			title: "notification-title",
+			toggle: "notification-toggle",
+			details: "notification-details",
+			detailsContent: "notification-details-content",
+			close: "notification-close",
+			shimmer: "notification-shimmer",
+			simple: "notification-simple",
+			simpleIcon: "notification-simple-icon",
+			simpleText: "notification-simple-text",
 			// Override with custom classes if provided
 			...(options.customClasses || {})
 		};
@@ -278,17 +278,17 @@ export class NotificationManager {
 	}
 
 	removeExistingButtons() {
-		const existingButtons = document.querySelectorAll(".quiz-notification-copy-button, .quiz-notification-filter-button");
+		const existingButtons = document.querySelectorAll(".notification-copy-button, .notification-filter-button");
 		existingButtons.forEach(btn => btn.remove());
 	}
 
 	addCopyButton() {
 		const copyButton = document.createElement("div");
-		copyButton.className = "quiz-notification-copy-button";
+		copyButton.className = "notification-copy-button";
 		copyButton.innerHTML = `
 			<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 				<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-				<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+				<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2 2v1"></path>
 			</svg>
 		`;
 		copyButton.title = "Copy notifications";
@@ -299,7 +299,7 @@ export class NotificationManager {
 
 	addFilterButton() {
 		const filterButton = document.createElement("div");
-		filterButton.className = "quiz-notification-filter-button";
+		filterButton.className = "notification-filter-button";
 		filterButton.innerHTML = "🔍";
 		filterButton.title = "Filter notifications";
 
@@ -311,21 +311,21 @@ export class NotificationManager {
 		this.removeExistingMenus();
 
 		const menu = document.createElement("div");
-		menu.className = "quiz-copy-options-menu";
+		menu.className = "notification-copy-options-menu";
 		menu.innerHTML = `
-			<div class="quiz-copy-options-menu-item" data-format="text" data-filter="all">All as Text</div>
-			<div class="quiz-copy-options-menu-item" data-format="json" data-filter="all">All as JSON</div>
-			<div class="quiz-copy-options-menu-item" data-format="csv" data-filter="all">All as CSV</div>
-			<div class="quiz-copy-options-menu-divider"></div>
-			<div class="quiz-copy-options-menu-item" data-format="text" data-filter="error">Errors Only</div>
-			<div class="quiz-copy-options-menu-item" data-format="text" data-filter="success">Success Only</div>
-			<div class="quiz-copy-options-menu-item" data-format="text" data-filter="info">Info Only</div>
+			<div class="notification-copy-options-menu-item" data-format="text" data-filter="all">All as Text</div>
+			<div class="notification-copy-options-menu-item" data-format="json" data-filter="all">All as JSON</div>
+			<div class="notification-copy-options-menu-item" data-format="csv" data-filter="all">All as CSV</div>
+			<div class="notification-copy-options-menu-divider"></div>
+			<div class="notification-copy-options-menu-item" data-format="text" data-filter="error">Errors Only</div>
+			<div class="notification-copy-options-menu-item" data-format="text" data-filter="success">Success Only</div>
+			<div class="notification-copy-options-menu-item" data-format="text" data-filter="info">Info Only</div>
 		`;
 
 		document.body.appendChild(menu);
 
 		menu.addEventListener("click", e => {
-			const item = e.target.closest(".quiz-copy-options-menu-item");
+			const item = e.target.closest(".notification-copy-options-menu-item");
 			if (item) {
 				const format = item.dataset.format;
 				const filter = item.dataset.filter;
@@ -349,18 +349,18 @@ export class NotificationManager {
 		this.removeExistingMenus();
 
 		const menu = document.createElement("div");
-		menu.className = "quiz-filter-options-menu";
+		menu.className = "notification-filter-options-menu";
 		menu.innerHTML = `
-			<div class="quiz-filter-options-menu-item ${this.currentFilter === "all" ? "active" : ""}" data-filter="all">All Types</div>
-			<div class="quiz-filter-options-menu-item ${this.currentFilter === "error" ? "active" : ""}" data-filter="error">Errors</div>
-			<div class="quiz-filter-options-menu-item ${this.currentFilter === "success" ? "active" : ""}" data-filter="success">Success</div>
-			<div class="quiz-filter-options-menu-item ${this.currentFilter === "info" ? "active" : ""}" data-filter="info">Info</div>
+			<div class="notification-filter-options-menu-item ${this.currentFilter === "all" ? "active" : ""}" data-filter="all">All Types</div>
+			<div class="notification-filter-options-menu-item ${this.currentFilter === "error" ? "active" : ""}" data-filter="error">Errors</div>
+			<div class="notification-filter-options-menu-item ${this.currentFilter === "success" ? "active" : ""}" data-filter="success">Success</div>
+			<div class="notification-filter-options-menu-item ${this.currentFilter === "info" ? "active" : ""}" data-filter="info">Info</div>
 		`;
 
 		document.body.appendChild(menu);
 
 		menu.addEventListener("click", e => {
-			const item = e.target.closest(".quiz-filter-options-menu-item");
+			const item = e.target.closest(".notification-filter-options-menu-item");
 			if (item) {
 				const filter = item.dataset.filter;
 				this.currentFilter = filter;
@@ -382,7 +382,7 @@ export class NotificationManager {
 	}
 
 	removeExistingMenus() {
-		const existingMenus = document.querySelectorAll(".quiz-copy-options-menu, .quiz-filter-options-menu");
+		const existingMenus = document.querySelectorAll(".notification-copy-options-menu, .notification-filter-options-menu");
 		existingMenus.forEach(menu => menu.remove());
 	}
 
@@ -487,8 +487,8 @@ export class NotificationManager {
 	}
 
 	extractNotificationText(notification) {
-		const titleElement = notification.querySelector(".quiz-notification-title, .quiz-notification-simple-text");
-		const detailsElement = notification.querySelector(".quiz-notification-details-content");
+		const titleElement = notification.querySelector(`.${this.cssClasses.title}, .${this.cssClasses.simpleText}`);
+		const detailsElement = notification.querySelector(`.${this.cssClasses.detailsContent}`);
 
 		let text = titleElement ? titleElement.textContent.trim() : "";
 		if (detailsElement && detailsElement.textContent.trim()) {
@@ -591,7 +591,7 @@ export class NotificationManager {
 	}
 
 	applyPriorityStyles(notification, priority, priorityConfig) {
-		notification.classList.add(`quiz-notification-priority-${priority}`);
+		notification.classList.add(`notification-priority-${priority}`);
 
 		if (priorityConfig.shouldPulse) {
 			notification.style.animation = "pulse-critical 2s infinite";

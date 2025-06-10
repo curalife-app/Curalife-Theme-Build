@@ -69,14 +69,26 @@ class ModularQuiz {
 				defaultDuration: 0, // Don't auto-remove notifications by default
 				enableFiltering: true,
 				enableCopy: true,
-				// Ensure the container uses the exact quiz styling
+				// Map generic notification classes to quiz-specific ones for backward compatibility
 				customClasses: {
 					container: "quiz-background-notifications",
 					notification: "quiz-notification",
 					success: "quiz-notification-success",
 					error: "quiz-notification-error",
 					info: "quiz-notification-info",
-					warning: "quiz-notification-warning"
+					warning: "quiz-notification-warning",
+					header: "quiz-notification-header",
+					content: "quiz-notification-content",
+					icon: "quiz-notification-icon",
+					title: "quiz-notification-title",
+					toggle: "quiz-notification-toggle",
+					details: "quiz-notification-details",
+					detailsContent: "quiz-notification-details-content",
+					close: "quiz-notification-close",
+					shimmer: "quiz-notification-shimmer",
+					simple: "quiz-notification-simple",
+					simpleIcon: "quiz-notification-simple-icon",
+					simpleText: "quiz-notification-simple-text"
 				}
 			});
 
