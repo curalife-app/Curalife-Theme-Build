@@ -59,13 +59,9 @@ export class NotificationManager {
 	init() {
 		if (this.isDestroyed) return;
 
-		try {
-			this.createContainer();
-			if (this.options.enableFiltering || this.options.enableCopy) {
-				this.addControlButtons();
-			}
-		} catch (error) {
-			console.error("Failed to initialize NotificationManager:", error);
+		this.createContainer();
+		if (this.options.enableFiltering || this.options.enableCopy) {
+			this.addControlButtons();
 		}
 	}
 
@@ -79,7 +75,7 @@ export class NotificationManager {
 		let container = document.querySelector(this.options.containerSelector);
 		if (!container) {
 			if (!document.body) {
-				throw new Error("Document body not available for creating notification container");
+				return;
 			}
 			container = document.createElement("div");
 			container.className = this.cssClasses.container;
@@ -90,23 +86,17 @@ export class NotificationManager {
 
 	show(text, type = "info", priority = null, duration = null) {
 		if (this.isDestroyed) {
-			console.warn("Cannot show notification: NotificationManager has been destroyed");
 			return null;
 		}
 
-		try {
-			const notification = this.createNotification(text, type, priority, duration);
-			this.queueNotification(notification);
-			return notification;
-		} catch (error) {
-			console.error("Failed to show notification:", error);
-			return null;
-		}
+		const notification = this.createNotification(text, type, priority, duration);
+		this.queueNotification(notification);
+		return notification;
 	}
 
 	createNotification(text, type = "info", priority = null, duration = null) {
 		if (!text || typeof text !== "string") {
-			throw new Error("Notification text must be a non-empty string");
+			return null;
 		}
 
 		const id = `notification-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -198,7 +188,6 @@ export class NotificationManager {
 		const toggle = notification.querySelector(`.${this.cssClasses.toggle}`);
 
 		if (!header || !closeBtn) {
-			console.error("Failed to find required elements in notification");
 			return;
 		}
 
@@ -325,12 +314,10 @@ export class NotificationManager {
 	queueNotification(notification) {
 		if (this.isDestroyed) return;
 
-		console.log(`📥 Adding notification to queue. Queue was: ${this.notificationQueue.length}, now: ${this.notificationQueue.length + 1}`);
 		this.notificationQueue.push(notification);
 
 		// Use a small delay to batch notifications that arrive in quick succession
 		if (!this.isProcessingQueue) {
-			console.log(`⏱️ Starting batching delay (${this.batchingDelay}ms) to collect rapid notifications...`);
 			const timeoutId = setTimeout(() => {
 				this.processNotificationQueue();
 				this.timeouts.delete(timeoutId);
@@ -344,17 +331,14 @@ export class NotificationManager {
 
 		// If already processing, just return - the current processing will handle the queue
 		if (this.isProcessingQueue) {
-			console.log(`⏸️ Already processing queue. Current queue length: ${this.notificationQueue.length}`);
 			return;
 		}
 
 		// If queue is empty, nothing to process
 		if (this.notificationQueue.length === 0) {
-			console.log("📭 Queue is empty, nothing to process");
 			return;
 		}
 
-		console.log(`⏳ Starting queue processing. Queue length: ${this.notificationQueue.length}`);
 		this.isProcessingQueue = true;
 		this.processNextInQueue();
 	}
@@ -367,19 +351,15 @@ export class NotificationManager {
 
 		// If no more notifications, end processing
 		if (this.notificationQueue.length === 0) {
-			console.log("✅ Queue processing complete - no more notifications");
 			this.isProcessingQueue = false;
 			return;
 		}
 
 		const notification = this.notificationQueue.shift();
-		console.log(`🎬 Processing notification. Remaining in queue: ${this.notificationQueue.length}`);
-
 		this.addNotificationImmediate(notification);
 
 		// Schedule next notification processing
 		if (this.notificationQueue.length > 0) {
-			console.log(`⏰ Next notification in ${this.staggerDelay}ms. Remaining: ${this.notificationQueue.length}`);
 			const timeoutId = setTimeout(() => {
 				this.processNextInQueue();
 				this.timeouts.delete(timeoutId);
@@ -389,10 +369,8 @@ export class NotificationManager {
 			// Keep processing state active for a short period to catch rapid additions
 			const timeoutId = setTimeout(() => {
 				if (this.notificationQueue.length === 0) {
-					console.log("✅ Queue processing complete - timeout reached");
 					this.isProcessingQueue = false;
 				} else {
-					console.log(`🔄 New notifications added during timeout. Continuing processing...`);
 					this.processNextInQueue();
 				}
 				this.timeouts.delete(timeoutId);
@@ -421,19 +399,11 @@ export class NotificationManager {
 			// Add a micro-delay for better visual effect
 			const timeoutId = setTimeout(() => {
 				if (!this.isDestroyed && notification.parentNode) {
-					console.log("🎬 Adding animate-in class to notification:", notification.id);
-
 					// Clear inline styles to let CSS take over
 					notification.style.opacity = "";
 					notification.style.transform = "";
 
 					notification.classList.add("animate-in");
-
-					// Debug: Check if animation is applied
-					const computedStyle = window.getComputedStyle(notification);
-					console.log("🎭 Animation name:", computedStyle.animationName);
-					console.log("🎭 Animation duration:", computedStyle.animationDuration);
-					console.log("🎭 Final transform:", computedStyle.transform);
 
 					// Add a subtle bounce effect to surrounding notifications
 					this.addInteractiveEffects(notification);
@@ -496,8 +466,6 @@ export class NotificationManager {
 			this.eventListeners.delete(notification);
 		}
 
-		console.log("🚪 Starting removal animation for:", notification.id);
-
 		// Remove any existing animation classes first
 		notification.classList.remove("animate-in");
 
@@ -507,16 +475,10 @@ export class NotificationManager {
 		// Add exit animation with enhanced effects
 		notification.classList.add("animate-out");
 
-		// Debug animation application
-		const computedStyle = window.getComputedStyle(notification);
-		console.log("🎬 Exit animation name:", computedStyle.animationName);
-		console.log("🎬 Exit animation duration:", computedStyle.animationDuration);
-
 		// Add ripple effect to remaining notifications
 		this.addRemovalEffects(notification);
 
 		const timeoutId = setTimeout(() => {
-			console.log("🗑️ Removing notification from DOM:", notification.id);
 			if (notification.parentNode && !this.isDestroyed) {
 				notification.parentNode.removeChild(notification);
 			}
@@ -527,7 +489,7 @@ export class NotificationManager {
 				}
 			}
 			this.timeouts.delete(timeoutId);
-		}, 800); // Updated to match longer hide animation
+		}, 800);
 		this.timeouts.add(timeoutId);
 	}
 
@@ -565,15 +527,11 @@ export class NotificationManager {
 
 		this.removeExistingButtons();
 
-		try {
-			if (this.options.enableCopy) {
-				this.addCopyButton();
-			}
-			if (this.options.enableFiltering) {
-				this.addFilterButton();
-			}
-		} catch (error) {
-			console.error("Failed to add control buttons:", error);
+		if (this.options.enableCopy) {
+			this.addCopyButton();
+		}
+		if (this.options.enableFiltering) {
+			this.addFilterButton();
 		}
 	}
 
@@ -761,25 +719,21 @@ export class NotificationManager {
 	exportNotifications(format, filter, copyButton) {
 		if (this.isDestroyed) return;
 
-		try {
-			const filteredNotifications = this.getFilteredNotifications(filter);
+		const filteredNotifications = this.getFilteredNotifications(filter);
 
-			let exportedData;
-			switch (format) {
-				case "json":
-					exportedData = this.formatAsJSON(filteredNotifications, filter);
-					break;
-				case "csv":
-					exportedData = this.formatAsCSV(filteredNotifications, filter);
-					break;
-				default:
-					exportedData = this.formatAsText(filteredNotifications, filter);
-			}
-
-			this.copyToClipboard(exportedData, copyButton, { format, filter });
-		} catch (error) {
-			console.error("Failed to export notifications:", error);
+		let exportedData;
+		switch (format) {
+			case "json":
+				exportedData = this.formatAsJSON(filteredNotifications, filter);
+				break;
+			case "csv":
+				exportedData = this.formatAsCSV(filteredNotifications, filter);
+				break;
+			default:
+				exportedData = this.formatAsText(filteredNotifications, filter);
 		}
+
+		this.copyToClipboard(exportedData, copyButton, { format, filter });
 	}
 
 	getFilteredNotifications(filter) {
@@ -866,7 +820,6 @@ export class NotificationManager {
 				this.fallbackCopyToClipboard(text, button, formatInfo);
 			}
 		} catch (error) {
-			console.error("Clipboard operation failed:", error);
 			this.fallbackCopyToClipboard(text, button, formatInfo);
 		}
 	}
@@ -887,7 +840,6 @@ export class NotificationManager {
 			const successful = document.execCommand("copy");
 			this.showCopyFeedback(button, successful, formatInfo);
 		} catch (error) {
-			console.error("Fallback copy failed:", error);
 			this.showCopyFeedback(button, false, formatInfo);
 		} finally {
 			if (document.body.contains(textArea)) {
@@ -1035,7 +987,7 @@ export class NotificationManager {
 		this.timeouts.clear();
 
 		// Clean up all event listeners
-		this.eventListeners.forEach((listeners, element) => {
+		this.eventListeners.forEach(listeners => {
 			listeners.forEach(({ element: el, event, handler }) => {
 				if (el && el.removeEventListener) {
 					el.removeEventListener(event, handler);
@@ -1072,97 +1024,15 @@ export const NotificationUtils = {
 
 	showQuickNotification(text, type = "info", duration = 3000) {
 		if (!text || typeof text !== "string") {
-			console.error("Quick notification requires valid text");
 			return null;
 		}
 
-		try {
-			const tempManager = new NotificationManager({
-				enableFiltering: false,
-				enableCopy: false,
-				autoCollapse: false
-			});
-			return tempManager.show(text, type, null, duration);
-		} catch (error) {
-			console.error("Failed to show quick notification:", error);
-			return null;
-		}
-	},
-
-	// Test function for debugging animations
-	testAnimations() {
-		console.log("🧪 Testing notification animations...");
-		const manager = new NotificationManager({
-			enableFiltering: true,
-			enableCopy: true,
-			autoCollapse: false,
-			defaultDuration: 0
+		const tempManager = new NotificationManager({
+			enableFiltering: false,
+			enableCopy: false,
+			autoCollapse: false
 		});
-
-		// Test multiple notifications to see queue effect
-		const notifications = [
-			{ text: "First notification test\nThis is a detailed message", type: "info" },
-			{ text: "Second notification test\nAnother detailed message", type: "success" },
-			{ text: "Third notification test\nYet another detailed message", type: "warning" },
-			{ text: "Fourth notification test\nFinal detailed message", type: "error" }
-		];
-
-		console.log("🎬 Adding notifications to queue rapidly to test stagger delay...");
-
-		// Add all notifications immediately to test the queue system
-		notifications.forEach((notif, index) => {
-			console.log(`🚀 Queuing notification ${index + 1}:`, notif.text.split("\n")[0]);
-			manager.show(notif.text, notif.type);
-		});
-
-		// Add a few more notifications after a short delay to test mid-processing additions
-		setTimeout(() => {
-			console.log("🎬 Adding additional notifications during processing...");
-			manager.show("Additional notification 1\nTesting mid-processing addition", "info");
-			manager.show("Additional notification 2\nAnother mid-processing test", "warning");
-		}, 100);
-
-		// Test removal after some time
-		setTimeout(() => {
-			console.log("🗑️ Testing removal animations...");
-			const currentNotifications = manager.getNotifications();
-			if (currentNotifications.length > 0) {
-				console.log("Removing first notification...");
-				manager.removeNotification(currentNotifications[0]);
-
-				setTimeout(() => {
-					if (currentNotifications.length > 1) {
-						console.log("Removing second notification...");
-						manager.removeNotification(currentNotifications[1]);
-					}
-				}, 1000);
-			}
-		}, 3000);
-
-		// Make manager globally accessible for testing
-		window.testNotificationManager = manager;
-		// Add helper functions to the global manager
-		window.testNotificationManager = manager;
-		window.testRemoval = () => {
-			console.log("🗑️ Testing removal animations manually...");
-			const notifications = manager.getNotifications();
-			if (notifications.length > 0) {
-				notifications.forEach((notif, index) => {
-					setTimeout(() => {
-						console.log(`Removing notification ${index + 1}...`);
-						manager.removeNotification(notif);
-					}, index * 500);
-				});
-			} else {
-				console.log("No notifications to remove");
-			}
-		};
-
-		console.log("✅ Test manager created. Access via window.testNotificationManager");
-		console.log("🗑️ Test removal with: window.testRemoval()");
-		console.log("🎯 Watch console for queue processing and animation debugging");
-
-		return manager;
+		return tempManager.show(text, type, null, duration);
 	}
 };
 
