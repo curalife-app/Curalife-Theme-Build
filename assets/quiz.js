@@ -2,6 +2,8 @@
  * Modular Quiz System for Shopify
  */
 
+import { NotificationManager } from "../utils/notifications.js";
+
 const ELEMENT_SELECTORS = {
 	MAIN_CONTAINER: "#quiz-container",
 	QUESTIONS: ".quiz-questions",
@@ -37,46 +39,16 @@ class ModularQuiz {
 		this.eligibilityWorkflowError = null;
 		this.userCreationWorkflowPromise = null;
 
-		// Initialize notification system state
-		this.currentNotificationFilter = "all";
-		this.notificationCount = 0;
-		this.maxExpandedNotifications = 3;
-
-		this.allNotifications = []; // Store all notifications for history and "Show All" mode
-
-		// Define notification priority levels
-		this.PRIORITY_LEVELS = {
-			CRITICAL: {
-				color: "#dc2626",
-				persist: true,
-				icon: "🚨",
-				timeout: null // Never auto-hide
-			},
-			ERROR: {
-				color: "#dc2626",
-				persist: true,
-				icon: "❌",
-				timeout: null
-			},
-			WARNING: {
-				color: "#f59e0b",
-				persist: true,
-				icon: "⚠️",
-				timeout: 15000 // 15 seconds
-			},
-			SUCCESS: {
-				color: "#059669",
-				persist: false,
-				icon: "✅",
-				timeout: 8000 // 8 seconds
-			},
-			INFO: {
-				color: "#2563eb",
-				persist: false,
-				icon: "ℹ️",
-				timeout: 12000 // 12 seconds
-			}
-		};
+		// Initialize the modular notification system
+		this.notificationManager = new NotificationManager({
+			containerSelector: ".quiz-background-notifications",
+			position: "top-right",
+			autoCollapse: true,
+			maxNotifications: 50,
+			defaultDuration: 5000,
+			enableFiltering: true,
+			enableCopy: true
+		});
 
 		this.init();
 	}
@@ -289,228 +261,19 @@ class ModularQuiz {
 			return;
 		}
 
-		// Determine priority level
-		const notificationPriority = priority || this._determinePriority(type, text);
-		const priorityConfig = this.PRIORITY_LEVELS[notificationPriority];
+		// Use the modular notification system - it handles all the advanced features
+		// like test mode parsing, expandable content, priority styling, etc.
+		return this.notificationManager.show(text, type, priority);
+	}
 
-		this.notificationCount++;
+	clearNotifications() {
+		return this.notificationManager.clear();
+	}
 
-		// Create or get notification container
-		let notificationContainer = document.querySelector(".quiz-background-notifications");
-		if (!notificationContainer) {
-			console.log("🆕 Creating new notification container");
-			notificationContainer = document.createElement("div");
-			notificationContainer.className = "quiz-background-notifications";
-			document.body.appendChild(notificationContainer);
-
-			// Add floating copy button and filter button (only once)
-			this._addNotificationButtons();
-		} else {
-			console.log("📦 Using existing notification container");
-		}
-
-		// Parse text to extract title and details for test mode notifications
-		const isTestMode = text.includes("TEST MODE");
-		let notificationTitle = "";
-		let notificationDetails = "";
-
-		if (isTestMode && text.includes("<br>")) {
-			const parts = text.split("<br>");
-			// Clean the title - remove emojis and "TEST MODE" text
-			notificationTitle = parts[0]
-				.trim()
-				.replace(/🧪/g, "")
-				.replace(/✓/g, "")
-				.replace(/❌/g, "")
-				.replace(/⚠️/g, "")
-				.replace(/ℹ️/g, "")
-				.replace(/📡/g, "")
-				.replace(/🔄/g, "")
-				.replace(/TEST MODE\s*[-:]\s*/gi, "")
-				.trim();
-			notificationDetails = parts.slice(1).join("<br>").trim();
-		} else {
-			// Clean simple notifications too - remove all icons and test mode text
-			notificationTitle = text
-				.replace(/🧪/g, "")
-				.replace(/✓/g, "")
-				.replace(/❌/g, "")
-				.replace(/⚠️/g, "")
-				.replace(/ℹ️/g, "")
-				.replace(/📡/g, "")
-				.replace(/🔄/g, "")
-				.replace(/TEST MODE\s*[-:]\s*/gi, "")
-				.trim();
-		}
-
-		// Create notification element
-		const notification = document.createElement("div");
-		notification.className = `quiz-notification quiz-notification-${type}`;
-
-		// Add shimmer effect
-		const shimmer = document.createElement("div");
-		shimmer.className = "quiz-notification-shimmer";
-		notification.appendChild(shimmer);
-
-		// Create collapsible structure for test mode notifications
-		if (isTestMode && notificationDetails) {
-			notification.innerHTML = `
-				<div class="quiz-notification-shimmer"></div>
-				<div class="quiz-notification-header">
-					<div class="quiz-notification-content">
-						<span class="quiz-notification-title">${notificationTitle}</span>
-					</div>
-					<div class="quiz-notification-toggle">
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-							<path d="M7.41 8.84L12 13.42l4.59-4.58L18 10.25l-6 6-6-6z"/>
-						</svg>
-					</div>
-				</div>
-				<div class="quiz-notification-details">
-					<div class="quiz-notification-details-content">
-						${notificationDetails}
-					</div>
-				</div>
-			`;
-
-			// Add enhanced toggle functionality
-			const toggleButton = notification.querySelector(".quiz-notification-toggle");
-			const toggleIcon = toggleButton.querySelector("svg");
-			const details = notification.querySelector(".quiz-notification-details");
-			const header = notification.querySelector(".quiz-notification-header");
-			let isExpanded = false;
-
-			header.addEventListener("click", e => {
-				e.stopPropagation();
-				isExpanded = !isExpanded;
-
-				if (isExpanded) {
-					// First set classes to apply expanded styles
-					details.classList.add("expanded");
-					toggleButton.classList.add("expanded");
-
-					// Use requestAnimationFrame to ensure DOM has updated
-					requestAnimationFrame(() => {
-						// Get the content element to measure its height
-						const content = details.querySelector(".quiz-notification-details-content");
-
-						// Temporarily set details to auto height to measure
-						const originalMaxHeight = details.style.maxHeight;
-						details.style.maxHeight = "auto";
-
-						// Calculate total height needed including padding and borders
-						const contentHeight = content ? content.scrollHeight : details.scrollHeight;
-						const paddingTop = parseInt(getComputedStyle(details).paddingTop) || 0;
-						const paddingBottom = parseInt(getComputedStyle(details).paddingBottom) || 0;
-						const borderTop = parseInt(getComputedStyle(details).borderTopWidth) || 0;
-						const borderBottom = parseInt(getComputedStyle(details).borderBottomWidth) || 0;
-
-						const totalHeight = contentHeight + paddingTop + paddingBottom + borderTop + borderBottom + 24; // Add 24px buffer
-
-						// Reset and animate
-						details.style.maxHeight = "0";
-						requestAnimationFrame(() => {
-							details.style.maxHeight = totalHeight + "px";
-						});
-					});
-				} else {
-					details.style.maxHeight = "0";
-					details.classList.remove("expanded");
-					toggleButton.classList.remove("expanded");
-				}
-			});
-
-			// Add enhanced close button
-			const closeButton = document.createElement("div");
-			closeButton.className = "quiz-notification-close";
-			closeButton.innerHTML = `
-				<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-					<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-				</svg>
-			`;
-
-			closeButton.addEventListener("click", e => {
-				e.stopPropagation();
-				notification.classList.add("animate-out");
-				setTimeout(() => notification.remove(), 400);
-			});
-			notification.appendChild(closeButton);
-		} else {
-			// Enhanced simple notification
-			notification.innerHTML = `
-				<div class="quiz-notification-shimmer"></div>
-				<div class="quiz-notification-simple">
-					<span class="quiz-notification-simple-text">${notificationTitle}</span>
-				</div>
-			`;
-
-			// Add click to dismiss for non-test mode notifications
-			notification.addEventListener("click", () => {
-				notification.classList.add("animate-out");
-				setTimeout(() => notification.remove(), 400);
-			});
-		}
-
-		// Store in history for "Show All" functionality
-		const notificationId = this.notificationCount + 1;
-		const timestamp = new Date().toISOString();
-		const notificationData = {
-			id: notificationId,
-			element: notification,
-			text: text,
-			type: type,
-			priority: notificationPriority,
-			timestamp: timestamp,
-			removed: false
-		};
-		this.allNotifications.push(notificationData);
-
-		notificationContainer.appendChild(notification);
-		this.notificationCount++;
-		console.log("✅ Notification added to DOM. Total notifications:", notificationContainer.children.length);
-
-		// Store creation timestamp and ID on element
-		notification.setAttribute("data-created-at", timestamp);
-		notification.setAttribute("data-notification-id", notificationId);
-
-		// Apply priority-specific styling
-		this._applyPriorityStyles(notification, notificationPriority, priorityConfig);
-
-		// Manage notification states
-		this._manageNotificationStates();
-
-		// Set auto-hide timeout if configured (but respect "show all" mode)
-		if (priorityConfig.timeout && this.currentNotificationFilter !== "all") {
-			setTimeout(() => {
-				this._removeNotification(notification);
-			}, priorityConfig.timeout);
-		}
-
-		// Animate in with enhanced effects
-		setTimeout(() => {
-			notification.classList.add("animate-in");
-
-			// Trigger shimmer effect
-			const shimmerElement = notification.querySelector(".quiz-notification-shimmer");
-			if (shimmerElement) {
-				setTimeout(() => {
-					shimmerElement.style.left = "100%";
-				}, 200);
-			}
-		}, 100);
-
-		// Auto remove after delay (except for persistent test mode notifications)
-		// But only if not in "show all" mode
-		if (!isTestMode && this.currentNotificationFilter !== "all") {
-			setTimeout(
-				() => {
-					if (notification.parentNode) {
-						notification.classList.add("animate-out");
-						setTimeout(() => notification.remove(), 400);
-					}
-				},
-				type === "error" ? 8000 : 4000
-			);
+	exportNotifications(format = "text", filter = "all") {
+		const copyButton = document.querySelector(".quiz-notification-copy-button");
+		if (copyButton) {
+			return this.notificationManager.exportNotifications(format, filter, copyButton);
 		}
 	}
 
@@ -586,7 +349,7 @@ class ModularQuiz {
 
 		// Restore all notifications from history
 		let restoredCount = 0;
-		this.allNotifications.forEach(notificationData => {
+		this.notificationManager.getNotifications().forEach(notificationData => {
 			// Clone the notification element to avoid conflicts
 			const notification = notificationData.element.cloneNode(true);
 
@@ -791,7 +554,7 @@ class ModularQuiz {
 		// Add priority class
 		notification.classList.add(`quiz-notification-priority-${priority.toLowerCase()}`);
 		notification.setAttribute("data-priority", priority);
-		notification.setAttribute("data-notification-id", this.notificationCount);
+		notification.setAttribute("data-notification-id", this.notificationManager.getNotificationCount());
 
 		// Update the gradient based on priority
 		const gradientColors = this._getPriorityGradient(priorityConfig.color);
@@ -814,7 +577,7 @@ class ModularQuiz {
 			notification.style.boxShadow = `0 0 20px ${priorityConfig.color}30`;
 		}
 
-		console.log(`🎨 Applied ${priority} priority styling to notification ${this.notificationCount}`);
+		console.log(`🎨 Applied ${priority} priority styling to notification ${this.notificationManager.getNotificationCount()}`);
 	}
 
 	_getPriorityGradient(baseColor) {
@@ -879,7 +642,7 @@ class ModularQuiz {
 		// Mark as removed in history
 		const notificationId = notification.getAttribute("data-notification-id");
 		if (notificationId) {
-			const historyItem = this.allNotifications.find(item => item.id == notificationId);
+			const historyItem = this.notificationManager.getNotifications().find(item => item.id == notificationId);
 			if (historyItem) {
 				historyItem.removed = true;
 			}
