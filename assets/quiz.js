@@ -621,12 +621,15 @@ class ModularQuiz {
 		const notificationContainer = this.questionContainer?.querySelector(".quiz-notifications");
 		if (!notificationContainer) return;
 
+		// Only expand notifications that have collapsible content
 		const notifications = Array.from(notificationContainer.children);
-		notifications.forEach(notification => {
+		const expandableNotifications = notifications.filter(notification => notification.querySelector(".quiz-notification-details") && !notification.classList.contains("filter-hidden"));
+
+		expandableNotifications.forEach(notification => {
 			this._expandNotification(notification);
 		});
 
-		console.log("🔧 All notifications expanded (auto-collapse disabled)");
+		console.log(`🔧 Expanded ${expandableNotifications.length} notifications with content (auto-collapse disabled)`);
 	}
 
 	_showCopyOptionsMenu(copyButton) {
@@ -740,6 +743,7 @@ class ModularQuiz {
 	_applyNotificationFilter(filter) {
 		this.currentNotificationFilter = filter;
 		const notifications = document.querySelectorAll(".quiz-notification");
+		let visibleCount = 0;
 
 		notifications.forEach(notification => {
 			const type = notification.classList.contains("quiz-notification-success") ? "success" : notification.classList.contains("quiz-notification-error") ? "error" : "info";
@@ -749,13 +753,17 @@ class ModularQuiz {
 			if (shouldShow) {
 				notification.classList.remove("filter-hidden");
 				notification.classList.add("filter-visible");
+				visibleCount++;
 			} else {
 				notification.classList.remove("filter-visible");
 				notification.classList.add("filter-hidden");
 			}
 		});
 
-		console.log(`🔍 Applied filter: ${filter}`);
+		// After filtering, reapply smart notification management to visible notifications
+		this._manageNotificationStates();
+
+		console.log(`🔍 Applied filter: ${filter} - showing ${visibleCount}/${notifications.length} notifications`);
 	}
 
 	_updateFilterButtonAppearance(filterButton, emoji) {
@@ -848,33 +856,64 @@ class ModularQuiz {
 	}
 
 	_manageNotificationStates() {
-		const notifications = document.querySelectorAll(".quiz-notification");
-		let expandedCount = 0;
+		// Only manage auto-collapse if it's enabled
+		if (!this.autoCollapseEnabled) {
+			return;
+		}
 
-		// Process notifications from newest to oldest
-		Array.from(notifications)
-			.reverse()
-			.forEach((notification, reverseIndex) => {
-				const priority = notification.getAttribute("data-priority");
-				const priorityConfig = this.PRIORITY_LEVELS[priority];
-				const actualIndex = notifications.length - 1 - reverseIndex;
+		// Get only visible notifications (respecting current filter)
+		const allNotifications = document.querySelectorAll(".quiz-notification");
+		const visibleNotifications = Array.from(allNotifications).filter(notification => !notification.classList.contains("filter-hidden"));
 
-				// Keep critical/error notifications always expanded
-				if (priority === "CRITICAL" || priority === "ERROR") {
-					this._expandNotification(notification);
-					return;
-				}
+		// Only work with notifications that have collapsible content
+		const collapsibleNotifications = visibleNotifications.filter(notification => notification.querySelector(".quiz-notification-details"));
 
-				// Auto-collapse based on position and priority
-				if (priorityConfig?.autoCollapse && expandedCount >= this.maxExpandedNotifications) {
-					this._collapseNotification(notification, true); // true = auto-collapsed
-				} else {
-					this._expandNotification(notification);
-					expandedCount++;
-				}
+		if (collapsibleNotifications.length <= this.maxExpandedNotifications) {
+			// If we have few notifications, expand all collapsible ones
+			collapsibleNotifications.forEach(notification => {
+				this._expandNotification(notification);
 			});
+			return;
+		}
 
-		console.log(`📋 Managed notification states: ${expandedCount} expanded, ${notifications.length - expandedCount} collapsed`);
+		// Sort by priority and creation time (newest first)
+		const sortedNotifications = collapsibleNotifications.sort((a, b) => {
+			const priorityOrder = { CRITICAL: 0, ERROR: 1, WARNING: 2, SUCCESS: 3, INFO: 4 };
+			const aPriority = a.getAttribute("data-priority") || "INFO";
+			const bPriority = b.getAttribute("data-priority") || "INFO";
+
+			if (priorityOrder[aPriority] !== priorityOrder[bPriority]) {
+				return priorityOrder[aPriority] - priorityOrder[bPriority];
+			}
+
+			// If same priority, newer first
+			const aTime = new Date(a.getAttribute("data-created-at") || 0);
+			const bTime = new Date(b.getAttribute("data-created-at") || 0);
+			return bTime - aTime;
+		});
+
+		// Apply smart expansion logic
+		let expandedCount = 0;
+		sortedNotifications.forEach((notification, index) => {
+			const priority = notification.getAttribute("data-priority") || "INFO";
+
+			// Critical/Error notifications always stay expanded
+			if (priority === "CRITICAL" || priority === "ERROR") {
+				this._expandNotification(notification);
+				expandedCount++;
+			}
+			// Other notifications: expand up to the limit
+			else if (expandedCount < this.maxExpandedNotifications) {
+				this._expandNotification(notification);
+				expandedCount++;
+			}
+			// Rest get auto-collapsed
+			else {
+				this._collapseNotification(notification, true);
+			}
+		});
+
+		console.log(`🎯 Smart notification management: ${expandedCount} expanded, ${sortedNotifications.length - expandedCount} auto-collapsed (${visibleNotifications.length} visible total)`);
 	}
 
 	_expandNotification(notification) {
@@ -4413,9 +4452,9 @@ class ModularQuiz {
 		return testParam !== null && testParam !== "false";
 	}
 
-	// Debug method to manually test notifications and copy button
+	// Debug method to manually test the enhanced notification system
 	_testNotificationSystem() {
-		console.log("🧪 Testing notification system with priorities...");
+		console.log("🎯 Testing SMART notification system...");
 
 		// Force create a questionContainer if it doesn't exist (for testing)
 		if (!this.questionContainer) {
@@ -4425,36 +4464,45 @@ class ModularQuiz {
 			document.body.appendChild(this.questionContainer);
 		}
 
-		// Test realistic notifications similar to your export
-		this._showBackgroundProcessNotification("Extraction Result<br>• Email: jane.humana@example.com<br>• Name: Jane Doe<br>• Missing fields: groupNumber", "info", "WARNING");
+		// Test notifications that demonstrate the smart filtering/collapsing
+		// Mix of simple and detailed notifications to show smart behavior
+
+		console.log("📝 Creating test notifications...");
+
+		// Simple notifications (no details to collapse)
+		this._showBackgroundProcessNotification("Starting process...", "info");
+		this._showBackgroundProcessNotification("Connected successfully", "success");
+		this._showBackgroundProcessNotification("Authentication failed", "error");
 
 		setTimeout(() => {
+			// Detailed notifications (can be auto-collapsed)
+			this._showBackgroundProcessNotification("Extraction Result<br>• Email: jane.humana@example.com<br>• Name: Jane Doe<br>• Missing fields: groupNumber", "info", "WARNING");
+
 			this._showBackgroundProcessNotification("Processing Result<br>• Final status: ELIGIBLE<br>• Is eligible: true<br>• Has error: false", "info");
-		}, 500);
 
-		setTimeout(() => {
 			this._showBackgroundProcessNotification(
 				"Eligibility Result<br>✅ Status: ELIGIBLE<br>• Eligible: true<br>• Sessions: 10<br>• Message: Good news! Based on your insurance information, you are eligible for dietitian sessions.",
 				"success"
 			);
+		}, 500);
+
+		setTimeout(() => {
+			// Critical notification (always stays expanded)
+			this._showBackgroundProcessNotification("Critical system failure detected!<br>• Database: Offline<br>• Immediate action required<br>• Contact IT support", "error", "CRITICAL");
 		}, 1000);
 
 		setTimeout(() => {
-			this._showBackgroundProcessNotification("Database connection failed completely", "error");
+			console.log("✅ Test complete! Smart notification features:");
+			console.log("   🔍 Filter buttons: Show only relevant notification types");
+			console.log("   📱 Auto-collapse: Only affects detailed notifications");
+			console.log("   ⚡ Simple notifications: Always visible (no collapse needed)");
+			console.log("   🚨 Critical/Error: Always stay expanded");
+			console.log("   🎛️ Combined logic: Filter first, then auto-collapse visible ones");
+			console.log("");
+			console.log("🧪 Try these commands:");
+			console.log("   testNotifications() - Run this test again");
+			console.log("   productQuiz._testNotificationSystem() - Alternative method");
 		}, 1500);
-
-		setTimeout(() => {
-			this._showBackgroundProcessNotification("Critical system failure detected!", "error", "CRITICAL");
-		}, 2000);
-
-		// Check if copy button exists after creation
-		setTimeout(() => {
-			const copyButton = document.querySelector(".quiz-notification-copy-button");
-			console.log("🔍 Copy button check:", copyButton ? "✅ Found" : "❌ Not found");
-			if (copyButton) {
-				console.log("📍 Copy button position:", copyButton.getBoundingClientRect());
-			}
-		}, 2000);
 	}
 }
 
