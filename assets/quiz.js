@@ -249,6 +249,9 @@ class ModularQuiz {
 			notificationContainer = document.createElement("div");
 			notificationContainer.className = "quiz-background-notifications";
 			document.body.appendChild(notificationContainer);
+
+			// Add floating copy button
+			this._addNotificationCopyButton(notificationContainer);
 		}
 
 		// Parse text to extract title and details for test mode notifications
@@ -422,6 +425,145 @@ class ModularQuiz {
 				type === "error" ? 8000 : 4000
 			);
 		}
+	}
+
+	_addNotificationCopyButton(notificationContainer) {
+		// Create floating copy button
+		const copyButton = document.createElement("div");
+		copyButton.className = "quiz-notification-copy-button";
+		copyButton.title = "Copy all notifications to clipboard";
+		copyButton.innerHTML = `
+			<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+				<path d="M16 1H4C2.9 1 2 1.9 2 3v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+			</svg>
+		`;
+
+		// Add click handler for copying
+		copyButton.addEventListener("click", () => {
+			this._copyAllNotificationsToClipboard(copyButton);
+		});
+
+		// Add the button to the notification container
+		notificationContainer.appendChild(copyButton);
+	}
+
+	_copyAllNotificationsToClipboard(copyButton) {
+		try {
+			// Gather all notification text
+			const notifications = document.querySelectorAll(".quiz-notification");
+			const notificationTexts = [];
+
+			notifications.forEach((notification, index) => {
+				let notificationText = `--- Notification ${index + 1} ---\n`;
+
+				// Get title
+				const title = notification.querySelector(".quiz-notification-title");
+				const simpleText = notification.querySelector(".quiz-notification-simple-text");
+
+				if (title) {
+					notificationText += `Title: ${title.textContent.trim()}\n`;
+				} else if (simpleText) {
+					notificationText += `Text: ${simpleText.textContent.trim()}\n`;
+				}
+
+				// Get details if expanded or available
+				const details = notification.querySelector(".quiz-notification-details-content");
+				if (details) {
+					const detailsText = details.textContent.trim();
+					if (detailsText) {
+						notificationText += `Details:\n${detailsText}\n`;
+					}
+				}
+
+				// Get type
+				const type = notification.classList.contains("quiz-notification-success") ? "SUCCESS" : notification.classList.contains("quiz-notification-error") ? "ERROR" : "INFO";
+				notificationText += `Type: ${type}\n`;
+
+				notificationTexts.push(notificationText);
+			});
+
+			// Combine all notifications
+			const allText = [
+				"=== QUIZ NOTIFICATIONS EXPORT ===",
+				`Exported at: ${new Date().toISOString()}`,
+				`Total notifications: ${notifications.length}`,
+				"",
+				...notificationTexts,
+				"=== END OF EXPORT ==="
+			].join("\n");
+
+			// Copy to clipboard
+			navigator.clipboard
+				.writeText(allText)
+				.then(() => {
+					// Show success feedback
+					this._showCopyFeedback(copyButton, true);
+				})
+				.catch(err => {
+					console.error("Failed to copy to clipboard:", err);
+
+					// Fallback for older browsers
+					this._fallbackCopyToClipboard(allText, copyButton);
+				});
+		} catch (error) {
+			console.error("Error copying notifications:", error);
+			this._showCopyFeedback(copyButton, false);
+		}
+	}
+
+	_fallbackCopyToClipboard(text, copyButton) {
+		try {
+			// Create temporary textarea
+			const textarea = document.createElement("textarea");
+			textarea.value = text;
+			textarea.style.position = "fixed";
+			textarea.style.left = "-9999px";
+			document.body.appendChild(textarea);
+
+			// Select and copy
+			textarea.select();
+			textarea.setSelectionRange(0, 99999);
+			const successful = document.execCommand("copy");
+
+			// Clean up
+			document.body.removeChild(textarea);
+
+			this._showCopyFeedback(copyButton, successful);
+		} catch (err) {
+			console.error("Fallback copy failed:", err);
+			this._showCopyFeedback(copyButton, false);
+		}
+	}
+
+	_showCopyFeedback(copyButton, success) {
+		// Update button appearance
+		const originalHTML = copyButton.innerHTML;
+		const originalTitle = copyButton.title;
+
+		if (success) {
+			copyButton.innerHTML = `
+				<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+					<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+				</svg>
+			`;
+			copyButton.title = "Copied to clipboard!";
+			copyButton.classList.add("success");
+		} else {
+			copyButton.innerHTML = `
+				<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+					<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+				</svg>
+			`;
+			copyButton.title = "Copy failed - try again";
+			copyButton.classList.add("error");
+		}
+
+		// Reset after 2 seconds
+		setTimeout(() => {
+			copyButton.innerHTML = originalHTML;
+			copyButton.title = originalTitle;
+			copyButton.classList.remove("success", "error");
+		}, 2000);
 	}
 
 	getCurrentStep() {
