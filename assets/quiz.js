@@ -41,6 +41,7 @@ class ModularQuiz {
 		this.currentNotificationFilter = "all";
 		this.notificationCount = 0;
 		this.maxExpandedNotifications = 3;
+		this.autoCollapseEnabled = false; // Default to disabled
 
 		// Define notification priority levels
 		this.PRIORITY_LEVELS = {
@@ -465,8 +466,10 @@ class ModularQuiz {
 		// Apply priority-specific styling
 		this._applyPriorityStyles(notification, notificationPriority, priorityConfig);
 
-		// Auto-collapse older notifications
-		this._manageNotificationStates();
+		// Auto-collapse older notifications (only if enabled)
+		if (this.autoCollapseEnabled) {
+			this._manageNotificationStates();
+		}
 
 		// Set auto-hide timeout if configured
 		if (priorityConfig.timeout) {
@@ -518,7 +521,7 @@ class ModularQuiz {
 		filterButton.style.cssText = `
 			position: fixed !important;
 			bottom: 16px !important;
-			right: 80px !important;
+			right: 144px !important;
 			width: 48px !important;
 			height: 48px !important;
 			border-radius: 50% !important;
@@ -541,6 +544,41 @@ class ModularQuiz {
 		filterButton.innerHTML = `
 			<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
 				<path d="M4.25 5.61C6.27 8.2 10 13 10 13v6c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-6s3.73-4.8 5.75-7.39C20.25 4.95 19.78 4 18.95 4H5.04C4.21 4 3.74 4.95 4.25 5.61Z"/>
+			</svg>
+		`;
+
+		// Create auto-collapse toggle button
+		const autoCollapseButton = document.createElement("div");
+		autoCollapseButton.className = "quiz-notification-autocollapse-button";
+		autoCollapseButton.title = "Toggle auto-collapse (currently OFF)";
+
+		// Apply inline styles for auto-collapse button
+		autoCollapseButton.style.cssText = `
+			position: fixed !important;
+			bottom: 16px !important;
+			right: 80px !important;
+			width: 48px !important;
+			height: 48px !important;
+			border-radius: 50% !important;
+			background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%) !important;
+			display: flex !important;
+			align-items: center !important;
+			justify-content: center !important;
+			cursor: pointer !important;
+			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+			color: white !important;
+			transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+			z-index: 10000 !important;
+			opacity: 0.9 !important;
+			backdrop-filter: blur(8px) !important;
+			border: 2px solid rgba(255, 255, 255, 0.2) !important;
+			margin: 0 !important;
+			padding: 0 !important;
+		`;
+
+		autoCollapseButton.innerHTML = `
+			<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+				<path d="M10 4H4c-1.11 0-2 .89-2 2v6c0 1.11.89 2 2 2h6c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 8H4V6h6v6zm10-8h-6c-1.11 0-2 .89-2 2v6c0 1.11.89 2 2 2h6c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 8h-6V6h6v6zm-10 4H4c-1.11 0-2 .89-2 2v6c0 1.11.89 2 2 2h6c1.11 0 2-.89 2-2v-6c0-1.11-.89-2-2-2zm0 8H4v-6h6v6z"/>
 			</svg>
 		`;
 
@@ -590,6 +628,17 @@ class ModularQuiz {
 			filterButton.style.opacity = "0.9";
 		});
 
+		// Add hover effects for auto-collapse button
+		autoCollapseButton.addEventListener("mouseenter", () => {
+			autoCollapseButton.style.transform = "scale(1.1) rotate(5deg)";
+			autoCollapseButton.style.opacity = "1";
+		});
+
+		autoCollapseButton.addEventListener("mouseleave", () => {
+			autoCollapseButton.style.transform = "scale(1)";
+			autoCollapseButton.style.opacity = "0.9";
+		});
+
 		// Add hover effects for copy button
 		copyButton.addEventListener("mouseenter", () => {
 			copyButton.style.transform = "scale(1.1) rotate(5deg)";
@@ -607,6 +656,11 @@ class ModularQuiz {
 			this._showFilterOptionsMenu(filterButton);
 		});
 
+		autoCollapseButton.addEventListener("click", e => {
+			e.stopPropagation();
+			this._toggleAutoCollapse(autoCollapseButton);
+		});
+
 		copyButton.addEventListener("click", e => {
 			e.stopPropagation();
 			this._showCopyOptionsMenu(copyButton);
@@ -614,8 +668,68 @@ class ModularQuiz {
 
 		// Add buttons to the body
 		document.body.appendChild(filterButton);
+		document.body.appendChild(autoCollapseButton);
 		document.body.appendChild(copyButton);
 		console.log("🔧 Notification buttons added to page");
+	}
+
+	_toggleAutoCollapse(autoCollapseButton) {
+		// Toggle the auto-collapse state
+		this.autoCollapseEnabled = !this.autoCollapseEnabled;
+
+		console.log(`🔧 Auto-collapse toggled: ${this.autoCollapseEnabled ? "ON" : "OFF"}`);
+
+		// Update button appearance
+		this._updateAutoCollapseButtonAppearance(autoCollapseButton);
+
+		// If turning on auto-collapse, apply it immediately to existing notifications
+		if (this.autoCollapseEnabled) {
+			this._manageNotificationStates();
+		} else {
+			// If turning off auto-collapse, expand all notifications
+			this._expandAllNotifications();
+		}
+	}
+
+	_updateAutoCollapseButtonAppearance(button) {
+		const isEnabled = this.autoCollapseEnabled;
+
+		// Update colors based on state
+		if (isEnabled) {
+			// ON state - orange/amber gradient
+			button.style.background = "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)";
+			button.title = "Toggle auto-collapse (currently ON)";
+
+			// Change icon to indicate expansion/collapse
+			button.innerHTML = `
+				<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+					<path d="M19 3H5c-1.11 0-2 .89-2 2v14c0 1.11.89 2 2 2h14c1.11 0 2-.89 2-2V5c0-1.11-.89-2-2-2zm0 16H5V5h14v14zm-5-7l-3 3-3-3z"/>
+				</svg>
+			`;
+		} else {
+			// OFF state - gray gradient
+			button.style.background = "linear-gradient(135deg, #94a3b8 0%, #64748b 100%)";
+			button.title = "Toggle auto-collapse (currently OFF)";
+
+			// Default grid icon
+			button.innerHTML = `
+				<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+					<path d="M10 4H4c-1.11 0-2 .89-2 2v6c0 1.11.89 2 2 2h6c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 8H4V6h6v6zm10-8h-6c-1.11 0-2 .89-2 2v6c0 1.11.89 2 2 2h6c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 8h-6V6h6v6zm-10 4H4c-1.11 0-2 .89-2 2v6c0 1.11.89 2 2 2h6c1.11 0 2-.89 2-2v-6c0-1.11-.89-2-2-2zm0 8H4v-6h6v6z"/>
+				</svg>
+			`;
+		}
+	}
+
+	_expandAllNotifications() {
+		const notificationContainer = this.questionContainer?.querySelector(".quiz-notifications");
+		if (!notificationContainer) return;
+
+		const notifications = Array.from(notificationContainer.children);
+		notifications.forEach(notification => {
+			this._expandNotification(notification);
+		});
+
+		console.log("🔧 All notifications expanded (auto-collapse disabled)");
 	}
 
 	_showCopyOptionsMenu(copyButton) {
