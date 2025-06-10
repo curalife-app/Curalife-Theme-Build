@@ -60,36 +60,16 @@ class ModularQuiz {
 			// Dynamic import of the NotificationManager using the asset URL
 			const { NotificationManager } = await import(notificationsUrl);
 
-			// Configure the notification manager to match quiz's exact requirements
+			// Configure the notification manager for quiz component using generic classes
 			this.notificationManager = new NotificationManager({
-				containerSelector: ".quiz-background-notifications",
+				containerSelector: ".notification-container",
 				position: "top-right",
 				autoCollapse: true,
 				maxNotifications: 50,
 				defaultDuration: 0, // Don't auto-remove notifications by default
 				enableFiltering: true,
-				enableCopy: true,
-				// Map generic notification classes to quiz-specific ones for backward compatibility
-				customClasses: {
-					container: "quiz-background-notifications",
-					notification: "quiz-notification",
-					success: "quiz-notification-success",
-					error: "quiz-notification-error",
-					info: "quiz-notification-info",
-					warning: "quiz-notification-warning",
-					header: "quiz-notification-header",
-					content: "quiz-notification-content",
-					icon: "quiz-notification-icon",
-					title: "quiz-notification-title",
-					toggle: "quiz-notification-toggle",
-					details: "quiz-notification-details",
-					detailsContent: "quiz-notification-details-content",
-					close: "quiz-notification-close",
-					shimmer: "quiz-notification-shimmer",
-					simple: "quiz-notification-simple",
-					simpleIcon: "quiz-notification-simple-icon",
-					simpleText: "quiz-notification-simple-text"
-				}
+				enableCopy: true
+				// Using generic notification classes - no custom mapping needed
 			});
 
 			console.log("✅ Notification system loaded successfully");
