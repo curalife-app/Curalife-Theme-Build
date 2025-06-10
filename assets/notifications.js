@@ -26,6 +26,7 @@ export class NotificationManager {
 			warning: "notification-warning",
 			header: "notification-header",
 			content: "notification-content",
+			controls: "notification-controls",
 			icon: "notification-icon",
 			title: "notification-title",
 			toggle: "notification-toggle",
@@ -159,15 +160,18 @@ export class NotificationManager {
 					<div class="${this.cssClasses.icon}">${this.getTypeIcon(type)}</div>
 					<div class="${this.cssClasses.title}">${safeTitle}</div>
 				</div>
-				${
-					detailsText
-						? `<div class="${this.cssClasses.toggle}">
-					<svg width="12" height="8" viewBox="0 0 12 8" fill="none">
-						<path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-					</svg>
-				</div>`
-						: ""
-				}
+				<div class="notification-controls">
+					${
+						detailsText
+							? `<div class="${this.cssClasses.toggle}">
+						<svg width="12" height="8" viewBox="0 0 12 8" fill="none">
+							<path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+						</svg>
+					</div>`
+							: ""
+					}
+					<div class="${this.cssClasses.close}">×</div>
+				</div>
 			</div>
 			${
 				detailsText
@@ -176,7 +180,6 @@ export class NotificationManager {
 			</div>`
 					: ""
 			}
-			<div class="${this.cssClasses.close}">×</div>
 			<div class="${this.cssClasses.shimmer}"></div>
 		`;
 
