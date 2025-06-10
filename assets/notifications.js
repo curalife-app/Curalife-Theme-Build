@@ -475,8 +475,12 @@ export class NotificationManager {
 		// Add exit animation with enhanced effects
 		notification.classList.add("animate-out");
 
-		// Add ripple effect to remaining notifications
-		this.addRemovalEffects(notification);
+		// Add slide-up effect to remaining notifications after a short delay
+		const effectTimeoutId = setTimeout(() => {
+			this.addRemovalEffects(notification);
+			this.timeouts.delete(effectTimeoutId);
+		}, 150); // Start slide-up while the notification is still animating out
+		this.timeouts.add(effectTimeoutId);
 
 		const timeoutId = setTimeout(() => {
 			if (notification.parentNode && !this.isDestroyed) {
@@ -489,32 +493,38 @@ export class NotificationManager {
 				}
 			}
 			this.timeouts.delete(timeoutId);
-		}, 800);
+		}, 600);
 		this.timeouts.add(timeoutId);
 	}
 
 	addRemovalEffects(removingNotification) {
 		if (this.isDestroyed) return;
 
-		// Add subtle shift effect to remaining notifications
+		// Add elegant slide-up effect to remaining notifications
 		const remainingNotifications = this.notifications.filter(n => n !== removingNotification && n.parentNode);
 		remainingNotifications.forEach((notification, index) => {
 			if (this.isDestroyed) return;
 
-			const delay = index * 20; // Stagger the shift effect
+			const delay = index * 50; // Stagger the slide-up effect
 			const timeoutId = setTimeout(() => {
 				if (!this.isDestroyed && notification.parentNode) {
-					notification.style.transform = "translateY(-5px) scale(0.99)";
-					notification.style.transition = "transform 0.3s ease-out";
+					// Remove any existing animation classes
+					notification.classList.remove("slide-up");
 
-					const resetTimeoutId = setTimeout(() => {
+					// Force reflow
+					notification.offsetHeight;
+
+					// Add slide-up animation
+					notification.classList.add("slide-up");
+
+					// Clean up animation class after animation completes
+					const cleanupTimeoutId = setTimeout(() => {
 						if (!this.isDestroyed && notification.parentNode) {
-							notification.style.transform = "";
-							notification.style.transition = "";
+							notification.classList.remove("slide-up");
 						}
-						this.timeouts.delete(resetTimeoutId);
-					}, 300);
-					this.timeouts.add(resetTimeoutId);
+						this.timeouts.delete(cleanupTimeoutId);
+					}, 500);
+					this.timeouts.add(cleanupTimeoutId);
 				}
 				this.timeouts.delete(timeoutId);
 			}, delay);
