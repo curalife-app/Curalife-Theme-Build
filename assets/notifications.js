@@ -207,19 +207,27 @@ export class NotificationManager {
 
 			// Use requestAnimationFrame to ensure the DOM has updated before calculating height
 			requestAnimationFrame(() => {
+				// Calculate total height including margins and padding
 				const contentHeight = details.scrollHeight;
-				details.style.maxHeight = contentHeight + "px";
+				const computedStyle = window.getComputedStyle(details);
+				const marginTop = parseInt(computedStyle.marginTop) || 0;
+				const paddingTop = parseInt(computedStyle.paddingTop) || 0;
+				const paddingBottom = parseInt(computedStyle.paddingBottom) || 0;
+
+				const totalHeight = contentHeight + marginTop + paddingTop + paddingBottom;
+				details.style.maxHeight = totalHeight + "px";
 			});
 		}
 		if (toggle) {
 			toggle.classList.add("expanded");
 		}
 
-		if (this.autoCollapseEnabled) {
-			setTimeout(() => {
-				this.collapseNotification(notification);
-			}, 8000);
-		}
+		// Removed auto-collapse for better user experience
+		// if (this.autoCollapseEnabled) {
+		// 	setTimeout(() => {
+		// 		this.collapseNotification(notification);
+		// 	}, 8000);
+		// }
 	}
 
 	collapseNotification(notification) {
