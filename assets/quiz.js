@@ -250,8 +250,8 @@ class ModularQuiz {
 			notificationContainer.className = "quiz-background-notifications";
 			document.body.appendChild(notificationContainer);
 
-			// Add floating copy button
-			this._addNotificationCopyButton(notificationContainer);
+			// Add floating copy button (only once)
+			this._addNotificationCopyButton();
 		}
 
 		// Parse text to extract title and details for test mode notifications
@@ -427,7 +427,12 @@ class ModularQuiz {
 		}
 	}
 
-	_addNotificationCopyButton(notificationContainer) {
+	_addNotificationCopyButton() {
+		// Check if button already exists
+		if (document.querySelector(".quiz-notification-copy-button")) {
+			return;
+		}
+
 		// Create floating copy button
 		const copyButton = document.createElement("div");
 		copyButton.className = "quiz-notification-copy-button";
@@ -443,8 +448,10 @@ class ModularQuiz {
 			this._copyAllNotificationsToClipboard(copyButton);
 		});
 
-		// Add the button to the notification container
-		notificationContainer.appendChild(copyButton);
+		// Add the button directly to the body for fixed positioning
+		document.body.appendChild(copyButton);
+
+		console.log("🔧 Copy button added to page");
 	}
 
 	_copyAllNotificationsToClipboard(copyButton) {
@@ -3851,9 +3858,31 @@ class ModularQuiz {
 		const testParam = new URLSearchParams(window.location.search).get("test");
 		return testParam !== null && testParam !== "false";
 	}
+
+	// Debug method to manually test notifications and copy button
+	_testNotificationSystem() {
+		console.log("🧪 Testing notification system...");
+		this._showBackgroundProcessNotification("Test notification to verify copy button appears", "info");
+
+		setTimeout(() => {
+			this._showBackgroundProcessNotification(
+				`
+				Test Notification with Details<br>
+				• This is a test notification<br>
+				• It has multiple lines<br>
+				• To test the copy functionality<br>
+				• Button should appear after first notification
+			`,
+				"success"
+			);
+		}, 1000);
+	}
 }
 
 document.addEventListener("DOMContentLoaded", () => {
 	const quiz = new ModularQuiz();
 	window.productQuiz = quiz;
+
+	// Add test method to global scope for debugging
+	window.testNotifications = () => quiz._testNotificationSystem();
 });
