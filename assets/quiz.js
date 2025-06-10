@@ -334,14 +334,26 @@ class ModularQuiz {
 
 					// Use requestAnimationFrame to ensure DOM has updated
 					requestAnimationFrame(() => {
-						// Temporarily set to auto to measure natural height
-						details.style.maxHeight = "auto";
-						const actualHeight = details.scrollHeight;
+						// Get the content element to measure its height
+						const content = details.querySelector(".quiz-notification-details-content");
 
-						// Reset to 0 and then animate to actual height
+						// Temporarily set details to auto height to measure
+						const originalMaxHeight = details.style.maxHeight;
+						details.style.maxHeight = "auto";
+
+						// Calculate total height needed including padding and borders
+						const contentHeight = content ? content.scrollHeight : details.scrollHeight;
+						const paddingTop = parseInt(getComputedStyle(details).paddingTop) || 0;
+						const paddingBottom = parseInt(getComputedStyle(details).paddingBottom) || 0;
+						const borderTop = parseInt(getComputedStyle(details).borderTopWidth) || 0;
+						const borderBottom = parseInt(getComputedStyle(details).borderBottomWidth) || 0;
+
+						const totalHeight = contentHeight + paddingTop + paddingBottom + borderTop + borderBottom + 24; // Add 24px buffer
+
+						// Reset and animate
 						details.style.maxHeight = "0";
 						requestAnimationFrame(() => {
-							details.style.maxHeight = actualHeight + "px";
+							details.style.maxHeight = totalHeight + "px";
 						});
 					});
 				} else {
