@@ -50,7 +50,7 @@ export class NotificationManager {
 		// Track notification queue for staggered animations
 		this.notificationQueue = [];
 		this.isProcessingQueue = false;
-		this.staggerDelay = 150; // milliseconds between notifications
+		this.staggerDelay = 300; // milliseconds between notifications
 
 		this.init();
 	}
@@ -324,6 +324,7 @@ export class NotificationManager {
 	queueNotification(notification) {
 		if (this.isDestroyed) return;
 
+		console.log(`📥 Adding notification to queue. Queue was: ${this.notificationQueue.length}, now: ${this.notificationQueue.length + 1}`);
 		this.notificationQueue.push(notification);
 		this.processNotificationQueue();
 	}
@@ -447,13 +448,27 @@ export class NotificationManager {
 			this.eventListeners.delete(notification);
 		}
 
+		console.log("🚪 Starting removal animation for:", notification.id);
+
+		// Remove any existing animation classes first
+		notification.classList.remove("animate-in");
+
+		// Force reflow
+		notification.offsetHeight;
+
 		// Add exit animation with enhanced effects
 		notification.classList.add("animate-out");
+
+		// Debug animation application
+		const computedStyle = window.getComputedStyle(notification);
+		console.log("🎬 Exit animation name:", computedStyle.animationName);
+		console.log("🎬 Exit animation duration:", computedStyle.animationDuration);
 
 		// Add ripple effect to remaining notifications
 		this.addRemovalEffects(notification);
 
 		const timeoutId = setTimeout(() => {
+			console.log("🗑️ Removing notification from DOM:", notification.id);
 			if (notification.parentNode && !this.isDestroyed) {
 				notification.parentNode.removeChild(notification);
 			}
@@ -464,7 +479,7 @@ export class NotificationManager {
 				}
 			}
 			this.timeouts.delete(timeoutId);
-		}, 600); // Updated to match longer hide animation
+		}, 800); // Updated to match longer hide animation
 		this.timeouts.add(timeoutId);
 	}
 
@@ -1036,24 +1051,43 @@ export const NotificationUtils = {
 			defaultDuration: 0
 		});
 
-		// Test multiple notifications with delays
+		// Test multiple notifications to see queue effect
 		const notifications = [
-			{ text: "First notification test", type: "info" },
-			{ text: "Second notification test", type: "success" },
-			{ text: "Third notification test", type: "warning" },
-			{ text: "Fourth notification test", type: "error" }
+			{ text: "First notification test\nThis is a detailed message", type: "info" },
+			{ text: "Second notification test\nAnother detailed message", type: "success" },
+			{ text: "Third notification test\nYet another detailed message", type: "warning" },
+			{ text: "Fourth notification test\nFinal detailed message", type: "error" }
 		];
 
+		console.log("🎬 Adding notifications to queue rapidly to test stagger delay...");
+
+		// Add all notifications immediately to test the queue system
 		notifications.forEach((notif, index) => {
-			setTimeout(() => {
-				console.log(`🚀 Showing notification ${index + 1}:`, notif.text);
-				manager.show(notif.text, notif.type);
-			}, index * 200); // Slight delay to see the queue effect
+			console.log(`🚀 Queuing notification ${index + 1}:`, notif.text.split("\n")[0]);
+			manager.show(notif.text, notif.type);
 		});
+
+		// Test removal after some time
+		setTimeout(() => {
+			console.log("🗑️ Testing removal animations...");
+			const currentNotifications = manager.getNotifications();
+			if (currentNotifications.length > 0) {
+				console.log("Removing first notification...");
+				manager.removeNotification(currentNotifications[0]);
+
+				setTimeout(() => {
+					if (currentNotifications.length > 1) {
+						console.log("Removing second notification...");
+						manager.removeNotification(currentNotifications[1]);
+					}
+				}, 1000);
+			}
+		}, 3000);
 
 		// Make manager globally accessible for testing
 		window.testNotificationManager = manager;
 		console.log("✅ Test manager created. Access via window.testNotificationManager");
+		console.log("🎯 Watch console for queue processing and animation debugging");
 
 		return manager;
 	}
