@@ -1480,7 +1480,22 @@ class ModularQuiz {
 	_triggerEligibilityWorkflow() {
 		try {
 			const eligibilityPayload = this._buildEligibilityPayload();
-			const webhookUrl = this.container.getAttribute("data-webhook-url") || this.quizData.config?.webhookUrl;
+			let webhookUrl = this.container.getAttribute("data-webhook-url") || this.quizData.config?.webhookUrl;
+
+			// Use test webhook URL when in test mode
+			if (this.isTestMode) {
+				const testWebhookUrl =
+					this.container.getAttribute("data-test-webhook-url") || (webhookUrl ? webhookUrl.replace(/\/[^\/]*$/, "/test-eligibility") : null) || this.quizData.config?.testWebhookUrl;
+
+				if (testWebhookUrl) {
+					webhookUrl = testWebhookUrl;
+					console.log("🧪 Test mode detected - using test webhook URL:", webhookUrl);
+				} else {
+					console.log("🧪 Test mode detected but no test webhook URL configured - using production URL with test mode indicator");
+					// Add test mode indicator to payload for the workflow to handle
+					eligibilityPayload.testMode = true;
+				}
+			}
 
 			if (webhookUrl) {
 				console.log("🔍 Starting eligibility check in background...", {
@@ -1488,6 +1503,7 @@ class ModularQuiz {
 					lastName: eligibilityPayload.lastName,
 					insurance: eligibilityPayload.insurance,
 					insuranceMemberId: eligibilityPayload.insuranceMemberId,
+					testMode: this.isTestMode,
 					fullPayload: eligibilityPayload
 				});
 
@@ -3573,6 +3589,11 @@ class ModularQuiz {
 	_generateRecommendationResultsHTML(resultData, resultUrl) {
 		// Implementation for recommendation results
 		return this._generateGenericResultsHTML(resultData, resultUrl);
+	}
+
+	get isTestMode() {
+		const testParam = new URLSearchParams(window.location.search).get("test");
+		return testParam !== null && testParam !== "false";
 	}
 }
 
