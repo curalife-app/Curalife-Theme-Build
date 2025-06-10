@@ -41,7 +41,7 @@ class ModularQuiz {
 		this.currentNotificationFilter = "all";
 		this.notificationCount = 0;
 		this.maxExpandedNotifications = 3;
-		this.autoCollapseEnabled = false; // Default to disabled
+
 		this.allNotifications = []; // Store all notifications for history and "Show All" mode
 
 		// Define notification priority levels
@@ -49,35 +49,30 @@ class ModularQuiz {
 			CRITICAL: {
 				color: "#dc2626",
 				persist: true,
-				autoCollapse: false,
 				icon: "🚨",
 				timeout: null // Never auto-hide
 			},
 			ERROR: {
 				color: "#dc2626",
 				persist: true,
-				autoCollapse: false,
 				icon: "❌",
 				timeout: null
 			},
 			WARNING: {
 				color: "#f59e0b",
 				persist: true,
-				autoCollapse: true,
 				icon: "⚠️",
 				timeout: 15000 // 15 seconds
 			},
 			SUCCESS: {
 				color: "#059669",
 				persist: false,
-				autoCollapse: true,
 				icon: "✅",
 				timeout: 8000 // 8 seconds
 			},
 			INFO: {
 				color: "#2563eb",
 				persist: false,
-				autoCollapse: true,
 				icon: "ℹ️",
 				timeout: 12000 // 12 seconds
 			}
@@ -481,10 +476,8 @@ class ModularQuiz {
 		// Apply priority-specific styling
 		this._applyPriorityStyles(notification, notificationPriority, priorityConfig);
 
-		// Auto-collapse older notifications (only if enabled)
-		if (this.autoCollapseEnabled) {
-			this._manageNotificationStates();
-		}
+		// Manage notification states
+		this._manageNotificationStates();
 
 		// Set auto-hide timeout if configured (but respect "show all" mode)
 		if (priorityConfig.timeout && this.currentNotificationFilter !== "all") {
@@ -539,17 +532,6 @@ class ModularQuiz {
 			</svg>
 		`;
 
-		// Create auto-collapse toggle button
-		const autoCollapseButton = document.createElement("div");
-		autoCollapseButton.className = "quiz-notification-autocollapse-button";
-		autoCollapseButton.title = "Toggle auto-collapse (currently OFF)";
-
-		autoCollapseButton.innerHTML = `
-			<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-				<path d="M10 4H4c-1.11 0-2 .89-2 2v6c0 1.11.89 2 2 2h6c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 8H4V6h6v6zm10-8h-6c-1.11 0-2 .89-2 2v6c0 1.11.89 2 2 2h6c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 8h-6V6h6v6zm-10 4H4c-1.11 0-2 .89-2 2v6c0 1.11.89 2 2 2h6c1.11 0 2-.89 2-2v-6c0-1.11-.89-2-2-2zm0 8H4v-6h6v6z"/>
-			</svg>
-		`;
-
 		// Create copy button
 		const copyButton = document.createElement("div");
 		copyButton.className = "quiz-notification-copy-button";
@@ -569,11 +551,6 @@ class ModularQuiz {
 			this._showFilterOptionsMenu(filterButton);
 		});
 
-		autoCollapseButton.addEventListener("click", e => {
-			e.stopPropagation();
-			this._toggleAutoCollapse(autoCollapseButton);
-		});
-
 		copyButton.addEventListener("click", e => {
 			e.stopPropagation();
 			this._showCopyOptionsMenu(copyButton);
@@ -581,56 +558,8 @@ class ModularQuiz {
 
 		// Add buttons to the body
 		document.body.appendChild(filterButton);
-		document.body.appendChild(autoCollapseButton);
 		document.body.appendChild(copyButton);
 		console.log("🔧 Notification buttons added to page");
-	}
-
-	_toggleAutoCollapse(autoCollapseButton) {
-		// Toggle the auto-collapse state
-		this.autoCollapseEnabled = !this.autoCollapseEnabled;
-
-		console.log(`🔧 Auto-collapse toggled: ${this.autoCollapseEnabled ? "ON" : "OFF"}`);
-
-		// Update button appearance
-		this._updateAutoCollapseButtonAppearance(autoCollapseButton);
-
-		// If turning on auto-collapse, apply it immediately to existing notifications
-		if (this.autoCollapseEnabled) {
-			this._manageNotificationStates();
-		} else {
-			// If turning off auto-collapse, expand all notifications
-			this._expandAllNotifications();
-		}
-	}
-
-	_updateAutoCollapseButtonAppearance(button) {
-		const isEnabled = this.autoCollapseEnabled;
-
-		// Update CSS class and content based on state
-		if (isEnabled) {
-			// ON state - add enabled class for orange/amber gradient
-			button.classList.add("enabled");
-			button.title = "Toggle auto-collapse (currently ON)";
-
-			// Change icon to indicate expansion/collapse
-			button.innerHTML = `
-				<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-					<path d="M19 3H5c-1.11 0-2 .89-2 2v14c0 1.11.89 2 2 2h14c1.11 0 2-.89 2-2V5c0-1.11-.89-2-2-2zm0 16H5V5h14v14zm-5-7l-3 3-3-3z"/>
-				</svg>
-			`;
-		} else {
-			// OFF state - remove enabled class for gray gradient
-			button.classList.remove("enabled");
-			button.title = "Toggle auto-collapse (currently OFF)";
-
-			// Default grid icon
-			button.innerHTML = `
-				<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-					<path d="M10 4H4c-1.11 0-2 .89-2 2v6c0 1.11.89 2 2 2h6c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 8H4V6h6v6zm10-8h-6c-1.11 0-2 .89-2 2v6c0 1.11.89 2 2 2h6c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 8h-6V6h6v6zm-10 4H4c-1.11 0-2 .89-2 2v6c0 1.11.89 2 2 2h6c1.11 0 2-.89 2-2v-6c0-1.11-.89-2-2-2zm0 8H4v-6h6v6z"/>
-				</svg>
-			`;
-		}
 	}
 
 	_expandAllNotifications() {
@@ -645,7 +574,7 @@ class ModularQuiz {
 			this._expandNotification(notification);
 		});
 
-		console.log(`🔧 Expanded ${expandableNotifications.length} notifications with content (auto-collapse disabled)`);
+		console.log(`🔧 Expanded ${expandableNotifications.length} notifications with content`);
 	}
 
 	_restoreAllNotifications() {
@@ -901,64 +830,18 @@ class ModularQuiz {
 	}
 
 	_manageNotificationStates() {
-		// Only manage auto-collapse if it's enabled
-		if (!this.autoCollapseEnabled) {
-			return;
-		}
-
-		// Get only visible notifications (respecting current filter)
+		// Simplified notification management - just keep all notifications expanded by default
 		const allNotifications = document.querySelectorAll(".quiz-notification");
 		const visibleNotifications = Array.from(allNotifications).filter(notification => !notification.classList.contains("filter-hidden"));
 
-		// Only work with notifications that have collapsible content
+		// Expand all visible notifications that have collapsible content
 		const collapsibleNotifications = visibleNotifications.filter(notification => notification.querySelector(".quiz-notification-details"));
 
-		if (collapsibleNotifications.length <= this.maxExpandedNotifications) {
-			// If we have few notifications, expand all collapsible ones
-			collapsibleNotifications.forEach(notification => {
-				this._expandNotification(notification);
-			});
-			return;
-		}
-
-		// Sort by priority and creation time (newest first)
-		const sortedNotifications = collapsibleNotifications.sort((a, b) => {
-			const priorityOrder = { CRITICAL: 0, ERROR: 1, WARNING: 2, SUCCESS: 3, INFO: 4 };
-			const aPriority = a.getAttribute("data-priority") || "INFO";
-			const bPriority = b.getAttribute("data-priority") || "INFO";
-
-			if (priorityOrder[aPriority] !== priorityOrder[bPriority]) {
-				return priorityOrder[aPriority] - priorityOrder[bPriority];
-			}
-
-			// If same priority, newer first
-			const aTime = new Date(a.getAttribute("data-created-at") || 0);
-			const bTime = new Date(b.getAttribute("data-created-at") || 0);
-			return bTime - aTime;
+		collapsibleNotifications.forEach(notification => {
+			this._expandNotification(notification);
 		});
 
-		// Apply smart expansion logic
-		let expandedCount = 0;
-		sortedNotifications.forEach((notification, index) => {
-			const priority = notification.getAttribute("data-priority") || "INFO";
-
-			// Critical/Error notifications always stay expanded
-			if (priority === "CRITICAL" || priority === "ERROR") {
-				this._expandNotification(notification);
-				expandedCount++;
-			}
-			// Other notifications: expand up to the limit
-			else if (expandedCount < this.maxExpandedNotifications) {
-				this._expandNotification(notification);
-				expandedCount++;
-			}
-			// Rest get auto-collapsed
-			else {
-				this._collapseNotification(notification, true);
-			}
-		});
-
-		console.log(`🎯 Smart notification management: ${expandedCount} expanded, ${sortedNotifications.length - expandedCount} auto-collapsed (${visibleNotifications.length} visible total)`);
+		console.log(`📋 Notification management: ${collapsibleNotifications.length} notifications expanded (${visibleNotifications.length} visible total)`);
 	}
 
 	_expandNotification(notification) {
@@ -977,11 +860,9 @@ class ModularQuiz {
 				details.style.maxHeight = height + "px";
 			});
 		}
-
-		notification.classList.remove("auto-collapsed");
 	}
 
-	_collapseNotification(notification, isAutoCollapse = false) {
+	_collapseNotification(notification) {
 		const details = notification.querySelector(".quiz-notification-details");
 		const toggleButton = notification.querySelector(".quiz-notification-toggle");
 
@@ -989,10 +870,6 @@ class ModularQuiz {
 			details.style.maxHeight = "0";
 			details.classList.remove("expanded");
 			toggleButton.classList.remove("expanded");
-		}
-
-		if (isAutoCollapse) {
-			notification.classList.add("auto-collapsed");
 		}
 	}
 
