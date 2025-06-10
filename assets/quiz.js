@@ -42,6 +42,7 @@ class ModularQuiz {
 		this.notificationCount = 0;
 		this.maxExpandedNotifications = 3;
 		this.autoCollapseEnabled = false; // Default to disabled
+		this.allNotifications = []; // Store all notifications for history and "Show All" mode
 
 		// Define notification priority levels
 		this.PRIORITY_LEVELS = {
@@ -457,11 +458,27 @@ class ModularQuiz {
 			});
 		}
 
+		// Store in history for "Show All" functionality
+		const notificationId = this.notificationCount + 1;
+		const timestamp = new Date().toISOString();
+		const notificationData = {
+			id: notificationId,
+			element: notification,
+			text: text,
+			type: type,
+			priority: notificationPriority,
+			timestamp: timestamp,
+			removed: false
+		};
+		this.allNotifications.push(notificationData);
+
 		notificationContainer.appendChild(notification);
+		this.notificationCount++;
 		console.log("✅ Notification added to DOM. Total notifications:", notificationContainer.children.length);
 
-		// Store creation timestamp
-		notification.setAttribute("data-created-at", new Date().toISOString());
+		// Store creation timestamp and ID on element
+		notification.setAttribute("data-created-at", timestamp);
+		notification.setAttribute("data-notification-id", notificationId);
 
 		// Apply priority-specific styling
 		this._applyPriorityStyles(notification, notificationPriority, priorityConfig);
@@ -471,8 +488,8 @@ class ModularQuiz {
 			this._manageNotificationStates();
 		}
 
-		// Set auto-hide timeout if configured
-		if (priorityConfig.timeout) {
+		// Set auto-hide timeout if configured (but respect "show all" mode)
+		if (priorityConfig.timeout && this.currentNotificationFilter !== "all") {
 			setTimeout(() => {
 				this._removeNotification(notification);
 			}, priorityConfig.timeout);
@@ -492,7 +509,8 @@ class ModularQuiz {
 		}, 100);
 
 		// Auto remove after delay (except for persistent test mode notifications)
-		if (!isTestMode) {
+		// But only if not in "show all" mode
+		if (!isTestMode && this.currentNotificationFilter !== "all") {
 			setTimeout(
 				() => {
 					if (notification.parentNode) {
@@ -632,6 +650,32 @@ class ModularQuiz {
 		console.log(`🔧 Expanded ${expandableNotifications.length} notifications with content (auto-collapse disabled)`);
 	}
 
+	_restoreAllNotifications() {
+		const notificationContainer = this.questionContainer?.querySelector(".quiz-notifications");
+		if (!notificationContainer) return;
+
+		// Remove all current notifications from DOM
+		Array.from(notificationContainer.children).forEach(child => child.remove());
+
+		// Restore all notifications from history
+		let restoredCount = 0;
+		this.allNotifications.forEach(notificationData => {
+			// Clone the notification element to avoid conflicts
+			const notification = notificationData.element.cloneNode(true);
+
+			// Update the element reference in history
+			notificationData.element = notification;
+			notificationData.removed = false;
+
+			// Add back to container
+			notificationContainer.appendChild(notification);
+			restoredCount++;
+		});
+
+		console.log(`📦 Restored ${restoredCount} notifications for "Show All" mode`);
+		return restoredCount;
+	}
+
 	_showCopyOptionsMenu(copyButton) {
 		// Remove existing menu if any
 		const existingMenu = document.querySelector(".quiz-copy-options-menu");
@@ -742,6 +786,12 @@ class ModularQuiz {
 
 	_applyNotificationFilter(filter) {
 		this.currentNotificationFilter = filter;
+
+		// If switching to "Show All", restore all notifications first
+		if (filter === "all") {
+			this._restoreAllNotifications();
+		}
+
 		const notifications = document.querySelectorAll(".quiz-notification");
 		let visibleCount = 0;
 
@@ -953,6 +1003,15 @@ class ModularQuiz {
 
 	_removeNotification(notification) {
 		if (!notification || !notification.parentNode) return;
+
+		// Mark as removed in history
+		const notificationId = notification.getAttribute("data-notification-id");
+		if (notificationId) {
+			const historyItem = this.allNotifications.find(item => item.id == notificationId);
+			if (historyItem) {
+				historyItem.removed = true;
+			}
+		}
 
 		// Animate out
 		notification.style.opacity = "0";
@@ -4492,16 +4551,16 @@ class ModularQuiz {
 		}, 1000);
 
 		setTimeout(() => {
-			console.log("✅ Test complete! Smart notification features:");
+			console.log("✅ Test complete! Enhanced notification system features:");
 			console.log("   🔍 Filter buttons: Show only relevant notification types");
+			console.log("   📦 Show All: Restores ALL notifications (even auto-removed ones)");
 			console.log("   📱 Auto-collapse: Only affects detailed notifications");
 			console.log("   ⚡ Simple notifications: Always visible (no collapse needed)");
 			console.log("   🚨 Critical/Error: Always stay expanded");
-			console.log("   🎛️ Combined logic: Filter first, then auto-collapse visible ones");
+			console.log("   🛡️ Smart prevention: Auto-removal disabled when 'Show All' is active");
 			console.log("");
-			console.log("🧪 Try these commands:");
+			console.log("🧪 Try filtering to 'Show All' to see all notifications restored!");
 			console.log("   testNotifications() - Run this test again");
-			console.log("   productQuiz._testNotificationSystem() - Alternative method");
 		}, 1500);
 	}
 }
