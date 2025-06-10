@@ -574,7 +574,7 @@ class ModularQuiz {
 			this._expandNotification(notification);
 		});
 
-		console.log(`🔧 Expanded ${expandableNotifications.length} notifications with content`);
+		console.log(`🔧 Manually expanded ${expandableNotifications.length} notifications with content`);
 	}
 
 	_restoreAllNotifications() {
@@ -830,18 +830,18 @@ class ModularQuiz {
 	}
 
 	_manageNotificationStates() {
-		// Simplified notification management - just keep all notifications expanded by default
+		// Simplified notification management - keep all notifications collapsed by default
 		const allNotifications = document.querySelectorAll(".quiz-notification");
 		const visibleNotifications = Array.from(allNotifications).filter(notification => !notification.classList.contains("filter-hidden"));
 
-		// Expand all visible notifications that have collapsible content
+		// Collapse all visible notifications that have collapsible content
 		const collapsibleNotifications = visibleNotifications.filter(notification => notification.querySelector(".quiz-notification-details"));
 
 		collapsibleNotifications.forEach(notification => {
-			this._expandNotification(notification);
+			this._collapseNotification(notification);
 		});
 
-		console.log(`📋 Notification management: ${collapsibleNotifications.length} notifications expanded (${visibleNotifications.length} visible total)`);
+		console.log(`📋 Notification management: ${collapsibleNotifications.length} notifications collapsed by default (${visibleNotifications.length} visible total)`);
 	}
 
 	_expandNotification(notification) {
