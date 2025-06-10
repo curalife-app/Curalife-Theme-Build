@@ -202,8 +202,14 @@ export class NotificationManager {
 		const toggle = notification.querySelector(`.${this.cssClasses.toggle}`);
 
 		if (details) {
+			// First add the expanded class to apply styling
 			details.classList.add("expanded");
-			details.style.maxHeight = details.scrollHeight + "px";
+
+			// Use requestAnimationFrame to ensure the DOM has updated before calculating height
+			requestAnimationFrame(() => {
+				const contentHeight = details.scrollHeight;
+				details.style.maxHeight = contentHeight + "px";
+			});
 		}
 		if (toggle) {
 			toggle.classList.add("expanded");
