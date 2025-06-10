@@ -517,30 +517,6 @@ class ModularQuiz {
 		filterButton.className = "quiz-notification-filter-button";
 		filterButton.title = "Filter notifications";
 
-		// Apply inline styles for filter button
-		filterButton.style.cssText = `
-			position: fixed !important;
-			bottom: 16px !important;
-			right: 144px !important;
-			width: 48px !important;
-			height: 48px !important;
-			border-radius: 50% !important;
-			background: linear-gradient(135deg, #48bb78 0%, #38a169 100%) !important;
-			display: flex !important;
-			align-items: center !important;
-			justify-content: center !important;
-			cursor: pointer !important;
-			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-			color: white !important;
-			transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-			z-index: 10000 !important;
-			opacity: 0.9 !important;
-			backdrop-filter: blur(8px) !important;
-			border: 2px solid rgba(255, 255, 255, 0.2) !important;
-			margin: 0 !important;
-			padding: 0 !important;
-		`;
-
 		filterButton.innerHTML = `
 			<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
 				<path d="M4.25 5.61C6.27 8.2 10 13 10 13v6c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-6s3.73-4.8 5.75-7.39C20.25 4.95 19.78 4 18.95 4H5.04C4.21 4 3.74 4.95 4.25 5.61Z"/>
@@ -551,30 +527,6 @@ class ModularQuiz {
 		const autoCollapseButton = document.createElement("div");
 		autoCollapseButton.className = "quiz-notification-autocollapse-button";
 		autoCollapseButton.title = "Toggle auto-collapse (currently OFF)";
-
-		// Apply inline styles for auto-collapse button
-		autoCollapseButton.style.cssText = `
-			position: fixed !important;
-			bottom: 16px !important;
-			right: 80px !important;
-			width: 48px !important;
-			height: 48px !important;
-			border-radius: 50% !important;
-			background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%) !important;
-			display: flex !important;
-			align-items: center !important;
-			justify-content: center !important;
-			cursor: pointer !important;
-			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-			color: white !important;
-			transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-			z-index: 10000 !important;
-			opacity: 0.9 !important;
-			backdrop-filter: blur(8px) !important;
-			border: 2px solid rgba(255, 255, 255, 0.2) !important;
-			margin: 0 !important;
-			padding: 0 !important;
-		`;
 
 		autoCollapseButton.innerHTML = `
 			<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
@@ -587,68 +539,13 @@ class ModularQuiz {
 		copyButton.className = "quiz-notification-copy-button";
 		copyButton.title = "Copy notifications to clipboard";
 
-		// Apply inline styles for copy button
-		copyButton.style.cssText = `
-			position: fixed !important;
-			bottom: 16px !important;
-			right: 16px !important;
-			width: 48px !important;
-			height: 48px !important;
-			border-radius: 50% !important;
-			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-			display: flex !important;
-			align-items: center !important;
-			justify-content: center !important;
-			cursor: pointer !important;
-			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-			color: white !important;
-			transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-			z-index: 10000 !important;
-			opacity: 0.9 !important;
-			backdrop-filter: blur(8px) !important;
-			border: 2px solid rgba(255, 255, 255, 0.2) !important;
-			margin: 0 !important;
-			padding: 0 !important;
-		`;
-
 		copyButton.innerHTML = `
 			<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
 				<path d="M16 1H4C2.9 1 2 1.9 2 3v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
 			</svg>
 		`;
 
-		// Add hover effects for filter button
-		filterButton.addEventListener("mouseenter", () => {
-			filterButton.style.transform = "scale(1.1) rotate(5deg)";
-			filterButton.style.opacity = "1";
-		});
-
-		filterButton.addEventListener("mouseleave", () => {
-			filterButton.style.transform = "scale(1)";
-			filterButton.style.opacity = "0.9";
-		});
-
-		// Add hover effects for auto-collapse button
-		autoCollapseButton.addEventListener("mouseenter", () => {
-			autoCollapseButton.style.transform = "scale(1.1) rotate(5deg)";
-			autoCollapseButton.style.opacity = "1";
-		});
-
-		autoCollapseButton.addEventListener("mouseleave", () => {
-			autoCollapseButton.style.transform = "scale(1)";
-			autoCollapseButton.style.opacity = "0.9";
-		});
-
-		// Add hover effects for copy button
-		copyButton.addEventListener("mouseenter", () => {
-			copyButton.style.transform = "scale(1.1) rotate(5deg)";
-			copyButton.style.opacity = "1";
-		});
-
-		copyButton.addEventListener("mouseleave", () => {
-			copyButton.style.transform = "scale(1)";
-			copyButton.style.opacity = "0.9";
-		});
+		// Hover effects are now handled by CSS
 
 		// Add click handlers
 		filterButton.addEventListener("click", e => {
@@ -694,10 +591,10 @@ class ModularQuiz {
 	_updateAutoCollapseButtonAppearance(button) {
 		const isEnabled = this.autoCollapseEnabled;
 
-		// Update colors based on state
+		// Update CSS class and content based on state
 		if (isEnabled) {
-			// ON state - orange/amber gradient
-			button.style.background = "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)";
+			// ON state - add enabled class for orange/amber gradient
+			button.classList.add("enabled");
 			button.title = "Toggle auto-collapse (currently ON)";
 
 			// Change icon to indicate expansion/collapse
@@ -707,8 +604,8 @@ class ModularQuiz {
 				</svg>
 			`;
 		} else {
-			// OFF state - gray gradient
-			button.style.background = "linear-gradient(135deg, #94a3b8 0%, #64748b 100%)";
+			// OFF state - remove enabled class for gray gradient
+			button.classList.remove("enabled");
 			button.title = "Toggle auto-collapse (currently OFF)";
 
 			// Default grid icon
@@ -743,19 +640,6 @@ class ModularQuiz {
 		// Create dropdown menu
 		const menu = document.createElement("div");
 		menu.className = "quiz-copy-options-menu";
-		menu.style.cssText = `
-			position: fixed !important;
-			bottom: 80px !important;
-			right: 16px !important;
-			background: white !important;
-			border-radius: 12px !important;
-			box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
-			border: 1px solid rgba(0, 0, 0, 0.1) !important;
-			z-index: 10001 !important;
-			min-width: 220px !important;
-			overflow: hidden !important;
-			animation: slideUp 0.2s ease-out !important;
-		`;
 
 		const menuOptions = [
 			{ label: "📋 Copy as Text", action: () => this._exportNotifications("text", this.currentNotificationFilter) },
@@ -768,33 +652,10 @@ class ModularQuiz {
 
 			if (option.action === null) {
 				// Divider
-				menuItem.style.cssText = `
-					height: 1px !important;
-					background: rgba(0, 0, 0, 0.1) !important;
-					margin: 4px 0 !important;
-				`;
+				menuItem.className = "quiz-copy-options-menu-divider";
 			} else {
 				menuItem.textContent = option.label;
-				menuItem.style.cssText = `
-					padding: 12px 16px !important;
-					cursor: pointer !important;
-					font-size: 14px !important;
-					color: #333 !important;
-					border: none !important;
-					background: none !important;
-					text-align: left !important;
-					width: 100% !important;
-					box-sizing: border-box !important;
-					transition: background-color 0.2s ease !important;
-				`;
-
-				menuItem.addEventListener("mouseenter", () => {
-					menuItem.style.backgroundColor = "#f5f5f5";
-				});
-
-				menuItem.addEventListener("mouseleave", () => {
-					menuItem.style.backgroundColor = "transparent";
-				});
+				menuItem.className = "quiz-copy-options-menu-item";
 
 				menuItem.addEventListener("click", () => {
 					option.action();
@@ -832,19 +693,6 @@ class ModularQuiz {
 		// Create dropdown menu
 		const menu = document.createElement("div");
 		menu.className = "quiz-filter-options-menu";
-		menu.style.cssText = `
-			position: fixed !important;
-			bottom: 80px !important;
-			right: 80px !important;
-			background: white !important;
-			border-radius: 12px !important;
-			box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
-			border: 1px solid rgba(0, 0, 0, 0.1) !important;
-			z-index: 10001 !important;
-			min-width: 180px !important;
-			overflow: hidden !important;
-			animation: slideUp 0.2s ease-out !important;
-		`;
 
 		const filterOptions = [
 			{ label: "📋 Show All", value: "all", emoji: "📋" },
@@ -856,35 +704,13 @@ class ModularQuiz {
 		filterOptions.forEach(option => {
 			const menuItem = document.createElement("div");
 			menuItem.textContent = option.label;
+			menuItem.className = "quiz-filter-options-menu-item";
 
 			// Highlight current filter
 			const isActive = this.currentNotificationFilter === option.value;
-
-			menuItem.style.cssText = `
-				padding: 12px 16px !important;
-				cursor: pointer !important;
-				font-size: 14px !important;
-				color: ${isActive ? "#48bb78" : "#333"} !important;
-				border: none !important;
-				background: ${isActive ? "rgba(72, 187, 120, 0.1)" : "none"} !important;
-				text-align: left !important;
-				width: 100% !important;
-				box-sizing: border-box !important;
-				transition: background-color 0.2s ease !important;
-				font-weight: ${isActive ? "600" : "400"} !important;
-			`;
-
-			menuItem.addEventListener("mouseenter", () => {
-				if (!isActive) {
-					menuItem.style.backgroundColor = "#f5f5f5";
-				}
-			});
-
-			menuItem.addEventListener("mouseleave", () => {
-				if (!isActive) {
-					menuItem.style.backgroundColor = "transparent";
-				}
-			});
+			if (isActive) {
+				menuItem.classList.add("active");
+			}
 
 			menuItem.addEventListener("click", () => {
 				this._applyNotificationFilter(option.value, option.emoji);
@@ -921,19 +747,11 @@ class ModularQuiz {
 			const shouldShow = filter === "all" || filter === type;
 
 			if (shouldShow) {
-				notification.style.display = "block";
-				// Animate in
-				setTimeout(() => {
-					notification.style.opacity = "1";
-					notification.style.transform = "translateY(0)";
-				}, 50);
+				notification.classList.remove("filter-hidden");
+				notification.classList.add("filter-visible");
 			} else {
-				// Animate out
-				notification.style.opacity = "0";
-				notification.style.transform = "translateY(-10px)";
-				setTimeout(() => {
-					notification.style.display = "none";
-				}, 200);
+				notification.classList.remove("filter-visible");
+				notification.classList.add("filter-hidden");
 			}
 		});
 
