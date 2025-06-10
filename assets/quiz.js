@@ -258,10 +258,19 @@ class ModularQuiz {
 
 		if (isTestMode && text.includes("<br>")) {
 			const parts = text.split("<br>");
-			notificationTitle = parts[0].trim();
+			// Clean the title - remove emojis and "TEST MODE" text
+			notificationTitle = parts[0]
+				.trim()
+				.replace(/🧪/g, "")
+				.replace(/TEST MODE\s*[-:]\s*/gi, "")
+				.trim();
 			notificationDetails = parts.slice(1).join("<br>").trim();
 		} else {
-			notificationTitle = text;
+			// Clean simple notifications too
+			notificationTitle = text
+				.replace(/🧪/g, "")
+				.replace(/TEST MODE\s*[-:]\s*/gi, "")
+				.trim();
 		}
 
 		// Create notification element
