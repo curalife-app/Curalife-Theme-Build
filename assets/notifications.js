@@ -16,6 +16,30 @@ export class NotificationManager {
 			...options
 		};
 
+		// CSS class configuration - allows customization while maintaining defaults
+		this.cssClasses = {
+			container: "quiz-background-notifications",
+			notification: "quiz-notification",
+			success: "quiz-notification-success",
+			error: "quiz-notification-error",
+			info: "quiz-notification-info",
+			warning: "quiz-notification-warning",
+			header: "quiz-notification-header",
+			content: "quiz-notification-content",
+			icon: "quiz-notification-icon",
+			title: "quiz-notification-title",
+			toggle: "quiz-notification-toggle",
+			details: "quiz-notification-details",
+			detailsContent: "quiz-notification-details-content",
+			close: "quiz-notification-close",
+			shimmer: "quiz-notification-shimmer",
+			simple: "quiz-notification-simple",
+			simpleIcon: "quiz-notification-simple-icon",
+			simpleText: "quiz-notification-simple-text",
+			// Override with custom classes if provided
+			...(options.customClasses || {})
+		};
+
 		this.notifications = [];
 		this.currentFilter = "all";
 		this.autoCollapseEnabled = this.options.autoCollapse;
@@ -34,7 +58,7 @@ export class NotificationManager {
 		let container = document.querySelector(this.options.containerSelector);
 		if (!container) {
 			container = document.createElement("div");
-			container.className = "quiz-background-notifications";
+			container.className = this.cssClasses.container;
 			document.body.appendChild(container);
 		}
 		this.container = container;
@@ -52,7 +76,7 @@ export class NotificationManager {
 		const notificationDuration = duration || this.options.defaultDuration;
 
 		const notification = document.createElement("div");
-		notification.className = `quiz-notification quiz-notification-${type}`;
+		notification.className = `${this.cssClasses.notification} ${this.cssClasses[type] || this.cssClasses.info}`;
 		notification.id = id;
 		notification.dataset.type = type;
 		notification.dataset.priority = actualPriority;
@@ -61,8 +85,10 @@ export class NotificationManager {
 		// Apply priority styling
 		this.applyPriorityStyles(notification, actualPriority, this.getPriorityConfig(actualPriority));
 
-		// Determine if notification should be expandable
-		const isExpandable = text.length > 100 || text.includes("\n") || text.includes("|");
+		// Determine if notification should be expandable (quiz-compatible logic)
+		const isTestMode = text.includes("TEST MODE");
+		const hasDetails = text.includes("<br>") || text.includes("\n") || text.length > 100;
+		const isExpandable = isTestMode || hasDetails;
 
 		if (isExpandable) {
 			this.createExpandableNotification(notification, text, type);
@@ -81,26 +107,50 @@ export class NotificationManager {
 	}
 
 	createExpandableNotification(notification, text, type) {
-		const [title, ...details] = text.split("\n");
-		const detailsText = details.join("\n");
+		// Handle quiz-specific formatting (supports both <br> and \n)
+		let title, detailsText;
+
+		if (text.includes("<br>")) {
+			const parts = text.split("<br>");
+			title = parts[0].trim();
+			detailsText = parts.slice(1).join("<br>").trim();
+		} else {
+			const [firstLine, ...details] = text.split("\n");
+			title = firstLine.trim();
+			detailsText = details.join("\n").trim();
+		}
+
+		// Clean title for test mode (remove emojis and TEST MODE text like the original)
+		if (title.includes("TEST MODE")) {
+			title = title
+				.replace(/🧪/g, "")
+				.replace(/✓/g, "")
+				.replace(/❌/g, "")
+				.replace(/⚠️/g, "")
+				.replace(/ℹ️/g, "")
+				.replace(/📡/g, "")
+				.replace(/🔄/g, "")
+				.replace(/TEST MODE\s*[-:]?\s*/gi, "")
+				.trim();
+		}
 
 		notification.innerHTML = `
-			<div class="quiz-notification-header">
-				<div class="quiz-notification-content">
-					<div class="quiz-notification-icon">${this.getTypeIcon(type)}</div>
-					<div class="quiz-notification-title">${title}</div>
+			<div class="${this.cssClasses.header}">
+				<div class="${this.cssClasses.content}">
+					<div class="${this.cssClasses.icon}">${this.getTypeIcon(type)}</div>
+					<div class="${this.cssClasses.title}">${title}</div>
 				</div>
-				<div class="quiz-notification-toggle">
+				<div class="${this.cssClasses.toggle}">
 					<svg width="12" height="8" viewBox="0 0 12 8" fill="none">
 						<path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 					</svg>
 				</div>
 			</div>
-			<div class="quiz-notification-details">
-				<div class="quiz-notification-details-content">${detailsText}</div>
+			<div class="${this.cssClasses.details}">
+				<div class="${this.cssClasses.detailsContent}">${detailsText}</div>
 			</div>
-			<div class="quiz-notification-close">×</div>
-			<div class="quiz-notification-shimmer"></div>
+			<div class="${this.cssClasses.close}">×</div>
+			<div class="${this.cssClasses.shimmer}"></div>
 		`;
 
 		this.attachExpandableListeners(notification);
@@ -108,21 +158,21 @@ export class NotificationManager {
 
 	createSimpleNotification(notification, text, type) {
 		notification.innerHTML = `
-			<div class="quiz-notification-simple">
-				<div class="quiz-notification-simple-icon">${this.getTypeIcon(type)}</div>
-				<div class="quiz-notification-simple-text">${text}</div>
+			<div class="${this.cssClasses.simple}">
+				<div class="${this.cssClasses.simpleIcon}">${this.getTypeIcon(type)}</div>
+				<div class="${this.cssClasses.simpleText}">${text}</div>
 			</div>
-			<div class="quiz-notification-close">×</div>
-			<div class="quiz-notification-shimmer"></div>
+			<div class="${this.cssClasses.close}">×</div>
+			<div class="${this.cssClasses.shimmer}"></div>
 		`;
 
 		this.attachSimpleListeners(notification);
 	}
 
 	attachExpandableListeners(notification) {
-		const header = notification.querySelector(".quiz-notification-header");
-		const toggle = notification.querySelector(".quiz-notification-toggle");
-		const closeBtn = notification.querySelector(".quiz-notification-close");
+		const header = notification.querySelector(`.${this.cssClasses.header}`);
+		const toggle = notification.querySelector(`.${this.cssClasses.toggle}`);
+		const closeBtn = notification.querySelector(`.${this.cssClasses.close}`);
 
 		header.addEventListener("click", () => this.toggleNotification(notification));
 		closeBtn.addEventListener("click", e => {
@@ -132,13 +182,13 @@ export class NotificationManager {
 	}
 
 	attachSimpleListeners(notification) {
-		const closeBtn = notification.querySelector(".quiz-notification-close");
+		const closeBtn = notification.querySelector(`.${this.cssClasses.close}`);
 		closeBtn.addEventListener("click", () => this.removeNotification(notification));
 	}
 
 	toggleNotification(notification) {
-		const details = notification.querySelector(".quiz-notification-details");
-		const toggle = notification.querySelector(".quiz-notification-toggle");
+		const details = notification.querySelector(`.${this.cssClasses.details}`);
+		const toggle = notification.querySelector(`.${this.cssClasses.toggle}`);
 
 		if (details.classList.contains("expanded")) {
 			this.collapseNotification(notification);
@@ -148,8 +198,8 @@ export class NotificationManager {
 	}
 
 	expandNotification(notification) {
-		const details = notification.querySelector(".quiz-notification-details");
-		const toggle = notification.querySelector(".quiz-notification-toggle");
+		const details = notification.querySelector(`.${this.cssClasses.details}`);
+		const toggle = notification.querySelector(`.${this.cssClasses.toggle}`);
 
 		if (details) {
 			details.classList.add("expanded");
@@ -167,8 +217,8 @@ export class NotificationManager {
 	}
 
 	collapseNotification(notification) {
-		const details = notification.querySelector(".quiz-notification-details");
-		const toggle = notification.querySelector(".quiz-notification-toggle");
+		const details = notification.querySelector(`.${this.cssClasses.details}`);
+		const toggle = notification.querySelector(`.${this.cssClasses.toggle}`);
 
 		if (details) {
 			details.classList.remove("expanded");
@@ -566,7 +616,7 @@ export class NotificationManager {
 
 	expandAll() {
 		this.notifications.forEach(notification => {
-			if (notification.querySelector(".quiz-notification-details")) {
+			if (notification.querySelector(`.${this.cssClasses.details}`)) {
 				this.expandNotification(notification);
 			}
 		});
@@ -574,7 +624,7 @@ export class NotificationManager {
 
 	collapseAll() {
 		this.notifications.forEach(notification => {
-			if (notification.querySelector(".quiz-notification-details")) {
+			if (notification.querySelector(`.${this.cssClasses.details}`)) {
 				this.collapseNotification(notification);
 			}
 		});

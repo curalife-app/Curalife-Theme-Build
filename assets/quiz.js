@@ -60,27 +60,42 @@ class ModularQuiz {
 			// Dynamic import of the NotificationManager using the asset URL
 			const { NotificationManager } = await import(notificationsUrl);
 
+			// Configure the notification manager to match quiz's exact requirements
 			this.notificationManager = new NotificationManager({
 				containerSelector: ".quiz-background-notifications",
 				position: "top-right",
 				autoCollapse: true,
 				maxNotifications: 50,
-				defaultDuration: 5000,
+				defaultDuration: 0, // Don't auto-remove notifications by default
 				enableFiltering: true,
-				enableCopy: true
+				enableCopy: true,
+				// Ensure the container uses the exact quiz styling
+				customClasses: {
+					container: "quiz-background-notifications",
+					notification: "quiz-notification",
+					success: "quiz-notification-success",
+					error: "quiz-notification-error",
+					info: "quiz-notification-info",
+					warning: "quiz-notification-warning"
+				}
 			});
 
-			console.log("✅ Modular notification system initialized successfully");
+			console.log("✅ Notification system loaded successfully");
+			return true;
 		} catch (error) {
 			console.error("❌ Failed to load notification system:", error);
-			// Fallback: create a simple notification manager that just logs
+
+			// Fallback: Create a simple notification function
 			this.notificationManager = {
-				show: (text, type, priority) => {
-					console.log(`[${type.toUpperCase()}] ${text}`);
+				show: (text, type = "info", priority = null) => {
+					console.log(`📢 Notification (${type}):`, text);
+					return null;
 				},
-				clear: () => console.log("Clear notifications"),
-				exportNotifications: () => console.log("Export notifications")
+				clear: () => console.log("🧹 Clear notifications"),
+				exportNotifications: () => console.log("📤 Export notifications")
 			};
+
+			return false;
 		}
 	}
 
