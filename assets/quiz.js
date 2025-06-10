@@ -446,11 +446,46 @@ class ModularQuiz {
 		const copyButton = document.createElement("div");
 		copyButton.className = "quiz-notification-copy-button";
 		copyButton.title = "Copy all notifications to clipboard";
+
+		// Apply inline styles as backup
+		copyButton.style.cssText = `
+			position: fixed !important;
+			bottom: 16px !important;
+			right: 16px !important;
+			width: 48px !important;
+			height: 48px !important;
+			border-radius: 50% !important;
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+			display: flex !important;
+			align-items: center !important;
+			justify-content: center !important;
+			cursor: pointer !important;
+			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+			color: white !important;
+			z-index: 10000 !important;
+			opacity: 0.9 !important;
+			border: 2px solid rgba(255, 255, 255, 0.2) !important;
+			margin: 0 !important;
+			padding: 0 !important;
+			transition: all 0.3s ease !important;
+		`;
+
 		copyButton.innerHTML = `
 			<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
 				<path d="M16 1H4C2.9 1 2 1.9 2 3v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
 			</svg>
 		`;
+
+		// Add hover effects
+		copyButton.addEventListener("mouseenter", () => {
+			copyButton.style.transform = "scale(1.1) rotate(5deg)";
+			copyButton.style.opacity = "1";
+		});
+
+		copyButton.addEventListener("mouseleave", () => {
+			copyButton.style.transform = "scale(1)";
+			copyButton.style.opacity = "0.9";
+		});
 
 		// Add click handler for copying
 		copyButton.addEventListener("click", () => {
