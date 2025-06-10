@@ -256,8 +256,8 @@ class ModularQuiz {
 			notificationContainer.className = "quiz-background-notifications";
 			document.body.appendChild(notificationContainer);
 
-			// Add floating copy button (only once)
-			this._addNotificationCopyButton();
+			// Add floating copy button and filter button (only once)
+			this._addNotificationButtons();
 		} else {
 			console.log("📦 Using existing notification container");
 		}
@@ -436,18 +436,57 @@ class ModularQuiz {
 		}
 	}
 
-	_addNotificationCopyButton() {
-		// Check if button already exists
-		if (document.querySelector(".quiz-notification-copy-button")) {
+	_addNotificationButtons() {
+		// Check if buttons already exist
+		if (document.querySelector(".quiz-notification-copy-button") || document.querySelector(".quiz-notification-filter-button")) {
+			console.log("🔧 Notification buttons already exist");
 			return;
 		}
 
-		// Create floating copy button
+		// Initialize filter state
+		this.currentNotificationFilter = "all";
+
+		// Create filter button
+		const filterButton = document.createElement("div");
+		filterButton.className = "quiz-notification-filter-button";
+		filterButton.title = "Filter notifications";
+
+		// Apply inline styles for filter button
+		filterButton.style.cssText = `
+			position: fixed !important;
+			bottom: 16px !important;
+			right: 80px !important;
+			width: 48px !important;
+			height: 48px !important;
+			border-radius: 50% !important;
+			background: linear-gradient(135deg, #48bb78 0%, #38a169 100%) !important;
+			display: flex !important;
+			align-items: center !important;
+			justify-content: center !important;
+			cursor: pointer !important;
+			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+			color: white !important;
+			transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+			z-index: 10000 !important;
+			opacity: 0.9 !important;
+			backdrop-filter: blur(8px) !important;
+			border: 2px solid rgba(255, 255, 255, 0.2) !important;
+			margin: 0 !important;
+			padding: 0 !important;
+		`;
+
+		filterButton.innerHTML = `
+			<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+				<path d="M4.25 5.61C6.27 8.2 10 13 10 13v6c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-6s3.73-4.8 5.75-7.39C20.25 4.95 19.78 4 18.95 4H5.04C4.21 4 3.74 4.95 4.25 5.61Z"/>
+			</svg>
+		`;
+
+		// Create copy button
 		const copyButton = document.createElement("div");
 		copyButton.className = "quiz-notification-copy-button";
-		copyButton.title = "Copy all notifications to clipboard";
+		copyButton.title = "Copy notifications to clipboard";
 
-		// Apply inline styles as backup
+		// Apply inline styles for copy button
 		copyButton.style.cssText = `
 			position: fixed !important;
 			bottom: 16px !important;
@@ -462,12 +501,13 @@ class ModularQuiz {
 			cursor: pointer !important;
 			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2) !important;
 			color: white !important;
+			transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 			z-index: 10000 !important;
 			opacity: 0.9 !important;
+			backdrop-filter: blur(8px) !important;
 			border: 2px solid rgba(255, 255, 255, 0.2) !important;
 			margin: 0 !important;
 			padding: 0 !important;
-			transition: all 0.3s ease !important;
 		`;
 
 		copyButton.innerHTML = `
@@ -476,7 +516,18 @@ class ModularQuiz {
 			</svg>
 		`;
 
-		// Add hover effects
+		// Add hover effects for filter button
+		filterButton.addEventListener("mouseenter", () => {
+			filterButton.style.transform = "scale(1.1) rotate(5deg)";
+			filterButton.style.opacity = "1";
+		});
+
+		filterButton.addEventListener("mouseleave", () => {
+			filterButton.style.transform = "scale(1)";
+			filterButton.style.opacity = "0.9";
+		});
+
+		// Add hover effects for copy button
 		copyButton.addEventListener("mouseenter", () => {
 			copyButton.style.transform = "scale(1.1) rotate(5deg)";
 			copyButton.style.opacity = "1";
@@ -487,16 +538,21 @@ class ModularQuiz {
 			copyButton.style.opacity = "0.9";
 		});
 
-		// Add click handler for dropdown menu
+		// Add click handlers
+		filterButton.addEventListener("click", e => {
+			e.stopPropagation();
+			this._showFilterOptionsMenu(filterButton);
+		});
+
 		copyButton.addEventListener("click", e => {
 			e.stopPropagation();
 			this._showCopyOptionsMenu(copyButton);
 		});
 
-		// Add the button directly to the body for fixed positioning
+		// Add buttons to the body
+		document.body.appendChild(filterButton);
 		document.body.appendChild(copyButton);
-
-		console.log("🔧 Copy button added to page");
+		console.log("🔧 Notification buttons added to page");
 	}
 
 	_showCopyOptionsMenu(copyButton) {
@@ -525,20 +581,9 @@ class ModularQuiz {
 		`;
 
 		const menuOptions = [
-			{ label: "📋 All Notifications (Text)", action: () => this._exportNotifications("text", "all") },
-			{ label: "✅ Success Only (Text)", action: () => this._exportNotifications("text", "success") },
-			{ label: "❌ Errors Only (Text)", action: () => this._exportNotifications("text", "error") },
-			{ label: "ℹ️ Info Only (Text)", action: () => this._exportNotifications("text", "info") },
-			{ label: "━━━━━━━━━━━━", action: null }, // Divider
-			{ label: "📄 All Notifications (JSON)", action: () => this._exportNotifications("json", "all") },
-			{ label: "✅ Success Only (JSON)", action: () => this._exportNotifications("json", "success") },
-			{ label: "❌ Errors Only (JSON)", action: () => this._exportNotifications("json", "error") },
-			{ label: "ℹ️ Info Only (JSON)", action: () => this._exportNotifications("json", "info") },
-			{ label: "━━━━━━━━━━━━", action: null }, // Divider
-			{ label: "📊 All Notifications (CSV)", action: () => this._exportNotifications("csv", "all") },
-			{ label: "✅ Success Only (CSV)", action: () => this._exportNotifications("csv", "success") },
-			{ label: "❌ Errors Only (CSV)", action: () => this._exportNotifications("csv", "error") },
-			{ label: "ℹ️ Info Only (CSV)", action: () => this._exportNotifications("csv", "info") }
+			{ label: "📋 Copy as Text", action: () => this._exportNotifications("text", this.currentNotificationFilter) },
+			{ label: "📄 Copy as JSON", action: () => this._exportNotifications("json", this.currentNotificationFilter) },
+			{ label: "📊 Copy as CSV", action: () => this._exportNotifications("csv", this.currentNotificationFilter) }
 		];
 
 		menuOptions.forEach(option => {
@@ -599,6 +644,141 @@ class ModularQuiz {
 		}, 100);
 	}
 
+	_showFilterOptionsMenu(filterButton) {
+		// Remove existing menu if any
+		const existingMenu = document.querySelector(".quiz-filter-options-menu");
+		if (existingMenu) {
+			existingMenu.remove();
+			return;
+		}
+
+		// Create dropdown menu
+		const menu = document.createElement("div");
+		menu.className = "quiz-filter-options-menu";
+		menu.style.cssText = `
+			position: fixed !important;
+			bottom: 80px !important;
+			right: 80px !important;
+			background: white !important;
+			border-radius: 12px !important;
+			box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+			border: 1px solid rgba(0, 0, 0, 0.1) !important;
+			z-index: 10001 !important;
+			min-width: 180px !important;
+			overflow: hidden !important;
+			animation: slideUp 0.2s ease-out !important;
+		`;
+
+		const filterOptions = [
+			{ label: "📋 Show All", value: "all", emoji: "📋" },
+			{ label: "✅ Success Only", value: "success", emoji: "✅" },
+			{ label: "❌ Errors Only", value: "error", emoji: "❌" },
+			{ label: "ℹ️ Info Only", value: "info", emoji: "ℹ️" }
+		];
+
+		filterOptions.forEach(option => {
+			const menuItem = document.createElement("div");
+			menuItem.textContent = option.label;
+
+			// Highlight current filter
+			const isActive = this.currentNotificationFilter === option.value;
+
+			menuItem.style.cssText = `
+				padding: 12px 16px !important;
+				cursor: pointer !important;
+				font-size: 14px !important;
+				color: ${isActive ? "#48bb78" : "#333"} !important;
+				border: none !important;
+				background: ${isActive ? "rgba(72, 187, 120, 0.1)" : "none"} !important;
+				text-align: left !important;
+				width: 100% !important;
+				box-sizing: border-box !important;
+				transition: background-color 0.2s ease !important;
+				font-weight: ${isActive ? "600" : "400"} !important;
+			`;
+
+			menuItem.addEventListener("mouseenter", () => {
+				if (!isActive) {
+					menuItem.style.backgroundColor = "#f5f5f5";
+				}
+			});
+
+			menuItem.addEventListener("mouseleave", () => {
+				if (!isActive) {
+					menuItem.style.backgroundColor = "transparent";
+				}
+			});
+
+			menuItem.addEventListener("click", () => {
+				this._applyNotificationFilter(option.value, option.emoji);
+				this._updateFilterButtonAppearance(filterButton, option.emoji);
+				menu.remove();
+			});
+
+			menu.appendChild(menuItem);
+		});
+
+		// Add the menu to the body
+		document.body.appendChild(menu);
+
+		// Close menu when clicking outside
+		const closeMenu = e => {
+			if (!menu.contains(e.target) && !filterButton.contains(e.target)) {
+				menu.remove();
+				document.removeEventListener("click", closeMenu);
+			}
+		};
+
+		setTimeout(() => {
+			document.addEventListener("click", closeMenu);
+		}, 100);
+	}
+
+	_applyNotificationFilter(filter) {
+		this.currentNotificationFilter = filter;
+		const notifications = document.querySelectorAll(".quiz-notification");
+
+		notifications.forEach(notification => {
+			const type = notification.classList.contains("quiz-notification-success") ? "success" : notification.classList.contains("quiz-notification-error") ? "error" : "info";
+
+			const shouldShow = filter === "all" || filter === type;
+
+			if (shouldShow) {
+				notification.style.display = "block";
+				// Animate in
+				setTimeout(() => {
+					notification.style.opacity = "1";
+					notification.style.transform = "translateY(0)";
+				}, 50);
+			} else {
+				// Animate out
+				notification.style.opacity = "0";
+				notification.style.transform = "translateY(-10px)";
+				setTimeout(() => {
+					notification.style.display = "none";
+				}, 200);
+			}
+		});
+
+		console.log(`🔍 Applied filter: ${filter}`);
+	}
+
+	_updateFilterButtonAppearance(filterButton, emoji) {
+		// Update the filter button to show current filter
+		const filterIcon =
+			emoji === "📋"
+				? `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+				<path d="M4.25 5.61C6.27 8.2 10 13 10 13v6c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-6s3.73-4.8 5.75-7.39C20.25 4.95 19.78 4 18.95 4H5.04C4.21 4 3.74 4.95 4.25 5.61Z"/>
+			</svg>`
+				: emoji;
+
+		if (emoji !== "📋") {
+			filterButton.innerHTML = `<span style="font-size: 18px;">${emoji}</span>`;
+		} else {
+			filterButton.innerHTML = filterIcon;
+		}
+	}
+
 	_exportNotifications(format, filter) {
 		try {
 			const notifications = this._getFilteredNotifications(filter);
@@ -638,18 +818,24 @@ class ModularQuiz {
 	_getFilteredNotifications(filter) {
 		const allNotifications = document.querySelectorAll(".quiz-notification");
 		const filtered = [];
+		let visibleIndex = 1;
 
 		allNotifications.forEach((notification, index) => {
 			const type = notification.classList.contains("quiz-notification-success") ? "success" : notification.classList.contains("quiz-notification-error") ? "error" : "info";
 
-			if (filter === "all" || filter === type) {
+			// Only include notifications that match the filter and are currently visible
+			const matchesFilter = filter === "all" || filter === type;
+			const isVisible = notification.style.display !== "none";
+
+			if (matchesFilter && isVisible) {
 				// Extract notification data
 				const title = notification.querySelector(".quiz-notification-title");
 				const simpleText = notification.querySelector(".quiz-notification-simple-text");
 				const details = notification.querySelector(".quiz-notification-details-content");
 
 				const notificationData = {
-					index: index + 1,
+					index: visibleIndex,
+					originalIndex: index + 1,
 					title: title ? title.textContent.trim() : simpleText ? simpleText.textContent.trim() : "",
 					details: details ? details.textContent.trim() : "",
 					type: type.toUpperCase(),
@@ -657,6 +843,7 @@ class ModularQuiz {
 				};
 
 				filtered.push(notificationData);
+				visibleIndex++;
 			}
 		});
 
