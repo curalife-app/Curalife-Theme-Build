@@ -156,23 +156,12 @@ export class NotificationManager {
 			detailsText = details.join("\n").trim();
 		}
 
-		// Clean title for test mode (remove emojis and TEST MODE text like the original)
-		if (title.includes("TEST MODE")) {
-			title = title
-				.replace(/🧪/g, "")
-				.replace(/✓/g, "")
-				.replace(/❌/g, "")
-				.replace(/⚠️/g, "")
-				.replace(/ℹ️/g, "")
-				.replace(/📡/g, "")
-				.replace(/🔄/g, "")
-				.replace(/TEST MODE\s*[-:]?\s*/gi, "")
-				.trim();
-		}
+		// Clean title consistently (remove emojis and TEST MODE text)
+		title = this.cleanNotificationTitle(title);
 
-		// Escape HTML to prevent XSS
-		const safeTitle = this.escapeHtml(title);
-		const safeDetailsText = this.escapeHtml(detailsText);
+		// Sanitize HTML but preserve <br> tags for legitimate formatting
+		const safeTitle = this.sanitizeHtml(title);
+		const safeDetailsText = this.sanitizeHtml(detailsText);
 
 		notification.innerHTML = `
 			<div class="${this.cssClasses.header}">
@@ -197,8 +186,8 @@ export class NotificationManager {
 	}
 
 	createSimpleNotification(notification, text, type) {
-		// Escape HTML to prevent XSS
-		const safeText = this.escapeHtml(text);
+		// Sanitize HTML but preserve <br> tags for legitimate formatting
+		const safeText = this.sanitizeHtml(text);
 
 		notification.innerHTML = `
 			<div class="${this.cssClasses.simple}">
@@ -212,10 +201,46 @@ export class NotificationManager {
 		this.attachSimpleListeners(notification);
 	}
 
-	escapeHtml(text) {
+	cleanNotificationTitle(title) {
+		// Clean title consistently - remove common emojis and TEST MODE text
+		return title
+			.replace(/🧪/g, "")
+			.replace(/✓/g, "")
+			.replace(/❌/g, "")
+			.replace(/⚠️/g, "")
+			.replace(/ℹ️/g, "")
+			.replace(/📡/g, "")
+			.replace(/🔄/g, "")
+			.replace(/🔍/g, "") // Add search emoji
+			.replace(/💊/g, "") // Add pill emoji
+			.replace(/🏥/g, "") // Add hospital emoji
+			.replace(/📋/g, "") // Add clipboard emoji
+			.replace(/TEST MODE\s*[-:]?\s*/gi, "")
+			.trim();
+	}
+
+	sanitizeHtml(text) {
+		if (!text || typeof text !== "string") return "";
+
+		// Create a temporary div to escape HTML
 		const div = document.createElement("div");
 		div.textContent = text;
-		return div.innerHTML;
+		let escaped = div.innerHTML;
+
+		// Allow specific safe HTML tags for formatting
+		escaped = escaped
+			.replace(/&lt;br&gt;/gi, "<br>")
+			.replace(/&lt;br\/&gt;/gi, "<br>")
+			.replace(/&lt;br \/&gt;/gi, "<br>")
+			.replace(/&lt;strong&gt;(.*?)&lt;\/strong&gt;/gi, "<strong>$1</strong>")
+			.replace(/&lt;em&gt;(.*?)&lt;\/em&gt;/gi, "<em>$1</em>");
+
+		return escaped;
+	}
+
+	escapeHtml(text) {
+		// Legacy method - keeping for backward compatibility but redirecting to sanitizeHtml
+		return this.sanitizeHtml(text);
 	}
 
 	attachExpandableListeners(notification) {
