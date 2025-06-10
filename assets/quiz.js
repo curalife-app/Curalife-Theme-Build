@@ -2,7 +2,8 @@
  * Modular Quiz System for Shopify
  */
 
-import { NotificationManager } from "../utils/notifications.js";
+// Remove static import and use dynamic import instead
+// import { NotificationManager } from '../utils/notifications.js';
 
 const ELEMENT_SELECTORS = {
 	MAIN_CONTAINER: "#quiz-container",
@@ -39,18 +40,39 @@ class ModularQuiz {
 		this.eligibilityWorkflowError = null;
 		this.userCreationWorkflowPromise = null;
 
-		// Initialize the modular notification system
-		this.notificationManager = new NotificationManager({
-			containerSelector: ".quiz-background-notifications",
-			position: "top-right",
-			autoCollapse: true,
-			maxNotifications: 50,
-			defaultDuration: 5000,
-			enableFiltering: true,
-			enableCopy: true
+		// Initialize the modular notification system asynchronously
+		this._initializeNotificationManager().then(() => {
+			this.init();
 		});
+	}
 
-		this.init();
+	async _initializeNotificationManager() {
+		try {
+			// Dynamic import of the NotificationManager
+			const { NotificationManager } = await import("../utils/notifications.js");
+
+			this.notificationManager = new NotificationManager({
+				containerSelector: ".quiz-background-notifications",
+				position: "top-right",
+				autoCollapse: true,
+				maxNotifications: 50,
+				defaultDuration: 5000,
+				enableFiltering: true,
+				enableCopy: true
+			});
+
+			console.log("✅ Modular notification system initialized successfully");
+		} catch (error) {
+			console.error("❌ Failed to load notification system:", error);
+			// Fallback: create a simple notification manager that just logs
+			this.notificationManager = {
+				show: (text, type, priority) => {
+					console.log(`[${type.toUpperCase()}] ${text}`);
+				},
+				clear: () => console.log("Clear notifications"),
+				exportNotifications: () => console.log("Export notifications")
+			};
+		}
 	}
 
 	_initializeDOMElements() {
