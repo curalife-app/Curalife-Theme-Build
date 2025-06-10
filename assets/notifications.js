@@ -51,6 +51,7 @@ export class NotificationManager {
 		this.notificationQueue = [];
 		this.isProcessingQueue = false;
 		this.staggerDelay = 300; // milliseconds between notifications
+		this.batchingDelay = 50; // milliseconds to wait for batching notifications
 
 		this.init();
 	}
@@ -326,30 +327,77 @@ export class NotificationManager {
 
 		console.log(`📥 Adding notification to queue. Queue was: ${this.notificationQueue.length}, now: ${this.notificationQueue.length + 1}`);
 		this.notificationQueue.push(notification);
-		this.processNotificationQueue();
+
+		// Use a small delay to batch notifications that arrive in quick succession
+		if (!this.isProcessingQueue) {
+			console.log(`⏱️ Starting batching delay (${this.batchingDelay}ms) to collect rapid notifications...`);
+			const timeoutId = setTimeout(() => {
+				this.processNotificationQueue();
+				this.timeouts.delete(timeoutId);
+			}, this.batchingDelay);
+			this.timeouts.add(timeoutId);
+		}
 	}
 
 	processNotificationQueue() {
-		if (this.isDestroyed || this.isProcessingQueue || this.notificationQueue.length === 0) return;
+		if (this.isDestroyed) return;
 
-		console.log(`⏳ Processing notification queue. Queue length: ${this.notificationQueue.length}`);
+		// If already processing, just return - the current processing will handle the queue
+		if (this.isProcessingQueue) {
+			console.log(`⏸️ Already processing queue. Current queue length: ${this.notificationQueue.length}`);
+			return;
+		}
+
+		// If queue is empty, nothing to process
+		if (this.notificationQueue.length === 0) {
+			console.log("📭 Queue is empty, nothing to process");
+			return;
+		}
+
+		console.log(`⏳ Starting queue processing. Queue length: ${this.notificationQueue.length}`);
 		this.isProcessingQueue = true;
+		this.processNextInQueue();
+	}
+
+	processNextInQueue() {
+		if (this.isDestroyed) {
+			this.isProcessingQueue = false;
+			return;
+		}
+
+		// If no more notifications, end processing
+		if (this.notificationQueue.length === 0) {
+			console.log("✅ Queue processing complete - no more notifications");
+			this.isProcessingQueue = false;
+			return;
+		}
+
 		const notification = this.notificationQueue.shift();
+		console.log(`🎬 Processing notification. Remaining in queue: ${this.notificationQueue.length}`);
 
 		this.addNotificationImmediate(notification);
 
-		// Process next notification after delay
+		// Schedule next notification processing
 		if (this.notificationQueue.length > 0) {
 			console.log(`⏰ Next notification in ${this.staggerDelay}ms. Remaining: ${this.notificationQueue.length}`);
 			const timeoutId = setTimeout(() => {
-				this.isProcessingQueue = false;
-				this.processNotificationQueue();
+				this.processNextInQueue();
 				this.timeouts.delete(timeoutId);
 			}, this.staggerDelay);
 			this.timeouts.add(timeoutId);
 		} else {
-			console.log("✅ Queue processing complete");
-			this.isProcessingQueue = false;
+			// Keep processing state active for a short period to catch rapid additions
+			const timeoutId = setTimeout(() => {
+				if (this.notificationQueue.length === 0) {
+					console.log("✅ Queue processing complete - timeout reached");
+					this.isProcessingQueue = false;
+				} else {
+					console.log(`🔄 New notifications added during timeout. Continuing processing...`);
+					this.processNextInQueue();
+				}
+				this.timeouts.delete(timeoutId);
+			}, this.staggerDelay);
+			this.timeouts.add(timeoutId);
 		}
 	}
 
@@ -1067,6 +1115,13 @@ export const NotificationUtils = {
 			manager.show(notif.text, notif.type);
 		});
 
+		// Add a few more notifications after a short delay to test mid-processing additions
+		setTimeout(() => {
+			console.log("🎬 Adding additional notifications during processing...");
+			manager.show("Additional notification 1\nTesting mid-processing addition", "info");
+			manager.show("Additional notification 2\nAnother mid-processing test", "warning");
+		}, 100);
+
 		// Test removal after some time
 		setTimeout(() => {
 			console.log("🗑️ Testing removal animations...");
@@ -1086,7 +1141,25 @@ export const NotificationUtils = {
 
 		// Make manager globally accessible for testing
 		window.testNotificationManager = manager;
+		// Add helper functions to the global manager
+		window.testNotificationManager = manager;
+		window.testRemoval = () => {
+			console.log("🗑️ Testing removal animations manually...");
+			const notifications = manager.getNotifications();
+			if (notifications.length > 0) {
+				notifications.forEach((notif, index) => {
+					setTimeout(() => {
+						console.log(`Removing notification ${index + 1}...`);
+						manager.removeNotification(notif);
+					}, index * 500);
+				});
+			} else {
+				console.log("No notifications to remove");
+			}
+		};
+
 		console.log("✅ Test manager created. Access via window.testNotificationManager");
+		console.log("🗑️ Test removal with: window.testRemoval()");
 		console.log("🎯 Watch console for queue processing and animation debugging");
 
 		return manager;
