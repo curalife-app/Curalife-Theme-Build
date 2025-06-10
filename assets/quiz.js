@@ -459,6 +459,9 @@ class ModularQuiz {
 		notificationContainer.appendChild(notification);
 		console.log("✅ Notification added to DOM. Total notifications:", notificationContainer.children.length);
 
+		// Store creation timestamp
+		notification.setAttribute("data-created-at", new Date().toISOString());
+
 		// Apply priority-specific styling
 		this._applyPriorityStyles(notification, notificationPriority, priorityConfig);
 
@@ -848,19 +851,19 @@ class ModularQuiz {
 			return "CRITICAL";
 		}
 
-		// Error conditions
-		if (type === "error" || lowerText.includes("failed") || lowerText.includes("error")) {
+		// Success conditions (check before error to catch "eligible" correctly)
+		if (type === "success" || lowerText.includes("success") || lowerText.includes("complete") || lowerText.includes("eligible") || lowerText.includes("✅")) {
+			return "SUCCESS";
+		}
+
+		// Error conditions (actual failures)
+		if (type === "error" || lowerText.includes("failed") || lowerText.includes("error") || lowerText.includes("cannot") || lowerText.includes("invalid")) {
 			return "ERROR";
 		}
 
-		// Warning conditions
-		if (lowerText.includes("warning") || lowerText.includes("timeout") || lowerText.includes("retry")) {
+		// Warning conditions (missing data, timeouts, etc.)
+		if (lowerText.includes("warning") || lowerText.includes("timeout") || lowerText.includes("retry") || lowerText.includes("missing")) {
 			return "WARNING";
-		}
-
-		// Success conditions
-		if (type === "success" || lowerText.includes("success") || lowerText.includes("complete") || lowerText.includes("eligible")) {
-			return "SUCCESS";
 		}
 
 		// Default to info
@@ -877,12 +880,17 @@ class ModularQuiz {
 		const gradientColors = this._getPriorityGradient(priorityConfig.color);
 		notification.style.background = gradientColors;
 
-		// Add priority icon to title if there's a header
+		// Add priority icon to title if there's a header and no emoji already exists
 		const header = notification.querySelector(".quiz-notification-header");
 		if (header && priorityConfig.icon) {
 			const titleElement = header.querySelector(".quiz-notification-title");
-			if (titleElement && !titleElement.textContent.includes(priorityConfig.icon)) {
-				titleElement.textContent = `${priorityConfig.icon} ${titleElement.textContent}`;
+			if (titleElement) {
+				const currentText = titleElement.textContent.trim();
+				// Only add icon if no emoji exists at the start
+				const hasEmoji = /^[\u{1F300}-\u{1F9FF}]/.test(currentText);
+				if (!hasEmoji && !currentText.includes(priorityConfig.icon)) {
+					titleElement.textContent = `${priorityConfig.icon} ${currentText}`;
+				}
 			}
 		}
 
@@ -1051,7 +1059,8 @@ class ModularQuiz {
 					title: title ? title.textContent.trim() : simpleText ? simpleText.textContent.trim() : "",
 					details: details ? details.textContent.trim() : "",
 					type: type.toUpperCase(),
-					timestamp: new Date().toISOString() // Current time as we don't store original timestamps
+					priority: notification.getAttribute("data-priority") || "INFO",
+					timestamp: notification.getAttribute("data-created-at") || new Date().toISOString()
 				};
 
 				filtered.push(notificationData);
@@ -1074,6 +1083,7 @@ class ModularQuiz {
 			}
 
 			text += `Type: ${notification.type}\n`;
+			text += `Priority: ${notification.priority}\n`;
 			text += `Timestamp: ${notification.timestamp}\n`;
 
 			return text;
@@ -4483,36 +4493,27 @@ class ModularQuiz {
 			document.body.appendChild(this.questionContainer);
 		}
 
-		// Test different priority levels
-		this._showBackgroundProcessNotification("🚨 Critical system failure detected!", "error", "CRITICAL");
+		// Test realistic notifications similar to your export
+		this._showBackgroundProcessNotification("Extraction Result<br>• Email: jane.humana@example.com<br>• Name: Jane Doe<br>• Missing fields: groupNumber", "info", "WARNING");
 
 		setTimeout(() => {
-			this._showBackgroundProcessNotification("Database connection failed", "error");
+			this._showBackgroundProcessNotification("Processing Result<br>• Final status: ELIGIBLE<br>• Is eligible: true<br>• Has error: false", "info");
 		}, 500);
 
 		setTimeout(() => {
-			this._showBackgroundProcessNotification("Request timeout after 30 seconds", "info", "WARNING");
+			this._showBackgroundProcessNotification(
+				"Eligibility Result<br>✅ Status: ELIGIBLE<br>• Eligible: true<br>• Sessions: 10<br>• Message: Good news! Based on your insurance information, you are eligible for dietitian sessions.",
+				"success"
+			);
 		}, 1000);
 
 		setTimeout(() => {
-			this._showBackgroundProcessNotification("Data processing info", "info");
+			this._showBackgroundProcessNotification("Database connection failed completely", "error");
 		}, 1500);
 
 		setTimeout(() => {
-			this._showBackgroundProcessNotification("Workflow completed successfully", "success");
+			this._showBackgroundProcessNotification("Critical system failure detected!", "error", "CRITICAL");
 		}, 2000);
-
-		setTimeout(() => {
-			this._showBackgroundProcessNotification("Another info notification", "info");
-		}, 2500);
-
-		setTimeout(() => {
-			this._showBackgroundProcessNotification("More processing info", "info");
-		}, 3000);
-
-		setTimeout(() => {
-			this._showBackgroundProcessNotification("Final test notification", "info");
-		}, 3500);
 
 		// Check if copy button exists after creation
 		setTimeout(() => {
