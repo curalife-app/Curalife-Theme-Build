@@ -3409,16 +3409,21 @@ class ModularQuiz {
 			// Test mode response notification
 			if (this.isTestMode) {
 				const schedulingData = result?.schedulingData;
+				const workflowSuccess = result?.success;
+				const schedulingSuccess = schedulingData?.success;
+
 				this._showBackgroundProcessNotification(
 					`
 					🧪 TEST MODE - Scheduling Response<br>
-					• Status: ${response.status} ${response.statusText}<br>
-					• Success: ${result?.success}<br>
+					• HTTP Status: ${response.status} ${response.statusText}<br>
+					• Workflow Success: ${workflowSuccess}<br>
+					• Scheduling Success: ${schedulingSuccess}<br>
 					• Scheduling Status: ${schedulingData?.status || "Unknown"}<br>
 					• Has Schedule Link: ${!!schedulingData?.scheduleLink}<br>
-					• Message: ${schedulingData?.message || "No message"}
+					• Message: ${schedulingData?.message || "No message"}<br>
+					• Error: ${schedulingData?.error || "None"}
 				`,
-					result?.success ? "success" : "error"
+					schedulingSuccess ? "success" : "error"
 				);
 			}
 
