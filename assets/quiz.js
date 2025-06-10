@@ -48,8 +48,17 @@ class ModularQuiz {
 
 	async _initializeNotificationManager() {
 		try {
-			// Dynamic import of the NotificationManager
-			const { NotificationManager } = await import("../utils/notifications.js");
+			// Get the notifications.js URL from the data attribute set by Liquid
+			const notificationsUrl = this.container.getAttribute("data-notifications-url");
+
+			if (!notificationsUrl) {
+				throw new Error("Notifications asset URL not found");
+			}
+
+			console.log("🔗 Loading notification system from:", notificationsUrl);
+
+			// Dynamic import of the NotificationManager using the asset URL
+			const { NotificationManager } = await import(notificationsUrl);
 
 			this.notificationManager = new NotificationManager({
 				containerSelector: ".quiz-background-notifications",
