@@ -262,13 +262,25 @@ class ModularQuiz {
 			notificationTitle = parts[0]
 				.trim()
 				.replace(/🧪/g, "")
+				.replace(/✓/g, "")
+				.replace(/❌/g, "")
+				.replace(/⚠️/g, "")
+				.replace(/ℹ️/g, "")
+				.replace(/📡/g, "")
+				.replace(/🔄/g, "")
 				.replace(/TEST MODE\s*[-:]\s*/gi, "")
 				.trim();
 			notificationDetails = parts.slice(1).join("<br>").trim();
 		} else {
-			// Clean simple notifications too
+			// Clean simple notifications too - remove all icons and test mode text
 			notificationTitle = text
 				.replace(/🧪/g, "")
+				.replace(/✓/g, "")
+				.replace(/❌/g, "")
+				.replace(/⚠️/g, "")
+				.replace(/ℹ️/g, "")
+				.replace(/📡/g, "")
+				.replace(/🔄/g, "")
 				.replace(/TEST MODE\s*[-:]\s*/gi, "")
 				.trim();
 		}
