@@ -185,29 +185,29 @@ class ModularQuiz {
 			// Support different test scenarios
 			if (testMode === "true") {
 				testDataKey = "default";
-				displayName = "REAL API - UHC Test Data";
+				displayName = "TEST API - UHC Test Data";
 			} else if (testMode === "not-covered") {
 				testDataKey = "notCovered";
-				displayName = "REAL API - Not Covered Test";
+				displayName = "TEST API - Not Covered Test";
 			} else if (this.quizData.testData[testMode]) {
 				testDataKey = testMode;
 				// Create display names for better UX
 				const displayNames = {
-					default: "REAL API - UHC Test Data",
-					notCovered: "REAL API - Not Covered Test",
-					aetna_dependent: "REAL API - Aetna Test Data",
-					anthem_dependent: "REAL API - Anthem Test Data",
-					bcbstx_dependent: "REAL API - BCBS TX Test Data",
-					cigna_dependent: "REAL API - Cigna Test Data",
-					oscar_dependent: "REAL API - Oscar Test Data",
-					error_42: "REAL API - Error 42 Test Data",
-					error_43: "REAL API - Error 43 Test Data",
-					error_72: "REAL API - Error 72 Test Data",
-					error_73: "REAL API - Error 73 Test Data",
-					error_75: "REAL API - Error 75 Test Data",
-					error_79: "REAL API - Error 79 Test Data"
+					default: "TEST API - UHC Test Data",
+					notCovered: "TEST API - Not Covered Test",
+					aetna_dependent: "TEST API - Aetna Test Data",
+					anthem_dependent: "TEST API - Anthem Test Data",
+					bcbstx_dependent: "TEST API - BCBS TX Test Data",
+					cigna_dependent: "TEST API - Cigna Test Data",
+					oscar_dependent: "TEST API - Oscar Test Data",
+					error_42: "TEST API - Error 42 Test Data",
+					error_43: "TEST API - Error 43 Test Data",
+					error_72: "TEST API - Error 72 Test Data",
+					error_73: "TEST API - Error 73 Test Data",
+					error_75: "TEST API - Error 75 Test Data",
+					error_79: "TEST API - Error 79 Test Data"
 				};
-				displayName = displayNames[testMode] || `REAL API - ${testMode.toUpperCase()}`;
+				displayName = displayNames[testMode] || `TEST API - ${testMode.toUpperCase()}`;
 			}
 
 			const testData = this.quizData.testData[testDataKey] || this.quizData.testData.default || this.quizData.testData;
