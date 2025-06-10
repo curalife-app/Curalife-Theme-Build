@@ -487,9 +487,10 @@ class ModularQuiz {
 			copyButton.style.opacity = "0.9";
 		});
 
-		// Add click handler for copying
-		copyButton.addEventListener("click", () => {
-			this._copyAllNotificationsToClipboard(copyButton);
+		// Add click handler for dropdown menu
+		copyButton.addEventListener("click", e => {
+			e.stopPropagation();
+			this._showCopyOptionsMenu(copyButton);
 		});
 
 		// Add the button directly to the body for fixed positioning
@@ -498,68 +499,236 @@ class ModularQuiz {
 		console.log("🔧 Copy button added to page");
 	}
 
-	_copyAllNotificationsToClipboard(copyButton) {
+	_showCopyOptionsMenu(copyButton) {
+		// Remove existing menu if any
+		const existingMenu = document.querySelector(".quiz-copy-options-menu");
+		if (existingMenu) {
+			existingMenu.remove();
+			return;
+		}
+
+		// Create dropdown menu
+		const menu = document.createElement("div");
+		menu.className = "quiz-copy-options-menu";
+		menu.style.cssText = `
+			position: fixed !important;
+			bottom: 80px !important;
+			right: 16px !important;
+			background: white !important;
+			border-radius: 12px !important;
+			box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+			border: 1px solid rgba(0, 0, 0, 0.1) !important;
+			z-index: 10001 !important;
+			min-width: 220px !important;
+			overflow: hidden !important;
+			animation: slideUp 0.2s ease-out !important;
+		`;
+
+		const menuOptions = [
+			{ label: "📋 All Notifications (Text)", action: () => this._exportNotifications("text", "all") },
+			{ label: "✅ Success Only (Text)", action: () => this._exportNotifications("text", "success") },
+			{ label: "❌ Errors Only (Text)", action: () => this._exportNotifications("text", "error") },
+			{ label: "ℹ️ Info Only (Text)", action: () => this._exportNotifications("text", "info") },
+			{ label: "━━━━━━━━━━━━", action: null }, // Divider
+			{ label: "📄 All Notifications (JSON)", action: () => this._exportNotifications("json", "all") },
+			{ label: "✅ Success Only (JSON)", action: () => this._exportNotifications("json", "success") },
+			{ label: "❌ Errors Only (JSON)", action: () => this._exportNotifications("json", "error") },
+			{ label: "ℹ️ Info Only (JSON)", action: () => this._exportNotifications("json", "info") },
+			{ label: "━━━━━━━━━━━━", action: null }, // Divider
+			{ label: "📊 All Notifications (CSV)", action: () => this._exportNotifications("csv", "all") },
+			{ label: "✅ Success Only (CSV)", action: () => this._exportNotifications("csv", "success") },
+			{ label: "❌ Errors Only (CSV)", action: () => this._exportNotifications("csv", "error") },
+			{ label: "ℹ️ Info Only (CSV)", action: () => this._exportNotifications("csv", "info") }
+		];
+
+		menuOptions.forEach(option => {
+			const menuItem = document.createElement("div");
+
+			if (option.action === null) {
+				// Divider
+				menuItem.style.cssText = `
+					height: 1px !important;
+					background: rgba(0, 0, 0, 0.1) !important;
+					margin: 4px 0 !important;
+				`;
+			} else {
+				menuItem.textContent = option.label;
+				menuItem.style.cssText = `
+					padding: 12px 16px !important;
+					cursor: pointer !important;
+					font-size: 14px !important;
+					color: #333 !important;
+					border: none !important;
+					background: none !important;
+					text-align: left !important;
+					width: 100% !important;
+					box-sizing: border-box !important;
+					transition: background-color 0.2s ease !important;
+				`;
+
+				menuItem.addEventListener("mouseenter", () => {
+					menuItem.style.backgroundColor = "#f5f5f5";
+				});
+
+				menuItem.addEventListener("mouseleave", () => {
+					menuItem.style.backgroundColor = "transparent";
+				});
+
+				menuItem.addEventListener("click", () => {
+					option.action();
+					menu.remove();
+				});
+			}
+
+			menu.appendChild(menuItem);
+		});
+
+		// Add the menu to the body
+		document.body.appendChild(menu);
+
+		// Close menu when clicking outside
+		const closeMenu = e => {
+			if (!menu.contains(e.target) && !copyButton.contains(e.target)) {
+				menu.remove();
+				document.removeEventListener("click", closeMenu);
+			}
+		};
+
+		setTimeout(() => {
+			document.addEventListener("click", closeMenu);
+		}, 100);
+	}
+
+	_exportNotifications(format, filter) {
 		try {
-			// Gather all notification text
-			const notifications = document.querySelectorAll(".quiz-notification");
-			const notificationTexts = [];
+			const notifications = this._getFilteredNotifications(filter);
+			let content = "";
 
-			notifications.forEach((notification, index) => {
-				let notificationText = `--- Notification ${index + 1} ---\n`;
-
-				// Get title
-				const title = notification.querySelector(".quiz-notification-title");
-				const simpleText = notification.querySelector(".quiz-notification-simple-text");
-
-				if (title) {
-					notificationText += `Title: ${title.textContent.trim()}\n`;
-				} else if (simpleText) {
-					notificationText += `Text: ${simpleText.textContent.trim()}\n`;
-				}
-
-				// Get details if expanded or available
-				const details = notification.querySelector(".quiz-notification-details-content");
-				if (details) {
-					const detailsText = details.textContent.trim();
-					if (detailsText) {
-						notificationText += `Details:\n${detailsText}\n`;
-					}
-				}
-
-				// Get type
-				const type = notification.classList.contains("quiz-notification-success") ? "SUCCESS" : notification.classList.contains("quiz-notification-error") ? "ERROR" : "INFO";
-				notificationText += `Type: ${type}\n`;
-
-				notificationTexts.push(notificationText);
-			});
-
-			// Combine all notifications
-			const allText = [
-				"=== QUIZ NOTIFICATIONS EXPORT ===",
-				`Exported at: ${new Date().toISOString()}`,
-				`Total notifications: ${notifications.length}`,
-				"",
-				...notificationTexts,
-				"=== END OF EXPORT ==="
-			].join("\n");
+			switch (format) {
+				case "text":
+					content = this._formatAsText(notifications, filter);
+					break;
+				case "json":
+					content = this._formatAsJSON(notifications, filter);
+					break;
+				case "csv":
+					content = this._formatAsCSV(notifications, filter);
+					break;
+				default:
+					content = this._formatAsText(notifications, filter);
+			}
 
 			// Copy to clipboard
 			navigator.clipboard
-				.writeText(allText)
+				.writeText(content)
 				.then(() => {
-					// Show success feedback
-					this._showCopyFeedback(copyButton, true);
+					// Show success feedback with format info
+					this._showCopyFeedback(document.querySelector(".quiz-notification-copy-button"), true, `${format.toUpperCase()} (${filter})`);
 				})
 				.catch(err => {
 					console.error("Failed to copy to clipboard:", err);
-
-					// Fallback for older browsers
-					this._fallbackCopyToClipboard(allText, copyButton);
+					this._fallbackCopyToClipboard(content, document.querySelector(".quiz-notification-copy-button"));
 				});
 		} catch (error) {
-			console.error("Error copying notifications:", error);
-			this._showCopyFeedback(copyButton, false);
+			console.error("Error exporting notifications:", error);
+			this._showCopyFeedback(document.querySelector(".quiz-notification-copy-button"), false);
 		}
+	}
+
+	_getFilteredNotifications(filter) {
+		const allNotifications = document.querySelectorAll(".quiz-notification");
+		const filtered = [];
+
+		allNotifications.forEach((notification, index) => {
+			const type = notification.classList.contains("quiz-notification-success") ? "success" : notification.classList.contains("quiz-notification-error") ? "error" : "info";
+
+			if (filter === "all" || filter === type) {
+				// Extract notification data
+				const title = notification.querySelector(".quiz-notification-title");
+				const simpleText = notification.querySelector(".quiz-notification-simple-text");
+				const details = notification.querySelector(".quiz-notification-details-content");
+
+				const notificationData = {
+					index: index + 1,
+					title: title ? title.textContent.trim() : simpleText ? simpleText.textContent.trim() : "",
+					details: details ? details.textContent.trim() : "",
+					type: type.toUpperCase(),
+					timestamp: new Date().toISOString() // Current time as we don't store original timestamps
+				};
+
+				filtered.push(notificationData);
+			}
+		});
+
+		return filtered;
+	}
+
+	_formatAsText(notifications, filter) {
+		const filterLabel = filter === "all" ? "All Notifications" : filter === "success" ? "Success Notifications Only" : filter === "error" ? "Error Notifications Only" : "Info Notifications Only";
+
+		const notificationTexts = notifications.map(notification => {
+			let text = `--- Notification ${notification.index} ---\n`;
+			text += `Title: ${notification.title}\n`;
+
+			if (notification.details) {
+				text += `Details:\n${notification.details}\n`;
+			}
+
+			text += `Type: ${notification.type}\n`;
+			text += `Timestamp: ${notification.timestamp}\n`;
+
+			return text;
+		});
+
+		return [
+			"=== QUIZ NOTIFICATIONS EXPORT ===",
+			`Filter: ${filterLabel}`,
+			`Exported at: ${new Date().toISOString()}`,
+			`Total notifications: ${notifications.length}`,
+			"",
+			...notificationTexts,
+			"=== END OF EXPORT ==="
+		].join("\n");
+	}
+
+	_formatAsJSON(notifications, filter) {
+		const exportData = {
+			exportInfo: {
+				filter: filter,
+				exportedAt: new Date().toISOString(),
+				totalNotifications: notifications.length,
+				format: "JSON"
+			},
+			notifications: notifications
+		};
+
+		return JSON.stringify(exportData, null, 2);
+	}
+
+	_formatAsCSV(notifications, filter) {
+		const headers = ["Index", "Title", "Details", "Type", "Timestamp"];
+		const csvRows = [headers.join(",")];
+
+		notifications.forEach(notification => {
+			const row = [
+				notification.index,
+				`"${notification.title.replace(/"/g, '""')}"`, // Escape quotes
+				`"${notification.details.replace(/"/g, '""')}"`, // Escape quotes
+				notification.type,
+				notification.timestamp
+			];
+			csvRows.push(row.join(","));
+		});
+
+		// Add metadata header
+		const metadata = [`# Quiz Notifications Export - ${filter} filter`, `# Exported at: ${new Date().toISOString()}`, `# Total notifications: ${notifications.length}`, ""];
+
+		return metadata.join("\n") + csvRows.join("\n");
+	}
+
+	// Legacy method for backward compatibility
+	_copyAllNotificationsToClipboard(copyButton) {
+		this._exportNotifications("text", "all");
 	}
 
 	_fallbackCopyToClipboard(text, copyButton) {
@@ -586,7 +755,7 @@ class ModularQuiz {
 		}
 	}
 
-	_showCopyFeedback(copyButton, success) {
+	_showCopyFeedback(copyButton, success, formatInfo = "") {
 		// Update button appearance
 		const originalHTML = copyButton.innerHTML;
 		const originalTitle = copyButton.title;
@@ -597,7 +766,7 @@ class ModularQuiz {
 					<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
 				</svg>
 			`;
-			copyButton.title = "Copied to clipboard!";
+			copyButton.title = formatInfo ? `Copied ${formatInfo} to clipboard!` : "Copied to clipboard!";
 			copyButton.classList.add("success");
 		} else {
 			copyButton.innerHTML = `
