@@ -363,7 +363,6 @@ class ModularQuiz {
 				<div class="quiz-notification-shimmer"></div>
 				<div class="quiz-notification-header">
 					<div class="quiz-notification-content">
-						<div class="quiz-notification-icon">🧪</div>
 						<span class="quiz-notification-title">${notificationTitle}</span>
 					</div>
 					<div class="quiz-notification-toggle">
@@ -446,7 +445,6 @@ class ModularQuiz {
 			notification.innerHTML = `
 				<div class="quiz-notification-shimmer"></div>
 				<div class="quiz-notification-simple">
-					<div class="quiz-notification-simple-icon">${type === "success" ? "✓" : type === "error" ? "!" : "ℹ"}</div>
 					<span class="quiz-notification-simple-text">${notificationTitle}</span>
 				</div>
 			`;
@@ -870,17 +868,14 @@ class ModularQuiz {
 		const gradientColors = this._getPriorityGradient(priorityConfig.color);
 		notification.style.background = gradientColors;
 
-		// Add priority icon to title if there's a header and no emoji already exists
-		const header = notification.querySelector(".quiz-notification-header");
-		if (header && priorityConfig.icon) {
-			const titleElement = header.querySelector(".quiz-notification-title");
-			if (titleElement) {
-				const currentText = titleElement.textContent.trim();
-				// Only add icon if no emoji exists at the start
-				const hasEmoji = /^[\u{1F300}-\u{1F9FF}]/u.test(currentText);
-				if (!hasEmoji && !currentText.includes(priorityConfig.icon)) {
-					titleElement.textContent = `${priorityConfig.icon} ${currentText}`;
-				}
+		// Add priority icon to title (works for both detailed and simple notifications)
+		const titleElement = notification.querySelector(".quiz-notification-title") || notification.querySelector(".quiz-notification-simple-text");
+		if (titleElement && priorityConfig.icon) {
+			const currentText = titleElement.textContent.trim();
+			// Only add icon if no emoji exists at the start
+			const hasEmoji = /^[\u{1F300}-\u{1F9FF}]/u.test(currentText);
+			if (!hasEmoji && !currentText.includes(priorityConfig.icon)) {
+				titleElement.textContent = `${priorityConfig.icon} ${currentText}`;
 			}
 		}
 
