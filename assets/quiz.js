@@ -240,18 +240,26 @@ class ModularQuiz {
 	}
 
 	_showBackgroundProcessNotification(text, type = "info") {
+		console.log("📢 Creating notification:", { text: text.substring(0, 50) + "...", type });
+
 		// Only show notifications if we have a container
-		if (!this.questionContainer) return;
+		if (!this.questionContainer) {
+			console.log("❌ No questionContainer found, skipping notification");
+			return;
+		}
 
 		// Create or get notification container
 		let notificationContainer = document.querySelector(".quiz-background-notifications");
 		if (!notificationContainer) {
+			console.log("🆕 Creating new notification container");
 			notificationContainer = document.createElement("div");
 			notificationContainer.className = "quiz-background-notifications";
 			document.body.appendChild(notificationContainer);
 
 			// Add floating copy button (only once)
 			this._addNotificationCopyButton();
+		} else {
+			console.log("📦 Using existing notification container");
 		}
 
 		// Parse text to extract title and details for test mode notifications
@@ -399,6 +407,7 @@ class ModularQuiz {
 		}
 
 		notificationContainer.appendChild(notification);
+		console.log("✅ Notification added to DOM. Total notifications:", notificationContainer.children.length);
 
 		// Animate in with enhanced effects
 		setTimeout(() => {
@@ -3862,6 +3871,13 @@ class ModularQuiz {
 	// Debug method to manually test notifications and copy button
 	_testNotificationSystem() {
 		console.log("🧪 Testing notification system...");
+
+		// Force create a questionContainer if it doesn't exist (for testing)
+		if (!this.questionContainer) {
+			console.log("🔧 Creating temporary questionContainer for testing");
+			this.questionContainer = document.createElement("div");
+		}
+
 		this._showBackgroundProcessNotification("Test notification to verify copy button appears", "info");
 
 		setTimeout(() => {
@@ -3876,6 +3892,15 @@ class ModularQuiz {
 				"success"
 			);
 		}, 1000);
+
+		// Check if copy button exists after creation
+		setTimeout(() => {
+			const copyButton = document.querySelector(".quiz-notification-copy-button");
+			console.log("🔍 Copy button check:", copyButton ? "✅ Found" : "❌ Not found");
+			if (copyButton) {
+				console.log("📍 Copy button position:", copyButton.getBoundingClientRect());
+			}
+		}, 2000);
 	}
 }
 
