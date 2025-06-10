@@ -1073,13 +1073,15 @@
     pointer-events: none;
     border-radius: inherit;
     z-index: 1;
-    background: linear-gradient(90deg, #0000 0%, #ffffff0d 25%, #fff3 50%, #ffffff0d 75%, #0000 100%);
-    width: 100%;
+    filter: blur(.5px);
+    background: linear-gradient(90deg, #0000 0%, #ffffff14 20%, #ffffff40 40%, #ffffff59 50%, #ffffff40 60%, #ffffff14 80%, #0000 100%);
+    width: 120%;
     height: 100%;
-    transition: left .8s cubic-bezier(.23, 1, .32, 1);
+    transition: left 1s cubic-bezier(.23, 1, .32, 1);
     position: absolute;
     top: 0;
-    left: -100%;
+    left: -120%;
+    transform: skewX(-20deg);
   }
 
   .notification-filter-button, .notification-copy-button {
@@ -1422,6 +1424,84 @@
     50% {
       filter: brightness(1.1);
       transform: scale(1.02);
+    }
+  }
+
+  .notification.stagger-effect {
+    animation: .4s cubic-bezier(.23, 1, .32, 1) staggerBounce;
+  }
+
+  @keyframes staggerBounce {
+    0% {
+      transform: translateX(0)scale(1);
+    }
+
+    25% {
+      transform: translateX(-3px)scale(1.008);
+    }
+
+    50% {
+      transform: translateX(-2px)scale(1.005);
+    }
+
+    75% {
+      transform: translateX(-1px)scale(1.002);
+    }
+
+    100% {
+      transform: translateX(0)scale(1);
+    }
+  }
+
+  .notification.removal-effect {
+    animation: .5s cubic-bezier(.23, 1, .32, 1) removalShift;
+  }
+
+  @keyframes removalShift {
+    0% {
+      transform: translateY(0)scale(1);
+    }
+
+    30% {
+      transform: translateY(-8px)scale(.995);
+    }
+
+    60% {
+      transform: translateY(-3px)scale(.998);
+    }
+
+    100% {
+      transform: translateY(0)scale(1);
+    }
+  }
+
+  .notification.reveal-sequence {
+    animation: .6s cubic-bezier(.23, 1, .32, 1) revealSequence;
+  }
+
+  @keyframes revealSequence {
+    0% {
+      opacity: 0;
+      filter: blur(4px);
+      transform: translateX(100%)scale(.9)rotateY(10deg);
+    }
+
+    40% {
+      opacity: .6;
+      filter: blur(2px);
+      transform: translateX(30%)scale(.96)rotateY(4deg);
+    }
+
+    70% {
+      opacity: .9;
+      filter: blur();
+      transform: translateX(-5px)scale(1.01)rotateY(-1deg);
+    }
+
+    100% {
+      opacity: 1;
+      filter: blur();
+      transform: translateX(0)scale(1)rotateY(0);
     }
   }
 
