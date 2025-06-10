@@ -239,14 +239,20 @@ class ModularQuiz {
 		setTimeout(() => indicator.remove(), 5000);
 	}
 
-	_showBackgroundProcessNotification(text, type = "info") {
-		console.log("📢 Creating notification:", { text: text.substring(0, 50) + "...", type });
+	_showBackgroundProcessNotification(text, type = "info", priority = null) {
+		console.log("📢 Creating notification:", { text: text.substring(0, 50) + "...", type, priority });
 
 		// Only show notifications if we have a container
 		if (!this.questionContainer) {
 			console.log("❌ No questionContainer found, skipping notification");
 			return;
 		}
+
+		// Determine priority level
+		const notificationPriority = priority || this._determinePriority(type, text);
+		const priorityConfig = this.PRIORITY_LEVELS[notificationPriority];
+
+		this.notificationCount++;
 
 		// Create or get notification container
 		let notificationContainer = document.querySelector(".quiz-background-notifications");
@@ -409,6 +415,19 @@ class ModularQuiz {
 		notificationContainer.appendChild(notification);
 		console.log("✅ Notification added to DOM. Total notifications:", notificationContainer.children.length);
 
+		// Apply priority-specific styling
+		this._applyPriorityStyles(notification, notificationPriority, priorityConfig);
+
+		// Auto-collapse older notifications
+		this._manageNotificationStates();
+
+		// Set auto-hide timeout if configured
+		if (priorityConfig.timeout) {
+			setTimeout(() => {
+				this._removeNotification(notification);
+			}, priorityConfig.timeout);
+		}
+
 		// Animate in with enhanced effects
 		setTimeout(() => {
 			notification.classList.add("animate-in");
@@ -445,6 +464,49 @@ class ModularQuiz {
 
 		// Initialize filter state
 		this.currentNotificationFilter = "all";
+
+		// Initialize notification system state
+		this.notificationCount = 0;
+		this.maxExpandedNotifications = 3;
+
+		// Define notification priority levels
+		this.PRIORITY_LEVELS = {
+			CRITICAL: {
+				color: "#dc2626",
+				persist: true,
+				autoCollapse: false,
+				icon: "🚨",
+				timeout: null // Never auto-hide
+			},
+			ERROR: {
+				color: "#dc2626",
+				persist: true,
+				autoCollapse: false,
+				icon: "❌",
+				timeout: null
+			},
+			WARNING: {
+				color: "#f59e0b",
+				persist: true,
+				autoCollapse: true,
+				icon: "⚠️",
+				timeout: 15000 // 15 seconds
+			},
+			SUCCESS: {
+				color: "#059669",
+				persist: false,
+				autoCollapse: true,
+				icon: "✅",
+				timeout: 8000 // 8 seconds
+			},
+			INFO: {
+				color: "#2563eb",
+				persist: false,
+				autoCollapse: true,
+				icon: "ℹ️",
+				timeout: 12000 // 12 seconds
+			}
+		};
 
 		// Create filter button
 		const filterButton = document.createElement("div");
@@ -777,6 +839,158 @@ class ModularQuiz {
 		} else {
 			filterButton.innerHTML = filterIcon;
 		}
+	}
+
+	_determinePriority(type, text) {
+		// Smart priority determination based on type and content
+		const lowerText = text.toLowerCase();
+
+		// Critical conditions
+		if (lowerText.includes("critical") || lowerText.includes("fatal") || lowerText.includes("crashed")) {
+			return "CRITICAL";
+		}
+
+		// Error conditions
+		if (type === "error" || lowerText.includes("failed") || lowerText.includes("error")) {
+			return "ERROR";
+		}
+
+		// Warning conditions
+		if (lowerText.includes("warning") || lowerText.includes("timeout") || lowerText.includes("retry")) {
+			return "WARNING";
+		}
+
+		// Success conditions
+		if (type === "success" || lowerText.includes("success") || lowerText.includes("complete") || lowerText.includes("eligible")) {
+			return "SUCCESS";
+		}
+
+		// Default to info
+		return "INFO";
+	}
+
+	_applyPriorityStyles(notification, priority, priorityConfig) {
+		// Add priority class
+		notification.classList.add(`quiz-notification-priority-${priority.toLowerCase()}`);
+		notification.setAttribute("data-priority", priority);
+		notification.setAttribute("data-notification-id", this.notificationCount);
+
+		// Update the gradient based on priority
+		const gradientColors = this._getPriorityGradient(priorityConfig.color);
+		notification.style.background = gradientColors;
+
+		// Add priority icon to title if there's a header
+		const header = notification.querySelector(".quiz-notification-header");
+		if (header && priorityConfig.icon) {
+			const titleElement = header.querySelector(".quiz-notification-title");
+			if (titleElement && !titleElement.textContent.includes(priorityConfig.icon)) {
+				titleElement.textContent = `${priorityConfig.icon} ${titleElement.textContent}`;
+			}
+		}
+
+		// Add border for critical/error notifications
+		if (priority === "CRITICAL" || priority === "ERROR") {
+			notification.style.border = `2px solid ${priorityConfig.color}`;
+			notification.style.boxShadow = `0 0 20px ${priorityConfig.color}30`;
+		}
+
+		console.log(`🎨 Applied ${priority} priority styling to notification ${this.notificationCount}`);
+	}
+
+	_getPriorityGradient(baseColor) {
+		// Generate a gradient based on the priority color
+		const gradients = {
+			"#dc2626": "linear-gradient(135deg, #dc2626 0%, #991b1b 100%)", // Red
+			"#f59e0b": "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)", // Orange
+			"#059669": "linear-gradient(135deg, #059669 0%, #047857 100%)", // Green
+			"#2563eb": "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)" // Blue
+		};
+
+		return gradients[baseColor] || gradients["#2563eb"];
+	}
+
+	_manageNotificationStates() {
+		const notifications = document.querySelectorAll(".quiz-notification");
+		let expandedCount = 0;
+
+		// Process notifications from newest to oldest
+		Array.from(notifications)
+			.reverse()
+			.forEach((notification, reverseIndex) => {
+				const priority = notification.getAttribute("data-priority");
+				const priorityConfig = this.PRIORITY_LEVELS[priority];
+				const actualIndex = notifications.length - 1 - reverseIndex;
+
+				// Keep critical/error notifications always expanded
+				if (priority === "CRITICAL" || priority === "ERROR") {
+					this._expandNotification(notification);
+					return;
+				}
+
+				// Auto-collapse based on position and priority
+				if (priorityConfig?.autoCollapse && expandedCount >= this.maxExpandedNotifications) {
+					this._collapseNotification(notification, true); // true = auto-collapsed
+				} else {
+					this._expandNotification(notification);
+					expandedCount++;
+				}
+			});
+
+		console.log(`📋 Managed notification states: ${expandedCount} expanded, ${notifications.length - expandedCount} collapsed`);
+	}
+
+	_expandNotification(notification) {
+		const details = notification.querySelector(".quiz-notification-details");
+		const toggleButton = notification.querySelector(".quiz-notification-toggle");
+
+		if (details && toggleButton) {
+			details.classList.add("expanded");
+			toggleButton.classList.add("expanded");
+			details.style.maxHeight = "auto";
+
+			// Measure height for smooth animation
+			const height = details.scrollHeight;
+			details.style.maxHeight = "0";
+			requestAnimationFrame(() => {
+				details.style.maxHeight = height + "px";
+			});
+		}
+
+		notification.classList.remove("auto-collapsed");
+	}
+
+	_collapseNotification(notification, isAutoCollapse = false) {
+		const details = notification.querySelector(".quiz-notification-details");
+		const toggleButton = notification.querySelector(".quiz-notification-toggle");
+
+		if (details && toggleButton) {
+			details.style.maxHeight = "0";
+			details.classList.remove("expanded");
+			toggleButton.classList.remove("expanded");
+		}
+
+		if (isAutoCollapse) {
+			notification.classList.add("auto-collapsed");
+		}
+	}
+
+	_removeNotification(notification) {
+		if (!notification || !notification.parentNode) return;
+
+		// Animate out
+		notification.style.opacity = "0";
+		notification.style.transform = "translateX(100%)";
+
+		setTimeout(() => {
+			if (notification.parentNode) {
+				notification.parentNode.removeChild(notification);
+
+				// Remanage states after removal
+				this._manageNotificationStates();
+
+				console.log("🗑️ Auto-removed notification");
+			}
+		}, 300);
 	}
 
 	_exportNotifications(format, filter) {
@@ -4261,28 +4475,46 @@ class ModularQuiz {
 
 	// Debug method to manually test notifications and copy button
 	_testNotificationSystem() {
-		console.log("🧪 Testing notification system...");
+		console.log("🧪 Testing notification system with priorities...");
 
 		// Force create a questionContainer if it doesn't exist (for testing)
 		if (!this.questionContainer) {
 			console.log("🔧 Creating temporary questionContainer for testing");
 			this.questionContainer = document.createElement("div");
+			this.questionContainer.style.display = "none";
+			document.body.appendChild(this.questionContainer);
 		}
 
-		this._showBackgroundProcessNotification("Test notification to verify copy button appears", "info");
+		// Test different priority levels
+		this._showBackgroundProcessNotification("🚨 Critical system failure detected!", "error", "CRITICAL");
 
 		setTimeout(() => {
-			this._showBackgroundProcessNotification(
-				`
-				Test Notification with Details<br>
-				• This is a test notification<br>
-				• It has multiple lines<br>
-				• To test the copy functionality<br>
-				• Button should appear after first notification
-			`,
-				"success"
-			);
+			this._showBackgroundProcessNotification("Database connection failed", "error");
+		}, 500);
+
+		setTimeout(() => {
+			this._showBackgroundProcessNotification("Request timeout after 30 seconds", "info", "WARNING");
 		}, 1000);
+
+		setTimeout(() => {
+			this._showBackgroundProcessNotification("Data processing info", "info");
+		}, 1500);
+
+		setTimeout(() => {
+			this._showBackgroundProcessNotification("Workflow completed successfully", "success");
+		}, 2000);
+
+		setTimeout(() => {
+			this._showBackgroundProcessNotification("Another info notification", "info");
+		}, 2500);
+
+		setTimeout(() => {
+			this._showBackgroundProcessNotification("More processing info", "info");
+		}, 3000);
+
+		setTimeout(() => {
+			this._showBackgroundProcessNotification("Final test notification", "info");
+		}, 3500);
 
 		// Check if copy button exists after creation
 		setTimeout(() => {
