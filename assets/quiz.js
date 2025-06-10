@@ -254,9 +254,24 @@ class ModularQuiz {
 				right: 20px;
 				z-index: 1000;
 				max-width: 400px;
+				max-height: 80vh;
+				overflow-y: auto;
 				pointer-events: none;
 			`;
 			document.body.appendChild(notificationContainer);
+		}
+
+		// Parse text to extract title and details for test mode notifications
+		const isTestMode = text.includes("TEST MODE");
+		let notificationTitle = "";
+		let notificationDetails = "";
+
+		if (isTestMode && text.includes("<br>")) {
+			const parts = text.split("<br>");
+			notificationTitle = parts[0].trim();
+			notificationDetails = parts.slice(1).join("<br>").trim();
+		} else {
+			notificationTitle = text;
 		}
 
 		// Create notification element
@@ -276,15 +291,72 @@ class ModularQuiz {
 			transition: all 0.3s ease;
 			pointer-events: auto;
 			cursor: pointer;
+			position: relative;
 		`;
-		notification.innerHTML = text;
 
-		// Add click to dismiss
-		notification.addEventListener("click", () => {
-			notification.style.opacity = "0";
-			notification.style.transform = "translateX(100%)";
-			setTimeout(() => notification.remove(), 300);
-		});
+		// Create collapsible structure for test mode notifications
+		if (isTestMode && notificationDetails) {
+			notification.innerHTML = `
+				<div class="quiz-notification-header" style="display: flex; align-items: center; justify-content: space-between;">
+					<span class="quiz-notification-title">${notificationTitle}</span>
+					<span class="quiz-notification-toggle" style="font-size: 18px; margin-left: 8px;">▼</span>
+				</div>
+				<div class="quiz-notification-details" style="margin-top: 8px; display: none; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 8px;">
+					${notificationDetails}
+				</div>
+			`;
+
+			// Add toggle functionality
+			const toggleButton = notification.querySelector(".quiz-notification-toggle");
+			const details = notification.querySelector(".quiz-notification-details");
+			const header = notification.querySelector(".quiz-notification-header");
+
+			header.addEventListener("click", e => {
+				e.stopPropagation();
+				const isExpanded = details.style.display !== "none";
+
+				if (isExpanded) {
+					details.style.display = "none";
+					toggleButton.textContent = "▼";
+					toggleButton.style.transform = "rotate(0deg)";
+				} else {
+					details.style.display = "block";
+					toggleButton.textContent = "▲";
+					toggleButton.style.transform = "rotate(180deg)";
+				}
+			});
+
+			// Add close button for test mode notifications
+			const closeButton = document.createElement("span");
+			closeButton.innerHTML = "×";
+			closeButton.style.cssText = `
+				position: absolute;
+				top: 8px;
+				right: 8px;
+				cursor: pointer;
+				font-size: 16px;
+				font-weight: bold;
+				opacity: 0.7;
+				hover: opacity: 1;
+			`;
+			closeButton.addEventListener("click", e => {
+				e.stopPropagation();
+				notification.style.opacity = "0";
+				notification.style.transform = "translateX(100%)";
+				setTimeout(() => notification.remove(), 300);
+			});
+			notification.appendChild(closeButton);
+		} else {
+			// Simple notification without collapse functionality
+			notification.innerHTML = notificationTitle;
+
+			// Add click to dismiss for non-test mode notifications
+			notification.addEventListener("click", () => {
+				notification.style.opacity = "0";
+				notification.style.transform = "translateX(100%)";
+				setTimeout(() => notification.remove(), 300);
+			});
+		}
 
 		notificationContainer.appendChild(notification);
 
@@ -295,7 +367,7 @@ class ModularQuiz {
 		}, 100);
 
 		// Auto remove after delay (except for persistent test mode notifications)
-		if (!text.includes("TEST MODE")) {
+		if (!isTestMode) {
 			setTimeout(
 				() => {
 					if (notification.parentNode) {
