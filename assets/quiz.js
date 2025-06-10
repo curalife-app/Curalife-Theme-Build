@@ -328,9 +328,22 @@ class ModularQuiz {
 				isExpanded = !isExpanded;
 
 				if (isExpanded) {
-					details.style.maxHeight = details.scrollHeight + "px";
+					// First set classes to apply expanded styles
 					details.classList.add("expanded");
 					toggleButton.classList.add("expanded");
+
+					// Use requestAnimationFrame to ensure DOM has updated
+					requestAnimationFrame(() => {
+						// Temporarily set to auto to measure natural height
+						details.style.maxHeight = "auto";
+						const actualHeight = details.scrollHeight;
+
+						// Reset to 0 and then animate to actual height
+						details.style.maxHeight = "0";
+						requestAnimationFrame(() => {
+							details.style.maxHeight = actualHeight + "px";
+						});
+					});
 				} else {
 					details.style.maxHeight = "0";
 					details.classList.remove("expanded");
