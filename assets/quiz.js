@@ -2452,14 +2452,18 @@ class ModularQuiz {
 
 						// Test mode detailed result notification
 						if (this.isTestMode) {
+							const sessionsText = result?.sessionsCovered ? `${result.sessionsCovered} covered dietitian sessions` : "No sessions covered";
+
+							const fullMessage = result?.userMessage || "";
+
 							this._showBackgroundProcessNotification(
 								`
 								🧪 TEST MODE - Eligibility Result<br>
 								${statusIcon} Status: ${result?.eligibilityStatus || "Unknown"}<br>
 								• Eligible: ${result?.isEligible}<br>
-								• Sessions: ${result?.sessionsCovered || 0}<br>
+								• Sessions: ${sessionsText}<br>
 								• Error Code: ${result?.error?.code || result?.aaaErrorCode || "None"}<br>
-								• Message: ${(result?.userMessage || "").substring(0, 100)}${result?.userMessage?.length > 100 ? "..." : ""}
+								• Message: ${fullMessage.substring(0, 120)}${fullMessage.length > 120 ? "..." : ""}
 							`,
 								result?.eligibilityStatus === "AAA_ERROR" ? "error" : "success"
 							);
@@ -2676,7 +2680,7 @@ class ModularQuiz {
 	}
 
 	_buildEligibilityPayload() {
-		const extractedData = this._extractResponseData();
+		const extractedData = this._extractResponseData(true);
 
 		console.log("Building eligibility payload with extracted data:", {
 			extractedData,
@@ -2707,7 +2711,7 @@ class ModularQuiz {
 	}
 
 	_buildUserCreationPayload(eligibilityData = null) {
-		const extractedData = this._extractResponseData();
+		const extractedData = this._extractResponseData(false);
 		const allResponses =
 			this.responses?.map(response => ({
 				questionId: response.questionId,
@@ -2716,7 +2720,7 @@ class ModularQuiz {
 			})) || [];
 
 		const payload = {
-			...this._buildSubmissionPayload(),
+			...this._buildSubmissionPayload(extractedData),
 			...extractedData,
 			allResponses,
 			eligibilityData: eligibilityData || this._createProcessingEligibilityData(),
@@ -2767,14 +2771,14 @@ class ModularQuiz {
 		return payload;
 	}
 
-	_buildSubmissionPayload() {
-		const extractedData = this._extractResponseData();
+	_buildSubmissionPayload(extractedData = null) {
+		const data = extractedData || this._extractResponseData(false);
 
 		return {
 			quizId: this.quizData.id,
 			quizTitle: this.quizData.title,
 			completedAt: new Date().toISOString(),
-			...extractedData,
+			...data,
 			allResponses: this.responses.map(r => ({
 				stepId: r.stepId,
 				questionId: r.questionId,
@@ -2783,7 +2787,7 @@ class ModularQuiz {
 		};
 	}
 
-	_extractResponseData() {
+	_extractResponseData(showNotifications = false) {
 		const fieldMapping = {
 			q9: "customerEmail",
 			q7: "firstName",
@@ -2817,8 +2821,8 @@ class ModularQuiz {
 
 		console.log("Extracting response data from responses:", this.responses);
 
-		// Test mode detailed extraction notification
-		if (this.isTestMode) {
+		// Test mode detailed extraction notification - only show if requested
+		if (this.isTestMode && showNotifications) {
 			const responsesSummary = this.responses?.map(r => `${r.questionId}: ${Array.isArray(r.answer) ? r.answer.join(",") : r.answer}`).join("<br>• ") || "None";
 
 			this._showBackgroundProcessNotification(
@@ -2869,11 +2873,17 @@ class ModularQuiz {
 
 		console.log("Extracted response data:", data);
 
-		// Test mode extraction result notification
-		if (this.isTestMode) {
+		// Test mode extraction result notification - only show if requested
+		if (this.isTestMode && showNotifications) {
+			// groupNumber is optional, so exclude it from required field checks
 			const missingFields = Object.entries(data)
-				.filter(([key, value]) => !value && !["mainReasons", "medicalConditions", "consent"].includes(key))
+				.filter(([key, value]) => !value && !["mainReasons", "medicalConditions", "consent", "groupNumber"].includes(key))
 				.map(([key]) => key);
+
+			const optionalFields = [];
+			if (!data.groupNumber) {
+				optionalFields.push("groupNumber");
+			}
 
 			this._showBackgroundProcessNotification(
 				`
@@ -2882,7 +2892,8 @@ class ModularQuiz {
 				• Name: ${data.firstName} ${data.lastName}<br>
 				• Insurance: ${data.insurance || "❌ Missing"}<br>
 				• Member ID: ${data.insuranceMemberId || "❌ Missing"}<br>
-				• Missing fields: ${missingFields.length ? missingFields.join(", ") : "None"}
+				• Missing required: ${missingFields.length ? missingFields.join(", ") : "None"}<br>
+				• Optional fields: ${optionalFields.length ? optionalFields.join(", ") : "All present"}
 			`,
 				missingFields.length > 0 ? "error" : "success"
 			);
