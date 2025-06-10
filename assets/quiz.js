@@ -1492,8 +1492,6 @@ class ModularQuiz {
 					console.log("🧪 Test mode detected - using test webhook URL:", webhookUrl);
 				} else {
 					console.log("🧪 Test mode detected but no test webhook URL configured - using production URL with test mode indicator");
-					// Add test mode indicator to payload for the workflow to handle
-					eligibilityPayload.testMode = true;
 				}
 			}
 
@@ -1780,6 +1778,7 @@ class ModularQuiz {
 			quizTitle: this.quizData.title,
 			workflowType: "eligibility",
 			triggeredAt: new Date().toISOString(),
+			testMode: this.isTestMode,
 			// Only include data needed for eligibility
 			customerEmail: extractedData.customerEmail,
 			firstName: extractedData.firstName,
