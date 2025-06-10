@@ -37,6 +37,50 @@ class ModularQuiz {
 		this.eligibilityWorkflowError = null;
 		this.userCreationWorkflowPromise = null;
 
+		// Initialize notification system state
+		this.currentNotificationFilter = "all";
+		this.notificationCount = 0;
+		this.maxExpandedNotifications = 3;
+
+		// Define notification priority levels
+		this.PRIORITY_LEVELS = {
+			CRITICAL: {
+				color: "#dc2626",
+				persist: true,
+				autoCollapse: false,
+				icon: "🚨",
+				timeout: null // Never auto-hide
+			},
+			ERROR: {
+				color: "#dc2626",
+				persist: true,
+				autoCollapse: false,
+				icon: "❌",
+				timeout: null
+			},
+			WARNING: {
+				color: "#f59e0b",
+				persist: true,
+				autoCollapse: true,
+				icon: "⚠️",
+				timeout: 15000 // 15 seconds
+			},
+			SUCCESS: {
+				color: "#059669",
+				persist: false,
+				autoCollapse: true,
+				icon: "✅",
+				timeout: 8000 // 8 seconds
+			},
+			INFO: {
+				color: "#2563eb",
+				persist: false,
+				autoCollapse: true,
+				icon: "ℹ️",
+				timeout: 12000 // 12 seconds
+			}
+		};
+
 		this.init();
 	}
 
@@ -461,52 +505,6 @@ class ModularQuiz {
 			console.log("🔧 Notification buttons already exist");
 			return;
 		}
-
-		// Initialize filter state
-		this.currentNotificationFilter = "all";
-
-		// Initialize notification system state
-		this.notificationCount = 0;
-		this.maxExpandedNotifications = 3;
-
-		// Define notification priority levels
-		this.PRIORITY_LEVELS = {
-			CRITICAL: {
-				color: "#dc2626",
-				persist: true,
-				autoCollapse: false,
-				icon: "🚨",
-				timeout: null // Never auto-hide
-			},
-			ERROR: {
-				color: "#dc2626",
-				persist: true,
-				autoCollapse: false,
-				icon: "❌",
-				timeout: null
-			},
-			WARNING: {
-				color: "#f59e0b",
-				persist: true,
-				autoCollapse: true,
-				icon: "⚠️",
-				timeout: 15000 // 15 seconds
-			},
-			SUCCESS: {
-				color: "#059669",
-				persist: false,
-				autoCollapse: true,
-				icon: "✅",
-				timeout: 8000 // 8 seconds
-			},
-			INFO: {
-				color: "#2563eb",
-				persist: false,
-				autoCollapse: true,
-				icon: "ℹ️",
-				timeout: 12000 // 12 seconds
-			}
-		};
 
 		// Create filter button
 		const filterButton = document.createElement("div");
