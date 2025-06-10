@@ -613,7 +613,7 @@ class ModularQuiz {
 			// Only add icon if no emoji exists at the start
 			const hasEmoji = /^[\u{1F300}-\u{1F9FF}]/u.test(currentText);
 			if (!hasEmoji && !currentText.includes(priorityConfig.icon)) {
-				titleElement.textContent = `${priorityConfig.icon} ${currentText}`;
+				titleElement.textContent = `${currentText}`;
 			}
 		}
 
