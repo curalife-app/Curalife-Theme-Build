@@ -33,9 +33,6 @@ export class NotificationManager {
 			detailsContent: "notification-details-content",
 			close: "notification-close",
 			shimmer: "notification-shimmer",
-			simple: "notification-simple",
-			simpleIcon: "notification-simple-icon",
-			simpleText: "notification-simple-text",
 			// Override with custom classes if provided
 			...(options.customClasses || {})
 		};
@@ -119,16 +116,8 @@ export class NotificationManager {
 		// Apply priority styling
 		this.applyPriorityStyles(notification, actualPriority, this.getPriorityConfig(actualPriority));
 
-		// Determine if notification should be expandable (quiz-compatible logic)
-		const isTestMode = text.includes("TEST MODE");
-		const hasDetails = text.includes("<br>") || text.includes("\n") || text.length > 100;
-		const isExpandable = isTestMode || hasDetails;
-
-		if (isExpandable) {
-			this.createExpandableNotification(notification, text, type);
-		} else {
-			this.createSimpleNotification(notification, text, type);
-		}
+		// All notifications use the same unified structure
+		this.createUnifiedNotification(notification, text, type);
 
 		// Auto-remove after duration (only if duration > 0)
 		if (notificationDuration > 0) {
@@ -142,8 +131,8 @@ export class NotificationManager {
 		return notification;
 	}
 
-	createExpandableNotification(notification, text, type) {
-		// Handle quiz-specific formatting (supports both <br> and \n)
+	createUnifiedNotification(notification, text, type) {
+		// Handle formatting (supports both <br> and \n)
 		let title, detailsText;
 
 		if (text.includes("<br>")) {
@@ -163,42 +152,65 @@ export class NotificationManager {
 		const safeTitle = this.sanitizeHtml(title);
 		const safeDetailsText = this.sanitizeHtml(detailsText);
 
+		// Always use the expandable structure, even for simple notifications
 		notification.innerHTML = `
 			<div class="${this.cssClasses.header}">
 				<div class="${this.cssClasses.content}">
 					<div class="${this.cssClasses.icon}">${this.getTypeIcon(type)}</div>
 					<div class="${this.cssClasses.title}">${safeTitle}</div>
 				</div>
-				<div class="${this.cssClasses.toggle}">
+				${
+					detailsText
+						? `<div class="${this.cssClasses.toggle}">
 					<svg width="12" height="8" viewBox="0 0 12 8" fill="none">
 						<path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 					</svg>
-				</div>
+				</div>`
+						: ""
+				}
 			</div>
-			<div class="${this.cssClasses.details}">
+			${
+				detailsText
+					? `<div class="${this.cssClasses.details}">
 				<div class="${this.cssClasses.detailsContent}">${safeDetailsText}</div>
-			</div>
+			</div>`
+					: ""
+			}
 			<div class="${this.cssClasses.close}">×</div>
 			<div class="${this.cssClasses.shimmer}"></div>
 		`;
 
-		this.attachExpandableListeners(notification);
+		this.attachNotificationListeners(notification);
 	}
 
-	createSimpleNotification(notification, text, type) {
-		// Sanitize HTML but preserve <br> tags for legitimate formatting
-		const safeText = this.sanitizeHtml(text);
+	attachNotificationListeners(notification) {
+		const header = notification.querySelector(`.${this.cssClasses.header}`);
+		const closeBtn = notification.querySelector(`.${this.cssClasses.close}`);
+		const toggle = notification.querySelector(`.${this.cssClasses.toggle}`);
 
-		notification.innerHTML = `
-			<div class="${this.cssClasses.simple}">
-				<div class="${this.cssClasses.simpleIcon}">${this.getTypeIcon(type)}</div>
-				<div class="${this.cssClasses.simpleText}">${safeText}</div>
-			</div>
-			<div class="${this.cssClasses.close}">×</div>
-			<div class="${this.cssClasses.shimmer}"></div>
-		`;
+		if (!header || !closeBtn) {
+			console.error("Failed to find required elements in notification");
+			return;
+		}
 
-		this.attachSimpleListeners(notification);
+		const closeClickHandler = e => {
+			e.stopPropagation();
+			this.removeNotification(notification);
+		};
+
+		const listeners = [{ element: closeBtn, event: "click", handler: closeClickHandler }];
+
+		// Only add toggle functionality if there are details to expand
+		if (toggle) {
+			const headerClickHandler = () => this.toggleNotification(notification);
+			header.addEventListener("click", headerClickHandler);
+			listeners.push({ element: header, event: "click", handler: headerClickHandler });
+		}
+
+		closeBtn.addEventListener("click", closeClickHandler);
+
+		// Store listeners for cleanup
+		this.eventListeners.set(notification, listeners);
 	}
 
 	cleanNotificationTitle(title) {
@@ -241,46 +253,6 @@ export class NotificationManager {
 	escapeHtml(text) {
 		// Legacy method - keeping for backward compatibility but redirecting to sanitizeHtml
 		return this.sanitizeHtml(text);
-	}
-
-	attachExpandableListeners(notification) {
-		const header = notification.querySelector(`.${this.cssClasses.header}`);
-		const closeBtn = notification.querySelector(`.${this.cssClasses.close}`);
-
-		if (!header || !closeBtn) {
-			console.error("Failed to find required elements in expandable notification");
-			return;
-		}
-
-		const headerClickHandler = () => this.toggleNotification(notification);
-		const closeClickHandler = e => {
-			e.stopPropagation();
-			this.removeNotification(notification);
-		};
-
-		header.addEventListener("click", headerClickHandler);
-		closeBtn.addEventListener("click", closeClickHandler);
-
-		// Store listeners for cleanup
-		this.eventListeners.set(notification, [
-			{ element: header, event: "click", handler: headerClickHandler },
-			{ element: closeBtn, event: "click", handler: closeClickHandler }
-		]);
-	}
-
-	attachSimpleListeners(notification) {
-		const closeBtn = notification.querySelector(`.${this.cssClasses.close}`);
-
-		if (!closeBtn) {
-			console.error("Failed to find close button in simple notification");
-			return;
-		}
-
-		const closeClickHandler = () => this.removeNotification(notification);
-		closeBtn.addEventListener("click", closeClickHandler);
-
-		// Store listeners for cleanup
-		this.eventListeners.set(notification, [{ element: closeBtn, event: "click", handler: closeClickHandler }]);
 	}
 
 	toggleNotification(notification) {
@@ -678,7 +650,7 @@ export class NotificationManager {
 	extractNotificationText(notification) {
 		if (!notification) return "";
 
-		const titleElement = notification.querySelector(`.${this.cssClasses.title}, .${this.cssClasses.simpleText}`);
+		const titleElement = notification.querySelector(`.${this.cssClasses.title}`);
 		const detailsElement = notification.querySelector(`.${this.cssClasses.detailsContent}`);
 
 		let text = titleElement ? titleElement.textContent.trim() : "";
