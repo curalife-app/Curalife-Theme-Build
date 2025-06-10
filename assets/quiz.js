@@ -277,93 +277,252 @@ class ModularQuiz {
 		// Create notification element
 		const notification = document.createElement("div");
 		notification.className = `quiz-notification quiz-notification-${type}`;
+
+		// Enhanced styling with modern UI principles
+		const bgColor = type === "success" ? "#059669" : type === "error" ? "#dc2626" : "#2563eb";
+		const bgGradient =
+			type === "success"
+				? "linear-gradient(135deg, #059669 0%, #10b981 100%)"
+				: type === "error"
+					? "linear-gradient(135deg, #dc2626 0%, #ef4444 100%)"
+					: "linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)";
+
 		notification.style.cssText = `
-			background: ${type === "success" ? "#10b981" : type === "error" ? "#ef4444" : "#3b82f6"};
+			background: ${bgGradient};
 			color: white;
-			padding: 12px 16px;
-			margin-bottom: 8px;
-			border-radius: 8px;
-			box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+			padding: 16px 20px;
+			margin-bottom: 12px;
+			border-radius: 12px;
+			box-shadow: 0 8px 25px rgba(0,0,0,0.15), 0 4px 10px rgba(0,0,0,0.1);
 			font-size: 14px;
-			line-height: 1.4;
+			line-height: 1.5;
 			opacity: 0;
 			transform: translateX(100%);
-			transition: all 0.3s ease;
+			transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 			pointer-events: auto;
 			cursor: pointer;
 			position: relative;
+			border: 1px solid rgba(255,255,255,0.2);
+			backdrop-filter: blur(10px);
+			overflow: hidden;
 		`;
+
+		// Add subtle shimmer effect
+		const shimmer = document.createElement("div");
+		shimmer.style.cssText = `
+			position: absolute;
+			top: 0;
+			left: -100%;
+			width: 100%;
+			height: 100%;
+			background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+			transition: left 0.6s ease;
+			pointer-events: none;
+		`;
+		notification.appendChild(shimmer);
 
 		// Create collapsible structure for test mode notifications
 		if (isTestMode && notificationDetails) {
 			notification.innerHTML = `
-				<div class="quiz-notification-header" style="display: flex; align-items: center; justify-content: space-between;">
-					<span class="quiz-notification-title">${notificationTitle}</span>
-					<span class="quiz-notification-toggle" style="font-size: 18px; margin-left: 8px;">▼</span>
+				<div class="quiz-notification-header" style="
+					display: flex;
+					align-items: center;
+					justify-content: space-between;
+					cursor: pointer;
+					user-select: none;
+					position: relative;
+					z-index: 2;
+				">
+					<div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+						<div class="quiz-notification-icon" style="
+							width: 24px;
+							height: 24px;
+							border-radius: 50%;
+							background: rgba(255,255,255,0.2);
+							display: flex;
+							align-items: center;
+							justify-content: center;
+							font-size: 12px;
+							font-weight: bold;
+							flex-shrink: 0;
+						">🧪</div>
+						<span class="quiz-notification-title" style="
+							font-weight: 600;
+							font-size: 15px;
+							letter-spacing: 0.02em;
+						">${notificationTitle}</span>
+					</div>
+					<div class="quiz-notification-toggle" style="
+						width: 32px;
+						height: 32px;
+						border-radius: 8px;
+						background: rgba(255,255,255,0.1);
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+						font-size: 16px;
+						font-weight: bold;
+						flex-shrink: 0;
+						border: 1px solid rgba(255,255,255,0.2);
+					">
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
+							<path d="M7.41 8.84L12 13.42l4.59-4.58L18 10.25l-6 6-6-6z"/>
+						</svg>
+					</div>
 				</div>
-				<div class="quiz-notification-details" style="margin-top: 8px; display: none; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 8px;">
-					${notificationDetails}
+				<div class="quiz-notification-details" style="
+					margin-top: 12px;
+					max-height: 0;
+					overflow: hidden;
+					opacity: 0;
+					transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+					border-top: 1px solid transparent;
+					padding-top: 0;
+				">
+					<div style="
+						padding-top: 12px;
+						border-top: 1px solid rgba(255,255,255,0.15);
+						font-size: 13px;
+						line-height: 1.6;
+						color: rgba(255,255,255,0.9);
+					">
+						${notificationDetails}
+					</div>
 				</div>
 			`;
 
-			// Add toggle functionality
+			// Add enhanced toggle functionality
 			const toggleButton = notification.querySelector(".quiz-notification-toggle");
+			const toggleIcon = toggleButton.querySelector("svg");
 			const details = notification.querySelector(".quiz-notification-details");
 			const header = notification.querySelector(".quiz-notification-header");
+			let isExpanded = false;
+
+			// Add hover effects
+			header.addEventListener("mouseenter", () => {
+				toggleButton.style.background = "rgba(255,255,255,0.2)";
+				toggleButton.style.transform = "scale(1.05)";
+			});
+
+			header.addEventListener("mouseleave", () => {
+				toggleButton.style.background = "rgba(255,255,255,0.1)";
+				toggleButton.style.transform = "scale(1)";
+			});
 
 			header.addEventListener("click", e => {
 				e.stopPropagation();
-				const isExpanded = details.style.display !== "none";
+				isExpanded = !isExpanded;
 
 				if (isExpanded) {
-					details.style.display = "none";
-					toggleButton.textContent = "▼";
-					toggleButton.style.transform = "rotate(0deg)";
+					details.style.maxHeight = details.scrollHeight + "px";
+					details.style.opacity = "1";
+					toggleIcon.style.transform = "rotate(180deg)";
+					toggleButton.style.background = "rgba(255,255,255,0.25)";
 				} else {
-					details.style.display = "block";
-					toggleButton.textContent = "▲";
-					toggleButton.style.transform = "rotate(180deg)";
+					details.style.maxHeight = "0";
+					details.style.opacity = "0";
+					toggleIcon.style.transform = "rotate(0deg)";
+					toggleButton.style.background = "rgba(255,255,255,0.1)";
 				}
 			});
 
-			// Add close button for test mode notifications
-			const closeButton = document.createElement("span");
-			closeButton.innerHTML = "×";
+			// Add enhanced close button
+			const closeButton = document.createElement("div");
+			closeButton.innerHTML = `
+				<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+					<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+				</svg>
+			`;
 			closeButton.style.cssText = `
 				position: absolute;
-				top: 8px;
-				right: 8px;
+				top: 12px;
+				right: 12px;
+				width: 32px;
+				height: 32px;
+				border-radius: 8px;
+				background: rgba(255,255,255,0.1);
+				display: flex;
+				align-items: center;
+				justify-content: center;
 				cursor: pointer;
-				font-size: 16px;
-				font-weight: bold;
 				opacity: 0.7;
-				hover: opacity: 1;
+				transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+				border: 1px solid rgba(255,255,255,0.2);
+				z-index: 3;
 			`;
+
+			closeButton.addEventListener("mouseenter", () => {
+				closeButton.style.opacity = "1";
+				closeButton.style.background = "rgba(255,255,255,0.2)";
+				closeButton.style.transform = "scale(1.1) rotate(90deg)";
+			});
+
+			closeButton.addEventListener("mouseleave", () => {
+				closeButton.style.opacity = "0.7";
+				closeButton.style.background = "rgba(255,255,255,0.1)";
+				closeButton.style.transform = "scale(1) rotate(0deg)";
+			});
+
 			closeButton.addEventListener("click", e => {
 				e.stopPropagation();
 				notification.style.opacity = "0";
-				notification.style.transform = "translateX(100%)";
-				setTimeout(() => notification.remove(), 300);
+				notification.style.transform = "translateX(100%) scale(0.95)";
+				setTimeout(() => notification.remove(), 400);
 			});
 			notification.appendChild(closeButton);
 		} else {
-			// Simple notification without collapse functionality
-			notification.innerHTML = notificationTitle;
+			// Enhanced simple notification
+			notification.innerHTML = `
+				<div style="display: flex; align-items: center; gap: 12px;">
+					<div style="
+						width: 20px;
+						height: 20px;
+						border-radius: 50%;
+						background: rgba(255,255,255,0.2);
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						font-size: 12px;
+						flex-shrink: 0;
+					">${type === "success" ? "✓" : type === "error" ? "!" : "ℹ"}</div>
+					<span style="font-weight: 500; flex: 1;">${notificationTitle}</span>
+				</div>
+			`;
+
+			// Add enhanced hover effect
+			notification.addEventListener("mouseenter", () => {
+				notification.style.transform = "translateX(0) scale(1.02)";
+				notification.style.boxShadow = "0 12px 35px rgba(0,0,0,0.2), 0 6px 15px rgba(0,0,0,0.15)";
+			});
+
+			notification.addEventListener("mouseleave", () => {
+				notification.style.transform = "translateX(0) scale(1)";
+				notification.style.boxShadow = "0 8px 25px rgba(0,0,0,0.15), 0 4px 10px rgba(0,0,0,0.1)";
+			});
 
 			// Add click to dismiss for non-test mode notifications
 			notification.addEventListener("click", () => {
 				notification.style.opacity = "0";
-				notification.style.transform = "translateX(100%)";
-				setTimeout(() => notification.remove(), 300);
+				notification.style.transform = "translateX(100%) scale(0.95)";
+				setTimeout(() => notification.remove(), 400);
 			});
 		}
 
 		notificationContainer.appendChild(notification);
 
-		// Animate in
+		// Animate in with enhanced effects
 		setTimeout(() => {
 			notification.style.opacity = "1";
 			notification.style.transform = "translateX(0)";
+
+			// Trigger shimmer effect
+			const shimmerElement = notification.querySelector("div[style*='left: -100%']");
+			if (shimmerElement) {
+				setTimeout(() => {
+					shimmerElement.style.left = "100%";
+				}, 200);
+			}
 		}, 100);
 
 		// Auto remove after delay (except for persistent test mode notifications)
