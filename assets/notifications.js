@@ -331,6 +331,7 @@ export class NotificationManager {
 	processNotificationQueue() {
 		if (this.isDestroyed || this.isProcessingQueue || this.notificationQueue.length === 0) return;
 
+		console.log(`⏳ Processing notification queue. Queue length: ${this.notificationQueue.length}`);
 		this.isProcessingQueue = true;
 		const notification = this.notificationQueue.shift();
 
@@ -338,6 +339,7 @@ export class NotificationManager {
 
 		// Process next notification after delay
 		if (this.notificationQueue.length > 0) {
+			console.log(`⏰ Next notification in ${this.staggerDelay}ms. Remaining: ${this.notificationQueue.length}`);
 			const timeoutId = setTimeout(() => {
 				this.isProcessingQueue = false;
 				this.processNotificationQueue();
@@ -345,6 +347,7 @@ export class NotificationManager {
 			}, this.staggerDelay);
 			this.timeouts.add(timeoutId);
 		} else {
+			console.log("✅ Queue processing complete");
 			this.isProcessingQueue = false;
 		}
 	}
@@ -355,6 +358,13 @@ export class NotificationManager {
 		this.notifications.push(notification);
 		this.container.appendChild(notification);
 
+		// Force initial state and trigger reflow
+		notification.style.opacity = "0";
+		notification.style.transform = "translateX(120%) scale(0.85)";
+
+		// Force a reflow to ensure initial state is applied
+		notification.offsetHeight;
+
 		// Add entrance animation with enhanced effects
 		requestAnimationFrame(() => {
 			if (this.isDestroyed) return;
@@ -362,7 +372,19 @@ export class NotificationManager {
 			// Add a micro-delay for better visual effect
 			const timeoutId = setTimeout(() => {
 				if (!this.isDestroyed && notification.parentNode) {
+					console.log("🎬 Adding animate-in class to notification:", notification.id);
+
+					// Clear inline styles to let CSS take over
+					notification.style.opacity = "";
+					notification.style.transform = "";
+
 					notification.classList.add("animate-in");
+
+					// Debug: Check if animation is applied
+					const computedStyle = window.getComputedStyle(notification);
+					console.log("🎭 Animation name:", computedStyle.animationName);
+					console.log("🎭 Animation duration:", computedStyle.animationDuration);
+					console.log("🎭 Final transform:", computedStyle.transform);
 
 					// Add a subtle bounce effect to surrounding notifications
 					this.addInteractiveEffects(notification);
@@ -1002,6 +1024,38 @@ export const NotificationUtils = {
 			console.error("Failed to show quick notification:", error);
 			return null;
 		}
+	},
+
+	// Test function for debugging animations
+	testAnimations() {
+		console.log("🧪 Testing notification animations...");
+		const manager = new NotificationManager({
+			enableFiltering: true,
+			enableCopy: true,
+			autoCollapse: false,
+			defaultDuration: 0
+		});
+
+		// Test multiple notifications with delays
+		const notifications = [
+			{ text: "First notification test", type: "info" },
+			{ text: "Second notification test", type: "success" },
+			{ text: "Third notification test", type: "warning" },
+			{ text: "Fourth notification test", type: "error" }
+		];
+
+		notifications.forEach((notif, index) => {
+			setTimeout(() => {
+				console.log(`🚀 Showing notification ${index + 1}:`, notif.text);
+				manager.show(notif.text, notif.type);
+			}, index * 200); // Slight delay to see the queue effect
+		});
+
+		// Make manager globally accessible for testing
+		window.testNotificationManager = manager;
+		console.log("✅ Test manager created. Access via window.testNotificationManager");
+
+		return manager;
 	}
 };
 
