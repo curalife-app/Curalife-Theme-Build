@@ -3200,7 +3200,7 @@ class ModularQuiz {
 		const isEligible = resultData.isEligible === true;
 		const eligibilityStatus = resultData.eligibilityStatus || "UNKNOWN";
 
-		console.log("Processing eligibility status:", eligibilityStatus, "isEligible:", isEligible);
+		console.log("Processing eligibility status:", eligibilityStatus, "isEligible:", isEligible, "raw isEligible:", resultData.isEligible);
 
 		if (isEligible && eligibilityStatus === "ELIGIBLE") {
 			console.log("Generating eligible insurance results");
@@ -3215,6 +3215,11 @@ class ModularQuiz {
 		if (eligibilityStatus === "TEST_DATA_ERROR") {
 			console.log("Generating test data error results");
 			return this._generateTestDataErrorResultsHTML(resultData, resultUrl);
+		}
+
+		if (eligibilityStatus === "PROCESSING") {
+			console.log("Generating processing insurance results");
+			return this._generateProcessingInsuranceResultsHTML(resultData, resultUrl);
 		}
 
 		if (eligibilityStatus === "ERROR") {
@@ -3303,6 +3308,55 @@ class ModularQuiz {
 							</div>
 						</div>
 						<a href="${resultUrl}" class="quiz-booking-button">Continue to Support</a>
+					</div>
+				</div>
+			</div>
+		`;
+	}
+
+	_generateProcessingInsuranceResultsHTML(resultData, resultUrl) {
+		const messages = this.quizData.ui?.resultMessages?.processing || {};
+		const userMessage =
+			resultData.userMessage ||
+			"Your eligibility check and account setup is still processing in the background. This can take up to 3 minutes for complex insurance verifications and account creation. Please proceed with booking - we'll contact you with your coverage details shortly.";
+
+		return `
+			<div class="quiz-results-container">
+				<div class="quiz-results-header">
+					<h2 class="quiz-results-title">${messages.title || "Thanks for completing the quiz!"}</h2>
+					<p class="quiz-results-subtitle">${messages.subtitle || "We're processing your information."}</p>
+				</div>
+				<div class="quiz-coverage-card" style="border-left: 4px solid #3182ce; background-color: #ebf8ff;">
+					<h3 class="quiz-coverage-card-title" style="color: #2c5282;">⏳ Processing Your Information</h3>
+					<p style="color: #2c5282;">${userMessage}</p>
+				</div>
+				<div class="quiz-action-section">
+					<div class="quiz-action-content">
+						<div class="quiz-action-header">
+							<h3 class="quiz-action-title">What's happening now?</h3>
+						</div>
+						<div class="quiz-action-details">
+							<div class="quiz-action-info">
+								<svg class="quiz-action-info-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M10 18.3333C14.6023 18.3333 18.3333 14.6023 18.3333 9.99996C18.3333 5.39759 14.6023 1.66663 10 1.66663C5.39762 1.66663 1.66666 5.39759 1.66666 9.99996C1.66666 14.6023 5.39762 18.3333 10 18.3333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+									<path d="M7.5 9.99996L9.16667 11.6666L12.5 8.33329" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-info-text">We're verifying your insurance coverage and setting up your account in the background.</div>
+							</div>
+							<div class="quiz-action-feature">
+								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M18.3333 14.1667C18.3333 15.0871 17.5871 15.8333 16.6667 15.8333H5.83333L1.66666 20V3.33333C1.66666 2.41286 2.41285 1.66667 3.33333 1.66667H16.6667C17.5871 1.66667 18.3333 2.41286 18.3333 3.33333V14.1667Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-feature-text">You'll receive an update with your coverage details shortly</div>
+							</div>
+							<div class="quiz-action-feature">
+								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M6.66666 2.5V5.83333M13.3333 2.5V5.83333M2.5 9.16667H17.5M4.16666 3.33333H15.8333C16.7538 3.33333 17.5 4.07952 17.5 5V16.6667C17.5 17.5871 16.7538 18.3333 15.8333 18.3333H4.16666C3.24619 18.3333 2.5 17.5871 2.5 16.6667V5C2.5 4.07952 3.24619 3.33333 4.16666 3.33333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-feature-text">You can proceed with booking while we complete the verification</div>
+							</div>
+						</div>
+						<a href="${resultUrl}" class="quiz-booking-button">Continue to Booking</a>
 					</div>
 				</div>
 			</div>
