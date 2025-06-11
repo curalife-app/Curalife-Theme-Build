@@ -1521,7 +1521,7 @@ class ModularQuiz {
 
 		// Call orchestrator and handle response directly (no status polling)
 		this._submitOrchestratorToWebhook(orchestratorUrl, payload)
-			.then(result => {
+					.then(result => {
 				console.log("✅ Orchestrator workflow completed:", result);
 				this._handleWorkflowCompletion(result);
 			})
@@ -1549,7 +1549,7 @@ class ModularQuiz {
 				resultData,
 				result.message || "Account creation completed successfully!"
 			);
-		} else {
+			} else {
 			this.showResults(
 				this.config.resultUrl,
 				false, // webhookSuccess
@@ -2002,7 +2002,7 @@ class ModularQuiz {
 				<h3 class="quiz-title">${question.text}</h3>
 				${question.helpText ? `<p class="quiz-text">${question.helpText}</p>` : ""}
 			`;
-		} else {
+			} else {
 			html += `
 				<div class="quiz-divider">
 					<h4 class="quiz-heading">${question.text}</h4>
@@ -2082,9 +2082,9 @@ class ModularQuiz {
 					<div class="quiz-option-button ${selected ? "selected" : ""}">
 						<div class="quiz-option-text">
 							<div class="quiz-option-text-content">${option.text}</div>
-						</div>
+				</div>
 						${selected ? this._getCheckmarkSVG() : ""}
-					</div>
+				</div>
 				</label>
 			`;
 		});
@@ -2098,8 +2098,8 @@ class ModularQuiz {
 				<div class="quiz-checkbox-container">
 					<input type="checkbox" id="${option.id}" name="question-${question.id}" value="${option.id}" class="quiz-checkbox-input" ${selectedOptions.includes(option.id) ? "checked" : ""}>
 					<label class="quiz-checkbox-label" for="${option.id}">${option.text}</label>
-				</div>
-			`;
+			</div>
+		`;
 		});
 		return html + "</div>";
 	}
@@ -2128,7 +2128,7 @@ class ModularQuiz {
 					value="${response.answer || ""}"
 					aria-describedby="error-${question.id}">
 				${this._getErrorElement(question.id)}
-			</div>
+				</div>
 		`;
 	}
 
@@ -2189,7 +2189,7 @@ class ModularQuiz {
 			<div class="quiz-question-section">
 				<textarea id="question-${question.id}" class="quiz-textarea" rows="4"
 					placeholder="${question.placeholder || "Type your answer here..."}">${response.answer || ""}</textarea>
-			</div>
+				</div>
 		`;
 	}
 
@@ -2200,8 +2200,8 @@ class ModularQuiz {
 					min="1" max="10" step="1" value="${response.answer || 5}">
 				<div class="quiz-range-labels">
                     <span>1</span><span>5</span><span>10</span>
-				</div>
-			</div>
+							</div>
+							</div>
 		`;
 	}
 
@@ -2214,8 +2214,8 @@ class ModularQuiz {
                     aria-describedby="error-${question.id}">
                 ${this._getErrorElement(question.id)}
                 ${question.helpText ? `<p class="quiz-text-sm">${question.helpText}</p>` : ""}
-            </div>
-        `;
+			</div>
+		`;
 	}
 
 	_getCheckmarkSVG() {
@@ -2424,7 +2424,7 @@ class ModularQuiz {
 			this.nextButton.disabled = false;
 		}
 
-		this.updateNavigation();
+					this.updateNavigation();
 	}
 
 	handleFormAnswer(questionId, answer) {
@@ -2487,7 +2487,7 @@ class ModularQuiz {
 						if (!optionButton.querySelector(".quiz-checkmark")) {
 							optionButton.innerHTML += this._getCheckmarkSVG();
 						}
-					} else {
+			} else {
 						optionButton.classList.remove("selected");
 						checkbox.checked = false;
 						const checkmark = optionButton.querySelector(".quiz-checkmark");
@@ -2672,7 +2672,7 @@ class ModularQuiz {
 		const currentValue = response?.answer;
 
 		if (question.required && this._isEmptyValue(currentValue, question.type)) {
-			return {
+				return {
 				questionId: question.id,
 				message: this.quizData.ui?.errorMessages?.validationRequired || "This field is required"
 			};
@@ -2906,7 +2906,7 @@ class ModularQuiz {
 					// This is already processed eligibility data - use it directly
 					finalResult = eligibilityResult;
 					console.log("Using eligibility result directly (already processed):", finalResult);
-				} else {
+		} else {
 					// This is a raw webhook response - process it
 					finalResult = this._processWebhookResult(eligibilityResult);
 					console.log("Processed webhook result:", finalResult);
