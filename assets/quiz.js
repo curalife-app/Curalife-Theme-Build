@@ -503,7 +503,7 @@ class ModularQuiz {
 	 */
 	_startOrchestratorWorkflow() {
 		const orchestratorUrl = this._getOrchestratorUrl();
-		const payload = this._buildWorkflowPayload();
+		const payload = this._extractResponseData();
 
 		console.log("🚀 Starting orchestrator workflow...", { orchestratorUrl, payload });
 
