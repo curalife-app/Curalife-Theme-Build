@@ -512,7 +512,7 @@ class ModularQuiz {
 
 		// Call orchestrator and handle response directly (no status polling)
 		this._submitOrchestratorToWebhook(orchestratorUrl, payload)
-			.then(result => {
+					.then(result => {
 				console.log("✅ Orchestrator workflow completed:", result);
 				this._handleWorkflowCompletion(result);
 			})
@@ -540,7 +540,7 @@ class ModularQuiz {
 				resultData,
 				result.message || "Account creation completed successfully!"
 			);
-		} else {
+			} else {
 			this.showResults(
 				this.config.resultUrl,
 				false, // webhookSuccess
@@ -1122,7 +1122,7 @@ class ModularQuiz {
 				<h3 class="quiz-title">${question.text}</h3>
 				${question.helpText ? `<p class="quiz-text">${question.helpText}</p>` : ""}
 			`;
-		} else {
+			} else {
 			html += `
 				<div class="quiz-divider">
 					<h4 class="quiz-heading">${question.text}</h4>
@@ -1604,7 +1604,7 @@ class ModularQuiz {
 			this.nextButton.disabled = false;
 		}
 
-		this.updateNavigation();
+					this.updateNavigation();
 	}
 
 	handleFormAnswer(questionId, answer) {
@@ -1667,7 +1667,7 @@ class ModularQuiz {
 						if (!optionButton.querySelector(".quiz-checkmark")) {
 							optionButton.innerHTML += this._getCheckmarkSVG();
 						}
-					} else {
+			} else {
 						optionButton.classList.remove("selected");
 						checkbox.checked = false;
 						const checkmark = optionButton.querySelector(".quiz-checkmark");
@@ -2131,7 +2131,7 @@ class ModularQuiz {
 		const currentValue = response?.answer;
 
 		if (question.required && this._isEmptyValue(currentValue, question.type)) {
-			return {
+				return {
 				questionId: question.id,
 				message: this.quizData.ui?.errorMessages?.validationRequired || "This field is required"
 			};
@@ -2365,7 +2365,7 @@ class ModularQuiz {
 					// This is already processed eligibility data - use it directly
 					finalResult = eligibilityResult;
 					console.log("Using eligibility result directly (already processed):", finalResult);
-				} else {
+		} else {
 					// This is a raw webhook response - process it
 					finalResult = this._processWebhookResult(eligibilityResult);
 					console.log("Processed webhook result:", finalResult);
@@ -2482,6 +2482,7 @@ class ModularQuiz {
 		html += "</div>";
 		html += "</div>";
 		html += "</div>";
+		// Rest of HTML for coverage card and contact info would continue here...
 		html += '<div class="quiz-coverage-card">';
 		html += '<div class="quiz-coverage-card-title">What to Expect</div>';
 		html += '<div class="quiz-coverage-benefits">';
@@ -2565,8 +2566,41 @@ class ModularQuiz {
 		html += "</div>";
 		html += "</div>";
 		html += "</div>";
-
-		return html;
+		html += "</div>";
+		html += "</div>";
+		html += "</div>";
+		html += "</div>";
+		html += '<div class="quiz-action-section" style="background-color: #f8f9fa;">';
+		html += '<div class="quiz-action-content">';
+		html += '<div class="quiz-action-header">';
+		html += '<h3 class="quiz-action-title">Need Assistance?</h3>';
+		html += "</div>";
+		html += '<div class="quiz-action-details">';
+		html += '<div class="quiz-action-info">';
+		html += '<div class="quiz-action-info-text">';
+		html += "Our support team is here to help if you have any questions about scheduling or preparing for your appointment.";
+		html += "</div>";
+		html += "</div>";
+		html += '<div class="quiz-action-feature">';
+		html += '<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">';
+		html += '<path d="M18.3333 5.83333L10 11.6667L1.66666 5.83333" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+		html +=
+			'<path d="M1.66666 5.83333H18.3333V15C18.3333 15.442 18.1577 15.866 17.8452 16.1785C17.5327 16.491 17.1087 16.6667 16.6667 16.6667H3.33333C2.89131 16.6667 2.46738 16.491 2.15482 16.1785C1.84226 15.866 1.66666 15.442 1.66666 15V5.83333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+		html += "</svg>";
+		html += '<div class="quiz-action-feature-text">Email: support@curalife.com</div>';
+		html += "</div>";
+		html += '<div class="quiz-action-feature">';
+		html += '<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">';
+		html +=
+			'<path d="M18.3081 14.2233C17.1569 14.2233 16.0346 14.0397 14.9845 13.6971C14.6449 13.5878 14.2705 13.6971 14.0579 13.9427L12.8372 15.6772C10.3023 14.4477 8.55814 12.7138 7.32326 10.1581L9.10465 8.89535C9.34884 8.68372 9.45814 8.30233 9.34884 7.96279C9.00581 6.91628 8.82209 5.79186 8.82209 4.64535C8.82209 4.28953 8.53256 4 8.17674 4H4.64535C4.28953 4 4 4.28953 4 4.64535C4 12.1715 10.1831 18.3953 17.6628 18.3953C18.0186 18.3953 18.3081 18.1058 18.3081 17.75V14.2233Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-feature-text">Phone: 1-800-CURALIFE</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		`;
 	}
 
 	_generateSchedulingErrorHTML(errorMessage, schedulingData = null) {
@@ -3137,6 +3171,241 @@ class ModularQuiz {
 	_generateRecommendationResultsHTML(resultData, resultUrl) {
 		// Implementation for recommendation results
 		return this._generateGenericResultsHTML(resultData, resultUrl);
+	}
+
+	_generateErrorResultsHTML(resultUrl, errorMessage) {
+		return `
+			<div class="quiz-results-container">
+				<div class="quiz-results-header">
+					<h2 class="quiz-results-title">Quiz Complete</h2>
+					<p class="quiz-results-subtitle">We've received your information.</p>
+				</div>
+				<div class="quiz-coverage-card" style="border-left: 4px solid #f56565; background-color: #fed7d7;">
+                    <h3 class="quiz-coverage-card-title" style="color: #c53030;">⚠️ Eligibility Check Error</h3>
+                    <p style="color: #c53030;">There was an error checking your insurance eligibility.</p>
+				</div>
+				<div class="quiz-action-section">
+					<div class="quiz-action-content">
+						<div class="quiz-action-header">
+							<h3 class="quiz-action-title">Need assistance?</h3>
+						</div>
+						<div class="quiz-action-details">
+							<div class="quiz-action-info">
+								<svg class="quiz-action-info-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M10 18.3333C14.6023 18.3333 18.3333 14.6023 18.3333 9.99996C18.3333 5.39759 14.6023 1.66663 10 1.66663C5.39762 1.66663 1.66666 5.39759 1.66666 9.99996C1.66666 14.6023 5.39762 18.3333 10 18.3333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+									<path d="M7.5 9.99996L9.16667 11.6666L12.5 8.33329" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-info-text">Our support team will manually verify your insurance coverage and help you get connected with the right dietitian.</div>
+							</div>
+							<div class="quiz-action-feature">
+								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M18.3333 14.1667C18.3333 15.0871 17.5871 15.8333 16.6667 15.8333H5.83333L1.66666 20V3.33333C1.66666 2.41286 2.41285 1.66667 3.33333 1.66667H16.6667C17.5871 1.66667 18.3333 2.41286 18.3333 3.33333V14.1667Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-feature-text">Direct support to help resolve any coverage questions</div>
+							</div>
+							<div class="quiz-action-feature">
+								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M6.66666 2.5V5.83333M13.3333 2.5V5.83333M2.5 9.16667H17.5M4.16666 3.33333H15.8333C16.7538 3.33333 17.5 4.07952 17.5 5V16.6667C17.5 17.5871 16.7538 18.3333 15.8333 18.3333H4.16666C3.24619 18.3333 2.5 17.5871 2.5 16.6667V5C2.5 4.07952 3.24619 3.33333 4.16666 3.33333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-feature-text">Quick resolution to get you scheduled with a dietitian</div>
+							</div>
+						</div>
+						<a href="${resultUrl}" class="quiz-booking-button">Continue to Support</a>
+					</div>
+				</div>
+			</div>
+		`;
+	}
+
+	_generateIneligibleInsuranceResultsHTML(eligibilityData, resultUrl) {
+		const messages = this.quizData.ui?.resultMessages?.notEligible || {};
+		const userMessage = eligibilityData.userMessage || "Your eligibility check is complete.";
+		const error = eligibilityData.error || {};
+		const errorCode = error.code || "Unknown";
+		const errorMessage = error.message || "";
+		const errorDetails = error.details || "";
+
+		// Check if this is actually an error scenario that needs detailed display
+		const hasDetailedError = error.code || error.message || error.details;
+		const isErrorScenario = eligibilityData.eligibilityStatus === "PAYER_ERROR" || hasDetailedError;
+
+		// Generate detailed error information if available
+		const errorDetailsHTML = hasDetailedError ? this._generateErrorDetailsHTML(error, errorCode, errorMessage, errorDetails, false) : "";
+
+		return `
+			<div class="quiz-results-container">
+				<div class="quiz-results-header">
+                    <h2 class="quiz-results-title">${messages.title || "Thanks for completing the quiz!"}</h2>
+                    <p class="quiz-results-subtitle">${messages.subtitle || "We're ready to help you."}</p>
+				</div>
+                <div class="quiz-coverage-card ${isErrorScenario ? "quiz-error-card" : ""}">
+                    <h3 class="quiz-coverage-card-title ${isErrorScenario ? "quiz-error-card-title" : ""}">${isErrorScenario ? "⚠️ " : ""}Insurance Coverage Check${errorCode !== "Unknown" ? ` (Error ${errorCode})` : ""}</h3>
+
+					${
+						isErrorScenario && errorMessage
+							? `
+						<div class="quiz-error-main-message">
+							<p class="quiz-error-primary-text">${errorMessage}</p>
+							<p class="quiz-error-secondary-text">${userMessage}</p>
+						</div>
+						${errorDetailsHTML}
+					`
+							: `<p>${userMessage}</p>`
+					}
+				</div>
+				<div class="quiz-action-section">
+					<div class="quiz-action-content">
+						<div class="quiz-action-header">
+							<h3 class="quiz-action-title">What's next?</h3>
+						</div>
+						<div class="quiz-action-details">
+							<div class="quiz-action-info">
+								<svg class="quiz-action-info-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M10 18.3333C14.6023 18.3333 18.3333 14.6023 18.3333 9.99996C18.3333 5.39759 14.6023 1.66663 10 1.66663C5.39762 1.66663 1.66666 5.39759 1.66666 9.99996C1.66666 14.6023 5.39762 18.3333 10 18.3333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+									<path d="M7.5 9.99996L9.16667 11.6666L12.5 8.33329" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-info-text">We'll help you connect with a registered dietitian and explore your options for coverage and consultation.</div>
+							</div>
+							<div class="quiz-action-feature">
+								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M18.3333 14.1667C18.3333 15.0871 17.5871 15.8333 16.6667 15.8333H5.83333L1.66666 20V3.33333C1.66666 2.41286 2.41285 1.66667 3.33333 1.66667H16.6667C17.5871 1.66667 18.3333 2.41286 18.3333 3.33333V14.1667Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-feature-text">Personal consultation to review your coverage options</div>
+							</div>
+							<div class="quiz-action-feature">
+								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M6.66666 2.5V5.83333M13.3333 2.5V5.83333M2.5 9.16667H17.5M4.16666 3.33333H15.8333C16.7538 3.33333 17.5 4.07952 17.5 5V16.6667C17.5 17.5871 16.7538 18.3333 15.8333 18.3333H4.16666C3.24619 18.3333 2.5 17.5871 2.5 16.6667V5C2.5 4.07952 3.24619 3.33333 4.16666 3.33333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-feature-text">Flexible scheduling that works with your availability</div>
+							</div>
+						</div>
+						<a href="${resultUrl}" class="quiz-booking-button">Continue with Next Steps</a>
+					</div>
+				</div>
+			</div>
+		`;
+	}
+
+	_generateErrorDetailsHTML(error, errorCode, errorMessage, errorDetails, hasMultipleErrors) {
+		let detailsHTML = "";
+
+		// Add technical details if available
+		if (errorDetails && errorDetails !== errorMessage) {
+			detailsHTML += `
+				<div class="quiz-error-technical-section">
+					<p class="quiz-error-section-title"><strong>Technical Details:</strong></p>
+					<p class="quiz-error-details-text">${errorDetails}</p>
+				</div>
+			`;
+		}
+
+		// Add error metadata if available
+		const metadata = [];
+		if (error.isAAAError) metadata.push("Verification Issue");
+		if (hasMultipleErrors) metadata.push(`Multiple Issues (${error.totalErrors})`);
+		if (errorCode && errorCode !== "Unknown") metadata.push(`Error Code: ${errorCode}`);
+
+		if (metadata.length > 0) {
+			detailsHTML += `
+				<div class="quiz-error-metadata-section">
+					<p class="quiz-error-section-title"><strong>Issue Details:</strong></p>
+					<div class="quiz-error-metadata-badges">
+						${metadata.map(item => `<span class="quiz-error-badge">${item}</span>`).join("")}
+					</div>
+				</div>
+			`;
+		}
+
+		// Add specific guidance based on error code
+		const guidance = this._getErrorGuidance(errorCode);
+		if (guidance) {
+			detailsHTML += `
+				<div class="quiz-error-guidance-section">
+					<p class="quiz-error-section-title"><strong>What This Means:</strong></p>
+					<p class="quiz-error-guidance-text">${guidance}</p>
+				</div>
+			`;
+		}
+
+		return detailsHTML;
+	}
+
+	_getErrorTitle(errorCode) {
+		const errorTitles = {
+			42: "Service Temporarily Unavailable",
+			43: "Provider Registration Issue",
+			72: "Member ID Verification Needed",
+			73: "Name Verification Needed",
+			75: "Subscriber Not Found",
+			76: "Duplicate Member ID Found",
+			79: "System Connection Issue"
+		};
+
+		return errorTitles[errorCode] || "Insurance Verification Issue";
+	}
+
+	_getErrorGuidance(errorCode) {
+		const errorGuidance = {
+			42: "Your insurance company's system is temporarily down for maintenance. This is usually resolved within a few hours.",
+			43: "Your insurance plan requires our provider to be specifically registered. We'll handle this registration process for you.",
+			72: "The member ID entered doesn't match records. Please verify the ID exactly as shown on your insurance card, including any letters or special characters.",
+			73: "The name entered doesn't match your insurance records. Make sure the name matches exactly as it appears on your insurance card.",
+			75: "Your insurance information wasn't found in the system. This could be due to a recent plan change, new enrollment, or data sync delay.",
+			76: "Your member ID appears multiple times in the insurance database. This often happens when you have multiple plan types or recent changes. Our team will identify your current active plan.",
+			79: "There's a temporary technical issue connecting with your insurance provider's verification system. This is typically resolved quickly."
+		};
+
+		return errorGuidance[errorCode] || null;
+	}
+
+	_generateFAQHTML() {
+		const faqData = this.quizData.ui?.faq || [];
+		if (faqData.length === 0) return "";
+
+		return `
+			<div class="quiz-faq-section">
+				<div class="quiz-faq-divider"></div>
+                ${faqData
+					.map(
+						faq => `
+                    <div class="quiz-faq-item" data-faq="${faq.id}" tabindex="0" role="button" aria-expanded="false">
+					<div class="quiz-faq-content">
+                            <div class="quiz-faq-question-collapsed">${faq.question}</div>
+                            <div class="quiz-faq-answer">${faq.answer}</div>
+					</div>
+					<div class="quiz-faq-toggle">
+                            <svg class="quiz-faq-toggle-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+							<path d="M4 12H20" stroke="#4f4f4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+							<path d="M12 4V20" stroke="#4f4f4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+						</svg>
+					</div>
+				</div>
+				<div class="quiz-faq-divider"></div>
+                `
+					)
+					.join("")}
+			</div>
+		`;
+	}
+
+	_attachFAQListeners() {
+		const faqItems = this.questionContainer.querySelectorAll(".quiz-faq-item");
+		faqItems.forEach(item => {
+			item.addEventListener("click", () => {
+				const isExpanded = item.classList.contains("expanded");
+
+				// Toggle expanded state immediately for smooth animation
+				if (!isExpanded) {
+					item.classList.add("expanded");
+					const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
+					if (question) question.className = "quiz-faq-question";
+				} else {
+					item.classList.remove("expanded");
+					const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
+					if (question) question.className = "quiz-faq-question-collapsed";
+				}
+			});
+		});
 	}
 
 	get isTestMode() {
