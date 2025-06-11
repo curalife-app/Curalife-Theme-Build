@@ -2981,118 +2981,119 @@ class ModularQuiz {
 	}
 
 	_generateSchedulingSuccessHTML(schedulingData) {
-		const scheduleLink = schedulingData?.scheduleLink || "#";
-		const masterId = schedulingData?.masterId || "";
+		// Fallback for ES5 compatibility - using regular variables and string concatenation
+		var scheduleLink = (schedulingData && schedulingData.scheduleLink) ? schedulingData.scheduleLink : "#";
+		var masterId = (schedulingData && schedulingData.masterId) ? schedulingData.masterId : "";
+		var referenceHtml = masterId ? ('<p class="quiz-text-xs" style="margin-top: 16px; color: #666; font-family: monospace;">Reference ID: ' + masterId + '</p>') : "";
 
-		return `
-			<div class="quiz-results-container">
-				<div class="quiz-results-header">
-					<h2 class="quiz-results-title">🎉 Appointment Request Submitted!</h2>
-					<p class="quiz-results-subtitle">Great news! Your request has been successfully processed and your dietitian appointment is ready to be scheduled.</p>
-				</div>
+		var html = "";
+		html += '<div class="quiz-results-container">';
+		html += '<div class="quiz-results-header">';
+		html += '<h2 class="quiz-results-title">🎉 Appointment Request Submitted!</h2>';
+		html += '<p class="quiz-results-subtitle">Great news! Your request has been successfully processed and your dietitian appointment is ready to be scheduled.</p>';
+		html += '</div>';
+		html += '<div class="quiz-action-section">';
+		html += '<div class="quiz-action-content">';
+		html += '<div class="quiz-action-header">';
+		html += '<h3 class="quiz-action-title">Next: Choose Your Appointment Time</h3>';
+		html += '</div>';
+		html += '<div class="quiz-action-details">';
+		html += '<div class="quiz-action-info">';
+		html += '<div class="quiz-action-info-text">';
+		html += 'Click below to access your personalized scheduling portal where you can select from available appointment times that work best for your schedule.';
+		html += '</div>';
+		html += '</div>';
+		html += '<a href="' + scheduleLink + '" target="_blank" class="quiz-booking-button">';
+		html += '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">';
+		html += '<path d="M6.66666 2.5V5.83333M13.3333 2.5V5.83333M2.5 9.16667H17.5M4.16666 3.33333H15.8333C16.7538 3.33333 17.5 4.07952 17.5 5V16.6667C17.5 17.5871 16.7538 18.3333 15.8333 18.3333H4.16666C3.24619 18.3333 2.5 17.5871 2.5 16.6667V5C2.5 4.07952 3.24619 3.33333 4.16666 3.33333Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+		html += '</svg>';
+		html += 'Schedule Your Appointment';
+		html += '</a>';
+		html += referenceHtml;
+		html += '</div>';
+		html += '</div>';
+		html += '</div>';
+		// Rest of HTML for coverage card and contact info would continue here...
+		html += '<div class="quiz-coverage-card">';
+		html += '<div class="quiz-coverage-card-title">What to Expect</div>';
+		html += '<div class="quiz-coverage-benefits">';
+		html += '<div class="quiz-coverage-benefit">';
+		html += '<div class="quiz-coverage-benefit-icon">';
+		html += '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">';
+		html += '<path d="M12 8V12L15 15" stroke="#306E51" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+		html += '<circle cx="12" cy="12" r="9" stroke="#306E51" stroke-width="2"/>';
+		html += '</svg>';
+		html += '</div>';
+		html += '<div class="quiz-coverage-benefit-text">';
+		html += '<strong>30-60 Minutes</strong><br/>';
+		html += 'Comprehensive nutrition consultation tailored to your specific health goals';
+		html += '</div>';
+		html += '</div>';
+		html += '<div class="quiz-coverage-benefit">';
+		html += '<div class="quiz-coverage-benefit-icon">';
+		html += '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">';
+		html += '<path d="M17 3V0M12 3V0M7 3V0M3 7H21M5 21H19C20.1046 21 21 20.1046 21 19V7C21 5.89543 20.1046 5 19 5H5C3.89543 5 3 5.89543 3 7V19C3 20.1046 3.89543 21 5 21Z" stroke="#306E51" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+		html += '</svg>';
+		html += '</div>';
+		html += '<div class="quiz-coverage-benefit-text">';
+		html += '<strong>Flexible Scheduling</strong><br/>';
+		html += 'Choose from morning, afternoon, or evening slots that fit your lifestyle';
+		html += '</div>';
+		html += '</div>';
+		html += '<div class="quiz-coverage-benefit">';
+		html += '<div class="quiz-coverage-benefit-icon">';
+		html += '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">';
+		html += '<path d="M9 12L11 14L22 3M21 12V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V5C3.89543 3 5 3 5 3H16" stroke="#306E51" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+		html += '</svg>';
+		html += '</div>';
+		html += '<div class="quiz-coverage-benefit-text">';
+		html += '<strong>Personalized Plan</strong><br/>';
+		html += 'Receive a custom nutrition plan based on your quiz responses and health profile';
+		html += '</div>';
+		html += '</div>';
+		html += '<div class="quiz-coverage-benefit">';
+		html += '<div class="quiz-coverage-benefit-icon">';
+		html += '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">';
+		html += '<path d="M18.3333 14.1667C18.3333 15.0871 17.5871 15.8333 16.6667 15.8333H5.83333L1.66666 20V3.33333C1.66666 2.41286 2.41285 1.66667 3.33333 1.66667H16.6667C17.5871 1.66667 18.3333 2.41286 18.3333 3.33333V14.1667Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+		html += '</svg>';
+		html += '</div>';
+		html += '<div class="quiz-coverage-benefit-text">';
+		html += '<strong>Ongoing Support</strong><br/>';
+		html += 'Follow-up resources and support to help you achieve your health goals';
+		html += '</div>';
+		html += '</div>';
+		html += '</div>';
+		html += '</div>';
+		html += '<div class="quiz-action-section" style="background-color: #f8f9fa;">';
+		html += '<div class="quiz-action-content">';
+		html += '<div class="quiz-action-header">';
+		html += '<h3 class="quiz-action-title">Need Assistance?</h3>';
+		html += '</div>';
+		html += '<div class="quiz-action-details">';
+		html += '<div class="quiz-action-info">';
+		html += '<div class="quiz-action-info-text">';
+		html += 'Our support team is here to help if you have any questions about scheduling or preparing for your appointment.';
+		html += '</div>';
+		html += '</div>';
+		html += '<div class="quiz-action-feature">';
+		html += '<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">';
+		html += '<path d="M18.3333 5.83333L10 11.6667L1.66666 5.83333" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+		html += '<path d="M1.66666 5.83333H18.3333V15C18.3333 15.442 18.1577 15.866 17.8452 16.1785C17.5327 16.491 17.1087 16.6667 16.6667 16.6667H3.33333C2.89131 16.6667 2.46738 16.491 2.15482 16.1785C1.84226 15.866 1.66666 15.442 1.66666 15V5.83333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+		html += '</svg>';
+		html += '<div class="quiz-action-feature-text">Email: support@curalife.com</div>';
+		html += '</div>';
+		html += '<div class="quiz-action-feature">';
+		html += '<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">';
+		html += '<path d="M18.3081 14.2233C17.1569 14.2233 16.0346 14.0397 14.9845 13.6971C14.6449 13.5878 14.2705 13.6971 14.0579 13.9427L12.8372 15.6772C10.3023 14.4477 8.55814 12.7138 7.32326 10.1581L9.10465 8.89535C9.34884 8.68372 9.45814 8.30233 9.34884 7.96279C9.00581 6.91628 8.82209 5.79186 8.82209 4.64535C8.82209 4.28953 8.53256 4 8.17674 4H4.64535C4.28953 4 4 4.28953 4 4.64535C4 12.1715 10.1831 18.3953 17.6628 18.3953C18.0186 18.3953 18.3081 18.1058 18.3081 17.75V14.2233Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+		html += '</svg>';
+		html += '<div class="quiz-action-feature-text">Phone: 1-800-CURALIFE</div>';
+		html += '</div>';
+		html += '</div>';
+		html += '</div>';
+		html += '</div>';
+		html += '</div>';
 
-				<div class="quiz-action-section">
-					<div class="quiz-action-content">
-						<div class="quiz-action-header">
-							<h3 class="quiz-action-title">Next: Choose Your Appointment Time</h3>
-						</div>
-						<div class="quiz-action-details">
-							<div class="quiz-action-info">
-								<div class="quiz-action-info-text">
-									Click below to access your personalized scheduling portal where you can select from available appointment times that work best for your schedule.
-								</div>
-							</div>
-							<a href="${scheduleLink}" target="_blank" class="quiz-booking-button">
-								<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-									<path d="M6.66666 2.5V5.83333M13.3333 2.5V5.83333M2.5 9.16667H17.5M4.16666 3.33333H15.8333C16.7538 3.33333 17.5 4.07952 17.5 5V16.6667C17.5 17.5871 16.7538 18.3333 15.8333 18.3333H4.16666C3.24619 18.3333 2.5 17.5871 2.5 16.6667V5C2.5 4.07952 3.24619 3.33333 4.16666 3.33333Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-								</svg>
-								Schedule Your Appointment
-							</a>
-							${masterId ? '<p class="quiz-text-xs" style="margin-top: 16px; color: #666; font-family: monospace;">Reference ID: ' + masterId + '</p>' : ""}
-						</div>
-					</div>
-				</div>
-
-				<div class="quiz-coverage-card">
-					<div class="quiz-coverage-card-title">What to Expect</div>
-					<div class="quiz-coverage-benefits">
-						<div class="quiz-coverage-benefit">
-							<div class="quiz-coverage-benefit-icon">
-								<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-									<path d="M12 8V12L15 15" stroke="#306E51" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-									<circle cx="12" cy="12" r="9" stroke="#306E51" stroke-width="2"/>
-								</svg>
-							</div>
-							<div class="quiz-coverage-benefit-text">
-								<strong>30-60 Minutes</strong><br/>
-								Comprehensive nutrition consultation tailored to your specific health goals
-							</div>
-						</div>
-						<div class="quiz-coverage-benefit">
-							<div class="quiz-coverage-benefit-icon">
-								<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-									<path d="M17 3V0M12 3V0M7 3V0M3 7H21M5 21H19C20.1046 21 21 20.1046 21 19V7C21 5.89543 20.1046 5 19 5H5C3.89543 5 3 5.89543 3 7V19C3 20.1046 3.89543 21 5 21Z" stroke="#306E51" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-								</svg>
-							</div>
-							<div class="quiz-coverage-benefit-text">
-								<strong>Flexible Scheduling</strong><br/>
-								Choose from morning, afternoon, or evening slots that fit your lifestyle
-							</div>
-						</div>
-						<div class="quiz-coverage-benefit">
-							<div class="quiz-coverage-benefit-icon">
-								<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-									<path d="M9 12L11 14L22 3M21 12V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V5C3.89543 3 5 3 5 3H16" stroke="#306E51" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-								</svg>
-							</div>
-							<div class="quiz-coverage-benefit-text">
-								<strong>Personalized Plan</strong><br/>
-								Receive a custom nutrition plan based on your quiz responses and health profile
-							</div>
-						</div>
-						<div class="quiz-coverage-benefit">
-							<div class="quiz-coverage-benefit-icon">
-								<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-									<path d="M18.3333 14.1667C18.3333 15.0871 17.5871 15.8333 16.6667 15.8333H5.83333L1.66666 20V3.33333C1.66666 2.41286 2.41285 1.66667 3.33333 1.66667H16.6667C17.5871 1.66667 18.3333 2.41286 18.3333 3.33333V14.1667Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-								</svg>
-							</div>
-							<div class="quiz-coverage-benefit-text">
-								<strong>Ongoing Support</strong><br>
-								Follow-up resources and support to help you achieve your health goals
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<div class="quiz-action-section" style="background-color: #f8f9fa;">
-					<div class="quiz-action-content">
-						<div class="quiz-action-header">
-							<h3 class="quiz-action-title">Need Assistance?</h3>
-						</div>
-						<div class="quiz-action-details">
-							<div class="quiz-action-info">
-								<div class="quiz-action-info-text">
-									Our support team is here to help if you have any questions about scheduling or preparing for your appointment.
-								</div>
-							</div>
-							<div class="quiz-action-feature">
-								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-									<path d="M18.3333 5.83333L10 11.6667L1.66666 5.83333" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-									<path d="M1.66666 5.83333H18.3333V15C18.3333 15.442 18.1577 15.866 17.8452 16.1785C17.5327 16.491 17.1087 16.6667 16.6667 16.6667H3.33333C2.89131 16.6667 2.46738 16.491 2.15482 16.1785C1.84226 15.866 1.66666 15.442 1.66666 15V5.83333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-								</svg>
-								<div class="quiz-action-feature-text">Email: support@curalife.com</div>
-							</div>
-							<div class="quiz-action-feature">
-								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-									<path d="M18.3081 14.2233C17.1569 14.2233 16.0346 14.0397 14.9845 13.6971C14.6449 13.5878 14.2705 13.6971 14.0579 13.9427L12.8372 15.6772C10.3023 14.4477 8.55814 12.7138 7.32326 10.1581L9.10465 8.89535C9.34884 8.68372 9.45814 8.30233 9.34884 7.96279C9.00581 6.91628 8.82209 5.79186 8.82209 4.64535C8.82209 4.28953 8.53256 4 8.17674 4H4.64535C4.28953 4 4 4.28953 4 4.64535C4 12.1715 10.1831 18.3953 17.6628 18.3953C18.0186 18.3953 18.3081 18.1058 18.3081 17.75V14.2233Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-								</svg>
-								<div class="quiz-action-feature-text">Phone: 1-800-CURALIFE</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		`;
+		return html;
 	}
 
 	_generateSchedulingErrorHTML(errorMessage, schedulingData = null) {
