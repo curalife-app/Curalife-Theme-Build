@@ -165,16 +165,23 @@ let CartItems$1 = class CartItems2 extends HTMLElement {
   }
 };
 customElements.define("cart-items", CartItems$1);
+window.CartItems = CartItems$1;
 if (!customElements.get("cart-note")) {
-  customElements.define("cart-note", class CartNote extends HTMLElement {
-    constructor() {
-      super();
-      this.addEventListener("change", debounce((event) => {
-        const body = JSON.stringify({ note: event.target.value });
-        fetch("".concat(routes.cart_update_url), { ...fetchConfig(), ...{ body } });
-      }, ON_CHANGE_DEBOUNCE_TIMER));
+  customElements.define(
+    "cart-note",
+    class CartNote extends HTMLElement {
+      constructor() {
+        super();
+        this.addEventListener(
+          "change",
+          debounce((event) => {
+            const body = JSON.stringify({ note: event.target.value });
+            fetch("".concat(routes.cart_update_url), { ...fetchConfig(), ...{ body } });
+          }, ON_CHANGE_DEBOUNCE_TIMER)
+        );
+      }
     }
-  });
+  );
 }
 class CartDrawer extends HTMLElement {
   constructor() {
