@@ -556,14 +556,23 @@ class ModularQuiz {
 	_handleWorkflowError(error) {
 		console.error("Handling workflow error:", error);
 
-		// Stop loading messages
+		// Stop loading messages and status polling
 		this._stopLoadingMessages();
+		this._stopStatusPolling();
+
+		// Create proper error result data instead of null
+		const errorResultData = {
+			eligibilityStatus: "ERROR",
+			isEligible: false,
+			userMessage: error.message || error.error || "There was an error processing your request.",
+			error: error
+		};
 
 		// Show error results
 		this.showResults(
 			this.config.resultUrl,
 			false, // webhookSuccess
-			null,
+			errorResultData,
 			error.message || error.error || "There was an error processing your request."
 		);
 	}
