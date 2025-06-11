@@ -5,12 +5,6 @@
   function _get() { return _get = "undefined" != typeof Reflect && Reflect.get ? Reflect.get.bind() : function (e, t, r) { var p = _superPropBase(e, t); if (p) { var n = Object.getOwnPropertyDescriptor(p, t); return n.get ? n.get.call(arguments.length < 3 ? e : r) : n.value; } }, _get.apply(null, arguments); }
   function _superPropBase(t, o) { for (; !{}.hasOwnProperty.call(t, o) && null !== (t = _getPrototypeOf(t));); return t; }
   function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
-  function _toConsumableArray(r) { return _arrayWithoutHoles(r) || _iterableToArray(r) || _unsupportedIterableToArray(r) || _nonIterableSpread(); }
-  function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-  function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
-  function _iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
-  function _arrayWithoutHoles(r) { if (Array.isArray(r)) return _arrayLikeToArray(r); }
-  function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
   function _classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
   function _defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, _toPropertyKey(o.key), o); } }
   function _createClass(e, r, t) { return r && _defineProperties(e.prototype, r), t && _defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
@@ -26,10 +20,11 @@
   function _isNativeFunction(t) { try { return -1 !== Function.toString.call(t).indexOf("[native code]"); } catch (n) { return "function" == typeof t; } }
   function _setPrototypeOf(t, e) { return _setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function (t, e) { return t.__proto__ = e, t; }, _setPrototypeOf(t, e); }
   function _getPrototypeOf(t) { return _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function (t) { return t.__proto__ || Object.getPrototypeOf(t); }, _getPrototypeOf(t); }
-  System.register([], function (exports, module) {
+  System.register(['./pubsub-legacy-chunk.js'], function (exports, module) {
     'use strict';
 
     return {
+      setters: [null],
       execute: function execute() {
         if (!customElements.get("product-form")) {
           customElements.define("product-form", /*#__PURE__*/function (_HTMLElement) {
@@ -80,8 +75,8 @@
                   return response.json();
                 }).then(function (response) {
                   if (response.status) {
-                    if (typeof publish$1 === "function") {
-                      publish$1(PUB_SUB_EVENTS$1.cartError, {
+                    if (typeof publish === "function") {
+                      publish(PUB_SUB_EVENTS.cartError, {
                         source: "product-form",
                         productVariantId: formData.get("id"),
                         errors: response.errors || response.description,
@@ -100,7 +95,7 @@
                     window.location = window.routes.cart_url;
                     return;
                   }
-                  if (!_this2.error && typeof publish$1 === "function") publish$1(PUB_SUB_EVENTS$1.cartUpdate, {
+                  if (!_this2.error && typeof publish === "function") publish(PUB_SUB_EVENTS.cartUpdate, {
                     source: "product-form",
                     productVariantId: formData.get("id"),
                     cartData: response
@@ -151,29 +146,8 @@
             }]);
           }(/*#__PURE__*/_wrapNativeSuper(HTMLElement)));
         }
-        var PUB_SUB_EVENTS$1 = {
-          cartUpdate: "cart-update",
-          quantityUpdate: "quantity-update"
-        };
-        var subscribers = {};
-        function subscribe$1(eventName, callback) {
-          if (subscribers[eventName] === undefined) {
-            subscribers[eventName] = [];
-          }
-          subscribers[eventName] = [].concat(_toConsumableArray(subscribers[eventName]), [callback]);
-          return function unsubscribe() {
-            subscribers[eventName] = subscribers[eventName].filter(function (cb) {
-              return cb !== callback;
-            });
-          };
-        }
-        function publish$1(eventName, data) {
-          if (subscribers[eventName]) {
-            subscribers[eventName].forEach(function (callback) {
-              callback(data);
-            });
-          }
-        }
+
+        // Constants and pubsub functions moved to constants.js and pubsub.js
         var QuantityInput = /*#__PURE__*/function (_HTMLElement2) {
           function QuantityInput() {
             var _this3;
@@ -195,7 +169,7 @@
             key: "connectedCallback",
             value: function connectedCallback() {
               this.validateQtyRules();
-              this.quantityUpdateUnsubscriber = subscribe$1(PUB_SUB_EVENTS$1.quantityUpdate, this.validateQtyRules.bind(this));
+              this.quantityUpdateUnsubscriber = subscribe(PUB_SUB_EVENTS.quantityUpdate, this.validateQtyRules.bind(this));
             }
           }, {
             key: "disconnectedCallback",

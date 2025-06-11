@@ -8,6 +8,7 @@ function __vite_legacy_guard() {
   })().next();
 }
 ;
+import "./pubsub-chunk.js";
 class CartRemoveButton extends HTMLElement {
   constructor() {
     super();

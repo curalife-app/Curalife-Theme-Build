@@ -5,6 +5,7 @@ function __vite_legacy_guard() {
   })().next();
 }
 ;
+import "./pubsub-chunk.js";
 if (typeof window.Shopify == "undefined") {
   window.Shopify = {};
 }

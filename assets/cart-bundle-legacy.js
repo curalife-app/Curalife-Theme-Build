@@ -25,10 +25,11 @@
   function _isNativeFunction(t) { try { return -1 !== Function.toString.call(t).indexOf("[native code]"); } catch (n) { return "function" == typeof t; } }
   function _setPrototypeOf(t, e) { return _setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function (t, e) { return t.__proto__ = e, t; }, _setPrototypeOf(t, e); }
   function _getPrototypeOf(t) { return _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function (t) { return t.__proto__ || Object.getPrototypeOf(t); }, _getPrototypeOf(t); }
-  System.register([], function (exports, module) {
+  System.register(['./pubsub-legacy-chunk.js'], function (exports, module) {
     'use strict';
 
     return {
+      setters: [null],
       execute: function execute() {
         var CartRemoveButton = /*#__PURE__*/function (_HTMLElement) {
           function CartRemoveButton() {

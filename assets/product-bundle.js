@@ -8,6 +8,7 @@ function __vite_legacy_guard() {
   })().next();
 }
 ;
+import "./pubsub-chunk.js";
 if (!customElements.get("product-form")) {
   customElements.define(
     "product-form",
@@ -51,8 +52,8 @@ if (!customElements.get("product-form")) {
         config.body = formData;
         fetch("".concat(routes.cart_add_url), config).then((response) => response.json()).then((response) => {
           if (response.status) {
-            if (typeof publish$1 === "function") {
-              publish$1(PUB_SUB_EVENTS$1.cartError, {
+            if (typeof publish === "function") {
+              publish(PUB_SUB_EVENTS.cartError, {
                 source: "product-form",
                 productVariantId: formData.get("id"),
                 errors: response.errors || response.description,
@@ -71,7 +72,7 @@ if (!customElements.get("product-form")) {
             window.location = window.routes.cart_url;
             return;
           }
-          if (!this.error && typeof publish$1 === "function") publish$1(PUB_SUB_EVENTS$1.cartUpdate, { source: "product-form", productVariantId: formData.get("id"), cartData: response });
+          if (!this.error && typeof publish === "function") publish(PUB_SUB_EVENTS.cartUpdate, { source: "product-form", productVariantId: formData.get("id"), cartData: response });
           this.error = false;
           const quickAddModal = this.closest("quick-add-modal");
           if (quickAddModal) {
@@ -117,29 +118,6 @@ if (!customElements.get("product-form")) {
     }
   );
 }
-const PUB_SUB_EVENTS$1 = {
-  cartUpdate: "cart-update",
-  quantityUpdate: "quantity-update"
-};
-let subscribers = {};
-function subscribe$1(eventName, callback) {
-  if (subscribers[eventName] === void 0) {
-    subscribers[eventName] = [];
-  }
-  subscribers[eventName] = [...subscribers[eventName], callback];
-  return function unsubscribe() {
-    subscribers[eventName] = subscribers[eventName].filter((cb) => {
-      return cb !== callback;
-    });
-  };
-}
-function publish$1(eventName, data) {
-  if (subscribers[eventName]) {
-    subscribers[eventName].forEach((callback) => {
-      callback(data);
-    });
-  }
-}
 class QuantityInput extends HTMLElement {
   constructor() {
     super();
@@ -151,7 +129,7 @@ class QuantityInput extends HTMLElement {
   }
   connectedCallback() {
     this.validateQtyRules();
-    this.quantityUpdateUnsubscriber = subscribe$1(PUB_SUB_EVENTS$1.quantityUpdate, this.validateQtyRules.bind(this));
+    this.quantityUpdateUnsubscriber = subscribe(PUB_SUB_EVENTS.quantityUpdate, this.validateQtyRules.bind(this));
   }
   disconnectedCallback() {
     if (this.quantityUpdateUnsubscriber) {

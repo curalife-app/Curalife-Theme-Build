@@ -25,10 +25,11 @@
   function _getPrototypeOf(t) { return _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function (t) { return t.__proto__ || Object.getPrototypeOf(t); }, _getPrototypeOf(t); }
   function _inherits(t, e) { if ("function" != typeof e && null !== e) throw new TypeError("Super expression must either be null or a function"); t.prototype = Object.create(e && e.prototype, { constructor: { value: t, writable: !0, configurable: !0 } }), Object.defineProperty(t, "prototype", { writable: !1 }), e && _setPrototypeOf(t, e); }
   function _setPrototypeOf(t, e) { return _setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function (t, e) { return t.__proto__ = e, t; }, _setPrototypeOf(t, e); }
-  System.register([], function (exports, module) {
+  System.register(['./pubsub-legacy-chunk.js'], function (exports, module) {
     'use strict';
 
     return {
+      setters: [null],
       execute: function execute() {
         var PredictiveSearch = /*#__PURE__*/function (_SearchForm) {
           function PredictiveSearch() {
