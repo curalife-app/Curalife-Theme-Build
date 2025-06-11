@@ -1339,35 +1339,40 @@ class ModularQuiz {
 	}
 
 	renderPayerSearch(question, response) {
-		const selectedValue = response.answer || "";
-		const placeholder = question.placeholder || "Search for your insurance plan...";
+		const selectedPayer = response.answer;
+		const placeholder = question.placeholder || "Start typing to search for your insurance plan...";
+		let selectedDisplayName = "";
+
+		if (selectedPayer && typeof selectedPayer === "string") {
+			selectedDisplayName = this._resolvePayerDisplayName(selectedPayer) || "";
+		}
 
 		return `
 			<div class="quiz-payer-search-container">
-				<div class="quiz-payer-search-input-wrapper">
-					<input
-						type="text"
-						id="question-${question.id}"
-						class="quiz-input quiz-payer-search-input"
-						placeholder="${placeholder}"
-						value="${selectedValue}"
-						autocomplete="off"
-						aria-describedby="error-${question.id}"
-						data-api-endpoint="${question.apiEndpoint || ""}"
-					>
-					<div class="quiz-payer-search-results" id="payer-results-${question.id}" style="display: none;">
-						<!-- Search results will be populated here -->
-					</div>
+                <div class="quiz-payer-search-input-wrapper">
+                    <input type="text" id="question-${question.id}" class="quiz-payer-search-input"
+                           placeholder="${placeholder}"
+                           value="${selectedDisplayName}"
+                           autocomplete="off"
+                           aria-describedby="error-${question.id}">
+                    <svg class="quiz-payer-search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" fill="none">
+  <path d="M13.1667 13.1667L16.5 16.5M14.8333 8.16667C14.8333 4.48477 11.8486 1.5 8.16667 1.5C4.48477 1.5 1.5 4.48477 1.5 8.16667C1.5 11.8486 4.48477 14.8333 8.16667 14.8333C11.8486 14.8333 14.8333 11.8486 14.8333 8.16667Z" stroke="#121212" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+                </div>
+				<div class="quiz-payer-search-dropdown" id="search-dropdown-${question.id}" style="display: none;">
+                    <div class="quiz-payer-search-dropdown-header">
+                        <span class="quiz-payer-search-dropdown-title">Suggestions</span>
+                        <button class="quiz-payer-search-close-btn" type="button" aria-label="Close dropdown">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 4L4 12M4 4L12 12" stroke="#6B7280" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="quiz-payer-search-results"></div>
 				</div>
-				${this._getErrorElement(question.id)}
-				<div class="quiz-payer-search-common">
-					<p class="quiz-text-sm">Common insurance providers:</p>
-					<div class="quiz-payer-common-grid">
-						${this._renderCommonPayers(question)}
-					</div>
-				</div>
-			</div>
-		`;
+				<p id="error-${question.id}" class="quiz-error-text quiz-error-hidden"></p>
+            </div>
+        `;
 	}
 
 	_renderCommonPayers(question) {
@@ -1804,142 +1809,282 @@ class ModularQuiz {
 	}
 
 	_attachPayerSearchListeners(question) {
-		const input = this.questionContainer.querySelector(`#question-${question.id}`);
-		const resultsContainer = this.questionContainer.querySelector(`#payer-results-${question.id}`);
-		const commonButtons = this.questionContainer.querySelectorAll(`[data-question-id="${question.id}"]`);
+		const searchInput = this.questionContainer.querySelector(`#question-${question.id}`);
+		const dropdown = this.questionContainer.querySelector(`#search-dropdown-${question.id}`);
 
-		if (!input) return;
-
-		// Handle input search
-		let searchTimeout;
-		input.addEventListener("input", e => {
-			clearTimeout(searchTimeout);
-			const searchTerm = e.target.value.trim();
-
-			if (searchTerm.length >= 2) {
-				searchTimeout = setTimeout(() => {
-					this._searchPayers(question, searchTerm, resultsContainer);
-				}, 300);
-			} else {
-				if (resultsContainer) {
-					resultsContainer.style.display = "none";
-				}
-			}
-		});
-
-		// Handle common payer buttons
-		commonButtons.forEach(button => {
-			button.addEventListener("click", () => {
-				const payerId = button.getAttribute("data-payer-id");
-				const payerName = button.getAttribute("data-payer-name");
-				this._selectPayer(question, payerId, payerName, input);
+		if (searchInput && dropdown) {
+			this._setupPayerSearchBehavior(question, searchInput, dropdown, selectedPayer => {
+				this.handleAnswer(selectedPayer);
 			});
-		});
-
-		// Handle clicking outside to close results
-		document.addEventListener("click", e => {
-			if (!input.contains(e.target) && !resultsContainer?.contains(e.target)) {
-				if (resultsContainer) {
-					resultsContainer.style.display = "none";
-				}
-			}
-		});
+		}
 	}
 
 	_attachPayerSearchFormListeners(question) {
-		// For form steps, we use the same logic as regular payer search
-		this._attachPayerSearchListeners(question);
+		setTimeout(() => {
+			const searchInput = this.questionContainer.querySelector(`#question-${question.id}`);
+			const dropdown = this.questionContainer.querySelector(`#search-dropdown-${question.id}`);
 
-		// Additionally handle form-specific validation
-		const input = this.questionContainer.querySelector(`#question-${question.id}`);
-		if (input) {
-			input.addEventListener("blur", () => {
-				// Clear any validation errors when a payer is selected
-				if (input.value.trim()) {
-					this._clearFieldError(question.id, input);
-				}
-			});
-		}
+			if (searchInput && dropdown) {
+				this._setupPayerSearchBehavior(question, searchInput, dropdown, selectedPayer => {
+					this.handleFormAnswer(question.id, selectedPayer);
+					this.updateNavigation();
+				});
+			}
+		}, 100);
 	}
 
-	async _searchPayers(question, searchTerm, resultsContainer) {
-		if (!resultsContainer) return;
+	_setupPayerSearchBehavior(question, searchInput, dropdown, onSelectCallback) {
+		let isOpen = false;
+		let searchTimeout = null;
+		const container = searchInput.closest(".quiz-payer-search-container");
 
-		try {
-			const apiEndpoint = question.apiEndpoint;
-			if (!apiEndpoint) {
-				console.warn("No API endpoint provided for payer search");
-				return;
+		searchInput.addEventListener("focus", () => {
+			if (!isOpen) {
+				this._openPayerSearchDropdown(dropdown, container, searchInput);
+				isOpen = true;
+				this._showInitialPayerList(dropdown, onSelectCallback);
+			}
+		});
+
+		searchInput.addEventListener("click", () => {
+			if (!isOpen) {
+				this._openPayerSearchDropdown(dropdown, container, searchInput);
+				isOpen = true;
+				this._showInitialPayerList(dropdown, onSelectCallback);
+			}
+		});
+
+		searchInput.addEventListener("input", () => {
+			if (!isOpen) {
+				this._openPayerSearchDropdown(dropdown, container, searchInput);
+				isOpen = true;
 			}
 
-			// Show loading state
-			resultsContainer.innerHTML = '<div class="quiz-payer-search-loading">Searching...</div>';
-			resultsContainer.style.display = "block";
+			const query = searchInput.value.trim();
 
-			// Make API call to search payers
-			const response = await fetch(`${apiEndpoint}?q=${encodeURIComponent(searchTerm)}`);
-
-			if (!response.ok) {
-				throw new Error(`Search failed: ${response.status}`);
+			if (searchTimeout) {
+				clearTimeout(searchTimeout);
 			}
 
-			const results = await response.json();
-			this._displayPayerResults(question, results, resultsContainer);
-		} catch (error) {
-			console.error("Payer search error:", error);
-			resultsContainer.innerHTML = '<div class="quiz-payer-search-error">Search unavailable. Please select from common providers below.</div>';
-		}
-	}
+			if (query.length > 0) {
+				searchTimeout = setTimeout(() => {
+					const currentQuery = searchInput.value.trim();
+					this._searchPayers(currentQuery, dropdown, onSelectCallback);
+				}, 300);
+			} else {
+				this._showInitialPayerList(dropdown, onSelectCallback);
+			}
+		});
 
-	_displayPayerResults(question, results, resultsContainer) {
-		if (!resultsContainer) return;
-
-		if (!results || !results.length) {
-			resultsContainer.innerHTML = '<div class="quiz-payer-search-no-results">No matching insurance plans found.</div>';
-			resultsContainer.style.display = "block";
-			return;
-		}
-
-		const resultsHTML = results
-			.slice(0, 10)
-			.map(
-				payer => `
-			<div class="quiz-payer-search-result"
-				data-payer-id="${payer.id || payer.stediId}"
-				data-payer-name="${payer.name || payer.displayName}"
-				data-question-id="${question.id}">
-				${payer.name || payer.displayName}
-			</div>
-		`
-			)
-			.join("");
-
-		resultsContainer.innerHTML = resultsHTML;
-		resultsContainer.style.display = "block";
-
-		// Attach click handlers to results
-		const resultElements = resultsContainer.querySelectorAll(".quiz-payer-search-result");
-		resultElements.forEach(result => {
-			result.addEventListener("click", () => {
-				const payerId = result.getAttribute("data-payer-id");
-				const payerName = result.getAttribute("data-payer-name");
-				const input = this.questionContainer.querySelector(`#question-${question.id}`);
-				this._selectPayer(question, payerId, payerName, input);
-				resultsContainer.style.display = "none";
+		// Handle close button click
+		const closeButton = dropdown.querySelector(".quiz-payer-search-close-btn");
+		if (closeButton) {
+			closeButton.addEventListener("click", e => {
+				e.preventDefault();
+				e.stopPropagation();
+				this._closePayerSearchDropdown(dropdown, container, searchInput);
+				isOpen = false;
 			});
+		}
+
+		// Close dropdown when clicking outside
+		document.addEventListener("click", e => {
+			if (!container.contains(e.target)) {
+				this._closePayerSearchDropdown(dropdown, container, searchInput);
+				isOpen = false;
+			}
 		});
 	}
 
-	_selectPayer(question, payerId, payerName, input) {
-		if (input) {
-			input.value = payerName;
+	_showInitialPayerList(dropdown, onSelectCallback) {
+		const commonPayers = this.quizData.commonPayers || [];
+		const results = commonPayers.map(payer => ({ payer }));
+		this._renderSearchResults(results, "", dropdown, onSelectCallback);
+	}
+
+	async _searchPayers(query, dropdown, onSelectCallback) {
+		const resultsContainer = dropdown.querySelector(".quiz-payer-search-results");
+		if (!resultsContainer) return;
+
+		// Show loading state
+		resultsContainer.innerHTML = `
+			<div class="quiz-payer-search-loading">
+				<div class="quiz-payer-search-loading-spinner"></div>
+				Searching insurance plans...
+			</div>
+		`;
+
+		try {
+			const apiResults = await this._searchPayersAPI(query);
+			if (apiResults && apiResults.length > 0) {
+				this._renderSearchResults(apiResults, query, dropdown, onSelectCallback);
+				return;
+			}
+		} catch (error) {
+			console.warn("API search failed, falling back to local search:", error);
 		}
 
-		// Update the response with the selected payer
-		this.handleAnswer ? this.handleAnswer(payerId) : this.handleFormAnswer(question.id, payerId);
+		try {
+			const localResults = this._filterCommonPayers(query);
+			this._renderSearchResults(localResults, query, dropdown, onSelectCallback);
+		} catch (error) {
+			console.error("Payer search error:", error);
+			resultsContainer.innerHTML = `<div class="quiz-payer-search-error">Error searching. Please try again.</div>`;
+		}
+	}
 
-		// Clear any validation errors
-		this._clearFieldError(question.id, input);
+	async _searchPayersAPI(query) {
+		const config = this.quizData.config?.apiConfig || {};
+		const apiKey = config.stediApiKey;
+
+		if (!apiKey || apiKey.trim() === "") {
+			console.warn("Stedi API key not configured or empty, using local search only");
+			return null;
+		}
+
+		const baseUrl = "https://healthcare.us.stedi.com/2024-04-01/payers/search";
+		const params = new URLSearchParams({
+			query: query,
+			pageSize: "10",
+			eligibilityCheck: "SUPPORTED"
+		});
+
+		const url = `${baseUrl}?${params}`;
+
+		const response = await fetch(url, {
+			method: "GET",
+			headers: {
+				Authorization: apiKey,
+				Accept: "application/json"
+			}
+		});
+
+		if (!response.ok) {
+			const errorText = await response.text();
+			throw new Error(`API request failed: ${response.status} - ${errorText}`);
+		}
+
+		const data = await response.json();
+
+		const transformedResults =
+			data.items?.map(item => ({
+				payer: {
+					stediId: item.payer.stediId,
+					displayName: item.payer.displayName,
+					primaryPayerId: item.payer.primaryPayerId,
+					aliases: item.payer.aliases || [],
+					score: item.score
+				}
+			})) || [];
+
+		return transformedResults;
+	}
+
+	_filterCommonPayers(query) {
+		const commonPayers = this.quizData.commonPayers || [];
+		if (!query || query.length === 0) {
+			return commonPayers.map(payer => ({ payer }));
+		}
+
+		const lowerQuery = query.toLowerCase();
+		const filtered = commonPayers.filter(payer => payer.displayName.toLowerCase().includes(lowerQuery) || (payer.aliases && payer.aliases.some(alias => alias.toLowerCase().includes(lowerQuery))));
+
+		return filtered.map(payer => ({ payer }));
+	}
+
+	_renderSearchResults(results, query, dropdown, onSelectCallback) {
+		const resultsContainer = dropdown.querySelector(".quiz-payer-search-results");
+		if (!resultsContainer) return;
+
+		if (results.length === 0) {
+			resultsContainer.innerHTML = `<div class="quiz-payer-search-no-results">No insurance plans found. Try a different search term.</div>`;
+		} else {
+			const resultsHTML = results
+				.map((item, index) => {
+					const payer = item.payer;
+					const highlightedName = this._highlightSearchTerm(payer.displayName, query);
+					const isApiResult = payer.score !== undefined;
+
+					return `
+					<div class="quiz-payer-search-item" data-index="${index}">
+                        <div class="quiz-payer-search-item-name">
+							${highlightedName}
+						</div>
+						<div class="quiz-payer-search-item-details">
+							<span class="quiz-payer-search-item-id">${payer.stediId}</span>
+                            ${payer.aliases?.length > 0 ? `• ${payer.aliases.slice(0, 2).join(", ")}` : ""}
+							${isApiResult && payer.score ? `• Score: ${payer.score.toFixed(1)}` : ""}
+						</div>
+					</div>
+				`;
+				})
+				.join("");
+
+			resultsContainer.innerHTML = resultsHTML;
+
+			const resultItems = resultsContainer.querySelectorAll(".quiz-payer-search-item");
+			const container = dropdown.closest(".quiz-payer-search-container");
+			const searchInput = container.querySelector(".quiz-payer-search-input");
+
+			resultItems.forEach((item, index) => {
+				item.addEventListener("click", () => {
+					this._selectPayer(results[index].payer, searchInput, dropdown, onSelectCallback);
+				});
+			});
+		}
+
+		dropdown.classList.add("visible");
+		dropdown.style.display = "block";
+	}
+
+	_selectPayer(payer, searchInput, dropdown, onSelectCallback) {
+		// Update the search input with the selected payer name
+		searchInput.value = payer.displayName;
+		searchInput.classList.add("quiz-input-valid");
+
+		const container = searchInput.closest(".quiz-payer-search-container");
+		this._closePayerSearchDropdown(dropdown, container, searchInput);
+
+		onSelectCallback(payer.primaryPayerId);
+	}
+
+	_openPayerSearchDropdown(dropdown, container, searchInput) {
+		dropdown.classList.add("visible");
+		dropdown.style.display = "block";
+		container.classList.add("open");
+
+		const isMobile = window.innerWidth <= 768;
+		if (isMobile) {
+			setTimeout(() => {
+				const inputRect = searchInput.getBoundingClientRect();
+				const offset = 20;
+				const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
+				const targetScrollY = currentScrollY + inputRect.top - offset;
+
+				window.scrollTo({
+					top: Math.max(0, targetScrollY),
+					behavior: "smooth"
+				});
+			}, 100);
+		}
+	}
+
+	_closePayerSearchDropdown(dropdown, container, searchInput) {
+		dropdown.classList.remove("visible");
+		dropdown.style.display = "none";
+		container.classList.remove("open");
+	}
+
+	_highlightSearchTerm(text, searchTerm) {
+		if (!searchTerm || !text) return text;
+		const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
+		return text.replace(regex, '<span class="quiz-payer-search-highlight">$1</span>');
+	}
+
+	_resolvePayerDisplayName(primaryPayerId) {
+		const commonPayers = this.quizData.commonPayers || [];
+		const matchingPayer = commonPayers.find(payer => payer.primaryPayerId === primaryPayerId);
+		return matchingPayer?.displayName || null;
 	}
 
 	_attachFormQuestionListener(question) {
@@ -2421,8 +2566,41 @@ class ModularQuiz {
 		html += "</div>";
 		html += "</div>";
 		html += "</div>";
-
-		return html;
+		html += "</div>";
+		html += "</div>";
+		html += "</div>";
+		html += "</div>";
+		html += '<div class="quiz-action-section" style="background-color: #f8f9fa;">';
+		html += '<div class="quiz-action-content">';
+		html += '<div class="quiz-action-header">';
+		html += '<h3 class="quiz-action-title">Need Assistance?</h3>';
+		html += "</div>";
+		html += '<div class="quiz-action-details">';
+		html += '<div class="quiz-action-info">';
+		html += '<div class="quiz-action-info-text">';
+		html += "Our support team is here to help if you have any questions about scheduling or preparing for your appointment.";
+		html += "</div>";
+		html += "</div>";
+		html += '<div class="quiz-action-feature">';
+		html += '<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">';
+		html += '<path d="M18.3333 5.83333L10 11.6667L1.66666 5.83333" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+		html +=
+			'<path d="M1.66666 5.83333H18.3333V15C18.3333 15.442 18.1577 15.866 17.8452 16.1785C17.5327 16.491 17.1087 16.6667 16.6667 16.6667H3.33333C2.89131 16.6667 2.46738 16.491 2.15482 16.1785C1.84226 15.866 1.66666 15.442 1.66666 15V5.83333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+		html += "</svg>";
+		html += '<div class="quiz-action-feature-text">Email: support@curalife.com</div>';
+		html += "</div>";
+		html += '<div class="quiz-action-feature">';
+		html += '<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">';
+		html +=
+			'<path d="M18.3081 14.2233C17.1569 14.2233 16.0346 14.0397 14.9845 13.6971C14.6449 13.5878 14.2705 13.6971 14.0579 13.9427L12.8372 15.6772C10.3023 14.4477 8.55814 12.7138 7.32326 10.1581L9.10465 8.89535C9.34884 8.68372 9.45814 8.30233 9.34884 7.96279C9.00581 6.91628 8.82209 5.79186 8.82209 4.64535C8.82209 4.28953 8.53256 4 8.17674 4H4.64535C4.28953 4 4 4.28953 4 4.64535C4 12.1715 10.1831 18.3953 17.6628 18.3953C18.0186 18.3953 18.3081 18.1058 18.3081 17.75V14.2233Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-feature-text">Phone: 1-800-CURALIFE</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		`;
 	}
 
 	_generateSchedulingErrorHTML(errorMessage, schedulingData = null) {
