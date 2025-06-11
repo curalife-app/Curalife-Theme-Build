@@ -386,6 +386,28 @@
   .frequency-description[data-changing="false"] {
     animation: fadeIn 0.3s forwards;
   }
+
+  /* 🚨 EMERGENCY VARIANT SELECTION STYLES 🚨 */
+  .variant-box[aria-selected="true"] {
+    background-color: var(--color-primary, #2563eb) !important;
+    color: white !important;
+    border-color: var(--color-primary, #2563eb) !important;
+  }
+
+  .variant-box[aria-selected="false"] {
+    background-color: white !important;
+    color: var(--color-primary, #2563eb) !important;
+    border-color: #e5e7eb !important;
+  }
+
+  .variant-box {
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+  }
+
+  .variant-box:hover {
+    background-color: #f3f4f6 !important;
+  }
 </style>
 
 {% comment %} Pass product data to JS {% endcomment %}
@@ -473,5 +495,93 @@
 		document.querySelectorAll('.variant-box').forEach(box => {
 			observer.observe(box, { attributes: true });
 		});
+	});
+</script>
+
+<script>
+	// 🚨 EMERGENCY BUY BOX FIX 🚨
+	document.addEventListener('DOMContentLoaded', function() {
+		console.log('🚨 EMERGENCY BUY BOX INITIALIZATION STARTING...');
+
+		// Force check for BuyBoxNew class
+		if (typeof BuyBoxNew === 'undefined') {
+			console.error('🚨 BuyBoxNew class not found! Product bundle may not be loaded.');
+
+			// Emergency fallback - add basic click handling
+			const container = document.querySelector('[data-buy-box-new-root="true"]');
+			if (container) {
+				console.log('🚨 Adding emergency click handlers...');
+
+				const variantBoxes = container.querySelectorAll('.variant-box');
+				variantBoxes.forEach(box => {
+					box.addEventListener('click', function(e) {
+						e.preventDefault();
+						console.log('🚨 Emergency variant box clicked:', this.dataset.variant);
+
+						// Remove selected from all boxes
+						variantBoxes.forEach(b => b.setAttribute('aria-selected', 'false'));
+
+						// Add selected to clicked box
+						this.setAttribute('aria-selected', 'true');
+
+						// Update hidden inputs if they exist
+						const sellingPlanInput = container.querySelector('.submit-selling-plan-id');
+						const variantInput = container.querySelector('.submit-variant-id');
+
+						if (sellingPlanInput && this.dataset.subscriptionSellingPlanId) {
+							sellingPlanInput.value = this.dataset.subscriptionSellingPlanId;
+						}
+
+						if (variantInput && this.dataset.variant) {
+							variantInput.value = this.dataset.variant;
+						}
+
+						console.log('🚨 Emergency variant selection complete');
+					});
+				});
+
+				// Select first variant by default
+				if (variantBoxes.length > 0) {
+					variantBoxes[0].click();
+				}
+			}
+		} else {
+			console.log('🚨 BuyBoxNew class found, checking initialization...');
+
+			// Check if BuyBoxNew was initialized
+			const container = document.querySelector('[data-buy-box-new-root="true"]');
+			if (container) {
+				const sid = container.dataset.sid;
+				const instance = BuyBoxNew.getInstance ? BuyBoxNew.getInstance(sid) : null;
+
+				if (!instance) {
+					console.log('🚨 BuyBoxNew not initialized, forcing initialization...');
+
+					const config = {
+						SID: container.dataset.sid,
+						buyType: container.dataset.buyType,
+						priceFormat: container.dataset.priceFormat || "per_bottle",
+						isSlideVariant: container.dataset.isSlideVariant === "true",
+						isOneTimeGift: container.dataset.isOneTimeGift === "true",
+						isOneTimePurchaseLink: container.dataset.isOneTimePurchaseLink === "true",
+						currencySymbol: container.dataset.currencySymbol || "$",
+						product: window.productData?.[container.dataset.productId]
+					};
+
+					console.log('🚨 Emergency config:', config);
+
+					if (config.SID) {
+						try {
+							new BuyBoxNew(container, config);
+							console.log('🚨 Emergency BuyBoxNew initialization successful!');
+						} catch (error) {
+							console.error('🚨 Emergency BuyBoxNew initialization failed:', error);
+						}
+					}
+				} else {
+					console.log('🚨 BuyBoxNew already initialized');
+				}
+			}
+		}
 	});
 </script>
