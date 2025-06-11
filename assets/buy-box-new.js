@@ -1471,3 +1471,6 @@ document.addEventListener("DOMContentLoaded", () => {
 		new BuyBoxNew(container, config);
 	});
 });
+
+// Export for Vite bundling
+export { BuyBoxNew };

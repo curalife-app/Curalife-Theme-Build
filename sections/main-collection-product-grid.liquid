@@ -11,8 +11,9 @@
 
 {%- if section.settings.enable_quick_add -%}
 	<link rel="stylesheet" href="{{ 'quick-add.css' | asset_url }}" media="print" onload="this.media='all'">
-	<script type="module" src="{{ 'product-bundle.js' | asset_url }}"></script>
-	<script nomodule src="{{ 'product-bundle-legacy.js' | asset_url }}"></script>
+	{{ 'product-form.js' | asset_url | script_tag }}
+	{{ 'quick-add.js' | asset_url | script_tag }}
+	{{ 'product-info.js' | asset_url | script_tag }}
 {%- endif -%}
 <noscript>{{ 'component-rte.css' | asset_url | stylesheet_tag }}</noscript>
 
@@ -96,8 +97,10 @@
 
 	<div class="{% if section.settings.filter_type == 'vertical' %} facets-vertical container{% endif %}">
 		{{ 'component-facets.css' | asset_url | stylesheet_tag }}
-		<script type="module" src="{{ 'search-bundle.js' | asset_url }}"></script>
-		<script nomodule src="{{ 'search-bundle-legacy.js' | asset_url }}"></script>
+		{{ 'facets.js' | asset_url | script_tag }}
+		{{ 'search-form.js' | asset_url | script_tag }}
+		{{ 'show-more.js' | asset_url | script_tag }}
+
 		{%- if section.settings.enable_filtering or section.settings.enable_sorting -%}
 			<aside
 				aria-labelledby="verticalTitle"
