@@ -1247,6 +1247,57 @@ class ModularQuiz {
 		`;
 	}
 
+	renderPayerSearch(question, response) {
+		const selectedValue = response.answer || "";
+		const placeholder = question.placeholder || "Search for your insurance plan...";
+
+		return `
+			<div class="quiz-payer-search-container">
+				<div class="quiz-payer-search-input-wrapper">
+					<input
+						type="text"
+						id="question-${question.id}"
+						class="quiz-input quiz-payer-search-input"
+						placeholder="${placeholder}"
+						value="${selectedValue}"
+						autocomplete="off"
+						aria-describedby="error-${question.id}"
+						data-api-endpoint="${question.apiEndpoint || ""}"
+					>
+					<div class="quiz-payer-search-results" id="payer-results-${question.id}" style="display: none;">
+						<!-- Search results will be populated here -->
+					</div>
+				</div>
+				${this._getErrorElement(question.id)}
+				<div class="quiz-payer-search-common">
+					<p class="quiz-text-sm">Common insurance providers:</p>
+					<div class="quiz-payer-common-grid">
+						${this._renderCommonPayers(question)}
+					</div>
+				</div>
+			</div>
+		`;
+	}
+
+	_renderCommonPayers(question) {
+		const commonPayers = this.quizData.commonPayers || [];
+		return commonPayers
+			.map(
+				payer => `
+			<button
+				type="button"
+				class="quiz-payer-common-button"
+				data-payer-id="${payer.stediId}"
+				data-payer-name="${payer.displayName}"
+				data-question-id="${question.id}"
+			>
+				${payer.displayName}
+			</button>
+		`
+			)
+			.join("");
+	}
+
 	_getCheckmarkSVG() {
 		return `<div class="quiz-checkmark">
             <svg width="19" height="19" viewBox="0 0 19 19" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1655,6 +1706,145 @@ class ModularQuiz {
 
 	_removeExistingHandlers(element, events) {
 		events.forEach(event => element.removeEventListener(event, element[`_${event}Handler`]));
+	}
+
+	_attachPayerSearchListeners(question) {
+		const input = this.questionContainer.querySelector(`#question-${question.id}`);
+		const resultsContainer = this.questionContainer.querySelector(`#payer-results-${question.id}`);
+		const commonButtons = this.questionContainer.querySelectorAll(`[data-question-id="${question.id}"]`);
+
+		if (!input) return;
+
+		// Handle input search
+		let searchTimeout;
+		input.addEventListener("input", e => {
+			clearTimeout(searchTimeout);
+			const searchTerm = e.target.value.trim();
+
+			if (searchTerm.length >= 2) {
+				searchTimeout = setTimeout(() => {
+					this._searchPayers(question, searchTerm, resultsContainer);
+				}, 300);
+			} else {
+				if (resultsContainer) {
+					resultsContainer.style.display = "none";
+				}
+			}
+		});
+
+		// Handle common payer buttons
+		commonButtons.forEach(button => {
+			button.addEventListener("click", () => {
+				const payerId = button.getAttribute("data-payer-id");
+				const payerName = button.getAttribute("data-payer-name");
+				this._selectPayer(question, payerId, payerName, input);
+			});
+		});
+
+		// Handle clicking outside to close results
+		document.addEventListener("click", e => {
+			if (!input.contains(e.target) && !resultsContainer?.contains(e.target)) {
+				if (resultsContainer) {
+					resultsContainer.style.display = "none";
+				}
+			}
+		});
+	}
+
+	_attachPayerSearchFormListeners(question) {
+		// For form steps, we use the same logic as regular payer search
+		this._attachPayerSearchListeners(question);
+
+		// Additionally handle form-specific validation
+		const input = this.questionContainer.querySelector(`#question-${question.id}`);
+		if (input) {
+			input.addEventListener("blur", () => {
+				// Clear any validation errors when a payer is selected
+				if (input.value.trim()) {
+					this._clearFieldError(question.id, input);
+				}
+			});
+		}
+	}
+
+	async _searchPayers(question, searchTerm, resultsContainer) {
+		if (!resultsContainer) return;
+
+		try {
+			const apiEndpoint = question.apiEndpoint;
+			if (!apiEndpoint) {
+				console.warn("No API endpoint provided for payer search");
+				return;
+			}
+
+			// Show loading state
+			resultsContainer.innerHTML = '<div class="quiz-payer-search-loading">Searching...</div>';
+			resultsContainer.style.display = "block";
+
+			// Make API call to search payers
+			const response = await fetch(`${apiEndpoint}?q=${encodeURIComponent(searchTerm)}`);
+
+			if (!response.ok) {
+				throw new Error(`Search failed: ${response.status}`);
+			}
+
+			const results = await response.json();
+			this._displayPayerResults(question, results, resultsContainer);
+		} catch (error) {
+			console.error("Payer search error:", error);
+			resultsContainer.innerHTML = '<div class="quiz-payer-search-error">Search unavailable. Please select from common providers below.</div>';
+		}
+	}
+
+	_displayPayerResults(question, results, resultsContainer) {
+		if (!resultsContainer) return;
+
+		if (!results || !results.length) {
+			resultsContainer.innerHTML = '<div class="quiz-payer-search-no-results">No matching insurance plans found.</div>';
+			resultsContainer.style.display = "block";
+			return;
+		}
+
+		const resultsHTML = results
+			.slice(0, 10)
+			.map(
+				payer => `
+			<div class="quiz-payer-search-result"
+				data-payer-id="${payer.id || payer.stediId}"
+				data-payer-name="${payer.name || payer.displayName}"
+				data-question-id="${question.id}">
+				${payer.name || payer.displayName}
+			</div>
+		`
+			)
+			.join("");
+
+		resultsContainer.innerHTML = resultsHTML;
+		resultsContainer.style.display = "block";
+
+		// Attach click handlers to results
+		const resultElements = resultsContainer.querySelectorAll(".quiz-payer-search-result");
+		resultElements.forEach(result => {
+			result.addEventListener("click", () => {
+				const payerId = result.getAttribute("data-payer-id");
+				const payerName = result.getAttribute("data-payer-name");
+				const input = this.questionContainer.querySelector(`#question-${question.id}`);
+				this._selectPayer(question, payerId, payerName, input);
+				resultsContainer.style.display = "none";
+			});
+		});
+	}
+
+	_selectPayer(question, payerId, payerName, input) {
+		if (input) {
+			input.value = payerName;
+		}
+
+		// Update the response with the selected payer
+		this.handleAnswer ? this.handleAnswer(payerId) : this.handleFormAnswer(question.id, payerId);
+
+		// Clear any validation errors
+		this._clearFieldError(question.id, input);
 	}
 
 	_attachFormQuestionListener(question) {
