@@ -1581,11 +1581,8 @@ class ModularQuiz {
 	 * Gets the orchestrator URL
 	 */
 	_getOrchestratorUrl() {
-		// Use environment-specific URLs
-		if (this.isTestMode) {
-			return "https://us-central1-telemedicine-458913.cloudfunctions.net/workflow_orchestrator";
-		}
-		return "https://us-central1-telemedicine-458913.cloudfunctions.net/workflow_orchestrator";
+		const container = document.getElementById('quiz-container');
+		return container?.dataset?.orchestratorUrl || 'https://workflow-orchestrator-xxn52lyizq-uc.a.run.app';
 	}
 
 	// =======================================================================
@@ -1702,7 +1699,8 @@ class ModularQuiz {
 	 * Get the status polling URL
 	 */
 	_getStatusPollingUrl() {
-		return "https://us-central1-telemedicine-458913.cloudfunctions.net/workflow_status_polling";
+		const container = document.getElementById('quiz-container');
+		return container?.dataset?.statusPollingUrl || 'https://workflow-status-polling-xxn52lyizq-uc.a.run.app';
 	}
 
 	/**
