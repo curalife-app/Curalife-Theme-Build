@@ -695,12 +695,16 @@ class ModularQuiz {
 
 			// Check if this is the insurance step completion
 			if (currentStep.id === "step-insurance") {
-				this._triggerEligibilityWorkflow();
+				// HIPAA COMPLIANT: No longer calling eligibility workflow directly from browser
+				// Eligibility will be checked server-side by the user creation workflow
+				console.log("📋 Insurance information collected - will be processed server-side for HIPAA compliance");
 			}
 
 			// Check if this is the contact step completion
 			if (currentStep.id === "step-contact") {
-				// Trigger eligibility workflow now that we have all required data
+				// HIPAA COMPLIANT: Only call user creation workflow
+				// This will handle eligibility checking server-side to keep PHI data secure
+				console.log("👤 Starting HIPAA-compliant user creation workflow (includes server-side eligibility check)");
 				this._triggerUserCreationWorkflow();
 				this.finishQuiz();
 				return;
@@ -1479,149 +1483,20 @@ class ModularQuiz {
 		}
 	}
 
+	// HIPAA COMPLIANCE: This method has been removed to prevent PHI data from being sent directly to eligibility workflow from browser
+	// Eligibility checking is now handled server-side within the user creation workflow
 	_triggerEligibilityWorkflow() {
-		try {
-			const eligibilityPayload = this._buildEligibilityPayload();
-			let webhookUrl = this.container.getAttribute("data-webhook-url") || this.quizData.config?.webhookUrl;
-
-			// Use test webhook URL when in test mode
-			if (this.isTestMode) {
-				const testWebhookUrl =
-					this.container.getAttribute("data-test-webhook-url") || (webhookUrl ? webhookUrl.replace(/\/[^\/]*$/, "/test-eligibility") : null) || this.quizData.config?.testWebhookUrl;
-
-				if (testWebhookUrl) {
-					webhookUrl = testWebhookUrl;
-					console.log("🧪 Test mode detected - using test webhook URL:", webhookUrl);
-				} else {
-					console.log("🧪 Test mode detected but no test webhook URL configured - using production URL with test mode indicator");
-				}
-			}
-
-			if (webhookUrl) {
-				console.log("🔍 Starting eligibility check in background...", {
-					firstName: eligibilityPayload.firstName,
-					lastName: eligibilityPayload.lastName,
-					insurance: eligibilityPayload.insurance,
-					insuranceMemberId: eligibilityPayload.insuranceMemberId,
-					testMode: this.isTestMode,
-					fullPayload: eligibilityPayload
-				});
-
-				// Show notifications
-				this._showBackgroundProcessNotification("🔍 Checking your insurance coverage in the background...");
-
-				// Test mode detailed notification
-				if (this.isTestMode) {
-					this._showBackgroundProcessNotification(
-						`
-						🧪 TEST MODE - Eligibility Workflow Started<br>
-						• URL: ${webhookUrl}<br>
-						• Name: ${eligibilityPayload.firstName} ${eligibilityPayload.lastName}<br>
-						• Insurance: ${eligibilityPayload.insurance}<br>
-						• Member ID: ${eligibilityPayload.insuranceMemberId}<br>
-						• Responses: ${this.responses?.length || 0} collected
-					`,
-						"info"
-					);
-				}
-
-				this.eligibilityWorkflowPromise = this._submitEligibilityToWebhook(webhookUrl, eligibilityPayload);
-
-				// Handle completion in background
-				this.eligibilityWorkflowPromise
-					.then(result => {
-						console.log("✅ Eligibility check completed in background", {
-							success: result?.success,
-							eligibilityStatus: result?.eligibilityStatus,
-							isEligible: result?.isEligible
-						});
-						this.eligibilityWorkflowResult = result;
-
-						const statusIcon = result?.eligibilityStatus === "AAA_ERROR" ? "⚠️" : result?.eligibilityStatus === "ELIGIBLE" ? "✅" : result?.eligibilityStatus === "NOT_COVERED" ? "❌" : "⏳";
-
-						this._showBackgroundProcessNotification("✅ Insurance coverage check complete!", "success");
-
-						// Test mode detailed result notification
-						if (this.isTestMode) {
-							const sessionsText = result?.sessionsCovered ? `${result.sessionsCovered} covered dietitian sessions` : "No sessions covered";
-
-							const fullMessage = result?.userMessage || "";
-
-							this._showBackgroundProcessNotification(
-								`
-								🧪 TEST MODE - Eligibility Result<br>
-								${statusIcon} Status: ${result?.eligibilityStatus || "Unknown"}<br>
-								• Eligible: ${result?.isEligible}<br>
-								• Sessions: ${sessionsText}<br>
-								• Error Code: ${result?.error?.code || result?.aaaErrorCode || "None"}<br>
-								• Message: ${fullMessage.substring(0, 120)}${fullMessage.length > 120 ? "..." : ""}
-							`,
-								result?.eligibilityStatus === "AAA_ERROR" ? "error" : "success"
-							);
-						}
-					})
-					.catch(error => {
-						console.error("❌ Eligibility check failed in background", error);
-						this.eligibilityWorkflowError = error;
-
-						this._showBackgroundProcessNotification("❌ Eligibility check failed", "error");
-
-						// Test mode error notification
-						if (this.isTestMode) {
-							this._showBackgroundProcessNotification(
-								`
-								🧪 TEST MODE - Eligibility Error<br>
-								❌ ${error.message}<br>
-								• Check console for details
-							`,
-								"error"
-							);
-						}
-					});
-			} else {
-				console.warn("No webhook URL configured for eligibility check");
-				if (this.isTestMode) {
-					this._showBackgroundProcessNotification(
-						`
-						🧪 TEST MODE - Configuration Error<br>
-						❌ No webhook URL found<br>
-						• Check data-webhook-url attribute
-					`,
-						"error"
-					);
-				}
-			}
-		} catch (error) {
-			console.error("Failed to trigger eligibility workflow:", error);
-			if (this.isTestMode) {
-				this._showBackgroundProcessNotification(
-					`
-					🧪 TEST MODE - Trigger Error<br>
-					❌ ${error.message}
-				`,
-					"error"
-				);
-			}
-		}
+		console.warn("⚠️ HIPAA COMPLIANCE: Direct eligibility workflow calls from browser are disabled. Eligibility will be checked server-side.");
+		// Show user-friendly notification
+		this._showBackgroundProcessNotification("🔒 Insurance verification will be processed securely server-side", "info");
 	}
 
 	_triggerUserCreationWorkflow() {
 		try {
-			// Wait for eligibility to complete before starting user creation
-			// This maintains the dependency while still being non-blocking for UI
-			if (this.eligibilityWorkflowPromise) {
-				this.eligibilityWorkflowPromise
-					.then(eligibilityResult => {
-						this._startUserCreationWithEligibilityData(eligibilityResult);
-					})
-					.catch(error => {
-						console.error("❌ Eligibility failed, starting user creation without eligibility data", error);
-						this._startUserCreationWithEligibilityData(null);
-					});
-			} else {
-				// No eligibility workflow running, start user creation without eligibility data
-				this._startUserCreationWithEligibilityData(null);
-			}
+			// HIPAA COMPLIANT: Start user creation workflow immediately
+			// Eligibility checking will be handled server-side within the user creation workflow
+			console.log("🔒 Starting HIPAA-compliant user creation workflow (eligibility will be checked server-side)");
+			this._startUserCreationWithEligibilityData(null);
 		} catch (error) {
 			console.error("Failed to trigger user creation workflow:", error);
 		}
@@ -1770,34 +1645,14 @@ class ModularQuiz {
 		}
 	}
 
+	// HIPAA COMPLIANCE: This method has been deprecated to prevent PHI data from being sent directly to eligibility workflow from browser
+	// All eligibility data is now included in user creation payload and processed server-side
 	_buildEligibilityPayload() {
-		const extractedData = this._extractResponseData(true);
-
-		console.log("Building eligibility payload with extracted data:", {
-			extractedData,
-			responsesCount: this.responses?.length || 0,
-			responses: this.responses
-		});
-
+		console.warn("⚠️ HIPAA COMPLIANCE: _buildEligibilityPayload is deprecated - eligibility data is now processed server-side");
 		return {
-			quizId: this.quizData.id,
-			quizTitle: this.quizData.title,
-			workflowType: "eligibility",
-			triggeredAt: new Date().toISOString(),
-			testMode: this.isTestMode,
-			// Only include data needed for eligibility
-			customerEmail: extractedData.customerEmail,
-			firstName: extractedData.firstName,
-			lastName: extractedData.lastName,
-			phoneNumber: extractedData.phoneNumber,
-			state: extractedData.state,
-			insurance: extractedData.insurance,
-			insurancePrimaryPayerId: extractedData.insurancePrimaryPayerId,
-			insuranceMemberId: extractedData.insuranceMemberId,
-			groupNumber: extractedData.groupNumber,
-			dateOfBirth: extractedData.dateOfBirth,
-			mainReasons: extractedData.mainReasons,
-			medicalConditions: extractedData.medicalConditions
+			deprecated: true,
+			message: "Eligibility checking is now handled server-side for HIPAA compliance",
+			redirect: "All insurance data is included in user creation workflow payload"
 		};
 	}
 
