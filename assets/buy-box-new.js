@@ -1472,5 +1472,5 @@ document.addEventListener("DOMContentLoaded", () => {
 	});
 });
 
-// Export for Vite bundling
-export { BuyBoxNew };
+// Make BuyBoxNew globally available
+window.BuyBoxNew = BuyBoxNew;
