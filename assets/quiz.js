@@ -3024,7 +3024,7 @@ class ModularQuiz {
 								</svg>
 							</div>
 							<div class="quiz-coverage-benefit-text">
-								<strong>30-60 Minutes</strong><br>
+								<strong>30-60 Minutes</strong><br/>
 								Comprehensive nutrition consultation tailored to your specific health goals
 							</div>
 						</div>
@@ -3035,7 +3035,7 @@ class ModularQuiz {
 								</svg>
 							</div>
 							<div class="quiz-coverage-benefit-text">
-								<strong>Flexible Scheduling</strong><br>
+								<strong>Flexible Scheduling</strong><br/>
 								Choose from morning, afternoon, or evening slots that fit your lifestyle
 							</div>
 						</div>
@@ -3046,7 +3046,7 @@ class ModularQuiz {
 								</svg>
 							</div>
 							<div class="quiz-coverage-benefit-text">
-								<strong>Personalized Plan</strong><br>
+								<strong>Personalized Plan</strong><br/>
 								Receive a custom nutrition plan based on your quiz responses and health profile
 							</div>
 						</div>
