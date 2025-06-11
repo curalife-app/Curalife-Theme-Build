@@ -256,10 +256,10 @@
             var _this7;
             _classCallCheck(this, CartDrawer);
             _this7 = _callSuper(this, CartDrawer);
-            _this7.addEventListener('keyup', function (evt) {
-              return evt.code === 'Escape' && _this7.close();
+            _this7.addEventListener("keyup", function (evt) {
+              return evt.code === "Escape" && _this7.close();
             });
-            _this7.querySelector('#CartDrawer-Overlay').addEventListener('click', _this7.close.bind(_this7));
+            _this7.querySelector("#CartDrawer-Overlay").addEventListener("click", _this7.close.bind(_this7));
             _this7.setHeaderCartIconAccessibility();
             return _this7;
           }
@@ -268,15 +268,16 @@
             key: "setHeaderCartIconAccessibility",
             value: function setHeaderCartIconAccessibility() {
               var _this8 = this;
-              var cartLink = document.querySelector('#cart-icon-bubble');
-              cartLink.setAttribute('role', 'button');
-              cartLink.setAttribute('aria-haspopup', 'dialog');
-              cartLink.addEventListener('click', function (event) {
+              var cartLink = document.querySelector("#cart-icon-bubble");
+              if (!cartLink) return;
+              cartLink.setAttribute("role", "button");
+              cartLink.setAttribute("aria-haspopup", "dialog");
+              cartLink.addEventListener("click", function (event) {
                 event.preventDefault();
                 _this8.open(cartLink);
               });
-              cartLink.addEventListener('keydown', function (event) {
-                if (event.code.toUpperCase() === 'SPACE') {
+              cartLink.addEventListener("keydown", function (event) {
+                if (event.code.toUpperCase() === "SPACE") {
                   event.preventDefault();
                   _this8.open(cartLink);
                 }
@@ -288,76 +289,76 @@
               var _this9 = this;
               if (triggeredBy) this.setActiveElement(triggeredBy);
               var cartDrawerNote = this.querySelector('[id^="Details-"] summary');
-              if (cartDrawerNote && !cartDrawerNote.hasAttribute('role')) this.setSummaryAccessibility(cartDrawerNote);
+              if (cartDrawerNote && !cartDrawerNote.hasAttribute("role")) this.setSummaryAccessibility(cartDrawerNote);
               // here the animation doesn't seem to always get triggered. A timeout seem to help
               setTimeout(function () {
-                _this9.classList.add('animate', 'active');
+                _this9.classList.add("animate", "active");
               });
-              this.addEventListener('transitionend', function () {
-                var containerToTrapFocusOn = _this9.classList.contains('is-empty') ? _this9.querySelector('.drawer__inner-empty') : document.getElementById('CartDrawer');
-                var focusElement = _this9.querySelector('.drawer__inner') || _this9.querySelector('.drawer__close');
+              this.addEventListener("transitionend", function () {
+                var containerToTrapFocusOn = _this9.classList.contains("is-empty") ? _this9.querySelector(".drawer__inner-empty") : document.getElementById("CartDrawer");
+                var focusElement = _this9.querySelector(".drawer__inner") || _this9.querySelector(".drawer__close");
                 trapFocus(containerToTrapFocusOn, focusElement);
               }, {
                 once: true
               });
-              document.body.classList.add('overflow-hidden');
+              document.body.classList.add("overflow-hidden");
             }
           }, {
             key: "close",
             value: function close() {
-              this.classList.remove('active');
+              this.classList.remove("active");
               removeTrapFocus(this.activeElement);
-              document.body.classList.remove('overflow-hidden');
+              document.body.classList.remove("overflow-hidden");
             }
           }, {
             key: "setSummaryAccessibility",
             value: function setSummaryAccessibility(cartDrawerNote) {
-              cartDrawerNote.setAttribute('role', 'button');
-              cartDrawerNote.setAttribute('aria-expanded', 'false');
-              if (cartDrawerNote.nextElementSibling.getAttribute('id')) {
-                cartDrawerNote.setAttribute('aria-controls', cartDrawerNote.nextElementSibling.id);
+              cartDrawerNote.setAttribute("role", "button");
+              cartDrawerNote.setAttribute("aria-expanded", "false");
+              if (cartDrawerNote.nextElementSibling.getAttribute("id")) {
+                cartDrawerNote.setAttribute("aria-controls", cartDrawerNote.nextElementSibling.id);
               }
-              cartDrawerNote.addEventListener('click', function (event) {
-                event.currentTarget.setAttribute('aria-expanded', !event.currentTarget.closest('details').hasAttribute('open'));
+              cartDrawerNote.addEventListener("click", function (event) {
+                event.currentTarget.setAttribute("aria-expanded", !event.currentTarget.closest("details").hasAttribute("open"));
               });
-              cartDrawerNote.parentElement.addEventListener('keyup', onKeyUpEscape);
+              cartDrawerNote.parentElement.addEventListener("keyup", onKeyUpEscape);
             }
           }, {
             key: "renderContents",
             value: function renderContents(parsedState) {
               var _this0 = this;
-              this.querySelector('.drawer__inner').classList.contains('is-empty') && this.querySelector('.drawer__inner').classList.remove('is-empty');
+              this.querySelector(".drawer__inner").classList.contains("is-empty") && this.querySelector(".drawer__inner").classList.remove("is-empty");
               this.productId = parsedState.id;
               this.getSectionsToRender().forEach(function (section) {
                 var sectionElement = section.selector ? document.querySelector(section.selector) : document.getElementById(section.id);
                 sectionElement.innerHTML = _this0.getSectionInnerHTML(parsedState.sections[section.id], section.selector);
               });
               setTimeout(function () {
-                _this0.querySelector('#CartDrawer-Overlay').addEventListener('click', _this0.close.bind(_this0));
+                _this0.querySelector("#CartDrawer-Overlay").addEventListener("click", _this0.close.bind(_this0));
                 _this0.open();
               });
             }
           }, {
             key: "getSectionInnerHTML",
             value: function getSectionInnerHTML(html) {
-              var selector = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '.shopify-section';
-              return new DOMParser().parseFromString(html, 'text/html').querySelector(selector).innerHTML;
+              var selector = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : ".shopify-section";
+              return new DOMParser().parseFromString(html, "text/html").querySelector(selector).innerHTML;
             }
           }, {
             key: "getSectionsToRender",
             value: function getSectionsToRender() {
               return [{
-                id: 'cart-drawer',
-                selector: '#CartDrawer'
+                id: "cart-drawer",
+                selector: "#CartDrawer"
               }, {
-                id: 'cart-icon-bubble'
+                id: "cart-icon-bubble"
               }];
             }
           }, {
             key: "getSectionDOM",
             value: function getSectionDOM(html) {
-              var selector = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '.shopify-section';
-              return new DOMParser().parseFromString(html, 'text/html').querySelector(selector);
+              var selector = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : ".shopify-section";
+              return new DOMParser().parseFromString(html, "text/html").querySelector(selector);
             }
           }, {
             key: "setActiveElement",
@@ -366,7 +367,7 @@
             }
           }]);
         }(/*#__PURE__*/_wrapNativeSuper(HTMLElement));
-        customElements.define('cart-drawer', CartDrawer);
+        customElements.define("cart-drawer", CartDrawer);
         var CartDrawerItems = /*#__PURE__*/function (_CartItems2) {
           function CartDrawerItems() {
             _classCallCheck(this, CartDrawerItems);
@@ -377,18 +378,18 @@
             key: "getSectionsToRender",
             value: function getSectionsToRender() {
               return [{
-                id: 'CartDrawer',
-                section: 'cart-drawer',
-                selector: '.drawer__inner'
+                id: "CartDrawer",
+                section: "cart-drawer",
+                selector: ".drawer__inner"
               }, {
-                id: 'cart-icon-bubble',
-                section: 'cart-icon-bubble',
-                selector: '.shopify-section'
+                id: "cart-icon-bubble",
+                section: "cart-icon-bubble",
+                selector: ".shopify-section"
               }];
             }
           }]);
         }(CartItems);
-        customElements.define('cart-drawer-items', CartDrawerItems);
+        customElements.define("cart-drawer-items", CartDrawerItems);
         var CartNotification = /*#__PURE__*/function (_HTMLElement5) {
           function CartNotification() {
             var _this1;
