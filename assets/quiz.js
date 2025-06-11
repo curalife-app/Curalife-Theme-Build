@@ -983,37 +983,68 @@ class ModularQuiz {
 			return "";
 		}
 
-		return questions
-			.map(question => {
+		// Group questions into sections for proper layout
+		const datePartQuestions = questions.filter(q => q.type === "date-part");
+		const regularQuestions = questions.filter(q => q.type !== "date-part");
+
+		let html = "";
+
+		// Process regular questions first
+		regularQuestions.forEach(question => {
+			const response = this.responses.find(r => r.questionId === question.id) || {
+				stepId: this.getCurrentStep()?.id,
+				questionId: question.id,
+				answer: null
+			};
+
+			html += `<div class="quiz-question-section">`;
+
+			// Add label if question has text
+			if (question.text) {
+				html += `<label for="question-${question.id}" class="quiz-label">
+					${question.text}
+					${question.required ? '<span class="quiz-required-marker">*</span>' : ""}
+				</label>`;
+			}
+
+			// Add help text if available
+			if (question.helpText) {
+				html += `<p class="quiz-help-text">${question.helpText}</p>`;
+			}
+
+			// Generate the appropriate input based on question type
+			html += this._renderQuestionByType(question, response);
+			html += `</div>`;
+		});
+
+		// Process date part questions in a grid if they exist
+		if (datePartQuestions.length > 0) {
+			html += `<div class="quiz-question-section">`;
+
+			// Add label for the date field group (use the first date part question's text)
+			const firstDateQuestion = datePartQuestions.find(q => q.text);
+			if (firstDateQuestion) {
+				html += `<label class="quiz-label">
+					${firstDateQuestion.text}
+					${firstDateQuestion.required ? '<span class="quiz-required-marker">*</span>' : ""}
+				</label>`;
+			}
+
+			// Create grid layout for date parts
+			html += `<div class="quiz-grid-3">`;
+			datePartQuestions.forEach(question => {
 				const response = this.responses.find(r => r.questionId === question.id) || {
 					stepId: this.getCurrentStep()?.id,
 					questionId: question.id,
 					answer: null
 				};
+				html += this._renderQuestionByType(question, response);
+			});
+			html += `</div>`;
+			html += `</div>`;
+		}
 
-				// Generate form field HTML based on question type
-				let questionHTML = `<div class="quiz-form-field">`;
-
-				// Add label if question has text
-				if (question.text) {
-					questionHTML += `<label for="question-${question.id}" class="quiz-form-label">
-					${question.text}
-					${question.required ? '<span class="quiz-required">*</span>' : ""}
-				</label>`;
-				}
-
-				// Add help text if available
-				if (question.helpText) {
-					questionHTML += `<p class="quiz-form-help-text">${question.helpText}</p>`;
-				}
-
-				// Generate the appropriate input based on question type
-				questionHTML += this._renderQuestionByType(question, response);
-
-				questionHTML += `</div>`;
-				return questionHTML;
-			})
-			.join("");
+		return html;
 	}
 
 	_generateWizardStepHTML(step) {
@@ -1286,12 +1317,16 @@ class ModularQuiz {
 				payer => `
 			<button
 				type="button"
-				class="quiz-payer-common-button"
+				class="quiz-option-card quiz-payer-common-button"
 				data-payer-id="${payer.stediId}"
 				data-payer-name="${payer.displayName}"
 				data-question-id="${question.id}"
 			>
-				${payer.displayName}
+				<div class="quiz-option-button">
+					<div class="quiz-option-text">
+						<div class="quiz-option-text-content">${payer.displayName}</div>
+					</div>
+				</div>
 			</button>
 		`
 			)
