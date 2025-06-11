@@ -235,16 +235,11 @@
           }]);
         }(/*#__PURE__*/_wrapNativeSuper(HTMLElement));
         customElements.define("quantity-input", QuantityInput);
-        function fetchConfig() {
-          var type = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "json";
-          return {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/".concat(type)
-            }
-          };
-        }
+
+        // debounce function moved to constants.js
+
+        // fetchConfig function moved to constants.js
+
         if (!customElements.get('product-info')) {
           customElements.define('product-info', /*#__PURE__*/function (_HTMLElement3) {
             function ProductInfo() {

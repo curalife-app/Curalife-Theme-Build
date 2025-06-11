@@ -182,12 +182,6 @@ class QuantityInput extends HTMLElement {
   }
 }
 customElements.define("quantity-input", QuantityInput);
-function fetchConfig(type = "json") {
-  return {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/".concat(type) }
-  };
-}
 if (!customElements.get("product-info")) {
   customElements.define(
     "product-info",
