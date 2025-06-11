@@ -715,6 +715,131 @@ class ModularQuiz {
 	// Orchestrator Helper Methods
 	// =======================================================================
 
+	_extractResponseData(showNotifications = false) {
+		const fieldMapping = {
+			q9: "customerEmail",
+			q7: "firstName",
+			q8: "lastName",
+			q10: "phoneNumber",
+			q5: "state",
+			q3: ["insurance", "insurancePrimaryPayerId"],
+			q4: "insuranceMemberId",
+			q4_group: "groupNumber",
+			q1: "mainReasons",
+			q2: "medicalConditions",
+			// New address fields for Beluga scheduling
+			q11: "address",
+			q12: "city",
+			q13: "zip",
+			q14: "sex"
+		};
+
+		const data = {
+			customerEmail: "",
+			firstName: "",
+			lastName: "",
+			phoneNumber: "",
+			state: "",
+			insurance: "",
+			insurancePrimaryPayerId: "",
+			insuranceMemberId: "",
+			groupNumber: "",
+			mainReasons: [],
+			medicalConditions: [],
+			dateOfBirth: "",
+			consent: true,
+			// New address fields for Beluga scheduling
+			address: "",
+			city: "",
+			zip: "",
+			sex: ""
+		};
+
+		const dobParts = {};
+
+		console.log("Extracting response data from responses:", this.responses);
+
+		// Test mode detailed extraction notification - only show if requested
+		if (this.isTestMode && showNotifications) {
+			const responsesSummary = this.responses?.map(r => `${r.questionId}: ${Array.isArray(r.answer) ? r.answer.join(",") : r.answer}`).join("<br>• ") || "None";
+
+			this._showBackgroundProcessNotification(
+				`
+				🧪 TEST MODE - Data Extraction<br>
+				• Total responses: ${this.responses?.length || 0}<br>
+				• Expected questions: ${Object.keys(fieldMapping).join(", ")}<br>
+				• Responses:<br>• ${responsesSummary}
+			`,
+				"info"
+			);
+		}
+
+		// Process responses
+		if (this.responses && Array.isArray(this.responses)) {
+			for (const response of this.responses) {
+				const questionId = response.questionId;
+				const answer = response.answer;
+
+				// Handle date of birth parts
+				if (questionId && (questionId.startsWith("q6_") || questionId.startsWith("q11_") || questionId.includes("birth") || questionId.includes("dob"))) {
+					if (questionId.includes("month")) dobParts.month = answer;
+					if (questionId.includes("day")) dobParts.day = answer;
+					if (questionId.includes("year")) dobParts.year = answer;
+					continue;
+				}
+
+				// Handle mapped fields
+				const fieldName = fieldMapping[questionId];
+				if (fieldName) {
+					if (Array.isArray(fieldName)) {
+						// Handle payer search (q3) mapping to both insurance and insurancePrimaryPayerId
+						data[fieldName[0]] = answer;
+						data[fieldName[1]] = answer;
+					} else {
+						data[fieldName] = answer;
+					}
+				}
+			}
+		}
+
+		// Construct date of birth
+		if (dobParts.month && dobParts.day && dobParts.year) {
+			const month = String(dobParts.month).padStart(2, "0");
+			const day = String(dobParts.day).padStart(2, "0");
+			data.dateOfBirth = `${dobParts.year}${month}${day}`;
+		}
+
+		console.log("Extracted response data:", data);
+
+		// Test mode extraction result notification - only show if requested
+		if (this.isTestMode && showNotifications) {
+			// groupNumber is optional, so exclude it from required field checks
+			const missingFields = Object.entries(data)
+				.filter(([key, value]) => !value && !["mainReasons", "medicalConditions", "consent", "groupNumber"].includes(key))
+				.map(([key]) => key);
+
+			const optionalFields = [];
+			if (!data.groupNumber) {
+				optionalFields.push("groupNumber");
+			}
+
+			this._showBackgroundProcessNotification(
+				`
+				🧪 TEST MODE - Extraction Result<br>
+				• Email: ${data.customerEmail || "❌ Missing"}<br>
+				• Name: ${data.firstName} ${data.lastName}<br>
+				• Insurance: ${data.insurance || "❌ Missing"}<br>
+				• Member ID: ${data.insuranceMemberId || "❌ Missing"}<br>
+				• Missing required: ${missingFields.length ? missingFields.join(", ") : "None"}<br>
+				• Optional fields: ${optionalFields.length ? optionalFields.join(", ") : "All present"}
+			`,
+				missingFields.length > 0 ? "error" : "success"
+			);
+		}
+
+		return data;
+	}
+
 	/**
 	 * Build payload for the orchestrator workflow
 	 */
@@ -2565,6 +2690,7 @@ class ModularQuiz {
 		html += "</div>";
 		html += "</div>";
 		html += "</div>";
+		html += "</div>";
 
 		return html; // Proper return statement
 	}
@@ -3372,6 +3498,180 @@ class ModularQuiz {
 				}
 			});
 		});
+	}
+
+	_attachBookingButtonListeners() {
+		const bookingButtons = this.questionContainer.querySelectorAll(".quiz-booking-button");
+		bookingButtons.forEach(button => {
+			button.addEventListener("click", this._handleBookingButtonClick.bind(this));
+		});
+	}
+
+	async _handleBookingButtonClick(event) {
+		event.preventDefault();
+		const button = event.currentTarget;
+
+		console.log("Booking button clicked");
+
+		// Show loading state
+		this._showBookingLoadingState(button);
+
+		try {
+			// Get scheduling URL
+			const schedulingUrl = this.container.getAttribute("data-scheduling-url");
+			if (!schedulingUrl) {
+				throw new Error("Scheduling URL not configured");
+			}
+
+			// Trigger scheduling workflow
+			const schedulingResult = await this._triggerSchedulingWorkflow(schedulingUrl);
+
+			// Show scheduling results
+			this._showSchedulingResults(schedulingResult);
+		} catch (error) {
+			console.error("Scheduling error:", error);
+
+			// Test mode error notification
+			if (this.isTestMode) {
+				this._showBackgroundProcessNotification(
+					`
+					🧪 TEST MODE - Scheduling Error<br>
+					❌ ${error.message}<br>
+					• Check console for details
+				`,
+					"error"
+				);
+			}
+
+			this._showSchedulingError(error.message);
+		}
+	}
+
+	_showBookingLoadingState(button) {
+		// Store original button content
+		if (!button.dataset.originalContent) {
+			button.dataset.originalContent = button.innerHTML;
+		}
+
+		// Show loading state
+		button.innerHTML = `
+			<div class="quiz-spinner" style="width: 20px; height: 20px; margin-right: 8px;"></div>
+			Setting up your appointment...
+		`;
+		button.disabled = true;
+		button.style.cursor = "not-allowed";
+	}
+
+	async _triggerSchedulingWorkflow(schedulingUrl) {
+		console.log("Triggering scheduling workflow...");
+
+		// Extract all required data
+		const extractedData = this._extractResponseData(this.isTestMode);
+		const payload = this._buildSchedulingPayload(extractedData);
+
+		console.log("Scheduling payload:", payload);
+
+		// Test mode notification
+		if (this.isTestMode) {
+			this._showBackgroundProcessNotification(
+				`
+				🧪 TEST MODE - Scheduling Request<br>
+				• URL: ${schedulingUrl}<br>
+				• Required fields: ${Object.keys(payload)
+					.filter(k => k !== "allResponses")
+					.join(", ")}<br>
+				• Address: ${payload.address || "❌ Missing"}<br>
+				• City: ${payload.city || "❌ Missing"}<br>
+				• ZIP: ${payload.zip || "❌ Missing"}<br>
+				• Sex: ${payload.sex || "❌ Missing"}
+			`,
+				"info"
+			);
+		}
+
+		const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Scheduling request timed out")), 45000));
+
+		const fetchPromise = fetch(schedulingUrl, {
+			method: "POST",
+			mode: "cors",
+			headers: {
+				"Content-Type": "application/json",
+				Accept: "application/json",
+				"X-Workflow-Type": "scheduling"
+			},
+			body: JSON.stringify(payload)
+		});
+
+		const response = await Promise.race([fetchPromise, timeoutPromise]);
+
+		console.log("Raw scheduling response:", {
+			ok: response.ok,
+			status: response.status,
+			statusText: response.statusText
+		});
+
+		if (response.ok) {
+			const result = await response.json();
+			console.log("Parsed scheduling response:", result);
+
+			// Test mode response notification
+			if (this.isTestMode) {
+				const schedulingData = result?.schedulingData;
+				const workflowSuccess = result?.success;
+				const schedulingSuccess = schedulingData?.success;
+
+				this._showBackgroundProcessNotification(
+					`
+					🧪 TEST MODE - Scheduling Response<br>
+					• HTTP Status: ${response.status} ${response.statusText}<br>
+					• Workflow Success: ${workflowSuccess}<br>
+					• Scheduling Success: ${schedulingSuccess}<br>
+					• Scheduling Status: ${schedulingData?.status || "Unknown"}<br>
+					• Has Schedule Link: ${!!schedulingData?.scheduleLink}<br>
+					• Message: ${schedulingData?.message || "No message"}<br>
+					• Error: ${schedulingData?.error || "None"}
+				`,
+					schedulingSuccess ? "success" : "error"
+				);
+			}
+
+			return result;
+		} else {
+			const errorText = await response.text();
+			throw new Error(`HTTP ${response.status}: ${errorText}`);
+		}
+	}
+
+	_buildSchedulingPayload(extractedData = null) {
+		const data = extractedData || this._extractResponseData();
+
+		return {
+			// Basic info
+			firstName: data.firstName,
+			lastName: data.lastName,
+			customerEmail: data.customerEmail,
+			phoneNumber: data.phoneNumber,
+			dateOfBirth: data.dateOfBirth,
+			state: data.state,
+
+			// Address fields required by Beluga
+			address: data.address,
+			city: data.city,
+			zip: data.zip,
+			sex: data.sex,
+
+			// Quiz responses
+			mainReasons: data.mainReasons,
+			medicalConditions: data.medicalConditions,
+			allResponses: this.responses,
+
+			// Metadata
+			workflowType: "scheduling",
+			testMode: this.isTestMode,
+			triggeredAt: new Date().toISOString(),
+			quizId: this.quizData?.id || "dietitian-quiz",
+			quizTitle: this.quizData?.title || "Find Your Perfect Dietitian"
+		};
 	}
 
 	get isTestMode() {
