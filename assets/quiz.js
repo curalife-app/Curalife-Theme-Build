@@ -3123,7 +3123,7 @@ class ModularQuiz {
 									</svg>
 								</div>
 								<div class="quiz-coverage-benefit-text">
-									<strong>Check Your Email</strong><br>
+									<strong>Check Your Email</strong><br/>
 									Your appointment confirmation and scheduling details have been sent to your email address
 								</div>
 							</div>
@@ -3134,7 +3134,7 @@ class ModularQuiz {
 									</svg>
 								</div>
 								<div class="quiz-coverage-benefit-text">
-									<strong>Reschedule if Needed</strong><br>
+									<strong>Reschedule if Needed</strong><br/>
 									If you need to change your appointment time, use the link in your confirmation email
 								</div>
 							</div>

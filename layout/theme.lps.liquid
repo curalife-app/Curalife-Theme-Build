@@ -24,8 +24,9 @@
 			{%- unless page_title contains shop.name %}&ndash; {{ shop.name }}{% endunless -%}
 		</title>
 
-		<link rel="preload" href="{{ 'global.js' | asset_url }}" as="script">
-		<script src="{{ 'global.js' | asset_url }}" defer></script>
+		<link rel="preload" href="{{ 'global-bundle.js' | asset_url }}" as="script" crossorigin>
+		<script type="module" src="{{ 'global-bundle.js' | asset_url }}"></script>
+		<script nomodule src="{{ 'global-bundle-legacy.js' | asset_url }}"></script>
 		<link rel="dns-prefetch" href="https://cdn.shopify.com">
 		<link rel="preconnect" href="https://cdn.shopify.com">
 		<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
@@ -88,7 +89,7 @@
 			{{ 'component-cart-drawer.css' | asset_url | stylesheet_tag }}
 			{{ 'component-cart.css' | asset_url | stylesheet_tag }}
 			<noscript>{{ 'component-cart-items.css' | asset_url | stylesheet_tag }}</noscript>
-			<script src="{{ 'cart-drawer.js' | asset_url }}" defer="defer"></script>
+			{% comment %} cart-drawer.js is now bundled in cart-bundle.js {% endcomment %}
 		{% endif %}
 
 		{% unless request.design_mode %}
