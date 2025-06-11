@@ -978,6 +978,44 @@ class ModularQuiz {
 		`;
 	}
 
+	_processFormQuestions(questions) {
+		if (!questions || !Array.isArray(questions)) {
+			return "";
+		}
+
+		return questions
+			.map(question => {
+				const response = this.responses.find(r => r.questionId === question.id) || {
+					stepId: this.getCurrentStep()?.id,
+					questionId: question.id,
+					answer: null
+				};
+
+				// Generate form field HTML based on question type
+				let questionHTML = `<div class="quiz-form-field">`;
+
+				// Add label if question has text
+				if (question.text) {
+					questionHTML += `<label for="question-${question.id}" class="quiz-form-label">
+					${question.text}
+					${question.required ? '<span class="quiz-required">*</span>' : ""}
+				</label>`;
+				}
+
+				// Add help text if available
+				if (question.helpText) {
+					questionHTML += `<p class="quiz-form-help-text">${question.helpText}</p>`;
+				}
+
+				// Generate the appropriate input based on question type
+				questionHTML += this._renderQuestionByType(question, response);
+
+				questionHTML += `</div>`;
+				return questionHTML;
+			})
+			.join("");
+	}
+
 	_generateWizardStepHTML(step) {
 		const question = step.questions[this.currentQuestionIndex];
 		const response = this.getResponseForCurrentQuestion();
