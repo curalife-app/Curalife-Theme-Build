@@ -979,72 +979,132 @@ class ModularQuiz {
 	}
 
 	_processFormQuestions(questions) {
-		if (!questions || !Array.isArray(questions)) {
-			return "";
-		}
-
-		// Group questions into sections for proper layout
-		const datePartQuestions = questions.filter(q => q.type === "date-part");
-		const regularQuestions = questions.filter(q => q.type !== "date-part");
-
 		let html = "";
+		let i = 0;
 
-		// Process regular questions first
-		regularQuestions.forEach(question => {
-			const response = this.responses.find(r => r.questionId === question.id) || {
-				stepId: this.getCurrentStep()?.id,
-				questionId: question.id,
-				answer: null
-			};
-
-			html += `<div class="quiz-question-section">`;
-
-			// Add label if question has text
-			if (question.text) {
-				html += `<label for="question-${question.id}" class="quiz-label">
-					${question.text}
-					${question.required ? '<span class="quiz-required-marker">*</span>' : ""}
-				</label>`;
+		while (i < questions.length) {
+			const processed = this._tryProcessQuestionGroup(questions, i);
+			if (processed.html) {
+				html += processed.html;
+				i += processed.skip;
+			} else {
+				html += this._generateSingleFormQuestion(questions[i]);
+				i++;
 			}
-
-			// Add help text if available
-			if (question.helpText) {
-				html += `<p class="quiz-help-text">${question.helpText}</p>`;
-			}
-
-			// Generate the appropriate input based on question type
-			html += this._renderQuestionByType(question, response);
-			html += `</div>`;
-		});
-
-		// Process date part questions in a grid if they exist
-		if (datePartQuestions.length > 0) {
-			html += `<div class="quiz-question-section">`;
-
-			// Add label for the date field group (use the first date part question's text)
-			const firstDateQuestion = datePartQuestions.find(q => q.text);
-			if (firstDateQuestion) {
-				html += `<label class="quiz-label">
-					${firstDateQuestion.text}
-					${firstDateQuestion.required ? '<span class="quiz-required-marker">*</span>' : ""}
-				</label>`;
-			}
-
-			// Create grid layout for date parts
-			html += `<div class="quiz-grid-3">`;
-			datePartQuestions.forEach(question => {
-				const response = this.responses.find(r => r.questionId === question.id) || {
-					stepId: this.getCurrentStep()?.id,
-					questionId: question.id,
-					answer: null
-				};
-				html += this._renderQuestionByType(question, response);
-			});
-			html += `</div>`;
-			html += `</div>`;
 		}
 
 		return html;
+	}
+
+	_tryProcessQuestionGroup(questions, index) {
+		const question = questions[index];
+		const pairs = this.config.questionPairs || {};
+		const getResponse = q => this.responses.find(r => r.questionId === q.id) || { answer: null };
+
+		// Check for paired fields
+		const pairChecks = [
+			{ fields: pairs.memberIdFields, skip: 2 },
+			{ fields: pairs.nameFields, skip: 2 },
+			{ fields: pairs.contactFields, skip: 2 }
+		];
+
+		for (const pair of pairChecks) {
+			if (question.id === pair.fields?.[0] && questions[index + 1]?.id === pair.fields[1]) {
+				return {
+					html: this._generateFormFieldPair(question, questions[index + 1], getResponse(question), getResponse(questions[index + 1])),
+					skip: pair.skip
+				};
+			}
+		}
+
+		// Check for date group
+		if (question.type === "date-part" && question.part === "month") {
+			const [dayQ, yearQ] = [questions[index + 1], questions[index + 2]];
+			if (dayQ?.type === "date-part" && dayQ.part === "day" && yearQ?.type === "date-part" && yearQ.part === "year") {
+				return {
+					html: this._generateDateGroup(question, dayQ, yearQ),
+					skip: 3
+				};
+			}
+		}
+
+		return { html: null, skip: 0 };
+	}
+
+	_generateSingleFormQuestion(question) {
+		const response = this.responses.find(r => r.questionId === question.id) || { answer: null };
+		const helpIcon = this._getHelpIcon(question.id);
+
+		return `
+            <div class="quiz-question-section">
+                <label class="quiz-label" for="question-${question.id}">
+                    ${question.text}${helpIcon}
+                </label>
+                ${question.helpText ? `<p class="quiz-text-sm">${question.helpText}</p>` : ""}
+                ${this._renderQuestionByType(question, response)}
+            </div>
+        `;
+	}
+
+	_generateFormFieldPair(leftQuestion, rightQuestion, leftResponse, rightResponse) {
+		const generateField = (question, response) => ({
+			input: this._renderQuestionByType(question, response),
+			helpIcon: this._getHelpIcon(question.id),
+			label: question.text,
+			id: question.id
+		});
+
+		const [left, right] = [generateField(leftQuestion, leftResponse), generateField(rightQuestion, rightResponse)];
+
+		return `
+            <div class="quiz-grid-2-form">
+                ${[left, right]
+									.map(
+										field => `
+                    <div>
+                        <label class="quiz-label" for="question-${field.id}">
+                            ${field.label}${field.helpIcon}
+                        </label>
+                        ${field.input}
+                    </div>
+                `
+									)
+									.join("")}
+            </div>
+        `;
+	}
+
+	_getHelpIcon(questionId) {
+		const tooltip = this.quizData.validation?.tooltips?.[questionId];
+		return tooltip ? this._generateHelpIcon(questionId, tooltip) : "";
+	}
+
+	_generateDateGroup(monthQ, dayQ, yearQ) {
+		const monthResponse = this.responses.find(r => r.questionId === monthQ.id) || { answer: null };
+		const dayResponse = this.responses.find(r => r.questionId === dayQ.id) || { answer: null };
+		const yearResponse = this.responses.find(r => r.questionId === yearQ.id) || { answer: null };
+
+		return `
+            <div class="quiz-question-section">
+                <label class="quiz-label">${monthQ.text}</label>
+                <div class="quiz-grid-3">
+                    ${this.renderDatePart(monthQ, monthResponse)}
+                    ${this.renderDatePart(dayQ, dayResponse)}
+                    ${this.renderDatePart(yearQ, yearResponse)}
+                </div>
+            </div>
+        `;
+	}
+
+	_generateHelpIcon(questionId, tooltipContent) {
+		const escapedTooltip = tooltipContent.replace(/"/g, "&quot;");
+		return `<span class="quiz-help-icon-container" data-tooltip="${escapedTooltip}">
+            <svg class="quiz-help-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M14.6668 8.00004C14.6668 4.31814 11.682 1.33337 8.00016 1.33337C4.31826 1.33337 1.3335 4.31814 1.3335 8.00004C1.3335 11.6819 4.31826 14.6667 8.00016 14.6667C11.682 14.6667 14.6668 11.6819 14.6668 8.00004Z" stroke="#121212"/>
+                <path d="M8.1613 11.3334V8.00004C8.1613 7.68577 8.1613 7.52864 8.06363 7.43097C7.96603 7.33337 7.8089 7.33337 7.49463 7.33337" stroke="#121212" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M7.99463 5.33337H8.00063" stroke="#121212" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </span>`;
 	}
 
 	_generateWizardStepHTML(step) {
