@@ -2482,7 +2482,6 @@ class ModularQuiz {
 		html += "</div>";
 		html += "</div>";
 		html += "</div>";
-		// Rest of HTML for coverage card and contact info would continue here...
 		html += '<div class="quiz-coverage-card">';
 		html += '<div class="quiz-coverage-card-title">What to Expect</div>';
 		html += '<div class="quiz-coverage-benefits">';
@@ -2566,41 +2565,8 @@ class ModularQuiz {
 		html += "</div>";
 		html += "</div>";
 		html += "</div>";
-		html += "</div>";
-		html += "</div>";
-		html += "</div>";
-		html += "</div>";
-		html += '<div class="quiz-action-section" style="background-color: #f8f9fa;">';
-		html += '<div class="quiz-action-content">';
-		html += '<div class="quiz-action-header">';
-		html += '<h3 class="quiz-action-title">Need Assistance?</h3>';
-		html += "</div>";
-		html += '<div class="quiz-action-details">';
-		html += '<div class="quiz-action-info">';
-		html += '<div class="quiz-action-info-text">';
-		html += "Our support team is here to help if you have any questions about scheduling or preparing for your appointment.";
-		html += "</div>";
-		html += "</div>";
-		html += '<div class="quiz-action-feature">';
-		html += '<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">';
-		html += '<path d="M18.3333 5.83333L10 11.6667L1.66666 5.83333" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
-		html +=
-			'<path d="M1.66666 5.83333H18.3333V15C18.3333 15.442 18.1577 15.866 17.8452 16.1785C17.5327 16.491 17.1087 16.6667 16.6667 16.6667H3.33333C2.89131 16.6667 2.46738 16.491 2.15482 16.1785C1.84226 15.866 1.66666 15.442 1.66666 15V5.83333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
-		html += "</svg>";
-		html += '<div class="quiz-action-feature-text">Email: support@curalife.com</div>';
-		html += "</div>";
-		html += '<div class="quiz-action-feature">';
-		html += '<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">';
-		html +=
-			'<path d="M18.3081 14.2233C17.1569 14.2233 16.0346 14.0397 14.9845 13.6971C14.6449 13.5878 14.2705 13.6971 14.0579 13.9427L12.8372 15.6772C10.3023 14.4477 8.55814 12.7138 7.32326 10.1581L9.10465 8.89535C9.34884 8.68372 9.45814 8.30233 9.34884 7.96279C9.00581 6.91628 8.82209 5.79186 8.82209 4.64535C8.82209 4.28953 8.53256 4 8.17674 4H4.64535C4.28953 4 4 4.28953 4 4.64535C4 12.1715 10.1831 18.3953 17.6628 18.3953C18.0186 18.3953 18.3081 18.1058 18.3081 17.75V14.2233Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-								</svg>
-								<div class="quiz-action-feature-text">Phone: 1-800-CURALIFE</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		`;
+
+		return html;
 	}
 
 	_generateSchedulingErrorHTML(errorMessage, schedulingData = null) {
