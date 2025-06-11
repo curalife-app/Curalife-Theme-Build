@@ -2253,18 +2253,6 @@
           }]);
         }(/*#__PURE__*/_wrapNativeSuper(HTMLElement));
         customElements.define('show-more-button', ShowMoreButton);
-
-        /**
-         * Product Bundle - Product page functionality and related components
-         *
-         * This bundle includes product forms, media galleries, modals,
-         * quick add functionality, and pickup availability.
-         */
-
-        // Buy box implementations
-        console.log("📦 About to import buy-box-new.js...");
-        console.log("📦 buy-box-new.js imported successfully!");
-        console.log("📦 Product bundle loaded - Product page functionality initialized");
       }
     };
   });

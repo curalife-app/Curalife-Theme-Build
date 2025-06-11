@@ -1667,9 +1667,6 @@ class ShowMoreButton extends HTMLElement {
   }
 }
 customElements.define("show-more-button", ShowMoreButton);
-console.log("📦 About to import buy-box-new.js...");
-console.log("📦 buy-box-new.js imported successfully!");
-console.log("📦 Product bundle loaded - Product page functionality initialized");
 export {
   __vite_legacy_guard
 };
