@@ -3008,7 +3008,7 @@ class ModularQuiz {
 								</svg>
 								Schedule Your Appointment
 							</a>
-							${masterId ? `<p class="quiz-text-xs" style="margin-top: 16px; color: #666; font-family: monospace;">Reference ID: ${masterId}</p>` : ""}
+							${masterId ? '<p class="quiz-text-xs" style="margin-top: 16px; color: #666; font-family: monospace;">Reference ID: ' + masterId + '</p>' : ""}
 						</div>
 					</div>
 				</div>
