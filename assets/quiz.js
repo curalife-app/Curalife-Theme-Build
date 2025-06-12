@@ -561,7 +561,7 @@ class ModularQuiz {
 		// Set tracking variables AFTER clearing intervals but WITHOUT calling _stopStatusPolling
 		this.statusTrackingId = statusTrackingId;
 		this.pollingAttempts = 0;
-		this.maxPollingAttempts = 20; // 40 seconds max (2 sec interval * 20 attempts)
+		this.maxPollingAttempts = 60; // 120 seconds max (2 sec interval * 60 attempts)
 		this._lastStatusMessage = "";
 
 		console.log("✅ Status polling setup complete, trackingId:", this.statusTrackingId);
@@ -588,8 +588,8 @@ class ModularQuiz {
 					console.error("WorkflowCompletionReject not set, cannot reject promise on timeout.");
 				}
 			},
-			this.maxPollingAttempts * 2000 + 5000
-		); // Max attempts * interval + a buffer
+			this.maxPollingAttempts * 2000 + 10000
+		); // Max attempts * interval + a buffer (130 seconds total)
 	}
 
 	/**
