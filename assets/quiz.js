@@ -548,12 +548,23 @@ class ModularQuiz {
 	_startStatusPolling(statusTrackingId) {
 		console.log("🔄 Starting status polling for:", statusTrackingId);
 
+		// Clear any existing polling interval to prevent duplicates (but preserve statusTrackingId)
+		if (this.statusPollingInterval) {
+			clearInterval(this.statusPollingInterval);
+			this.statusPollingInterval = null;
+		}
+		if (this.pollingTimeout) {
+			clearTimeout(this.pollingTimeout);
+			this.pollingTimeout = null;
+		}
+
+		// Set tracking variables AFTER clearing intervals but WITHOUT calling _stopStatusPolling
 		this.statusTrackingId = statusTrackingId;
 		this.pollingAttempts = 0;
 		this.maxPollingAttempts = 20; // 40 seconds max (2 sec interval * 20 attempts)
+		this._lastStatusMessage = "";
 
-		// Clear any existing polling interval to prevent duplicates
-		this._stopStatusPolling();
+		console.log("✅ Status polling setup complete, trackingId:", this.statusTrackingId);
 
 		// Start with an immediate poll, then continue every 2 seconds
 		this._pollWorkflowStatus();
