@@ -557,10 +557,10 @@ class ModularQuiz {
 	_setupOrchestrationFallback(orchestratorUrl, payload, statusTrackingId) {
 		console.log("🔄 Setting up orchestrator fallback check...");
 
-		// Check every 10 seconds starting after 30 seconds
+		// Check every 10 seconds starting after 20 seconds (sooner due to stale status issues)
 		this.fallbackTimeout = setTimeout(() => {
 			this._startFallbackChecking(orchestratorUrl, payload, statusTrackingId);
-		}, 30000);
+		}, 20000);
 	}
 
 	_startFallbackChecking(orchestratorUrl, payload, statusTrackingId) {
@@ -725,6 +725,11 @@ class ModularQuiz {
 
 				if (statusData.success && statusData.statusData) {
 					this._updateWorkflowStatus(statusData.statusData);
+
+					// Debug: Track stale status detection
+					if (statusData.statusData.currentStep === "processing" && this.pollingAttempts > 20) {
+						console.warn(`⚠️ Potentially stale status detected - attempt ${this.pollingAttempts}, step: ${statusData.statusData.currentStep}, progress: ${statusData.statusData.progress}`);
+					}
 
 					if (statusData.statusData.completed) {
 						console.log("✅ Workflow completed according to status polling.");
