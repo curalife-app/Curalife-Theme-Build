@@ -495,9 +495,11 @@ class ModularQuiz {
 				}
 
 				const initialResult = await initialResponse.json();
+				console.log("Orchestrator initial response:", initialResult);
 
 				// 2. Check for a statusTrackingId to begin polling, or if final data is immediately available
 				if (initialResult.success && initialResult.statusTrackingId) {
+					console.log("Starting status polling with ID:", initialResult.statusTrackingId);
 					this._startStatusPolling(initialResult.statusTrackingId);
 				} else if (initialResult.success && initialResult.data) {
 					// If orchestrator immediately returns final data (e.g., for simple, fast workflows)
@@ -661,12 +663,16 @@ class ModularQuiz {
 	 * This function will eventually resolve the workflowCompletionPromise.
 	 */
 	_startStatusPolling(statusTrackingId) {
+		console.log("_startStatusPolling called with ID:", statusTrackingId);
+
 		// Clear any existing polling interval to prevent duplicates (but preserve statusTrackingId)
 		if (this.statusPollingInterval) {
+			console.log("Clearing existing polling interval");
 			clearInterval(this.statusPollingInterval);
 			this.statusPollingInterval = null;
 		}
 		if (this.pollingTimeout) {
+			console.log("Clearing existing polling timeout");
 			clearTimeout(this.pollingTimeout);
 			this.pollingTimeout = null;
 		}
@@ -677,6 +683,7 @@ class ModularQuiz {
 		this.maxPollingAttempts = 60; // 120 seconds max (2 sec interval * 60 attempts)
 		this._lastStatusMessage = "";
 
+		console.log("Starting immediate poll and setting up interval...");
 		// Start with an immediate poll, then continue every 2 seconds
 		this._pollWorkflowStatus();
 
@@ -733,6 +740,7 @@ class ModularQuiz {
 
 			if (response.ok) {
 				const statusData = await response.json();
+				console.log(`Polling attempt ${this.pollingAttempts}: Status data received:`, statusData);
 
 				// Check for important warnings
 				if (statusData.statusData?.debug?.eligibilityTimeout) {
@@ -744,6 +752,12 @@ class ModularQuiz {
 				}
 
 				if (statusData.success && statusData.statusData) {
+					console.log("Status data is valid, checking completion status:", {
+						completed: statusData.statusData.completed,
+						currentStatus: statusData.statusData.currentStatus,
+						progress: statusData.statusData.progress
+					});
+
 					this._updateWorkflowStatus(statusData.statusData);
 
 					// Track stale status but don't trigger emergency fallback (causes duplicate workflows)
