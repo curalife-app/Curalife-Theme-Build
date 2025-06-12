@@ -547,7 +547,7 @@ class ModularQuiz {
 	 */
 	_getOrchestratorUrl() {
 		const container = document.getElementById("quiz-container");
-		return container?.dataset?.orchestratorUrl || "https://workflow-orchestrator-xxn52lyizq-uc.a.run.app";
+		return container?.dataset?.orchestratorUrl || "https://us-central1-telemedicine-458913.cloudfunctions.net/workflow_orchestrator";
 	}
 
 	// =======================================================================
