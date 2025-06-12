@@ -311,8 +311,6 @@ class ModularQuiz {
 			// Trigger the orchestrator workflow and await its *final* completion (including polling)
 			const orchestratorResult = await this._startOrchestratorWorkflow();
 
-			console.log("✅ Orchestrator workflow definitively completed with result:", orchestratorResult);
-
 			// Process the final result from the orchestrator
 			const finalResult = this._processWebhookResult(orchestratorResult);
 
@@ -333,15 +331,9 @@ class ModularQuiz {
 				);
 			}
 
-			console.log("Showing results with data:", {
-				resultData: finalResult,
-				eligibilityStatus: finalResult?.eligibilityStatus,
-				webhookSuccess: true
-			});
-
 			this.showResults(resultUrl, true, finalResult);
 		} catch (error) {
-			console.error("❌ Error finishing quiz:", error);
+			console.error("Error finishing quiz:", error);
 
 			// Test mode error notification
 			if (this.isTestMode) {
@@ -462,8 +454,6 @@ class ModularQuiz {
 		this._lastOrchestratorUrl = orchestratorUrl;
 		this._lastOrchestratorPayload = payload;
 
-		console.log("🚀 Starting orchestrator workflow (initial request)...", { orchestratorUrl, payload });
-
 		// Ensure any previous workflow state is cleaned up
 		this._stopStatusPolling();
 		this._stopFallbackChecking();
@@ -472,7 +462,7 @@ class ModularQuiz {
 		return new Promise(async (resolve, reject) => {
 			// Clear any existing resolvers before setting new ones
 			if (this.workflowCompletionResolve || this.workflowCompletionReject) {
-				console.warn("⚠️ Replacing existing workflow completion resolvers");
+				console.warn("Replacing existing workflow completion resolvers");
 			}
 
 			this.workflowCompletionResolve = resolve;
@@ -492,21 +482,16 @@ class ModularQuiz {
 				}
 
 				const initialResult = await initialResponse.json();
-				console.log("✅ Initial orchestrator response received:", initialResult);
 
 				// 2. Check for a statusTrackingId to begin polling, or if final data is immediately available
 				if (initialResult.success && initialResult.statusTrackingId) {
-					console.log("Status tracking ID received, starting polling...");
 					this._startStatusPolling(initialResult.statusTrackingId);
 				} else if (initialResult.success && initialResult.data) {
 					// If orchestrator immediately returns final data (e.g., for simple, fast workflows)
-					console.log("Orchestrator returned final data immediately, no polling needed.");
 					this._stopLoadingMessages(); // Dismiss loading as it's truly done
 					resolve(initialResult.data); // Resolve the promise with the final data
 				} else if (initialResult.success) {
 					// Workflow started but no immediate data - set up polling with fallback
-					console.log("Workflow started but no immediate data, setting up enhanced polling with fallback...");
-
 					// Start polling as usual
 					this._startStatusPolling(initialResult.statusTrackingId);
 
@@ -517,7 +502,7 @@ class ModularQuiz {
 					throw new Error(initialResult.error || "Orchestrator did not provide status tracking ID or final data.");
 				}
 			} catch (error) {
-				console.error("❌ Error initiating orchestrator workflow:", error);
+				console.error("Error initiating orchestrator workflow:", error);
 				this._stopLoadingMessages(); // Ensure loading is dismissed on immediate error
 				reject(error); // Reject the promise
 			}
@@ -576,8 +561,6 @@ class ModularQuiz {
 	 * This handles cases where status polling fails but the workflow completes
 	 */
 	_setupOrchestrationFallback(orchestratorUrl, payload, statusTrackingId) {
-		console.log("🔄 Setting up orchestrator fallback check...");
-
 		// Check every 10 seconds starting after 20 seconds (sooner due to stale status issues)
 		this.fallbackTimeout = setTimeout(() => {
 			this._startFallbackChecking(orchestratorUrl, payload, statusTrackingId);
@@ -585,14 +568,11 @@ class ModularQuiz {
 	}
 
 	_startFallbackChecking(orchestratorUrl, payload, statusTrackingId) {
-		console.log("🔍 Starting fallback orchestrator checking...");
-
 		let fallbackAttempts = 0;
 		const maxFallbackAttempts = 6; // 6 attempts = 1 minute of checking
 
 		this.fallbackInterval = setInterval(async () => {
 			fallbackAttempts++;
-			console.log(`🔄 Fallback check attempt ${fallbackAttempts}/${maxFallbackAttempts}`);
 
 			try {
 				// Try calling the orchestrator again to see if it's completed
@@ -604,11 +584,9 @@ class ModularQuiz {
 
 				if (response.ok) {
 					const result = await response.json();
-					console.log("🔍 Fallback response:", result);
 
 					// If we get final data, resolve the workflow
 					if (result.success && result.data) {
-						console.log("✅ Fallback detected workflow completion!");
 						this._stopFallbackChecking();
 						this._stopStatusPolling();
 						this._stopLoadingMessages();
@@ -626,7 +604,6 @@ class ModularQuiz {
 
 			// Stop fallback checking after max attempts
 			if (fallbackAttempts >= maxFallbackAttempts) {
-				console.log("⏹️ Stopping fallback checking - max attempts reached");
 				this._stopFallbackChecking();
 			}
 		}, 10000); // Check every 10 seconds
@@ -636,7 +613,6 @@ class ModularQuiz {
 		if (this.fallbackInterval) {
 			clearInterval(this.fallbackInterval);
 			this.fallbackInterval = null;
-			console.log("⏹️ Fallback checking stopped");
 		}
 		if (this.fallbackTimeout) {
 			clearTimeout(this.fallbackTimeout);
@@ -649,13 +625,11 @@ class ModularQuiz {
 	 * Emergency fallback when stale status is detected
 	 */
 	_triggerEmergencyFallback() {
-		console.log("🚨 EMERGENCY FALLBACK: Immediately checking orchestrator for completion");
-
 		// Use the stored orchestrator data from the initial call
 		if (this._lastOrchestratorUrl && this._lastOrchestratorPayload) {
 			this._startFallbackChecking(this._lastOrchestratorUrl, this._lastOrchestratorPayload, this.statusTrackingId);
 		} else {
-			console.error("❌ Cannot trigger emergency fallback - missing orchestrator data");
+			console.error("Cannot trigger emergency fallback - missing orchestrator data");
 			// Fallback to timeout error
 			setTimeout(() => {
 				if (this.workflowCompletionReject) {
@@ -674,8 +648,6 @@ class ModularQuiz {
 	 * This function will eventually resolve the workflowCompletionPromise.
 	 */
 	_startStatusPolling(statusTrackingId) {
-		console.log("🔄 Starting status polling for:", statusTrackingId);
-
 		// Clear any existing polling interval to prevent duplicates (but preserve statusTrackingId)
 		if (this.statusPollingInterval) {
 			clearInterval(this.statusPollingInterval);
@@ -691,8 +663,6 @@ class ModularQuiz {
 		this.pollingAttempts = 0;
 		this.maxPollingAttempts = 60; // 120 seconds max (2 sec interval * 60 attempts)
 		this._lastStatusMessage = "";
-
-		console.log("✅ Status polling setup complete, trackingId:", this.statusTrackingId);
 
 		// Start with an immediate poll, then continue every 2 seconds
 		this._pollWorkflowStatus();
@@ -725,28 +695,22 @@ class ModularQuiz {
 	 * This function will eventually resolve the workflowCompletionPromise.
 	 */
 	async _pollWorkflowStatus() {
-		console.log(`🔍 _pollWorkflowStatus called - attempt ${this.pollingAttempts + 1}, trackingId: ${this.statusTrackingId}`);
-
 		if (!this.statusTrackingId) {
-			console.log("❌ Stopping polling: No statusTrackingId");
 			this._stopStatusPolling();
 			return;
 		}
 
 		if (this.pollingAttempts >= this.maxPollingAttempts) {
-			console.warn("❌ Stopping polling: Max polling attempts reached without explicit completion from backend.");
+			console.warn("Stopping polling: Max polling attempts reached without explicit completion from backend.");
 			this._stopStatusPolling(); // Stop polling, overall timeout will handle the promise
 			return;
 		}
 
 		this.pollingAttempts++;
-		console.log(`📊 Polling attempt ${this.pollingAttempts}/${this.maxPollingAttempts}`);
 
 		try {
 			const statusUrl = this._getStatusPollingUrl();
 			const payload = { statusTrackingId: this.statusTrackingId };
-
-			console.log("🔍 Polling status from:", statusUrl, "with payload:", payload);
 
 			const response = await fetch(statusUrl, {
 				method: "POST",
@@ -754,65 +718,16 @@ class ModularQuiz {
 				body: JSON.stringify(payload)
 			});
 
-			console.log("📡 Polling response:", {
-				ok: response.ok,
-				status: response.status,
-				statusText: response.statusText
-			});
-
 			if (response.ok) {
 				const statusData = await response.json();
-				console.log("📊 Status update received:", statusData);
-				console.log("🔍 Raw status data structure:", {
-					hasSuccess: "success" in statusData,
-					hasStatusData: "statusData" in statusData,
-					statusDataKeys: statusData.statusData ? Object.keys(statusData.statusData) : "none",
-					completed: statusData.statusData?.completed,
-					currentStep: statusData.statusData?.currentStep,
-					progress: statusData.statusData?.progress
-				});
 
-				// Enhanced debug logging
-				if (statusData.statusData?.debug) {
-					console.group("🔧 Debug Information");
-					console.log("📍 Workflow Path:", statusData.statusData.debug.workflowPath);
-					console.log("⏱️ Elapsed Time:", statusData.statusData.debug.elapsedTime, "seconds");
+				// Check for important warnings
+				if (statusData.statusData?.debug?.eligibilityTimeout) {
+					console.warn("Eligibility timeout detected - workflow continuing without eligibility data");
+				}
 
-					if (statusData.statusData.debug.validationChecks) {
-						console.log("✅ Validation Checks:", statusData.statusData.debug.validationChecks);
-					}
-
-					if (statusData.statusData.debug.insuranceInfo) {
-						console.log("🏥 Insurance Info:", statusData.statusData.debug.insuranceInfo);
-					}
-
-					if (statusData.statusData.debug.completionSummary) {
-						console.log("📋 Completion Summary:", statusData.statusData.debug.completionSummary);
-						console.log("📊 Response Codes:", statusData.statusData.debug.responseCodes);
-					}
-
-					if (statusData.statusData.debug.hubspotContactId) {
-						console.log("👤 HubSpot Contact ID:", statusData.statusData.debug.hubspotContactId);
-					}
-
-					if (statusData.statusData.debug.skipReason) {
-						console.log("⏭️ Skip Reason:", statusData.statusData.debug.skipReason);
-					}
-
-					// Enhanced timeout and warning detection
-					if (statusData.statusData.debug.eligibilityTimeout) {
-						console.warn("⏰ ELIGIBILITY TIMEOUT DETECTED - Workflow continuing without eligibility data");
-					}
-
-					if (statusData.statusData.debug.warnings) {
-						console.warn("⚠️ Workflow Warnings:", statusData.statusData.debug.warnings);
-					}
-
-					if (statusData.statusData.warning) {
-						console.warn("⚠️ Status Warning Flag:", statusData.statusData.warning);
-					}
-
-					console.groupEnd();
+				if (statusData.statusData?.debug?.warnings) {
+					console.warn("Workflow warnings:", statusData.statusData.debug.warnings);
 				}
 
 				if (statusData.success && statusData.statusData) {
@@ -820,22 +735,16 @@ class ModularQuiz {
 
 					// Track stale status but don't trigger emergency fallback (causes duplicate workflows)
 					if (statusData.statusData.currentStep === "processing" && statusData.statusData.progress === 25 && this.pollingAttempts > 15) {
-						console.warn(`⚠️ STALE DATA DETECTED - stuck at processing/25% for ${this.pollingAttempts} attempts`);
-						console.warn("🔄 Status polling service appears to have stale data issues");
-						console.warn("⏰ Relying on workflow timeout and original fallback mechanism");
+						console.warn(`Stale data detected - stuck at processing/25% for ${this.pollingAttempts} attempts`);
 					}
 
 					if (statusData.statusData.completed) {
-						console.log("✅ Workflow completed according to status polling.");
-						console.log("🔍 Final status data:", statusData.statusData);
-
 						this._stopStatusPolling();
 						this._stopFallbackChecking(); // Stop fallback since polling succeeded
 						this._stopLoadingMessages(); // Stop loading since workflow is complete
 
 						// Extract the final result data properly
 						const finalResult = statusData.statusData.finalData || statusData.statusData.finalResult || statusData.statusData;
-						console.log("📦 Extracted final result:", finalResult);
 
 						// Resolve the original workflow promise with the final result from polling
 						if (this.workflowCompletionResolve) {
@@ -849,8 +758,6 @@ class ModularQuiz {
 					}
 				} else {
 					console.warn("Status polling received unsuccessful or invalid data:", statusData);
-					console.warn("🔍 Expected: statusData.success=true and statusData.statusData to exist");
-					console.warn("🔍 Actual structure:", Object.keys(statusData));
 
 					// Non-critical, continue polling unless it's a hard error
 					if (statusData.error) {
@@ -875,8 +782,6 @@ class ModularQuiz {
 	 */
 	_updateWorkflowStatus(statusData) {
 		if (!statusData) return;
-
-		console.log("📱 Updating UI with status:", statusData);
 
 		const loadingStepsMap = {
 			INITIATED: { title: "Processing Your Answers", description: "Analyzing your health information..." },
@@ -915,12 +820,10 @@ class ModularQuiz {
 		if (this.statusPollingInterval) {
 			clearInterval(this.statusPollingInterval);
 			this.statusPollingInterval = null;
-			console.log("⏹️ Status polling stopped");
 		}
 		if (this.pollingTimeout) {
 			clearTimeout(this.pollingTimeout);
 			this.pollingTimeout = null;
-			console.log("⏹️ Polling timeout cleared");
 		}
 		// Reset tracking variables
 		this.statusTrackingId = null;
@@ -930,7 +833,6 @@ class ModularQuiz {
 		// Clear workflow completion resolvers to prevent memory leaks and errors
 		// Note: These should already be null if the workflow completed successfully
 		if (this.workflowCompletionResolve || this.workflowCompletionReject) {
-			console.log("⚠️ Clearing workflow completion resolvers during polling stop");
 			this.workflowCompletionResolve = null;
 			this.workflowCompletionReject = null;
 		}
