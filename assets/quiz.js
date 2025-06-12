@@ -733,12 +733,19 @@ class ModularQuiz {
 
 					if (statusData.statusData.completed) {
 						console.log("✅ Workflow completed according to status polling.");
+						console.log("🔍 Final status data:", statusData.statusData);
+
 						this._stopStatusPolling();
 						this._stopFallbackChecking(); // Stop fallback since polling succeeded
 						this._stopLoadingMessages(); // Stop loading since workflow is complete
+
+						// Extract the final result data properly
+						const finalResult = statusData.statusData.finalData || statusData.statusData.finalResult || statusData.statusData;
+						console.log("📦 Extracted final result:", finalResult);
+
 						// Resolve the original workflow promise with the final result from polling
 						if (this.workflowCompletionResolve) {
-							this.workflowCompletionResolve(statusData.statusData.finalResult);
+							this.workflowCompletionResolve(finalResult);
 							this.workflowCompletionResolve = null; // Prevent multiple resolutions
 						} else {
 							console.error("WorkflowCompletionResolve not set, cannot resolve promise.");
