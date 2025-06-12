@@ -86,7 +86,7 @@ export class NotificationManager {
 
 		this.notifications = [];
 		this.currentFilter = "all";
-		this.autoCollapseEnabled = this.options.autoCollapse;
+		this.autoCollapseEnabled = Boolean(this.options.autoCollapse);
 
 		this.timeouts = new Set();
 		this.eventListeners = new WeakMap();
@@ -255,6 +255,7 @@ export class NotificationManager {
 
 	_cleanNotificationTitle(title) {
 		if (typeof title !== "string") return "";
+		// More robust regex for various emojis and "TEST MODE"
 		return title
 			.replace(/[\u{1F000}-\u{1F6FF}\u{1F900}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F300}-\u{1F5FF}\u{FE0F}]/gu, "")
 			.replace(/TEST MODE\s*[-:]?\s*/gi, "")
@@ -262,8 +263,9 @@ export class NotificationManager {
 	}
 
 	_sanitizeHtml(text) {
-		if (typeof text !== "string" || !text) return "";
+		if (typeof text !== "string" || text.trim() === "") return "";
 
+		// Define placeholders for allowed tags
 		const BR_PLACEHOLDER = "__BR_NPM__";
 		const STRONG_START_PLACEHOLDER = "__STRONG_START_NPM__";
 		const STRONG_END_PLACEHOLDER = "__STRONG_END_NPM__";
@@ -272,16 +274,19 @@ export class NotificationManager {
 
 		let processedText = text;
 
+		// 1. Replace allowed tags with placeholders
 		processedText = processedText.replace(/<br\s*\/?>/gi, BR_PLACEHOLDER);
 		processedText = processedText.replace(/<strong>/gi, STRONG_START_PLACEHOLDER);
 		processedText = processedText.replace(/<\/strong>/gi, STRONG_END_PLACEHOLDER);
 		processedText = processedText.replace(/<em>/gi, EM_START_PLACEHOLDER);
 		processedText = processedText.replace(/<\/em>/gi, EM_END_PLACEHOLDER);
 
+		// 2. Use a DOM element to safely escape all HTML entities (including &lt;br&gt;)
 		const div = document.createElement("div");
-		div.textContent = processedText;
+		div.textContent = processedText; // This escapes all HTML characters
 		let escaped = div.innerHTML;
 
+		// 3. Restore allowed tags from their placeholders
 		escaped = escaped.replace(new RegExp(BR_PLACEHOLDER, "g"), "<br>");
 		escaped = escaped.replace(new RegExp(STRONG_START_PLACEHOLDER, "g"), "<strong>");
 		escaped = escaped.replace(new RegExp(STRONG_END_PLACEHOLDER, "g"), "</strong>");
@@ -292,6 +297,7 @@ export class NotificationManager {
 	}
 
 	escapeHtml(text) {
+		// Legacy method for backward compatibility
 		return this._sanitizeHtml(text);
 	}
 
@@ -330,6 +336,7 @@ export class NotificationManager {
 		const toggle = notification.querySelector(`.${this.cssClasses.TOGGLE}`);
 
 		if (details) {
+			// Set explicit height before transition to 0 for smooth collapse
 			details.style.maxHeight = `${details.scrollHeight}px`;
 			requestAnimationFrame(() => {
 				if (this.isDestroyed) return;
@@ -371,7 +378,7 @@ export class NotificationManager {
 			this.isProcessingQueue = false;
 			if (this.staggerTimeoutId) {
 				clearTimeout(this.staggerTimeoutId);
-				this.timeouts.delete(this.staggerTimeoutId);
+				this.timeouts.delete(this.staggerTimeoutId); // Ensure timeout is cleared from Set
 				this.staggerTimeoutId = null;
 			}
 			return;
@@ -461,6 +468,7 @@ export class NotificationManager {
 
 		const timeoutId = setTimeout(() => {
 			if (notification.parentNode && !this.isDestroyed) {
+				// Check parentNode again before removing
 				notification.parentNode.removeChild(notification);
 			}
 			if (updateArray && !this.isDestroyed) {
@@ -862,6 +870,7 @@ export class NotificationManager {
 
 	clear() {
 		if (this.isDestroyed) return;
+		// Create a copy to iterate, as removeNotification modifies the original array.
 		[...this.notifications].forEach(notification => this.removeNotification(notification, false));
 		this.notifications = [];
 	}
@@ -885,7 +894,7 @@ export class NotificationManager {
 	}
 
 	setAutoCollapse(enabled) {
-		this.autoCollapseEnabled = !!enabled;
+		this.autoCollapseEnabled = Boolean(enabled);
 	}
 
 	getNotifications() {
@@ -903,6 +912,7 @@ export class NotificationManager {
 		this.timeouts.forEach(timeoutId => clearTimeout(timeoutId));
 		this.timeouts.clear();
 
+		// Ensure specific queue timeouts are cleared
 		if (this.processingQueueTimeoutId) {
 			clearTimeout(this.processingQueueTimeoutId);
 			this.timeouts.delete(this.processingQueueTimeoutId);
