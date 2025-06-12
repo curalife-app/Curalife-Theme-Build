@@ -20,14 +20,14 @@ const CSS_CLASSES = {
 	DETAILS_CONTENT: "notification-details-content",
 	CLOSE: "notification-close",
 	SHIMMER: "notification-shimmer",
-	ACTIVE: "active",
-	EXPANDED: "expanded",
+	ACTIVE: "active", // For menu items
+	EXPANDED: "expanded", // For details/toggle
 	ANIMATE_IN: "animate-in",
 	ANIMATE_OUT: "animate-out",
 	SLIDE_UP: "slide-up",
 	FILTER_HIDDEN: "filter-hidden",
 	FILTER_VISIBLE: "filter-visible",
-	PRIORITY_PREFIX: "notification-priority-",
+	PRIORITY_PREFIX: "notification-priority-", // Prefix for dynamic priority classes
 	COPY_BUTTON: "notification-copy-button",
 	FILTER_BUTTON: "notification-filter-button",
 	COPY_MENU: "notification-copy-options-menu",
@@ -53,20 +53,9 @@ const EMOJIS = {
 	FILTER_ERROR: "❌",
 	FILTER_SUCCESS: "✅",
 	FILTER_INFO: "ℹ️",
-	COPY_SUCCESS: `
-		<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-			<polyline points="20,6 9,17 4,12"></polyline>
-		</svg>`,
-	COPY_ERROR: `
-		<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-			<line x1="18" y1="6" x2="6" y2="18"></line>
-			<line x1="6" y1="6" x2="18" y2="18"></line>
-		</svg>`,
-	COPY_DEFAULT: `
-		<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-			<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-			<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2 2v1"></path>
-		</svg>`
+	COPY_SUCCESS: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20,6 9,17 4,12"></polyline></svg>`,
+	COPY_ERROR: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`,
+	COPY_DEFAULT: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2 2v1"></path></svg>`
 };
 
 const DEFAULT_PRIORITY_CONFIGS = {
@@ -81,7 +70,7 @@ export class NotificationManager {
 	constructor(options = {}) {
 		this.options = {
 			containerSelector: `.${CSS_CLASSES.CONTAINER}`,
-			position: "top-right",
+			position: "top-right", // Not directly used in JS, for CSS only
 			autoCollapse: true,
 			maxNotifications: 50,
 			defaultDuration: 5000,
@@ -116,7 +105,6 @@ export class NotificationManager {
 
 	_init() {
 		if (this.isDestroyed) return;
-
 		this._createContainer();
 		if (this.options.enableFiltering || this.options.enableCopy) {
 			this._addControlButtons();
@@ -153,7 +141,8 @@ export class NotificationManager {
 			console.warn("NotificationManager: Cannot show notification, manager is destroyed.");
 			return null;
 		}
-		if (!text || typeof text !== "string") {
+		if (typeof text !== "string" || text.trim() === "") {
+			// Ensure non-empty string after trim
 			console.error("NotificationManager: Notification text must be a non-empty string.");
 			return null;
 		}
@@ -193,19 +182,14 @@ export class NotificationManager {
 
 	_buildNotificationContent(notification, text, type) {
 		let title, detailsText;
-
-		if (text.includes("<br>")) {
-			const parts = text.split("<br>");
-			title = parts[0].trim();
-			detailsText = parts.slice(1).join("<br>").trim();
-		} else {
-			const [firstLine, ...details] = text.split("\n");
-			title = firstLine.trim();
-			detailsText = details.join("\n").trim();
-		}
+		const parts = text.includes("<br>") ? text.split("<br>") : text.split("\n");
+		title = parts[0].trim();
+		detailsText = parts
+			.slice(1)
+			.join(text.includes("<br>") ? "<br>" : "\n")
+			.trim();
 
 		title = this._cleanNotificationTitle(title);
-
 		const safeTitle = this._sanitizeHtml(title);
 		const safeDetailsText = this._sanitizeHtml(detailsText);
 
@@ -263,35 +247,32 @@ export class NotificationManager {
 		}
 	}
 
-	_addAndTrackListener(element, event, handler, parentNotification = element) {
+	_addAndTrackListener(element, event, handler, keyElement = element) {
 		element.addEventListener(event, handler);
-		let listeners = this.eventListeners.get(parentNotification) || [];
+		let listeners = this.eventListeners.get(keyElement) || [];
 		listeners.push({ element, event, handler });
-		this.eventListeners.set(parentNotification, listeners);
+		this.eventListeners.set(keyElement, listeners);
 	}
 
 	_cleanNotificationTitle(title) {
 		if (typeof title !== "string") return "";
+		// More robust regex for emojis and TEST MODE text
 		return title
-			.replace(
-				/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}\u{2B50}\u{2122}\u{2B06}\u{2B07}\u{2B05}\u{27A1}\u{274C}\u{2716}\u{2714}\u{2795}\u{2797}\u{27B0}\u{3030}\u{303D}\u{3297}\u{3299}\u{FE0F}]/gu,
-				""
-			)
+			.replace(/[\u{1F000}-\u{1F6FF}\u{1F900}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F300}-\u{1F5FF}\u{FE0F}]/gu, "")
 			.replace(/TEST MODE\s*[-:]?\s*/gi, "")
 			.trim();
 	}
 
 	_sanitizeHtml(text) {
-		if (!text || typeof text !== "string") return "";
+		if (typeof text !== "string" || !text) return ""; // Handle null/undefined/empty string
 
 		const div = document.createElement("div");
 		div.textContent = text;
 		let escaped = div.innerHTML;
 
+		// Re-enable allowed HTML tags for formatting. Order matters.
 		escaped = escaped
-			.replace(/<br>/gi, "<br>")
-			.replace(/<br\/>/gi, "<br>")
-			.replace(/<br \/>/gi, "<br>")
+			.replace(/<br\s*\/>|<br>/gi, "<br>")
 			.replace(/<strong>(.*?)<\/strong>/gi, "<strong>$1</strong>")
 			.replace(/<em>(.*?)<\/em>/gi, "<em>$1</em>");
 
@@ -304,7 +285,6 @@ export class NotificationManager {
 
 	toggleNotification(notification) {
 		if (this.isDestroyed) return;
-
 		const details = notification.querySelector(`.${this.cssClasses.DETAILS}`);
 		if (!details) return;
 
@@ -317,7 +297,6 @@ export class NotificationManager {
 
 	expandNotification(notification) {
 		if (this.isDestroyed) return;
-
 		const details = notification.querySelector(`.${this.cssClasses.DETAILS}`);
 		const toggle = notification.querySelector(`.${this.cssClasses.TOGGLE}`);
 
@@ -325,8 +304,7 @@ export class NotificationManager {
 			details.classList.add(this.cssClasses.EXPANDED);
 			requestAnimationFrame(() => {
 				if (this.isDestroyed) return;
-				const contentHeight = details.scrollHeight;
-				details.style.maxHeight = contentHeight + "px";
+				details.style.maxHeight = `${details.scrollHeight}px`;
 			});
 		}
 		if (toggle) {
@@ -336,12 +314,11 @@ export class NotificationManager {
 
 	collapseNotification(notification) {
 		if (this.isDestroyed) return;
-
 		const details = notification.querySelector(`.${this.cssClasses.DETAILS}`);
 		const toggle = notification.querySelector(`.${this.cssClasses.TOGGLE}`);
 
 		if (details) {
-			details.style.maxHeight = details.scrollHeight + "px";
+			details.style.maxHeight = `${details.scrollHeight}px`; // Set explicit height before transition to 0
 			requestAnimationFrame(() => {
 				if (this.isDestroyed) return;
 				details.classList.remove(this.cssClasses.EXPANDED);
@@ -355,7 +332,6 @@ export class NotificationManager {
 
 	_queueNotification(notification) {
 		if (this.isDestroyed) return;
-
 		this.notificationQueue.push(notification);
 
 		if (!this.processingQueueTimeoutId) {
@@ -368,12 +344,7 @@ export class NotificationManager {
 	}
 
 	_processNotificationQueue() {
-		if (this.isDestroyed) return;
-
-		if (this.isProcessingQueue) {
-			return;
-		}
-
+		if (this.isDestroyed || this.isProcessingQueue) return;
 		this.isProcessingQueue = true;
 		this._processNextInQueue();
 	}
@@ -387,6 +358,7 @@ export class NotificationManager {
 		if (this.notificationQueue.length === 0) {
 			this.isProcessingQueue = false;
 			if (this.staggerTimeoutId) {
+				// Clear lingering stagger timeout if queue empties
 				clearTimeout(this.staggerTimeoutId);
 				this.timeouts.delete(this.staggerTimeoutId);
 				this.staggerTimeoutId = null;
@@ -411,11 +383,10 @@ export class NotificationManager {
 
 		notification.style.opacity = "0";
 		notification.style.transform = "translateX(120%) scale(0.85)";
-		notification.offsetHeight;
+		notification.offsetHeight; // Force reflow
 
 		requestAnimationFrame(() => {
 			if (this.isDestroyed) return;
-
 			const timeoutId = setTimeout(() => {
 				if (!this.isDestroyed && notification.parentNode) {
 					notification.style.opacity = "";
@@ -424,7 +395,7 @@ export class NotificationManager {
 					this._addInteractiveEffects(notification);
 				}
 				this.timeouts.delete(timeoutId);
-			}, 50);
+			}, 50); // Small delay to allow browser to apply initial state
 			this.timeouts.add(timeoutId);
 		});
 
@@ -432,17 +403,14 @@ export class NotificationManager {
 			const oldestNotification = this.notifications.shift();
 			this.removeNotification(oldestNotification, false);
 		}
-
 		this._applyNotificationFilter(this.currentFilter);
 	}
 
 	_addInteractiveEffects(newNotification) {
 		if (this.isDestroyed) return;
-
 		const existingNotifications = this.notifications.filter(n => n !== newNotification && n.parentNode);
 		existingNotifications.forEach((notification, index) => {
 			if (this.isDestroyed) return;
-
 			const delay = index * 30;
 			const timeoutId = setTimeout(() => {
 				if (!this.isDestroyed && notification.parentNode) {
@@ -469,10 +437,8 @@ export class NotificationManager {
 
 		this._cleanupEventListeners(notification);
 
-		notification.classList.remove(this.cssClasses.ANIMATE_IN);
-		notification.classList.remove(this.cssClasses.SLIDE_UP);
-
-		notification.offsetHeight;
+		notification.classList.remove(this.cssClasses.ANIMATE_IN, this.cssClasses.SLIDE_UP);
+		notification.offsetHeight; // Force reflow
 
 		notification.classList.add(this.cssClasses.ANIMATE_OUT);
 
@@ -511,16 +477,14 @@ export class NotificationManager {
 
 	_addRemovalEffects(removingNotification) {
 		if (this.isDestroyed) return;
-
 		const remainingNotifications = this.notifications.filter(n => n !== removingNotification && n.parentNode);
 		remainingNotifications.forEach((notification, index) => {
 			if (this.isDestroyed) return;
-
 			const delay = index * 50;
 			const timeoutId = setTimeout(() => {
 				if (!this.isDestroyed && notification.parentNode) {
 					notification.classList.remove(this.cssClasses.SLIDE_UP);
-					notification.offsetHeight;
+					notification.offsetHeight; // Force reflow
 
 					notification.classList.add(this.cssClasses.SLIDE_UP);
 
@@ -540,7 +504,6 @@ export class NotificationManager {
 
 	_addControlButtons() {
 		if (this.isDestroyed) return;
-
 		this._removeExistingButtons();
 
 		if (this.options.enableCopy) {
@@ -561,7 +524,6 @@ export class NotificationManager {
 
 	_addCopyButton() {
 		if (!document.body) return;
-
 		const copyButton = document.createElement("div");
 		copyButton.className = this.cssClasses.COPY_BUTTON;
 		copyButton.innerHTML = EMOJIS.COPY_DEFAULT;
@@ -569,13 +531,11 @@ export class NotificationManager {
 
 		const clickHandler = () => this._showCopyOptionsMenu(copyButton);
 		this._addAndTrackListener(copyButton, "click", clickHandler, copyButton);
-
 		document.body.appendChild(copyButton);
 	}
 
 	_addFilterButton() {
 		if (!document.body) return;
-
 		const filterButton = document.createElement("div");
 		filterButton.className = this.cssClasses.FILTER_BUTTON;
 		filterButton.innerHTML = EMOJIS.FILTER_ALL;
@@ -583,7 +543,6 @@ export class NotificationManager {
 
 		const clickHandler = () => this._showFilterOptionsMenu(filterButton);
 		this._addAndTrackListener(filterButton, "click", clickHandler, filterButton);
-
 		document.body.appendChild(filterButton);
 	}
 
@@ -613,6 +572,7 @@ export class NotificationManager {
 				const filter = item.dataset[DATA_ATTRIBUTES.FILTER];
 				this._exportNotifications(format, filter, copyButton);
 				menu.remove();
+				this._cleanupEventListeners(document); // Clean up the document click handler
 			}
 		};
 		this._addAndTrackListener(menu, "click", menuClickHandler, menu);
@@ -624,6 +584,7 @@ export class NotificationManager {
 			}
 		};
 		const timeoutId = setTimeout(() => {
+			// Delay to prevent immediate close if opened by a click
 			this._addAndTrackListener(document, "click", closeMenuHandler, document);
 			this.timeouts.delete(timeoutId);
 		}, 100);
@@ -654,6 +615,7 @@ export class NotificationManager {
 				this._applyNotificationFilter(filter);
 				this._updateFilterButtonAppearance(filterButton, this._getFilterEmoji(filter));
 				menu.remove();
+				this._cleanupEventListeners(document); // Clean up the document click handler
 			}
 		};
 		this._addAndTrackListener(menu, "click", menuClickHandler, menu);
@@ -681,11 +643,9 @@ export class NotificationManager {
 
 	_applyNotificationFilter(filter) {
 		if (this.isDestroyed) return;
-
 		this.notifications.forEach(notification => {
 			const type = notification.dataset[DATA_ATTRIBUTES.TYPE];
 			const shouldShow = filter === "all" || type === filter;
-
 			notification.classList.toggle(this.cssClasses.FILTER_HIDDEN, !shouldShow);
 			notification.classList.toggle(this.cssClasses.FILTER_VISIBLE, shouldShow);
 		});
@@ -714,9 +674,7 @@ export class NotificationManager {
 
 	_exportNotifications(format, filter, copyButton) {
 		if (this.isDestroyed) return;
-
 		const filteredNotifications = this._getFilteredNotifications(filter);
-
 		let exportedData;
 		switch (format) {
 			case "json":
@@ -727,8 +685,8 @@ export class NotificationManager {
 				break;
 			default:
 				exportedData = this._formatAsText(filteredNotifications, filter);
+				break;
 		}
-
 		this._copyToClipboard(exportedData, copyButton, { format, filter });
 	}
 
@@ -742,27 +700,20 @@ export class NotificationManager {
 
 	_formatAsText(notifications, filter) {
 		const header = `=== NOTIFICATIONS EXPORT (${filter.toUpperCase()}) ===\n` + `Exported: ${new Date().toLocaleString()}\n` + `Total: ${notifications.length} notifications\n\n`;
-
 		const content = notifications
 			.map((notification, index) => {
 				const type = (notification.dataset[DATA_ATTRIBUTES.TYPE] || "unknown").toUpperCase();
 				const timestamp = notification.dataset[DATA_ATTRIBUTES.TIMESTAMP] ? new Date(notification.dataset[DATA_ATTRIBUTES.TIMESTAMP]).toLocaleString() : "Unknown";
 				const text = this._extractNotificationText(notification);
-
 				return `[${index + 1}] ${type} - ${timestamp}\n${text}\n`;
 			})
 			.join("\n");
-
 		return header + content;
 	}
 
 	_formatAsJSON(notifications, filter) {
 		const data = {
-			export_info: {
-				filter: filter,
-				exported_at: new Date().toISOString(),
-				total_count: notifications.length
-			},
+			export_info: { filter: filter, exported_at: new Date().toISOString(), total_count: notifications.length },
 			notifications: notifications.map((notification, index) => ({
 				index: index + 1,
 				type: notification.dataset[DATA_ATTRIBUTES.TYPE] || "unknown",
@@ -781,8 +732,7 @@ export class NotificationManager {
 				const type = notification.dataset[DATA_ATTRIBUTES.TYPE] || "unknown";
 				const priority = notification.dataset[DATA_ATTRIBUTES.PRIORITY] || "";
 				const timestamp = notification.dataset[DATA_ATTRIBUTES.TIMESTAMP] || new Date().toISOString();
-				const text = `"${this._extractNotificationText(notification).replace(/"/g, '""')}"`;
-
+				const text = `"${this._extractNotificationText(notification).replace(/"/g, '""')}"`; // CSV-escape text
 				return `${index + 1},"${type}","${priority}","${timestamp}",${text}`;
 			})
 			.join("\n");
@@ -791,20 +741,17 @@ export class NotificationManager {
 
 	_extractNotificationText(notification) {
 		if (!notification) return "";
-
 		const titleElement = notification.querySelector(`.${this.cssClasses.TITLE}`);
 		const detailsElement = notification.querySelector(`.${this.cssClasses.DETAILS_CONTENT}`);
-
 		let text = titleElement ? titleElement.textContent.trim() : "";
 		if (detailsElement && detailsElement.textContent.trim()) {
-			text += "\n" + detailsElement.textContent.trim();
+			text += `\n${detailsElement.textContent.trim()}`;
 		}
 		return text;
 	}
 
 	async _copyToClipboard(text, button, formatInfo) {
 		if (this.isDestroyed) return;
-
 		try {
 			if (navigator.clipboard && window.isSecureContext) {
 				await navigator.clipboard.writeText(text);
@@ -820,7 +767,6 @@ export class NotificationManager {
 
 	_fallbackCopyToClipboard(text, button, formatInfo) {
 		if (this.isDestroyed || !document.body) return;
-
 		const textArea = document.createElement("textarea");
 		textArea.value = text;
 		textArea.style.position = "fixed";
@@ -845,7 +791,6 @@ export class NotificationManager {
 
 	_showCopyFeedback(button, success, formatInfo = {}) {
 		if (this.isDestroyed || !button) return;
-
 		const originalClass = button.className;
 		const originalContent = EMOJIS.COPY_DEFAULT;
 
@@ -863,10 +808,8 @@ export class NotificationManager {
 	}
 
 	_determinePriority(type, text) {
-		if (!text || typeof text !== "string") return "info";
-
+		if (typeof text !== "string" || text.trim() === "") return "info";
 		const lowerText = text.toLowerCase();
-
 		if (type === "error") {
 			if (lowerText.includes("critical") || lowerText.includes("fatal") || lowerText.includes("failure")) {
 				return "critical";
@@ -888,14 +831,8 @@ export class NotificationManager {
 
 	_applyPriorityStyles(notification, priority, priorityConfig) {
 		if (!notification || this.isDestroyed) return;
-
 		notification.classList.add(`${this.cssClasses.PRIORITY_PREFIX}${priority}`);
-
-		if (priorityConfig.shouldPulse) {
-			notification.style.animation = "pulse-critical 2s infinite";
-		} else {
-			notification.style.animation = "";
-		}
+		notification.style.animation = priorityConfig.shouldPulse ? "pulse-critical 2s infinite" : "";
 	}
 
 	_getTypeIcon(type) {
@@ -915,15 +852,12 @@ export class NotificationManager {
 
 	clear() {
 		if (this.isDestroyed) return;
-
-		const notificationsToRemove = [...this.notifications];
-		notificationsToRemove.forEach(notification => this.removeNotification(notification, false));
+		[...this.notifications].forEach(notification => this.removeNotification(notification, false));
 		this.notifications = [];
 	}
 
 	expandAll() {
 		if (this.isDestroyed) return;
-
 		this.notifications.forEach(notification => {
 			if (notification.querySelector(`.${this.cssClasses.DETAILS}`)) {
 				this.expandNotification(notification);
@@ -933,7 +867,6 @@ export class NotificationManager {
 
 	collapseAll() {
 		if (this.isDestroyed) return;
-
 		this.notifications.forEach(notification => {
 			if (notification.querySelector(`.${this.cssClasses.DETAILS}`)) {
 				this.collapseNotification(notification);
@@ -955,7 +888,6 @@ export class NotificationManager {
 
 	destroy() {
 		if (this.isDestroyed) return;
-
 		this.isDestroyed = true;
 
 		this.timeouts.forEach(timeoutId => clearTimeout(timeoutId));
@@ -981,7 +913,7 @@ export class NotificationManager {
 		});
 		this.eventListeners = new WeakMap();
 
-		this.clear();
+		this.clear(); // Removes notifications and their listeners
 
 		this._removeExistingButtons();
 		this._removeExistingMenus();
@@ -1003,7 +935,7 @@ export const NotificationUtils = {
 	},
 
 	showQuickNotification(text, type = "info", duration = 3000) {
-		if (!text || typeof text !== "string") {
+		if (typeof text !== "string" || text.trim() === "") {
 			console.error("NotificationUtils: Quick notification text must be a string.");
 			return null;
 		}
@@ -1016,19 +948,18 @@ export const NotificationUtils = {
 			defaultDuration: duration,
 			enableFiltering: false,
 			enableCopy: false,
-			customClasses: {
-				container: "quick-notification-container"
-			}
+			customClasses: { container: "quick-notification-container" }
 		});
 
 		const notification = tempManager.show(text, type, null, duration);
 
 		if (notification && duration > 0) {
 			const destroyTimeout = setTimeout(() => {
+				// Destroy only if manager exists and has no remaining notifications (after auto-removal)
 				if (tempManager.container && !tempManager.notifications.length) {
 					tempManager.destroy();
 				}
-			}, duration + 500);
+			}, duration + 500); // Add a small buffer after notification removal
 			tempManager.timeouts.add(destroyTimeout);
 		}
 
