@@ -360,8 +360,8 @@ class ModularQuiz {
 		} finally {
 			this.submitting = false;
 			this.nextButton.disabled = false;
-			this._stopLoadingMessages(); // Ensure all loading messages are cleared
-			this._stopStatusPolling(); // Ensure polling is stopped
+			// Note: Don't stop polling here as it should continue until workflow completes
+			// Polling will be stopped by the workflow completion or error handlers
 		}
 	}
 
@@ -555,7 +555,9 @@ class ModularQuiz {
 		// Clear any existing polling interval to prevent duplicates
 		this._stopStatusPolling();
 
-		// Start polling every 2 seconds
+		// Start with an immediate poll, then continue every 2 seconds
+		this._pollWorkflowStatus();
+
 		this.statusPollingInterval = setInterval(() => {
 			this._pollWorkflowStatus();
 		}, 2000);
@@ -564,6 +566,7 @@ class ModularQuiz {
 		this.pollingTimeout = setTimeout(
 			() => {
 				this._stopStatusPolling();
+				this._stopLoadingMessages(); // Stop loading on timeout
 				console.warn("Polling timed out. Workflow status unknown or took too long.");
 				const timeoutError = new Error("Workflow processing took too long. Please contact support.");
 				// Reject the original workflow promise if it hasn't been resolved/rejected yet
@@ -614,6 +617,7 @@ class ModularQuiz {
 					if (statusData.statusData.completed) {
 						console.log("✅ Workflow completed according to status polling.");
 						this._stopStatusPolling();
+						this._stopLoadingMessages(); // Stop loading since workflow is complete
 						// Resolve the original workflow promise with the final result from polling
 						if (this.workflowCompletionResolve) {
 							this.workflowCompletionResolve(statusData.statusData.finalResult);
@@ -697,6 +701,9 @@ class ModularQuiz {
 		this.statusTrackingId = null;
 		this.pollingAttempts = 0;
 		this._lastStatusMessage = "";
+
+		// Debug: Log the stack trace to see what called this
+		console.log("🔍 _stopStatusPolling called from:", new Error().stack);
 	}
 
 	/**
