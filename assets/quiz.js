@@ -335,7 +335,16 @@ class ModularQuiz {
 			}
 
 			console.log("Calling showResults with:", { resultUrl, finalResult });
-			this.showResults(resultUrl, true, finalResult);
+
+			// Add debugging to see if showResults is actually being called
+			try {
+				console.log("About to call showResults...");
+				this.showResults(resultUrl, true, finalResult);
+				console.log("showResults called successfully");
+			} catch (showResultsError) {
+				console.error("Error in showResults:", showResultsError);
+				throw showResultsError;
+			}
 		} catch (error) {
 			console.error("Error finishing quiz:", error);
 
@@ -752,9 +761,12 @@ class ModularQuiz {
 						const finalResult = statusData.statusData.finalData || statusData.statusData.finalResult || statusData.statusData;
 						console.log("Final result extracted:", finalResult);
 
+						// Store the result for debugging
+						this.workflowResult = finalResult;
+
 						// Resolve the original workflow promise with the final result from polling
 						if (this.workflowCompletionResolve) {
-							console.log("Resolving workflow completion promise");
+							console.log("Resolving workflow completion promise with:", finalResult);
 							this.workflowCompletionResolve(finalResult);
 							this.workflowCompletionResolve = null; // Prevent multiple resolutions
 						} else {
@@ -3216,27 +3228,42 @@ class ModularQuiz {
 			errorMessage
 		});
 
-		this._stopLoadingMessages();
-		this._stopStatusPolling(); // Ensure polling is stopped
+		try {
+			console.log("Stopping loading messages and polling...");
+			this._stopLoadingMessages();
+			this._stopStatusPolling(); // Ensure polling is stopped
 
-		// Hide loading screen and show results
-		this._toggleElement(this.loading, false);
-		this._toggleElement(this.questions, true);
-		this._toggleElement(this.navigationButtons, false);
-		this._toggleElement(this.progressSection, false);
+			console.log("Toggling UI elements...");
+			// Hide loading screen and show results
+			this._toggleElement(this.loading, false);
+			this._toggleElement(this.questions, true);
+			this._toggleElement(this.navigationButtons, false);
+			this._toggleElement(this.progressSection, false);
 
-		// Keep nav header visible for back button functionality
-		this._toggleElement(this.navHeader, true);
+			// Keep nav header visible for back button functionality
+			this._toggleElement(this.navHeader, true);
 
-		const quizType = this.quizData?.type || "general";
-		const resultsHTML = webhookSuccess ? this._generateResultsHTML(quizType, resultData, resultUrl) : this._generateErrorResultsHTML(resultUrl, errorMessage);
+			console.log("Generating results HTML...");
+			const quizType = this.quizData?.type || "general";
+			const resultsHTML = webhookSuccess ? this._generateResultsHTML(quizType, resultData, resultUrl) : this._generateErrorResultsHTML(resultUrl, errorMessage);
 
-		this.questionContainer.innerHTML = resultsHTML;
-		this._attachFAQListeners();
-		this._attachBookingButtonListeners();
+			console.log("Generated results HTML length:", resultsHTML?.length);
+			console.log("Setting innerHTML...");
+			this.questionContainer.innerHTML = resultsHTML;
 
-		// Scroll to top of results
-		window.scrollTo({ top: 0, behavior: "smooth" });
+			console.log("Attaching listeners...");
+			this._attachFAQListeners();
+			this._attachBookingButtonListeners();
+
+			console.log("Scrolling to top...");
+			// Scroll to top of results
+			window.scrollTo({ top: 0, behavior: "smooth" });
+
+			console.log("showResults completed successfully");
+		} catch (error) {
+			console.error("Error in showResults:", error);
+			throw error;
+		}
 	}
 
 	_stopLoadingMessages() {
