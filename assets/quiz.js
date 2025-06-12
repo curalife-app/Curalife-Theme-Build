@@ -768,31 +768,50 @@ class ModularQuiz {
 
 					if (statusData.statusData.completed) {
 						console.log("Workflow completed - stopping polling and resolving");
-						this._stopStatusPolling();
-						this._stopFallbackChecking(); // Stop fallback since polling succeeded
-						this._stopLoadingMessages(); // Stop loading since workflow is complete
 
-						// Extract the final result data properly
-						const finalResult = statusData.statusData.finalData || statusData.statusData.finalResult || statusData.statusData;
-						console.log("Final result extracted:", finalResult);
-
-						// Store the result for debugging
-						this.workflowResult = finalResult;
-
-						// Resolve the original workflow promise with the final result from polling
-						if (this.workflowCompletionResolve) {
-							console.log("Resolving workflow completion promise with:", finalResult);
-							console.log("About to call workflowCompletionResolve...");
-							this.workflowCompletionResolve(finalResult);
-							console.log("workflowCompletionResolve called successfully");
-							this.workflowCompletionResolve = null; // Prevent multiple resolutions
-						} else {
-							console.warn("WorkflowCompletionResolve not set - workflow may have already completed or been reset. Stopping polling.");
-							// Stop polling since we can't resolve the promise anyway
+						try {
+							console.log("Step 1: Stopping status polling...");
 							this._stopStatusPolling();
+
+							console.log("Step 2: Stopping fallback checking...");
+							this._stopFallbackChecking(); // Stop fallback since polling succeeded
+
+							console.log("Step 3: Stopping loading messages...");
+							this._stopLoadingMessages(); // Stop loading since workflow is complete
+
+							console.log("Step 4: Extracting final result...");
+							// Extract the final result data properly
+							const finalResult = statusData.statusData.finalData || statusData.statusData.finalResult || statusData.statusData;
+							console.log("Final result extracted:", finalResult);
+
+							console.log("Step 5: Storing result for debugging...");
+							// Store the result for debugging
+							this.workflowResult = finalResult;
+
+							console.log("Step 6: Checking if workflowCompletionResolve exists...");
+							console.log("workflowCompletionResolve:", this.workflowCompletionResolve);
+
+							// Resolve the original workflow promise with the final result from polling
+							if (this.workflowCompletionResolve) {
+								console.log("Step 7: Resolving workflow completion promise with:", finalResult);
+								console.log("About to call workflowCompletionResolve...");
+								this.workflowCompletionResolve(finalResult);
+								console.log("workflowCompletionResolve called successfully");
+								this.workflowCompletionResolve = null; // Prevent multiple resolutions
+							} else {
+								console.warn("WorkflowCompletionResolve not set - workflow may have already completed or been reset. Stopping polling.");
+								// Stop polling since we can't resolve the promise anyway
+								this._stopStatusPolling();
+							}
+						} catch (error) {
+							console.error("Error in workflow completion handling:", error);
+							// Still try to resolve the promise even if there was an error
+							if (this.workflowCompletionReject) {
+								this.workflowCompletionReject(error);
+								this.workflowCompletionReject = null;
+							}
 						}
-					}
-				} else {
+					} else {
 					console.warn("Status polling received unsuccessful or invalid data:", statusData);
 
 					// Non-critical, continue polling unless it's a hard error
@@ -2773,6 +2792,31 @@ class ModularQuiz {
 		html += "</div>";
 		html += "</div>";
 		html += "</div>";
+		html += "</div>";
+		html += "</div>";
+		html += "</div>";
+		html += '<div class="quiz-action-section" style="background-color: #f8f9fa;">';
+		html += '<div class="quiz-action-content">';
+		html += '<div class="quiz-action-header">';
+		html += '<h3 class="quiz-action-title">Need Assistance?</h3>';
+		html += "</div>";
+		html += '<div class="quiz-action-details">';
+		html += '<div class="quiz-action-info">';
+		html += '<div class="quiz-action-info-text">';
+		html += "Our support team is here to help if you have any questions about scheduling or preparing for your appointment.";
+		html += "</div>";
+		html += "</div>";
+		html += '<div class="quiz-action-feature">';
+		html += '<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">';
+		html += '<path d="M18.3333 5.83333L10 11.6667L1.66666 5.83333" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+		html +=
+			'<path d="M1.66666 5.83333H18.3333V15C18.3333 15.442 18.1577 15.866 17.8452 16.1785C17.5327 16.491 17.1087 16.6667 16.6667 16.6667H3.33333C2.89131 16.6667 2.46738 16.491 2.15482 16.1785C1.84226 15.866 1.66666 15.442 1.66666 15V5.83333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+		html += "</svg>";
+		html += '<div class="quiz-action-feature-text">Email: support@curalife.com</div>';
+		html += "</div>";
+		html += '<div class="quiz-action-feature">';
+		html += '<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">';
+		html +=
 
 		return html; // Proper return statement
 	}
