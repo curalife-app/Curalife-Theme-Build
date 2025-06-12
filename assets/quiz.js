@@ -722,13 +722,22 @@ class ModularQuiz {
 			if (response.ok) {
 				const statusData = await response.json();
 				console.log("📊 Status update received:", statusData);
+				console.log("🔍 Raw status data structure:", {
+					hasSuccess: "success" in statusData,
+					hasStatusData: "statusData" in statusData,
+					statusDataKeys: statusData.statusData ? Object.keys(statusData.statusData) : "none",
+					completed: statusData.statusData?.completed,
+					currentStep: statusData.statusData?.currentStep,
+					progress: statusData.statusData?.progress
+				});
 
 				if (statusData.success && statusData.statusData) {
 					this._updateWorkflowStatus(statusData.statusData);
 
 					// Debug: Track stale status detection
-					if (statusData.statusData.currentStep === "processing" && this.pollingAttempts > 20) {
+					if (statusData.statusData.currentStep === "processing" && this.pollingAttempts > 5) {
 						console.warn(`⚠️ Potentially stale status detected - attempt ${this.pollingAttempts}, step: ${statusData.statusData.currentStep}, progress: ${statusData.statusData.progress}`);
+						console.warn("🔍 Consider checking status polling service for data freshness issues");
 					}
 
 					if (statusData.statusData.completed) {
@@ -753,6 +762,9 @@ class ModularQuiz {
 					}
 				} else {
 					console.warn("Status polling received unsuccessful or invalid data:", statusData);
+					console.warn("🔍 Expected: statusData.success=true and statusData.statusData to exist");
+					console.warn("🔍 Actual structure:", Object.keys(statusData));
+
 					// Non-critical, continue polling unless it's a hard error
 					if (statusData.error) {
 						this._showBackgroundProcessNotification(`Polling error: ${statusData.error}`, "error", "LOW");
