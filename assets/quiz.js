@@ -309,10 +309,7 @@ class ModularQuiz {
 			this._showComprehensiveLoadingSequence();
 
 			// Trigger the orchestrator workflow and await its *final* completion (including polling)
-			console.log("Starting orchestrator workflow...");
-			console.log("About to await _startOrchestratorWorkflow...");
 			const orchestratorResult = await this._startOrchestratorWorkflow();
-			console.log("finishQuiz: Workflow completed successfully with result:", orchestratorResult);
 
 			// Process the final result from the orchestrator
 			const finalResult = this._processWebhookResult(orchestratorResult);
@@ -496,11 +493,8 @@ class ModularQuiz {
 				}
 
 				const initialResult = await initialResponse.json();
-				console.log("Orchestrator initial response:", initialResult);
-
 				// 2. Check for a statusTrackingId to begin polling, or if final data is immediately available
 				if (initialResult.success && initialResult.statusTrackingId) {
-					console.log("Starting status polling with ID:", initialResult.statusTrackingId);
 					this._startStatusPolling(initialResult.statusTrackingId);
 				} else if (initialResult.success && initialResult.data) {
 					// If orchestrator immediately returns final data (e.g., for simple, fast workflows)
@@ -664,8 +658,6 @@ class ModularQuiz {
 	 * This function will eventually resolve the workflowCompletionPromise.
 	 */
 	_startStatusPolling(statusTrackingId) {
-		console.log("_startStatusPolling called with ID:", statusTrackingId);
-
 		// Clear any existing polling interval to prevent duplicates (but preserve statusTrackingId)
 		if (this.statusPollingInterval) {
 			console.log("Clearing existing polling interval");
@@ -684,7 +676,6 @@ class ModularQuiz {
 		this.maxPollingAttempts = 60; // 120 seconds max (2 sec interval * 60 attempts)
 		this._lastStatusMessage = "";
 
-		console.log("Starting immediate poll and setting up interval...");
 		// Start with an immediate poll, then continue every 2 seconds
 		this._pollWorkflowStatus();
 
@@ -741,7 +732,6 @@ class ModularQuiz {
 
 			if (response.ok) {
 				const statusData = await response.json();
-				console.log(`Polling attempt ${this.pollingAttempts}: Status data received:`, statusData);
 
 				// Check for important warnings
 				if (statusData.statusData?.debug?.eligibilityTimeout) {
@@ -753,12 +743,6 @@ class ModularQuiz {
 				}
 
 				if (statusData.success && statusData.statusData) {
-					console.log("Status data is valid, checking completion status:", {
-						completed: statusData.statusData.completed,
-						currentStatus: statusData.statusData.currentStatus,
-						progress: statusData.statusData.progress
-					});
-
 					this._updateWorkflowStatus(statusData.statusData);
 
 					// Track stale status but don't trigger emergency fallback (causes duplicate workflows)
@@ -767,26 +751,17 @@ class ModularQuiz {
 					}
 
 					if (statusData.statusData.completed) {
-						console.log("Workflow completed - stopping polling and resolving");
-
 						// Extract the final result data properly
 						const finalResult = statusData.statusData.finalData || statusData.statusData.finalResult || statusData.statusData;
-						console.log("Final result extracted:", finalResult);
 
 						// Store the result for debugging
 						this.workflowResult = finalResult;
 
 						// Resolve the original workflow promise with the final result from polling BEFORE stopping polling
-						console.log("Checking workflowCompletionResolve:", this.workflowCompletionResolve);
-						console.log("Checking workflowCompletionReject:", this.workflowCompletionReject);
-
 						if (this.workflowCompletionResolve) {
-							console.log("Resolving workflow completion promise with:", finalResult);
 							this.workflowCompletionResolve(finalResult);
-							console.log("Promise resolved successfully");
 						} else {
 							console.warn("WorkflowCompletionResolve not set - workflow may have already completed or been reset.");
-							console.warn("This means the promise was already resolved/rejected or never set up properly");
 						}
 
 						// Now stop polling and cleanup (this will clear the resolvers)
@@ -3268,20 +3243,10 @@ class ModularQuiz {
 	}
 
 	showResults(resultUrl, webhookSuccess = true, resultData = null, errorMessage = "") {
-		console.log("showResults called with:", {
-			webhookSuccess,
-			resultData,
-			eligibilityStatus: resultData?.eligibilityStatus,
-			isEligible: resultData?.isEligible,
-			errorMessage
-		});
-
 		try {
-			console.log("Stopping loading messages and polling...");
 			this._stopLoadingMessages();
 			this._stopStatusPolling(); // Ensure polling is stopped
 
-			console.log("Toggling UI elements...");
 			// Hide loading screen and show results
 			this._toggleElement(this.loading, false);
 			this._toggleElement(this.questions, true);
@@ -3291,23 +3256,16 @@ class ModularQuiz {
 			// Keep nav header visible for back button functionality
 			this._toggleElement(this.navHeader, true);
 
-			console.log("Generating results HTML...");
 			const quizType = this.quizData?.type || "general";
 			const resultsHTML = webhookSuccess ? this._generateResultsHTML(quizType, resultData, resultUrl) : this._generateErrorResultsHTML(resultUrl, errorMessage);
 
-			console.log("Generated results HTML length:", resultsHTML?.length);
-			console.log("Setting innerHTML...");
 			this.questionContainer.innerHTML = resultsHTML;
 
-			console.log("Attaching listeners...");
 			this._attachFAQListeners();
 			this._attachBookingButtonListeners();
 
-			console.log("Scrolling to top...");
 			// Scroll to top of results
 			window.scrollTo({ top: 0, behavior: "smooth" });
-
-			console.log("showResults completed successfully");
 		} catch (error) {
 			console.error("Error in showResults:", error);
 			throw error;
@@ -3475,55 +3433,85 @@ class ModularQuiz {
 	}
 
 	_generateEligibleInsuranceResultsHTML(resultData, resultUrl) {
-		const messages = this.quizData.ui?.resultMessages?.eligible || {};
-		const userMessage = resultData.userMessage || "Your insurance is active and covers nutrition counseling sessions.";
-		const sessionsCovered = resultData.sessionsCovered || 0;
-		const deductible = resultData.deductible?.individual || 0;
-		const planBegin = resultData.planBegin || "";
-		const planEnd = resultData.planEnd || "";
+		const sessionsCovered = resultData.sessionsCovered || 5;
+		const planEnd = resultData.planEnd || "Dec 31, 2025";
 
 		return `
 			<div class="quiz-results-container">
 				<div class="quiz-results-header">
-					<h2 class="quiz-results-title">${messages.title || "Great news! You're covered!"}</h2>
-					<p class="quiz-results-subtitle">${messages.subtitle || "Your insurance covers nutrition counseling."}</p>
+					<h2 class="quiz-results-title">Great news! You're covered</h2>
+					<p class="quiz-results-subtitle">As of today, your insurance fully covers your online dietitian consultations*</p>
 				</div>
-				<div class="quiz-coverage-card" style="border-left: 4px solid #38a169; background-color: #f0fff4;">
-					<h3 class="quiz-coverage-card-title" style="color: #2f855a;">✅ Insurance Coverage Confirmed</h3>
-					<p style="color: #2f855a;">${userMessage}</p>
-					${sessionsCovered > 0 ? `<p style="color: #2f855a; font-weight: 600; margin-top: 8px;">Sessions covered: ${sessionsCovered}</p>` : ""}
-					${deductible > 0 ? `<p style="color: #2f855a; margin-top: 4px;">Individual deductible: $${deductible}</p>` : ""}
-					${planBegin ? `<p style="color: #2f855a; margin-top: 4px;">Coverage period: ${planBegin}${planEnd ? ` - ${planEnd}` : ""}</p>` : ""}
+
+				<div class="quiz-coverage-card">
+					<div class="quiz-coverage-card-title">Here's Your Offer</div>
+					<div class="quiz-coverage-pricing">
+						<div class="quiz-coverage-service-item">
+							<div class="quiz-coverage-service">Initial consultation – 60 minutes</div>
+							<div class="quiz-coverage-cost">
+								<div class="quiz-coverage-copay">Co-pay: $0*</div>
+								<div class="quiz-coverage-original-price">$100</div>
+							</div>
+						</div>
+						<div class="quiz-coverage-service-item">
+							<div class="quiz-coverage-service">Follow-up consultation – 30 minutes</div>
+							<div class="quiz-coverage-cost">
+								<div class="quiz-coverage-copay">Co-pay: $0*</div>
+								<div class="quiz-coverage-original-price">$50</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="quiz-coverage-divider"></div>
+
+					<div class="quiz-coverage-benefits">
+						<div class="quiz-coverage-benefit">
+							<div class="quiz-coverage-benefit-icon">
+								<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M7.08 1.67L3.33 1.67L3.33 18.33L10.83 18.33L10 7.5L16.67 5" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+							</div>
+							<div class="quiz-coverage-benefit-text">${sessionsCovered} covered sessions remaining</div>
+						</div>
+						<div class="quiz-coverage-benefit">
+							<div class="quiz-coverage-benefit-icon">
+								<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M10.83 11.67L6.25 1.67L13.75 3.33L2.5 18.33L17.5 8.33" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+							</div>
+							<div class="quiz-coverage-benefit-text">Coverage expires ${planEnd}</div>
+						</div>
+					</div>
 				</div>
-				<div class="quiz-action-section">
+
+				<div class="quiz-action-section" style="background-color: #F1F8F4;">
 					<div class="quiz-action-content">
 						<div class="quiz-action-header">
-							<h3 class="quiz-action-title">Ready to get started?</h3>
+							<h3 class="quiz-action-title">Schedule your initial online consultation now</h3>
 						</div>
 						<div class="quiz-action-details">
 							<div class="quiz-action-info">
-								<svg class="quiz-action-info-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-									<path d="M10 18.3333C14.6023 18.3333 18.3333 14.6023 18.3333 9.99996C18.3333 5.39759 14.6023 1.66663 10 1.66663C5.39762 1.66663 1.66666 5.39759 1.66666 9.99996C1.66666 14.6023 5.39762 18.3333 10 18.3333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-									<path d="M7.5 9.99996L9.16667 11.6666L12.5 8.33329" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-								</svg>
-								<div class="quiz-action-info-text">Your insurance covers nutrition counseling sessions with our registered dietitians.</div>
+								<div class="quiz-action-info-icon">
+									<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+										<path d="M4.58 4.17L15.83 15.42L2.08 1.67L17.83 13.75L8.33 16.25" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+									</svg>
+								</div>
+								<div class="quiz-action-info-text">Our dietitians usually recommend minimum 6 consultations over 6 months, Today, just book your first.</div>
 							</div>
 							<div class="quiz-action-feature">
-								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-									<path d="M18.3333 14.1667C18.3333 15.0871 17.5871 15.8333 16.6667 15.8333H5.83333L1.66666 20V3.33333C1.66666 2.41286 2.41285 1.66667 3.33333 1.66667H16.6667C17.5871 1.66667 18.3333 2.41286 18.3333 3.33333V14.1667Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-								</svg>
-								<div class="quiz-action-feature-text">Schedule your first session at no additional cost</div>
-							</div>
-							<div class="quiz-action-feature">
-								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-									<path d="M6.66666 2.5V5.83333M13.3333 2.5V5.83333M2.5 9.16667H17.5M4.16666 3.33333H15.8333C16.7538 3.33333 17.5 4.07952 17.5 5V16.6667C17.5 17.5871 16.7538 18.3333 15.8333 18.3333H4.16666C3.24619 18.3333 2.5 17.5871 2.5 16.6667V5C2.5 4.07952 3.24619 3.33333 4.16666 3.33333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-								</svg>
-								<div class="quiz-action-feature-text">Flexible scheduling that works with your availability</div>
+								<div class="quiz-action-feature-icon">
+									<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+										<path d="M1.67 2.5L18.33 18.17L13.33 1.67L5 5L6.67 10.42" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+									</svg>
+								</div>
+								<div class="quiz-action-feature-text">Free cancellation up to 24h before</div>
 							</div>
 						</div>
-						<a href="${resultUrl}" class="quiz-booking-button">Book Your First Session</a>
+						<a href="${resultUrl}" class="quiz-booking-button">Proceed to booking</a>
 					</div>
 				</div>
+
+				${this._generateFAQHTML()}
 			</div>
 		`;
 	}
@@ -3864,7 +3852,22 @@ class ModularQuiz {
 	}
 
 	_generateFAQHTML() {
-		const faqData = this.quizData.ui?.faq || [];
+		const defaultFAQData = [
+			{
+				id: "credit-card",
+				question: "Why do I need to provide my credit card?",
+				answer:
+					"You'll be able to attend your consultation right away, while the co-pay will be charged later, only after your insurance is billed. We require your card for this purpose. If you cancel or reschedule with less than 24 hours' notice, or miss your appointment, your card will be charged the full consultation fee."
+			},
+			{
+				id: "coverage-change",
+				question: "Can my coverage or co-pay change after booking?",
+				answer:
+					"Your coverage details are verified at the time of booking. However, insurance benefits can change due to plan updates, deductible changes, or other factors. We'll always verify your current benefits before each appointment and notify you of any changes."
+			}
+		];
+
+		const faqData = this.quizData.ui?.faq || defaultFAQData;
 		if (faqData.length === 0) return "";
 
 		return `
@@ -3879,9 +3882,9 @@ class ModularQuiz {
                             <div class="quiz-faq-answer">${faq.answer}</div>
 					</div>
 					<div class="quiz-faq-toggle">
-                            <svg class="quiz-faq-toggle-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
-							<path d="M4 12H20" stroke="#4f4f4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-							<path d="M12 4V20" stroke="#4f4f4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            <svg class="quiz-faq-toggle-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+							<path d="M4 16H28" stroke="#4f4f4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+							<path d="M16 4V28" stroke="#4f4f4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 						</svg>
 					</div>
 				</div>
