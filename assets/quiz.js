@@ -768,9 +768,6 @@ class ModularQuiz {
 
 					if (statusData.statusData.completed) {
 						console.log("Workflow completed - stopping polling and resolving");
-						this._stopStatusPolling();
-						this._stopFallbackChecking(); // Stop fallback since polling succeeded
-						this._stopLoadingMessages(); // Stop loading since workflow is complete
 
 						// Extract the final result data properly
 						const finalResult = statusData.statusData.finalData || statusData.statusData.finalResult || statusData.statusData;
@@ -779,16 +776,23 @@ class ModularQuiz {
 						// Store the result for debugging
 						this.workflowResult = finalResult;
 
-						// Resolve the original workflow promise with the final result from polling
+						// Resolve the original workflow promise with the final result from polling BEFORE stopping polling
+						console.log("Checking workflowCompletionResolve:", this.workflowCompletionResolve);
+						console.log("Checking workflowCompletionReject:", this.workflowCompletionReject);
+
 						if (this.workflowCompletionResolve) {
 							console.log("Resolving workflow completion promise with:", finalResult);
 							this.workflowCompletionResolve(finalResult);
-							this.workflowCompletionResolve = null; // Prevent multiple resolutions
+							console.log("Promise resolved successfully");
 						} else {
-							console.warn("WorkflowCompletionResolve not set - workflow may have already completed or been reset. Stopping polling.");
-							// Stop polling since we can't resolve the promise anyway
-							this._stopStatusPolling();
+							console.warn("WorkflowCompletionResolve not set - workflow may have already completed or been reset.");
+							console.warn("This means the promise was already resolved/rejected or never set up properly");
 						}
+
+						// Now stop polling and cleanup (this will clear the resolvers)
+						this._stopStatusPolling();
+						this._stopFallbackChecking(); // Stop fallback since polling succeeded
+						this._stopLoadingMessages(); // Stop loading since workflow is complete
 					}
 				} else {
 					console.warn("Status polling received unsuccessful or invalid data:", statusData);
