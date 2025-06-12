@@ -782,6 +782,19 @@ class ModularQuiz {
 						console.log("⏭️ Skip Reason:", statusData.statusData.debug.skipReason);
 					}
 
+					// Enhanced timeout and warning detection
+					if (statusData.statusData.debug.eligibilityTimeout) {
+						console.warn("⏰ ELIGIBILITY TIMEOUT DETECTED - Workflow continuing without eligibility data");
+					}
+
+					if (statusData.statusData.debug.warnings) {
+						console.warn("⚠️ Workflow Warnings:", statusData.statusData.debug.warnings);
+					}
+
+					if (statusData.statusData.warning) {
+						console.warn("⚠️ Status Warning Flag:", statusData.statusData.warning);
+					}
+
 					console.groupEnd();
 				}
 
@@ -2789,6 +2802,7 @@ class ModularQuiz {
 			'<path d="M18.3081 14.2233C17.1569 14.2233 16.0346 14.0397 14.9845 13.6971C14.6449 13.5878 14.2705 13.6971 14.0579 13.9427L12.8372 15.6772C10.3023 14.4477 8.55814 12.7138 7.32326 10.1581L9.10465 8.89535C9.34884 8.68372 9.45814 8.30233 9.34884 7.96279C9.00581 6.91628 8.82209 5.79186 8.82209 4.64535C8.82209 4.28953 8.53256 4 8.17674 4H4.64535C4.28953 4 4 4.28953 4 4.64535C4 12.1715 10.1831 18.3953 17.6628 18.3953C18.0186 18.3953 18.3081 18.1058 18.3081 17.75V14.2233Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
 		html += "</svg>";
 		html += '<div class="quiz-action-feature-text">Phone: 1-800-CURALIFE</div>';
+		html += "</div>";
 		html += "</div>";
 		html += "</div>";
 		html += "</div>";
