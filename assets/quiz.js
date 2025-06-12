@@ -755,18 +755,44 @@ class ModularQuiz {
 					progress: statusData.statusData?.progress
 				});
 
+				// Enhanced debug logging
+				if (statusData.statusData?.debug) {
+					console.group("🔧 Debug Information");
+					console.log("📍 Workflow Path:", statusData.statusData.debug.workflowPath);
+					console.log("⏱️ Elapsed Time:", statusData.statusData.debug.elapsedTime, "seconds");
+
+					if (statusData.statusData.debug.validationChecks) {
+						console.log("✅ Validation Checks:", statusData.statusData.debug.validationChecks);
+					}
+
+					if (statusData.statusData.debug.insuranceInfo) {
+						console.log("🏥 Insurance Info:", statusData.statusData.debug.insuranceInfo);
+					}
+
+					if (statusData.statusData.debug.completionSummary) {
+						console.log("📋 Completion Summary:", statusData.statusData.debug.completionSummary);
+						console.log("📊 Response Codes:", statusData.statusData.debug.responseCodes);
+					}
+
+					if (statusData.statusData.debug.hubspotContactId) {
+						console.log("👤 HubSpot Contact ID:", statusData.statusData.debug.hubspotContactId);
+					}
+
+					if (statusData.statusData.debug.skipReason) {
+						console.log("⏭️ Skip Reason:", statusData.statusData.debug.skipReason);
+					}
+
+					console.groupEnd();
+				}
+
 				if (statusData.success && statusData.statusData) {
 					this._updateWorkflowStatus(statusData.statusData);
 
-					// Aggressive stale status detection and fallback activation
-					if (statusData.statusData.currentStep === "processing" && statusData.statusData.progress === 25 && this.pollingAttempts > 8) {
+					// Track stale status but don't trigger emergency fallback (causes duplicate workflows)
+					if (statusData.statusData.currentStep === "processing" && statusData.statusData.progress === 25 && this.pollingAttempts > 15) {
 						console.warn(`⚠️ STALE DATA DETECTED - stuck at processing/25% for ${this.pollingAttempts} attempts`);
-						console.warn("🚀 Activating emergency fallback to direct orchestrator check");
-
-						// Stop polling immediately and trigger fallback
-						this._stopStatusPolling();
-						this._triggerEmergencyFallback();
-						return;
+						console.warn("🔄 Status polling service appears to have stale data issues");
+						console.warn("⏰ Relying on workflow timeout and original fallback mechanism");
 					}
 
 					if (statusData.statusData.completed) {
