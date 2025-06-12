@@ -3010,9 +3010,40 @@ class ModularQuiz {
 			hasSuccess: "success" in result,
 			hasBody: "body" in result,
 			hasEligibilityData: result?.eligibilityData || result?.body?.eligibilityData,
+			hasEligibility: result?.eligibility,
 			resultKeys: Object.keys(result || {}),
 			bodyKeys: result?.body ? Object.keys(result.body) : "no body"
 		});
+
+		// Handle new workflow orchestrator format with eligibility, insurancePlan, userCreation
+		if (result?.eligibility && typeof result.eligibility === "object") {
+			console.log("Processing new workflow orchestrator format");
+			const eligibilityResult = result.eligibility;
+
+			if (eligibilityResult?.success === true && eligibilityResult.eligibilityData) {
+				const eligibilityData = eligibilityResult.eligibilityData;
+				console.log("Extracted eligibility data from orchestrator result:", eligibilityData);
+
+				// Handle generic ERROR status first
+				if (eligibilityData.eligibilityStatus === "ERROR") {
+					const errorMessage =
+						eligibilityData.userMessage || eligibilityData.error?.message || eligibilityData.error || "There was an error checking your eligibility. Please contact customer support.";
+					console.log("Processing generic ERROR status with message:", errorMessage);
+					return this._createErrorEligibilityData(errorMessage);
+				}
+
+				// Handle AAA_ERROR status from workflow
+				if (eligibilityData.eligibilityStatus === "AAA_ERROR") {
+					// Try multiple ways to extract the error code
+					const errorCode = eligibilityData.error?.code || eligibilityData.aaaErrorCode || eligibilityData.error?.allErrors?.[0]?.code || "Unknown";
+
+					console.log("Processing AAA_ERROR with code:", errorCode, "from eligibilityData:", eligibilityData);
+					return this._createAAAErrorEligibilityData(errorCode, eligibilityData.userMessage);
+				}
+
+				return eligibilityData;
+			}
+		}
 
 		// Handle nested response format (like from Google Cloud Function)
 		if (result?.body && typeof result.body === "object") {
@@ -3256,7 +3287,7 @@ class ModularQuiz {
 
 		console.log("Processing eligibility status:", eligibilityStatus, "isEligible:", isEligible, "raw isEligible:", resultData.isEligible);
 
-		if (isEligible && eligibilityStatus === "ELIGIBLE") {
+		if (isEligible && (eligibilityStatus === "ELIGIBLE" || eligibilityStatus === "ACTIVE")) {
 			console.log("Generating eligible insurance results");
 			return this._generateEligibleInsuranceResultsHTML(resultData, resultUrl);
 		}
@@ -3362,6 +3393,205 @@ class ModularQuiz {
 							</div>
 						</div>
 						<a href="${resultUrl}" class="quiz-booking-button">Continue to Support</a>
+					</div>
+				</div>
+			</div>
+		`;
+	}
+
+	_generateEligibleInsuranceResultsHTML(resultData, resultUrl) {
+		const messages = this.quizData.ui?.resultMessages?.eligible || {};
+		const userMessage = resultData.userMessage || "Your insurance is active and covers nutrition counseling sessions.";
+		const sessionsCovered = resultData.sessionsCovered || 0;
+		const deductible = resultData.deductible?.individual || 0;
+		const planBegin = resultData.planBegin || "";
+		const planEnd = resultData.planEnd || "";
+
+		return `
+			<div class="quiz-results-container">
+				<div class="quiz-results-header">
+					<h2 class="quiz-results-title">${messages.title || "Great news! You're covered!"}</h2>
+					<p class="quiz-results-subtitle">${messages.subtitle || "Your insurance covers nutrition counseling."}</p>
+				</div>
+				<div class="quiz-coverage-card" style="border-left: 4px solid #38a169; background-color: #f0fff4;">
+					<h3 class="quiz-coverage-card-title" style="color: #2f855a;">✅ Insurance Coverage Confirmed</h3>
+					<p style="color: #2f855a;">${userMessage}</p>
+					${sessionsCovered > 0 ? `<p style="color: #2f855a; font-weight: 600; margin-top: 8px;">Sessions covered: ${sessionsCovered}</p>` : ""}
+					${deductible > 0 ? `<p style="color: #2f855a; margin-top: 4px;">Individual deductible: $${deductible}</p>` : ""}
+					${planBegin ? `<p style="color: #2f855a; margin-top: 4px;">Coverage period: ${planBegin}${planEnd ? ` - ${planEnd}` : ""}</p>` : ""}
+				</div>
+				<div class="quiz-action-section">
+					<div class="quiz-action-content">
+						<div class="quiz-action-header">
+							<h3 class="quiz-action-title">Ready to get started?</h3>
+						</div>
+						<div class="quiz-action-details">
+							<div class="quiz-action-info">
+								<svg class="quiz-action-info-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M10 18.3333C14.6023 18.3333 18.3333 14.6023 18.3333 9.99996C18.3333 5.39759 14.6023 1.66663 10 1.66663C5.39762 1.66663 1.66666 5.39759 1.66666 9.99996C1.66666 14.6023 5.39762 18.3333 10 18.3333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+									<path d="M7.5 9.99996L9.16667 11.6666L12.5 8.33329" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-info-text">Your insurance covers nutrition counseling sessions with our registered dietitians.</div>
+							</div>
+							<div class="quiz-action-feature">
+								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M18.3333 14.1667C18.3333 15.0871 17.5871 15.8333 16.6667 15.8333H5.83333L1.66666 20V3.33333C1.66666 2.41286 2.41285 1.66667 3.33333 1.66667H16.6667C17.5871 1.66667 18.3333 2.41286 18.3333 3.33333V14.1667Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-feature-text">Schedule your first session at no additional cost</div>
+							</div>
+							<div class="quiz-action-feature">
+								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M6.66666 2.5V5.83333M13.3333 2.5V5.83333M2.5 9.16667H17.5M4.16666 3.33333H15.8333C16.7538 3.33333 17.5 4.07952 17.5 5V16.6667C17.5 17.5871 16.7538 18.3333 15.8333 18.3333H4.16666C3.24619 18.3333 2.5 17.5871 2.5 16.6667V5C2.5 4.07952 3.24619 3.33333 4.16666 3.33333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-feature-text">Flexible scheduling that works with your availability</div>
+							</div>
+						</div>
+						<a href="${resultUrl}" class="quiz-booking-button">Book Your First Session</a>
+					</div>
+				</div>
+			</div>
+		`;
+	}
+
+	_generateNotCoveredInsuranceResultsHTML(resultData, resultUrl) {
+		const messages = this.quizData.ui?.resultMessages?.notCovered || {};
+		const userMessage = resultData.userMessage || "Your insurance plan doesn't cover nutrition counseling, but we have affordable options available.";
+
+		return `
+			<div class="quiz-results-container">
+				<div class="quiz-results-header">
+					<h2 class="quiz-results-title">${messages.title || "Thanks for completing the quiz!"}</h2>
+					<p class="quiz-results-subtitle">${messages.subtitle || "We have options for you."}</p>
+				</div>
+				<div class="quiz-coverage-card" style="border-left: 4px solid #ed8936; background-color: #fffaf0;">
+					<h3 class="quiz-coverage-card-title" style="color: #c05621;">💡 Coverage Information</h3>
+					<p style="color: #c05621;">${userMessage}</p>
+				</div>
+				<div class="quiz-action-section">
+					<div class="quiz-action-content">
+						<div class="quiz-action-header">
+							<h3 class="quiz-action-title">Alternative Options</h3>
+						</div>
+						<div class="quiz-action-details">
+							<div class="quiz-action-info">
+								<svg class="quiz-action-info-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M10 18.3333C14.6023 18.3333 18.3333 14.6023 18.3333 9.99996C18.3333 5.39759 14.6023 1.66663 10 1.66663C5.39762 1.66663 1.66666 5.39759 1.66666 9.99996C1.66666 14.6023 5.39762 18.3333 10 18.3333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+									<path d="M7.5 9.99996L9.16667 11.6666L12.5 8.33329" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-info-text">We offer affordable self-pay options and payment plans to make nutrition counseling accessible.</div>
+							</div>
+							<div class="quiz-action-feature">
+								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M18.3333 14.1667C18.3333 15.0871 17.5871 15.8333 16.6667 15.8333H5.83333L1.66666 20V3.33333C1.66666 2.41286 2.41285 1.66667 3.33333 1.66667H16.6667C17.5871 1.66667 18.3333 2.41286 18.3333 3.33333V14.1667Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-feature-text">Competitive rates and flexible payment options</div>
+							</div>
+							<div class="quiz-action-feature">
+								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M6.66666 2.5V5.83333M13.3333 2.5V5.83333M2.5 9.16667H17.5M4.16666 3.33333H15.8333C16.7538 3.33333 17.5 4.07952 17.5 5V16.6667C17.5 17.5871 16.7538 18.3333 15.8333 18.3333H4.16666C3.24619 18.3333 2.5 17.5871 2.5 16.6667V5C2.5 4.07952 3.24619 3.33333 4.16666 3.33333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-feature-text">Same quality care from registered dietitians</div>
+							</div>
+						</div>
+						<a href="${resultUrl}" class="quiz-booking-button">Explore Options</a>
+					</div>
+				</div>
+			</div>
+		`;
+	}
+
+	_generateAAAErrorResultsHTML(resultData, resultUrl) {
+		const messages = this.quizData.ui?.resultMessages?.aaaError || {};
+		const error = resultData.error || {};
+		const errorCode = error.code || resultData.aaaErrorCode || "Unknown";
+		const userMessage = resultData.userMessage || error.message || "There was an issue verifying your insurance coverage automatically.";
+		const errorTitle = error.title || this._getErrorTitle(errorCode);
+
+		return `
+			<div class="quiz-results-container">
+				<div class="quiz-results-header">
+					<h2 class="quiz-results-title">${messages.title || "Thanks for completing the quiz!"}</h2>
+					<p class="quiz-results-subtitle">${messages.subtitle || "We're here to help."}</p>
+				</div>
+				<div class="quiz-coverage-card" style="border-left: 4px solid #f56565; background-color: #fed7d7;">
+					<h3 class="quiz-coverage-card-title" style="color: #c53030;">⚠️ ${errorTitle}</h3>
+					<p style="color: #c53030;">${userMessage}</p>
+					${errorCode !== "Unknown" ? `<p style="color: #c53030; font-size: 0.9em; margin-top: 8px;">Error Code: ${errorCode}</p>` : ""}
+				</div>
+				<div class="quiz-action-section">
+					<div class="quiz-action-content">
+						<div class="quiz-action-header">
+							<h3 class="quiz-action-title">We'll help resolve this</h3>
+						</div>
+						<div class="quiz-action-details">
+							<div class="quiz-action-info">
+								<svg class="quiz-action-info-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M10 18.3333C14.6023 18.3333 18.3333 14.6023 18.3333 9.99996C18.3333 5.39759 14.6023 1.66663 10 1.66663C5.39762 1.66663 1.66666 5.39759 1.66666 9.99996C1.66666 14.6023 5.39762 18.3333 10 18.3333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+									<path d="M7.5 9.99996L9.16667 11.6666L12.5 8.33329" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-info-text">Our team will manually verify your insurance coverage and resolve any verification issues.</div>
+							</div>
+							<div class="quiz-action-feature">
+								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M18.3333 14.1667C18.3333 15.0871 17.5871 15.8333 16.6667 15.8333H5.83333L1.66666 20V3.33333C1.66666 2.41286 2.41285 1.66667 3.33333 1.66667H16.6667C17.5871 1.66667 18.3333 2.41286 18.3333 3.33333V14.1667Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-feature-text">Direct support to resolve coverage verification</div>
+							</div>
+							<div class="quiz-action-feature">
+								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M6.66666 2.5V5.83333M13.3333 2.5V5.83333M2.5 9.16667H17.5M4.16666 3.33333H15.8333C16.7538 3.33333 17.5 4.07952 17.5 5V16.6667C17.5 17.5871 16.7538 18.3333 15.8333 18.3333H4.16666C3.24619 18.3333 2.5 17.5871 2.5 16.6667V5C2.5 4.07952 3.24619 3.33333 4.16666 3.33333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-feature-text">Quick resolution to get you connected with a dietitian</div>
+							</div>
+						</div>
+						<a href="${resultUrl}" class="quiz-booking-button">Continue with Support</a>
+					</div>
+				</div>
+			</div>
+		`;
+	}
+
+	_generateTestDataErrorResultsHTML(resultData, resultUrl) {
+		const messages = this.quizData.ui?.resultMessages?.testDataError || {};
+		const userMessage = resultData.userMessage || "Test data was detected in your submission. Please use real insurance information for accurate verification.";
+
+		return `
+			<div class="quiz-results-container">
+				<div class="quiz-results-header">
+					<h2 class="quiz-results-title">${messages.title || "Please use real information"}</h2>
+					<p class="quiz-results-subtitle">${messages.subtitle || "We need accurate details for verification."}</p>
+				</div>
+				<div class="quiz-coverage-card" style="border-left: 4px solid #ed8936; background-color: #fffaf0;">
+					<h3 class="quiz-coverage-card-title" style="color: #c05621;">⚠️ Test Data Detected</h3>
+					<p style="color: #c05621;">${userMessage}</p>
+				</div>
+				<div class="quiz-action-section">
+					<div class="quiz-action-content">
+						<div class="quiz-action-header">
+							<h3 class="quiz-action-title">Next Steps</h3>
+						</div>
+						<div class="quiz-action-details">
+							<div class="quiz-action-info">
+								<svg class="quiz-action-info-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M10 18.3333C14.6023 18.3333 18.3333 14.6023 18.3333 9.99996C18.3333 5.39759 14.6023 1.66663 10 1.66663C5.39762 1.66663 1.66666 5.39759 1.66666 9.99996C1.66666 14.6023 5.39762 18.3333 10 18.3333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+									<path d="M7.5 9.99996L9.16667 11.6666L12.5 8.33329" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-info-text">Please retake the quiz with your actual insurance information for accurate coverage verification.</div>
+							</div>
+							<div class="quiz-action-feature">
+								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M18.3333 14.1667C18.3333 15.0871 17.5871 15.8333 16.6667 15.8333H5.83333L1.66666 20V3.33333C1.66666 2.41286 2.41285 1.66667 3.33333 1.66667H16.6667C17.5871 1.66667 18.3333 2.41286 18.3333 3.33333V14.1667Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-feature-text">Use information exactly as it appears on your insurance card</div>
+							</div>
+							<div class="quiz-action-feature">
+								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M6.66666 2.5V5.83333M13.3333 2.5V5.83333M2.5 9.16667H17.5M4.16666 3.33333H15.8333C16.7538 3.33333 17.5 4.07952 17.5 5V16.6667C17.5 17.5871 16.7538 18.3333 15.8333 18.3333H4.16666C3.24619 18.3333 2.5 17.5871 2.5 16.6667V5C2.5 4.07952 3.24619 3.33333 4.16666 3.33333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-feature-text">Get accurate coverage details for your plan</div>
+							</div>
+						</div>
+						<a href="${resultUrl}" class="quiz-booking-button">Continue</a>
 					</div>
 				</div>
 			</div>
