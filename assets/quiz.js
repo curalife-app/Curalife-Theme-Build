@@ -40,6 +40,10 @@ class ModularQuiz {
 		this.eligibilityWorkflowError = null;
 		this.userCreationWorkflowPromise = null;
 
+		// Orchestrator workflow state
+		this.orchestratorWorkflowPromise = null;
+		this.orchestratorWorkflowResult = null;
+
 		// Initialize the modular notification system asynchronously
 		this._initializeNotificationManager().then(() => {
 			this.init();
@@ -298,6 +302,259 @@ class ModularQuiz {
 		this._showBackgroundProcessNotification("🔒 Insurance verification will be processed securely server-side", "info");
 	}
 
+	// =======================================================================
+	// Orchestrator Workflow Methods (HIPAA Compliant)
+	// =======================================================================
+
+	/**
+	 * Starts the orchestrator workflow with status tracking
+	 */
+	_startOrchestratorWorkflow() {
+		const orchestratorUrl = this._getOrchestratorUrl();
+		const payload = this._extractResponseData();
+
+		console.log("🚀 Starting orchestrator workflow...", { orchestratorUrl, payload });
+
+		// Show loading state
+		this._showLoadingScreen();
+
+		// Store the orchestrator workflow promise for finishQuiz to wait for
+		this.orchestratorWorkflowPromise = this._submitOrchestratorToWebhook(orchestratorUrl, payload)
+			.then(result => {
+				console.log("✅ Orchestrator workflow completed:", result);
+				this.orchestratorWorkflowResult = result;
+				return result;
+			})
+			.catch(error => {
+				console.error("❌ Orchestrator workflow failed:", error);
+				throw error;
+			});
+
+		// Don't handle completion here - let finishQuiz handle it
+		console.log("🔄 Orchestrator workflow promise stored, finishQuiz will wait for completion");
+	}
+
+	_handleWorkflowCompletion(result) {
+		console.log("🎉 Workflow completed successfully:", result);
+
+		// Store the result
+		this.orchestratorWorkflowResult = result;
+
+		// Stop status polling if it was started
+		this._stopStatusPolling();
+
+		// Process the result and show appropriate UI
+		const processedResult = this._processWebhookResult(result);
+		console.log("📊 Processed workflow result:", processedResult);
+	}
+
+	_handleWorkflowError(error) {
+		console.error("Handling workflow error:", error);
+
+		// Stop loading messages and status polling
+		this._stopLoadingMessages();
+		this._stopStatusPolling();
+
+		// Create proper error result data instead of null
+		const errorResultData = {
+			eligibilityStatus: "ERROR",
+			isEligible: false,
+			userMessage: error.message || error.error || "There was an error processing your request.",
+			error: error
+		};
+
+		// Show error results
+		this.showResults(
+			this.container.getAttribute("data-result-url") || "/quiz-complete",
+			false, // webhookSuccess
+			errorResultData,
+			error.message || error.error || "There was an error processing your request."
+		);
+	}
+
+	_getOrchestratorUrl() {
+		const orchestratorUrl = this.container.getAttribute("data-orchestrator-url");
+		if (!orchestratorUrl) {
+			console.error("❌ Orchestrator URL not configured");
+			throw new Error("Orchestrator URL not configured");
+		}
+		return orchestratorUrl;
+	}
+
+	_startStatusPolling(statusTrackingId) {
+		if (!statusTrackingId) {
+			console.warn("⚠️ No status tracking ID provided for polling");
+			return;
+		}
+
+		console.log("🔄 Starting status polling for ID:", statusTrackingId);
+		this.statusTrackingId = statusTrackingId;
+		this.statusPollingInterval = setInterval(() => {
+			this._pollWorkflowStatus();
+		}, 2000); // Poll every 2 seconds
+	}
+
+	async _pollWorkflowStatus() {
+		if (!this.statusTrackingId) {
+			console.warn("⚠️ No status tracking ID available for polling");
+			this._stopStatusPolling();
+			return;
+		}
+
+		try {
+			const statusUrl = this._getStatusPollingUrl();
+			const response = await fetch(statusUrl, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json"
+				},
+				body: JSON.stringify({
+					statusTrackingId: this.statusTrackingId
+				})
+			});
+
+			if (response.ok) {
+				const statusData = await response.json();
+				console.log("📊 Status update:", statusData);
+
+				this._updateWorkflowStatus(statusData);
+
+				// Check if workflow is complete
+				if (statusData.completed) {
+					console.log("✅ Workflow completed via status polling");
+					this._stopStatusPolling();
+
+					if (statusData.error) {
+						this._handleWorkflowError(statusData);
+					} else {
+						this._handleWorkflowCompletion(statusData);
+					}
+				}
+			} else {
+				console.warn("⚠️ Status polling failed:", response.status, response.statusText);
+			}
+		} catch (error) {
+			console.error("❌ Status polling error:", error);
+		}
+	}
+
+	_updateWorkflowStatus(statusData) {
+		// Update loading progress if available
+		if (statusData.progress !== undefined) {
+			this._updateLoadingProgress(statusData.progress);
+		}
+
+		// Update loading message if available
+		if (statusData.message) {
+			this._updateLoadingStep({
+				title: statusData.currentStep || "Processing...",
+				description: statusData.message
+			});
+		}
+
+		// Show test mode notifications
+		if (this.isTestMode) {
+			this._showBackgroundProcessNotification(
+				`🔄 Status Update: ${statusData.currentStep || "Processing"}<br>Progress: ${statusData.progress || 0}%<br>Message: ${statusData.message || "No message"}`,
+				statusData.error ? "error" : "info"
+			);
+		}
+	}
+
+	_stopStatusPolling() {
+		if (this.statusPollingInterval) {
+			clearInterval(this.statusPollingInterval);
+			this.statusPollingInterval = null;
+			console.log("🛑 Status polling stopped");
+		}
+	}
+
+	_getStatusPollingUrl() {
+		const statusUrl = this.container.getAttribute("data-status-url");
+		if (!statusUrl) {
+			console.error("❌ Status polling URL not configured");
+			throw new Error("Status polling URL not configured");
+		}
+		return statusUrl;
+	}
+
+	_updateLoadingProgress(progress) {
+		// Update any progress indicators
+		const progressElements = document.querySelectorAll(".quiz-loading-progress");
+		progressElements.forEach(element => {
+			element.style.width = `${progress}%`;
+		});
+	}
+
+	/**
+	 * Extracts response data for the orchestrator workflow
+	 */
+	_extractResponseData(showNotifications = false) {
+		const data = {
+			timestamp: Date.now(),
+			hasInsurance: this._hasInsurance(),
+			customerEmail: this._getResponseValue("customer_email"),
+			firstName: this._getResponseValue("first_name"),
+			lastName: this._getResponseValue("last_name"),
+			phoneNumber: this._getResponseValue("phone_number"),
+			dateOfBirth: this._getResponseValue("date_of_birth"),
+			state: this._getResponseValue("state"),
+			address: this._getResponseValue("address"),
+			city: this._getResponseValue("city"),
+			zip: this._getResponseValue("zip"),
+			sex: this._getResponseValue("sex"),
+			insurance: this._getResponseValue("insurance"),
+			insuranceMemberId: this._getResponseValue("insurance_member_id"),
+			groupNumber: this._getResponseValue("group_number"),
+			mainReasons: this._getResponseValue("main_reasons"),
+			medicalConditions: this._getResponseValue("medical_conditions"),
+			allResponses: this.responses
+		};
+
+		if (showNotifications && this.isTestMode) {
+			this._showBackgroundProcessNotification(
+				`🔍 Extracted Data:<br>• Email: ${data.customerEmail}<br>• Name: ${data.firstName} ${data.lastName}<br>• Insurance: ${data.insurance}<br>• Has Insurance: ${data.hasInsurance}`,
+				"info"
+			);
+		}
+
+		return data;
+	}
+
+	async _submitOrchestratorToWebhook(url, payload) {
+		console.log("📤 Submitting to orchestrator workflow:", { url, payload });
+
+		const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Orchestrator request timed out")), 60000));
+
+		const fetchPromise = fetch(url, {
+			method: "POST",
+			mode: "cors",
+			headers: {
+				"Content-Type": "application/json",
+				Accept: "application/json",
+				"X-Workflow-Type": "orchestrator"
+			},
+			body: JSON.stringify(payload)
+		});
+
+		const response = await Promise.race([fetchPromise, timeoutPromise]);
+
+		if (response.ok) {
+			const result = await response.json();
+			console.log("✅ Orchestrator response received:", result);
+
+			// Start status polling if statusTrackingId is provided
+			if (result.statusTrackingId) {
+				this._startStatusPolling(result.statusTrackingId);
+			}
+
+			return result;
+		} else {
+			const errorText = await response.text();
+			throw new Error(`HTTP ${response.status}: ${errorText}`);
+		}
+	}
+
 	async finishQuiz() {
 		const resultUrl = this.container.getAttribute("data-result-url") || this.container.getAttribute("data-booking-url") || "/quiz-complete";
 
@@ -321,10 +578,11 @@ class ModularQuiz {
 				} else {
 					// Still running - wait for it
 					try {
+						console.log("⏳ Waiting for orchestrator workflow to complete...");
 						orchestratorResult = await this.orchestratorWorkflowPromise;
-						console.log("Waited for orchestrator result:", orchestratorResult);
+						console.log("✅ Orchestrator workflow completed:", orchestratorResult);
 					} catch (error) {
-						console.error("Orchestrator workflow failed:", error);
+						console.error("❌ Orchestrator workflow failed:", error);
 						orchestratorResult = this._createErrorEligibilityData("Orchestrator workflow failed");
 					}
 				}
@@ -537,7 +795,6 @@ class ModularQuiz {
 			'<path d="M18.3081 14.2233C17.1569 14.2233 16.0346 14.0397 14.9845 13.6971C14.6449 13.5878 14.2705 13.6971 14.0579 13.9427L12.8372 15.6772C10.3023 14.4477 8.55814 12.7138 7.32326 10.1581L9.10465 8.89535C9.34884 8.68372 9.45814 8.30233 9.34884 7.96279C9.00581 6.91628 8.82209 5.79186 8.82209 4.64535C8.82209 4.28953 8.53256 4 8.17674 4H4.64535C4.28953 4 4 4.28953 4 4.64535C4 12.1715 10.1831 18.3953 17.6628 18.3953C18.0186 18.3953 18.3081 18.1058 18.3081 17.75V14.2233Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
 		html += "</svg>";
 		html += '<div class="quiz-action-feature-text">Phone: 1-800-CURALIFE</div>';
-		html += "</div>";
 		html += "</div>";
 		html += "</div>";
 		html += "</div>";
@@ -1216,6 +1473,186 @@ class ModularQuiz {
 		`;
 	}
 
+	_generateEligibleInsuranceResultsHTML(eligibilityData, resultUrl) {
+		const messages = this.quizData.ui?.resultMessages?.eligible || {};
+		const userMessage = eligibilityData.userMessage || "Great news! You're eligible for dietitian sessions.";
+		const sessionsCovered = eligibilityData.sessionsCovered || 0;
+		const deductible = eligibilityData.deductible?.individual || 0;
+
+		return `
+			<div class="quiz-results-container">
+				<div class="quiz-results-header">
+					<h2 class="quiz-results-title">${messages.title || "🎉 You're Covered!"}</h2>
+					<p class="quiz-results-subtitle">${messages.subtitle || "Your insurance covers dietitian sessions."}</p>
+				</div>
+				<div class="quiz-coverage-card" style="border-left: 4px solid #48bb78; background-color: #f0fff4;">
+					<h3 class="quiz-coverage-card-title" style="color: #2f855a;">✅ Insurance Coverage Confirmed</h3>
+					<p style="color: #2f855a;">${userMessage}</p>
+					${sessionsCovered > 0 ? `<p style="color: #2f855a; margin-top: 8px;"><strong>Sessions Covered:</strong> ${sessionsCovered}</p>` : ""}
+					${deductible > 0 ? `<p style="color: #2f855a; margin-top: 4px;"><strong>Deductible:</strong> $${deductible}</p>` : ""}
+				</div>
+				<div class="quiz-action-section">
+					<div class="quiz-action-content">
+						<div class="quiz-action-header">
+							<h3 class="quiz-action-title">Ready to Schedule?</h3>
+						</div>
+						<div class="quiz-action-details">
+							<div class="quiz-action-info">
+								<svg class="quiz-action-info-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M10 18.3333C14.6023 18.3333 18.3333 14.6023 18.3333 9.99996C18.3333 5.39759 14.6023 1.66663 10 1.66663C5.39762 1.66663 1.66666 5.39759 1.66666 9.99996C1.66666 14.6023 5.39762 18.3333 10 18.3333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+									<path d="M7.5 9.99996L9.16667 11.6666L12.5 8.33329" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-info-text">Your insurance covers dietitian consultations. Let's get you connected with a registered dietitian who can help you achieve your health goals.</div>
+							</div>
+							<div class="quiz-action-feature">
+								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M6.66666 2.5V5.83333M13.3333 2.5V5.83333M2.5 9.16667H17.5M4.16666 3.33333H15.8333C16.7538 3.33333 17.5 4.07952 17.5 5V16.6667C17.5 17.5871 16.7538 18.3333 15.8333 18.3333H4.16666C3.24619 18.3333 2.5 17.5871 2.5 16.6667V5C2.5 4.07952 3.24619 3.33333 4.16666 3.33333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-feature-text">Schedule your first consultation at no cost to you</div>
+							</div>
+							<div class="quiz-action-feature">
+								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M18.3333 14.1667C18.3333 15.0871 17.5871 15.8333 16.6667 15.8333H5.83333L1.66666 20V3.33333C1.66666 2.41286 2.41285 1.66667 3.33333 1.66667H16.6667C17.5871 1.66667 18.3333 2.41286 18.3333 3.33333V14.1667Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-feature-text">Get personalized nutrition guidance from certified professionals</div>
+							</div>
+						</div>
+						<a href="${resultUrl}" class="quiz-booking-button">Schedule Your Appointment</a>
+					</div>
+				</div>
+			</div>
+		`;
+	}
+
+	_generateNotCoveredInsuranceResultsHTML(eligibilityData, resultUrl) {
+		const messages = this.quizData.ui?.resultMessages?.notCovered || {};
+		const userMessage = eligibilityData.userMessage || "Your current insurance plan doesn't cover dietitian sessions, but we have other options.";
+
+		return `
+			<div class="quiz-results-container">
+				<div class="quiz-results-header">
+					<h2 class="quiz-results-title">${messages.title || "Thanks for completing the quiz!"}</h2>
+					<p class="quiz-results-subtitle">${messages.subtitle || "We're here to help you explore your options."}</p>
+				</div>
+				<div class="quiz-coverage-card" style="border-left: 4px solid #ed8936; background-color: #fffaf0;">
+					<h3 class="quiz-coverage-card-title" style="color: #c05621;">ℹ️ Insurance Coverage Status</h3>
+					<p style="color: #c05621;">${userMessage}</p>
+				</div>
+				<div class="quiz-action-section">
+					<div class="quiz-action-content">
+						<div class="quiz-action-header">
+							<h3 class="quiz-action-title">Alternative Options Available</h3>
+						</div>
+						<div class="quiz-action-details">
+							<div class="quiz-action-info">
+								<svg class="quiz-action-info-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M10 18.3333C14.6023 18.3333 18.3333 14.6023 18.3333 9.99996C18.3333 5.39759 14.6023 1.66663 10 1.66663C5.39762 1.66663 1.66666 5.39759 1.66666 9.99996C1.66666 14.6023 5.39762 18.3333 10 18.3333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+									<path d="M7.5 9.99996L9.16667 11.6666L12.5 8.33329" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-info-text">Don't worry! We offer affordable self-pay options and can help you explore other coverage possibilities.</div>
+							</div>
+							<div class="quiz-action-feature">
+								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M2.5 7.5L10 12.5L17.5 7.5" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+									<path d="M2.5 7.5H17.5V15C17.5 15.442 17.324 15.866 17.012 16.1785C16.699 16.491 16.275 16.6667 15.833 16.6667H4.167C3.725 16.6667 3.301 16.491 2.988 16.1785C2.676 15.866 2.5 15.442 2.5 15V7.5Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-feature-text">Competitive self-pay rates for nutrition consultations</div>
+							</div>
+							<div class="quiz-action-feature">
+								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M18.3333 14.1667C18.3333 15.0871 17.5871 15.8333 16.6667 15.8333H5.83333L1.66666 20V3.33333C1.66666 2.41286 2.41285 1.66667 3.33333 1.66667H16.6667C17.5871 1.66667 18.3333 2.41286 18.3333 3.33333V14.1667Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-feature-text">Personal consultation to review all your options</div>
+							</div>
+						</div>
+						<a href="${resultUrl}" class="quiz-booking-button">Explore Your Options</a>
+					</div>
+				</div>
+			</div>
+		`;
+	}
+
+	_generateAAAErrorResultsHTML(eligibilityData, resultUrl) {
+		const error = eligibilityData.error || {};
+		const errorCode = error.code || eligibilityData.aaaErrorCode || "Unknown";
+		const userMessage = eligibilityData.userMessage || error.message || "There was an issue verifying your insurance coverage.";
+		const errorTitle = error.title || this._getErrorTitle(errorCode);
+		const actionTitle = error.actionTitle || "Manual Verification";
+		const actionText = error.actionText || "Our team will verify your coverage manually and contact you with results.";
+
+		return `
+			<div class="quiz-results-container">
+				<div class="quiz-results-header">
+					<h2 class="quiz-results-title">Thanks for completing the quiz!</h2>
+					<p class="quiz-results-subtitle">We're processing your insurance verification.</p>
+				</div>
+				<div class="quiz-coverage-card" style="border-left: 4px solid #f56565; background-color: #fed7d7;">
+					<h3 class="quiz-coverage-card-title" style="color: #c53030;">⚠️ ${errorTitle}</h3>
+					<p style="color: #c53030;">${userMessage}</p>
+				</div>
+				<div class="quiz-action-section">
+					<div class="quiz-action-content">
+						<div class="quiz-action-header">
+							<h3 class="quiz-action-title">${actionTitle}</h3>
+						</div>
+						<div class="quiz-action-details">
+							<div class="quiz-action-info">
+								<svg class="quiz-action-info-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M10 18.3333C14.6023 18.3333 18.3333 14.6023 18.3333 9.99996C18.3333 5.39759 14.6023 1.66663 10 1.66663C5.39762 1.66663 1.66666 5.39759 1.66666 9.99996C1.66666 14.6023 5.39762 18.3333 10 18.3333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+									<path d="M7.5 9.99996L9.16667 11.6666L12.5 8.33329" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-info-text">${actionText}</div>
+							</div>
+							<div class="quiz-action-feature">
+								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M18.3333 14.1667C18.3333 15.0871 17.5871 15.8333 16.6667 15.8333H5.83333L1.66666 20V3.33333C1.66666 2.41286 2.41285 1.66667 3.33333 1.66667H16.6667C17.5871 1.66667 18.3333 2.41286 18.3333 3.33333V14.1667Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-feature-text">Personal assistance to resolve verification issues</div>
+							</div>
+							<div class="quiz-action-feature">
+								<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M6.66666 2.5V5.83333M13.3333 2.5V5.83333M2.5 9.16667H17.5M4.16666 3.33333H15.8333C16.7538 3.33333 17.5 4.07952 17.5 5V16.6667C17.5 17.5871 16.7538 18.3333 15.8333 18.3333H4.16666C3.24619 18.3333 2.5 17.5871 2.5 16.6667V5C2.5 4.07952 3.24619 3.33333 4.16666 3.33333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<div class="quiz-action-feature-text">Quick resolution to get you scheduled with a dietitian</div>
+							</div>
+						</div>
+						<a href="${resultUrl}" class="quiz-booking-button">Continue with Support</a>
+					</div>
+				</div>
+			</div>
+		`;
+	}
+
+	_generateTestDataErrorResultsHTML(eligibilityData, resultUrl) {
+		const userMessage = eligibilityData.userMessage || "Test data error encountered during eligibility check.";
+
+		return `
+			<div class="quiz-results-container">
+				<div class="quiz-results-header">
+					<h2 class="quiz-results-title">🧪 Test Mode - Data Error</h2>
+					<p class="quiz-results-subtitle">This is a test scenario demonstrating error handling.</p>
+				</div>
+				<div class="quiz-coverage-card" style="border-left: 4px solid #9f7aea; background-color: #faf5ff;">
+					<h3 class="quiz-coverage-card-title" style="color: #6b46c1;">🧪 Test Data Error</h3>
+					<p style="color: #6b46c1;">${userMessage}</p>
+				</div>
+				<div class="quiz-action-section">
+					<div class="quiz-action-content">
+						<div class="quiz-action-header">
+							<h3 class="quiz-action-title">Test Mode Information</h3>
+						</div>
+						<div class="quiz-action-details">
+							<div class="quiz-action-info">
+								<div class="quiz-action-info-text">This is a test scenario to demonstrate how the system handles various error conditions. In production, users would receive appropriate support.</div>
+							</div>
+						</div>
+						<a href="${resultUrl}" class="quiz-booking-button">Continue Test</a>
+					</div>
+				</div>
+			</div>
+		`;
+	}
+
 	_generateIneligibleInsuranceResultsHTML(eligibilityData, resultUrl) {
 		const messages = this.quizData.ui?.resultMessages?.notEligible || {};
 		const userMessage = eligibilityData.userMessage || "Your eligibility check is complete.";
@@ -1584,6 +2021,104 @@ class ModularQuiz {
 	get isTestMode() {
 		const testParam = new URLSearchParams(window.location.search).get("test");
 		return testParam !== null && testParam !== "false";
+	}
+
+	// =======================================================================
+	// Utility Methods for Data Extraction
+	// =======================================================================
+
+	_hasInsurance() {
+		const insuranceResponse = this._getResponseValue("insurance");
+		return insuranceResponse && insuranceResponse !== "no" && insuranceResponse !== "none";
+	}
+
+	_getResponseValue(questionId) {
+		const response = this.responses.find(r => r.questionId === questionId);
+		return response ? response.answer : null;
+	}
+
+	// =======================================================================
+	// Loading Screen Methods
+	// =======================================================================
+
+	_showLoadingScreen() {
+		this._toggleElement(this.questions, false);
+		this._toggleElement(this.loading, true);
+		this._toggleElement(this.navigationButtons, false);
+		this._toggleElement(this.progressSection, false);
+	}
+
+	_updateLoadingStep(step) {
+		// Update loading step display if elements exist
+		const loadingTitle = this.loading?.querySelector(".quiz-loading-title");
+		const loadingDescription = this.loading?.querySelector(".quiz-loading-description");
+
+		if (loadingTitle && step.title) {
+			loadingTitle.textContent = step.title;
+		}
+
+		if (loadingDescription && step.description) {
+			loadingDescription.textContent = step.description;
+		}
+	}
+
+	// =======================================================================
+	// Background Process Notification Methods
+	// =======================================================================
+
+	_showBackgroundProcessNotification(message, type = "info", priority = null) {
+		if (this.notificationManager && this.notificationManager.show) {
+			return this.notificationManager.show(message, type, priority);
+		} else {
+			// Fallback for when notification system isn't loaded
+			console.log(`📢 Background Process (${type}):`, message.replace(/<br\/?>/g, "\n"));
+			return null;
+		}
+	}
+
+	// =======================================================================
+	// Comprehensive Loading Sequence
+	// =======================================================================
+
+	async _showComprehensiveLoadingSequence() {
+		console.log("🔄 Starting comprehensive loading sequence...");
+
+		// Show initial loading state
+		this._showLoadingScreen();
+
+		// Start the orchestrator workflow if not already started
+		if (!this.orchestratorWorkflowPromise) {
+			console.log("🚀 Starting orchestrator workflow from loading sequence...");
+			this._startOrchestratorWorkflow();
+		}
+
+		// Show loading messages
+		this._startLoadingMessages();
+
+		// Wait a moment for the loading sequence to be visible
+		await new Promise(resolve => setTimeout(resolve, 500));
+
+		console.log("✅ Comprehensive loading sequence started");
+	}
+
+	_startLoadingMessages() {
+		const loadingMessages = [
+			{ title: "Processing Your Information", description: "Analyzing your quiz responses..." },
+			{ title: "Verifying Insurance Coverage", description: "Checking your eligibility with your insurance provider..." },
+			{ title: "Setting Up Your Account", description: "Creating your personalized profile..." },
+			{ title: "Finalizing Details", description: "Preparing your results and next steps..." }
+		];
+
+		let messageIndex = 0;
+
+		// Show first message immediately
+		this._updateLoadingStep(loadingMessages[messageIndex]);
+
+		// Cycle through messages every 3 seconds
+		this.loadingInterval = setInterval(() => {
+			messageIndex = (messageIndex + 1) % loadingMessages.length;
+			this._updateLoadingStep(loadingMessages[messageIndex]);
+		}, 3000);
 	}
 
 	// Debug method to manually test the enhanced notification system
