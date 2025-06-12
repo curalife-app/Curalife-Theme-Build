@@ -309,10 +309,13 @@ class ModularQuiz {
 			this._showComprehensiveLoadingSequence();
 
 			// Trigger the orchestrator workflow and await its *final* completion (including polling)
+			console.log("Starting orchestrator workflow...");
 			const orchestratorResult = await this._startOrchestratorWorkflow();
+			console.log("Orchestrator workflow completed with result:", orchestratorResult);
 
 			// Process the final result from the orchestrator
 			const finalResult = this._processWebhookResult(orchestratorResult);
+			console.log("Processed final result:", finalResult);
 
 			// Test mode comprehensive finish notification
 			if (this.isTestMode) {
@@ -331,6 +334,7 @@ class ModularQuiz {
 				);
 			}
 
+			console.log("Calling showResults with:", { resultUrl, finalResult });
 			this.showResults(resultUrl, true, finalResult);
 		} catch (error) {
 			console.error("Error finishing quiz:", error);
@@ -739,15 +743,18 @@ class ModularQuiz {
 					}
 
 					if (statusData.statusData.completed) {
+						console.log("Workflow completed - stopping polling and resolving");
 						this._stopStatusPolling();
 						this._stopFallbackChecking(); // Stop fallback since polling succeeded
 						this._stopLoadingMessages(); // Stop loading since workflow is complete
 
 						// Extract the final result data properly
 						const finalResult = statusData.statusData.finalData || statusData.statusData.finalResult || statusData.statusData;
+						console.log("Final result extracted:", finalResult);
 
 						// Resolve the original workflow promise with the final result from polling
 						if (this.workflowCompletionResolve) {
+							console.log("Resolving workflow completion promise");
 							this.workflowCompletionResolve(finalResult);
 							this.workflowCompletionResolve = null; // Prevent multiple resolutions
 						} else {
