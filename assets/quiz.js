@@ -1,10 +1,3 @@
-/**
- * Modular Quiz System for Shopify
- */
-
-// Remove static import and use dynamic import instead
-// import { NotificationManager } from '../utils/notifications.js';
-
 const ELEMENT_SELECTORS = {
 	MAIN_CONTAINER: "#quiz-container",
 	QUESTIONS: ".quiz-questions",
@@ -32,13 +25,17 @@ class ModularQuiz {
 		this.currentQuestionIndex = 0;
 		this.responses = [];
 		this.submitting = false;
-		this.loadingInterval = null;
+		this.loadingInterval = null; // Used for comprehensive loading sequence steps
 
-		// New state for background processing
-		this.eligibilityWorkflowPromise = null;
-		this.eligibilityWorkflowResult = null;
-		this.eligibilityWorkflowError = null;
-		this.userCreationWorkflowPromise = null;
+		// New state for background processing orchestration and polling
+		this.statusTrackingId = null;
+		this.pollingAttempts = 0;
+		this.maxPollingAttempts = 20; // 40 seconds max (2 sec interval * 20 attempts)
+		this.statusPollingInterval = null;
+		this.pollingTimeout = null; // Overall timeout for the polling process
+		this.workflowCompletionResolve = null; // To resolve the promise returned by _startOrchestratorWorkflow
+		this.workflowCompletionReject = null; // To reject the promise returned by _startOrchestratorWorkflow
+		this._lastStatusMessage = ""; // To prevent duplicate notifications for same status
 
 		// Initialize the modular notification system asynchronously
 		this._initializeNotificationManager().then(() => {
@@ -308,69 +305,25 @@ class ModularQuiz {
 			this._toggleElement(this.navigationButtons, false);
 			this._toggleElement(this.progressSection, false);
 
-			// Start the comprehensive loading sequence
-			await this._showComprehensiveLoadingSequence();
+			// Start the comprehensive loading sequence (UI only)
+			this._showComprehensiveLoadingSequence();
 
-			// Check if eligibility workflow is complete
-			let eligibilityResult = null;
-			if (this.eligibilityWorkflowPromise) {
-				if (this.eligibilityWorkflowResult) {
-					// Already completed
-					eligibilityResult = this.eligibilityWorkflowResult;
-					console.log("Using cached eligibility result:", eligibilityResult);
-				} else {
-					// Still running - wait for it
-					try {
-						eligibilityResult = await this.eligibilityWorkflowPromise;
-						console.log("Waited for eligibility result:", eligibilityResult);
-					} catch (error) {
-						console.error("Eligibility workflow failed:", error);
-						eligibilityResult = this._createErrorEligibilityData("Eligibility check failed");
-					}
-				}
-			} else {
-				// No eligibility check was triggered - use default processing status
-				eligibilityResult = this._createProcessingEligibilityData();
-				console.log("No eligibility workflow, using processing status");
-			}
+			// Trigger the orchestrator workflow and await its *final* completion (including polling)
+			const orchestratorResult = await this._startOrchestratorWorkflow();
 
-			// Process the result consistently
-			let finalResult;
-			if (eligibilityResult) {
-				// Check if this is already processed eligibility data or a raw webhook response
-				if (eligibilityResult.eligibilityStatus && typeof eligibilityResult.eligibilityStatus === "string") {
-					// This is already processed eligibility data - use it directly
-					finalResult = eligibilityResult;
-					console.log("Using eligibility result directly (already processed):", finalResult);
-				} else {
-					// This is a raw webhook response - process it
-					finalResult = this._processWebhookResult(eligibilityResult);
-					console.log("Processed webhook result:", finalResult);
-				}
-			} else {
-				// No eligibility check was run - use default processing status
-				finalResult = this._createProcessingEligibilityData();
-				console.log("No eligibility result, using processing status");
-			}
+			console.log("✅ Orchestrator workflow definitively completed with result:", orchestratorResult);
 
-			console.log("Processing eligibility result in finishQuiz:", {
-				eligibilityResult: finalResult,
-				hasError: !!finalResult?.error,
-				status: finalResult?.eligibilityStatus,
-				isEligible: finalResult?.isEligible
-			});
+			// Process the final result from the orchestrator
+			const finalResult = this._processWebhookResult(orchestratorResult);
 
 			// Test mode comprehensive finish notification
 			if (this.isTestMode) {
-				const workflowStatus = this.eligibilityWorkflowPromise ? (this.eligibilityWorkflowResult ? "✅ Completed" : "⏳ In Progress") : "❌ Not Started";
-
-				const userCreationStatus = this.userCreationWorkflowPromise ? "✅ Started" : "❌ Not Started";
+				const workflowStatus = orchestratorResult ? "✅ Completed" : "❌ Failed"; // Simplistic based on success of awaited promise
 
 				this._showBackgroundProcessNotification(
 					`
 					🧪 TEST MODE - Quiz Completion Status<br>
-					• Eligibility Workflow: ${workflowStatus}<br>
-					• User Creation: ${userCreationStatus}<br>
+					• Orchestrator Workflow: ${workflowStatus}<br>
 					• Final Status: ${finalResult?.eligibilityStatus || "Unknown"}<br>
 					• Is Eligible: ${finalResult?.isEligible}<br>
 					• Result URL: ${resultUrl}<br>
@@ -388,7 +341,7 @@ class ModularQuiz {
 
 			this.showResults(resultUrl, true, finalResult);
 		} catch (error) {
-			console.error("Error finishing quiz:", error);
+			console.error("❌ Error finishing quiz:", error);
 
 			// Test mode error notification
 			if (this.isTestMode) {
@@ -402,13 +355,19 @@ class ModularQuiz {
 				);
 			}
 
-			this.showResults(resultUrl, false, null, error.message);
+			// Use _handleWorkflowError to ensure loading is stopped and proper error results are shown
+			this._handleWorkflowError(error);
+		} finally {
+			this.submitting = false;
+			this.nextButton.disabled = false;
+			this._stopLoadingMessages(); // Ensure all loading messages are cleared
+			this._stopStatusPolling(); // Ensure polling is stopped
 		}
 	}
 
 	// Comprehensive loading sequence with animated status updates
 	async _showComprehensiveLoadingSequence() {
-		// Show the loading screen with progress steps
+		// Show the loading screen with initial state
 		this._showLoadingScreen();
 
 		const loadingSteps = [
@@ -418,19 +377,17 @@ class ModularQuiz {
 			{ title: "Preparing Your Results", description: "Finalizing your personalized plan..." }
 		];
 
-		for (let i = 0; i < loadingSteps.length; i++) {
-			const step = loadingSteps[i];
-			this._updateLoadingStep(step);
+		// This loop primarily provides initial animation.
+		// Real updates will come from _updateWorkflowStatus during polling.
+		// Keep it simple and let polling handle the main flow.
+		let stepIndex = 0;
+		this._updateLoadingStep(loadingSteps[stepIndex]); // Initial step
 
-			// Wait between steps for realistic loading feel
-			await new Promise(resolve => setTimeout(resolve, 900));
-		}
-
-		// Final completion step
-		this._updateLoadingStep({ title: "Almost Ready!", description: "Preparing your personalized results..." });
-
-		// Final wait before showing results
-		await new Promise(resolve => setTimeout(resolve, 800));
+		// Animate through initial steps if no real status comes through fast
+		this.loadingInterval = setInterval(() => {
+			stepIndex = (stepIndex + 1) % loadingSteps.length;
+			this._updateLoadingStep(loadingSteps[stepIndex]);
+		}, 1800); // Slower interval for initial animation
 	}
 
 	_showLoadingScreen() {
@@ -483,13 +440,8 @@ class ModularQuiz {
 	}
 
 	_triggerUserCreationWorkflow() {
-		try {
-			// HIPAA COMPLIANT: Start orchestrator workflow with status tracking
-			console.log("🔒 Starting HIPAA-compliant orchestrator workflow with status tracking");
-			this._startOrchestratorWorkflow();
-		} catch (error) {
-			console.error("Failed to trigger orchestrator workflow:", error);
-		}
+		// This is now redundant as orchestrator is directly called in finishQuiz
+		console.warn("⚠️ _triggerUserCreationWorkflow is deprecated. Orchestrator is now triggered in finishQuiz.");
 	}
 
 	// =======================================================================
@@ -497,57 +449,57 @@ class ModularQuiz {
 	// =======================================================================
 
 	/**
-	 * Starts the orchestrator workflow (simplified version)
+	 * Starts the orchestrator workflow and polls for its completion.
 	 * This method triggers the orchestrator cloud function which coordinates
 	 * all workflows while maintaining HIPAA compliance.
+	 * Returns a Promise that resolves with the final workflow result.
 	 */
 	_startOrchestratorWorkflow() {
 		const orchestratorUrl = this._getOrchestratorUrl();
 		const payload = this._extractResponseData();
 
-		console.log("🚀 Starting orchestrator workflow...", { orchestratorUrl, payload });
+		console.log("🚀 Starting orchestrator workflow (initial request)...", { orchestratorUrl, payload });
 
-		// Show loading state
-		this._showLoadingScreen();
+		// Return a new Promise that will resolve when the workflow truly completes
+		return new Promise(async (resolve, reject) => {
+			this.workflowCompletionResolve = resolve;
+			this.workflowCompletionReject = reject;
 
-		// Call orchestrator and handle response directly (no status polling)
-		this._submitOrchestratorToWebhook(orchestratorUrl, payload)
-			.then(result => {
-				console.log("✅ Orchestrator workflow completed:", result);
-				this._handleWorkflowCompletion(result);
-			})
-			.catch(error => {
-				console.error("❌ Orchestrator workflow failed:", error);
-				this._handleWorkflowError(error);
-			});
-	}
+			try {
+				// 1. Initial call to the orchestrator to kick off the process
+				const initialResponse = await fetch(orchestratorUrl, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(payload)
+				});
 
-	/**
-	 * Handles successful workflow completion
-	 */
-	_handleWorkflowCompletion(result) {
-		console.log("Processing workflow completion result:", result);
+				if (!initialResponse.ok) {
+					const errorText = await initialResponse.text();
+					throw new Error(`Orchestrator initial call failed: HTTP ${initialResponse.status} - ${errorText}`);
+				}
 
-		// Stop loading messages
-		this._stopLoadingMessages();
+				const initialResult = await initialResponse.json();
+				console.log("✅ Initial orchestrator response received:", initialResult);
 
-		// Show results based on the orchestrator response
-		if (result && result.success) {
-			const resultData = result.data || result;
-			this.showResults(
-				this.config.resultUrl,
-				true, // webhookSuccess
-				resultData,
-				result.message || "Account creation completed successfully!"
-			);
-		} else {
-			this.showResults(
-				this.config.resultUrl,
-				false, // webhookSuccess
-				null,
-				result.error || "There was an error processing your request."
-			);
-		}
+				// 2. Check for a statusTrackingId to begin polling, or if final data is immediately available
+				if (initialResult.success && initialResult.statusTrackingId) {
+					console.log("Status tracking ID received, starting polling...");
+					this._startStatusPolling(initialResult.statusTrackingId);
+				} else if (initialResult.success && initialResult.data) {
+					// If orchestrator immediately returns final data (e.g., for simple, fast workflows)
+					console.log("Orchestrator returned final data immediately, no polling needed.");
+					this._stopLoadingMessages(); // Dismiss loading as it's truly done
+					resolve(initialResult.data); // Resolve the promise with the final data
+				} else {
+					// Initial call failed or didn't provide tracking ID/data
+					throw new Error(initialResult.error || "Orchestrator did not provide status tracking ID or final data.");
+				}
+			} catch (error) {
+				console.error("❌ Error initiating orchestrator workflow:", error);
+				this._stopLoadingMessages(); // Ensure loading is dismissed on immediate error
+				reject(error); // Reject the promise
+			}
+		});
 	}
 
 	/**
@@ -560,7 +512,7 @@ class ModularQuiz {
 		this._stopLoadingMessages();
 		this._stopStatusPolling();
 
-		// Create proper error result data instead of null
+		// Create proper error result data
 		const errorResultData = {
 			eligibilityStatus: "ERROR",
 			isEligible: false,
@@ -586,35 +538,59 @@ class ModularQuiz {
 	}
 
 	// =======================================================================
-	// Status Polling Methods (Simplified - Mock Implementation)
+	// Status Polling Methods
 	// =======================================================================
 
 	/**
-	 * Start mock status polling for enhanced user experience
-	 * This provides visual feedback while the orchestrator runs
+	 * Start status polling for enhanced user experience and final workflow completion.
+	 * This function will eventually resolve the workflowCompletionPromise.
 	 */
 	_startStatusPolling(statusTrackingId) {
-		console.log("🔄 Starting mock status polling for:", statusTrackingId);
+		console.log("🔄 Starting status polling for:", statusTrackingId);
 
 		this.statusTrackingId = statusTrackingId;
 		this.pollingAttempts = 0;
-		this.maxPollingAttempts = 20; // 40 seconds max
+		this.maxPollingAttempts = 20; // 40 seconds max (2 sec interval * 20 attempts)
 
-		// Show initial status message
-		this._showBackgroundProcessNotification("🚀 Starting user creation process...", "info");
+		// Clear any existing polling interval to prevent duplicates
+		this._stopStatusPolling();
 
-		// Start polling every 2 seconds for visual feedback
+		// Start polling every 2 seconds
 		this.statusPollingInterval = setInterval(() => {
 			this._pollWorkflowStatus();
 		}, 2000);
+
+		// Set a overall timeout for the polling
+		this.pollingTimeout = setTimeout(
+			() => {
+				this._stopStatusPolling();
+				console.warn("Polling timed out. Workflow status unknown or took too long.");
+				const timeoutError = new Error("Workflow processing took too long. Please contact support.");
+				// Reject the original workflow promise if it hasn't been resolved/rejected yet
+				if (this.workflowCompletionReject) {
+					this.workflowCompletionReject(timeoutError);
+					this.workflowCompletionReject = null; // Prevent multiple rejections
+				} else {
+					console.error("WorkflowCompletionReject not set, cannot reject promise on timeout.");
+				}
+			},
+			this.maxPollingAttempts * 2000 + 5000
+		); // Max attempts * interval + a buffer
 	}
 
 	/**
-	 * Mock status polling to provide user feedback
+	 * Polls for workflow status and updates UI.
+	 * This function will eventually resolve the workflowCompletionPromise.
 	 */
 	async _pollWorkflowStatus() {
 		if (!this.statusTrackingId) {
 			this._stopStatusPolling();
+			return;
+		}
+
+		if (this.pollingAttempts >= this.maxPollingAttempts) {
+			console.warn("Max polling attempts reached without explicit completion from backend.");
+			this._stopStatusPolling(); // Stop polling, overall timeout will handle the promise
 			return;
 		}
 
@@ -624,63 +600,82 @@ class ModularQuiz {
 			const statusUrl = this._getStatusPollingUrl();
 			const response = await fetch(statusUrl, {
 				method: "POST",
-				headers: {
-					"Content-Type": "application/json"
-				},
-				body: JSON.stringify({
-					statusTrackingId: this.statusTrackingId
-				})
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ statusTrackingId: this.statusTrackingId })
 			});
 
 			if (response.ok) {
 				const statusData = await response.json();
-				console.log("📊 Status update:", statusData);
+				console.log("📊 Status update received:", statusData);
 
 				if (statusData.success && statusData.statusData) {
 					this._updateWorkflowStatus(statusData.statusData);
 
-					// Stop polling when completed or max attempts reached
-					if (statusData.statusData.completed || this.pollingAttempts >= this.maxPollingAttempts) {
+					if (statusData.statusData.completed) {
+						console.log("✅ Workflow completed according to status polling.");
 						this._stopStatusPolling();
+						// Resolve the original workflow promise with the final result from polling
+						if (this.workflowCompletionResolve) {
+							this.workflowCompletionResolve(statusData.statusData.finalResult);
+							this.workflowCompletionResolve = null; // Prevent multiple resolutions
+						} else {
+							console.error("WorkflowCompletionResolve not set, cannot resolve promise.");
+						}
+					}
+				} else {
+					console.warn("Status polling received unsuccessful or invalid data:", statusData);
+					// Non-critical, continue polling unless it's a hard error
+					if (statusData.error) {
+						this._showBackgroundProcessNotification(`Polling error: ${statusData.error}`, "error", "LOW");
 					}
 				}
 			} else {
-				console.warn("Status polling failed:", response.status);
-				// Continue polling on failures (non-critical)
+				console.warn("Status polling failed HTTP:", response.status, await response.text());
+				// Non-critical, continue polling on network/HTTP errors
+				this._showBackgroundProcessNotification(`Network error during status check. Retrying...`, "error", "LOW");
 			}
 		} catch (error) {
-			console.warn("Status polling error:", error);
-			// Continue polling on errors (non-critical)
-		}
-
-		// Stop if we've reached max attempts
-		if (this.pollingAttempts >= this.maxPollingAttempts) {
-			this._stopStatusPolling();
+			console.warn("Status polling error (catch block):", error);
+			// Non-critical, continue polling on JS errors
+			this._showBackgroundProcessNotification(`An error occurred during status check. Retrying...`, "error", "LOW");
 		}
 	}
 
 	/**
-	 * Update UI with mock status information
+	 * Update UI with real status information from polling
 	 */
 	_updateWorkflowStatus(statusData) {
 		if (!statusData) return;
 
 		console.log("📱 Updating UI with status:", statusData);
 
-		// Update loading progress if available
+		const loadingStepsMap = {
+			INITIATED: { title: "Processing Your Answers", description: "Analyzing your health information..." },
+			ELIGIBILITY_CHECK_STARTED: { title: "Checking Insurance Coverage", description: "Verifying your benefits..." },
+			ELIGIBILITY_CHECK_COMPLETED: { title: "Insurance Checked!", description: "Eligibility verification complete." },
+			USER_CREATION_STARTED: { title: "Creating Your Account", description: "Setting up your personalized profile..." },
+			USER_CREATION_COMPLETED: { title: "Account Created!", description: "Your profile is ready." },
+			SCHEDULING_STARTED: { title: "Finding Your Dietitian", description: "Matching you with the right expert..." },
+			COMPLETED: { title: "Almost Ready!", description: "Preparing your personalized results..." }, // Final state for success
+			FAILED: { title: "Something Went Wrong!", description: "We encountered an issue. Please contact support." } // Final state for failure
+		};
+
+		const currentStepInfo = loadingStepsMap[statusData.currentStatus] || {
+			title: "Processing...",
+			description: statusData.message || "Please wait while we process your request."
+		};
+
+		this._updateLoadingStep(currentStepInfo);
+
+		// Show a small notification if the status message changes or is important
+		if (statusData.message && statusData.message !== this._lastStatusMessage) {
+			this._showBackgroundProcessNotification(statusData.message, "info", "LOW"); // Use low priority to not block UI
+			this._lastStatusMessage = statusData.message;
+		}
+
+		// Update progress bar
 		if (statusData.progress !== undefined) {
 			this._updateLoadingProgress(statusData.progress);
-		}
-
-		// Show status message to user
-		if (statusData.message) {
-			this._showBackgroundProcessNotification(statusData.message, "info");
-		}
-
-		// Handle completion
-		if (statusData.completed) {
-			console.log("✅ Workflow completed according to status");
-			// The actual workflow completion will be handled by the orchestrator response
 		}
 	}
 
@@ -693,6 +688,15 @@ class ModularQuiz {
 			this.statusPollingInterval = null;
 			console.log("⏹️ Status polling stopped");
 		}
+		if (this.pollingTimeout) {
+			clearTimeout(this.pollingTimeout);
+			this.pollingTimeout = null;
+			console.log("⏹️ Polling timeout cleared");
+		}
+		// Reset tracking variables
+		this.statusTrackingId = null;
+		this.pollingAttempts = 0;
+		this._lastStatusMessage = "";
 	}
 
 	/**
@@ -700,6 +704,7 @@ class ModularQuiz {
 	 */
 	_getStatusPollingUrl() {
 		const container = document.getElementById("quiz-container");
+		// Ensure this points to your actual backend status polling endpoint
 		return container?.dataset?.statusPollingUrl || "https://workflow-status-polling-xxn52lyizq-uc.a.run.app";
 	}
 
@@ -1582,7 +1587,8 @@ class ModularQuiz {
 				// HIPAA COMPLIANT: Only call user creation workflow
 				// This will handle eligibility checking server-side to keep PHI data secure
 				console.log("👤 Starting HIPAA-compliant user creation workflow (includes server-side eligibility check)");
-				this._triggerUserCreationWorkflow();
+				// Removed direct _triggerUserCreationWorkflow call here, as it's now handled by finishQuiz
+				// The orchestrator is initiated by finishQuiz, which then waits for its completion.
 				this.finishQuiz();
 				return;
 			}
@@ -2455,114 +2461,6 @@ class ModularQuiz {
 		}
 	}
 
-	async finishQuiz() {
-		const resultUrl = this.container.getAttribute("data-result-url") || this.container.getAttribute("data-booking-url") || "/quiz-complete";
-
-		try {
-			this.submitting = true;
-			this.nextButton.disabled = true;
-
-			this._toggleElement(this.navigationButtons, false);
-			this._toggleElement(this.progressSection, false);
-
-			// Start the comprehensive loading sequence
-			await this._showComprehensiveLoadingSequence();
-
-			// Check if eligibility workflow is complete
-			let eligibilityResult = null;
-			if (this.eligibilityWorkflowPromise) {
-				if (this.eligibilityWorkflowResult) {
-					// Already completed
-					eligibilityResult = this.eligibilityWorkflowResult;
-					console.log("Using cached eligibility result:", eligibilityResult);
-				} else {
-					// Still running - wait for it
-					try {
-						eligibilityResult = await this.eligibilityWorkflowPromise;
-						console.log("Waited for eligibility result:", eligibilityResult);
-					} catch (error) {
-						console.error("Eligibility workflow failed:", error);
-						eligibilityResult = this._createErrorEligibilityData("Eligibility check failed");
-					}
-				}
-			} else {
-				// No eligibility check was triggered - use default processing status
-				eligibilityResult = this._createProcessingEligibilityData();
-				console.log("No eligibility workflow, using processing status");
-			}
-
-			// Process the result consistently
-			let finalResult;
-			if (eligibilityResult) {
-				// Check if this is already processed eligibility data or a raw webhook response
-				if (eligibilityResult.eligibilityStatus && typeof eligibilityResult.eligibilityStatus === "string") {
-					// This is already processed eligibility data - use it directly
-					finalResult = eligibilityResult;
-					console.log("Using eligibility result directly (already processed):", finalResult);
-				} else {
-					// This is a raw webhook response - process it
-					finalResult = this._processWebhookResult(eligibilityResult);
-					console.log("Processed webhook result:", finalResult);
-				}
-			} else {
-				// No eligibility check was run - use default processing status
-				finalResult = this._createProcessingEligibilityData();
-				console.log("No eligibility result, using processing status");
-			}
-
-			console.log("Processing eligibility result in finishQuiz:", {
-				eligibilityResult: finalResult,
-				hasError: !!finalResult?.error,
-				status: finalResult?.eligibilityStatus,
-				isEligible: finalResult?.isEligible
-			});
-
-			// Test mode comprehensive finish notification
-			if (this.isTestMode) {
-				const workflowStatus = this.eligibilityWorkflowPromise ? (this.eligibilityWorkflowResult ? "✅ Completed" : "⏳ In Progress") : "❌ Not Started";
-
-				const userCreationStatus = this.userCreationWorkflowPromise ? "✅ Started" : "❌ Not Started";
-
-				this._showBackgroundProcessNotification(
-					`
-					🧪 TEST MODE - Quiz Completion Status<br>
-					• Eligibility Workflow: ${workflowStatus}<br>
-					• User Creation: ${userCreationStatus}<br>
-					• Final Status: ${finalResult?.eligibilityStatus || "Unknown"}<br>
-					• Is Eligible: ${finalResult?.isEligible}<br>
-					• Result URL: ${resultUrl}<br>
-					• Total Responses: ${this.responses?.length || 0}
-				`,
-					"info"
-				);
-			}
-
-			console.log("Showing results with data:", {
-				resultData: finalResult,
-				eligibilityStatus: finalResult?.eligibilityStatus,
-				webhookSuccess: true
-			});
-
-			this.showResults(resultUrl, true, finalResult);
-		} catch (error) {
-			console.error("Error finishing quiz:", error);
-
-			// Test mode error notification
-			if (this.isTestMode) {
-				this._showBackgroundProcessNotification(
-					`
-					🧪 TEST MODE - Quiz Finish Error<br>
-					❌ ${error.message}<br>
-					• Check console for details
-				`,
-					"error"
-				);
-			}
-
-			this.showResults(resultUrl, false, null, error.message);
-		}
-	}
-
 	_showSchedulingResults(result) {
 		const schedulingData = result?.schedulingData;
 
@@ -2694,7 +2592,6 @@ class ModularQuiz {
 			'<path d="M18.3081 14.2233C17.1569 14.2233 16.0346 14.0397 14.9845 13.6971C14.6449 13.5878 14.2705 13.6971 14.0579 13.9427L12.8372 15.6772C10.3023 14.4477 8.55814 12.7138 7.32326 10.1581L9.10465 8.89535C9.34884 8.68372 9.45814 8.30233 9.34884 7.96279C9.00581 6.91628 8.82209 5.79186 8.82209 4.64535C8.82209 4.28953 8.53256 4 8.17674 4H4.64535C4.28953 4 4 4.28953 4 4.64535C4 12.1715 10.1831 18.3953 17.6628 18.3953C18.0186 18.3953 18.3081 18.1058 18.3081 17.75V14.2233Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
 		html += "</svg>";
 		html += '<div class="quiz-action-feature-text">Phone: 1-800-CURALIFE</div>';
-		html += "</div>";
 		html += "</div>";
 		html += "</div>";
 		html += "</div>";
@@ -3142,6 +3039,7 @@ class ModularQuiz {
 		});
 
 		this._stopLoadingMessages();
+		this._stopStatusPolling(); // Ensure polling is stopped
 
 		// Hide loading screen and show results
 		this._toggleElement(this.loading, false);
@@ -3164,7 +3062,7 @@ class ModularQuiz {
 	}
 
 	_stopLoadingMessages() {
-		// Clear any loading intervals
+		// Clear any comprehensive loading sequence intervals
 		if (this.loadingInterval) {
 			clearInterval(this.loadingInterval);
 			this.loadingInterval = null;
@@ -3799,7 +3697,4 @@ class ModularQuiz {
 document.addEventListener("DOMContentLoaded", () => {
 	const quiz = new ModularQuiz();
 	window.productQuiz = quiz;
-
-	// Add test method to global scope for debugging
-	window.testNotifications = () => quiz._testNotificationSystem();
 });
