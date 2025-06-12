@@ -464,8 +464,17 @@ class ModularQuiz {
 
 		console.log("🚀 Starting orchestrator workflow (initial request)...", { orchestratorUrl, payload });
 
+		// Ensure any previous workflow state is cleaned up
+		this._stopStatusPolling();
+		this._stopFallbackChecking();
+
 		// Return a new Promise that will resolve when the workflow truly completes
 		return new Promise(async (resolve, reject) => {
+			// Clear any existing resolvers before setting new ones
+			if (this.workflowCompletionResolve || this.workflowCompletionReject) {
+				console.warn("⚠️ Replacing existing workflow completion resolvers");
+			}
+
 			this.workflowCompletionResolve = resolve;
 			this.workflowCompletionReject = reject;
 
@@ -524,6 +533,14 @@ class ModularQuiz {
 		// Stop loading messages and status polling
 		this._stopLoadingMessages();
 		this._stopStatusPolling();
+		this._stopFallbackChecking();
+
+		// Reject the workflow promise if it's still pending
+		if (this.workflowCompletionReject) {
+			this.workflowCompletionReject(error);
+			this.workflowCompletionReject = null;
+			this.workflowCompletionResolve = null;
+		}
 
 		// Create proper error result data
 		const errorResultData = {
@@ -825,7 +842,9 @@ class ModularQuiz {
 							this.workflowCompletionResolve(finalResult);
 							this.workflowCompletionResolve = null; // Prevent multiple resolutions
 						} else {
-							console.error("WorkflowCompletionResolve not set, cannot resolve promise.");
+							console.warn("WorkflowCompletionResolve not set - workflow may have already completed or been reset. Stopping polling.");
+							// Stop polling since we can't resolve the promise anyway
+							this._stopStatusPolling();
 						}
 					}
 				} else {
@@ -907,6 +926,14 @@ class ModularQuiz {
 		this.statusTrackingId = null;
 		this.pollingAttempts = 0;
 		this._lastStatusMessage = "";
+
+		// Clear workflow completion resolvers to prevent memory leaks and errors
+		// Note: These should already be null if the workflow completed successfully
+		if (this.workflowCompletionResolve || this.workflowCompletionReject) {
+			console.log("⚠️ Clearing workflow completion resolvers during polling stop");
+			this.workflowCompletionResolve = null;
+			this.workflowCompletionReject = null;
+		}
 	}
 
 	/**
