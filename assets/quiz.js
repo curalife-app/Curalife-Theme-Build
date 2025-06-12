@@ -768,50 +768,29 @@ class ModularQuiz {
 
 					if (statusData.statusData.completed) {
 						console.log("Workflow completed - stopping polling and resolving");
+						this._stopStatusPolling();
+						this._stopFallbackChecking(); // Stop fallback since polling succeeded
+						this._stopLoadingMessages(); // Stop loading since workflow is complete
 
-						try {
-							console.log("Step 1: Stopping status polling...");
+						// Extract the final result data properly
+						const finalResult = statusData.statusData.finalData || statusData.statusData.finalResult || statusData.statusData;
+						console.log("Final result extracted:", finalResult);
+
+						// Store the result for debugging
+						this.workflowResult = finalResult;
+
+						// Resolve the original workflow promise with the final result from polling
+						if (this.workflowCompletionResolve) {
+							console.log("Resolving workflow completion promise with:", finalResult);
+							this.workflowCompletionResolve(finalResult);
+							this.workflowCompletionResolve = null; // Prevent multiple resolutions
+						} else {
+							console.warn("WorkflowCompletionResolve not set - workflow may have already completed or been reset. Stopping polling.");
+							// Stop polling since we can't resolve the promise anyway
 							this._stopStatusPolling();
-
-							console.log("Step 2: Stopping fallback checking...");
-							this._stopFallbackChecking(); // Stop fallback since polling succeeded
-
-							console.log("Step 3: Stopping loading messages...");
-							this._stopLoadingMessages(); // Stop loading since workflow is complete
-
-							console.log("Step 4: Extracting final result...");
-							// Extract the final result data properly
-							const finalResult = statusData.statusData.finalData || statusData.statusData.finalResult || statusData.statusData;
-							console.log("Final result extracted:", finalResult);
-
-							console.log("Step 5: Storing result for debugging...");
-							// Store the result for debugging
-							this.workflowResult = finalResult;
-
-							console.log("Step 6: Checking if workflowCompletionResolve exists...");
-							console.log("workflowCompletionResolve:", this.workflowCompletionResolve);
-
-							// Resolve the original workflow promise with the final result from polling
-							if (this.workflowCompletionResolve) {
-								console.log("Step 7: Resolving workflow completion promise with:", finalResult);
-								console.log("About to call workflowCompletionResolve...");
-								this.workflowCompletionResolve(finalResult);
-								console.log("workflowCompletionResolve called successfully");
-								this.workflowCompletionResolve = null; // Prevent multiple resolutions
-							} else {
-								console.warn("WorkflowCompletionResolve not set - workflow may have already completed or been reset. Stopping polling.");
-								// Stop polling since we can't resolve the promise anyway
-								this._stopStatusPolling();
-							}
-						} catch (error) {
-							console.error("Error in workflow completion handling:", error);
-							// Still try to resolve the promise even if there was an error
-							if (this.workflowCompletionReject) {
-								this.workflowCompletionReject(error);
-								this.workflowCompletionReject = null;
-							}
 						}
-					} else {
+					}
+				} else {
 					console.warn("Status polling received unsuccessful or invalid data:", statusData);
 
 					// Non-critical, continue polling unless it's a hard error
@@ -2817,6 +2796,10 @@ class ModularQuiz {
 		html += '<div class="quiz-action-feature">';
 		html += '<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">';
 		html +=
+			'<path d="M18.3081 14.2233C17.1569 14.2233 16.0346 14.0397 14.9845 13.6971C14.6449 13.5878 14.2705 13.6971 14.0579 13.9427L12.8372 15.6772C10.3023 14.4477 8.55814 12.7138 7.32326 10.1581L9.10465 8.89535C9.34884 8.68372 9.45814 8.30233 9.34884 7.96279C9.00581 6.91628 8.82209 5.79186 8.82209 4.64535C8.82209 4.28953 8.53256 4 8.17674 4H4.64535C4.28953 4 4 4.28953 4 4.64535C4 12.1715 10.1831 18.3953 17.6628 18.3953C18.0186 18.3953 18.3081 18.1058 18.3081 17.75V14.2233Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+		html += "</svg>";
+		html += '<div class="quiz-action-feature-text">Phone: 1-800-CURALIFE</div>';
+		html += "</div>";
 
 		return html; // Proper return statement
 	}
