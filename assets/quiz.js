@@ -310,8 +310,9 @@ class ModularQuiz {
 
 			// Trigger the orchestrator workflow and await its *final* completion (including polling)
 			console.log("Starting orchestrator workflow...");
+			console.log("About to await _startOrchestratorWorkflow...");
 			const orchestratorResult = await this._startOrchestratorWorkflow();
-			console.log("Orchestrator workflow completed with result:", orchestratorResult);
+			console.log("finishQuiz: Workflow completed successfully with result:", orchestratorResult);
 
 			// Process the final result from the orchestrator
 			const finalResult = this._processWebhookResult(orchestratorResult);
@@ -781,7 +782,9 @@ class ModularQuiz {
 						// Resolve the original workflow promise with the final result from polling
 						if (this.workflowCompletionResolve) {
 							console.log("Resolving workflow completion promise with:", finalResult);
+							console.log("About to call workflowCompletionResolve...");
 							this.workflowCompletionResolve(finalResult);
+							console.log("workflowCompletionResolve called successfully");
 							this.workflowCompletionResolve = null; // Prevent multiple resolutions
 						} else {
 							console.warn("WorkflowCompletionResolve not set - workflow may have already completed or been reset. Stopping polling.");
