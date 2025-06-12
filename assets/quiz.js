@@ -586,18 +586,22 @@ class ModularQuiz {
 	 * This function will eventually resolve the workflowCompletionPromise.
 	 */
 	async _pollWorkflowStatus() {
+		console.log(`🔍 _pollWorkflowStatus called - attempt ${this.pollingAttempts + 1}, trackingId: ${this.statusTrackingId}`);
+
 		if (!this.statusTrackingId) {
+			console.log("❌ Stopping polling: No statusTrackingId");
 			this._stopStatusPolling();
 			return;
 		}
 
 		if (this.pollingAttempts >= this.maxPollingAttempts) {
-			console.warn("Max polling attempts reached without explicit completion from backend.");
+			console.warn("❌ Stopping polling: Max polling attempts reached without explicit completion from backend.");
 			this._stopStatusPolling(); // Stop polling, overall timeout will handle the promise
 			return;
 		}
 
 		this.pollingAttempts++;
+		console.log(`📊 Polling attempt ${this.pollingAttempts}/${this.maxPollingAttempts}`);
 
 		try {
 			const statusUrl = this._getStatusPollingUrl();
@@ -701,9 +705,6 @@ class ModularQuiz {
 		this.statusTrackingId = null;
 		this.pollingAttempts = 0;
 		this._lastStatusMessage = "";
-
-		// Debug: Log the stack trace to see what called this
-		console.log("🔍 _stopStatusPolling called from:", new Error().stack);
 	}
 
 	/**
