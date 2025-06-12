@@ -915,7 +915,7 @@ class ModularQuiz {
 	_getStatusPollingUrl() {
 		const container = document.getElementById("quiz-container");
 		// Ensure this points to your actual backend status polling endpoint
-		return container?.dataset?.statusPollingUrl || "https://workflow-status-polling-xxn52lyizq-uc.a.run.app";
+		return container?.dataset?.statusPollingUrl || "https://us-central1-telemedicine-458913.cloudfunctions.net/workflow_status_polling";
 	}
 
 	/**
