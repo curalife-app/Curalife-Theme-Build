@@ -20,14 +20,14 @@ const CSS_CLASSES = {
 	DETAILS_CONTENT: "notification-details-content",
 	CLOSE: "notification-close",
 	SHIMMER: "notification-shimmer",
-	ACTIVE: "active", // For menu items
-	EXPANDED: "expanded", // For details/toggle
+	ACTIVE: "active",
+	EXPANDED: "expanded",
 	ANIMATE_IN: "animate-in",
 	ANIMATE_OUT: "animate-out",
 	SLIDE_UP: "slide-up",
 	FILTER_HIDDEN: "filter-hidden",
 	FILTER_VISIBLE: "filter-visible",
-	PRIORITY_PREFIX: "notification-priority-", // Prefix for dynamic priority classes
+	PRIORITY_PREFIX: "notification-priority-",
 	COPY_BUTTON: "notification-copy-button",
 	FILTER_BUTTON: "notification-filter-button",
 	COPY_MENU: "notification-copy-options-menu",
@@ -70,7 +70,7 @@ export class NotificationManager {
 	constructor(options = {}) {
 		this.options = {
 			containerSelector: `.${CSS_CLASSES.CONTAINER}`,
-			position: "top-right", // Not directly used in JS, for CSS only
+			position: "top-right",
 			autoCollapse: true,
 			maxNotifications: 50,
 			defaultDuration: 5000,
@@ -142,7 +142,6 @@ export class NotificationManager {
 			return null;
 		}
 		if (typeof text !== "string" || text.trim() === "") {
-			// Ensure non-empty string after trim
 			console.error("NotificationManager: Notification text must be a non-empty string.");
 			return null;
 		}
@@ -256,7 +255,6 @@ export class NotificationManager {
 
 	_cleanNotificationTitle(title) {
 		if (typeof title !== "string") return "";
-		// More robust regex for emojis and TEST MODE text
 		return title
 			.replace(/[\u{1F000}-\u{1F6FF}\u{1F900}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F300}-\u{1F5FF}\u{FE0F}]/gu, "")
 			.replace(/TEST MODE\s*[-:]?\s*/gi, "")
@@ -264,17 +262,31 @@ export class NotificationManager {
 	}
 
 	_sanitizeHtml(text) {
-		if (typeof text !== "string" || !text) return ""; // Handle null/undefined/empty string
+		if (typeof text !== "string" || !text) return "";
+
+		const BR_PLACEHOLDER = "__BR_NPM__";
+		const STRONG_START_PLACEHOLDER = "__STRONG_START_NPM__";
+		const STRONG_END_PLACEHOLDER = "__STRONG_END_NPM__";
+		const EM_START_PLACEHOLDER = "__EM_START_NPM__";
+		const EM_END_PLACEHOLDER = "__EM_END_NPM__";
+
+		let processedText = text;
+
+		processedText = processedText.replace(/<br\s*\/?>/gi, BR_PLACEHOLDER);
+		processedText = processedText.replace(/<strong>/gi, STRONG_START_PLACEHOLDER);
+		processedText = processedText.replace(/<\/strong>/gi, STRONG_END_PLACEHOLDER);
+		processedText = processedText.replace(/<em>/gi, EM_START_PLACEHOLDER);
+		processedText = processedText.replace(/<\/em>/gi, EM_END_PLACEHOLDER);
 
 		const div = document.createElement("div");
-		div.textContent = text;
+		div.textContent = processedText;
 		let escaped = div.innerHTML;
 
-		// Re-enable allowed HTML tags for formatting. Order matters.
-		escaped = escaped
-			.replace(/<br\s*\/>|<br>/gi, "<br>")
-			.replace(/<strong>(.*?)<\/strong>/gi, "<strong>$1</strong>")
-			.replace(/<em>(.*?)<\/em>/gi, "<em>$1</em>");
+		escaped = escaped.replace(new RegExp(BR_PLACEHOLDER, "g"), "<br>");
+		escaped = escaped.replace(new RegExp(STRONG_START_PLACEHOLDER, "g"), "<strong>");
+		escaped = escaped.replace(new RegExp(STRONG_END_PLACEHOLDER, "g"), "</strong>");
+		escaped = escaped.replace(new RegExp(EM_START_PLACEHOLDER, "g"), "<em>");
+		escaped = escaped.replace(new RegExp(EM_END_PLACEHOLDER, "g"), "</em>");
 
 		return escaped;
 	}
@@ -318,7 +330,7 @@ export class NotificationManager {
 		const toggle = notification.querySelector(`.${this.cssClasses.TOGGLE}`);
 
 		if (details) {
-			details.style.maxHeight = `${details.scrollHeight}px`; // Set explicit height before transition to 0
+			details.style.maxHeight = `${details.scrollHeight}px`;
 			requestAnimationFrame(() => {
 				if (this.isDestroyed) return;
 				details.classList.remove(this.cssClasses.EXPANDED);
@@ -358,7 +370,6 @@ export class NotificationManager {
 		if (this.notificationQueue.length === 0) {
 			this.isProcessingQueue = false;
 			if (this.staggerTimeoutId) {
-				// Clear lingering stagger timeout if queue empties
 				clearTimeout(this.staggerTimeoutId);
 				this.timeouts.delete(this.staggerTimeoutId);
 				this.staggerTimeoutId = null;
@@ -383,7 +394,7 @@ export class NotificationManager {
 
 		notification.style.opacity = "0";
 		notification.style.transform = "translateX(120%) scale(0.85)";
-		notification.offsetHeight; // Force reflow
+		notification.offsetHeight;
 
 		requestAnimationFrame(() => {
 			if (this.isDestroyed) return;
@@ -395,7 +406,7 @@ export class NotificationManager {
 					this._addInteractiveEffects(notification);
 				}
 				this.timeouts.delete(timeoutId);
-			}, 50); // Small delay to allow browser to apply initial state
+			}, 50);
 			this.timeouts.add(timeoutId);
 		});
 
@@ -438,7 +449,7 @@ export class NotificationManager {
 		this._cleanupEventListeners(notification);
 
 		notification.classList.remove(this.cssClasses.ANIMATE_IN, this.cssClasses.SLIDE_UP);
-		notification.offsetHeight; // Force reflow
+		notification.offsetHeight;
 
 		notification.classList.add(this.cssClasses.ANIMATE_OUT);
 
@@ -484,7 +495,7 @@ export class NotificationManager {
 			const timeoutId = setTimeout(() => {
 				if (!this.isDestroyed && notification.parentNode) {
 					notification.classList.remove(this.cssClasses.SLIDE_UP);
-					notification.offsetHeight; // Force reflow
+					notification.offsetHeight;
 
 					notification.classList.add(this.cssClasses.SLIDE_UP);
 
@@ -572,7 +583,7 @@ export class NotificationManager {
 				const filter = item.dataset[DATA_ATTRIBUTES.FILTER];
 				this._exportNotifications(format, filter, copyButton);
 				menu.remove();
-				this._cleanupEventListeners(document); // Clean up the document click handler
+				this._cleanupEventListeners(document);
 			}
 		};
 		this._addAndTrackListener(menu, "click", menuClickHandler, menu);
@@ -584,7 +595,6 @@ export class NotificationManager {
 			}
 		};
 		const timeoutId = setTimeout(() => {
-			// Delay to prevent immediate close if opened by a click
 			this._addAndTrackListener(document, "click", closeMenuHandler, document);
 			this.timeouts.delete(timeoutId);
 		}, 100);
@@ -615,7 +625,7 @@ export class NotificationManager {
 				this._applyNotificationFilter(filter);
 				this._updateFilterButtonAppearance(filterButton, this._getFilterEmoji(filter));
 				menu.remove();
-				this._cleanupEventListeners(document); // Clean up the document click handler
+				this._cleanupEventListeners(document);
 			}
 		};
 		this._addAndTrackListener(menu, "click", menuClickHandler, menu);
@@ -732,7 +742,7 @@ export class NotificationManager {
 				const type = notification.dataset[DATA_ATTRIBUTES.TYPE] || "unknown";
 				const priority = notification.dataset[DATA_ATTRIBUTES.PRIORITY] || "";
 				const timestamp = notification.dataset[DATA_ATTRIBUTES.TIMESTAMP] || new Date().toISOString();
-				const text = `"${this._extractNotificationText(notification).replace(/"/g, '""')}"`; // CSV-escape text
+				const text = `"${this._extractNotificationText(notification).replace(/"/g, '""')}"`;
 				return `${index + 1},"${type}","${priority}","${timestamp}",${text}`;
 			})
 			.join("\n");
@@ -913,7 +923,7 @@ export class NotificationManager {
 		});
 		this.eventListeners = new WeakMap();
 
-		this.clear(); // Removes notifications and their listeners
+		this.clear();
 
 		this._removeExistingButtons();
 		this._removeExistingMenus();
@@ -955,11 +965,10 @@ export const NotificationUtils = {
 
 		if (notification && duration > 0) {
 			const destroyTimeout = setTimeout(() => {
-				// Destroy only if manager exists and has no remaining notifications (after auto-removal)
 				if (tempManager.container && !tempManager.notifications.length) {
 					tempManager.destroy();
 				}
-			}, duration + 500); // Add a small buffer after notification removal
+			}, duration + 500);
 			tempManager.timeouts.add(destroyTimeout);
 		}
 
