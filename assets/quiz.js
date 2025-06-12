@@ -458,6 +458,10 @@ class ModularQuiz {
 		const orchestratorUrl = this._getOrchestratorUrl();
 		const payload = this._extractResponseData();
 
+		// Store for emergency fallback
+		this._lastOrchestratorUrl = orchestratorUrl;
+		this._lastOrchestratorPayload = payload;
+
 		console.log("🚀 Starting orchestrator workflow (initial request)...", { orchestratorUrl, payload });
 
 		// Return a new Promise that will resolve when the workflow truly completes
@@ -624,6 +628,26 @@ class ModularQuiz {
 		}
 	}
 
+	/**
+	 * Emergency fallback when stale status is detected
+	 */
+	_triggerEmergencyFallback() {
+		console.log("🚨 EMERGENCY FALLBACK: Immediately checking orchestrator for completion");
+
+		// Use the stored orchestrator data from the initial call
+		if (this._lastOrchestratorUrl && this._lastOrchestratorPayload) {
+			this._startFallbackChecking(this._lastOrchestratorUrl, this._lastOrchestratorPayload, this.statusTrackingId);
+		} else {
+			console.error("❌ Cannot trigger emergency fallback - missing orchestrator data");
+			// Fallback to timeout error
+			setTimeout(() => {
+				if (this.workflowCompletionReject) {
+					this.workflowCompletionReject(new Error("Status polling failed and emergency fallback unavailable"));
+				}
+			}, 1000);
+		}
+	}
+
 	// =======================================================================
 	// Status Polling Methods
 	// =======================================================================
@@ -734,10 +758,15 @@ class ModularQuiz {
 				if (statusData.success && statusData.statusData) {
 					this._updateWorkflowStatus(statusData.statusData);
 
-					// Debug: Track stale status detection
-					if (statusData.statusData.currentStep === "processing" && this.pollingAttempts > 5) {
-						console.warn(`⚠️ Potentially stale status detected - attempt ${this.pollingAttempts}, step: ${statusData.statusData.currentStep}, progress: ${statusData.statusData.progress}`);
-						console.warn("🔍 Consider checking status polling service for data freshness issues");
+					// Aggressive stale status detection and fallback activation
+					if (statusData.statusData.currentStep === "processing" && statusData.statusData.progress === 25 && this.pollingAttempts > 8) {
+						console.warn(`⚠️ STALE DATA DETECTED - stuck at processing/25% for ${this.pollingAttempts} attempts`);
+						console.warn("🚀 Activating emergency fallback to direct orchestrator check");
+
+						// Stop polling immediately and trigger fallback
+						this._stopStatusPolling();
+						this._triggerEmergencyFallback();
+						return;
 					}
 
 					if (statusData.statusData.completed) {
