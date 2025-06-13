@@ -112,4 +112,12 @@ if (typeof window !== "undefined") {
 	console.log("  - testBackwardsCompatibility()");
 }
 
+// Auto-expose functions when loaded directly
+(function () {
+	if (typeof window !== "undefined" && !window.stediTestsLoaded) {
+		window.stediTestsLoaded = true;
+		console.log("🧪 Stedi Error Mapping Tests Loaded!");
+	}
+})();
+
 export { testStediErrorMappings, testErrorCategorization, testBackwardsCompatibility };
