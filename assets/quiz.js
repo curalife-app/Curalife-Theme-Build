@@ -3933,6 +3933,15 @@ class ModularQuiz {
 		this._showBookingLoadingState(button);
 
 		try {
+			// Debug: Log all data attributes on the container
+			console.log("Container data attributes:", {
+				orchestratorUrl: this.container.getAttribute("data-orchestrator-url"),
+				statusPollingUrl: this.container.getAttribute("data-status-polling-url"),
+				schedulingUrl: this.container.getAttribute("data-scheduling-url"),
+				resultUrl: this.container.getAttribute("data-result-url"),
+				quizUrl: this.container.getAttribute("data-quiz-url")
+			});
+
 			// Get scheduling URL
 			const schedulingUrl = this.container.getAttribute("data-scheduling-url");
 			if (!schedulingUrl) {
