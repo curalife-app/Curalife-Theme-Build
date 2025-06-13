@@ -3942,14 +3942,16 @@ class ModularQuiz {
 				quizUrl: this.container.getAttribute("data-quiz-url")
 			});
 
-			// Get scheduling URL
-			const schedulingUrl = this.container.getAttribute("data-scheduling-url");
-			if (!schedulingUrl) {
-				throw new Error("Scheduling URL not configured");
-			}
+			// Get scheduling URL with fallback
+			const schedulingUrl = this.container.getAttribute("data-scheduling-url") || "https://us-central1-telemedicine-458913.cloudfunctions.net/workflow_scheduling";
+
+			// Handle empty string case
+			const finalSchedulingUrl = schedulingUrl.trim() || "https://us-central1-telemedicine-458913.cloudfunctions.net/workflow_scheduling";
+
+			console.log("Using scheduling URL:", finalSchedulingUrl);
 
 			// Trigger scheduling workflow
-			const schedulingResult = await this._triggerSchedulingWorkflow(schedulingUrl);
+			const schedulingResult = await this._triggerSchedulingWorkflow(finalSchedulingUrl);
 
 			// Show scheduling results
 			this._showSchedulingResults(schedulingResult);
