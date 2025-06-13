@@ -1471,6 +1471,3 @@ document.addEventListener("DOMContentLoaded", () => {
 		new BuyBoxNew(container, config);
 	});
 });
-
-// Make BuyBoxNew globally available
-window.BuyBoxNew = BuyBoxNew;
