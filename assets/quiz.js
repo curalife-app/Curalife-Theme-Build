@@ -5002,14 +5002,14 @@ class ModularQuiz {
 			USER_CREATION_SUCCESS: {
 				type: "success",
 				priority: "success",
-				emoji: "👍",
+				emoji: "✅",
 				title: "User Account Created"
 			},
 			USER_CREATION_ERROR: {
 				type: "error",
 				priority: "error",
-				emoji: "👎",
-				title: "User Account Creation Failed"
+				emoji: "❌",
+				title: "User Creation Failed"
 			},
 
 			// Scheduling stages
@@ -5017,65 +5017,49 @@ class ModularQuiz {
 				type: "info",
 				priority: "info",
 				emoji: "📅",
-				title: "Appointment Scheduling Starting"
+				title: "Scheduling Appointment"
 			},
 			SCHEDULING_SUCCESS: {
 				type: "success",
 				priority: "success",
-				emoji: "🎯",
-				title: "Appointment Scheduled Successfully"
+				emoji: "🎉",
+				title: "Appointment Scheduled"
 			},
 			SCHEDULING_ERROR: {
 				type: "error",
 				priority: "error",
-				emoji: "📅❌",
-				title: "Appointment Scheduling Failed"
-			},
-
-			// Fallback and emergency stages
-			FALLBACK_TRIGGERED: {
-				type: "warning",
-				priority: "warning",
-				emoji: "🔄",
-				title: "Fallback Check Triggered"
-			},
-			EMERGENCY_FALLBACK: {
-				type: "warning",
-				priority: "critical",
-				emoji: "🚨",
-				title: "Emergency Fallback Activated"
-			},
-			STALE_STATUS: {
-				type: "warning",
-				priority: "warning",
-				emoji: "⚡",
-				title: "Stale Status Detected"
+				emoji: "❌",
+				title: "Scheduling Failed"
 			},
 
 			// Completion stages
 			WORKFLOW_COMPLETE: {
 				type: "success",
 				priority: "success",
-				emoji: "🎉",
-				title: "Workflow Completed Successfully"
+				emoji: "🏁",
+				title: "Workflow Complete"
 			},
 			WORKFLOW_FAILED: {
 				type: "error",
-				priority: "critical",
+				priority: "error",
 				emoji: "💥",
 				title: "Workflow Failed"
 			}
 		};
 
-		const config = stageConfig[stage] || {
-			type: "info",
-			priority: "info",
-			emoji: "📋",
-			title: "Workflow Update"
-		};
+		const config = stageConfig[stage];
+		if (!config) {
+			console.warn(`Unknown workflow stage: ${stage}`);
+			return;
+		}
 
-		const message = `${config.emoji} ${config.title}: ${status}`;
+		// Build comprehensive message
+		let message = `${config.emoji} ${config.title}`;
+		if (status) {
+			message += ` - ${status}`;
+		}
 
+		// Show notification with proper type and priority
 		return this._showWorkflowNotification(message, config.type, config.priority, details);
 	}
 
