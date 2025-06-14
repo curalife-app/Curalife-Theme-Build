@@ -4740,9 +4740,128 @@ class ModularQuiz {
 			console.log("   🚨 Critical/Error: Always stay expanded");
 			console.log("   🛡️ Smart prevention: Auto-removal disabled when 'Show All' is active");
 			console.log("");
-			console.log("🧪 Try filtering to 'Show All' to see all notifications restored!");
-			console.log("   testNotifications() - Run this test again");
-		}, 1500);
+					console.log("🧪 Try filtering to 'Show All' to see all notifications restored!");
+		console.log("   testNotifications() - Run this test again");
+	}
+
+	/**
+	 * Debug notification colors and fix any issues
+	 */
+	debugNotificationColors() {
+		console.log("🔧 NOTIFICATION COLOR DEBUGGER");
+		console.log("=".repeat(50));
+
+		if (!this.notificationManager) {
+			console.error("❌ Notification manager not available");
+			return;
+		}
+
+		// Step 1: Check if CSS is loaded
+		console.log("1️⃣ Checking CSS loading...");
+		const testElement = document.createElement('div');
+		testElement.className = 'notification notification-success';
+		testElement.style.position = 'absolute';
+		testElement.style.top = '-9999px';
+		testElement.style.opacity = '0';
+		document.body.appendChild(testElement);
+
+		const computedStyles = window.getComputedStyle(testElement);
+		const backgroundImage = computedStyles.backgroundImage;
+		const backgroundColor = computedStyles.backgroundColor;
+
+		console.log("   CSS Background Image:", backgroundImage);
+		console.log("   CSS Background Color:", backgroundColor);
+
+		const cssLoaded = backgroundImage !== 'none' || backgroundColor !== 'rgba(0, 0, 0, 0)';
+		console.log("   CSS Loaded:", cssLoaded ? "✅" : "❌");
+
+		document.body.removeChild(testElement);
+
+		// Step 2: Check CSS file loading
+		console.log("2️⃣ Checking notification CSS file...");
+		const stylesheets = Array.from(document.styleSheets);
+		const notificationCSS = stylesheets.find(sheet => {
+			try {
+				return sheet.href && sheet.href.includes('notifications.css');
+			} catch (e) {
+				return false;
+			}
+		});
+
+		console.log("   Notifications.css loaded:", notificationCSS ? "✅" : "❌");
+		if (notificationCSS) {
+			console.log("   CSS href:", notificationCSS.href);
+		}
+
+		// Step 3: Test actual notifications
+		console.log("3️⃣ Testing notification creation...");
+		this.notificationManager.clear();
+
+		const testTypes = [
+			{ type: 'success', expectedColor: 'green', bgCheck: '#10b981' },
+			{ type: 'error', expectedColor: 'red', bgCheck: '#ef4444' },
+			{ type: 'warning', expectedColor: 'yellow/orange', bgCheck: '#fbbf24' },
+			{ type: 'info', expectedColor: 'blue', bgCheck: '#3b82f6' }
+		];
+
+		testTypes.forEach((test, index) => {
+			setTimeout(() => {
+				const notification = this.notificationManager.show(
+					`${test.type.toUpperCase()} Test - Should be ${test.expectedColor}`,
+					test.type,
+					test.type
+				);
+
+				if (notification) {
+					setTimeout(() => {
+						const styles = window.getComputedStyle(notification);
+						const bgImage = styles.backgroundImage;
+						const hasCorrectColor = bgImage.includes(test.bgCheck.replace('#', ''));
+
+						console.log(`   ${test.type.toUpperCase()}: Classes=${notification.className}`);
+						console.log(`   ${test.type.toUpperCase()}: Background=${bgImage.substring(0, 100)}...`);
+						console.log(`   ${test.type.toUpperCase()}: Color Working=${hasCorrectColor ? "✅" : "❌"}`);
+
+						// If color not working, force apply it
+						if (!hasCorrectColor) {
+							console.log(`   🔧 Force-fixing ${test.type} color...`);
+							this.forceApplyNotificationColor(notification, test.type);
+						}
+					}, 100);
+				}
+			}, index * 600);
+		});
+
+		// Final summary
+		setTimeout(() => {
+			console.log("4️⃣ Debug complete! Check notifications above.");
+			console.log("=".repeat(50));
+		}, 3000);
+	}
+
+	/**
+	 * Force apply correct colors to notifications
+	 */
+	forceApplyNotificationColor(notification, type) {
+		const colorMap = {
+			success: 'linear-gradient(135deg, #10b981 0%, #059669 30%, #047857 70%, #065f46 100%)',
+			error: 'linear-gradient(135deg, #ef4444 0%, #dc2626 30%, #b91c1c 70%, #991b1b 100%)',
+			warning: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 30%, #d97706 70%, #b45309 100%)',
+			info: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 30%, #1d4ed8 70%, #1e40af 100%)'
+		};
+
+		const borderColorMap = {
+			success: 'rgba(16, 185, 129, 0.4)',
+			error: 'rgba(239, 68, 68, 0.4)',
+			warning: 'rgba(251, 191, 36, 0.4)',
+			info: 'rgba(59, 130, 246, 0.4)'
+		};
+
+		if (colorMap[type] && notification) {
+			notification.style.background = colorMap[type];
+			notification.style.borderColor = borderColorMap[type];
+			console.log(`   ✅ Fixed ${type} notification color`);
+		}
 	}
 
 	// =======================================================================
