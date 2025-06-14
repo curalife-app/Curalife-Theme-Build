@@ -4606,6 +4606,11 @@ class ModularQuiz {
 			return;
 		}
 
+		console.log("🎨 Starting notification color test...");
+
+		// Clear any existing notifications first
+		this.notificationManager.clear();
+
 		// Test all notification types with clear indicators
 		const testNotifications = [
 			{
@@ -4643,14 +4648,49 @@ class ModularQuiz {
 		testNotifications.forEach(test => {
 			setTimeout(() => {
 				console.log(`Testing notification: ${test.type} / ${test.priority}`);
-				this.notificationManager.show(test.message, test.type, test.priority);
+				const notification = this.notificationManager.show(test.message, test.type, test.priority);
+
+				// Debug: Check what classes are actually applied
+				if (notification) {
+					setTimeout(() => {
+						console.log(`Notification classes for ${test.type}:`, notification.className);
+						console.log(`Applied styles:`, window.getComputedStyle(notification).background);
+					}, 100);
+				}
 			}, test.delay);
 		});
 
-		// Add a final summary notification
+		// Add a final summary notification and debugging info
 		setTimeout(() => {
-			this.notificationManager.show("🎨 Color Test Complete<br><strong>Check above:</strong> Green=Success, Red=Error/Critical, Yellow=Warning, Blue=Info", "info", "info");
-		}, 2500);
+			console.log("🔍 Debugging notification system...");
+
+			// Check if CSS is loaded
+			const testElement = document.createElement("div");
+			testElement.className = "notification notification-success";
+			testElement.style.position = "absolute";
+			testElement.style.top = "-9999px";
+			document.body.appendChild(testElement);
+
+			const computedStyles = window.getComputedStyle(testElement);
+			console.log("Success notification background:", computedStyles.background);
+			console.log("Success notification backgroundColor:", computedStyles.backgroundColor);
+
+			document.body.removeChild(testElement);
+
+			// Check container
+			const container = document.querySelector(".notification-container");
+			console.log("Notification container found:", !!container);
+			if (container) {
+				console.log("Container children:", container.children.length);
+				console.log("Container HTML:", container.innerHTML.substring(0, 200));
+			}
+
+			this.notificationManager.show(
+				"🎨 Color Test Complete<br><strong>Check above:</strong> Green=Success, Red=Error/Critical, Yellow=Warning, Blue=Info<br><strong>Debug info logged to console</strong>",
+				"info",
+				"info"
+			);
+		}, 3000);
 	}
 
 	_testNotificationSystem() {
