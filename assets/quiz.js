@@ -665,7 +665,7 @@ class ModularQuiz {
 	 */
 	_getOrchestratorUrl() {
 		const container = document.getElementById("quiz-container");
-		return container?.dataset?.orchestratorUrl || "https://us-central1-telemedicine-458913.cloudfunctions.net/workflow_orchestrator";
+		return container?.dataset?.orchestratorUrl || "https://us-central1-telemedicine-458913.cloudfunctions.net/workflowOrchestratorV2";
 	}
 
 	// =======================================================================
@@ -4844,11 +4844,8 @@ class ModularQuiz {
 	}
 
 	_showBackgroundProcessNotification(text, type = "info", priority = null) {
-		console.log("📢 Creating notification:", { text: text.substring(0, 50) + "...", type, priority });
-
 		// Only show notifications if we have a container
 		if (!this.questionContainer) {
-			console.log("❌ No questionContainer found, skipping notification");
 			return;
 		}
 
