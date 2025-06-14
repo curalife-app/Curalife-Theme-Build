@@ -13,7 +13,6 @@
 
 {% assign blockMainImage = block.settings.image %}
 {% assign blockMainMobileImage = block.settings.image_mobile %}
-{% assign contentType = block.settings.content_type | default: 'image' %}
 {% assign svgContent = block.settings.svg_content %}
 
 {% comment %} Global Store Overrides - Add your logic here if needed {% endcomment %}
@@ -28,7 +27,7 @@
 	id="block-{{ block.id }}"
 	class="image-block-wrapper custom-block"
 	{{ block.shopify_attributes }}>
-	{% if contentType == 'svg' and svgContent != blank %}
+	{% if svgContent != blank %}
 		{% if block.settings.image_link != blank %}
 			<a href="{{ block.settings.image_link }}" class="{{ block.settings.additional_classes }}">
 				{{ svgContent }}
@@ -59,16 +58,6 @@
 		"class": "contents",
 		"settings": [
 			{
-				"type": "select",
-				"id": "content_type",
-				"label": "Content Type",
-				"options": [
-					{ "value": "image", "label": "Image" },
-					{ "value": "svg", "label": "SVG Code" }
-				],
-				"default": "image"
-			},
-			{
 				"type": "image_picker",
 				"id": "image",
 				"label": "Image"
@@ -81,8 +70,8 @@
 			{
 				"type": "textarea",
 				"id": "svg_content",
-				"label": "SVG Code",
-				"info": "Paste your SVG code here. Only visible when 'SVG Code' is selected above."
+				"label": "SVG Code (Optional)",
+				"info": "If provided, this will be used instead of the image above"
 			},
 			{
 				"type": "url",
