@@ -44,28 +44,6 @@
 			</div>
 		{% endfor %}
 	</div>
-
-	{% if section.blocks.size > 1 %}
-		<div class="slider-controls">
-			<button class="slider-control pause-play" aria-label="Pause slideshow" data-action="pause">
-				<span class="pause-icon">⏸</span>
-				<span class="play-icon hidden">▶</span>
-			</button>
-
-			<div class="slide-indicators" role="tablist" aria-label="Slide navigation">
-				{% for block in section.blocks %}
-					<button
-						class="slide-indicator{% if forloop.first %} active{% endif %}"
-						role="tab"
-						aria-label="Go to slide {{ forloop.index }}"
-						aria-selected="{% if forloop.first %}true{% else %}false{% endif %}"
-						data-slide="{{ forloop.index0 }}">
-						<span class="sr-only">Slide {{ forloop.index }}</span>
-					</button>
-				{% endfor %}
-			</div>
-		</div>
-	{% endif %}
 </section>
 
 <style>
@@ -113,13 +91,8 @@
 
 	.hero-banner .slide-button {
 		background-color: white;
-		color: var(--button-text-color);
+		color: var(--primary-color);
 		font-weight: bold;
-		border: none;
-		padding: 12px 24px;
-		border-radius: 4px;
-		cursor: pointer;
-		transition: all 0.3s ease;
 	}
 
 	.hero-banner .slide-button:hover {
@@ -136,56 +109,6 @@
 
 	.hero-banner h2 strong {
 		color: var(--orange);
-	}
-
-	.hero-banner .slider-controls {
-		position: absolute;
-		bottom: 20px;
-		left: 50%;
-		transform: translateX(-50%);
-		display: flex;
-		align-items: center;
-		gap: 16px;
-		z-index: 10;
-	}
-
-	.hero-banner .pause-play {
-		background: rgba(255, 255, 255, 0.9);
-		border: none;
-		border-radius: 50%;
-		width: 40px;
-		height: 40px;
-		cursor: pointer;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		transition: all 0.3s ease;
-	}
-
-	.hero-banner .pause-play:hover {
-		background: white;
-		transform: scale(1.1);
-	}
-
-	.hero-banner .slide-indicators {
-		display: flex;
-		gap: 8px;
-	}
-
-	.hero-banner .slide-indicator {
-		width: 12px;
-		height: 12px;
-		border-radius: 50%;
-		border: 2px solid rgba(255, 255, 255, 0.5);
-		background: transparent;
-		cursor: pointer;
-		transition: all 0.3s ease;
-	}
-
-	.hero-banner .slide-indicator.active,
-	.hero-banner .slide-indicator:hover {
-		background: white;
-		border-color: white;
 	}
 
 	.sr-only {
@@ -220,10 +143,6 @@
 		.hero-banner .statement {
 			margin-top: 1rem;
 		}
-
-		.hero-banner .slider-controls {
-			bottom: 10px;
-		}
 	}
 </style>
 
@@ -233,8 +152,6 @@
 		if (!heroSlider) return;
 
 		const slides = heroSlider.querySelectorAll('.slide');
-		const indicators = heroSlider.querySelectorAll('.slide-indicator');
-		const pausePlayBtn = heroSlider.querySelector('.pause-play');
 
 		if (slides.length <= 1) return;
 
@@ -277,14 +194,8 @@
 			if (index < 0 || index >= slides.length) return;
 
 			slides[currentSlide].classList.remove('active');
-			indicators[currentSlide]?.classList.remove('active');
-			indicators[currentSlide]?.setAttribute('aria-selected', 'false');
-
 			currentSlide = index;
-
 			slides[currentSlide].classList.add('active');
-			indicators[currentSlide]?.classList.add('active');
-			indicators[currentSlide]?.setAttribute('aria-selected', 'true');
 		}
 
 		function nextSlide() {
@@ -296,7 +207,6 @@
 			if (intervalId) clearInterval(intervalId);
 			intervalId = setInterval(nextSlide, 5000);
 			isPaused = false;
-			updatePausePlayButton();
 		}
 
 		function pauseSlideshow() {
@@ -305,24 +215,6 @@
 				intervalId = null;
 			}
 			isPaused = true;
-			updatePausePlayButton();
-		}
-
-		function updatePausePlayButton() {
-			if (!pausePlayBtn) return;
-
-			const pauseIcon = pausePlayBtn.querySelector('.pause-icon');
-			const playIcon = pausePlayBtn.querySelector('.play-icon');
-
-			if (isPaused) {
-				pauseIcon.classList.add('hidden');
-				playIcon.classList.remove('hidden');
-				pausePlayBtn.setAttribute('aria-label', 'Play slideshow');
-			} else {
-				pauseIcon.classList.remove('hidden');
-				playIcon.classList.add('hidden');
-				pausePlayBtn.setAttribute('aria-label', 'Pause slideshow');
-			}
 		}
 
 		// Initialize
@@ -331,25 +223,6 @@
 
 		// Event listeners
 		window.addEventListener('resize', debounce(adjustHeightForMobile, 250));
-
-		if (pausePlayBtn) {
-			pausePlayBtn.addEventListener('click', () => {
-				if (isPaused) {
-					startSlideshow();
-				} else {
-					pauseSlideshow();
-				}
-			});
-		}
-
-		indicators.forEach((indicator, index) => {
-			indicator.addEventListener('click', () => {
-				goToSlide(index);
-				if (!isPaused) {
-					startSlideshow(); // Reset timer
-				}
-			});
-		});
 
 		// Pause on hover
 		heroSlider.addEventListener('mouseenter', () => {
