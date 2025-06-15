@@ -123,12 +123,7 @@ export class QuizTextInputComponent extends QuizBaseComponent {
 					${this.isDisabled ? "disabled" : ""}
 					aria-describedby="error-${questionId}"
 				>
-				<div class="quiz-error-element ${this.showError ? "quiz-error-visible" : "quiz-error-hidden"}"
-					 id="error-${questionId}"
-					 role="alert"
-					 aria-live="polite">
-					${this.errorMessage}
-				</div>
+				<p id="error-${questionId}" class="quiz-error-text ${this.showError ? "quiz-error-visible" : "quiz-error-hidden"}">${this.errorMessage}</p>
 			</div>
 		`;
 	}
@@ -152,11 +147,11 @@ export class QuizTextInputComponent extends QuizBaseComponent {
 
 			.quiz-input {
 				width: 100%;
-				padding: 0.75rem 1rem;
-				border: 2px solid #e2e8f0;
-				border-radius: var(--quiz-border-radius);
+				padding: 13px 16px;
+				border: 1px solid #ddeee2;
+				border-radius: 10px;
 				background: white;
-				font-size: 1rem;
+				font-size: 18px;
 				color: #374151;
 				transition: var(--quiz-transition);
 				box-sizing: border-box;
@@ -164,12 +159,11 @@ export class QuizTextInputComponent extends QuizBaseComponent {
 
 			.quiz-input:focus {
 				outline: none;
-				border-color: var(--quiz-primary-color);
-				box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+				box-shadow: 0 0 0 2px var(--quiz-primary);
 			}
 
 			.quiz-input:hover:not(:disabled) {
-				border-color: #cbd5e1;
+				border-color: #ddeee2;
 			}
 
 			.quiz-input::placeholder {
@@ -178,32 +172,16 @@ export class QuizTextInputComponent extends QuizBaseComponent {
 
 			/* Error state */
 			.quiz-input-error {
-				border-color: var(--quiz-error-color);
-				background-color: #fef2f2;
+				border-color: #ad0000;
 			}
 
 			.quiz-input-error:focus {
-				border-color: var(--quiz-error-color);
-				box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+				box-shadow: 0 0 0 2px #ad0000;
 			}
 
-			/* Error message */
+			/* Error message - using global styling */
 			.quiz-error-element {
-				margin-top: 0.5rem;
-				font-size: 0.875rem;
-				color: var(--quiz-error-color);
-				transition: var(--quiz-transition);
-			}
-
-			.quiz-error-hidden {
-				opacity: 0;
-				height: 0;
-				overflow: hidden;
-			}
-
-			.quiz-error-visible {
-				opacity: 1;
-				height: auto;
+				/* Styling handled by global .quiz-error-text class */
 			}
 
 			/* Disabled state */
@@ -304,7 +282,7 @@ export class QuizTextInputComponent extends QuizBaseComponent {
 
 	updateErrorState() {
 		const input = this.root.querySelector(".quiz-input");
-		const errorElement = this.root.querySelector(".quiz-error-element");
+		const errorElement = this.root.querySelector(".quiz-error-text");
 
 		if (input) {
 			if (this.showError) {
@@ -327,7 +305,7 @@ export class QuizTextInputComponent extends QuizBaseComponent {
 	}
 
 	updateErrorMessage() {
-		const errorElement = this.root.querySelector(".quiz-error-element");
+		const errorElement = this.root.querySelector(".quiz-error-text");
 		if (errorElement) {
 			errorElement.textContent = this.errorMessage;
 		}

@@ -124,12 +124,7 @@ export class QuizDropdownComponent extends QuizBaseComponent {
 					<option value="">${placeholder}</option>
 					${optionsHTML}
 				</select>
-				<div class="quiz-error-element ${this.showError ? "quiz-error-visible" : "quiz-error-hidden"}"
-					 id="error-${questionId}"
-					 role="alert"
-					 aria-live="polite">
-					${this.errorMessage}
-				</div>
+				<p id="error-${questionId}" class="quiz-error-text ${this.showError ? "quiz-error-visible" : "quiz-error-hidden"}">${this.errorMessage}</p>
 			</div>
 		`;
 	}
@@ -191,32 +186,16 @@ export class QuizDropdownComponent extends QuizBaseComponent {
 
 			/* Error state */
 			.quiz-select-error {
-				border-color: var(--quiz-error-color);
-				background-color: #fef2f2;
+				border-color: #ad0000;
 			}
 
 			.quiz-select-error:focus {
-				border-color: var(--quiz-error-color);
-				box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+				box-shadow: 0 0 0 2px #ad0000;
 			}
 
-			/* Error message */
+			/* Error message - using global styling */
 			.quiz-error-element {
-				margin-top: 0.5rem;
-				font-size: 0.875rem;
-				color: var(--quiz-error-color);
-				transition: var(--quiz-transition);
-			}
-
-			.quiz-error-hidden {
-				opacity: 0;
-				height: 0;
-				overflow: hidden;
-			}
-
-			.quiz-error-visible {
-				opacity: 1;
-				height: auto;
+				/* Styling handled by global .quiz-error-text class */
 			}
 
 			/* Disabled state */
@@ -287,7 +266,7 @@ export class QuizDropdownComponent extends QuizBaseComponent {
 
 	updateErrorState() {
 		const select = this.root.querySelector(".quiz-select");
-		const errorElement = this.root.querySelector(".quiz-error-element");
+		const errorElement = this.root.querySelector(".quiz-error-text");
 
 		if (select) {
 			if (this.showError) {
@@ -309,7 +288,7 @@ export class QuizDropdownComponent extends QuizBaseComponent {
 	}
 
 	updateErrorMessage() {
-		const errorElement = this.root.querySelector(".quiz-error-element");
+		const errorElement = this.root.querySelector(".quiz-error-text");
 		if (errorElement) {
 			errorElement.textContent = this.errorMessage;
 		}
