@@ -34,11 +34,12 @@ class QuizCoverageCard extends QuizBaseComponent {
 
 		this.shadowRoot.innerHTML = `
 			<style>
-				:host {
-					display: block;
-					margin-bottom: 36px;
-					align-self: stretch;
-				}
+							:host {
+				display: block;
+				margin-bottom: 36px;
+				margin-top: 52px;
+				align-self: stretch;
+			}
 
 				.quiz-coverage-card {
 					border: 1px solid #bdddc9;
@@ -141,6 +142,7 @@ class QuizCoverageCard extends QuizBaseComponent {
 				@media (max-width: 768px) {
 					:host {
 						margin-bottom: 28px;
+						margin-top: 32px;
 						width: 100%;
 					}
 

@@ -601,11 +601,12 @@ class QuizCoverageCard extends QuizBaseComponent {
     const planEnd = this.getAttribute("plan-end") || "Dec 31, 2025";
     this.shadowRoot.innerHTML = `
 			<style>
-				:host {
-					display: block;
-					margin-bottom: 36px;
-					align-self: stretch;
-				}
+							:host {
+				display: block;
+				margin-bottom: 36px;
+				margin-top: 52px;
+				align-self: stretch;
+			}
 
 				.quiz-coverage-card {
 					border: 1px solid #bdddc9;
@@ -708,6 +709,7 @@ class QuizCoverageCard extends QuizBaseComponent {
 				@media (max-width: 768px) {
 					:host {
 						margin-bottom: 28px;
+						margin-top: 32px;
 						width: 100%;
 					}
 
@@ -1048,6 +1050,7 @@ class QuizActionSection extends QuizBaseComponent {
         font-weight: 700;
         line-height: 1.3333333333333333em;
         color: #121212;
+				margin: 0;
       }
 
       .quiz-action-details {
