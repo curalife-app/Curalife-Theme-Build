@@ -169,7 +169,6 @@ class QuizActionSection extends QuizBaseComponent {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        height: 52px;
         width: fit-content;
         margin-top: 32px;
       }
