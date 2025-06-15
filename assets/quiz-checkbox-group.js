@@ -23,6 +23,7 @@
 
 import { QuizBaseComponent } from "../base/quiz-base-component.js";
 import sharedStyles from "../utils/shared-styles.js";
+import "../utils/quiz-checkmark.js";
 
 export class QuizCheckboxGroupComponent extends QuizBaseComponent {
 	static get observedAttributes() {
@@ -148,7 +149,7 @@ export class QuizCheckboxGroupComponent extends QuizBaseComponent {
 					<div class="quiz-option-text">
 						<div class="quiz-option-text-content">${option.text}</div>
 					</div>
-					${this.selectedValues.includes(option.id) ? this.getCheckmarkSVG() : ""}
+					${this.selectedValues.includes(option.id) ? '<quiz-checkmark animation="bounce"></quiz-checkmark>' : ""}
 				</div>
 			</label>
 		`
@@ -189,14 +190,6 @@ export class QuizCheckboxGroupComponent extends QuizBaseComponent {
 			<div class="quiz-space-y-3 quiz-spacing-container" ${this.isDisabled ? 'aria-disabled="true"' : ""}>
 				${optionsHTML}
 			</div>
-		`;
-	}
-
-	getCheckmarkSVG() {
-		return `
-			<svg class="quiz-checkmark" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-				<path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-			</svg>
 		`;
 	}
 
@@ -263,8 +256,7 @@ export class QuizCheckboxGroupComponent extends QuizBaseComponent {
 				color: #374151;
 			}
 
-			.quiz-checkmark {
-				color: var(--quiz-primary-color);
+			quiz-checkmark {
 				flex-shrink: 0;
 				margin-left: 0.5rem;
 			}
@@ -445,17 +437,23 @@ export class QuizCheckboxGroupComponent extends QuizBaseComponent {
 				button.classList.add("selected");
 				input.checked = true;
 				// Add checkmark if not present
-				if (!button.querySelector(".quiz-checkmark")) {
+				if (!button.querySelector("quiz-checkmark")) {
 					const textDiv = button.querySelector(".quiz-option-text");
-					textDiv.insertAdjacentHTML("afterend", this.getCheckmarkSVG());
+					const checkmark = document.createElement("quiz-checkmark");
+					checkmark.setAttribute("animation", "bounce");
+					textDiv.insertAdjacentElement("afterend", checkmark);
 				}
 			} else {
 				button.classList.remove("selected");
 				input.checked = false;
-				// Remove checkmark if present
-				const checkmark = button.querySelector(".quiz-checkmark");
+				// Remove checkmark with smooth animation
+				const checkmark = button.querySelector("quiz-checkmark");
 				if (checkmark) {
-					checkmark.remove();
+					checkmark.hide("bounce", () => {
+						if (checkmark.parentNode) {
+							checkmark.remove();
+						}
+					});
 				}
 			}
 		});
