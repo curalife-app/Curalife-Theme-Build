@@ -2055,6 +2055,28 @@ class ModularQuiz {
 		}
 	}
 
+	_attachLegacyFormDropdownListener(question) {
+		const dropdown = this.questionContainer.querySelector(`#question-${question.id}`);
+		if (dropdown) {
+			dropdown.addEventListener("change", event => {
+				event.preventDefault(); // Prevent form submission
+				this.handleFormAnswer(question.id, event.target.value);
+				this.updateNavigation();
+			});
+		}
+	}
+
+	_attachLegacyFormTextInputListener(question) {
+		const input = this.questionContainer.querySelector(`#question-${question.id}`);
+		if (input) {
+			input.addEventListener("input", event => {
+				event.preventDefault(); // Prevent form submission
+				this.handleFormAnswer(question.id, event.target.value);
+				this.updateNavigation();
+			});
+		}
+	}
+
 	_attachPayerSearchFormListeners(question) {
 		setTimeout(() => {
 			const webComponent = this.questionContainer.querySelector(`quiz-payer-search[question-id="${question.id}"]`);
@@ -2114,8 +2136,8 @@ class ModularQuiz {
 				this._attachWebComponentValidationListener(question, "quiz-payer-search");
 			},
 			// Legacy components
-			"date-part": () => this._attachLegacyDropdownListener(question),
-			date: () => this._attachLegacyTextInputListener(question)
+			"date-part": () => this._attachLegacyFormDropdownListener(question),
+			date: () => this._attachLegacyFormTextInputListener(question)
 		};
 
 		formHandlers[question.type]?.();
