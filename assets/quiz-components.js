@@ -4401,6 +4401,9 @@ const _QuizCheckboxGroupComponent = class _QuizCheckboxGroupComponent extends Qu
 			</svg>
 		`;
   }
+  async render() {
+    await this.renderTemplate();
+  }
   async getStyles() {
     const baseStyles = super.getStyles();
     const quizStyles = await sharedStyles.getQuizStyles();
@@ -4793,6 +4796,9 @@ const _QuizDropdownComponent = class _QuizDropdownComponent extends QuizBaseComp
 			</div>
 		`;
   }
+  async render() {
+    await this.renderTemplate();
+  }
   async getStyles() {
     const baseStyles = super.getStyles();
     const quizStyles = await sharedStyles.getQuizStyles();
@@ -5101,6 +5107,9 @@ const _QuizTextInputComponent = class _QuizTextInputComponent extends QuizBaseCo
 				</div>
 			</div>
 		`;
+  }
+  async render() {
+    await this.renderTemplate();
   }
   async getStyles() {
     const baseStyles = super.getStyles();
@@ -5472,6 +5481,9 @@ const _QuizRatingComponent = class _QuizRatingComponent extends QuizBaseComponen
 				</div>
 			</div>
 		`;
+  }
+  async render() {
+    await this.renderTemplate();
   }
   async getStyles() {
     const baseStyles = super.getStyles();
