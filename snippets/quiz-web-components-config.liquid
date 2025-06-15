@@ -9,20 +9,18 @@
 {% endcomment %}
 
 <script>
-	// Set the correct Shopify CDN URL for quiz.css
-	window.QUIZ_CSS_URL = '{{ 'quiz.css' | asset_url }}';
+	// Set the correct Shopify CDN URL for quiz.css with cache busting
+	window.QUIZ_CSS_URL = '{{ 'quiz.css' | asset_url }}?v={{ 'quiz.css' | asset_url | split: '?' | last | default: 'dev' }}';
 
 	// Optional: Set other quiz-related configuration
 	window.QUIZ_CONFIG = {
-	  cssUrl: '{{ 'quiz.css' | asset_url }}',
+	  cssUrl: '{{ 'quiz.css' | asset_url }}?v={{ 'quiz.css' | asset_url | split: '?' | last | default: 'dev' }}',
 	  assetsPath: '{{ 'dummy' | asset_url | split: '/dummy' | first }}',
 	  shopDomain: '{{ shop.permanent_domain }}',
-	  debug: {% if section.settings.debug_mode %}{{ section.settings.debug_mode }}{% else %}{{ settings.quiz_debug_mode | default: false }}{% endif %}
+	  debug: true  // Always enable debug for now to help troubleshooting
 	};
 
-	{% comment %} Debug logging in development {% endcomment %}
-	{% if section.settings.debug_mode or settings.quiz_debug_mode %}
-	  console.log('🎯 Quiz Web Components Config:', window.QUIZ_CONFIG);
-	  console.log('📍 Quiz CSS URL:', window.QUIZ_CSS_URL);
-	{% endif %}
+	// Debug logging - always enabled for troubleshooting
+	console.log('🎯 Quiz Web Components Config:', window.QUIZ_CONFIG);
+	console.log('📍 Quiz CSS URL:', window.QUIZ_CSS_URL);
 </script>
