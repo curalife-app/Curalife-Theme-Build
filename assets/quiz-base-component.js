@@ -179,6 +179,13 @@ export class QuizBaseComponent extends HTMLElement {
 	}
 
 	/**
+	 * Check if component is connected (use native isConnected for DOM connection status)
+	 */
+	get isComponentConnected() {
+		return this._isComponentConnected;
+	}
+
+	/**
 	 * Utility: Get attribute as boolean
 	 */
 	getBooleanAttribute(name, defaultValue = false) {
