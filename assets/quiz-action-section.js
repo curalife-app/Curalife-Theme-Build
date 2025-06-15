@@ -101,6 +101,7 @@ class QuizActionSection extends QuizBaseComponent {
         font-weight: 700;
         line-height: 1.3333333333333333em;
         color: #121212;
+				margin: 0;
       }
 
       .quiz-action-details {
