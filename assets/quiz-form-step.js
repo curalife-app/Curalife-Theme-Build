@@ -9,7 +9,7 @@ import { QuizBaseComponent } from "../base/quiz-base-component.js";
 
 export class QuizFormStep extends QuizBaseComponent {
 	static get observedAttributes() {
-		return ["step-data", "responses", "is-last-step", "validation-errors"];
+		return ["step-data", "responses", "is-last-step", "validation-errors", "quiz-data"];
 	}
 
 	getTemplate() {
@@ -152,9 +152,9 @@ export class QuizFormStep extends QuizBaseComponent {
 
 		// Check for paired fields (simplified - would need full config)
 		const commonPairs = [
-			["member-id", "group-number"],
-			["first-name", "last-name"],
-			["email", "phone"]
+			["q4", "q4_group"],
+			["q7", "q8"],
+			["q9", "q10"]
 		];
 
 		for (const pair of commonPairs) {
@@ -323,16 +323,13 @@ export class QuizFormStep extends QuizBaseComponent {
 	}
 
 	renderHelpIcon(questionId) {
-		const stepData = this.getStepData();
-		if (!stepData || !stepData.questions) return "";
+		// Get tooltip from global quiz data validation tooltips
+		const quizData = this.getQuizData();
+		const tooltip = quizData?.validation?.tooltips?.[questionId];
 
-		// Find the question and check if it has help text or tooltip
-		const question = stepData.questions.find(q => q.id === questionId);
-		if (!question || (!question.tooltip && !question.helpText)) return "";
+		if (!tooltip) return "";
 
-		const tooltipText = question.tooltip || question.helpText || "";
-
-		return `<span class="quiz-help-icon-container" data-tooltip="${tooltipText}">
+		return `<span class="quiz-help-icon-container" data-tooltip="${tooltip}">
 			<svg class="quiz-help-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
 				<path d="M14.6668 8.00004C14.6668 4.31814 11.682 1.33337 8.00016 1.33337C4.31826 1.33337 1.3335 4.31814 1.3335 8.00004C1.3335 11.6819 4.31826 14.6667 8.00016 14.6667C11.682 14.6667 14.6668 11.6819 14.6668 8.00004Z" stroke="#121212"/>
 				<path d="M8.1613 11.3334V8.00004C8.1613 7.68577 8.1613 7.52864 8.06363 7.43097C7.96603 7.33337 7.8089 7.33337 7.49463 7.33337" stroke="#121212" stroke-linecap="round" stroke-linejoin="round"/>
@@ -348,6 +345,16 @@ export class QuizFormStep extends QuizBaseComponent {
 			return stepDataAttr ? JSON.parse(stepDataAttr) : null;
 		} catch (error) {
 			console.error("Error parsing step data:", error);
+			return null;
+		}
+	}
+
+	getQuizData() {
+		try {
+			const quizDataAttr = this.getAttribute("quiz-data");
+			return quizDataAttr ? JSON.parse(quizDataAttr) : null;
+		} catch (error) {
+			console.error("Error parsing quiz data:", error);
 			return null;
 		}
 	}
@@ -373,7 +380,7 @@ export class QuizFormStep extends QuizBaseComponent {
 	}
 
 	handleAttributeChange(name, oldValue, newValue) {
-		if (["step-data", "responses", "validation-errors", "is-last-step"].includes(name)) {
+		if (["step-data", "responses", "validation-errors", "is-last-step", "quiz-data"].includes(name)) {
 			this.render();
 		}
 	}

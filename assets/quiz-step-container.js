@@ -9,7 +9,7 @@ import { QuizBaseComponent } from "../base/quiz-base-component.js";
 
 export class QuizStepContainer extends QuizBaseComponent {
 	static get observedAttributes() {
-		return ["step-data", "responses", "current-question-index", "is-form-step", "validation-errors"];
+		return ["step-data", "responses", "current-question-index", "is-form-step", "validation-errors", "quiz-data"];
 	}
 
 	getTemplate() {
@@ -163,6 +163,12 @@ export class QuizStepContainer extends QuizBaseComponent {
 		formStep.setAttribute("step-data", JSON.stringify(stepData));
 		formStep.setAttribute("responses", JSON.stringify(responses));
 		formStep.setAttribute("validation-errors", JSON.stringify(validationErrors));
+
+		// Pass quiz data for tooltip access
+		const quizData = this.getQuizData();
+		if (quizData) {
+			formStep.setAttribute("quiz-data", JSON.stringify(quizData));
+		}
 
 		// Check if this is the last step (would need to be passed from parent)
 		const isLastStep = this.getAttribute("is-last-step") === "true";
@@ -357,8 +363,18 @@ export class QuizStepContainer extends QuizBaseComponent {
 		}
 	}
 
+	getQuizData() {
+		try {
+			const quizDataAttr = this.getAttribute("quiz-data");
+			return quizDataAttr ? JSON.parse(quizDataAttr) : null;
+		} catch (error) {
+			console.error("Error parsing quiz data:", error);
+			return null;
+		}
+	}
+
 	handleAttributeChange(name, oldValue, newValue) {
-		if (["step-data", "responses", "current-question-index", "is-form-step", "validation-errors"].includes(name)) {
+		if (["step-data", "responses", "current-question-index", "is-form-step", "validation-errors", "quiz-data"].includes(name)) {
 			this.render();
 		}
 	}

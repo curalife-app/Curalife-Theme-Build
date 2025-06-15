@@ -3167,7 +3167,7 @@ if (!customElements.get("quiz-result-card")) {
 }
 const _QuizFormStep = class _QuizFormStep extends QuizBaseComponent {
   static get observedAttributes() {
-    return ["step-data", "responses", "is-last-step", "validation-errors"];
+    return ["step-data", "responses", "is-last-step", "validation-errors", "quiz-data"];
   }
   getTemplate() {
     const stepData = this.getStepData();
@@ -3296,9 +3296,9 @@ const _QuizFormStep = class _QuizFormStep extends QuizBaseComponent {
     const question = questions[index];
     const getResponse = /* @__PURE__ */ __name((q) => responses?.find((r) => r.questionId === q.id) || { answer: null }, "getResponse");
     const commonPairs = [
-      ["member-id", "group-number"],
-      ["first-name", "last-name"],
-      ["email", "phone"]
+      ["q4", "q4_group"],
+      ["q7", "q8"],
+      ["q9", "q10"]
     ];
     for (const pair of commonPairs) {
       if (question.id === pair[0] && questions[index + 1]?.id === pair[1]) {
@@ -3441,12 +3441,10 @@ const _QuizFormStep = class _QuizFormStep extends QuizBaseComponent {
     }
   }
   renderHelpIcon(questionId) {
-    const stepData = this.getStepData();
-    if (!stepData || !stepData.questions) return "";
-    const question = stepData.questions.find((q) => q.id === questionId);
-    if (!question || !question.tooltip && !question.helpText) return "";
-    const tooltipText = question.tooltip || question.helpText || "";
-    return `<span class="quiz-help-icon-container" data-tooltip="${tooltipText}">
+    const quizData = this.getQuizData();
+    const tooltip = quizData?.validation?.tooltips?.[questionId];
+    if (!tooltip) return "";
+    return `<span class="quiz-help-icon-container" data-tooltip="${tooltip}">
 			<svg class="quiz-help-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
 				<path d="M14.6668 8.00004C14.6668 4.31814 11.682 1.33337 8.00016 1.33337C4.31826 1.33337 1.3335 4.31814 1.3335 8.00004C1.3335 11.6819 4.31826 14.6667 8.00016 14.6667C11.682 14.6667 14.6668 11.6819 14.6668 8.00004Z" stroke="#121212"/>
 				<path d="M8.1613 11.3334V8.00004C8.1613 7.68577 8.1613 7.52864 8.06363 7.43097C7.96603 7.33337 7.8089 7.33337 7.49463 7.33337" stroke="#121212" stroke-linecap="round" stroke-linejoin="round"/>
@@ -3461,6 +3459,15 @@ const _QuizFormStep = class _QuizFormStep extends QuizBaseComponent {
       return stepDataAttr ? JSON.parse(stepDataAttr) : null;
     } catch (error) {
       console.error("Error parsing step data:", error);
+      return null;
+    }
+  }
+  getQuizData() {
+    try {
+      const quizDataAttr = this.getAttribute("quiz-data");
+      return quizDataAttr ? JSON.parse(quizDataAttr) : null;
+    } catch (error) {
+      console.error("Error parsing quiz data:", error);
       return null;
     }
   }
@@ -3483,7 +3490,7 @@ const _QuizFormStep = class _QuizFormStep extends QuizBaseComponent {
     }
   }
   handleAttributeChange(name, oldValue, newValue) {
-    if (["step-data", "responses", "validation-errors", "is-last-step"].includes(name)) {
+    if (["step-data", "responses", "validation-errors", "is-last-step", "quiz-data"].includes(name)) {
       this.render();
     }
   }
@@ -3495,7 +3502,7 @@ if (!customElements.get("quiz-form-step")) {
 }
 const _QuizStepContainer = class _QuizStepContainer extends QuizBaseComponent {
   static get observedAttributes() {
-    return ["step-data", "responses", "current-question-index", "is-form-step", "validation-errors"];
+    return ["step-data", "responses", "current-question-index", "is-form-step", "validation-errors", "quiz-data"];
   }
   getTemplate() {
     const stepData = this.getStepData();
@@ -3628,6 +3635,10 @@ const _QuizStepContainer = class _QuizStepContainer extends QuizBaseComponent {
     formStep.setAttribute("step-data", JSON.stringify(stepData));
     formStep.setAttribute("responses", JSON.stringify(responses));
     formStep.setAttribute("validation-errors", JSON.stringify(validationErrors));
+    const quizData = this.getQuizData();
+    if (quizData) {
+      formStep.setAttribute("quiz-data", JSON.stringify(quizData));
+    }
     const isLastStep = this.getAttribute("is-last-step") === "true";
     if (isLastStep) {
       formStep.setAttribute("is-last-step", "true");
@@ -3781,8 +3792,17 @@ const _QuizStepContainer = class _QuizStepContainer extends QuizBaseComponent {
       return [];
     }
   }
+  getQuizData() {
+    try {
+      const quizDataAttr = this.getAttribute("quiz-data");
+      return quizDataAttr ? JSON.parse(quizDataAttr) : null;
+    } catch (error) {
+      console.error("Error parsing quiz data:", error);
+      return null;
+    }
+  }
   handleAttributeChange(name, oldValue, newValue) {
-    if (["step-data", "responses", "current-question-index", "is-form-step", "validation-errors"].includes(name)) {
+    if (["step-data", "responses", "current-question-index", "is-form-step", "validation-errors", "quiz-data"].includes(name)) {
       this.render();
     }
   }

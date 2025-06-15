@@ -1536,6 +1536,7 @@ class ModularQuiz {
 		stepContainer.setAttribute("responses", JSON.stringify(this.responses));
 		stepContainer.setAttribute("current-question-index", this.currentQuestionIndex.toString());
 		stepContainer.setAttribute("is-form-step", this.isFormStep(step.id).toString());
+		stepContainer.setAttribute("quiz-data", JSON.stringify(this.quizData));
 
 		// Add validation errors if any
 		const validationErrors = this._getValidationErrorsForStep(step);
