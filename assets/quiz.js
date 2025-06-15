@@ -134,8 +134,18 @@ class ModularQuiz {
 			// Dynamic import of the Quiz Components system
 			const quizComponentsModule = await import(quizComponentsUrl);
 
-			// Initialize the Web Components system (use the named export)
-			this.webComponentsInit = quizComponentsModule.QuizComponentsInit;
+			// Debug: Log what's available in the module
+			console.log("📦 Available exports:", Object.keys(quizComponentsModule));
+			console.log("🎯 QuizComponentsInit:", quizComponentsModule.QuizComponentsInit);
+			console.log("🎯 Default export:", quizComponentsModule.default);
+
+			// Initialize the Web Components system (try both named and default exports)
+			this.webComponentsInit = quizComponentsModule.QuizComponentsInit || quizComponentsModule.default;
+
+			// Validate that we have a valid initialization object
+			if (!this.webComponentsInit || typeof this.webComponentsInit.init !== "function") {
+				throw new Error(`Invalid QuizComponentsInit object. Available: ${Object.keys(quizComponentsModule).join(", ")}`);
+			}
 
 			// Get CSS URL from container data attribute
 			const cssUrl = this.container.getAttribute("data-quiz-css-url");
