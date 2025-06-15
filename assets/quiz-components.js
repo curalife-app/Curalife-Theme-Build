@@ -172,7 +172,9 @@ const _QuizBaseComponent = class _QuizBaseComponent extends HTMLElement {
       this.isInitialized = true;
     }
     if (this.config.autoRender) {
-      this.render();
+      this.render().catch((error) => {
+        console.error("Error rendering component:", error);
+      });
     }
     this.setupEventListeners();
     this.onConnected();
@@ -192,7 +194,9 @@ const _QuizBaseComponent = class _QuizBaseComponent extends HTMLElement {
     if (oldValue === newValue) return;
     this.handleAttributeChange(name, oldValue, newValue);
     if (this._isComponentConnected && this.config.autoRender) {
-      this.render();
+      this.render().catch((error) => {
+        console.error("Error rendering component on attribute change:", error);
+      });
     }
   }
   /**
@@ -205,7 +209,7 @@ const _QuizBaseComponent = class _QuizBaseComponent extends HTMLElement {
    * Render component
    * Must be implemented by subclasses
    */
-  render() {
+  async render() {
     throw new Error("render() must be implemented by subclass");
   }
   /**
@@ -389,14 +393,22 @@ const _QuizBaseComponent = class _QuizBaseComponent extends HTMLElement {
   /**
    * Render complete template with styles
    */
-  renderTemplate() {
+  async renderTemplate() {
     if (!this.config.useShadowDOM) {
       this.innerHTML = this.getTemplate();
       return;
     }
     this.root.innerHTML = "";
     const cssUrl = window.QUIZ_CSS_URL || window.QUIZ_CONFIG?.cssUrl;
-    const styleElement = sharedStyles.createStyleElement(this.getStyles(), cssUrl);
+    let componentStyles;
+    try {
+      const stylesResult = this.getStyles();
+      componentStyles = await Promise.resolve(stylesResult);
+    } catch (error) {
+      console.warn("Error loading component styles:", error);
+      componentStyles = "";
+    }
+    const styleElement = sharedStyles.createStyleElement(componentStyles, cssUrl);
     this.root.appendChild(styleElement);
     const template = this.getTemplate();
     if (template) {
@@ -4176,8 +4188,8 @@ const _QuizMultipleChoiceComponent = class _QuizMultipleChoiceComponent extends 
 			</svg>
 		`;
   }
-  render() {
-    this.renderTemplate();
+  async render() {
+    await this.renderTemplate();
   }
   async getStyles() {
     const baseStyles = super.getStyles();
