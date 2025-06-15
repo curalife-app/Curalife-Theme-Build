@@ -22,7 +22,7 @@ export class QuizBaseComponent extends HTMLElement {
 
 		// Component state
 		this.isInitialized = false;
-		this.isConnected = false;
+		this._isComponentConnected = false;
 
 		// Setup Shadow DOM if enabled
 		if (this.config.useShadowDOM) {
@@ -41,7 +41,7 @@ export class QuizBaseComponent extends HTMLElement {
 	 * Lifecycle: Component connected to DOM
 	 */
 	connectedCallback() {
-		this.isConnected = true;
+		this._isComponentConnected = true;
 
 		if (!this.isInitialized) {
 			this.initialize();
@@ -60,7 +60,7 @@ export class QuizBaseComponent extends HTMLElement {
 	 * Lifecycle: Component disconnected from DOM
 	 */
 	disconnectedCallback() {
-		this.isConnected = false;
+		this._isComponentConnected = false;
 		this.cleanup();
 		this.onDisconnected();
 	}
@@ -73,7 +73,7 @@ export class QuizBaseComponent extends HTMLElement {
 
 		this.handleAttributeChange(name, oldValue, newValue);
 
-		if (this.isConnected && this.config.autoRender) {
+		if (this._isComponentConnected && this.config.autoRender) {
 			this.render();
 		}
 	}
