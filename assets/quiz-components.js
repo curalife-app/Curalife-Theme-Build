@@ -248,17 +248,16 @@ const _QuizBaseComponent = class _QuizBaseComponent extends HTMLElement {
         display: none !important;
       }
 
-      /* Inherit quiz CSS custom properties */
-      :host {
-        --quiz-primary-color: var(--quiz-primary-color, #2c3e50);
-        --quiz-secondary-color: var(--quiz-secondary-color, #306E51);
-        --quiz-success-color: var(--quiz-success-color, #4CAF50);
-        --quiz-error-color: var(--quiz-error-color, #f56565);
-        --quiz-warning-color: var(--quiz-warning-color, #ed8936);
-        --quiz-border-radius: var(--quiz-border-radius, 8px);
-        --quiz-shadow: var(--quiz-shadow, 0 2px 10px rgba(0,0,0,0.1));
-        --quiz-transition: var(--quiz-transition, all 0.3s ease);
-      }
+      			/* Inherit quiz CSS custom properties */
+			:host {
+				--quiz-primary: var(--quiz-primary, #306E51);
+				--quiz-primary-hover: var(--quiz-primary-hover, #245a40);
+				--quiz-text-error: var(--quiz-text-error, #dc2626);
+				--quiz-border-radius: var(--quiz-border-radius, 8px);
+				--quiz-shadow-md: var(--quiz-shadow-md, 0 1px 3px rgba(0, 0, 0, 0.1));
+				--quiz-transition-fast: var(--quiz-transition-fast, 0.2s ease);
+				--quiz-transition-slow: var(--quiz-transition-slow, 0.5s ease-out);
+			}
     `;
   }
   /**
@@ -4240,12 +4239,12 @@ const _QuizMultipleChoiceComponent = class _QuizMultipleChoiceComponent extends 
 			.quiz-option-card {
 				cursor: pointer;
 				display: block;
-				transition: var(--quiz-transition);
+				transition: var(--quiz-transition-fast);
 			}
 
 			.quiz-option-card:hover:not([aria-disabled="true"]) .quiz-option-button {
 				transform: translateY(-2px);
-				box-shadow: var(--quiz-shadow);
+				box-shadow: var(--quiz-shadow-md);
 			}
 
 			.quiz-option-button {
@@ -4253,7 +4252,7 @@ const _QuizMultipleChoiceComponent = class _QuizMultipleChoiceComponent extends 
 				border-radius: var(--quiz-border-radius);
 				padding: 1rem;
 				background: white;
-				transition: var(--quiz-transition);
+				transition: var(--quiz-transition-fast);
 				position: relative;
 				min-height: 60px;
 				display: flex;
@@ -4262,7 +4261,7 @@ const _QuizMultipleChoiceComponent = class _QuizMultipleChoiceComponent extends 
 			}
 
 			.quiz-option-button.selected {
-				border-color: var(--quiz-primary-color);
+				border-color: var(--quiz-primary);
 				background-color: #f0f9ff;
 			}
 
@@ -4276,7 +4275,7 @@ const _QuizMultipleChoiceComponent = class _QuizMultipleChoiceComponent extends 
 			}
 
 			.quiz-checkmark {
-				color: var(--quiz-primary-color);
+				color: var(--quiz-primary);
 				flex-shrink: 0;
 				margin-left: 0.5rem;
 			}
@@ -4313,14 +4312,14 @@ const _QuizMultipleChoiceComponent = class _QuizMultipleChoiceComponent extends 
 			}
 
 			.quiz-error-text {
-				color: var(--quiz-error-color);
+				color: var(--quiz-text-error);
 				margin: 0;
 				font-size: 0.875rem;
 			}
 
 			/* Focus styles for accessibility */
 			.quiz-option-card:focus-within .quiz-option-button {
-				outline: 2px solid var(--quiz-primary-color);
+				outline: 2px solid var(--quiz-primary);
 				outline-offset: 2px;
 			}
 		`;

@@ -139,17 +139,16 @@ export class QuizBaseComponent extends HTMLElement {
         display: none !important;
       }
 
-      /* Inherit quiz CSS custom properties */
-      :host {
-        --quiz-primary-color: var(--quiz-primary-color, #2c3e50);
-        --quiz-secondary-color: var(--quiz-secondary-color, #306E51);
-        --quiz-success-color: var(--quiz-success-color, #4CAF50);
-        --quiz-error-color: var(--quiz-error-color, #f56565);
-        --quiz-warning-color: var(--quiz-warning-color, #ed8936);
-        --quiz-border-radius: var(--quiz-border-radius, 8px);
-        --quiz-shadow: var(--quiz-shadow, 0 2px 10px rgba(0,0,0,0.1));
-        --quiz-transition: var(--quiz-transition, all 0.3s ease);
-      }
+      			/* Inherit quiz CSS custom properties */
+			:host {
+				--quiz-primary: var(--quiz-primary, #306E51);
+				--quiz-primary-hover: var(--quiz-primary-hover, #245a40);
+				--quiz-text-error: var(--quiz-text-error, #dc2626);
+				--quiz-border-radius: var(--quiz-border-radius, 8px);
+				--quiz-shadow-md: var(--quiz-shadow-md, 0 1px 3px rgba(0, 0, 0, 0.1));
+				--quiz-transition-fast: var(--quiz-transition-fast, 0.2s ease);
+				--quiz-transition-slow: var(--quiz-transition-slow, 0.5s ease-out);
+			}
     `;
 	}
 

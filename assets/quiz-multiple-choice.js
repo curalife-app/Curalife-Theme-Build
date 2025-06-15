@@ -153,12 +153,12 @@ export class QuizMultipleChoiceComponent extends QuizBaseComponent {
 			.quiz-option-card {
 				cursor: pointer;
 				display: block;
-				transition: var(--quiz-transition);
+				transition: var(--quiz-transition-fast);
 			}
 
 			.quiz-option-card:hover:not([aria-disabled="true"]) .quiz-option-button {
 				transform: translateY(-2px);
-				box-shadow: var(--quiz-shadow);
+				box-shadow: var(--quiz-shadow-md);
 			}
 
 			.quiz-option-button {
@@ -166,7 +166,7 @@ export class QuizMultipleChoiceComponent extends QuizBaseComponent {
 				border-radius: var(--quiz-border-radius);
 				padding: 1rem;
 				background: white;
-				transition: var(--quiz-transition);
+				transition: var(--quiz-transition-fast);
 				position: relative;
 				min-height: 60px;
 				display: flex;
@@ -175,7 +175,7 @@ export class QuizMultipleChoiceComponent extends QuizBaseComponent {
 			}
 
 			.quiz-option-button.selected {
-				border-color: var(--quiz-primary-color);
+				border-color: var(--quiz-primary);
 				background-color: #f0f9ff;
 			}
 
@@ -189,7 +189,7 @@ export class QuizMultipleChoiceComponent extends QuizBaseComponent {
 			}
 
 			.quiz-checkmark {
-				color: var(--quiz-primary-color);
+				color: var(--quiz-primary);
 				flex-shrink: 0;
 				margin-left: 0.5rem;
 			}
@@ -226,14 +226,14 @@ export class QuizMultipleChoiceComponent extends QuizBaseComponent {
 			}
 
 			.quiz-error-text {
-				color: var(--quiz-error-color);
+				color: var(--quiz-text-error);
 				margin: 0;
 				font-size: 0.875rem;
 			}
 
 			/* Focus styles for accessibility */
 			.quiz-option-card:focus-within .quiz-option-button {
-				outline: 2px solid var(--quiz-primary-color);
+				outline: 2px solid var(--quiz-primary);
 				outline-offset: 2px;
 			}
 		`;
