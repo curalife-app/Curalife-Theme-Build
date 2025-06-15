@@ -338,6 +338,7 @@ export class QuizBaseComponent extends HTMLElement {
 		// Add shared styles + component styles (handle async getStyles)
 		const cssUrl = window.QUIZ_CSS_URL || window.QUIZ_CONFIG?.cssUrl;
 		let componentStyles;
+		let sharedCSS;
 
 		try {
 			// Handle both sync and async getStyles methods
@@ -348,7 +349,17 @@ export class QuizBaseComponent extends HTMLElement {
 			componentStyles = "";
 		}
 
-		const styleElement = sharedStyles.createStyleElement(componentStyles, cssUrl);
+		try {
+			// Load shared styles
+			sharedCSS = await sharedStyles.getQuizStyles(cssUrl);
+		} catch (error) {
+			console.warn("Error loading shared styles:", error);
+			sharedCSS = "";
+		}
+
+		// Create style element with combined styles
+		const styleElement = document.createElement("style");
+		styleElement.textContent = sharedCSS + "\n" + componentStyles;
 		this.root.appendChild(styleElement);
 
 		// Add template content

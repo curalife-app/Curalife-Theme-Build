@@ -415,6 +415,7 @@ const _QuizBaseComponent = class _QuizBaseComponent extends HTMLElement {
     this.root.innerHTML = "";
     const cssUrl = window.QUIZ_CSS_URL || window.QUIZ_CONFIG?.cssUrl;
     let componentStyles;
+    let sharedCSS;
     try {
       const stylesResult = this.getStyles();
       componentStyles = await Promise.resolve(stylesResult);
@@ -422,7 +423,14 @@ const _QuizBaseComponent = class _QuizBaseComponent extends HTMLElement {
       console.warn("Error loading component styles:", error);
       componentStyles = "";
     }
-    const styleElement = sharedStyles.createStyleElement(componentStyles, cssUrl);
+    try {
+      sharedCSS = await sharedStyles.getQuizStyles(cssUrl);
+    } catch (error) {
+      console.warn("Error loading shared styles:", error);
+      sharedCSS = "";
+    }
+    const styleElement = document.createElement("style");
+    styleElement.textContent = sharedCSS + "\n" + componentStyles;
     this.root.appendChild(styleElement);
     const template = this.getTemplate();
     if (template) {
