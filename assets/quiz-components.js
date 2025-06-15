@@ -2558,6 +2558,9 @@ const _QuizPayerSearch = class _QuizPayerSearch extends QuizBaseComponent {
     searchInput.addEventListener("input", (e) => {
       const query = e.target.value.trim();
       this.handleSearch(query, dropdown);
+      if (this.showError && query.length > 0) {
+        this.clearError();
+      }
     });
     searchInput.addEventListener("focus", () => {
       if (searchInput.value.trim() === "") {
@@ -2669,6 +2672,9 @@ const _QuizPayerSearch = class _QuizPayerSearch extends QuizBaseComponent {
     searchInput.value = payer.displayName;
     this.selectedPayer = payer.stediId;
     this.closeDropdown(dropdown, container, searchInput);
+    if (this.showError && this.selectedPayer) {
+      this.clearError();
+    }
     this.dispatchEvent(
       new CustomEvent("payer-selected", {
         detail: {
@@ -2729,6 +2735,21 @@ const _QuizPayerSearch = class _QuizPayerSearch extends QuizBaseComponent {
       bubbles: true
     });
     this.dispatchEvent(event);
+  }
+  clearError() {
+    this.showError = false;
+    this.errorMessage = "";
+    this.removeAttribute("show-error");
+    this.removeAttribute("error-message");
+    const input = this.root.querySelector(".quiz-payer-search-input");
+    const errorElement = this.root.querySelector(".quiz-error-text");
+    if (input) {
+      input.classList.remove("quiz-input-error");
+    }
+    if (errorElement) {
+      errorElement.classList.remove("quiz-error-visible");
+      errorElement.classList.add("quiz-error-hidden");
+    }
   }
 };
 __name(_QuizPayerSearch, "QuizPayerSearch");

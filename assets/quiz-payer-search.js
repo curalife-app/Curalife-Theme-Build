@@ -104,6 +104,11 @@ export class QuizPayerSearch extends QuizBaseComponent {
 		searchInput.addEventListener("input", e => {
 			const query = e.target.value.trim();
 			this.handleSearch(query, dropdown);
+
+			// Clear error state when user starts typing
+			if (this.showError && query.length > 0) {
+				this.clearError();
+			}
 		});
 
 		searchInput.addEventListener("focus", () => {
@@ -251,6 +256,11 @@ export class QuizPayerSearch extends QuizBaseComponent {
 		this.selectedPayer = payer.stediId;
 		this.closeDropdown(dropdown, container, searchInput);
 
+		// Clear error state when user makes a valid selection
+		if (this.showError && this.selectedPayer) {
+			this.clearError();
+		}
+
 		// Dispatch custom event for parent component
 		this.dispatchEvent(
 			new CustomEvent("payer-selected", {
@@ -321,6 +331,26 @@ export class QuizPayerSearch extends QuizBaseComponent {
 			bubbles: true
 		});
 		this.dispatchEvent(event);
+	}
+
+	clearError() {
+		this.showError = false;
+		this.errorMessage = "";
+		this.removeAttribute("show-error");
+		this.removeAttribute("error-message");
+
+		// Update the UI immediately
+		const input = this.root.querySelector(".quiz-payer-search-input");
+		const errorElement = this.root.querySelector(".quiz-error-text");
+
+		if (input) {
+			input.classList.remove("quiz-input-error");
+		}
+
+		if (errorElement) {
+			errorElement.classList.remove("quiz-error-visible");
+			errorElement.classList.add("quiz-error-hidden");
+		}
 	}
 }
 

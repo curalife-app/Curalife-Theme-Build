@@ -2313,7 +2313,7 @@ class ModularQuiz {
 		if (webComponent) {
 			// Update Web Component validation state
 			if (validationResult.isValid) {
-				webComponent.setAttribute("show-error", "false");
+				webComponent.removeAttribute("show-error");
 				webComponent.removeAttribute("error-message");
 			} else {
 				webComponent.setAttribute("show-error", "true");
