@@ -132,10 +132,10 @@ class ModularQuiz {
 			console.log("🔗 Loading Quiz Web Components from:", quizComponentsUrl);
 
 			// Dynamic import of the Quiz Components system
-			const quizComponentsInitModule = await import(quizComponentsUrl);
+			const quizComponentsModule = await import(quizComponentsUrl);
 
-			// Initialize the Web Components system (use the singleton instance)
-			this.webComponentsInit = quizComponentsInitModule.default;
+			// Initialize the Web Components system (use the named export)
+			this.webComponentsInit = quizComponentsModule.QuizComponentsInit;
 
 			// Get CSS URL from container data attribute
 			const cssUrl = this.container.getAttribute("data-quiz-css-url");
