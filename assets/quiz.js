@@ -435,13 +435,8 @@ class ModularQuiz {
 			// Create loading display component
 			const loadingDisplay = document.createElement("quiz-loading-display");
 			loadingDisplay.setAttribute("mode", "comprehensive");
-			loadingDisplay.setAttribute("current-step", "1");
-			loadingDisplay.setAttribute("total-steps", "4");
-			loadingDisplay.setAttribute("progress", "0");
-			loadingDisplay.innerHTML = `
-				<div slot="step-title">Starting...</div>
-				<div slot="step-description">Preparing to process your information</div>
-			`;
+			loadingDisplay.setAttribute("title", "Starting...");
+			loadingDisplay.setAttribute("message", "Preparing to process your information");
 
 			this.loading.innerHTML = "";
 			this.loading.appendChild(loadingDisplay);
@@ -456,25 +451,9 @@ class ModularQuiz {
 		const loadingDisplay = document.querySelector("quiz-loading-display");
 
 		if (loadingDisplay) {
-			// Update step content via slots
-			const titleSlot = loadingDisplay.querySelector('[slot="step-title"]');
-			const descriptionSlot = loadingDisplay.querySelector('[slot="step-description"]');
-
-			if (titleSlot && descriptionSlot) {
-				// Animate out
-				titleSlot.style.opacity = "0";
-				descriptionSlot.style.opacity = "0";
-
-				setTimeout(() => {
-					// Update content
-					titleSlot.textContent = step.title;
-					descriptionSlot.textContent = step.description;
-
-					// Animate in
-					titleSlot.style.opacity = "1";
-					descriptionSlot.style.opacity = "1";
-				}, 300);
-			}
+			// Update step content via attributes
+			loadingDisplay.setAttribute("title", step.title);
+			loadingDisplay.setAttribute("message", step.description);
 		}
 	}
 
@@ -3750,22 +3729,9 @@ class ModularQuiz {
 
 		// Create action section component
 		const actionSection = document.createElement("quiz-action-section");
-		actionSection.setAttribute("type", "primary");
+		actionSection.setAttribute("title", "Schedule your initial online consultation now");
 		actionSection.setAttribute("background-color", "#F1F8F4");
-		actionSection.innerHTML = `
-			<div slot="title">Schedule your initial online consultation now</div>
-			<div slot="info">
-				<quiz-clock-icon></quiz-clock-icon>
-				Our dietitians usually recommend minimum 6 consultations over 6 months, Today, just book your first.
-			</div>
-			<div slot="info">
-				<quiz-calendar-icon></quiz-calendar-icon>
-				Free cancellation up to 24h before
-			</div>
-			<div slot="action">
-				<a href="${resultUrl}" class="quiz-booking-button">Proceed to booking</a>
-			</div>
-		`;
+		actionSection.setAttribute("result-url", resultUrl);
 
 		// Create container and assemble
 		const container = document.createElement("div");

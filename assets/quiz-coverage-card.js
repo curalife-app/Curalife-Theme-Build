@@ -28,7 +28,7 @@ class QuizCoverageCard extends QuizBaseComponent {
 	}
 
 	render() {
-		const title = this.getAttribute("title") || "Coverage Details";
+		const title = this.getAttribute("title") || "Here's Your Offer";
 		const sessionsCovered = this.getAttribute("sessions-covered") || "5";
 		const planEnd = this.getAttribute("plan-end") || "Dec 31, 2025";
 
@@ -39,7 +39,7 @@ class QuizCoverageCard extends QuizBaseComponent {
 					margin: 1.5rem 0;
 				}
 
-				.coverage-card {
+				.quiz-coverage-card {
 					background: white;
 					border-radius: 8px;
 					border: 1px solid #e5e7eb;
@@ -47,19 +47,18 @@ class QuizCoverageCard extends QuizBaseComponent {
 					box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 				}
 
-				.coverage-title {
+				.quiz-coverage-card-title {
 					font-size: 1.25rem;
 					font-weight: 600;
 					color: #1f2937;
 					margin-bottom: 1rem;
-					text-align: center;
 				}
 
-				.coverage-pricing {
+				.quiz-coverage-pricing {
 					margin-bottom: 1.5rem;
 				}
 
-				.service-item {
+				.quiz-coverage-service-item {
 					display: flex;
 					justify-content: space-between;
 					align-items: center;
@@ -67,122 +66,122 @@ class QuizCoverageCard extends QuizBaseComponent {
 					border-bottom: 1px solid #f3f4f6;
 				}
 
-				.service-item:last-child {
+				.quiz-coverage-service-item:last-child {
 					border-bottom: none;
 				}
 
-				.service-name {
+				.quiz-coverage-service {
 					font-weight: 500;
 					color: #374151;
 				}
 
-				.service-cost {
+				.quiz-coverage-cost {
 					display: flex;
 					flex-direction: column;
 					align-items: flex-end;
 				}
 
-				.copay {
+				.quiz-coverage-copay {
 					font-weight: 600;
 					color: #059669;
 					font-size: 1.1rem;
 				}
 
-				.original-price {
+				.quiz-coverage-original-price {
 					font-size: 0.875rem;
 					color: #9ca3af;
 					text-decoration: line-through;
 				}
 
-				.divider {
+				.quiz-coverage-divider {
 					height: 1px;
 					background: #e5e7eb;
 					margin: 1rem 0;
 				}
 
-				.benefits {
+				.quiz-coverage-benefits {
 					display: flex;
 					flex-direction: column;
 					gap: 0.75rem;
 				}
 
-				.benefit {
+				.quiz-coverage-benefit {
 					display: flex;
 					align-items: center;
 					gap: 0.75rem;
 				}
 
-				.benefit-icon {
+				.quiz-coverage-benefit-icon {
 					flex-shrink: 0;
 					width: 20px;
 					height: 20px;
-					color: #059669;
+					color: #418865;
 				}
 
-				.benefit-text {
+				.quiz-coverage-benefit-text {
 					font-size: 0.875rem;
 					color: #374151;
 				}
 
 				@media (max-width: 768px) {
-					.coverage-card {
+					.quiz-coverage-card {
 						padding: 1rem;
 					}
 
-					.coverage-title {
+					.quiz-coverage-card-title {
 						font-size: 1.125rem;
 					}
 
-					.service-item {
+					.quiz-coverage-service-item {
 						flex-direction: column;
 						align-items: flex-start;
 						gap: 0.5rem;
 					}
 
-					.service-cost {
+					.quiz-coverage-cost {
 						align-items: flex-start;
 					}
 				}
 			</style>
 
-			<div class="coverage-card">
-				<div class="coverage-title">${title}</div>
+			<div class="quiz-coverage-card">
+				<div class="quiz-coverage-card-title">${title}</div>
 
-				<div class="coverage-pricing">
-					<div class="service-item">
-						<div class="service-name">Initial consultation – 60 minutes</div>
-						<div class="service-cost">
-							<div class="copay">Co-pay: $0*</div>
-							<div class="original-price">$100</div>
+				<div class="quiz-coverage-pricing">
+					<div class="quiz-coverage-service-item">
+						<div class="quiz-coverage-service">Initial consultation – 60 minutes</div>
+						<div class="quiz-coverage-cost">
+							<div class="quiz-coverage-copay">Co-pay: $0*</div>
+							<div class="quiz-coverage-original-price">$100</div>
 						</div>
 					</div>
-					<div class="service-item">
-						<div class="service-name">Follow-up consultation – 30 minutes</div>
-						<div class="service-cost">
-							<div class="copay">Co-pay: $0*</div>
-							<div class="original-price">$50</div>
+					<div class="quiz-coverage-service-item">
+						<div class="quiz-coverage-service">Follow-up consultation – 30 minutes</div>
+						<div class="quiz-coverage-cost">
+							<div class="quiz-coverage-copay">Co-pay: $0*</div>
+							<div class="quiz-coverage-original-price">$50</div>
 						</div>
 					</div>
 				</div>
 
-				<div class="divider"></div>
+				<div class="quiz-coverage-divider"></div>
 
-				<div class="benefits">
-					<div class="benefit">
-						<div class="benefit-icon">
+				<div class="quiz-coverage-benefits">
+					<div class="quiz-coverage-benefit">
+						<div class="quiz-coverage-benefit-icon">
 							<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M7.08 1.67L3.33 1.67L3.33 18.33L10.83 18.33L10 7.5L16.67 5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+								<path d="M7.08 1.67L3.33 1.67L3.33 18.33L10.83 18.33L10 7.5L16.67 5" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
 							</svg>
 						</div>
-						<div class="benefit-text">${sessionsCovered} covered sessions remaining</div>
+						<div class="quiz-coverage-benefit-text">${sessionsCovered} covered sessions remaining</div>
 					</div>
-					<div class="benefit">
-						<div class="benefit-icon">
+					<div class="quiz-coverage-benefit">
+						<div class="quiz-coverage-benefit-icon">
 							<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M10.83 11.67L6.25 1.67L13.75 3.33L2.5 18.33L17.5 8.33" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+								<path d="M10.83 11.67L6.25 1.67L13.75 3.33L2.5 18.33L17.5 8.33" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
 							</svg>
 						</div>
-						<div class="benefit-text">Coverage expires ${planEnd}</div>
+						<div class="quiz-coverage-benefit-text">Coverage expires ${planEnd}</div>
 					</div>
 				</div>
 			</div>

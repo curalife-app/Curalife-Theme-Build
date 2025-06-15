@@ -70,7 +70,7 @@ class QuizLoadingDisplay extends QuizBaseComponent {
 
 	getComprehensiveTemplate(title, message, progress, currentStep, totalSteps, showSpinner) {
 		return `
-      <div class="quiz-loading-display comprehensive">
+      <div class="quiz-comprehensive-loading">
         <div class="quiz-loading-content">
           ${
 						showSpinner
@@ -82,22 +82,9 @@ class QuizLoadingDisplay extends QuizBaseComponent {
 							: ""
 					}
 
-          <div class="quiz-loading-text">
-            <h3 class="quiz-loading-title">${this.sanitizeHTML(title)}</h3>
-            ${message ? `<p class="quiz-loading-message">${this.sanitizeHTML(message)}</p>` : ""}
-          </div>
-
-          <div class="quiz-loading-steps">
-            <slot name="steps"></slot>
-          </div>
-
-          <div class="quiz-loading-progress">
-            <div class="quiz-loading-progress-bar">
-              <div class="quiz-loading-progress-fill" style="width: ${progress}%"></div>
-            </div>
-            <div class="quiz-loading-progress-text">
-              ${progress}% complete (${currentStep}/${totalSteps})
-            </div>
+          <div class="quiz-loading-step">
+            <h3 class="quiz-loading-step-title">${this.sanitizeHTML(title)}</h3>
+            ${message ? `<p class="quiz-loading-step-description">${this.sanitizeHTML(message)}</p>` : ""}
           </div>
 
           <!-- Default slot for additional content -->
@@ -118,10 +105,10 @@ class QuizLoadingDisplay extends QuizBaseComponent {
 
       .quiz-loading-display {
         background: white;
-        border-radius: var(--quiz-border-radius);
+        border-radius: 8px;
         padding: 32px 24px;
         text-align: center;
-        box-shadow: var(--quiz-shadow);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         min-height: 200px;
         display: flex;
         align-items: center;
@@ -131,6 +118,18 @@ class QuizLoadingDisplay extends QuizBaseComponent {
       .quiz-loading-display.simple {
         min-height: 120px;
         padding: 24px;
+      }
+
+      .quiz-comprehensive-loading {
+        background: white;
+        border-radius: 8px;
+        padding: 32px 24px;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        min-height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
       .quiz-loading-content {
@@ -152,7 +151,7 @@ class QuizLoadingDisplay extends QuizBaseComponent {
         width: 32px;
         height: 32px;
         border: 3px solid #f3f3f3;
-        border-top: 3px solid var(--quiz-secondary-color);
+        border-top: 3px solid #306E51;
         border-radius: 50%;
         animation: spin 1s linear infinite;
       }
@@ -161,7 +160,7 @@ class QuizLoadingDisplay extends QuizBaseComponent {
         width: 48px;
         height: 48px;
         border: 4px solid #f3f3f3;
-        border-top: 4px solid var(--quiz-secondary-color);
+        border-top: 4px solid #306E51;
         border-radius: 50%;
         animation: spin 1s linear infinite;
       }
@@ -171,19 +170,19 @@ class QuizLoadingDisplay extends QuizBaseComponent {
         100% { transform: rotate(360deg); }
       }
 
-      .quiz-loading-text {
+      .quiz-loading-step {
         text-align: center;
       }
 
-      .quiz-loading-title {
+      .quiz-loading-step-title {
         font-size: 20px;
         font-weight: 600;
-        color: var(--quiz-primary-color);
+        color: #1f2937;
         margin: 0 0 8px 0;
         line-height: 1.3;
       }
 
-      .quiz-loading-message {
+      .quiz-loading-step-description {
         font-size: 14px;
         line-height: 1.5;
         color: #6b7280;

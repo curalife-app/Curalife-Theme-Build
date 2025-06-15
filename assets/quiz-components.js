@@ -596,7 +596,7 @@ class QuizCoverageCard extends QuizBaseComponent {
     }
   }
   render() {
-    const title = this.getAttribute("title") || "Coverage Details";
+    const title = this.getAttribute("title") || "Here's Your Offer";
     const sessionsCovered = this.getAttribute("sessions-covered") || "5";
     const planEnd = this.getAttribute("plan-end") || "Dec 31, 2025";
     this.shadowRoot.innerHTML = `
@@ -606,7 +606,7 @@ class QuizCoverageCard extends QuizBaseComponent {
 					margin: 1.5rem 0;
 				}
 
-				.coverage-card {
+				.quiz-coverage-card {
 					background: white;
 					border-radius: 8px;
 					border: 1px solid #e5e7eb;
@@ -614,19 +614,18 @@ class QuizCoverageCard extends QuizBaseComponent {
 					box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 				}
 
-				.coverage-title {
+				.quiz-coverage-card-title {
 					font-size: 1.25rem;
 					font-weight: 600;
 					color: #1f2937;
 					margin-bottom: 1rem;
-					text-align: center;
 				}
 
-				.coverage-pricing {
+				.quiz-coverage-pricing {
 					margin-bottom: 1.5rem;
 				}
 
-				.service-item {
+				.quiz-coverage-service-item {
 					display: flex;
 					justify-content: space-between;
 					align-items: center;
@@ -634,122 +633,122 @@ class QuizCoverageCard extends QuizBaseComponent {
 					border-bottom: 1px solid #f3f4f6;
 				}
 
-				.service-item:last-child {
+				.quiz-coverage-service-item:last-child {
 					border-bottom: none;
 				}
 
-				.service-name {
+				.quiz-coverage-service {
 					font-weight: 500;
 					color: #374151;
 				}
 
-				.service-cost {
+				.quiz-coverage-cost {
 					display: flex;
 					flex-direction: column;
 					align-items: flex-end;
 				}
 
-				.copay {
+				.quiz-coverage-copay {
 					font-weight: 600;
 					color: #059669;
 					font-size: 1.1rem;
 				}
 
-				.original-price {
+				.quiz-coverage-original-price {
 					font-size: 0.875rem;
 					color: #9ca3af;
 					text-decoration: line-through;
 				}
 
-				.divider {
+				.quiz-coverage-divider {
 					height: 1px;
 					background: #e5e7eb;
 					margin: 1rem 0;
 				}
 
-				.benefits {
+				.quiz-coverage-benefits {
 					display: flex;
 					flex-direction: column;
 					gap: 0.75rem;
 				}
 
-				.benefit {
+				.quiz-coverage-benefit {
 					display: flex;
 					align-items: center;
 					gap: 0.75rem;
 				}
 
-				.benefit-icon {
+				.quiz-coverage-benefit-icon {
 					flex-shrink: 0;
 					width: 20px;
 					height: 20px;
-					color: #059669;
+					color: #418865;
 				}
 
-				.benefit-text {
+				.quiz-coverage-benefit-text {
 					font-size: 0.875rem;
 					color: #374151;
 				}
 
 				@media (max-width: 768px) {
-					.coverage-card {
+					.quiz-coverage-card {
 						padding: 1rem;
 					}
 
-					.coverage-title {
+					.quiz-coverage-card-title {
 						font-size: 1.125rem;
 					}
 
-					.service-item {
+					.quiz-coverage-service-item {
 						flex-direction: column;
 						align-items: flex-start;
 						gap: 0.5rem;
 					}
 
-					.service-cost {
+					.quiz-coverage-cost {
 						align-items: flex-start;
 					}
 				}
 			</style>
 
-			<div class="coverage-card">
-				<div class="coverage-title">${title}</div>
+			<div class="quiz-coverage-card">
+				<div class="quiz-coverage-card-title">${title}</div>
 
-				<div class="coverage-pricing">
-					<div class="service-item">
-						<div class="service-name">Initial consultation – 60 minutes</div>
-						<div class="service-cost">
-							<div class="copay">Co-pay: $0*</div>
-							<div class="original-price">$100</div>
+				<div class="quiz-coverage-pricing">
+					<div class="quiz-coverage-service-item">
+						<div class="quiz-coverage-service">Initial consultation – 60 minutes</div>
+						<div class="quiz-coverage-cost">
+							<div class="quiz-coverage-copay">Co-pay: $0*</div>
+							<div class="quiz-coverage-original-price">$100</div>
 						</div>
 					</div>
-					<div class="service-item">
-						<div class="service-name">Follow-up consultation – 30 minutes</div>
-						<div class="service-cost">
-							<div class="copay">Co-pay: $0*</div>
-							<div class="original-price">$50</div>
+					<div class="quiz-coverage-service-item">
+						<div class="quiz-coverage-service">Follow-up consultation – 30 minutes</div>
+						<div class="quiz-coverage-cost">
+							<div class="quiz-coverage-copay">Co-pay: $0*</div>
+							<div class="quiz-coverage-original-price">$50</div>
 						</div>
 					</div>
 				</div>
 
-				<div class="divider"></div>
+				<div class="quiz-coverage-divider"></div>
 
-				<div class="benefits">
-					<div class="benefit">
-						<div class="benefit-icon">
+				<div class="quiz-coverage-benefits">
+					<div class="quiz-coverage-benefit">
+						<div class="quiz-coverage-benefit-icon">
 							<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M7.08 1.67L3.33 1.67L3.33 18.33L10.83 18.33L10 7.5L16.67 5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+								<path d="M7.08 1.67L3.33 1.67L3.33 18.33L10.83 18.33L10 7.5L16.67 5" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
 							</svg>
 						</div>
-						<div class="benefit-text">${sessionsCovered} covered sessions remaining</div>
+						<div class="quiz-coverage-benefit-text">${sessionsCovered} covered sessions remaining</div>
 					</div>
-					<div class="benefit">
-						<div class="benefit-icon">
+					<div class="quiz-coverage-benefit">
+						<div class="quiz-coverage-benefit-icon">
 							<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M10.83 11.67L6.25 1.67L13.75 3.33L2.5 18.33L17.5 8.33" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+								<path d="M10.83 11.67L6.25 1.67L13.75 3.33L2.5 18.33L17.5 8.33" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
 							</svg>
 						</div>
-						<div class="benefit-text">Coverage expires ${planEnd}</div>
+						<div class="quiz-coverage-benefit-text">Coverage expires ${planEnd}</div>
 					</div>
 				</div>
 			</div>
@@ -909,29 +908,40 @@ const quizBenefitItem = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.def
 }, Symbol.toStringTag, { value: "Module" }));
 class QuizActionSection extends QuizBaseComponent {
   static get observedAttributes() {
-    return ["title", "type", "background-color"];
+    return ["title", "type", "background-color", "result-url"];
   }
   getTemplate() {
-    const title = this.getAttribute("title") || "";
+    const title = this.getAttribute("title") || "Schedule your initial online consultation now";
     const type = this.getAttribute("type") || "default";
+    const backgroundColor = this.getAttribute("background-color") || "#F1F8F4";
+    const resultUrl = this.getAttribute("result-url") || "#";
     return `
-      <div class="quiz-action-section" data-type="${type}">
+      <div class="quiz-action-section" data-type="${type}" style="background-color: ${backgroundColor};">
         <div class="quiz-action-content">
-          ${title ? `
-            <div class="quiz-action-header">
-              <h3 class="quiz-action-title">${this.sanitizeHTML(title)}</h3>
-            </div>
-          ` : ""}
-
+          <div class="quiz-action-header">
+            <h3 class="quiz-action-title">${this.sanitizeHTML(title)}</h3>
+          </div>
           <div class="quiz-action-details">
-            <slot name="info"></slot>
+            <div class="quiz-action-info">
+              <div class="quiz-action-info-icon">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M4.58 4.17L15.83 15.42L2.08 1.67L17.83 13.75L8.33 16.25" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div class="quiz-action-info-text">Our dietitians usually recommend minimum 6 consultations over 6 months, Today, just book your first.</div>
+            </div>
+            <div class="quiz-action-feature">
+              <div class="quiz-action-feature-icon">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M1.67 2.5L18.33 18.17L13.33 1.67L5 5L6.67 10.42" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div class="quiz-action-feature-text">Free cancellation up to 24h before</div>
+            </div>
           </div>
+          <a href="${resultUrl}" class="quiz-booking-button">Proceed to booking</a>
 
-          <div class="quiz-action-buttons">
-            <slot name="action"></slot>
-          </div>
-
-          <!-- Default slot for any additional content -->
+          <!-- Slots for additional content -->
           <slot></slot>
         </div>
       </div>
@@ -947,31 +957,10 @@ class QuizActionSection extends QuizBaseComponent {
       }
 
       .quiz-action-section {
-        background: #f8f9fa;
-        border-radius: var(--quiz-border-radius);
+        background: #F1F8F4;
+        border-radius: 8px;
         padding: 32px 24px;
-        text-align: center;
         transition: var(--quiz-transition);
-      }
-
-      :host([type="primary"]) .quiz-action-section {
-        background: linear-gradient(135deg, #f1f8f4, #e8f5e8);
-        border: 1px solid #d4edda;
-      }
-
-      :host([type="secondary"]) .quiz-action-section {
-        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-        border: 1px solid #dee2e6;
-      }
-
-      :host([type="warning"]) .quiz-action-section {
-        background: linear-gradient(135deg, #fffaf0, #fef5e7);
-        border: 1px solid #ffeaa7;
-      }
-
-      /* Custom background color support */
-      :host([background-color]) .quiz-action-section {
-        background: attr(background-color);
       }
 
       .quiz-action-content {
@@ -986,7 +975,7 @@ class QuizActionSection extends QuizBaseComponent {
       .quiz-action-title {
         font-size: 24px;
         font-weight: 600;
-        color: var(--quiz-primary-color);
+        color: #1f2937;
         margin: 0 0 8px 0;
         line-height: 1.3;
       }
@@ -995,46 +984,74 @@ class QuizActionSection extends QuizBaseComponent {
         margin-bottom: 24px;
       }
 
-      .quiz-action-details ::slotted(*) {
-        margin-bottom: 12px;
-      }
-
-      .quiz-action-buttons {
+      .quiz-action-info {
         display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 16px;
+        align-items: flex-start;
+        margin-bottom: 16px;
+        gap: 12px;
       }
 
-      /* Style slotted booking buttons */
-      .quiz-action-buttons ::slotted(.quiz-booking-button) {
+      .quiz-action-info-icon {
+        flex-shrink: 0;
+        width: 20px;
+        height: 20px;
+        margin-top: 2px;
+      }
+
+      .quiz-action-info-text {
+        color: #374151;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .quiz-action-feature {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 12px;
+        gap: 12px;
+      }
+
+      .quiz-action-feature-icon {
+        flex-shrink: 0;
+        width: 20px;
+        height: 20px;
+        margin-top: 2px;
+      }
+
+      .quiz-action-feature-text {
+        color: #374151;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .quiz-booking-button {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        background: var(--quiz-secondary-color);
+        background: #306E51;
         color: white;
         padding: 16px 32px;
-        border-radius: var(--quiz-border-radius);
+        border-radius: 8px;
         text-decoration: none;
         font-weight: 600;
         font-size: 16px;
-        transition: var(--quiz-transition);
+        transition: all 0.2s ease;
         border: none;
         cursor: pointer;
         min-width: 200px;
       }
 
-      .quiz-action-buttons ::slotted(.quiz-booking-button:hover) {
+      .quiz-booking-button:hover {
         background: #2a5d42;
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(48, 110, 81, 0.3);
       }
 
-      .quiz-action-buttons ::slotted(.quiz-booking-button:active) {
+      .quiz-booking-button:active {
         transform: translateY(0);
       }
 
-      .quiz-action-buttons ::slotted(.quiz-booking-button:disabled) {
+      .quiz-booking-button:disabled {
         background: #6c757d;
         cursor: not-allowed;
         transform: none;
@@ -1052,7 +1069,7 @@ class QuizActionSection extends QuizBaseComponent {
           font-size: 20px;
         }
 
-        .quiz-action-buttons ::slotted(.quiz-booking-button) {
+        .quiz-booking-button {
           padding: 14px 24px;
           font-size: 15px;
           min-width: 180px;
@@ -1068,7 +1085,7 @@ class QuizActionSection extends QuizBaseComponent {
           font-size: 18px;
         }
 
-        .quiz-action-buttons ::slotted(.quiz-booking-button) {
+        .quiz-booking-button {
           width: 100%;
           max-width: 280px;
         }
@@ -1532,7 +1549,7 @@ class QuizLoadingDisplay extends QuizBaseComponent {
   }
   getComprehensiveTemplate(title, message, progress, currentStep, totalSteps, showSpinner) {
     return `
-      <div class="quiz-loading-display comprehensive">
+      <div class="quiz-comprehensive-loading">
         <div class="quiz-loading-content">
           ${showSpinner ? `
             <div class="quiz-loading-icon">
@@ -1540,22 +1557,9 @@ class QuizLoadingDisplay extends QuizBaseComponent {
             </div>
           ` : ""}
 
-          <div class="quiz-loading-text">
-            <h3 class="quiz-loading-title">${this.sanitizeHTML(title)}</h3>
-            ${message ? `<p class="quiz-loading-message">${this.sanitizeHTML(message)}</p>` : ""}
-          </div>
-
-          <div class="quiz-loading-steps">
-            <slot name="steps"></slot>
-          </div>
-
-          <div class="quiz-loading-progress">
-            <div class="quiz-loading-progress-bar">
-              <div class="quiz-loading-progress-fill" style="width: ${progress}%"></div>
-            </div>
-            <div class="quiz-loading-progress-text">
-              ${progress}% complete (${currentStep}/${totalSteps})
-            </div>
+          <div class="quiz-loading-step">
+            <h3 class="quiz-loading-step-title">${this.sanitizeHTML(title)}</h3>
+            ${message ? `<p class="quiz-loading-step-description">${this.sanitizeHTML(message)}</p>` : ""}
           </div>
 
           <!-- Default slot for additional content -->
@@ -1575,10 +1579,10 @@ class QuizLoadingDisplay extends QuizBaseComponent {
 
       .quiz-loading-display {
         background: white;
-        border-radius: var(--quiz-border-radius);
+        border-radius: 8px;
         padding: 32px 24px;
         text-align: center;
-        box-shadow: var(--quiz-shadow);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         min-height: 200px;
         display: flex;
         align-items: center;
@@ -1588,6 +1592,18 @@ class QuizLoadingDisplay extends QuizBaseComponent {
       .quiz-loading-display.simple {
         min-height: 120px;
         padding: 24px;
+      }
+
+      .quiz-comprehensive-loading {
+        background: white;
+        border-radius: 8px;
+        padding: 32px 24px;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        min-height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
       .quiz-loading-content {
@@ -1609,7 +1625,7 @@ class QuizLoadingDisplay extends QuizBaseComponent {
         width: 32px;
         height: 32px;
         border: 3px solid #f3f3f3;
-        border-top: 3px solid var(--quiz-secondary-color);
+        border-top: 3px solid #306E51;
         border-radius: 50%;
         animation: spin 1s linear infinite;
       }
@@ -1618,7 +1634,7 @@ class QuizLoadingDisplay extends QuizBaseComponent {
         width: 48px;
         height: 48px;
         border: 4px solid #f3f3f3;
-        border-top: 4px solid var(--quiz-secondary-color);
+        border-top: 4px solid #306E51;
         border-radius: 50%;
         animation: spin 1s linear infinite;
       }
@@ -1628,19 +1644,19 @@ class QuizLoadingDisplay extends QuizBaseComponent {
         100% { transform: rotate(360deg); }
       }
 
-      .quiz-loading-text {
+      .quiz-loading-step {
         text-align: center;
       }
 
-      .quiz-loading-title {
+      .quiz-loading-step-title {
         font-size: 20px;
         font-weight: 600;
-        color: var(--quiz-primary-color);
+        color: #1f2937;
         margin: 0 0 8px 0;
         line-height: 1.3;
       }
 
-      .quiz-loading-message {
+      .quiz-loading-step-description {
         font-size: 14px;
         line-height: 1.5;
         color: #6b7280;

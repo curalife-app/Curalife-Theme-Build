@@ -18,35 +18,42 @@ import { QuizBaseComponent, quizComponentRegistry } from "../base/quiz-base-comp
  */
 class QuizActionSection extends QuizBaseComponent {
 	static get observedAttributes() {
-		return ["title", "type", "background-color"];
+		return ["title", "type", "background-color", "result-url"];
 	}
 
 	getTemplate() {
-		const title = this.getAttribute("title") || "";
+		const title = this.getAttribute("title") || "Schedule your initial online consultation now";
 		const type = this.getAttribute("type") || "default";
+		const backgroundColor = this.getAttribute("background-color") || "#F1F8F4";
+		const resultUrl = this.getAttribute("result-url") || "#";
 
 		return `
-      <div class="quiz-action-section" data-type="${type}">
+      <div class="quiz-action-section" data-type="${type}" style="background-color: ${backgroundColor};">
         <div class="quiz-action-content">
-          ${
-						title
-							? `
-            <div class="quiz-action-header">
-              <h3 class="quiz-action-title">${this.sanitizeHTML(title)}</h3>
-            </div>
-          `
-							: ""
-					}
-
+          <div class="quiz-action-header">
+            <h3 class="quiz-action-title">${this.sanitizeHTML(title)}</h3>
+          </div>
           <div class="quiz-action-details">
-            <slot name="info"></slot>
+            <div class="quiz-action-info">
+              <div class="quiz-action-info-icon">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M4.58 4.17L15.83 15.42L2.08 1.67L17.83 13.75L8.33 16.25" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div class="quiz-action-info-text">Our dietitians usually recommend minimum 6 consultations over 6 months, Today, just book your first.</div>
+            </div>
+            <div class="quiz-action-feature">
+              <div class="quiz-action-feature-icon">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M1.67 2.5L18.33 18.17L13.33 1.67L5 5L6.67 10.42" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div class="quiz-action-feature-text">Free cancellation up to 24h before</div>
+            </div>
           </div>
+          <a href="${resultUrl}" class="quiz-booking-button">Proceed to booking</a>
 
-          <div class="quiz-action-buttons">
-            <slot name="action"></slot>
-          </div>
-
-          <!-- Default slot for any additional content -->
+          <!-- Slots for additional content -->
           <slot></slot>
         </div>
       </div>
@@ -63,31 +70,10 @@ class QuizActionSection extends QuizBaseComponent {
       }
 
       .quiz-action-section {
-        background: #f8f9fa;
-        border-radius: var(--quiz-border-radius);
+        background: #F1F8F4;
+        border-radius: 8px;
         padding: 32px 24px;
-        text-align: center;
         transition: var(--quiz-transition);
-      }
-
-      :host([type="primary"]) .quiz-action-section {
-        background: linear-gradient(135deg, #f1f8f4, #e8f5e8);
-        border: 1px solid #d4edda;
-      }
-
-      :host([type="secondary"]) .quiz-action-section {
-        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-        border: 1px solid #dee2e6;
-      }
-
-      :host([type="warning"]) .quiz-action-section {
-        background: linear-gradient(135deg, #fffaf0, #fef5e7);
-        border: 1px solid #ffeaa7;
-      }
-
-      /* Custom background color support */
-      :host([background-color]) .quiz-action-section {
-        background: attr(background-color);
       }
 
       .quiz-action-content {
@@ -102,7 +88,7 @@ class QuizActionSection extends QuizBaseComponent {
       .quiz-action-title {
         font-size: 24px;
         font-weight: 600;
-        color: var(--quiz-primary-color);
+        color: #1f2937;
         margin: 0 0 8px 0;
         line-height: 1.3;
       }
@@ -111,46 +97,74 @@ class QuizActionSection extends QuizBaseComponent {
         margin-bottom: 24px;
       }
 
-      .quiz-action-details ::slotted(*) {
-        margin-bottom: 12px;
-      }
-
-      .quiz-action-buttons {
+      .quiz-action-info {
         display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 16px;
+        align-items: flex-start;
+        margin-bottom: 16px;
+        gap: 12px;
       }
 
-      /* Style slotted booking buttons */
-      .quiz-action-buttons ::slotted(.quiz-booking-button) {
+      .quiz-action-info-icon {
+        flex-shrink: 0;
+        width: 20px;
+        height: 20px;
+        margin-top: 2px;
+      }
+
+      .quiz-action-info-text {
+        color: #374151;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .quiz-action-feature {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 12px;
+        gap: 12px;
+      }
+
+      .quiz-action-feature-icon {
+        flex-shrink: 0;
+        width: 20px;
+        height: 20px;
+        margin-top: 2px;
+      }
+
+      .quiz-action-feature-text {
+        color: #374151;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .quiz-booking-button {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        background: var(--quiz-secondary-color);
+        background: #306E51;
         color: white;
         padding: 16px 32px;
-        border-radius: var(--quiz-border-radius);
+        border-radius: 8px;
         text-decoration: none;
         font-weight: 600;
         font-size: 16px;
-        transition: var(--quiz-transition);
+        transition: all 0.2s ease;
         border: none;
         cursor: pointer;
         min-width: 200px;
       }
 
-      .quiz-action-buttons ::slotted(.quiz-booking-button:hover) {
+      .quiz-booking-button:hover {
         background: #2a5d42;
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(48, 110, 81, 0.3);
       }
 
-      .quiz-action-buttons ::slotted(.quiz-booking-button:active) {
+      .quiz-booking-button:active {
         transform: translateY(0);
       }
 
-      .quiz-action-buttons ::slotted(.quiz-booking-button:disabled) {
+      .quiz-booking-button:disabled {
         background: #6c757d;
         cursor: not-allowed;
         transform: none;
@@ -168,7 +182,7 @@ class QuizActionSection extends QuizBaseComponent {
           font-size: 20px;
         }
 
-        .quiz-action-buttons ::slotted(.quiz-booking-button) {
+        .quiz-booking-button {
           padding: 14px 24px;
           font-size: 15px;
           min-width: 180px;
@@ -184,7 +198,7 @@ class QuizActionSection extends QuizBaseComponent {
           font-size: 18px;
         }
 
-        .quiz-action-buttons ::slotted(.quiz-booking-button) {
+        .quiz-booking-button {
           width: 100%;
           max-width: 280px;
         }
