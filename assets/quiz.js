@@ -1496,6 +1496,30 @@ class ModularQuiz {
 	}
 
 	_generateStepHTML(step) {
+		// Use Web Component if available, otherwise fallback to legacy HTML
+		if (this.webComponentsInit && this.webComponentsInit.isInitialized()) {
+			const stepContainer = document.createElement("quiz-step-container");
+			stepContainer.setAttribute("step-data", JSON.stringify(step));
+			stepContainer.setAttribute("responses", JSON.stringify(this.responses));
+			stepContainer.setAttribute("current-question-index", this.currentQuestionIndex.toString());
+			stepContainer.setAttribute("is-form-step", this.isFormStep(step.id).toString());
+
+			// Add validation errors if any
+			const validationErrors = this._getValidationErrorsForStep(step);
+			if (validationErrors.length > 0) {
+				stepContainer.setAttribute("validation-errors", JSON.stringify(validationErrors));
+			}
+
+			// Check if this is the last step
+			const isLastStep = this.currentStepIndex === this.quizData.steps.length - 1;
+			if (isLastStep) {
+				stepContainer.setAttribute("is-last-step", "true");
+			}
+
+			return stepContainer.outerHTML;
+		}
+
+		// Legacy fallback HTML (original implementation)
 		let stepHTML = `<div class="animate-fade-in">`;
 		stepHTML += this._generateStepInfoHTML(step);
 
@@ -1712,108 +1736,62 @@ class ModularQuiz {
 	}
 
 	_renderQuestionByType(question, response) {
+		// Web Components should always be available - no fallbacks needed!
+		return this._renderQuestionWithWebComponent(question, response);
+	}
+
+	_renderQuestionWithWebComponent(question, response) {
+		const questionData = JSON.stringify(question);
+
 		switch (question.type) {
 			case "multiple-choice":
-				return this.renderMultipleChoice(question, response);
+				return `<quiz-multiple-choice
+					question-data='${questionData}'
+					selected-value="${response.answer || ""}"
+				></quiz-multiple-choice>`;
+
 			case "checkbox":
-				return this.renderCheckbox(question, response);
+				const selectedValues = Array.isArray(response.answer) ? response.answer : [];
+				const layout = question.id === "consent" ? "simple" : "cards";
+				return `<quiz-checkbox-group
+					question-data='${questionData}'
+					selected-values='${JSON.stringify(selectedValues)}'
+					layout="${layout}"
+				></quiz-checkbox-group>`;
+
 			case "dropdown":
-				return this.renderDropdown(question, response);
-			case "payer-search":
-				return this.renderPayerSearch(question, response);
+				return `<quiz-dropdown
+					question-data='${questionData}'
+					selected-value="${response.answer || ""}"
+				></quiz-dropdown>`;
+
 			case "text":
-				return this.renderTextInput(question, response);
-			case "date":
-				return this.renderDateInput(question, response);
-			case "date-part":
-				return this.renderDatePart(question, response);
-			case "textarea":
-				return this.renderTextarea(question, response);
+				return `<quiz-text-input
+					question-data='${questionData}'
+					value="${response.answer || ""}"
+				></quiz-text-input>`;
+
 			case "rating":
-				return this.renderRating(question, response);
+				return `<quiz-rating
+					question-data='${questionData}'
+					value="${response.answer || 5}"
+				></quiz-rating>`;
+
+			case "payer-search":
+				return this.renderPayerSearch(question, response); // Keep existing Web Component logic
+
+			case "date":
+				return this.renderDateInput(question, response); // Keep legacy for now
+
+			case "date-part":
+				return this.renderDatePart(question, response); // Keep legacy for now
+
+			case "textarea":
+				return this.renderTextarea(question, response); // Keep legacy for now
+
 			default:
 				return `<p class="quiz-error-text">Unsupported field type: ${question.type}</p>`;
 		}
-	}
-
-	renderMultipleChoice(question, response) {
-		return this._renderCardOptions(question, response, "radio");
-	}
-
-	renderCheckbox(question, response) {
-		const selectedOptions = Array.isArray(response.answer) ? response.answer : [];
-
-		if (question.id === "consent") {
-			return this._renderSimpleCheckboxes(question, selectedOptions);
-		}
-		return this._renderCardOptions(question, response, "checkbox");
-	}
-
-	_renderCardOptions(question, response, inputType) {
-		const selectedOptions = inputType === "checkbox" ? (Array.isArray(response.answer) ? response.answer : []) : null;
-		const isSelected = option => (inputType === "checkbox" ? selectedOptions.includes(option.id) : response.answer === option.id);
-
-		let html = '<div class="quiz-grid-2">';
-		question.options.forEach(option => {
-			const selected = isSelected(option);
-			html += `
-				<label for="${option.id}" class="quiz-option-card">
-					<input type="${inputType}" id="${option.id}" name="question-${question.id}" value="${option.id}" class="quiz-sr-only" ${selected ? "checked" : ""}>
-					<div class="quiz-option-button ${selected ? "selected" : ""}">
-						<div class="quiz-option-text">
-							<div class="quiz-option-text-content">${option.text}</div>
-				</div>
-						${selected ? this._getCheckmarkSVG() : ""}
-				</div>
-				</label>
-			`;
-		});
-		return html + "</div>";
-	}
-
-	_renderSimpleCheckboxes(question, selectedOptions) {
-		let html = '<div class="quiz-space-y-3 quiz-spacing-container">';
-		question.options.forEach(option => {
-			html += `
-				<div class="quiz-checkbox-container">
-					<input type="checkbox" id="${option.id}" name="question-${question.id}" value="${option.id}" class="quiz-checkbox-input" ${selectedOptions.includes(option.id) ? "checked" : ""}>
-					<label class="quiz-checkbox-label" for="${option.id}">${option.text}</label>
-			</div>
-		`;
-		});
-		return html + "</div>";
-	}
-
-	renderDropdown(question, response) {
-		const options = question.options || [];
-		const placeholder = question.placeholder || "Select an option";
-		const optionsHTML = options.map(option => `<option value="${option.id}" ${response.answer === option.id ? "selected" : ""}>${option.text}</option>`).join("");
-
-		return `
-			<div>
-				<select id="question-${question.id}" class="quiz-select">
-					<option value="">${placeholder}</option>
-					${optionsHTML}
-				</select>
-				${this._getErrorElement(question.id)}
-			</div>
-        `;
-	}
-
-	renderTextInput(question, response) {
-		return `
-			<div>
-				<input type="text" id="question-${question.id}" class="quiz-input"
-					placeholder="${question.placeholder || "Type your answer here..."}"
-					value="${response.answer || ""}"
-					aria-describedby="error-${question.id}">
-				${this._getErrorElement(question.id)}
-				</div>
-		`;
-	}
-
-	_getErrorElement(questionId) {
-		return `<p id="error-${questionId}" class="quiz-error-text quiz-error-hidden"></p>`;
 	}
 
 	renderDatePart(question, response) {
@@ -1873,18 +1851,6 @@ class ModularQuiz {
 		`;
 	}
 
-	renderRating(question, response) {
-		return `
-			<div class="quiz-spacing-container">
-				<input type="range" id="question-${question.id}" class="quiz-range"
-					min="1" max="10" step="1" value="${response.answer || 5}">
-				<div class="quiz-range-labels">
-                    <span>1</span><span>5</span><span>10</span>
-							</div>
-							</div>
-		`;
-	}
-
 	renderDateInput(question, response) {
 		return `
             <div class="quiz-question-section">
@@ -1896,6 +1862,10 @@ class ModularQuiz {
                 ${question.helpText ? `<p class="quiz-text-sm">${question.helpText}</p>` : ""}
 			</div>
 		`;
+	}
+
+	_getErrorElement(questionId) {
+		return `<p id="error-${questionId}" class="quiz-error-text quiz-error-hidden"></p>`;
 	}
 
 	renderPayerSearch(question, response) {
@@ -2800,6 +2770,12 @@ class ModularQuiz {
 		};
 	}
 
+	_getValidationErrorsForStep(step) {
+		// Helper method to collect validation errors for a step
+		// This would be populated during validation
+		return this.currentValidationErrors || [];
+	}
+
 	_validateFieldValue(question, value) {
 		const errorMessages = this.quizData.ui?.errorMessages || {};
 
@@ -2936,6 +2912,29 @@ class ModularQuiz {
 	_showSchedulingResults(result) {
 		const schedulingData = result?.schedulingData;
 
+		// Use Web Component if available, otherwise fallback to legacy HTML
+		if (this.webComponentsInit && this.webComponentsInit.isInitialized()) {
+			const schedulingResult = document.createElement("quiz-scheduling-result");
+
+			if (result?.success && schedulingData?.scheduleLink) {
+				// Success case
+				schedulingResult.setAttribute("result-type", "success");
+				schedulingResult.setAttribute("scheduling-data", JSON.stringify(schedulingData));
+			} else {
+				// Error case
+				const errorMessage = schedulingData?.message || result?.error || "Unknown scheduling error";
+				schedulingResult.setAttribute("result-type", "error");
+				schedulingResult.setAttribute("error-message", errorMessage);
+				if (schedulingData) {
+					schedulingResult.setAttribute("scheduling-data", JSON.stringify(schedulingData));
+				}
+			}
+
+			this.questionContainer.innerHTML = schedulingResult.outerHTML;
+			return;
+		}
+
+		// Legacy fallback
 		if (result?.success && schedulingData?.scheduleLink) {
 			// Success - show scheduling success page when we have a schedule link
 			const successHTML = this._generateSchedulingSuccessHTML(schedulingData);
@@ -2948,8 +2947,49 @@ class ModularQuiz {
 	}
 
 	_showSchedulingError(errorMessage, schedulingData = null) {
+		// Use Web Component if available, otherwise fallback to legacy HTML
+		if (this.webComponentsInit && this.webComponentsInit.isInitialized()) {
+			const schedulingResult = document.createElement("quiz-scheduling-result");
+			schedulingResult.setAttribute("result-type", "error");
+			schedulingResult.setAttribute("error-message", errorMessage);
+			if (schedulingData) {
+				schedulingResult.setAttribute("scheduling-data", JSON.stringify(schedulingData));
+			}
+			this.questionContainer.innerHTML = schedulingResult.outerHTML;
+			return;
+		}
+
+		// Legacy fallback
 		const errorHTML = this._generateSchedulingErrorHTML(errorMessage, schedulingData);
 		this.questionContainer.innerHTML = errorHTML;
+	}
+
+	_handleSchedulingAction(action) {
+		// Handle actions from the scheduling result Web Component
+		switch (action) {
+			case "retry":
+				// Retry the scheduling workflow
+				this._triggerSchedulingWorkflow(this._getSchedulingUrl());
+				break;
+			case "contact-support":
+				// Open support contact (could be email, phone, or chat)
+				window.open("mailto:support@curalife.com?subject=Scheduling%20Assistance%20Needed", "_blank");
+				break;
+			case "add-to-calendar":
+				// Add appointment to calendar (would need appointment data)
+				console.log("Add to calendar action triggered");
+				break;
+			case "view-details":
+				// Show detailed appointment information
+				console.log("View details action triggered");
+				break;
+			case "continue":
+				// Continue to next step or close
+				console.log("Continue action triggered");
+				break;
+			default:
+				console.warn("Unknown scheduling action:", action);
+		}
 	}
 
 	_generateSchedulingSuccessHTML(schedulingData) {
