@@ -71,7 +71,7 @@ class QuizBaseComponent extends HTMLElement {
       autoRender: true
     };
     this.isInitialized = false;
-    this.isConnected = false;
+    this._isComponentConnected = false;
     if (this.config.useShadowDOM) {
       this.attachShadow({ mode: "open" });
       this.root = this.shadowRoot;
@@ -85,7 +85,7 @@ class QuizBaseComponent extends HTMLElement {
    * Lifecycle: Component connected to DOM
    */
   connectedCallback() {
-    this.isConnected = true;
+    this._isComponentConnected = true;
     if (!this.isInitialized) {
       this.initialize();
       this.isInitialized = true;
@@ -100,7 +100,7 @@ class QuizBaseComponent extends HTMLElement {
    * Lifecycle: Component disconnected from DOM
    */
   disconnectedCallback() {
-    this.isConnected = false;
+    this._isComponentConnected = false;
     this.cleanup();
     this.onDisconnected();
   }
@@ -110,7 +110,7 @@ class QuizBaseComponent extends HTMLElement {
   attributeChangedCallback(name, oldValue, newValue) {
     if (oldValue === newValue) return;
     this.handleAttributeChange(name, oldValue, newValue);
-    if (this.isConnected && this.config.autoRender) {
+    if (this._isComponentConnected && this.config.autoRender) {
       this.render();
     }
   }
@@ -196,6 +196,12 @@ class QuizBaseComponent extends HTMLElement {
    * Override in subclasses
    */
   onDisconnected() {
+  }
+  /**
+   * Check if component is connected (use native isConnected for DOM connection status)
+   */
+  get isComponentConnected() {
+    return this._isComponentConnected;
   }
   /**
    * Utility: Get attribute as boolean
@@ -358,7 +364,21 @@ class QuizComponentRegistry {
       return;
     }
     try {
-      const module = await __vitePreload(() => import(`../${this.getComponentPath(componentName)}`), true ? [] : void 0);
+      const componentMap = {
+        "quiz-calendar-icon": () => __vitePreload(() => Promise.resolve().then(() => quizCalendarIcon), true ? void 0 : void 0),
+        "quiz-clock-icon": () => __vitePreload(() => Promise.resolve().then(() => quizClockIcon), true ? void 0 : void 0),
+        "quiz-checkmark-icon": () => __vitePreload(() => Promise.resolve().then(() => quizCheckmarkIcon), true ? void 0 : void 0),
+        "quiz-coverage-card": () => __vitePreload(() => Promise.resolve().then(() => quizCoverageCard), true ? void 0 : void 0),
+        "quiz-benefit-item": () => __vitePreload(() => Promise.resolve().then(() => quizBenefitItem), true ? void 0 : void 0),
+        "quiz-action-section": () => __vitePreload(() => Promise.resolve().then(() => quizActionSection), true ? void 0 : void 0),
+        "quiz-error-display": () => __vitePreload(() => Promise.resolve().then(() => quizErrorDisplay), true ? void 0 : void 0),
+        "quiz-loading-display": () => __vitePreload(() => Promise.resolve().then(() => quizLoadingDisplay), true ? void 0 : void 0)
+      };
+      const importFn = componentMap[componentName];
+      if (!importFn) {
+        throw new Error(`Unknown component: ${componentName}`);
+      }
+      const module = await importFn();
       if (module.default && !this.isRegistered(componentName)) {
         console.log(`✓ Loaded quiz component: ${componentName}`);
       }
@@ -437,6 +457,10 @@ class QuizCalendarIcon extends QuizBaseComponent {
 if (!customElements.get("quiz-calendar-icon")) {
   quizComponentRegistry.register("quiz-calendar-icon", QuizCalendarIcon);
 }
+const quizCalendarIcon = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: QuizCalendarIcon
+}, Symbol.toStringTag, { value: "Module" }));
 class QuizClockIcon extends QuizBaseComponent {
   constructor() {
     super();
@@ -483,6 +507,10 @@ class QuizClockIcon extends QuizBaseComponent {
 if (!customElements.get("quiz-clock-icon")) {
   quizComponentRegistry.register("quiz-clock-icon", QuizClockIcon);
 }
+const quizClockIcon = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: QuizClockIcon
+}, Symbol.toStringTag, { value: "Module" }));
 class QuizCheckmarkIcon extends QuizBaseComponent {
   constructor() {
     super();
@@ -551,119 +579,190 @@ class QuizCheckmarkIcon extends QuizBaseComponent {
 if (!customElements.get("quiz-checkmark-icon")) {
   quizComponentRegistry.register("quiz-checkmark-icon", QuizCheckmarkIcon);
 }
+const quizCheckmarkIcon = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: QuizCheckmarkIcon
+}, Symbol.toStringTag, { value: "Module" }));
 class QuizCoverageCard extends QuizBaseComponent {
   static get observedAttributes() {
-    return ["title", "type", "sessions-covered", "plan-end"];
+    return ["title", "sessions-covered", "plan-end"];
   }
-  getTemplate() {
-    const title = this.getAttribute("title") || "Coverage Information";
-    const type = this.getAttribute("type") || "default";
-    return `
-      <div class="quiz-coverage-card" data-type="${type}">
-        <div class="quiz-coverage-card-title">${this.sanitizeHTML(title)}</div>
-        <div class="quiz-coverage-content">
-          <slot></slot>
-        </div>
-      </div>
-    `;
+  connectedCallback() {
+    this.render();
   }
-  getStyles() {
-    return `
-      ${super.getStyles()}
-
-      :host {
-        display: block;
-        margin: 20px 0;
-      }
-
-      .quiz-coverage-card {
-        background: white;
-        border-radius: var(--quiz-border-radius);
-        padding: 24px;
-        box-shadow: var(--quiz-shadow);
-        border-left: 4px solid transparent;
-        transition: var(--quiz-transition);
-      }
-
-      :host([type="success"]) .quiz-coverage-card {
-        border-left-color: var(--quiz-success-color);
-        background-color: #f1f8f4;
-      }
-
-      :host([type="error"]) .quiz-coverage-card {
-        border-left-color: var(--quiz-error-color);
-        background-color: #fed7d7;
-      }
-
-      :host([type="warning"]) .quiz-coverage-card {
-        border-left-color: var(--quiz-warning-color);
-        background-color: #fffaf0;
-      }
-
-      .quiz-coverage-card-title {
-        font-size: 18px;
-        font-weight: 600;
-        margin-bottom: 16px;
-        color: var(--quiz-primary-color);
-      }
-
-      :host([type="success"]) .quiz-coverage-card-title {
-        color: #2d5a3d;
-      }
-
-      :host([type="error"]) .quiz-coverage-card-title {
-        color: #c53030;
-      }
-
-      :host([type="warning"]) .quiz-coverage-card-title {
-        color: #c05621;
-      }
-
-      .quiz-coverage-content {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
-
-      /* Responsive design */
-      @media (max-width: 768px) {
-        .quiz-coverage-card {
-          padding: 20px 16px;
-          margin: 16px 0;
-        }
-
-        .quiz-coverage-card-title {
-          font-size: 16px;
-          margin-bottom: 14px;
-        }
-      }
-    `;
+  attributeChangedCallback() {
+    if (this.isConnected) {
+      this.render();
+    }
   }
   render() {
-    this.renderTemplate();
-  }
-  handleAttributeChange(name, oldValue, newValue) {
-    if (name === "type") {
-      this.updateTypeStyles();
-    }
-  }
-  updateTypeStyles() {
-    const card = this.querySelector(".quiz-coverage-card");
-    if (card) {
-      const type = this.getAttribute("type") || "default";
-      card.setAttribute("data-type", type);
-    }
-  }
-  onConnected() {
-    this.dispatchCustomEvent("quiz-coverage-card-ready", {
-      title: this.getAttribute("title"),
-      type: this.getAttribute("type")
-    });
+    const title = this.getAttribute("title") || "Coverage Details";
+    const sessionsCovered = this.getAttribute("sessions-covered") || "5";
+    const planEnd = this.getAttribute("plan-end") || "Dec 31, 2025";
+    this.shadowRoot.innerHTML = `
+			<style>
+				:host {
+					display: block;
+					margin: 1.5rem 0;
+				}
+
+				.coverage-card {
+					background: white;
+					border-radius: 8px;
+					border: 1px solid #e5e7eb;
+					padding: 1.5rem;
+					box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+				}
+
+				.coverage-title {
+					font-size: 1.25rem;
+					font-weight: 600;
+					color: #1f2937;
+					margin-bottom: 1rem;
+					text-align: center;
+				}
+
+				.coverage-pricing {
+					margin-bottom: 1.5rem;
+				}
+
+				.service-item {
+					display: flex;
+					justify-content: space-between;
+					align-items: center;
+					padding: 0.75rem 0;
+					border-bottom: 1px solid #f3f4f6;
+				}
+
+				.service-item:last-child {
+					border-bottom: none;
+				}
+
+				.service-name {
+					font-weight: 500;
+					color: #374151;
+				}
+
+				.service-cost {
+					display: flex;
+					flex-direction: column;
+					align-items: flex-end;
+				}
+
+				.copay {
+					font-weight: 600;
+					color: #059669;
+					font-size: 1.1rem;
+				}
+
+				.original-price {
+					font-size: 0.875rem;
+					color: #9ca3af;
+					text-decoration: line-through;
+				}
+
+				.divider {
+					height: 1px;
+					background: #e5e7eb;
+					margin: 1rem 0;
+				}
+
+				.benefits {
+					display: flex;
+					flex-direction: column;
+					gap: 0.75rem;
+				}
+
+				.benefit {
+					display: flex;
+					align-items: center;
+					gap: 0.75rem;
+				}
+
+				.benefit-icon {
+					flex-shrink: 0;
+					width: 20px;
+					height: 20px;
+					color: #059669;
+				}
+
+				.benefit-text {
+					font-size: 0.875rem;
+					color: #374151;
+				}
+
+				@media (max-width: 768px) {
+					.coverage-card {
+						padding: 1rem;
+					}
+
+					.coverage-title {
+						font-size: 1.125rem;
+					}
+
+					.service-item {
+						flex-direction: column;
+						align-items: flex-start;
+						gap: 0.5rem;
+					}
+
+					.service-cost {
+						align-items: flex-start;
+					}
+				}
+			</style>
+
+			<div class="coverage-card">
+				<div class="coverage-title">${title}</div>
+
+				<div class="coverage-pricing">
+					<div class="service-item">
+						<div class="service-name">Initial consultation – 60 minutes</div>
+						<div class="service-cost">
+							<div class="copay">Co-pay: $0*</div>
+							<div class="original-price">$100</div>
+						</div>
+					</div>
+					<div class="service-item">
+						<div class="service-name">Follow-up consultation – 30 minutes</div>
+						<div class="service-cost">
+							<div class="copay">Co-pay: $0*</div>
+							<div class="original-price">$50</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="divider"></div>
+
+				<div class="benefits">
+					<div class="benefit">
+						<div class="benefit-icon">
+							<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<path d="M7.08 1.67L3.33 1.67L3.33 18.33L10.83 18.33L10 7.5L16.67 5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+							</svg>
+						</div>
+						<div class="benefit-text">${sessionsCovered} covered sessions remaining</div>
+					</div>
+					<div class="benefit">
+						<div class="benefit-icon">
+							<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<path d="M10.83 11.67L6.25 1.67L13.75 3.33L2.5 18.33L17.5 8.33" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+							</svg>
+						</div>
+						<div class="benefit-text">Coverage expires ${planEnd}</div>
+					</div>
+				</div>
+			</div>
+		`;
   }
 }
 if (!customElements.get("quiz-coverage-card")) {
   quizComponentRegistry.register("quiz-coverage-card", QuizCoverageCard);
 }
+const quizCoverageCard = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: QuizCoverageCard
+}, Symbol.toStringTag, { value: "Module" }));
 class QuizBenefitItem extends QuizBaseComponent {
   static get observedAttributes() {
     return ["icon", "text", "icon-color", "icon-size"];
@@ -804,6 +903,10 @@ class QuizBenefitItem extends QuizBaseComponent {
 if (!customElements.get("quiz-benefit-item")) {
   quizComponentRegistry.register("quiz-benefit-item", QuizBenefitItem);
 }
+const quizBenefitItem = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: QuizBenefitItem
+}, Symbol.toStringTag, { value: "Module" }));
 class QuizActionSection extends QuizBaseComponent {
   static get observedAttributes() {
     return ["title", "type", "background-color"];
@@ -1020,6 +1123,10 @@ class QuizActionSection extends QuizBaseComponent {
 if (!customElements.get("quiz-action-section")) {
   quizComponentRegistry.register("quiz-action-section", QuizActionSection);
 }
+const quizActionSection = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: QuizActionSection
+}, Symbol.toStringTag, { value: "Module" }));
 class QuizErrorDisplay extends QuizBaseComponent {
   static get observedAttributes() {
     return ["type", "title", "message", "error-code", "show-details"];
@@ -1380,6 +1487,10 @@ class QuizErrorDisplay extends QuizBaseComponent {
 if (!customElements.get("quiz-error-display")) {
   quizComponentRegistry.register("quiz-error-display", QuizErrorDisplay);
 }
+const quizErrorDisplay = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: QuizErrorDisplay
+}, Symbol.toStringTag, { value: "Module" }));
 class QuizLoadingDisplay extends QuizBaseComponent {
   static get observedAttributes() {
     return ["type", "title", "message", "progress", "current-step", "total-steps", "show-spinner"];
@@ -1786,6 +1897,10 @@ class QuizLoadingDisplay extends QuizBaseComponent {
 if (!customElements.get("quiz-loading-display")) {
   quizComponentRegistry.register("quiz-loading-display", QuizLoadingDisplay);
 }
+const quizLoadingDisplay = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: QuizLoadingDisplay
+}, Symbol.toStringTag, { value: "Module" }));
 const COMPONENT_CONFIG = {
   // Core icons
   "quiz-calendar-icon": {

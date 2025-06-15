@@ -377,7 +377,24 @@ export class QuizComponentRegistry {
 		}
 
 		try {
-			const module = await import(`../${this.getComponentPath(componentName)}`);
+			// Static import mapping for Vite compatibility
+			const componentMap = {
+				"quiz-calendar-icon": () => import("../icons/quiz-calendar-icon.js"),
+				"quiz-clock-icon": () => import("../icons/quiz-clock-icon.js"),
+				"quiz-checkmark-icon": () => import("../icons/quiz-checkmark-icon.js"),
+				"quiz-coverage-card": () => import("../content/quiz-coverage-card.js"),
+				"quiz-benefit-item": () => import("../content/quiz-benefit-item.js"),
+				"quiz-action-section": () => import("../content/quiz-action-section.js"),
+				"quiz-error-display": () => import("../content/quiz-error-display.js"),
+				"quiz-loading-display": () => import("../content/quiz-loading-display.js")
+			};
+
+			const importFn = componentMap[componentName];
+			if (!importFn) {
+				throw new Error(`Unknown component: ${componentName}`);
+			}
+
+			const module = await importFn();
 
 			if (module.default && !this.isRegistered(componentName)) {
 				// Component should self-register when imported

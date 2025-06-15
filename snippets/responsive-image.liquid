@@ -1,39 +1,12 @@
-{%- comment -%}
-  Phase 2C: Shopify CDN Responsive Image Helper
-  Uses Shopify's built-in CDN for responsive images with modern format support
-{%- endcomment -%}
-
-{%- liquid
-  assign sizes = sizes | default: '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw'
-  assign responsive_sizes = '320,640,768,1024,1280,1920' | split: ','
-
-  # Generate srcset using Shopify CDN
-  capture webp_srcset
-    for size in responsive_sizes
-      echo image | image_url: width: size, format: 'webp' | append: ' ' | append: size | append: 'w'
-      unless forloop.last
-        echo ', '
-      endunless
-    endfor
-  endcapture
-
-  capture fallback_srcset
-    for size in responsive_sizes
-      echo image | image_url: width: size | append: ' ' | append: size | append: 'w'
-      unless forloop.last
-        echo ', '
-      endunless
-    endfor
-  endcapture
--%}
-
-<picture>
-  <source srcset="{{ webp_srcset }}" sizes="{{ sizes }}" type="image/webp">
-  <img src="{{ image | image_url: width: 800 }}"
-       srcset="{{ fallback_srcset }}"
-       sizes="{{ sizes }}"
-       alt="{{ alt | escape }}"
-       loading="lazy"
-       decoding="async"
-       {{ attributes }}>
+<picture class="{{ classes }}">
+  {% if img_mobile %}
+    <source media="(max-width: 768px)" srcset="{{ img_mobile | image_url }}" width="{{ img_mobile.width }}" height="{{ img_mobile.height }}">
+  {% endif %}
+  <img src="{{ img | default: img_mobile | image_url }}" alt="{{ img.alt }}" width="{{ img.width }}" height="{{ img.height }}" {% unless is_dont_lazyload %}loading="lazy"{% endunless %}>
 </picture>
+
+<style>
+  picture img {
+    height: inherit;
+  }
+</style>

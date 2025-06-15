@@ -1,4 +1,4 @@
-import { QuizBaseComponent } from "../quiz-base-component.js";
+import { QuizBaseComponent, quizComponentRegistry } from "../base/quiz-base-component.js";
 
 /**
  * Coverage Card Component
@@ -12,7 +12,7 @@ import { QuizBaseComponent } from "../quiz-base-component.js";
  *   <quiz-benefit-item icon="calendar" text="Coverage expires Dec 31, 2025"></quiz-benefit-item>
  * </quiz-coverage-card>
  */
-export class QuizCoverageCard extends QuizBaseComponent {
+class QuizCoverageCard extends QuizBaseComponent {
 	static get observedAttributes() {
 		return ["title", "sessions-covered", "plan-end"];
 	}
@@ -189,3 +189,10 @@ export class QuizCoverageCard extends QuizBaseComponent {
 		`;
 	}
 }
+
+// Register the component
+if (!customElements.get("quiz-coverage-card")) {
+	quizComponentRegistry.register("quiz-coverage-card", QuizCoverageCard);
+}
+
+export default QuizCoverageCard;
