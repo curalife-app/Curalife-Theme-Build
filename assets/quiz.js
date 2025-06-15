@@ -430,21 +430,21 @@ class ModularQuiz {
 		this._toggleElement(this.results, false);
 		this._toggleElement(this.error, false);
 
-		// Show loading container (using the correct property name 'loading')
+		// Show loading container using Web Component
 		if (this.loading) {
-			this.loading.innerHTML = `
-				<div class="quiz-comprehensive-loading">
-					<div class="quiz-loading-content">
-						<div class="quiz-loading-icon">
-							<div class="quiz-loading-spinner-large"></div>
-						</div>
-						<div class="quiz-loading-step">
-							<h3 class="quiz-loading-step-title">Starting...</h3>
-							<p class="quiz-loading-step-description">Preparing to process your information</p>
-						</div>
-					</div>
-				</div>
+			// Create loading display component
+			const loadingDisplay = document.createElement("quiz-loading-display");
+			loadingDisplay.setAttribute("mode", "comprehensive");
+			loadingDisplay.setAttribute("current-step", "1");
+			loadingDisplay.setAttribute("total-steps", "4");
+			loadingDisplay.setAttribute("progress", "0");
+			loadingDisplay.innerHTML = `
+				<div slot="step-title">Starting...</div>
+				<div slot="step-description">Preparing to process your information</div>
 			`;
+
+			this.loading.innerHTML = "";
+			this.loading.appendChild(loadingDisplay);
 			this._toggleElement(this.loading, true);
 		} else {
 			// Fallback: update next button
@@ -453,23 +453,28 @@ class ModularQuiz {
 	}
 
 	_updateLoadingStep(step) {
-		const titleElement = document.querySelector(".quiz-loading-step-title");
-		const descriptionElement = document.querySelector(".quiz-loading-step-description");
+		const loadingDisplay = document.querySelector("quiz-loading-display");
 
-		if (titleElement && descriptionElement) {
-			// Animate out
-			titleElement.style.opacity = "0";
-			descriptionElement.style.opacity = "0";
+		if (loadingDisplay) {
+			// Update step content via slots
+			const titleSlot = loadingDisplay.querySelector('[slot="step-title"]');
+			const descriptionSlot = loadingDisplay.querySelector('[slot="step-description"]');
 
-			setTimeout(() => {
-				// Update content
-				titleElement.textContent = step.title;
-				descriptionElement.textContent = step.description;
+			if (titleSlot && descriptionSlot) {
+				// Animate out
+				titleSlot.style.opacity = "0";
+				descriptionSlot.style.opacity = "0";
 
-				// Animate in
-				titleElement.style.opacity = "1";
-				descriptionElement.style.opacity = "1";
-			}, 300);
+				setTimeout(() => {
+					// Update content
+					titleSlot.textContent = step.title;
+					descriptionSlot.textContent = step.description;
+
+					// Animate in
+					titleSlot.style.opacity = "1";
+					descriptionSlot.style.opacity = "1";
+				}, 300);
+			}
 		}
 	}
 
@@ -3005,31 +3010,31 @@ class ModularQuiz {
 		html += "</div>";
 		html += "</div>";
 		html += "</div>";
-		html += '<div class="quiz-action-section" style="background-color: #f8f9fa;">';
-		html += '<div class="quiz-action-content">';
-		html += '<div class="quiz-action-header">';
-		html += '<h3 class="quiz-action-title">Need Assistance?</h3>';
-		html += "</div>";
-		html += '<div class="quiz-action-details">';
-		html += '<div class="quiz-action-info">';
-		html += '<div class="quiz-action-info-text">';
-		html += "Our support team is here to help if you have any questions about scheduling or preparing for your appointment.";
 		html += "</div>";
 		html += "</div>";
-		html += '<div class="quiz-action-feature">';
-		html += '<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">';
-		html += '<path d="M18.3333 5.83333L10 11.6667L1.66666 5.83333" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
-		html +=
-			'<path d="M1.66666 5.83333H18.3333V15C18.3333 15.442 18.1577 15.866 17.8452 16.1785C17.5327 16.491 17.1087 16.6667 16.6667 16.6667H3.33333C2.89131 16.6667 2.46738 16.491 2.15482 16.1785C1.84226 15.866 1.66666 15.442 1.66666 15V5.83333Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
-		html += "</svg>";
-		html += '<div class="quiz-action-feature-text">Email: support@curalife.com</div>';
 		html += "</div>";
-		html += '<div class="quiz-action-feature">';
-		html += '<svg class="quiz-action-feature-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">';
-		html +=
-			'<path d="M18.3081 14.2233C17.1569 14.2233 16.0346 14.0397 14.9845 13.6971C14.6449 13.5878 14.2705 13.6971 14.0579 13.9427L12.8372 15.6772C10.3023 14.4477 8.55814 12.7138 7.32326 10.1581L9.10465 8.89535C9.34884 8.68372 9.45814 8.30233 9.34884 7.96279C9.00581 6.91628 8.82209 5.79186 8.82209 4.64535C8.82209 4.28953 8.53256 4 8.17674 4H4.64535C4.28953 4 4 4.28953 4 4.64535C4 12.1715 10.1831 18.3953 17.6628 18.3953C18.0186 18.3953 18.3081 18.1058 18.3081 17.75V14.2233Z" stroke="#306E51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
-		html += "</svg>";
-		html += '<div class="quiz-action-feature-text">Phone: 1-800-CURALIFE</div>';
+		html += "</div>";
+		html += "</div>";
+		html += "</div>";
+		html += "</div>";
+		html += "</div>";
+		html += "</div>";
+		html += "</div>";
+		html += "</div>";
+		html += "</div>";
+		html += "</div>";
+		html += "</div>";
+		html += "</div>";
+		html += "</div>";
+		html += "</div>";
+		html += "</div>";
+		html += "</div>";
+		html += "</div>";
+		html += "</div>";
+		html += "</div>";
+		html += "</div>";
+		html += "</div>";
+		html += "</div>";
 		html += "</div>";
 
 		return html; // Proper return statement
@@ -3737,84 +3742,46 @@ class ModularQuiz {
 		const sessionsCovered = resultData.sessionsCovered || 5;
 		const planEnd = resultData.planEnd || "Dec 31, 2025";
 
-		return `
-			<div class="quiz-results-container">
-				<div class="quiz-results-header">
-					<h2 class="quiz-results-title">Great news! You're covered</h2>
-					<p class="quiz-results-subtitle">As of today, your insurance fully covers your online dietitian consultations*</p>
-				</div>
+		// Create coverage card component
+		const coverageCard = document.createElement("quiz-coverage-card");
+		coverageCard.setAttribute("title", "Here's Your Offer");
+		coverageCard.setAttribute("sessions-covered", sessionsCovered);
+		coverageCard.setAttribute("plan-end", planEnd);
 
-				<div class="quiz-coverage-card">
-					<div class="quiz-coverage-card-title">Here's Your Offer</div>
-					<div class="quiz-coverage-pricing">
-						<div class="quiz-coverage-service-item">
-							<div class="quiz-coverage-service">Initial consultation – 60 minutes</div>
-							<div class="quiz-coverage-cost">
-								<div class="quiz-coverage-copay">Co-pay: $0*</div>
-								<div class="quiz-coverage-original-price">$100</div>
-							</div>
-						</div>
-						<div class="quiz-coverage-service-item">
-							<div class="quiz-coverage-service">Follow-up consultation – 30 minutes</div>
-							<div class="quiz-coverage-cost">
-								<div class="quiz-coverage-copay">Co-pay: $0*</div>
-								<div class="quiz-coverage-original-price">$50</div>
-							</div>
-						</div>
-					</div>
-
-					<div class="quiz-coverage-divider"></div>
-
-					<div class="quiz-coverage-benefits">
-						<div class="quiz-coverage-benefit">
-							<div class="quiz-coverage-benefit-icon">
-								<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-									<path d="M7.08 1.67L3.33 1.67L3.33 18.33L10.83 18.33L10 7.5L16.67 5" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
-								</svg>
-							</div>
-							<div class="quiz-coverage-benefit-text">${sessionsCovered} covered sessions remaining</div>
-						</div>
-						<div class="quiz-coverage-benefit">
-							<div class="quiz-coverage-benefit-icon">
-								<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-									<path d="M10.83 11.67L6.25 1.67L13.75 3.33L2.5 18.33L17.5 8.33" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
-								</svg>
-							</div>
-							<div class="quiz-coverage-benefit-text">Coverage expires ${planEnd}</div>
-						</div>
-					</div>
-				</div>
-
-				<div class="quiz-action-section" style="background-color: #F1F8F4;">
-					<div class="quiz-action-content">
-						<div class="quiz-action-header">
-							<h3 class="quiz-action-title">Schedule your initial online consultation now</h3>
-						</div>
-						<div class="quiz-action-details">
-							<div class="quiz-action-info">
-								<div class="quiz-action-info-icon">
-									<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-										<path d="M4.58 4.17L15.83 15.42L2.08 1.67L17.83 13.75L8.33 16.25" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
-									</svg>
-								</div>
-								<div class="quiz-action-info-text">Our dietitians usually recommend minimum 6 consultations over 6 months, Today, just book your first.</div>
-							</div>
-							<div class="quiz-action-feature">
-								<div class="quiz-action-feature-icon">
-									<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-										<path d="M1.67 2.5L18.33 18.17L13.33 1.67L5 5L6.67 10.42" stroke="#418865" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
-									</svg>
-								</div>
-								<div class="quiz-action-feature-text">Free cancellation up to 24h before</div>
-							</div>
-						</div>
-						<a href="${resultUrl}" class="quiz-booking-button">Proceed to booking</a>
-					</div>
-				</div>
-
-				${this._generateFAQHTML()}
+		// Create action section component
+		const actionSection = document.createElement("quiz-action-section");
+		actionSection.setAttribute("type", "primary");
+		actionSection.setAttribute("background-color", "#F1F8F4");
+		actionSection.innerHTML = `
+			<div slot="title">Schedule your initial online consultation now</div>
+			<div slot="info">
+				<quiz-clock-icon></quiz-clock-icon>
+				Our dietitians usually recommend minimum 6 consultations over 6 months, Today, just book your first.
+			</div>
+			<div slot="info">
+				<quiz-calendar-icon></quiz-calendar-icon>
+				Free cancellation up to 24h before
+			</div>
+			<div slot="action">
+				<a href="${resultUrl}" class="quiz-booking-button">Proceed to booking</a>
 			</div>
 		`;
+
+		// Create container and assemble
+		const container = document.createElement("div");
+		container.className = "quiz-results-container";
+		container.innerHTML = `
+			<div class="quiz-results-header">
+				<h2 class="quiz-results-title">Great news! You're covered</h2>
+				<p class="quiz-results-subtitle">As of today, your insurance fully covers your online dietitian consultations*</p>
+			</div>
+		`;
+
+		container.appendChild(coverageCard);
+		container.appendChild(actionSection);
+		container.insertAdjacentHTML("beforeend", this._generateFAQHTML());
+
+		return container.outerHTML;
 	}
 
 	_generateNotCoveredInsuranceResultsHTML(resultData, resultUrl) {
@@ -3970,132 +3937,35 @@ class ModularQuiz {
 		const actionTitle = error.actionTitle || "Technical Issue Detected";
 		const detailedDescription = error.detailedDescription || "Our systems encountered an unexpected error while processing your request.";
 
-		return `
-			<div class="quiz-results-container">
-				<div class="quiz-results-header">
-					<h2 class="quiz-results-title">${messages.title || "Technical Issue Detected"}</h2>
-					<p class="quiz-results-subtitle">${messages.subtitle || "We're resolving this for you."}</p>
-				</div>
+		// Create error display component
+		const errorDisplay = document.createElement("quiz-error-display");
+		errorDisplay.setAttribute("severity", "technical");
+		errorDisplay.setAttribute("title", actionTitle);
+		errorDisplay.setAttribute("message", userMessage);
+		errorDisplay.setAttribute("details", detailedDescription);
+		if (errorCode !== "Unknown") {
+			errorDisplay.setAttribute("error-code", errorCode);
+		}
 
-				<div class="quiz-technical-problem-error">
-					<div class="quiz-technical-problem-header">
-						<div class="quiz-technical-problem-icon">
-							<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M12 8V12M12 16H12.01M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-							</svg>
-						</div>
-						<div class="quiz-technical-problem-content">
-							<h3 class="quiz-technical-problem-title">${actionTitle}</h3>
-							<p class="quiz-technical-problem-subtitle">System error detected during processing</p>
-						</div>
-					</div>
-
-					<div class="quiz-technical-problem-message">
-						<p class="quiz-technical-problem-primary-text">${userMessage}</p>
-						<p class="quiz-technical-problem-secondary-text">${detailedDescription}</p>
-					</div>
-
-					<div class="quiz-technical-problem-details">
-						<div class="quiz-technical-problem-detail-item">
-							<svg class="quiz-technical-problem-detail-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M10 6V10M10 14H10.01M19 10C19 14.9706 14.9706 19 10 19C5.02944 19 1 14.9706 1 10C1 5.02944 5.02944 1 10 1C14.9706 1 19 5.02944 19 10Z" stroke="#dc2626" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-							</svg>
-							<div class="quiz-technical-problem-detail-content">
-								<p class="quiz-technical-problem-detail-title">Issue Type</p>
-								<p class="quiz-technical-problem-detail-text">System processing error</p>
-							</div>
-						</div>
-
-						<div class="quiz-technical-problem-detail-item">
-							<svg class="quiz-technical-problem-detail-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M10 2C14.9706 2 19 6.02944 19 11C19 15.9706 14.9706 20 10 20C5.02944 20 1 15.9706 1 11C1 6.02944 5.02944 2 10 2ZM10 7C9.44772 7 9 7.44772 9 8V12C9 12.5523 9.44772 13 10 13C10.5523 13 11 12.5523 11 12V8C11 7.44772 10.5523 7 10 7ZM10 15.5C10.8284 15.5 11.5 14.8284 11.5 14C11.5 13.1716 10.8284 12.5 10 12.5C9.17157 12.5 8.5 13.1716 8.5 14C8.5 14.8284 9.17157 15.5 10 15.5Z" fill="#dc2626"/>
-							</svg>
-							<div class="quiz-technical-problem-detail-content">
-								<p class="quiz-technical-problem-detail-title">Status</p>
-								<p class="quiz-technical-problem-detail-text">Automatically reported to our technical team</p>
-							</div>
-						</div>
-
-						<div class="quiz-technical-problem-detail-item">
-							<svg class="quiz-technical-problem-detail-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M13 2L3 14H12L7 18L17 6H8L13 2Z" stroke="#dc2626" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-							</svg>
-							<div class="quiz-technical-problem-detail-content">
-								<p class="quiz-technical-problem-detail-title">Resolution</p>
-								<p class="quiz-technical-problem-detail-text">Manual processing initiated</p>
-							</div>
-						</div>
-					</div>
-
-					${
-						errorCode !== "Unknown"
-							? `
-						<div class="quiz-technical-problem-error-code">
-							<span class="quiz-technical-problem-error-code-label">Error Code</span>
-							<span class="quiz-technical-problem-error-code-value">${errorCode}</span>
-						</div>
-					`
-							: ""
-					}
-				</div>
-
-				<div class="quiz-technical-problem-action">
-					<div class="quiz-technical-problem-action-header">
-						<div class="quiz-technical-problem-action-icon">
-							<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M8.5 3L11.5 3C12.6046 3 13.5 3.89543 13.5 5L13.5 15C13.5 16.1046 12.6046 17 11.5 17L8.5 17C7.39543 17 6.5 16.1046 6.5 15L6.5 5C6.5 3.89543 7.39543 3 8.5 3Z" stroke="#22c55e" stroke-width="1.5"/>
-								<path d="M9 6L11 6" stroke="#22c55e" stroke-width="1.5" stroke-linecap="round"/>
-								<path d="M9 8L11 8" stroke="#22c55e" stroke-width="1.5" stroke-linecap="round"/>
-								<path d="M9 10L11 10" stroke="#22c55e" stroke-width="1.5" stroke-linecap="round"/>
-								<path d="M9 12L11 12" stroke="#22c55e" stroke-width="1.5" stroke-linecap="round"/>
-								<path d="M10 14.5C10.2761 14.5 10.5 14.2761 10.5 14C10.5 13.7239 10.2761 13.5 10 13.5C9.72386 13.5 9.5 13.7239 9.5 14C9.5 14.2761 9.72386 14.5 10 14.5Z" fill="#22c55e"/>
-							</svg>
-						</div>
-						<h3 class="quiz-technical-problem-action-title">We're handling this</h3>
-					</div>
-
-					<div class="quiz-technical-problem-action-content">
-						<div class="quiz-technical-problem-action-item">
-							<svg class="quiz-technical-problem-action-item-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-								<path d="M9 12L11 14L15 10" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-							</svg>
-							<div class="quiz-technical-problem-action-item-content">
-								<h4 class="quiz-technical-problem-action-item-title">Automatic Resolution</h4>
-								<p class="quiz-technical-problem-action-item-text">Our technical team has been automatically notified and will resolve this issue manually</p>
-							</div>
-						</div>
-
-						<div class="quiz-technical-problem-action-item">
-							<svg class="quiz-technical-problem-action-item-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-							</svg>
-							<div class="quiz-technical-problem-action-item-content">
-								<h4 class="quiz-technical-problem-action-item-title">Manual Processing</h4>
-								<p class="quiz-technical-problem-action-item-text">We'll manually process your eligibility verification and contact you with results</p>
-							</div>
-						</div>
-
-						<div class="quiz-technical-problem-action-item">
-							<svg class="quiz-technical-problem-action-item-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M8 2V5M16 2V5M3.5 9H20.5M5 3H19C20.1046 3 21 3.89543 21 5V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V5C3 3.89543 3.89543 3 5 3Z" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-							</svg>
-							<div class="quiz-technical-problem-action-item-content">
-								<h4 class="quiz-technical-problem-action-item-title">Quick Connection</h4>
-								<p class="quiz-technical-problem-action-item-text">Get connected with our support team to expedite your dietitian appointment</p>
-							</div>
-						</div>
-					</div>
-
-					<a href="${resultUrl}" class="quiz-technical-problem-action-button">
-						<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="M17.5 12.5C17.5 13.4205 16.7705 14.1667 15.8333 14.1667H6.25L2.5 17.5V4.16667C2.5 3.24619 3.24619 2.5 4.16667 2.5H15.8333C16.7705 2.5 17.5 3.24619 17.5 4.16667V12.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-						</svg>
-						Continue with Support
-					</a>
-				</div>
+		// Add action button
+		errorDisplay.innerHTML = `
+			<div slot="actions">
+				<a href="${resultUrl}" class="quiz-booking-button">Continue with Support</a>
 			</div>
 		`;
+
+		// Create container
+		const container = document.createElement("div");
+		container.className = "quiz-results-container";
+		container.innerHTML = `
+			<div class="quiz-results-header">
+				<h2 class="quiz-results-title">${messages.title || "Technical Issue Detected"}</h2>
+				<p class="quiz-results-subtitle">${messages.subtitle || "We're resolving this for you."}</p>
+			</div>
+		`;
+
+		container.appendChild(errorDisplay);
+		return container.outerHTML;
 	}
 
 	_generateInsurancePlansErrorResultsHTML(resultData, resultUrl) {
