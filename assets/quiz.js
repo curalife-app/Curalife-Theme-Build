@@ -2321,7 +2321,7 @@ class ModularQuiz {
 		if (!question) return;
 
 		const handlers = {
-			"multiple-choice": () => this._attachInputGroupListeners(question, "change", input => this.handleAnswer(input.value)),
+			"multiple-choice": () => this._attachMultipleChoiceListeners(question),
 			checkbox: () => this._attachCheckboxListeners(question),
 			dropdown: () => this._attachDropdownListeners(question),
 			"date-part": () => this._attachDropdownListeners(question),
@@ -2333,6 +2333,24 @@ class ModularQuiz {
 		};
 
 		handlers[question.type]?.();
+	}
+
+	_attachMultipleChoiceListeners(question) {
+		// Check if Web Component is being used
+		const webComponent = this.questionContainer.querySelector(`quiz-multiple-choice`);
+
+		if (webComponent) {
+			// Handle Web Component events
+			webComponent.addEventListener("answer-selected", event => {
+				const { questionId, value } = event.detail;
+				if (questionId === question.id) {
+					this.handleAnswer(value);
+				}
+			});
+		} else {
+			// Legacy HTML handling
+			this._attachInputGroupListeners(question, "change", input => this.handleAnswer(input.value));
+		}
 	}
 
 	_attachInputGroupListeners(question, eventType, callback) {
