@@ -2208,7 +2208,9 @@ class QuizFAQSection extends HTMLElement {
     this.render();
   }
 }
-customElements.define("quiz-faq-section", QuizFAQSection);
+if (!customElements.get("quiz-faq-section")) {
+  customElements.define("quiz-faq-section", QuizFAQSection);
+}
 class QuizPayerSearch extends HTMLElement {
   constructor() {
     super();
@@ -2464,7 +2466,9 @@ class QuizPayerSearch extends HTMLElement {
     return this.selectedPayer;
   }
 }
-customElements.define("quiz-payer-search", QuizPayerSearch);
+if (!customElements.get("quiz-payer-search")) {
+  customElements.define("quiz-payer-search", QuizPayerSearch);
+}
 class QuizResultCard extends HTMLElement {
   constructor() {
     super();
@@ -2913,7 +2917,9 @@ class QuizResultCard extends HTMLElement {
     this.render();
   }
 }
-customElements.define("quiz-result-card", QuizResultCard);
+if (!customElements.get("quiz-result-card")) {
+  customElements.define("quiz-result-card", QuizResultCard);
+}
 class QuizFormStep extends QuizBaseComponent {
   static get observedAttributes() {
     return ["step-data", "responses", "is-last-step", "validation-errors"];
@@ -3232,7 +3238,9 @@ class QuizFormStep extends QuizBaseComponent {
     }
   }
 }
-customElements.define("quiz-form-step", QuizFormStep);
+if (!customElements.get("quiz-form-step")) {
+  customElements.define("quiz-form-step", QuizFormStep);
+}
 class QuizStepContainer extends QuizBaseComponent {
   static get observedAttributes() {
     return ["step-data", "responses", "current-question-index", "is-form-step", "validation-errors"];
@@ -3570,7 +3578,9 @@ class QuizStepContainer extends QuizBaseComponent {
     }
   }
 }
-customElements.define("quiz-step-container", QuizStepContainer);
+if (!customElements.get("quiz-step-container")) {
+  customElements.define("quiz-step-container", QuizStepContainer);
+}
 class QuizSchedulingResult extends QuizBaseComponent {
   static get observedAttributes() {
     return ["result-type", "scheduling-data", "error-message"];
@@ -4041,7 +4051,9 @@ class QuizSchedulingResult extends QuizBaseComponent {
     }
   }
 }
-customElements.define("quiz-scheduling-result", QuizSchedulingResult);
+if (!customElements.get("quiz-scheduling-result")) {
+  customElements.define("quiz-scheduling-result", QuizSchedulingResult);
+}
 class QuizMultipleChoiceComponent extends QuizBaseComponent {
   static get observedAttributes() {
     return ["question-data", "selected-value", "disabled"];
@@ -4126,6 +4138,9 @@ class QuizMultipleChoiceComponent extends QuizBaseComponent {
 				<path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 			</svg>
 		`;
+  }
+  render() {
+    this.renderTemplate();
   }
   async getStyles() {
     const baseStyles = super.getStyles();
@@ -4335,7 +4350,9 @@ class QuizMultipleChoiceComponent extends QuizBaseComponent {
     this.setAttribute("question-data", JSON.stringify(data));
   }
 }
-customElements.define("quiz-multiple-choice", QuizMultipleChoiceComponent);
+if (!customElements.get("quiz-multiple-choice")) {
+  customElements.define("quiz-multiple-choice", QuizMultipleChoiceComponent);
+}
 class QuizCheckboxGroupComponent extends QuizBaseComponent {
   static get observedAttributes() {
     return ["question-data", "selected-values", "disabled", "layout"];
@@ -4780,7 +4797,9 @@ class QuizCheckboxGroupComponent extends QuizBaseComponent {
     this.setAttribute("layout", layout);
   }
 }
-customElements.define("quiz-checkbox-group", QuizCheckboxGroupComponent);
+if (!customElements.get("quiz-checkbox-group")) {
+  customElements.define("quiz-checkbox-group", QuizCheckboxGroupComponent);
+}
 class QuizDropdownComponent extends QuizBaseComponent {
   static get observedAttributes() {
     return ["question-data", "selected-value", "disabled", "show-error", "error-message"];
@@ -5087,7 +5106,9 @@ class QuizDropdownComponent extends QuizBaseComponent {
     }
   }
 }
-customElements.define("quiz-dropdown", QuizDropdownComponent);
+if (!customElements.get("quiz-dropdown")) {
+  customElements.define("quiz-dropdown", QuizDropdownComponent);
+}
 class QuizTextInputComponent extends QuizBaseComponent {
   static get observedAttributes() {
     return ["question-data", "value", "disabled", "show-error", "error-message", "input-type"];
@@ -5455,7 +5476,9 @@ class QuizTextInputComponent extends QuizBaseComponent {
     }
   }
 }
-customElements.define("quiz-text-input", QuizTextInputComponent);
+if (!customElements.get("quiz-text-input")) {
+  customElements.define("quiz-text-input", QuizTextInputComponent);
+}
 class QuizRatingComponent extends QuizBaseComponent {
   static get observedAttributes() {
     return ["question-data", "value", "disabled", "min-value", "max-value", "step"];
@@ -5854,7 +5877,9 @@ class QuizRatingComponent extends QuizBaseComponent {
     }
   }
 }
-customElements.define("quiz-rating", QuizRatingComponent);
+if (!customElements.get("quiz-rating")) {
+  customElements.define("quiz-rating", QuizRatingComponent);
+}
 class QuizComponentsInit {
   constructor() {
     this.initialized = false;
