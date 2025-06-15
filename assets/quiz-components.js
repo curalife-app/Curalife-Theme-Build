@@ -95,23 +95,46 @@ class SharedStyles {
       return await response.text();
     } catch (error) {
       console.warn(`Could not load shared styles from ${cssPath}:`, error);
+      if (cssPath.includes("/assets/quiz.css")) {
+        const alternatives = [cssPath.replace("/assets/", "/assets/"), "./assets/quiz.css", "../assets/quiz.css"];
+        for (const altPath of alternatives) {
+          if (altPath !== cssPath) {
+            try {
+              const altResponse = await fetch(altPath);
+              if (altResponse.ok) {
+                console.log(`✓ Loaded styles from alternative path: ${altPath}`);
+                return await altResponse.text();
+              }
+            } catch (altError) {
+            }
+          }
+        }
+      }
       return "";
     }
   }
-  // Get quiz-specific styles
-  async getQuizStyles() {
-    return this.loadStyles("/assets/quiz.css");
+  // Get quiz-specific styles with configurable URL
+  async getQuizStyles(cssUrl = null) {
+    const url = cssUrl || window.QUIZ_CSS_URL || "/assets/quiz.css";
+    if (window.QUIZ_CONFIG?.debug) {
+      console.log(`🎨 Loading quiz styles from: ${url}`);
+    }
+    return this.loadStyles(url);
   }
   // Create a style element with the shared styles
-  createStyleElement(additionalCSS = "") {
+  createStyleElement(additionalCSS = "", cssUrl = null) {
     const styleElement = document.createElement("style");
-    this.getQuizStyles().then((sharedCSS) => {
+    this.getQuizStyles(cssUrl).then((sharedCSS) => {
       styleElement.textContent = sharedCSS + "\n" + additionalCSS;
     }).catch(() => {
       styleElement.textContent = additionalCSS;
     });
     styleElement.textContent = additionalCSS;
     return styleElement;
+  }
+  // Set global CSS URL for all components
+  setQuizCssUrl(url) {
+    window.QUIZ_CSS_URL = url;
   }
 }
 const sharedStyles = new SharedStyles();
@@ -367,7 +390,8 @@ class QuizBaseComponent extends HTMLElement {
       return;
     }
     this.root.innerHTML = "";
-    const styleElement = sharedStyles.createStyleElement(this.getStyles());
+    const cssUrl = window.QUIZ_CSS_URL || window.QUIZ_CONFIG?.cssUrl;
+    const styleElement = sharedStyles.createStyleElement(this.getStyles(), cssUrl);
     this.root.appendChild(styleElement);
     const template = this.getTemplate();
     if (template) {

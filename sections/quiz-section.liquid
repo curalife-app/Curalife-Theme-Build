@@ -3,6 +3,9 @@
 {{ 'quiz.css' | asset_url | stylesheet_tag }}
 {{ 'notifications.css' | asset_url | stylesheet_tag }}
 
+{% comment %} Configure Web Components with correct Shopify CDN URLs {% endcomment %}
+{% render 'quiz-web-components-config', section: section %}
+
 <div
 	id="quiz-container"
 	class="quiz-main-container"
@@ -121,6 +124,13 @@
 				"label": "Scheduling Workflow URL",
 				"default": "https://us-central1-telemedicine-458913.cloudfunctions.net/workflow_scheduling",
 				"info": "Google Cloud Function URL for the scheduling workflow"
+			},
+			{
+				"type": "checkbox",
+				"id": "debug_mode",
+				"label": "Enable Debug Mode",
+				"default": false,
+				"info": "Enable console logging for debugging quiz components and workflows"
 			}
 		],
 		"presets": [

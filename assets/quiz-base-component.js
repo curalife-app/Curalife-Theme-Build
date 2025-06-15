@@ -316,7 +316,8 @@ export class QuizBaseComponent extends HTMLElement {
 		this.root.innerHTML = "";
 
 		// Add shared styles + component styles
-		const styleElement = sharedStyles.createStyleElement(this.getStyles());
+		const cssUrl = window.QUIZ_CSS_URL || window.QUIZ_CONFIG?.cssUrl;
+		const styleElement = sharedStyles.createStyleElement(this.getStyles(), cssUrl);
 		this.root.appendChild(styleElement);
 
 		// Add template content
