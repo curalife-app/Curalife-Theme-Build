@@ -348,13 +348,21 @@ const _QuizBaseComponent = class _QuizBaseComponent extends HTMLElement {
    * Utility: Query element in component root
    */
   querySelector(selector) {
-    return this.root.querySelector(selector);
+    if (this.config.useShadowDOM) {
+      return this.shadowRoot.querySelector(selector);
+    } else {
+      return HTMLElement.prototype.querySelector.call(this, selector);
+    }
   }
   /**
    * Utility: Query all elements in component root
    */
   querySelectorAll(selector) {
-    return this.root.querySelectorAll(selector);
+    if (this.config.useShadowDOM) {
+      return this.shadowRoot.querySelectorAll(selector);
+    } else {
+      return HTMLElement.prototype.querySelectorAll.call(this, selector);
+    }
   }
   /**
    * Utility: Create element with attributes and content
