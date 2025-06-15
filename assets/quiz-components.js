@@ -424,13 +424,17 @@ const _QuizBaseComponent = class _QuizBaseComponent extends HTMLElement {
       componentStyles = "";
     }
     try {
+      console.log("🎨 Loading shared styles from:", cssUrl);
       sharedCSS = await sharedStyles.getQuizStyles(cssUrl);
+      console.log("✅ Shared styles loaded:", sharedCSS ? `${sharedCSS.length} chars` : "empty");
     } catch (error) {
-      console.warn("Error loading shared styles:", error);
+      console.warn("❌ Error loading shared styles:", error);
       sharedCSS = "";
     }
     const styleElement = document.createElement("style");
-    styleElement.textContent = sharedCSS + "\n" + componentStyles;
+    const combinedStyles = sharedCSS + "\n" + componentStyles;
+    styleElement.textContent = combinedStyles;
+    console.log("📝 Applied styles to component:", combinedStyles ? `${combinedStyles.length} chars` : "empty");
     this.root.appendChild(styleElement);
     const template = this.getTemplate();
     if (template) {

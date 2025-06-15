@@ -351,15 +351,19 @@ export class QuizBaseComponent extends HTMLElement {
 
 		try {
 			// Load shared styles
+			console.log("🎨 Loading shared styles from:", cssUrl);
 			sharedCSS = await sharedStyles.getQuizStyles(cssUrl);
+			console.log("✅ Shared styles loaded:", sharedCSS ? `${sharedCSS.length} chars` : "empty");
 		} catch (error) {
-			console.warn("Error loading shared styles:", error);
+			console.warn("❌ Error loading shared styles:", error);
 			sharedCSS = "";
 		}
 
 		// Create style element with combined styles
 		const styleElement = document.createElement("style");
-		styleElement.textContent = sharedCSS + "\n" + componentStyles;
+		const combinedStyles = sharedCSS + "\n" + componentStyles;
+		styleElement.textContent = combinedStyles;
+		console.log("📝 Applied styles to component:", combinedStyles ? `${combinedStyles.length} chars` : "empty");
 		this.root.appendChild(styleElement);
 
 		// Add template content
