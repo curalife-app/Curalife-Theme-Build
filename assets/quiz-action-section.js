@@ -66,141 +66,149 @@ class QuizActionSection extends QuizBaseComponent {
 
       :host {
         display: block;
-        margin: 24px 0;
+        margin-bottom: 72px;
+        align-self: stretch;
       }
 
       .quiz-action-section {
-        background: #F1F8F4;
-        border-radius: 8px;
-        padding: 32px 24px;
-        transition: var(--quiz-transition);
+        background-color: #f1f8f4;
+        border-radius: 20px;
+        padding: 32px;
+        align-self: stretch;
       }
 
       .quiz-action-content {
-        max-width: 600px;
-        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        align-self: stretch;
       }
 
       .quiz-action-header {
-        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
       }
 
       .quiz-action-title {
+        font-family: "PP Radio Grotesk", sans-serif;
         font-size: 24px;
-        font-weight: 600;
-        color: #1f2937;
-        margin: 0 0 8px 0;
-        line-height: 1.3;
+        font-weight: 700;
+        line-height: 1.3333333333333333em;
+        color: #121212;
       }
 
       .quiz-action-details {
-        margin-bottom: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        align-self: stretch;
+        margin-top: 12px;
+        max-width: 550px;
       }
 
       .quiz-action-info {
         display: flex;
         align-items: flex-start;
-        margin-bottom: 16px;
-        gap: 12px;
+        gap: 8px;
+        align-self: stretch;
       }
 
       .quiz-action-info-icon {
-        flex-shrink: 0;
         width: 20px;
         height: 20px;
+        flex-shrink: 0;
         margin-top: 2px;
       }
 
       .quiz-action-info-text {
-        color: #374151;
-        font-size: 14px;
-        line-height: 1.5;
+        line-height: 1.4444444444444444em;
+        color: #121212;
+        flex: 1;
       }
 
       .quiz-action-feature {
         display: flex;
-        align-items: flex-start;
-        margin-bottom: 12px;
-        gap: 12px;
+        align-items: center;
+        gap: 8px;
       }
 
       .quiz-action-feature-icon {
-        flex-shrink: 0;
         width: 20px;
         height: 20px;
-        margin-top: 2px;
+        flex-shrink: 0;
       }
 
       .quiz-action-feature-text {
-        color: #374151;
-        font-size: 14px;
-        line-height: 1.5;
+        font-family: "DM Sans", sans-serif;
+        font-size: 18px;
+        font-weight: 400;
+        line-height: 1.4444444444444444em;
+        color: #121212;
       }
 
       .quiz-booking-button {
+        background-color: #306e51;
+        color: white;
+        border: none;
+        border-radius: 300px;
+        padding: 12px 40px;
+        font-family: "DM Sans", sans-serif;
+        font-size: 18px;
+        font-weight: 600;
+        line-height: 1.3333333333333333em;
+        text-align: center;
+        cursor: pointer;
+        transition: all var(--quiz-transition-fast);
+        text-decoration: none;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        background: #306E51;
-        color: white;
-        padding: 16px 32px;
-        border-radius: 8px;
-        text-decoration: none;
-        font-weight: 600;
-        font-size: 16px;
-        transition: all 0.2s ease;
-        border: none;
-        cursor: pointer;
-        min-width: 200px;
+        height: 52px;
+        width: fit-content;
+        margin-top: 32px;
       }
 
       .quiz-booking-button:hover {
-        background: #2a5d42;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(48, 110, 81, 0.3);
-      }
-
-      .quiz-booking-button:active {
-        transform: translateY(0);
+        background-color: var(--quiz-primary-hover);
+        transform: translateY(-1px);
       }
 
       .quiz-booking-button:disabled {
-        background: #6c757d;
+        background-color: #6c757d;
         cursor: not-allowed;
         transform: none;
-        box-shadow: none;
       }
 
-      /* Responsive design */
+      .quiz-booking-button:disabled:hover {
+        background-color: #6c757d;
+        transform: none;
+      }
+
+      /* Mobile responsive styles */
       @media (max-width: 768px) {
+        :host {
+          margin-bottom: 72px;
+        }
+
         .quiz-action-section {
-          padding: 24px 20px;
-          margin: 20px 0;
+          padding: 32px;
         }
 
         .quiz-action-title {
-          font-size: 20px;
+          font-size: 24px;
+        }
+
+        .quiz-action-details {
+          gap: 12px;
+          margin-top: 12px;
         }
 
         .quiz-booking-button {
-          padding: 14px 24px;
-          font-size: 15px;
-          min-width: 180px;
-        }
-      }
-
-      @media (max-width: 480px) {
-        .quiz-action-section {
-          padding: 20px 16px;
-        }
-
-        .quiz-action-title {
+          padding: 12px 40px;
           font-size: 18px;
-        }
-
-        .quiz-booking-button {
-          width: 100%;
-          max-width: 280px;
+          height: 52px;
+          margin-top: 32px;
         }
       }
     `;

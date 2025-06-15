@@ -36,110 +36,175 @@ class QuizCoverageCard extends QuizBaseComponent {
 			<style>
 				:host {
 					display: block;
-					margin: 1.5rem 0;
+					margin-bottom: 36px;
+					align-self: stretch;
 				}
 
 				.quiz-coverage-card {
-					background: white;
-					border-radius: 8px;
-					border: 1px solid #e5e7eb;
-					padding: 1.5rem;
-					box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+					border: 1px solid #bdddc9;
+					border-radius: 20px;
+					padding: 32px;
+					background-color: white;
+					align-self: stretch;
 				}
 
 				.quiz-coverage-card-title {
-					font-size: 1.25rem;
-					font-weight: 600;
-					color: #1f2937;
-					margin-bottom: 1rem;
+					font-family: "PP Radio Grotesk", sans-serif;
+					font-size: 24px;
+					font-weight: 700;
+					line-height: 1.3333333333333333em;
+					color: #121212;
+					margin-bottom: 16px;
 				}
 
 				.quiz-coverage-pricing {
-					margin-bottom: 1.5rem;
+					display: flex;
+					flex-direction: column;
+					gap: 8px;
+					margin-bottom: 16px;
+					width: fit-content;
 				}
 
 				.quiz-coverage-service-item {
 					display: flex;
-					justify-content: space-between;
 					align-items: center;
-					padding: 0.75rem 0;
-					border-bottom: 1px solid #f3f4f6;
-				}
-
-				.quiz-coverage-service-item:last-child {
-					border-bottom: none;
+					gap: 32px;
+					width: fit-content;
 				}
 
 				.quiz-coverage-service {
-					font-weight: 500;
-					color: #374151;
+					font-family: "DM Sans", sans-serif;
+					font-size: 18px;
+					font-weight: 400;
+					line-height: 1.4444444444444444em;
+					color: #121212;
+					flex: 1;
+					width: 312px;
 				}
 
 				.quiz-coverage-cost {
 					display: flex;
-					flex-direction: column;
-					align-items: flex-end;
+					align-items: center;
+					gap: 4px;
 				}
 
 				.quiz-coverage-copay {
-					font-weight: 600;
-					color: #059669;
-					font-size: 1.1rem;
+					font-family: "DM Sans", sans-serif;
+					font-size: 18px;
+					font-weight: 800;
+					line-height: 1.4444444444444444em;
+					color: #121212;
 				}
 
 				.quiz-coverage-original-price {
-					font-size: 0.875rem;
-					color: #9ca3af;
+					font-family: "DM Sans", sans-serif;
+					font-size: 18px;
+					font-weight: 400;
+					line-height: 1.3333333333333333em;
+					color: #6d6d6d;
 					text-decoration: line-through;
 				}
 
 				.quiz-coverage-divider {
-					height: 1px;
-					background: #e5e7eb;
-					margin: 1rem 0;
+					width: 100%;
+					height: 0.5px;
+					background-color: #bdddc9;
+					margin: 16px 0;
 				}
 
 				.quiz-coverage-benefits {
 					display: flex;
 					flex-direction: column;
-					gap: 0.75rem;
+					gap: 12px;
 				}
 
 				.quiz-coverage-benefit {
 					display: flex;
 					align-items: center;
-					gap: 0.75rem;
+					gap: 8px;
 				}
 
 				.quiz-coverage-benefit-icon {
-					flex-shrink: 0;
 					width: 20px;
 					height: 20px;
-					color: #418865;
+					flex-shrink: 0;
 				}
 
 				.quiz-coverage-benefit-text {
-					font-size: 0.875rem;
-					color: #374151;
+					font-family: "DM Sans", sans-serif;
+					font-size: 16px;
+					font-weight: 400;
+					line-height: 1.5em;
+					color: #4f4f4f;
 				}
 
 				@media (max-width: 768px) {
+					:host {
+						margin-bottom: 28px;
+						width: 100%;
+					}
+
 					.quiz-coverage-card {
-						padding: 1rem;
+						padding: 20px;
+						align-self: stretch;
+						width: 100%;
 					}
 
 					.quiz-coverage-card-title {
-						font-size: 1.125rem;
+						font-size: 24px;
+						line-height: 1.3333333333333333em;
+						margin-bottom: 12px;
+					}
+
+					.quiz-coverage-pricing {
+						flex-direction: column;
+						gap: 16px;
+						align-items: stretch;
+						margin-bottom: 16px;
 					}
 
 					.quiz-coverage-service-item {
+						display: flex;
 						flex-direction: column;
-						align-items: flex-start;
-						gap: 0.5rem;
+						gap: 8px;
+						width: 100%;
+						align-items: start;
+					}
+
+					.quiz-coverage-service {
+						font-size: 18px;
+						line-height: 1.3333333333333333em;
+						width: unset;
 					}
 
 					.quiz-coverage-cost {
-						align-items: flex-start;
+						display: flex;
+						align-items: center;
+						gap: 4px;
+					}
+
+					.quiz-coverage-copay {
+						font-size: 18px;
+						font-weight: 700;
+						line-height: 1.3333333333333333em;
+					}
+
+					.quiz-coverage-original-price {
+						font-size: 18px;
+						line-height: 1.3333333333333333em;
+					}
+
+					.quiz-coverage-benefits {
+						gap: 12px;
+					}
+
+					.quiz-coverage-benefit-text {
+						font-size: 16px;
+						line-height: 1.5em;
+					}
+
+					.quiz-coverage-divider {
+						margin: 16px 0;
 					}
 				}
 			</style>

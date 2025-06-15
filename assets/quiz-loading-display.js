@@ -100,7 +100,6 @@ class QuizLoadingDisplay extends QuizBaseComponent {
 
       :host {
         display: block;
-        margin: 20px 0;
       }
 
       .quiz-loading-display {
@@ -121,46 +120,39 @@ class QuizLoadingDisplay extends QuizBaseComponent {
       }
 
       .quiz-comprehensive-loading {
-        background: white;
-        border-radius: 8px;
-        padding: 32px 24px;
-        text-align: center;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        min-height: 200px;
         display: flex;
         align-items: center;
         justify-content: center;
+        min-height: 400px;
+        padding: 2rem;
+        text-align: center;
       }
 
       .quiz-loading-content {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 20px;
         max-width: 500px;
         width: 100%;
       }
 
       .quiz-loading-icon {
+        margin-bottom: 2rem;
         display: flex;
-        align-items: center;
         justify-content: center;
       }
 
       .quiz-loading-spinner {
         width: 32px;
         height: 32px;
-        border: 3px solid #f3f3f3;
-        border-top: 3px solid #306E51;
+        border: 3px solid #f3f4f6;
+        border-top: 3px solid #10b981;
         border-radius: 50%;
         animation: spin 1s linear infinite;
       }
 
       .quiz-loading-spinner-large {
-        width: 48px;
-        height: 48px;
-        border: 4px solid #f3f3f3;
-        border-top: 4px solid #306E51;
+        width: 60px;
+        height: 60px;
+        border: 4px solid #f3f4f6;
+        border-top: 4px solid #10b981;
         border-radius: 50%;
         animation: spin 1s linear infinite;
       }
@@ -171,59 +163,118 @@ class QuizLoadingDisplay extends QuizBaseComponent {
       }
 
       .quiz-loading-step {
-        text-align: center;
+        margin-bottom: 2rem;
+      }
+
+      .quiz-loading-step-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        display: block;
+        transition: opacity 0.3s ease-in-out;
+        transform: scale(1);
+        animation: pulseIcon 2s ease-in-out infinite;
       }
 
       .quiz-loading-step-title {
-        font-size: 20px;
+        font-size: 1.5rem;
         font-weight: 600;
-        color: #1f2937;
-        margin: 0 0 8px 0;
-        line-height: 1.3;
+        color: #111827;
+        margin-bottom: 0.5rem;
+        transition: opacity 0.3s ease-in-out;
       }
 
       .quiz-loading-step-description {
-        font-size: 14px;
-        line-height: 1.5;
+        font-size: 1rem;
         color: #6b7280;
-        margin: 0;
+        margin-bottom: 0;
+        transition: opacity 0.3s ease-in-out;
       }
 
-      .quiz-loading-steps {
+      .quiz-loading-progress {
+        margin-top: 2rem;
+      }
+
+      .quiz-loading-progress-bar {
         width: 100%;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        margin: 8px 0;
+        height: 8px;
+        background-color: #f3f4f6;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 1rem;
       }
 
-      /* Style slotted step elements */
-      .quiz-loading-steps ::slotted(.loading-step) {
-        display: flex;
-        align-items: center;
-        padding: 12px 16px;
-        background: #f8f9fa;
-        border-radius: 8px;
-        font-size: 14px;
-        color: #6b7280;
-        transition: var(--quiz-transition);
+      .quiz-loading-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #10b981, #059669);
+        border-radius: 4px;
+        transition: width 0.8s ease-in-out;
         position: relative;
       }
 
-      .quiz-loading-steps ::slotted(.loading-step::before) {
-        content: attr(data-step);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 24px;
-        height: 24px;
-        background: #e5e7eb;
+      .quiz-loading-progress-fill::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        animation: shimmer 2s infinite;
+      }
+
+      .quiz-loading-progress-text {
+        font-size: 0.875rem;
         color: #6b7280;
-        border-radius: 50%;
-        font-size: 12px;
-        font-weight: 600;
-        margin-right: 12px;
-        flex-shrink: 0;
+        font-weight: 500;
+      }
+
+      @keyframes pulseIcon {
+        0%, 100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.1);
+        }
+      }
+
+      @keyframes shimmer {
+        0% {
+          transform: translateX(-100%);
+        }
+        100% {
+          transform: translateX(100%);
+        }
+      }
+
+      /* Mobile responsive styles */
+      @media (max-width: 768px) {
+        .quiz-comprehensive-loading {
+          padding: 2rem;
+        }
+
+        .quiz-loading-content {
+          .quiz-loading-icon {
+            .quiz-loading-spinner-large {
+              width: 48px;
+              height: 48px;
+              border-width: 3px;
+            }
+          }
+
+          .quiz-loading-step {
+            .quiz-loading-step-icon {
+              font-size: 2.5rem;
+            }
+
+            .quiz-loading-step-title {
+              font-size: 1.25rem;
+            }
+
+            .quiz-loading-step-description {
+              font-size: 0.875rem;
+            }
+          }
+        }
       }
 
       .quiz-loading-steps ::slotted(.loading-step.active) {
