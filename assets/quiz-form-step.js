@@ -191,7 +191,7 @@ export class QuizFormStep extends QuizBaseComponent {
 					${question.text}${this.renderHelpIcon(question.id)}
 				</label>
 				${question.helpText ? `<p class="quiz-text-sm">${question.helpText}</p>` : ""}
-				${this.renderQuestionInput(question, response)}
+				${this.renderQuestionInput(question, response, hasError)}
 				${hasError ? `<div class="quiz-error-message">${validationErrors.find(e => e.questionId === question.id)?.message || "Invalid input"}</div>` : ""}
 			</div>
 		`;
@@ -242,9 +242,10 @@ export class QuizFormStep extends QuizBaseComponent {
 		`;
 	}
 
-	renderQuestionInput(question, response) {
+	renderQuestionInput(question, response, hasError = false) {
 		// Simplified input rendering - would delegate to specific input components
 		const value = response?.answer || "";
+		const errorAttr = hasError ? 'show-error="true"' : "";
 
 		switch (question.type) {
 			case "text":
@@ -253,13 +254,15 @@ export class QuizFormStep extends QuizBaseComponent {
 				return `<quiz-text-input
 					question-data='${JSON.stringify(question)}'
 					value="${value || ""}"
+					${errorAttr}
 				></quiz-text-input>`;
 			case "textarea":
-				return `<textarea id="question-${question.id}" class="quiz-textarea" ${question.required ? "required" : ""}>${value}</textarea>`;
+				return `<textarea id="question-${question.id}" class="quiz-textarea ${hasError ? "quiz-input-error" : ""}" ${question.required ? "required" : ""}>${value}</textarea>`;
 			case "dropdown":
 				return `<quiz-dropdown
 					question-data='${JSON.stringify(question)}'
 					selected-value="${value || ""}"
+					${errorAttr}
 				></quiz-dropdown>`;
 			case "payer-search":
 				const quizData = this.getQuizData();
@@ -268,9 +271,10 @@ export class QuizFormStep extends QuizBaseComponent {
 					placeholder="${question.placeholder || "Start typing to search for your insurance plan..."}"
 					common-payers='${JSON.stringify(quizData?.commonPayers || [])}'
 					${value ? `selected-payer="${value}"` : ""}
+					${errorAttr}
 				></quiz-payer-search>`;
 			default:
-				return `<input type="text" id="question-${question.id}" class="quiz-input" value="${value}">`;
+				return `<input type="text" id="question-${question.id}" class="quiz-input ${hasError ? "quiz-input-error" : ""}" value="${value}">`;
 		}
 	}
 

@@ -8,10 +8,12 @@ export class QuizPayerSearch extends QuizBaseComponent {
 		this.commonPayers = [];
 		this.questionId = "";
 		this.searchTimeout = null;
+		this.showError = false;
+		this.errorMessage = "";
 	}
 
 	static get observedAttributes() {
-		return ["question-id", "placeholder", "selected-payer", "common-payers"];
+		return ["question-id", "placeholder", "selected-payer", "common-payers", "show-error", "error-message"];
 	}
 
 	initialize() {
@@ -22,6 +24,8 @@ export class QuizPayerSearch extends QuizBaseComponent {
 		this.questionId = this.getAttribute("question-id") || "";
 		this.placeholder = this.getAttribute("placeholder") || "Start typing to search for your insurance plan...";
 		this.selectedPayer = this.getAttribute("selected-payer") || "";
+		this.showError = this.getBooleanAttribute("show-error", false);
+		this.errorMessage = this.getAttribute("error-message") || "";
 
 		try {
 			const commonPayersAttr = this.getAttribute("common-payers");
@@ -38,6 +42,8 @@ export class QuizPayerSearch extends QuizBaseComponent {
 			case "placeholder":
 			case "selected-payer":
 			case "common-payers":
+			case "show-error":
+			case "error-message":
 				this.parseAttributes();
 				break;
 		}
@@ -57,7 +63,7 @@ export class QuizPayerSearch extends QuizBaseComponent {
 					<input
 						type="text"
 						id="question-${this.questionId}"
-						class="quiz-payer-search-input"
+						class="quiz-payer-search-input ${this.showError ? "quiz-input-error" : ""}"
 						placeholder="${this.placeholder}"
 						value="${selectedDisplayName}"
 						autocomplete="off"
@@ -78,7 +84,7 @@ export class QuizPayerSearch extends QuizBaseComponent {
 					</div>
 					<div class="quiz-payer-search-results"></div>
 				</div>
-				<p id="error-${this.questionId}" class="quiz-error-text quiz-error-hidden"></p>
+				<p id="error-${this.questionId}" class="quiz-error-text ${this.showError ? "quiz-error-visible" : "quiz-error-hidden"}">${this.errorMessage}</p>
 			</div>
 		`;
 	}

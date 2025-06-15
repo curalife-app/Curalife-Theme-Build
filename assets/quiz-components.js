@@ -2475,9 +2475,11 @@ const _QuizPayerSearch = class _QuizPayerSearch extends QuizBaseComponent {
     this.commonPayers = [];
     this.questionId = "";
     this.searchTimeout = null;
+    this.showError = false;
+    this.errorMessage = "";
   }
   static get observedAttributes() {
-    return ["question-id", "placeholder", "selected-payer", "common-payers"];
+    return ["question-id", "placeholder", "selected-payer", "common-payers", "show-error", "error-message"];
   }
   initialize() {
     this.parseAttributes();
@@ -2486,6 +2488,8 @@ const _QuizPayerSearch = class _QuizPayerSearch extends QuizBaseComponent {
     this.questionId = this.getAttribute("question-id") || "";
     this.placeholder = this.getAttribute("placeholder") || "Start typing to search for your insurance plan...";
     this.selectedPayer = this.getAttribute("selected-payer") || "";
+    this.showError = this.getBooleanAttribute("show-error", false);
+    this.errorMessage = this.getAttribute("error-message") || "";
     try {
       const commonPayersAttr = this.getAttribute("common-payers");
       this.commonPayers = commonPayersAttr ? JSON.parse(commonPayersAttr) : [];
@@ -2500,6 +2504,8 @@ const _QuizPayerSearch = class _QuizPayerSearch extends QuizBaseComponent {
       case "placeholder":
       case "selected-payer":
       case "common-payers":
+      case "show-error":
+      case "error-message":
         this.parseAttributes();
         break;
     }
@@ -2516,7 +2522,7 @@ const _QuizPayerSearch = class _QuizPayerSearch extends QuizBaseComponent {
 					<input
 						type="text"
 						id="question-${this.questionId}"
-						class="quiz-payer-search-input"
+						class="quiz-payer-search-input ${this.showError ? "quiz-input-error" : ""}"
 						placeholder="${this.placeholder}"
 						value="${selectedDisplayName}"
 						autocomplete="off"
@@ -2537,7 +2543,7 @@ const _QuizPayerSearch = class _QuizPayerSearch extends QuizBaseComponent {
 					</div>
 					<div class="quiz-payer-search-results"></div>
 				</div>
-				<p id="error-${this.questionId}" class="quiz-error-text quiz-error-hidden"></p>
+				<p id="error-${this.questionId}" class="quiz-error-text ${this.showError ? "quiz-error-visible" : "quiz-error-hidden"}">${this.errorMessage}</p>
 			</div>
 		`;
   }
@@ -3329,7 +3335,7 @@ const _QuizFormStep = class _QuizFormStep extends QuizBaseComponent {
 					${question.text}${this.renderHelpIcon(question.id)}
 				</label>
 				${question.helpText ? `<p class="quiz-text-sm">${question.helpText}</p>` : ""}
-				${this.renderQuestionInput(question, response)}
+				${this.renderQuestionInput(question, response, hasError)}
 				${hasError ? `<div class="quiz-error-message">${validationErrors.find((e) => e.questionId === question.id)?.message || "Invalid input"}</div>` : ""}
 			</div>
 		`;
@@ -3372,8 +3378,9 @@ const _QuizFormStep = class _QuizFormStep extends QuizBaseComponent {
 			</div>
 		`;
   }
-  renderQuestionInput(question, response) {
+  renderQuestionInput(question, response, hasError = false) {
     const value = response?.answer || "";
+    const errorAttr = hasError ? 'show-error="true"' : "";
     switch (question.type) {
       case "text":
       case "email":
@@ -3381,13 +3388,15 @@ const _QuizFormStep = class _QuizFormStep extends QuizBaseComponent {
         return `<quiz-text-input
 					question-data='${JSON.stringify(question)}'
 					value="${value || ""}"
+					${errorAttr}
 				></quiz-text-input>`;
       case "textarea":
-        return `<textarea id="question-${question.id}" class="quiz-textarea" ${question.required ? "required" : ""}>${value}</textarea>`;
+        return `<textarea id="question-${question.id}" class="quiz-textarea ${hasError ? "quiz-input-error" : ""}" ${question.required ? "required" : ""}>${value}</textarea>`;
       case "dropdown":
         return `<quiz-dropdown
 					question-data='${JSON.stringify(question)}'
 					selected-value="${value || ""}"
+					${errorAttr}
 				></quiz-dropdown>`;
       case "payer-search":
         const quizData = this.getQuizData();
@@ -3396,9 +3405,10 @@ const _QuizFormStep = class _QuizFormStep extends QuizBaseComponent {
 					placeholder="${question.placeholder || "Start typing to search for your insurance plan..."}"
 					common-payers='${JSON.stringify(quizData?.commonPayers || [])}'
 					${value ? `selected-payer="${value}"` : ""}
+					${errorAttr}
 				></quiz-payer-search>`;
       default:
-        return `<input type="text" id="question-${question.id}" class="quiz-input" value="${value}">`;
+        return `<input type="text" id="question-${question.id}" class="quiz-input ${hasError ? "quiz-input-error" : ""}" value="${value}">`;
     }
   }
   renderDatePart(question, response) {
