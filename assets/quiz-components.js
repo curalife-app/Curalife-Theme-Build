@@ -3476,67 +3476,37 @@ const _QuizStepContainer = class _QuizStepContainer extends QuizBaseComponent {
   }
   renderMultipleChoice(question, selectedValue) {
     if (!question.options) return "";
-    return `
-			<div class="quiz-multiple-choice">
-				${question.options.map(
-      (option) => `
-					<label class="quiz-option-card ${selectedValue === option.value ? "selected" : ""}">
-						<input type="radio" name="question-${question.id}" value="${option.value}"
-							   ${selectedValue === option.value ? "checked" : ""} class="quiz-radio-input">
-						<div class="quiz-option-content">
-							<span class="quiz-option-text">${option.text}</span>
-							${option.description ? `<span class="quiz-option-description">${option.description}</span>` : ""}
-						</div>
-					</label>
-				`
-    ).join("")}
-			</div>
-		`;
+    const questionData = JSON.stringify(question);
+    return `<quiz-multiple-choice
+			question-data='${questionData}'
+			selected-value="${selectedValue || ""}"
+		></quiz-multiple-choice>`;
   }
   renderCheckbox(question, selectedValues) {
     if (!question.options) return "";
     const selected = Array.isArray(selectedValues) ? selectedValues : selectedValues ? [selectedValues] : [];
-    return `
-			<div class="quiz-checkbox-group">
-				${question.options.map(
-      (option) => `
-					<label class="quiz-option-card ${selected.includes(option.value) ? "selected" : ""}">
-						<input type="checkbox" name="question-${question.id}" value="${option.value}"
-							   ${selected.includes(option.value) ? "checked" : ""} class="quiz-checkbox-input">
-						<div class="quiz-option-content">
-							<span class="quiz-option-text">${option.text}</span>
-							${option.description ? `<span class="quiz-option-description">${option.description}</span>` : ""}
-						</div>
-					</label>
-				`
-    ).join("")}
-			</div>
-		`;
+    const questionData = JSON.stringify(question);
+    const layout = question.id === "consent" ? "simple" : "cards";
+    return `<quiz-checkbox-group
+			question-data='${questionData}'
+			selected-values='${JSON.stringify(selected)}'
+			layout="${layout}"
+		></quiz-checkbox-group>`;
   }
   renderDropdown(question, selectedValue) {
     if (!question.options) return "";
-    return `
-			<select id="question-${question.id}" class="quiz-dropdown">
-				<option value="">${question.placeholder || "Select an option"}</option>
-				${question.options.map(
-      (option) => `
-					<option value="${option.value}" ${selectedValue === option.value ? "selected" : ""}>
-						${option.text}
-					</option>
-				`
-    ).join("")}
-			</select>
-		`;
+    const questionData = JSON.stringify(question);
+    return `<quiz-dropdown
+			question-data='${questionData}'
+			selected-value="${selectedValue || ""}"
+		></quiz-dropdown>`;
   }
   renderTextInput(question, value) {
-    return `
-			<input type="${question.type || "text"}"
-				   id="question-${question.id}"
-				   class="quiz-input"
-				   value="${value}"
-				   placeholder="${question.placeholder || ""}"
-				   ${question.required ? "required" : ""}>
-		`;
+    const questionData = JSON.stringify(question);
+    return `<quiz-text-input
+			question-data='${questionData}'
+			value="${value || ""}"
+		></quiz-text-input>`;
   }
   renderTextarea(question, value) {
     return `
@@ -3547,24 +3517,11 @@ const _QuizStepContainer = class _QuizStepContainer extends QuizBaseComponent {
 		`;
   }
   renderRating(question, value) {
-    const maxRating = question.maxRating || 5;
-    const currentRating = parseInt(value) || 0;
-    return `
-			<div class="quiz-rating">
-				${Array.from({ length: maxRating }, (_, i) => i + 1).map(
-      (rating) => `
-					<button type="button" class="quiz-rating-star ${rating <= currentRating ? "selected" : ""}"
-							data-rating="${rating}">
-						<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-							<path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
-								  fill="${rating <= currentRating ? "#fbbf24" : "#e5e7eb"}"
-								  stroke="#d1d5db" stroke-width="1"/>
-						</svg>
-					</button>
-				`
-    ).join("")}
-			</div>
-		`;
+    const questionData = JSON.stringify(question);
+    return `<quiz-rating
+			question-data='${questionData}'
+			value="${value || 5}"
+		></quiz-rating>`;
   }
   renderDateInput(question, value) {
     return `
