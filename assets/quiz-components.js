@@ -147,7 +147,8 @@ const _QuizBaseComponent = class _QuizBaseComponent extends HTMLElement {
   constructor() {
     super();
     this.config = {
-      useShadowDOM: true,
+      useShadowDOM: false,
+      // Disable for now - quiz.css designed for light DOM
       inheritStyles: true,
       autoRender: true
     };
@@ -407,44 +408,7 @@ const _QuizBaseComponent = class _QuizBaseComponent extends HTMLElement {
    * Render complete template with styles
    */
   async renderTemplate() {
-    if (!this.config.useShadowDOM) {
-      this.innerHTML = this.getTemplate();
-      return;
-    }
-    this.root.innerHTML = "";
-    const cssUrl = window.QUIZ_CSS_URL || window.QUIZ_CONFIG?.cssUrl;
-    let componentStyles;
-    let sharedCSS;
-    try {
-      const stylesResult = this.getStyles();
-      componentStyles = await Promise.resolve(stylesResult);
-    } catch (error) {
-      console.warn("Error loading component styles:", error);
-      componentStyles = "";
-    }
-    try {
-      console.log("🎨 Loading shared styles from:", cssUrl);
-      sharedCSS = await sharedStyles.getQuizStyles(cssUrl);
-      console.log("✅ Shared styles loaded:", sharedCSS ? `${sharedCSS.length} chars` : "empty");
-    } catch (error) {
-      console.warn("❌ Error loading shared styles:", error);
-      sharedCSS = "";
-    }
-    const styleElement = document.createElement("style");
-    const combinedStyles = sharedCSS + "\n" + componentStyles;
-    styleElement.textContent = combinedStyles;
-    console.log("📝 Applied styles to component:", combinedStyles ? `${combinedStyles.length} chars` : "empty");
-    this.root.appendChild(styleElement);
-    const template = this.getTemplate();
-    if (template) {
-      const templateElement = document.createElement("template");
-      templateElement.innerHTML = template;
-      this.root.appendChild(templateElement.content.cloneNode(true));
-    }
-    const slots = this.root.querySelectorAll("slot");
-    slots.forEach((slot) => {
-      slot.addEventListener("slotchange", this.handleSlotChange);
-    });
+    this.innerHTML = this.getTemplate();
   }
 };
 __name(_QuizBaseComponent, "QuizBaseComponent");
@@ -4216,113 +4180,8 @@ const _QuizMultipleChoiceComponent = class _QuizMultipleChoiceComponent extends 
   async render() {
     await this.renderTemplate();
   }
-  async getStyles() {
-    const baseStyles = super.getStyles();
-    const quizStyles = await sharedStyles.getQuizStyles();
-    return `
-			${baseStyles}
-			${quizStyles}
-
-			/* Component-specific styles */
-			.quiz-grid-2 {
-				display: grid;
-				grid-template-columns: repeat(2, 1fr);
-				gap: 1rem;
-			}
-
-			@media (max-width: 768px) {
-				.quiz-grid-2 {
-					grid-template-columns: 1fr;
-				}
-			}
-
-			.quiz-option-card {
-				cursor: pointer;
-				display: block;
-				transition: var(--quiz-transition-fast);
-			}
-
-			.quiz-option-card:hover:not([aria-disabled="true"]) .quiz-option-button {
-				transform: translateY(-2px);
-				box-shadow: var(--quiz-shadow-md);
-			}
-
-			.quiz-option-button {
-				border: 2px solid #e2e8f0;
-				border-radius: var(--quiz-border-radius);
-				padding: 1rem;
-				background: white;
-				transition: var(--quiz-transition-fast);
-				position: relative;
-				min-height: 60px;
-				display: flex;
-				align-items: center;
-				justify-content: space-between;
-			}
-
-			.quiz-option-button.selected {
-				border-color: var(--quiz-primary);
-				background-color: #f0f9ff;
-			}
-
-			.quiz-option-text {
-				flex: 1;
-			}
-
-			.quiz-option-text-content {
-				font-weight: 500;
-				color: #374151;
-			}
-
-			.quiz-checkmark {
-				color: var(--quiz-primary);
-				flex-shrink: 0;
-				margin-left: 0.5rem;
-			}
-
-			.quiz-sr-only {
-				position: absolute;
-				width: 1px;
-				height: 1px;
-				padding: 0;
-				margin: -1px;
-				overflow: hidden;
-				clip: rect(0, 0, 0, 0);
-				white-space: nowrap;
-				border: 0;
-			}
-
-			/* Disabled state */
-			:host([disabled]) .quiz-option-card {
-				cursor: not-allowed;
-				opacity: 0.6;
-			}
-
-			:host([disabled]) .quiz-option-button {
-				background-color: #f9fafb;
-				color: #9ca3af;
-			}
-
-			/* Error state */
-			.quiz-error-container {
-				padding: 1rem;
-				background-color: #fef2f2;
-				border: 1px solid #fecaca;
-				border-radius: var(--quiz-border-radius);
-			}
-
-			.quiz-error-text {
-				color: var(--quiz-text-error);
-				margin: 0;
-				font-size: 0.875rem;
-			}
-
-			/* Focus styles for accessibility */
-			.quiz-option-card:focus-within .quiz-option-button {
-				outline: 2px solid var(--quiz-primary);
-				outline-offset: 2px;
-			}
-		`;
+  getStyles() {
+    return "";
   }
   setupEventListeners() {
     this.root.addEventListener("change", this.handleOptionChange.bind(this));

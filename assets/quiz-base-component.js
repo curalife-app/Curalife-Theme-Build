@@ -17,7 +17,7 @@ export class QuizBaseComponent extends HTMLElement {
 
 		// Configuration
 		this.config = {
-			useShadowDOM: true,
+			useShadowDOM: false, // Disable for now - quiz.css designed for light DOM
 			inheritStyles: true,
 			autoRender: true
 		};
@@ -326,58 +326,8 @@ export class QuizBaseComponent extends HTMLElement {
 	 * Render complete template with styles
 	 */
 	async renderTemplate() {
-		if (!this.config.useShadowDOM) {
-			this.innerHTML = this.getTemplate();
-			return;
-		}
-
-		// Clear existing content
-		this.root.innerHTML = "";
-
-		// Add shared styles + component styles (handle async getStyles)
-		const cssUrl = window.QUIZ_CSS_URL || window.QUIZ_CONFIG?.cssUrl;
-		let componentStyles;
-		let sharedCSS;
-
-		try {
-			// Handle both sync and async getStyles methods
-			const stylesResult = this.getStyles();
-			componentStyles = await Promise.resolve(stylesResult);
-		} catch (error) {
-			console.warn("Error loading component styles:", error);
-			componentStyles = "";
-		}
-
-		try {
-			// Load shared styles
-			console.log("🎨 Loading shared styles from:", cssUrl);
-			sharedCSS = await sharedStyles.getQuizStyles(cssUrl);
-			console.log("✅ Shared styles loaded:", sharedCSS ? `${sharedCSS.length} chars` : "empty");
-		} catch (error) {
-			console.warn("❌ Error loading shared styles:", error);
-			sharedCSS = "";
-		}
-
-		// Create style element with combined styles
-		const styleElement = document.createElement("style");
-		const combinedStyles = sharedCSS + "\n" + componentStyles;
-		styleElement.textContent = combinedStyles;
-		console.log("📝 Applied styles to component:", combinedStyles ? `${combinedStyles.length} chars` : "empty");
-		this.root.appendChild(styleElement);
-
-		// Add template content
-		const template = this.getTemplate();
-		if (template) {
-			const templateElement = document.createElement("template");
-			templateElement.innerHTML = template;
-			this.root.appendChild(templateElement.content.cloneNode(true));
-		}
-
-		// Setup slot change listeners
-		const slots = this.root.querySelectorAll("slot");
-		slots.forEach(slot => {
-			slot.addEventListener("slotchange", this.handleSlotChange);
-		});
+		// For light DOM, simply set innerHTML - styles are handled globally by quiz.css
+		this.innerHTML = this.getTemplate();
 	}
 }
 
