@@ -1,5 +1,221 @@
-const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=Promise.resolve();if(t&&t.length>0){document.getElementsByTagName("link");const o=document.querySelector("meta[property=csp-nonce]"),a=o?.nonce||o?.getAttribute("nonce");r=Promise.allSettled(t.map(n=>{if(n=j(n),n in k)return;k[n]=!0;const g=n.endsWith(".css"),R=g?'[rel="stylesheet"]':"";if(document.querySelector(`link[href="${n}"]${R}`))return;const p=document.createElement("link");if(p.rel=g?"stylesheet":H,g||(p.as="script"),p.crossOrigin="",p.href=n,a&&p.setAttribute("nonce",a),document.head.appendChild(p),g)return new Promise((O,Q)=>{p.addEventListener("load",O),p.addEventListener("error",()=>Q(new Error(`Unable to preload CSS for ${n}`)))})}))}function s(o){const a=new Event("vite:preloadError",{cancelable:!0});if(a.payload=o,window.dispatchEvent(a),!a.defaultPrevented)throw o}return r.then(o=>{for(const a of o||[])a.status==="rejected"&&s(a.reason);return e().catch(s)})};class b{constructor(){this.stylesCache=new Map,this.loadingPromises=new Map}async loadStyles(e){if(this.stylesCache.has(e))return this.stylesCache.get(e);if(this.loadingPromises.has(e))return this.loadingPromises.get(e);const t=this.fetchStyles(e);this.loadingPromises.set(e,t);try{const i=await t;return this.stylesCache.set(e,i),this.loadingPromises.delete(e),i}catch(i){throw this.loadingPromises.delete(e),i}}async fetchStyles(e){try{const t=await fetch(e);if(!t.ok)throw new Error(`Failed to load CSS: ${t.status}`);return await t.text()}catch(t){if(console.warn(`Could not load shared styles from ${e}:`,t),e.includes("/assets/quiz.css")){const i=[e.replace("/assets/","/assets/"),"./assets/quiz.css","../assets/quiz.css"];for(const r of i)if(r!==e)try{const s=await fetch(r);if(s.ok)return console.log(`✓ Loaded styles from alternative path: ${r}`),await s.text()}catch{}}return""}}async getQuizStyles(e=null){const t=e||window.QUIZ_CSS_URL||"/assets/quiz.css";return window.QUIZ_CONFIG?.debug&&console.log(`🎨 Loading quiz styles from: ${t}`),this.loadStyles(t)}createStyleElement(e="",t=null){const i=document.createElement("style");return this.getQuizStyles(t).then(r=>{i.textContent=r+`
-`+e}).catch(()=>{i.textContent=e}),i.textContent=e,i}setQuizCssUrl(e){window.QUIZ_CSS_URL=e}}const d=new b;class u extends HTMLElement{constructor(){super(),this.config={useShadowDOM:!0,inheritStyles:!0,autoRender:!0},this.isInitialized=!1,this._isComponentConnected=!1,this.config.useShadowDOM?(this.attachShadow({mode:"open"}),this.root=this.shadowRoot):this.root=this,this.handleAttributeChange=this.handleAttributeChange.bind(this),this.handleSlotChange=this.handleSlotChange.bind(this)}connectedCallback(){this._isComponentConnected=!0,this.isInitialized||(this.initialize(),this.isInitialized=!0),this.config.autoRender&&this.render(),this.setupEventListeners(),this.onConnected()}disconnectedCallback(){this._isComponentConnected=!1,this.cleanup(),this.onDisconnected()}attributeChangedCallback(e,t,i){t!==i&&(this.handleAttributeChange(e,t,i),this._isComponentConnected&&this.config.autoRender&&this.render())}initialize(){}render(){throw new Error("render() must be implemented by subclass")}getTemplate(){throw new Error("getTemplate() must be implemented by subclass")}getStyles(){return`
+const scriptRel = "modulepreload";
+const assetsURL = function(dep) {
+  return "/" + dep;
+};
+const seen = {};
+const __vitePreload = function preload(baseModule, deps, importerUrl) {
+  let promise = Promise.resolve();
+  if (deps && deps.length > 0) {
+    document.getElementsByTagName("link");
+    const cspNonceMeta = document.querySelector(
+      "meta[property=csp-nonce]"
+    );
+    const cspNonce = cspNonceMeta?.nonce || cspNonceMeta?.getAttribute("nonce");
+    promise = Promise.allSettled(
+      deps.map((dep) => {
+        dep = assetsURL(dep);
+        if (dep in seen) return;
+        seen[dep] = true;
+        const isCss = dep.endsWith(".css");
+        const cssSelector = isCss ? '[rel="stylesheet"]' : "";
+        if (document.querySelector(`link[href="${dep}"]${cssSelector}`)) {
+          return;
+        }
+        const link = document.createElement("link");
+        link.rel = isCss ? "stylesheet" : scriptRel;
+        if (!isCss) {
+          link.as = "script";
+        }
+        link.crossOrigin = "";
+        link.href = dep;
+        if (cspNonce) {
+          link.setAttribute("nonce", cspNonce);
+        }
+        document.head.appendChild(link);
+        if (isCss) {
+          return new Promise((res, rej) => {
+            link.addEventListener("load", res);
+            link.addEventListener(
+              "error",
+              () => rej(new Error(`Unable to preload CSS for ${dep}`))
+            );
+          });
+        }
+      })
+    );
+  }
+  function handlePreloadError(err) {
+    const e = new Event("vite:preloadError", {
+      cancelable: true
+    });
+    e.payload = err;
+    window.dispatchEvent(e);
+    if (!e.defaultPrevented) {
+      throw err;
+    }
+  }
+  return promise.then((res) => {
+    for (const item of res || []) {
+      if (item.status !== "rejected") continue;
+      handlePreloadError(item.reason);
+    }
+    return baseModule().catch(handlePreloadError);
+  });
+};
+class SharedStyles {
+  constructor() {
+    this.stylesCache = /* @__PURE__ */ new Map();
+    this.loadingPromises = /* @__PURE__ */ new Map();
+  }
+  async loadStyles(cssPath) {
+    if (this.stylesCache.has(cssPath)) {
+      return this.stylesCache.get(cssPath);
+    }
+    if (this.loadingPromises.has(cssPath)) {
+      return this.loadingPromises.get(cssPath);
+    }
+    const loadingPromise = this.fetchStyles(cssPath);
+    this.loadingPromises.set(cssPath, loadingPromise);
+    try {
+      const styles = await loadingPromise;
+      this.stylesCache.set(cssPath, styles);
+      this.loadingPromises.delete(cssPath);
+      return styles;
+    } catch (error) {
+      this.loadingPromises.delete(cssPath);
+      throw error;
+    }
+  }
+  async fetchStyles(cssPath) {
+    try {
+      const response = await fetch(cssPath);
+      if (!response.ok) {
+        throw new Error(`Failed to load CSS: ${response.status}`);
+      }
+      return await response.text();
+    } catch (error) {
+      console.warn(`Could not load shared styles from ${cssPath}:`, error);
+      if (cssPath.includes("/assets/quiz.css")) {
+        const alternatives = [cssPath.replace("/assets/", "/assets/"), "./assets/quiz.css", "../assets/quiz.css"];
+        for (const altPath of alternatives) {
+          if (altPath !== cssPath) {
+            try {
+              const altResponse = await fetch(altPath);
+              if (altResponse.ok) {
+                console.log(`✓ Loaded styles from alternative path: ${altPath}`);
+                return await altResponse.text();
+              }
+            } catch (altError) {
+            }
+          }
+        }
+      }
+      return "";
+    }
+  }
+  // Get quiz-specific styles with configurable URL
+  async getQuizStyles(cssUrl = null) {
+    const url = cssUrl || window.QUIZ_CSS_URL || "/assets/quiz.css";
+    if (window.QUIZ_CONFIG?.debug) {
+      console.log(`🎨 Loading quiz styles from: ${url}`);
+    }
+    return this.loadStyles(url);
+  }
+  // Create a style element with the shared styles
+  createStyleElement(additionalCSS = "", cssUrl = null) {
+    const styleElement = document.createElement("style");
+    this.getQuizStyles(cssUrl).then((sharedCSS) => {
+      styleElement.textContent = sharedCSS + "\n" + additionalCSS;
+    }).catch(() => {
+      styleElement.textContent = additionalCSS;
+    });
+    styleElement.textContent = additionalCSS;
+    return styleElement;
+  }
+  // Set global CSS URL for all components
+  setQuizCssUrl(url) {
+    window.QUIZ_CSS_URL = url;
+  }
+}
+const sharedStyles = new SharedStyles();
+class QuizBaseComponent extends HTMLElement {
+  constructor() {
+    super();
+    this.config = {
+      useShadowDOM: true,
+      inheritStyles: true,
+      autoRender: true
+    };
+    this.isInitialized = false;
+    this._isComponentConnected = false;
+    if (this.config.useShadowDOM) {
+      this.attachShadow({ mode: "open" });
+      this.root = this.shadowRoot;
+    } else {
+      this.root = this;
+    }
+    this.handleAttributeChange = this.handleAttributeChange.bind(this);
+    this.handleSlotChange = this.handleSlotChange.bind(this);
+  }
+  /**
+   * Lifecycle: Component connected to DOM
+   */
+  connectedCallback() {
+    this._isComponentConnected = true;
+    if (!this.isInitialized) {
+      this.initialize();
+      this.isInitialized = true;
+    }
+    if (this.config.autoRender) {
+      this.render();
+    }
+    this.setupEventListeners();
+    this.onConnected();
+  }
+  /**
+   * Lifecycle: Component disconnected from DOM
+   */
+  disconnectedCallback() {
+    this._isComponentConnected = false;
+    this.cleanup();
+    this.onDisconnected();
+  }
+  /**
+   * Lifecycle: Attribute changed
+   */
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (oldValue === newValue) return;
+    this.handleAttributeChange(name, oldValue, newValue);
+    if (this._isComponentConnected && this.config.autoRender) {
+      this.render();
+    }
+  }
+  /**
+   * Initialize component
+   * Override in subclasses for custom initialization
+   */
+  initialize() {
+  }
+  /**
+   * Render component
+   * Must be implemented by subclasses
+   */
+  render() {
+    throw new Error("render() must be implemented by subclass");
+  }
+  /**
+   * Get component template
+   * Must be implemented by subclasses
+   */
+  getTemplate() {
+    throw new Error("getTemplate() must be implemented by subclass");
+  }
+  /**
+   * Get component styles
+   * Override in subclasses to add custom styles
+   */
+  getStyles() {
+    return `
       :host {
         display: block;
         box-sizing: border-box;
@@ -20,10 +236,286 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
         --quiz-shadow: var(--quiz-shadow, 0 2px 10px rgba(0,0,0,0.1));
         --quiz-transition: var(--quiz-transition, all 0.3s ease);
       }
-    `}handleAttributeChange(e,t,i){}handleSlotChange(e){}setupEventListeners(){}cleanup(){}onConnected(){}onDisconnected(){}get isComponentConnected(){return this._isComponentConnected}getBooleanAttribute(e,t=!1){const i=this.getAttribute(e);return i===null?t:i===""||i==="true"||i===e}getNumberAttribute(e,t=0){const i=this.getAttribute(e);if(i===null)return t;const r=parseFloat(i);return isNaN(r)?t:r}setAttributes(e){Object.entries(e).forEach(([t,i])=>{i==null?this.removeAttribute(t):this.setAttribute(t,String(i))})}dispatchCustomEvent(e,t={},i={}){const r=new CustomEvent(e,{detail:t,bubbles:!0,cancelable:!0,...i});return this.dispatchEvent(r),r}querySelector(e){return this.root.querySelector(e)}querySelectorAll(e){return this.root.querySelectorAll(e)}createElement(e,t={},i=""){const r=document.createElement(e);return Object.entries(t).forEach(([s,o])=>{r.setAttribute(s,String(o))}),i&&(r.innerHTML=i),r}sanitizeHTML(e){const t=document.createElement("div");return t.textContent=e,t.innerHTML}debounce(e,t){let i;return function(...s){const o=()=>{clearTimeout(i),e(...s)};clearTimeout(i),i=setTimeout(o,t)}}throttle(e,t){let i;return function(...s){i||(e.apply(this,s),i=!0,setTimeout(()=>i=!1,t))}}renderTemplate(){if(!this.config.useShadowDOM){this.innerHTML=this.getTemplate();return}this.root.innerHTML="";const e=window.QUIZ_CSS_URL||window.QUIZ_CONFIG?.cssUrl,t=d.createStyleElement(this.getStyles(),e);this.root.appendChild(t);const i=this.getTemplate();if(i){const s=document.createElement("template");s.innerHTML=i,this.root.appendChild(s.content.cloneNode(!0))}this.root.querySelectorAll("slot").forEach(s=>{s.addEventListener("slotchange",this.handleSlotChange)})}}class B{constructor(){this.components=new Map,this.loadedComponents=new Set}register(e,t,i={}){if(customElements.get(e)){console.warn(`Component ${e} already registered`);return}t.prototype instanceof u||console.warn(`Component ${e} should extend QuizBaseComponent`),customElements.define(e,t),this.components.set(e,{componentClass:t,options:i}),this.loadedComponents.add(e),console.log(`✓ Registered quiz component: ${e}`)}isRegistered(e){return this.loadedComponents.has(e)}getRegistered(){return Array.from(this.loadedComponents)}async loadComponent(e){if(!this.isRegistered(e))try{const i={"quiz-calendar-icon":()=>h(()=>Promise.resolve().then(()=>U),void 0),"quiz-clock-icon":()=>h(()=>Promise.resolve().then(()=>N),void 0),"quiz-checkmark-icon":()=>h(()=>Promise.resolve().then(()=>F),void 0),"quiz-coverage-card":()=>h(()=>Promise.resolve().then(()=>G),void 0),"quiz-benefit-item":()=>h(()=>Promise.resolve().then(()=>Z),void 0),"quiz-action-section":()=>h(()=>Promise.resolve().then(()=>J),void 0),"quiz-error-display":()=>h(()=>Promise.resolve().then(()=>W),void 0),"quiz-loading-display":()=>h(()=>Promise.resolve().then(()=>Y),void 0)}[e];if(!i)throw new Error(`Unknown component: ${e}`);(await i()).default&&!this.isRegistered(e)&&console.log(`✓ Loaded quiz component: ${e}`)}catch(t){console.error(`Failed to load component ${e}:`,t)}}getComponentPath(e){const t=e.split("-");return t[0]==="quiz"?`${this.getCategoryFromName(t[1])}/${e}.js`:`${e}.js`}getCategoryFromName(e){return{calendar:"icons",clock:"icons",checkmark:"icons",error:"icons",results:"layout",step:"layout",form:"forms",coverage:"content",action:"content",benefit:"content",faq:"content"}[e]||"content"}}const c=new B;class f extends u{constructor(){super(),this.config.useShadowDOM=!1}static get observedAttributes(){return["size","color","stroke-width"]}getTemplate(){const e=this.getAttribute("size")||"20",t=this.getAttribute("color")||"currentColor",i=this.getAttribute("stroke-width")||"1.5";return`
+    `;
+  }
+  /**
+   * Handle attribute changes
+   * Override in subclasses for custom attribute handling
+   */
+  handleAttributeChange(name, oldValue, newValue) {
+  }
+  /**
+   * Handle slot changes
+   */
+  handleSlotChange(event) {
+  }
+  /**
+   * Setup event listeners
+   * Override in subclasses
+   */
+  setupEventListeners() {
+  }
+  /**
+   * Cleanup resources
+   * Override in subclasses
+   */
+  cleanup() {
+  }
+  /**
+   * Called when component is connected
+   * Override in subclasses
+   */
+  onConnected() {
+  }
+  /**
+   * Called when component is disconnected
+   * Override in subclasses
+   */
+  onDisconnected() {
+  }
+  /**
+   * Check if component is connected (use native isConnected for DOM connection status)
+   */
+  get isComponentConnected() {
+    return this._isComponentConnected;
+  }
+  /**
+   * Utility: Get attribute as boolean
+   */
+  getBooleanAttribute(name, defaultValue = false) {
+    const value = this.getAttribute(name);
+    if (value === null) return defaultValue;
+    return value === "" || value === "true" || value === name;
+  }
+  /**
+   * Utility: Get attribute as number
+   */
+  getNumberAttribute(name, defaultValue = 0) {
+    const value = this.getAttribute(name);
+    if (value === null) return defaultValue;
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? defaultValue : parsed;
+  }
+  /**
+   * Utility: Set multiple attributes
+   */
+  setAttributes(attributes) {
+    Object.entries(attributes).forEach(([name, value]) => {
+      if (value === null || value === void 0) {
+        this.removeAttribute(name);
+      } else {
+        this.setAttribute(name, String(value));
+      }
+    });
+  }
+  /**
+   * Utility: Dispatch custom event
+   */
+  dispatchCustomEvent(eventName, detail = {}, options = {}) {
+    const event = new CustomEvent(eventName, {
+      detail,
+      bubbles: true,
+      cancelable: true,
+      ...options
+    });
+    this.dispatchEvent(event);
+    return event;
+  }
+  /**
+   * Utility: Query element in component root
+   */
+  querySelector(selector) {
+    return this.root.querySelector(selector);
+  }
+  /**
+   * Utility: Query all elements in component root
+   */
+  querySelectorAll(selector) {
+    return this.root.querySelectorAll(selector);
+  }
+  /**
+   * Utility: Create element with attributes and content
+   */
+  createElement(tagName, attributes = {}, content = "") {
+    const element = document.createElement(tagName);
+    Object.entries(attributes).forEach(([name, value]) => {
+      element.setAttribute(name, String(value));
+    });
+    if (content) {
+      element.innerHTML = content;
+    }
+    return element;
+  }
+  /**
+   * Utility: Sanitize HTML content
+   */
+  sanitizeHTML(html) {
+    const div = document.createElement("div");
+    div.textContent = html;
+    return div.innerHTML;
+  }
+  /**
+   * Utility: Debounce function calls
+   */
+  debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
+  /**
+   * Utility: Throttle function calls
+   */
+  throttle(func, limit) {
+    let inThrottle;
+    return function executedFunction(...args) {
+      if (!inThrottle) {
+        func.apply(this, args);
+        inThrottle = true;
+        setTimeout(() => inThrottle = false, limit);
+      }
+    };
+  }
+  /**
+   * Render complete template with styles
+   */
+  renderTemplate() {
+    if (!this.config.useShadowDOM) {
+      this.innerHTML = this.getTemplate();
+      return;
+    }
+    this.root.innerHTML = "";
+    const cssUrl = window.QUIZ_CSS_URL || window.QUIZ_CONFIG?.cssUrl;
+    const styleElement = sharedStyles.createStyleElement(this.getStyles(), cssUrl);
+    this.root.appendChild(styleElement);
+    const template = this.getTemplate();
+    if (template) {
+      const templateElement = document.createElement("template");
+      templateElement.innerHTML = template;
+      this.root.appendChild(templateElement.content.cloneNode(true));
+    }
+    const slots = this.root.querySelectorAll("slot");
+    slots.forEach((slot) => {
+      slot.addEventListener("slotchange", this.handleSlotChange);
+    });
+  }
+}
+class QuizComponentRegistry {
+  constructor() {
+    this.components = /* @__PURE__ */ new Map();
+    this.loadedComponents = /* @__PURE__ */ new Set();
+  }
+  /**
+   * Register a component
+   */
+  register(tagName, componentClass, options = {}) {
+    if (customElements.get(tagName)) {
+      console.warn(`Component ${tagName} already registered`);
+      return;
+    }
+    if (!(componentClass.prototype instanceof QuizBaseComponent)) {
+      console.warn(`Component ${tagName} should extend QuizBaseComponent`);
+    }
+    customElements.define(tagName, componentClass);
+    this.components.set(tagName, { componentClass, options });
+    this.loadedComponents.add(tagName);
+    console.log(`✓ Registered quiz component: ${tagName}`);
+  }
+  /**
+   * Check if component is registered
+   */
+  isRegistered(tagName) {
+    return this.loadedComponents.has(tagName);
+  }
+  /**
+   * Get all registered components
+   */
+  getRegistered() {
+    return Array.from(this.loadedComponents);
+  }
+  /**
+   * Load component dynamically
+   */
+  async loadComponent(componentName) {
+    if (this.isRegistered(componentName)) {
+      return;
+    }
+    try {
+      const componentMap = {
+        "quiz-calendar-icon": () => __vitePreload(() => Promise.resolve().then(() => quizCalendarIcon), true ? void 0 : void 0),
+        "quiz-clock-icon": () => __vitePreload(() => Promise.resolve().then(() => quizClockIcon), true ? void 0 : void 0),
+        "quiz-checkmark-icon": () => __vitePreload(() => Promise.resolve().then(() => quizCheckmarkIcon), true ? void 0 : void 0),
+        "quiz-coverage-card": () => __vitePreload(() => Promise.resolve().then(() => quizCoverageCard), true ? void 0 : void 0),
+        "quiz-benefit-item": () => __vitePreload(() => Promise.resolve().then(() => quizBenefitItem), true ? void 0 : void 0),
+        "quiz-action-section": () => __vitePreload(() => Promise.resolve().then(() => quizActionSection), true ? void 0 : void 0),
+        "quiz-error-display": () => __vitePreload(() => Promise.resolve().then(() => quizErrorDisplay), true ? void 0 : void 0),
+        "quiz-loading-display": () => __vitePreload(() => Promise.resolve().then(() => quizLoadingDisplay), true ? void 0 : void 0)
+      };
+      const importFn = componentMap[componentName];
+      if (!importFn) {
+        throw new Error(`Unknown component: ${componentName}`);
+      }
+      const module = await importFn();
+      if (module.default && !this.isRegistered(componentName)) {
+        console.log(`✓ Loaded quiz component: ${componentName}`);
+      }
+    } catch (error) {
+      console.error(`Failed to load component ${componentName}:`, error);
+    }
+  }
+  /**
+   * Get component file path
+   */
+  getComponentPath(componentName) {
+    const parts = componentName.split("-");
+    if (parts[0] === "quiz") {
+      const category = this.getCategoryFromName(parts[1]);
+      return `${category}/${componentName}.js`;
+    }
+    return `${componentName}.js`;
+  }
+  /**
+   * Determine component category from name
+   */
+  getCategoryFromName(type) {
+    const categoryMap = {
+      calendar: "icons",
+      clock: "icons",
+      checkmark: "icons",
+      error: "icons",
+      results: "layout",
+      step: "layout",
+      form: "forms",
+      coverage: "content",
+      action: "content",
+      benefit: "content",
+      faq: "content"
+    };
+    return categoryMap[type] || "content";
+  }
+}
+const quizComponentRegistry = new QuizComponentRegistry();
+class QuizCalendarIcon extends QuizBaseComponent {
+  constructor() {
+    super();
+    this.config.useShadowDOM = false;
+  }
+  static get observedAttributes() {
+    return ["size", "color", "stroke-width"];
+  }
+  getTemplate() {
+    const size = this.getAttribute("size") || "20";
+    const color = this.getAttribute("color") || "currentColor";
+    const strokeWidth = this.getAttribute("stroke-width") || "1.5";
+    return `
       <svg
-        width="${e}"
-        height="${e}"
+        width="${size}"
+        height="${size}"
         viewBox="0 0 20 20"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
@@ -32,16 +524,41 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
       >
         <path
           d="M6.66666 2.5V5.83333M13.3333 2.5V5.83333M2.5 9.16667H17.5M4.16666 3.33333H15.8333C16.7538 3.33333 17.5 4.07952 17.5 5V16.6667C17.5 17.5871 16.7538 18.3333 15.8333 18.3333H4.16666C3.24619 18.3333 2.5 17.5871 2.5 16.6667V5C2.5 4.07952 3.24619 3.33333 4.16666 3.33333Z"
-          stroke="${t}"
-          stroke-width="${i}"
+          stroke="${color}"
+          stroke-width="${strokeWidth}"
           stroke-linecap="round"
           stroke-linejoin="round"
         />
       </svg>
-    `}render(){this.innerHTML=this.getTemplate()}}customElements.get("quiz-calendar-icon")||c.register("quiz-calendar-icon",f);const U=Object.freeze(Object.defineProperty({__proto__:null,default:f},Symbol.toStringTag,{value:"Module"}));class m extends u{constructor(){super(),this.config.useShadowDOM=!1}static get observedAttributes(){return["size","color","stroke-width"]}getTemplate(){const e=this.getAttribute("size")||"24",t=this.getAttribute("color")||"#306E51",i=this.getAttribute("stroke-width")||"2";return`
+    `;
+  }
+  render() {
+    this.innerHTML = this.getTemplate();
+  }
+}
+if (!customElements.get("quiz-calendar-icon")) {
+  quizComponentRegistry.register("quiz-calendar-icon", QuizCalendarIcon);
+}
+const quizCalendarIcon = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: QuizCalendarIcon
+}, Symbol.toStringTag, { value: "Module" }));
+class QuizClockIcon extends QuizBaseComponent {
+  constructor() {
+    super();
+    this.config.useShadowDOM = false;
+  }
+  static get observedAttributes() {
+    return ["size", "color", "stroke-width"];
+  }
+  getTemplate() {
+    const size = this.getAttribute("size") || "24";
+    const color = this.getAttribute("color") || "#306E51";
+    const strokeWidth = this.getAttribute("stroke-width") || "2";
+    return `
       <svg
-        width="${e}"
-        height="${e}"
+        width="${size}"
+        height="${size}"
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
@@ -50,8 +567,8 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
       >
         <path
           d="M12 8V12L15 15"
-          stroke="${t}"
-          stroke-width="${i}"
+          stroke="${color}"
+          stroke-width="${strokeWidth}"
           stroke-linecap="round"
           stroke-linejoin="round"
         />
@@ -59,14 +576,41 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
           cx="12"
           cy="12"
           r="9"
-          stroke="${t}"
-          stroke-width="${i}"
+          stroke="${color}"
+          stroke-width="${strokeWidth}"
         />
       </svg>
-    `}render(){this.innerHTML=this.getTemplate()}}customElements.get("quiz-clock-icon")||c.register("quiz-clock-icon",m);const N=Object.freeze(Object.defineProperty({__proto__:null,default:m},Symbol.toStringTag,{value:"Module"}));class q extends u{constructor(){super(),this.config.useShadowDOM=!1}static get observedAttributes(){return["size","color","stroke-width","type"]}getTemplate(){const e=this.getAttribute("size")||"20",t=this.getAttribute("color")||"#306E51",i=this.getAttribute("stroke-width")||"1.5";return(this.getAttribute("type")||"simple")==="circle"?`
+    `;
+  }
+  render() {
+    this.innerHTML = this.getTemplate();
+  }
+}
+if (!customElements.get("quiz-clock-icon")) {
+  quizComponentRegistry.register("quiz-clock-icon", QuizClockIcon);
+}
+const quizClockIcon = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: QuizClockIcon
+}, Symbol.toStringTag, { value: "Module" }));
+class QuizCheckmarkIcon extends QuizBaseComponent {
+  constructor() {
+    super();
+    this.config.useShadowDOM = false;
+  }
+  static get observedAttributes() {
+    return ["size", "color", "stroke-width", "type"];
+  }
+  getTemplate() {
+    const size = this.getAttribute("size") || "20";
+    const color = this.getAttribute("color") || "#306E51";
+    const strokeWidth = this.getAttribute("stroke-width") || "1.5";
+    const type = this.getAttribute("type") || "simple";
+    if (type === "circle") {
+      return `
         <svg
-          width="${e}"
-          height="${e}"
+          width="${size}"
+          height="${size}"
           viewBox="0 0 20 20"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
@@ -75,23 +619,25 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
         >
           <path
             d="M10 18.3333C14.6023 18.3333 18.3333 14.6023 18.3333 9.99996C18.3333 5.39759 14.6023 1.66663 10 1.66663C5.39762 1.66663 1.66666 5.39759 1.66666 9.99996C1.66666 14.6023 5.39762 18.3333 10 18.3333Z"
-            stroke="${t}"
-            stroke-width="${i}"
+            stroke="${color}"
+            stroke-width="${strokeWidth}"
             stroke-linecap="round"
             stroke-linejoin="round"
           />
           <path
             d="M7.5 9.99996L9.16667 11.6666L12.5 8.33329"
-            stroke="${t}"
-            stroke-width="${i}"
+            stroke="${color}"
+            stroke-width="${strokeWidth}"
             stroke-linecap="round"
             stroke-linejoin="round"
           />
         </svg>
-      `:`
+      `;
+    }
+    return `
       <svg
-        width="${e}"
-        height="${e}"
+        width="${size}"
+        height="${size}"
         viewBox="0 0 20 20"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
@@ -100,18 +646,53 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
       >
         <path
           d="M7.5 9.99996L9.16667 11.6666L12.5 8.33329"
-          stroke="${t}"
-          stroke-width="${i}"
+          stroke="${color}"
+          stroke-width="${strokeWidth}"
           stroke-linecap="round"
           stroke-linejoin="round"
         />
       </svg>
-    `}render(){this.innerHTML=this.getTemplate()}}customElements.get("quiz-checkmark-icon")||c.register("quiz-checkmark-icon",q);const F=Object.freeze(Object.defineProperty({__proto__:null,default:q},Symbol.toStringTag,{value:"Module"}));class v extends u{static get observedAttributes(){return["title","sessions-covered","plan-end"]}connectedCallback(){this.render()}attributeChangedCallback(){this.isConnected&&this.render()}render(){this.getAttribute("title"),this.getAttribute("sessions-covered"),this.getAttribute("plan-end"),this.renderTemplate()}getTemplate(){const e=this.getAttribute("title")||"Here's Your Offer",t=this.getAttribute("sessions-covered")||"5",i=this.getAttribute("plan-end")||"Dec 31, 2025";return`
+    `;
+  }
+  render() {
+    this.innerHTML = this.getTemplate();
+  }
+}
+if (!customElements.get("quiz-checkmark-icon")) {
+  quizComponentRegistry.register("quiz-checkmark-icon", QuizCheckmarkIcon);
+}
+const quizCheckmarkIcon = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: QuizCheckmarkIcon
+}, Symbol.toStringTag, { value: "Module" }));
+class QuizCoverageCard extends QuizBaseComponent {
+  static get observedAttributes() {
+    return ["title", "sessions-covered", "plan-end"];
+  }
+  connectedCallback() {
+    this.render();
+  }
+  attributeChangedCallback() {
+    if (this.isConnected) {
+      this.render();
+    }
+  }
+  render() {
+    this.getAttribute("title") || "Here's Your Offer";
+    this.getAttribute("sessions-covered") || "5";
+    this.getAttribute("plan-end") || "Dec 31, 2025";
+    this.renderTemplate();
+  }
+  getTemplate() {
+    const title = this.getAttribute("title") || "Here's Your Offer";
+    const sessionsCovered = this.getAttribute("sessions-covered") || "5";
+    const planEnd = this.getAttribute("plan-end") || "Dec 31, 2025";
+    return `
 			<div class="quiz-coverage-card">
-				<div class="quiz-coverage-card-title">${e}</div>
+				<div class="quiz-coverage-card-title">${title}</div>
 				<div class="quiz-coverage-pricing">
 					<div class="quiz-coverage-service-item">
-						<div class="quiz-coverage-service">${t} sessions with a Registered Dietitian</div>
+						<div class="quiz-coverage-service">${sessionsCovered} sessions with a Registered Dietitian</div>
 						<div class="quiz-coverage-cost">
 							<div class="quiz-coverage-copay">$0 copay</div>
 							<div class="quiz-coverage-original-price">$1,200</div>
@@ -122,15 +703,18 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 				<div class="quiz-coverage-benefits">
 					<div class="quiz-coverage-benefit">
 						<quiz-checkmark-icon class="quiz-coverage-benefit-icon"></quiz-checkmark-icon>
-						<div class="quiz-coverage-benefit-text">${t} sessions covered</div>
+						<div class="quiz-coverage-benefit-text">${sessionsCovered} sessions covered</div>
 					</div>
 					<div class="quiz-coverage-benefit">
 						<quiz-calendar-icon class="quiz-coverage-benefit-icon"></quiz-calendar-icon>
-						<div class="quiz-coverage-benefit-text">Coverage expires ${i}</div>
+						<div class="quiz-coverage-benefit-text">Coverage expires ${planEnd}</div>
 					</div>
 				</div>
 			</div>
-		`}getStyles(){return`
+		`;
+  }
+  getStyles() {
+    return `
 				:host {
 					display: block;
 				}
@@ -299,30 +883,64 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 						margin: 16px 0;
 					}
 				}
-		`}}customElements.get("quiz-coverage-card")||c.register("quiz-coverage-card",v);const G=Object.freeze(Object.defineProperty({__proto__:null,default:v},Symbol.toStringTag,{value:"Module"}));class z extends u{static get observedAttributes(){return["icon","text","icon-color","icon-size"]}getTemplate(){const e=this.getAttribute("icon")||"checkmark",t=this.getAttribute("text")||"",i=this.getAttribute("icon-color")||"#306E51",r=this.getAttribute("icon-size")||"20";return`
+		`;
+  }
+}
+if (!customElements.get("quiz-coverage-card")) {
+  quizComponentRegistry.register("quiz-coverage-card", QuizCoverageCard);
+}
+const quizCoverageCard = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: QuizCoverageCard
+}, Symbol.toStringTag, { value: "Module" }));
+class QuizBenefitItem extends QuizBaseComponent {
+  static get observedAttributes() {
+    return ["icon", "text", "icon-color", "icon-size"];
+  }
+  getTemplate() {
+    const iconType = this.getAttribute("icon") || "checkmark";
+    const text = this.getAttribute("text") || "";
+    const iconColor = this.getAttribute("icon-color") || "#306E51";
+    const iconSize = this.getAttribute("icon-size") || "20";
+    return `
       <div class="quiz-benefit-item">
         <div class="quiz-benefit-icon">
-          ${this.getIconHTML(e,i,r)}
+          ${this.getIconHTML(iconType, iconColor, iconSize)}
         </div>
         <div class="quiz-benefit-text">
-          ${this.sanitizeHTML(t)}
+          ${this.sanitizeHTML(text)}
         </div>
       </div>
-    `}getIconHTML(e,t,i){const r=`width="${i}" height="${i}" role="img"`;switch(e){case"calendar":return`
-          <svg ${r} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Calendar">
-            <path d="M6.66666 2.5V5.83333M13.3333 2.5V5.83333M2.5 9.16667H17.5M4.16666 3.33333H15.8333C16.7538 3.33333 17.5 4.07952 17.5 5V16.6667C17.5 17.5871 16.7538 18.3333 15.8333 18.3333H4.16666C3.24619 18.3333 2.5 17.5871 2.5 16.6667V5C2.5 4.07952 3.24619 3.33333 4.16666 3.33333Z" stroke="${t}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    `;
+  }
+  getIconHTML(type, color, size) {
+    const commonAttrs = `width="${size}" height="${size}" role="img"`;
+    switch (type) {
+      case "calendar":
+        return `
+          <svg ${commonAttrs} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Calendar">
+            <path d="M6.66666 2.5V5.83333M13.3333 2.5V5.83333M2.5 9.16667H17.5M4.16666 3.33333H15.8333C16.7538 3.33333 17.5 4.07952 17.5 5V16.6667C17.5 17.5871 16.7538 18.3333 15.8333 18.3333H4.16666C3.24619 18.3333 2.5 17.5871 2.5 16.6667V5C2.5 4.07952 3.24619 3.33333 4.16666 3.33333Z" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-        `;case"clock":return`
-          <svg ${r} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Clock">
-            <path d="M12 8V12L15 15" stroke="${t}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="12" cy="12" r="9" stroke="${t}" stroke-width="2"/>
+        `;
+      case "clock":
+        return `
+          <svg ${commonAttrs} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Clock">
+            <path d="M12 8V12L15 15" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="12" cy="12" r="9" stroke="${color}" stroke-width="2"/>
           </svg>
-        `;case"checkmark":default:return`
-          <svg ${r} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Checkmark">
-            <path d="M10 18.3333C14.6023 18.3333 18.3333 14.6023 18.3333 9.99996C18.3333 5.39759 14.6023 1.66663 10 1.66663C5.39762 1.66663 1.66666 5.39759 1.66666 9.99996C1.66666 14.6023 5.39762 18.3333 10 18.3333Z" stroke="${t}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M7.5 9.99996L9.16667 11.6666L12.5 8.33329" stroke="${t}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        `;
+      case "checkmark":
+      default:
+        return `
+          <svg ${commonAttrs} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Checkmark">
+            <path d="M10 18.3333C14.6023 18.3333 18.3333 14.6023 18.3333 9.99996C18.3333 5.39759 14.6023 1.66663 10 1.66663C5.39762 1.66663 1.66666 5.39759 1.66666 9.99996C1.66666 14.6023 5.39762 18.3333 10 18.3333Z" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M7.5 9.99996L9.16667 11.6666L12.5 8.33329" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-        `}}getStyles(){return`
+        `;
+    }
+  }
+  getStyles() {
+    return `
       ${super.getStyles()}
 
       :host {
@@ -380,11 +998,59 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
           font-size: 13px;
         }
       }
-    `}render(){this.renderTemplate()}handleAttributeChange(e,t,i){this.isConnected&&this.render()}setBenefit(e,t,i="#306E51"){this.setAttributes({icon:e,text:t,"icon-color":i})}getBenefit(){return{icon:this.getAttribute("icon"),text:this.getAttribute("text"),iconColor:this.getAttribute("icon-color"),iconSize:this.getAttribute("icon-size")}}}customElements.get("quiz-benefit-item")||c.register("quiz-benefit-item",z);const Z=Object.freeze(Object.defineProperty({__proto__:null,default:z},Symbol.toStringTag,{value:"Module"}));class y extends u{static get observedAttributes(){return["title","type","background-color","result-url"]}getTemplate(){const e=this.getAttribute("title")||"Schedule your initial online consultation now",t=this.getAttribute("type")||"default",i=this.getAttribute("background-color")||"#F1F8F4",r=this.getAttribute("result-url")||"#";return`
-      <div class="quiz-action-section" data-type="${t}" style="background-color: ${i};">
+    `;
+  }
+  render() {
+    this.renderTemplate();
+  }
+  handleAttributeChange(name, oldValue, newValue) {
+    if (this.isConnected) {
+      this.render();
+    }
+  }
+  /**
+   * Utility method to set benefit data programmatically
+   */
+  setBenefit(icon, text, iconColor = "#306E51") {
+    this.setAttributes({
+      icon,
+      text,
+      "icon-color": iconColor
+    });
+  }
+  /**
+   * Get benefit data
+   */
+  getBenefit() {
+    return {
+      icon: this.getAttribute("icon"),
+      text: this.getAttribute("text"),
+      iconColor: this.getAttribute("icon-color"),
+      iconSize: this.getAttribute("icon-size")
+    };
+  }
+}
+if (!customElements.get("quiz-benefit-item")) {
+  quizComponentRegistry.register("quiz-benefit-item", QuizBenefitItem);
+}
+const quizBenefitItem = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: QuizBenefitItem
+}, Symbol.toStringTag, { value: "Module" }));
+class QuizActionSection extends QuizBaseComponent {
+  static get observedAttributes() {
+    return ["title", "type", "background-color", "result-url"];
+  }
+  getTemplate() {
+    const title = this.getAttribute("title") || "Schedule your initial online consultation now";
+    const type = this.getAttribute("type") || "default";
+    const backgroundColor = this.getAttribute("background-color") || "#F1F8F4";
+    const resultUrl = this.getAttribute("result-url") || "#";
+    return `
+      <div class="quiz-action-section" data-type="${type}" style="background-color: ${backgroundColor};">
         <div class="quiz-action-content">
           <div class="quiz-action-header">
-            <h3 class="quiz-action-title">${this.sanitizeHTML(e)}</h3>
+            <h3 class="quiz-action-title">${this.sanitizeHTML(title)}</h3>
           </div>
           <div class="quiz-action-details">
             <div class="quiz-action-info">
@@ -410,13 +1076,16 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
               <div class="quiz-action-feature-text">Free cancellation up to 24h before</div>
             </div>
           </div>
-          <a href="${r}" class="quiz-booking-button">Proceed to booking</a>
+          <a href="${resultUrl}" class="quiz-booking-button">Proceed to booking</a>
 
           <!-- Slots for additional content -->
           <slot></slot>
         </div>
       </div>
-    `}getStyles(){return`
+    `;
+  }
+  getStyles() {
+    return `
       ${super.getStyles()}
 
       :host {
@@ -561,27 +1230,91 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
           margin-top: 32px;
         }
       }
-    `}render(){this.renderTemplate(),this.updateBackgroundColor()}handleAttributeChange(e,t,i){e==="background-color"&&this.updateBackgroundColor()}updateBackgroundColor(){const e=this.getAttribute("background-color");if(e){const t=this.querySelector(".quiz-action-section");t&&(t.style.background=e)}}onConnected(){this.dispatchCustomEvent("quiz-action-section-ready",{title:this.getAttribute("title"),type:this.getAttribute("type")})}setAction(e,t="default",i=null){this.setAttributes({title:e,type:t,"background-color":i})}getAction(){return{title:this.getAttribute("title"),type:this.getAttribute("type"),backgroundColor:this.getAttribute("background-color")}}}customElements.get("quiz-action-section")||c.register("quiz-action-section",y);const J=Object.freeze(Object.defineProperty({__proto__:null,default:y},Symbol.toStringTag,{value:"Module"}));class x extends u{static get observedAttributes(){return["type","title","message","error-code","show-details"]}getTemplate(){const e=this.getAttribute("type")||"general",t=this.getAttribute("title")||"Error",i=this.getAttribute("message")||"An error occurred. Please try again.",r=this.getAttribute("error-code")||"",s=this.getBooleanAttribute("show-details",!1);return`
-      <div class="quiz-error-display" data-type="${e}">
+    `;
+  }
+  render() {
+    this.renderTemplate();
+    this.updateBackgroundColor();
+  }
+  handleAttributeChange(name, oldValue, newValue) {
+    if (name === "background-color") {
+      this.updateBackgroundColor();
+    }
+  }
+  updateBackgroundColor() {
+    const backgroundColor = this.getAttribute("background-color");
+    if (backgroundColor) {
+      const section = this.querySelector(".quiz-action-section");
+      if (section) {
+        section.style.background = backgroundColor;
+      }
+    }
+  }
+  onConnected() {
+    this.dispatchCustomEvent("quiz-action-section-ready", {
+      title: this.getAttribute("title"),
+      type: this.getAttribute("type")
+    });
+  }
+  /**
+   * Utility method to set action data programmatically
+   */
+  setAction(title, type = "default", backgroundColor = null) {
+    this.setAttributes({
+      title,
+      type,
+      "background-color": backgroundColor
+    });
+  }
+  /**
+   * Get action data
+   */
+  getAction() {
+    return {
+      title: this.getAttribute("title"),
+      type: this.getAttribute("type"),
+      backgroundColor: this.getAttribute("background-color")
+    };
+  }
+}
+if (!customElements.get("quiz-action-section")) {
+  quizComponentRegistry.register("quiz-action-section", QuizActionSection);
+}
+const quizActionSection = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: QuizActionSection
+}, Symbol.toStringTag, { value: "Module" }));
+class QuizErrorDisplay extends QuizBaseComponent {
+  static get observedAttributes() {
+    return ["type", "title", "message", "error-code", "show-details"];
+  }
+  getTemplate() {
+    const type = this.getAttribute("type") || "general";
+    const title = this.getAttribute("title") || "Error";
+    const message = this.getAttribute("message") || "An error occurred. Please try again.";
+    const errorCode = this.getAttribute("error-code") || "";
+    const showDetails = this.getBooleanAttribute("show-details", false);
+    return `
+      <div class="quiz-error-display" data-type="${type}">
         <div class="quiz-error-content">
           <div class="quiz-error-header">
             <div class="quiz-error-icon">
-              ${this.getErrorIcon(e)}
+              ${this.getErrorIcon(type)}
             </div>
             <div class="quiz-error-text">
-              <h3 class="quiz-error-title">${this.sanitizeHTML(t)}</h3>
-              <p class="quiz-error-message">${this.sanitizeHTML(i)}</p>
+              <h3 class="quiz-error-title">${this.sanitizeHTML(title)}</h3>
+              <p class="quiz-error-message">${this.sanitizeHTML(message)}</p>
             </div>
           </div>
 
-          ${r?`
+          ${errorCode ? `
             <div class="quiz-error-code">
               <span class="quiz-error-code-label">Error Code:</span>
-              <span class="quiz-error-code-value">${this.sanitizeHTML(r)}</span>
+              <span class="quiz-error-code-value">${this.sanitizeHTML(errorCode)}</span>
             </div>
-          `:""}
+          ` : ""}
 
-          ${s?`
+          ${showDetails ? `
             <div class="quiz-error-details">
               <details class="quiz-error-details-toggle">
                 <summary class="quiz-error-details-summary">Technical Details</summary>
@@ -590,7 +1323,7 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
                 </div>
               </details>
             </div>
-          `:""}
+          ` : ""}
 
           <div class="quiz-error-actions">
             <slot name="actions"></slot>
@@ -600,26 +1333,56 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
           <slot></slot>
         </div>
       </div>
-    `}getErrorIcon(e){const t=this.getIconColor(e);switch(e){case"warning":return`
+    `;
+  }
+  getErrorIcon(type) {
+    const iconColor = this.getIconColor(type);
+    switch (type) {
+      case "warning":
+        return `
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Warning">
-            <path d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="${t}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="${iconColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-        `;case"technical":return`
+        `;
+      case "technical":
+        return `
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Technical Error">
-            <path d="M12 8V12M12 16H12.01M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="${t}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M8 12L16 12" stroke="${t}" stroke-width="1" stroke-linecap="round"/>
+            <path d="M12 8V12M12 16H12.01M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="${iconColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M8 12L16 12" stroke="${iconColor}" stroke-width="1" stroke-linecap="round"/>
           </svg>
-        `;case"network":return`
+        `;
+      case "network":
+        return `
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Network Error">
-            <path d="M3 12H21M12 3L12 21" stroke="${t}" stroke-width="2" stroke-linecap="round"/>
-            <path d="M8.5 8.5L15.5 15.5M15.5 8.5L8.5 15.5" stroke="${t}" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M3 12H21M12 3L12 21" stroke="${iconColor}" stroke-width="2" stroke-linecap="round"/>
+            <path d="M8.5 8.5L15.5 15.5M15.5 8.5L8.5 15.5" stroke="${iconColor}" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
-        `;case"general":default:return`
+        `;
+      case "general":
+      default:
+        return `
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Error">
-            <circle cx="12" cy="12" r="9" stroke="${t}" stroke-width="2"/>
-            <path d="M15 9L9 15M9 9L15 15" stroke="${t}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="12" cy="12" r="9" stroke="${iconColor}" stroke-width="2"/>
+            <path d="M15 9L9 15M9 9L15 15" stroke="${iconColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-        `}}getIconColor(e){switch(e){case"warning":return"#ed8936";case"technical":return"#e53e3e";case"network":return"#3182ce";case"general":default:return"#e53e3e"}}getStyles(){return`
+        `;
+    }
+  }
+  getIconColor(type) {
+    switch (type) {
+      case "warning":
+        return "#ed8936";
+      case "technical":
+        return "#e53e3e";
+      case "network":
+        return "#3182ce";
+      case "general":
+      default:
+        return "#e53e3e";
+    }
+  }
+  getStyles() {
+    return `
       ${super.getStyles()}
 
       :host {
@@ -828,43 +1591,125 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
           max-width: 200px;
         }
       }
-    `}render(){this.renderTemplate()}handleAttributeChange(e,t,i){this.isConnected&&this.render()}onConnected(){this.dispatchCustomEvent("quiz-error-display-ready",{type:this.getAttribute("type"),title:this.getAttribute("title"),errorCode:this.getAttribute("error-code")})}setError(e,t,i,r=null,s=!1){this.setAttributes({type:e,title:t,message:i,"error-code":r,"show-details":s})}getError(){return{type:this.getAttribute("type"),title:this.getAttribute("title"),message:this.getAttribute("message"),errorCode:this.getAttribute("error-code"),showDetails:this.getBooleanAttribute("show-details")}}toggleDetails(e=null){const t=this.getBooleanAttribute("show-details"),i=e!==null?e:!t;this.setAttribute("show-details",i)}}customElements.get("quiz-error-display")||c.register("quiz-error-display",x);const W=Object.freeze(Object.defineProperty({__proto__:null,default:x},Symbol.toStringTag,{value:"Module"}));class w extends u{static get observedAttributes(){return["type","title","message","progress","current-step","total-steps","show-spinner"]}getTemplate(){const e=this.getAttribute("type")||"simple",t=this.getAttribute("title")||"Loading...",i=this.getAttribute("message")||"",r=this.getAttribute("progress")||"0",s=this.getAttribute("current-step")||"1",o=this.getAttribute("total-steps")||"1",a=this.getBooleanAttribute("show-spinner",!0);return e==="comprehensive"?this.getComprehensiveTemplate(t,i,r,s,o,a):this.getSimpleTemplate(t,i,a)}getSimpleTemplate(e,t,i){return`
+    `;
+  }
+  render() {
+    this.renderTemplate();
+  }
+  handleAttributeChange(name, oldValue, newValue) {
+    if (this.isConnected) {
+      this.render();
+    }
+  }
+  onConnected() {
+    this.dispatchCustomEvent("quiz-error-display-ready", {
+      type: this.getAttribute("type"),
+      title: this.getAttribute("title"),
+      errorCode: this.getAttribute("error-code")
+    });
+  }
+  /**
+   * Utility method to set error data programmatically
+   */
+  setError(type, title, message, errorCode = null, showDetails = false) {
+    this.setAttributes({
+      type,
+      title,
+      message,
+      "error-code": errorCode,
+      "show-details": showDetails
+    });
+  }
+  /**
+   * Get error data
+   */
+  getError() {
+    return {
+      type: this.getAttribute("type"),
+      title: this.getAttribute("title"),
+      message: this.getAttribute("message"),
+      errorCode: this.getAttribute("error-code"),
+      showDetails: this.getBooleanAttribute("show-details")
+    };
+  }
+  /**
+   * Show/hide technical details
+   */
+  toggleDetails(show = null) {
+    const currentShow = this.getBooleanAttribute("show-details");
+    const newShow = show !== null ? show : !currentShow;
+    this.setAttribute("show-details", newShow);
+  }
+}
+if (!customElements.get("quiz-error-display")) {
+  quizComponentRegistry.register("quiz-error-display", QuizErrorDisplay);
+}
+const quizErrorDisplay = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: QuizErrorDisplay
+}, Symbol.toStringTag, { value: "Module" }));
+class QuizLoadingDisplay extends QuizBaseComponent {
+  static get observedAttributes() {
+    return ["type", "title", "message", "progress", "current-step", "total-steps", "show-spinner"];
+  }
+  getTemplate() {
+    const type = this.getAttribute("type") || "simple";
+    const title = this.getAttribute("title") || "Loading...";
+    const message = this.getAttribute("message") || "";
+    const progress = this.getAttribute("progress") || "0";
+    const currentStep = this.getAttribute("current-step") || "1";
+    const totalSteps = this.getAttribute("total-steps") || "1";
+    const showSpinner = this.getBooleanAttribute("show-spinner", true);
+    if (type === "comprehensive") {
+      return this.getComprehensiveTemplate(title, message, progress, currentStep, totalSteps, showSpinner);
+    } else {
+      return this.getSimpleTemplate(title, message, showSpinner);
+    }
+  }
+  getSimpleTemplate(title, message, showSpinner) {
+    return `
       <div class="quiz-loading-display simple">
         <div class="quiz-loading-content">
-          ${i?`
+          ${showSpinner ? `
             <div class="quiz-loading-icon">
               <div class="quiz-loading-spinner"></div>
             </div>
-          `:""}
+          ` : ""}
 
           <div class="quiz-loading-text">
-            <h3 class="quiz-loading-title">${this.sanitizeHTML(e)}</h3>
-            ${t?`<p class="quiz-loading-message">${this.sanitizeHTML(t)}</p>`:""}
+            <h3 class="quiz-loading-title">${this.sanitizeHTML(title)}</h3>
+            ${message ? `<p class="quiz-loading-message">${this.sanitizeHTML(message)}</p>` : ""}
           </div>
 
           <!-- Default slot for additional content -->
           <slot></slot>
         </div>
       </div>
-    `}getComprehensiveTemplate(e,t,i,r,s,o){return`
+    `;
+  }
+  getComprehensiveTemplate(title, message, progress, currentStep, totalSteps, showSpinner) {
+    return `
       <div class="quiz-comprehensive-loading">
         <div class="quiz-loading-content">
-          ${o?`
+          ${showSpinner ? `
             <div class="quiz-loading-icon">
               <div class="quiz-loading-spinner-large"></div>
             </div>
-          `:""}
+          ` : ""}
 
           <div class="quiz-loading-step">
-            <h3 class="quiz-loading-step-title">${this.sanitizeHTML(e)}</h3>
-            ${t?`<p class="quiz-loading-step-description">${this.sanitizeHTML(t)}</p>`:""}
+            <h3 class="quiz-loading-step-title">${this.sanitizeHTML(title)}</h3>
+            ${message ? `<p class="quiz-loading-step-description">${this.sanitizeHTML(message)}</p>` : ""}
           </div>
 
           <!-- Default slot for additional content -->
           <slot></slot>
         </div>
       </div>
-    `}getStyles(){return`
+    `;
+  }
+  getStyles() {
+    return `
       ${super.getStyles()}
 
       :host {
@@ -1179,20 +2024,138 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
           font-size: 12px;
         }
       }
-    `}render(){this.renderTemplate()}handleAttributeChange(e,t,i){this.isConnected&&(e==="progress"?this.updateProgress(i):this.render())}updateProgress(e){const t=this.querySelector(".quiz-loading-progress-fill"),i=this.querySelector(".quiz-loading-progress-text");if(t&&(t.style.width=`${e}%`),i){const r=this.getAttribute("current-step")||"1",s=this.getAttribute("total-steps")||"1";i.textContent=`${e}% complete (${r}/${s})`}}onConnected(){this.dispatchCustomEvent("quiz-loading-display-ready",{type:this.getAttribute("type"),title:this.getAttribute("title"),progress:this.getAttribute("progress")})}setLoading(e,t,i="",r=0,s=1,o=1){this.setAttributes({type:e,title:t,message:i,progress:r.toString(),"current-step":s.toString(),"total-steps":o.toString()})}setProgress(e,t=null){this.setAttribute("progress",e.toString()),t!==null&&this.setAttribute("current-step",t.toString())}getLoading(){return{type:this.getAttribute("type"),title:this.getAttribute("title"),message:this.getAttribute("message"),progress:parseInt(this.getAttribute("progress")||"0"),currentStep:parseInt(this.getAttribute("current-step")||"1"),totalSteps:parseInt(this.getAttribute("total-steps")||"1")}}toggleSpinner(e=null){const t=this.getBooleanAttribute("show-spinner",!0),i=e!==null?e:!t;this.setAttribute("show-spinner",i)}}customElements.get("quiz-loading-display")||c.register("quiz-loading-display",w);const Y=Object.freeze(Object.defineProperty({__proto__:null,default:w},Symbol.toStringTag,{value:"Module"}));class $ extends HTMLElement{constructor(){super(),this.attachShadow({mode:"open"}),this.faqData=[]}static get observedAttributes(){return["faq-data"]}attributeChangedCallback(e,t,i){if(e==="faq-data"&&i)try{this.faqData=JSON.parse(i),this.render()}catch(r){console.error("Invalid FAQ data:",r)}}connectedCallback(){this.render()}async render(){const e=await b.getQuizStyles(),t=this.getTemplate(),i=this.getStyles();this.shadowRoot.innerHTML=`
+    `;
+  }
+  render() {
+    this.renderTemplate();
+  }
+  handleAttributeChange(name, oldValue, newValue) {
+    if (this.isConnected) {
+      if (name === "progress") {
+        this.updateProgress(newValue);
+      } else {
+        this.render();
+      }
+    }
+  }
+  updateProgress(progress) {
+    const progressFill = this.querySelector(".quiz-loading-progress-fill");
+    const progressText = this.querySelector(".quiz-loading-progress-text");
+    if (progressFill) {
+      progressFill.style.width = `${progress}%`;
+    }
+    if (progressText) {
+      const currentStep = this.getAttribute("current-step") || "1";
+      const totalSteps = this.getAttribute("total-steps") || "1";
+      progressText.textContent = `${progress}% complete (${currentStep}/${totalSteps})`;
+    }
+  }
+  onConnected() {
+    this.dispatchCustomEvent("quiz-loading-display-ready", {
+      type: this.getAttribute("type"),
+      title: this.getAttribute("title"),
+      progress: this.getAttribute("progress")
+    });
+  }
+  /**
+   * Utility method to set loading data programmatically
+   */
+  setLoading(type, title, message = "", progress = 0, currentStep = 1, totalSteps = 1) {
+    this.setAttributes({
+      type,
+      title,
+      message,
+      progress: progress.toString(),
+      "current-step": currentStep.toString(),
+      "total-steps": totalSteps.toString()
+    });
+  }
+  /**
+   * Update progress programmatically
+   */
+  setProgress(progress, currentStep = null) {
+    this.setAttribute("progress", progress.toString());
+    if (currentStep !== null) {
+      this.setAttribute("current-step", currentStep.toString());
+    }
+  }
+  /**
+   * Get loading data
+   */
+  getLoading() {
+    return {
+      type: this.getAttribute("type"),
+      title: this.getAttribute("title"),
+      message: this.getAttribute("message"),
+      progress: parseInt(this.getAttribute("progress") || "0"),
+      currentStep: parseInt(this.getAttribute("current-step") || "1"),
+      totalSteps: parseInt(this.getAttribute("total-steps") || "1")
+    };
+  }
+  /**
+   * Show/hide spinner
+   */
+  toggleSpinner(show = null) {
+    const currentShow = this.getBooleanAttribute("show-spinner", true);
+    const newShow = show !== null ? show : !currentShow;
+    this.setAttribute("show-spinner", newShow);
+  }
+}
+if (!customElements.get("quiz-loading-display")) {
+  quizComponentRegistry.register("quiz-loading-display", QuizLoadingDisplay);
+}
+const quizLoadingDisplay = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: QuizLoadingDisplay
+}, Symbol.toStringTag, { value: "Module" }));
+class QuizFAQSection extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
+    this.faqData = [];
+  }
+  static get observedAttributes() {
+    return ["faq-data"];
+  }
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (name === "faq-data" && newValue) {
+      try {
+        this.faqData = JSON.parse(newValue);
+        this.render();
+      } catch (error) {
+        console.error("Invalid FAQ data:", error);
+      }
+    }
+  }
+  connectedCallback() {
+    this.render();
+  }
+  async render() {
+    const sharedStyles2 = await SharedStyles.getQuizStyles();
+    const template = this.getTemplate();
+    const styles = this.getStyles();
+    this.shadowRoot.innerHTML = `
 			<style>
-				${e}
-				${i}
+				${sharedStyles2}
+				${styles}
 			</style>
-			${t}
-		`,this.attachEventListeners()}getTemplate(){return!this.faqData||this.faqData.length===0?"<div></div>":`
+			${template}
+		`;
+    this.attachEventListeners();
+  }
+  getTemplate() {
+    if (!this.faqData || this.faqData.length === 0) {
+      return "<div></div>";
+    }
+    return `
 			<div class="quiz-faq-section">
 				<div class="quiz-faq-divider"></div>
-				${this.faqData.map(e=>`
-					<div class="quiz-faq-item" data-faq="${e.id}" tabindex="0" role="button" aria-expanded="false">
+				${this.faqData.map(
+      (faq) => `
+					<div class="quiz-faq-item" data-faq="${faq.id}" tabindex="0" role="button" aria-expanded="false">
 						<div class="quiz-faq-content">
-							<div class="quiz-faq-question-collapsed">${e.question}</div>
-							<div class="quiz-faq-answer">${e.answer}</div>
+							<div class="quiz-faq-question-collapsed">${faq.question}</div>
+							<div class="quiz-faq-answer">${faq.answer}</div>
 						</div>
 						<div class="quiz-faq-toggle">
 							<svg class="quiz-faq-toggle-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
@@ -1202,19 +2165,106 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 						</div>
 					</div>
 					<div class="quiz-faq-divider"></div>
-				`).join("")}
+				`
+    ).join("")}
 			</div>
-		`}getStyles(){return`
+		`;
+  }
+  getStyles() {
+    return `
 			:host {
 				display: block;
 			}
-		`}attachEventListeners(){this.shadowRoot.querySelectorAll(".quiz-faq-item").forEach(t=>{t.addEventListener("click",()=>{if(t.classList.contains("expanded")){t.classList.remove("expanded"),t.setAttribute("aria-expanded","false");const r=t.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");r&&(r.className="quiz-faq-question-collapsed")}else{t.classList.add("expanded"),t.setAttribute("aria-expanded","true");const r=t.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");r&&(r.className="quiz-faq-question")}}),t.addEventListener("keydown",i=>{(i.key==="Enter"||i.key===" ")&&(i.preventDefault(),t.click())})})}setFAQData(e){this.faqData=e,this.render()}}customElements.define("quiz-faq-section",$);class A extends HTMLElement{constructor(){super(),this.attachShadow({mode:"open"}),this.selectedPayer="",this.placeholder="Start typing to search for your insurance plan...",this.commonPayers=[],this.questionId="",this.searchTimeout=null}static get observedAttributes(){return["question-id","placeholder","selected-payer","common-payers"]}attributeChangedCallback(e,t,i){switch(e){case"question-id":this.questionId=i||"";break;case"placeholder":this.placeholder=i||"Start typing to search for your insurance plan...";break;case"selected-payer":this.selectedPayer=i||"";break;case"common-payers":try{this.commonPayers=i?JSON.parse(i):[]}catch(r){console.error("Invalid common payers data:",r),this.commonPayers=[]}break}this.shadowRoot.innerHTML&&this.render()}connectedCallback(){this.render()}async render(){const e=await b.getQuizStyles(),t=this.getTemplate(),i=this.getStyles();this.shadowRoot.innerHTML=`
+		`;
+  }
+  attachEventListeners() {
+    const faqItems = this.shadowRoot.querySelectorAll(".quiz-faq-item");
+    faqItems.forEach((item) => {
+      item.addEventListener("click", () => {
+        const isExpanded = item.classList.contains("expanded");
+        if (!isExpanded) {
+          item.classList.add("expanded");
+          item.setAttribute("aria-expanded", "true");
+          const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
+          if (question) question.className = "quiz-faq-question";
+        } else {
+          item.classList.remove("expanded");
+          item.setAttribute("aria-expanded", "false");
+          const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
+          if (question) question.className = "quiz-faq-question-collapsed";
+        }
+      });
+      item.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          item.click();
+        }
+      });
+    });
+  }
+  // Public API for setting FAQ data
+  setFAQData(faqData) {
+    this.faqData = faqData;
+    this.render();
+  }
+}
+customElements.define("quiz-faq-section", QuizFAQSection);
+class QuizPayerSearch extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
+    this.selectedPayer = "";
+    this.placeholder = "Start typing to search for your insurance plan...";
+    this.commonPayers = [];
+    this.questionId = "";
+    this.searchTimeout = null;
+  }
+  static get observedAttributes() {
+    return ["question-id", "placeholder", "selected-payer", "common-payers"];
+  }
+  attributeChangedCallback(name, oldValue, newValue) {
+    switch (name) {
+      case "question-id":
+        this.questionId = newValue || "";
+        break;
+      case "placeholder":
+        this.placeholder = newValue || "Start typing to search for your insurance plan...";
+        break;
+      case "selected-payer":
+        this.selectedPayer = newValue || "";
+        break;
+      case "common-payers":
+        try {
+          this.commonPayers = newValue ? JSON.parse(newValue) : [];
+        } catch (error) {
+          console.error("Invalid common payers data:", error);
+          this.commonPayers = [];
+        }
+        break;
+    }
+    if (this.shadowRoot.innerHTML) {
+      this.render();
+    }
+  }
+  connectedCallback() {
+    this.render();
+  }
+  async render() {
+    const sharedStyles2 = await SharedStyles.getQuizStyles();
+    const template = this.getTemplate();
+    const styles = this.getStyles();
+    this.shadowRoot.innerHTML = `
 			<style>
-				${e}
-				${i}
+				${sharedStyles2}
+				${styles}
 			</style>
-			${t}
-		`,this.attachEventListeners()}getTemplate(){const e=this.resolvePayerDisplayName(this.selectedPayer);return`
+			${template}
+		`;
+    this.attachEventListeners();
+  }
+  getTemplate() {
+    const selectedDisplayName = this.resolvePayerDisplayName(this.selectedPayer);
+    return `
 			<div class="quiz-payer-search-container">
 				<div class="quiz-payer-search-input-wrapper">
 					<input
@@ -1222,7 +2272,7 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 						id="question-${this.questionId}"
 						class="quiz-payer-search-input"
 						placeholder="${this.placeholder}"
-						value="${e}"
+						value="${selectedDisplayName}"
 						autocomplete="off"
 						aria-describedby="error-${this.questionId}"
 					>
@@ -1243,35 +2293,248 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 				</div>
 				<p id="error-${this.questionId}" class="quiz-error-text quiz-error-hidden"></p>
 			</div>
-		`}getStyles(){return`
+		`;
+  }
+  getStyles() {
+    return `
 			:host {
 				display: block;
 			}
-		`}attachEventListeners(){const e=this.shadowRoot.querySelector(".quiz-payer-search-input"),t=this.shadowRoot.querySelector(".quiz-payer-search-dropdown"),i=this.shadowRoot.querySelector(".quiz-payer-search-close-btn"),r=this.shadowRoot.querySelector(".quiz-payer-search-container");e.addEventListener("input",s=>{const o=s.target.value.trim();this.handleSearch(o,t)}),e.addEventListener("focus",()=>{e.value.trim()===""&&this.showInitialPayerList(t),this.openDropdown(t,r,e)}),i.addEventListener("click",()=>{this.closeDropdown(t,r,e)}),document.addEventListener("click",s=>{r.contains(s.target)||this.closeDropdown(t,r,e)})}handleSearch(e,t){if(clearTimeout(this.searchTimeout),e.length===0){this.showInitialPayerList(t);return}this.searchTimeout=setTimeout(async()=>{try{const i=await this.searchPayers(e);this.renderSearchResults(i,e,t)}catch(i){console.error("Search error:",i),this.showSearchError(t)}},300)}async searchPayers(e){const t=this.filterCommonPayers(e);if(t.length>0)return t;try{return await this.searchPayersAPI(e)}catch(i){return console.error("API search failed:",i),t}}filterCommonPayers(e){const t=e.toLowerCase();return this.commonPayers.filter(i=>{const r=i.displayName.toLowerCase().includes(t),s=i.aliases?.some(o=>o.toLowerCase().includes(t));return r||s})}async searchPayersAPI(e){return[]}showInitialPayerList(e){const t=e.querySelector(".quiz-payer-search-results");t.innerHTML=this.commonPayers.map(i=>`
-			<div class="quiz-payer-search-item" data-payer-id="${i.stediId}" data-payer-name="${i.displayName}">
-				<div class="quiz-payer-search-item-name">${i.displayName}</div>
-				<div class="quiz-payer-search-item-details">ID: ${i.primaryPayerId}</div>
+		`;
+  }
+  attachEventListeners() {
+    const searchInput = this.shadowRoot.querySelector(".quiz-payer-search-input");
+    const dropdown = this.shadowRoot.querySelector(".quiz-payer-search-dropdown");
+    const closeBtn = this.shadowRoot.querySelector(".quiz-payer-search-close-btn");
+    const container = this.shadowRoot.querySelector(".quiz-payer-search-container");
+    searchInput.addEventListener("input", (e) => {
+      const query = e.target.value.trim();
+      this.handleSearch(query, dropdown);
+    });
+    searchInput.addEventListener("focus", () => {
+      if (searchInput.value.trim() === "") {
+        this.showInitialPayerList(dropdown);
+      }
+      this.openDropdown(dropdown, container, searchInput);
+    });
+    closeBtn.addEventListener("click", () => {
+      this.closeDropdown(dropdown, container, searchInput);
+    });
+    document.addEventListener("click", (e) => {
+      if (!container.contains(e.target)) {
+        this.closeDropdown(dropdown, container, searchInput);
+      }
+    });
+  }
+  handleSearch(query, dropdown) {
+    clearTimeout(this.searchTimeout);
+    if (query.length === 0) {
+      this.showInitialPayerList(dropdown);
+      return;
+    }
+    this.searchTimeout = setTimeout(async () => {
+      try {
+        const results = await this.searchPayers(query);
+        this.renderSearchResults(results, query, dropdown);
+      } catch (error) {
+        console.error("Search error:", error);
+        this.showSearchError(dropdown);
+      }
+    }, 300);
+  }
+  async searchPayers(query) {
+    const commonResults = this.filterCommonPayers(query);
+    if (commonResults.length > 0) {
+      return commonResults;
+    }
+    try {
+      return await this.searchPayersAPI(query);
+    } catch (error) {
+      console.error("API search failed:", error);
+      return commonResults;
+    }
+  }
+  filterCommonPayers(query) {
+    const queryLower = query.toLowerCase();
+    return this.commonPayers.filter((payer) => {
+      const nameMatch = payer.displayName.toLowerCase().includes(queryLower);
+      const aliasMatch = payer.aliases?.some((alias) => alias.toLowerCase().includes(queryLower));
+      return nameMatch || aliasMatch;
+    });
+  }
+  async searchPayersAPI(query) {
+    return [];
+  }
+  showInitialPayerList(dropdown) {
+    const resultsContainer = dropdown.querySelector(".quiz-payer-search-results");
+    resultsContainer.innerHTML = this.commonPayers.map(
+      (payer) => `
+			<div class="quiz-payer-search-item" data-payer-id="${payer.stediId}" data-payer-name="${payer.displayName}">
+				<div class="quiz-payer-search-item-name">${payer.displayName}</div>
+				<div class="quiz-payer-search-item-details">ID: ${payer.primaryPayerId}</div>
 			</div>
-		`).join(""),this.attachResultListeners(e)}renderSearchResults(e,t,i){const r=i.querySelector(".quiz-payer-search-results");if(e.length===0){r.innerHTML=`
+		`
+    ).join("");
+    this.attachResultListeners(dropdown);
+  }
+  renderSearchResults(results, query, dropdown) {
+    const resultsContainer = dropdown.querySelector(".quiz-payer-search-results");
+    if (results.length === 0) {
+      resultsContainer.innerHTML = `
 				<div class="quiz-payer-search-no-results">
-					No insurance plans found for "${t}"
+					No insurance plans found for "${query}"
 				</div>
-			`;return}r.innerHTML=e.map(s=>`
-			<div class="quiz-payer-search-item" data-payer-id="${s.stediId}" data-payer-name="${s.displayName}">
-				<div class="quiz-payer-search-item-name">${this.highlightSearchTerm(s.displayName,t)}</div>
-				<div class="quiz-payer-search-item-details">ID: ${s.primaryPayerId}</div>
+			`;
+      return;
+    }
+    resultsContainer.innerHTML = results.map(
+      (payer) => `
+			<div class="quiz-payer-search-item" data-payer-id="${payer.stediId}" data-payer-name="${payer.displayName}">
+				<div class="quiz-payer-search-item-name">${this.highlightSearchTerm(payer.displayName, query)}</div>
+				<div class="quiz-payer-search-item-details">ID: ${payer.primaryPayerId}</div>
 			</div>
-		`).join(""),this.attachResultListeners(i)}attachResultListeners(e){e.querySelectorAll(".quiz-payer-search-item").forEach(i=>{i.addEventListener("click",()=>{const r=i.dataset.payerId,s=i.dataset.payerName;this.selectPayer({stediId:r,displayName:s})})})}selectPayer(e){const t=this.shadowRoot.querySelector(".quiz-payer-search-input"),i=this.shadowRoot.querySelector(".quiz-payer-search-dropdown"),r=this.shadowRoot.querySelector(".quiz-payer-search-container");t.value=e.displayName,this.selectedPayer=e.stediId,this.closeDropdown(i,r,t),this.dispatchEvent(new CustomEvent("payer-selected",{detail:{questionId:this.questionId,payer:e},bubbles:!0}))}openDropdown(e,t,i){e.style.display="block",t.classList.add("dropdown-open"),i.classList.add("dropdown-open")}closeDropdown(e,t,i){e.style.display="none",t.classList.remove("dropdown-open"),i.classList.remove("dropdown-open")}showSearchError(e){const t=e.querySelector(".quiz-payer-search-results");t.innerHTML=`
+		`
+    ).join("");
+    this.attachResultListeners(dropdown);
+  }
+  attachResultListeners(dropdown) {
+    const items = dropdown.querySelectorAll(".quiz-payer-search-item");
+    items.forEach((item) => {
+      item.addEventListener("click", () => {
+        const payerId = item.dataset.payerId;
+        const payerName = item.dataset.payerName;
+        this.selectPayer({ stediId: payerId, displayName: payerName });
+      });
+    });
+  }
+  selectPayer(payer) {
+    const searchInput = this.shadowRoot.querySelector(".quiz-payer-search-input");
+    const dropdown = this.shadowRoot.querySelector(".quiz-payer-search-dropdown");
+    const container = this.shadowRoot.querySelector(".quiz-payer-search-container");
+    searchInput.value = payer.displayName;
+    this.selectedPayer = payer.stediId;
+    this.closeDropdown(dropdown, container, searchInput);
+    this.dispatchEvent(
+      new CustomEvent("payer-selected", {
+        detail: {
+          questionId: this.questionId,
+          payer
+        },
+        bubbles: true
+      })
+    );
+  }
+  openDropdown(dropdown, container, searchInput) {
+    dropdown.style.display = "block";
+    container.classList.add("dropdown-open");
+    searchInput.classList.add("dropdown-open");
+  }
+  closeDropdown(dropdown, container, searchInput) {
+    dropdown.style.display = "none";
+    container.classList.remove("dropdown-open");
+    searchInput.classList.remove("dropdown-open");
+  }
+  showSearchError(dropdown) {
+    const resultsContainer = dropdown.querySelector(".quiz-payer-search-results");
+    resultsContainer.innerHTML = `
 			<div class="quiz-payer-search-error">
 				Unable to search at this time. Please try again.
 			</div>
-		`}highlightSearchTerm(e,t){if(!t)return e;const i=new RegExp(`(${t})`,"gi");return e.replace(i,'<span class="quiz-payer-search-highlight">$1</span>')}resolvePayerDisplayName(e){if(!e)return"";const t=this.commonPayers.find(i=>i.stediId===e||i.primaryPayerId===e);return t?t.displayName:e}setValue(e){this.selectedPayer=e;const t=this.shadowRoot.querySelector(".quiz-payer-search-input");t&&(t.value=this.resolvePayerDisplayName(e))}getValue(){return this.selectedPayer}}customElements.define("quiz-payer-search",A);class E extends HTMLElement{constructor(){super(),this.attachShadow({mode:"open"}),this.resultType="generic",this.resultData={},this.resultUrl=""}static get observedAttributes(){return["result-type","result-data","result-url"]}attributeChangedCallback(e,t,i){switch(e){case"result-type":this.resultType=i||"generic";break;case"result-data":try{this.resultData=i?JSON.parse(i):{}}catch(r){console.error("Invalid result data:",r),this.resultData={}}break;case"result-url":this.resultUrl=i||"";break}this.shadowRoot.innerHTML&&this.render()}connectedCallback(){this.render()}async render(){const e=await b.getQuizStyles(),t=this.getTemplate(),i=this.getStyles();this.shadowRoot.innerHTML=`
+		`;
+  }
+  highlightSearchTerm(text, searchTerm) {
+    if (!searchTerm) return text;
+    const regex = new RegExp(`(${searchTerm})`, "gi");
+    return text.replace(regex, '<span class="quiz-payer-search-highlight">$1</span>');
+  }
+  resolvePayerDisplayName(payerId) {
+    if (!payerId) return "";
+    const payer = this.commonPayers.find((p) => p.stediId === payerId || p.primaryPayerId === payerId);
+    return payer ? payer.displayName : payerId;
+  }
+  // Public API
+  setValue(value) {
+    this.selectedPayer = value;
+    const searchInput = this.shadowRoot.querySelector(".quiz-payer-search-input");
+    if (searchInput) {
+      searchInput.value = this.resolvePayerDisplayName(value);
+    }
+  }
+  getValue() {
+    return this.selectedPayer;
+  }
+}
+customElements.define("quiz-payer-search", QuizPayerSearch);
+class QuizResultCard extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
+    this.resultType = "generic";
+    this.resultData = {};
+    this.resultUrl = "";
+  }
+  static get observedAttributes() {
+    return ["result-type", "result-data", "result-url"];
+  }
+  attributeChangedCallback(name, oldValue, newValue) {
+    switch (name) {
+      case "result-type":
+        this.resultType = newValue || "generic";
+        break;
+      case "result-data":
+        try {
+          this.resultData = newValue ? JSON.parse(newValue) : {};
+        } catch (error) {
+          console.error("Invalid result data:", error);
+          this.resultData = {};
+        }
+        break;
+      case "result-url":
+        this.resultUrl = newValue || "";
+        break;
+    }
+    if (this.shadowRoot.innerHTML) {
+      this.render();
+    }
+  }
+  connectedCallback() {
+    this.render();
+  }
+  async render() {
+    const sharedStyles2 = await SharedStyles.getQuizStyles();
+    const template = this.getTemplate();
+    const styles = this.getStyles();
+    this.shadowRoot.innerHTML = `
 			<style>
-				${e}
-				${i}
+				${sharedStyles2}
+				${styles}
 			</style>
-			${t}
-		`,this.attachEventListeners()}getTemplate(){switch(this.resultType){case"eligible":return this.getEligibleTemplate();case"not-covered":return this.getNotCoveredTemplate();case"aaa-error":return this.getAAAErrorTemplate();case"test-data-error":return this.getTestDataErrorTemplate();case"technical-problem":return this.getTechnicalProblemTemplate();case"processing":return this.getProcessingTemplate();case"ineligible":return this.getIneligibleTemplate();default:return this.getGenericTemplate()}}getStyles(){return`
+			${template}
+		`;
+    this.attachEventListeners();
+  }
+  getTemplate() {
+    switch (this.resultType) {
+      case "eligible":
+        return this.getEligibleTemplate();
+      case "not-covered":
+        return this.getNotCoveredTemplate();
+      case "aaa-error":
+        return this.getAAAErrorTemplate();
+      case "test-data-error":
+        return this.getTestDataErrorTemplate();
+      case "technical-problem":
+        return this.getTechnicalProblemTemplate();
+      case "processing":
+        return this.getProcessingTemplate();
+      case "ineligible":
+        return this.getIneligibleTemplate();
+      default:
+        return this.getGenericTemplate();
+    }
+  }
+  getStyles() {
+    return `
 			:host {
 				display: block;
 			}
@@ -1387,7 +2650,12 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 				font-size: 14px;
 				color: #666;
 			}
-		`}getEligibleTemplate(){const e=this.resultData.sessionsCovered||5,t=this.resultData.planEnd||"Dec 31, 2025";return`
+		`;
+  }
+  getEligibleTemplate() {
+    const sessionsCovered = this.resultData.sessionsCovered || 5;
+    const planEnd = this.resultData.planEnd || "Dec 31, 2025";
+    return `
 			<div class="result-card success-card">
 				<div class="result-header">
 					<h2 class="result-title">Great news! You're covered</h2>
@@ -1400,7 +2668,7 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 								<path d="M10 18.3333C14.6023 18.3333 18.3333 14.6023 18.3333 9.99996C18.3333 5.39759 14.6023 1.66663 10 1.66663C5.39762 1.66663 1.66666 5.39759 1.66666 9.99996C1.66666 14.6023 5.39762 18.3333 10 18.3333Z" stroke="#48bb78" stroke-width="1.5"/>
 								<path d="M7.5 9.99996L9.16667 11.6666L12.5 8.33329" stroke="#48bb78" stroke-width="1.5"/>
 							</svg>
-							Up to ${e} sessions covered through ${t}
+							Up to ${sessionsCovered} sessions covered through ${planEnd}
 						</li>
 						<li class="feature-item">
 							<svg class="feature-icon" viewBox="0 0 20 20" fill="none">
@@ -1422,7 +2690,11 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 					<a href="${this.resultUrl}" class="result-button">Schedule Your Consultation</a>
 				</div>
 			</div>
-		`}getNotCoveredTemplate(){return`
+		`;
+  }
+  getNotCoveredTemplate() {
+    const userMessage = this.resultData.userMessage || "Your insurance plan doesn't cover nutrition counseling, but we have affordable options available.";
+    return `
 			<div class="result-card warning-card">
 				<div class="result-header">
 					<h2 class="result-title">Thanks for completing the quiz!</h2>
@@ -1430,7 +2702,7 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 				</div>
 				<div class="result-content">
 					<p><strong>💡 Coverage Information:</strong></p>
-					<p>${this.resultData.userMessage||"Your insurance plan doesn't cover nutrition counseling, but we have affordable options available."}</p>
+					<p>${userMessage}</p>
 					<ul class="feature-list">
 						<li class="feature-item">
 							<svg class="feature-icon" viewBox="0 0 20 20" fill="none">
@@ -1457,16 +2729,23 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 					<a href="${this.resultUrl}" class="result-button">Explore Options</a>
 				</div>
 			</div>
-		`}getAAAErrorTemplate(){const e=this.resultData.error||{},t=e.code||this.resultData.aaaErrorCode||"Unknown",i=this.resultData.userMessage||e.message||"There was an issue verifying your insurance coverage automatically.";return`
+		`;
+  }
+  getAAAErrorTemplate() {
+    const error = this.resultData.error || {};
+    const errorCode = error.code || this.resultData.aaaErrorCode || "Unknown";
+    const userMessage = this.resultData.userMessage || error.message || "There was an issue verifying your insurance coverage automatically.";
+    const errorTitle = error.title || this.getErrorTitle(errorCode);
+    return `
 			<div class="result-card error-card">
 				<div class="result-header">
 					<h2 class="result-title">Thanks for completing the quiz!</h2>
 					<p class="result-subtitle">We're here to help.</p>
 				</div>
 				<div class="result-content">
-					<p><strong>⚠️ ${e.title||this.getErrorTitle(t)}:</strong></p>
-					<p>${i}</p>
-					${t!=="Unknown"?`<div class="error-details">Error Code: ${t}</div>`:""}
+					<p><strong>⚠️ ${errorTitle}:</strong></p>
+					<p>${userMessage}</p>
+					${errorCode !== "Unknown" ? `<div class="error-details">Error Code: ${errorCode}</div>` : ""}
 					<ul class="feature-list">
 						<li class="feature-item">
 							<svg class="feature-icon" viewBox="0 0 20 20" fill="none">
@@ -1493,7 +2772,11 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 					<a href="${this.resultUrl}" class="result-button">Continue with Support</a>
 				</div>
 			</div>
-		`}getTestDataErrorTemplate(){return`
+		`;
+  }
+  getTestDataErrorTemplate() {
+    const userMessage = this.resultData.userMessage || "Test data was detected in your submission. Please use real insurance information for accurate verification.";
+    return `
 			<div class="result-card warning-card">
 				<div class="result-header">
 					<h2 class="result-title">Please use real information</h2>
@@ -1501,7 +2784,7 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 				</div>
 				<div class="result-content">
 					<p><strong>⚠️ Test Data Detected:</strong></p>
-					<p>${this.resultData.userMessage||"Test data was detected in your submission. Please use real insurance information for accurate verification."}</p>
+					<p>${userMessage}</p>
 					<ul class="feature-list">
 						<li class="feature-item">
 							<svg class="feature-icon" viewBox="0 0 20 20" fill="none">
@@ -1528,21 +2811,30 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 					<a href="${this.resultUrl}" class="result-button">Continue</a>
 				</div>
 			</div>
-		`}getTechnicalProblemTemplate(){const e=this.resultData.error||{},t=e.code||this.resultData.stediErrorCode||"Unknown";return`
+		`;
+  }
+  getTechnicalProblemTemplate() {
+    const error = this.resultData.error || {};
+    const errorCode = error.code || this.resultData.stediErrorCode || "Unknown";
+    const userMessage = this.resultData.userMessage || error.message || "There was a technical issue processing your insurance verification.";
+    return `
 			<div class="result-card error-card">
 				<div class="result-header">
 					<h2 class="result-title">Technical Issue</h2>
 					<p class="result-subtitle">We're working to resolve this quickly.</p>
 				</div>
 				<div class="result-content">
-					<p>${this.resultData.userMessage||e.message||"There was a technical issue processing your insurance verification."}</p>
-					${t!=="Unknown"?`<div class="error-details">Error Code: ${t}</div>`:""}
+					<p>${userMessage}</p>
+					${errorCode !== "Unknown" ? `<div class="error-details">Error Code: ${errorCode}</div>` : ""}
 				</div>
 				<div class="result-actions">
 					<a href="${this.resultUrl}" class="result-button">Continue with Support</a>
 				</div>
 			</div>
-		`}getProcessingTemplate(){return`
+		`;
+  }
+  getProcessingTemplate() {
+    return `
 			<div class="result-card info-card">
 				<div class="result-header">
 					<h2 class="result-title">Thanks for completing the quiz!</h2>
@@ -1555,7 +2847,10 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 					<a href="${this.resultUrl}" class="result-button">Continue to Booking</a>
 				</div>
 			</div>
-		`}getIneligibleTemplate(){return`
+		`;
+  }
+  getIneligibleTemplate() {
+    return `
 			<div class="result-card warning-card">
 				<div class="result-header">
 					<h2 class="result-title">Thanks for completing the quiz!</h2>
@@ -1568,7 +2863,10 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 					<a href="${this.resultUrl}" class="result-button">Explore Options</a>
 				</div>
 			</div>
-		`}getGenericTemplate(){return`
+		`;
+  }
+  getGenericTemplate() {
+    return `
 			<div class="result-card">
 				<div class="result-header">
 					<h2 class="result-title">Thanks for completing the quiz!</h2>
@@ -1578,19 +2876,73 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 					<a href="${this.resultUrl}" class="result-button">Continue</a>
 				</div>
 			</div>
-		`}getErrorTitle(e){return{42:"Insurance Information Issue",43:"Coverage Verification Problem",72:"Plan Details Unavailable",73:"Eligibility Check Failed",75:"Coverage Status Unknown",79:"Verification Timeout"}[e]||"Verification Issue"}attachEventListeners(){this.shadowRoot.querySelectorAll(".result-button").forEach(t=>{t.addEventListener("click",i=>{this.dispatchEvent(new CustomEvent("result-action",{detail:{resultType:this.resultType,action:"button-click",url:t.href},bubbles:!0}))})})}setResultData(e,t,i){this.resultType=e,this.resultData=t,this.resultUrl=i,this.render()}}customElements.define("quiz-result-card",E);class D extends u{static get observedAttributes(){return["step-data","responses","is-last-step","validation-errors"]}getTemplate(){const e=this.getStepData(),t=this.getResponses(),i=this.getAttribute("is-last-step")==="true",r=this.getValidationErrors();if(!e)return'<p class="quiz-error-text">Step configuration error. Please contact support.</p>';const s=i?e.ctaText||"Finish Quiz":e.ctaText||"Continue";return`
-			${e.info?.formSubHeading?`<h4 class="quiz-heading quiz-heading-mobile-outside">${e.info.formSubHeading}</h4>`:""}
+		`;
+  }
+  getErrorTitle(errorCode) {
+    const errorTitles = {
+      42: "Insurance Information Issue",
+      43: "Coverage Verification Problem",
+      72: "Plan Details Unavailable",
+      73: "Eligibility Check Failed",
+      75: "Coverage Status Unknown",
+      79: "Verification Timeout"
+    };
+    return errorTitles[errorCode] || "Verification Issue";
+  }
+  attachEventListeners() {
+    const buttons = this.shadowRoot.querySelectorAll(".result-button");
+    buttons.forEach((button) => {
+      button.addEventListener("click", (e) => {
+        this.dispatchEvent(
+          new CustomEvent("result-action", {
+            detail: {
+              resultType: this.resultType,
+              action: "button-click",
+              url: button.href
+            },
+            bubbles: true
+          })
+        );
+      });
+    });
+  }
+  setResultData(type, data, url) {
+    this.resultType = type;
+    this.resultData = data;
+    this.resultUrl = url;
+    this.render();
+  }
+}
+customElements.define("quiz-result-card", QuizResultCard);
+class QuizFormStep extends QuizBaseComponent {
+  static get observedAttributes() {
+    return ["step-data", "responses", "is-last-step", "validation-errors"];
+  }
+  getTemplate() {
+    const stepData = this.getStepData();
+    const responses = this.getResponses();
+    const isLastStep = this.getAttribute("is-last-step") === "true";
+    const validationErrors = this.getValidationErrors();
+    if (!stepData) {
+      return '<p class="quiz-error-text">Step configuration error. Please contact support.</p>';
+    }
+    const buttonText = isLastStep ? stepData.ctaText || "Finish Quiz" : stepData.ctaText || "Continue";
+    return `
+			${stepData.info?.formSubHeading ? `<h4 class="quiz-heading quiz-heading-mobile-outside">${stepData.info.formSubHeading}</h4>` : ""}
 			<div class="quiz-form-container">
-				${e.info?.formSubHeading?`<h4 class="quiz-heading quiz-heading-desktop-inside">${e.info.formSubHeading}</h4>`:""}
+				${stepData.info?.formSubHeading ? `<h4 class="quiz-heading quiz-heading-desktop-inside">${stepData.info.formSubHeading}</h4>` : ""}
 				<div class="quiz-space-y-6">
-					${this.renderFormQuestions(e.questions,t,r)}
+					${this.renderFormQuestions(stepData.questions, responses, validationErrors)}
 				</div>
 				<button class="quiz-nav-button quiz-nav-button--primary quiz-form-button" id="quiz-form-next-button">
-					${s}
+					${buttonText}
 				</button>
-				${e.legal?`<p class="quiz-legal-form">${e.legal}</p>`:""}
+				${stepData.legal ? `<p class="quiz-legal-form">${stepData.legal}</p>` : ""}
 			</div>
-		`}getStyles(){return`
+		`;
+  }
+  getStyles() {
+    return `
 			${super.getStyles()}
 
 			.quiz-form-container {
@@ -1653,65 +3005,256 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 				text-align: center;
 				padding: 16px;
 			}
-		`}render(){this.renderTemplate(),this.attachEventListeners()}attachEventListeners(){const e=this.root.querySelector("#quiz-form-next-button");e&&e.addEventListener("click",t=>{t.preventDefault(),this.dispatchEvent(new CustomEvent("form-submit",{detail:{stepData:this.getStepData()},bubbles:!0}))})}renderFormQuestions(e,t,i){if(!e||!Array.isArray(e))return"";let r="",s=0;for(;s<e.length;){const o=this.tryProcessQuestionGroup(e,s,t);o.html?(r+=o.html,s+=o.skip):(r+=this.renderSingleFormQuestion(e[s],t,i),s++)}return r}tryProcessQuestionGroup(e,t,i){const r=e[t],s=a=>i?.find(n=>n.questionId===a.id)||{answer:null},o=[["member-id","group-number"],["first-name","last-name"],["email","phone"]];for(const a of o)if(r.id===a[0]&&e[t+1]?.id===a[1])return{html:this.renderFormFieldPair(r,e[t+1],s(r),s(e[t+1])),skip:2};if(r.type==="date-part"&&r.part==="month"){const[a,n]=[e[t+1],e[t+2]];if(a?.type==="date-part"&&a.part==="day"&&n?.type==="date-part"&&n.part==="year")return{html:this.renderDateGroup(r,a,n,i),skip:3}}return{html:null,skip:0}}renderSingleFormQuestion(e,t,i){const r=t?.find(a=>a.questionId===e.id)||{answer:null},s=i?.some(a=>a.questionId===e.id);return`
-			<div class="quiz-question-section ${s?"quiz-field-error":""}">
-				<label class="quiz-label" for="question-${e.id}">
-					${e.text}${this.renderHelpIcon(e.id)}
+		`;
+  }
+  render() {
+    this.renderTemplate();
+    this.attachEventListeners();
+  }
+  attachEventListeners() {
+    const submitButton = this.root.querySelector("#quiz-form-next-button");
+    if (submitButton) {
+      submitButton.addEventListener("click", (e) => {
+        e.preventDefault();
+        this.dispatchEvent(
+          new CustomEvent("form-submit", {
+            detail: { stepData: this.getStepData() },
+            bubbles: true
+          })
+        );
+      });
+    }
+  }
+  renderFormQuestions(questions, responses, validationErrors) {
+    if (!questions || !Array.isArray(questions)) return "";
+    let html = "";
+    let i = 0;
+    while (i < questions.length) {
+      const processed = this.tryProcessQuestionGroup(questions, i, responses);
+      if (processed.html) {
+        html += processed.html;
+        i += processed.skip;
+      } else {
+        html += this.renderSingleFormQuestion(questions[i], responses, validationErrors);
+        i++;
+      }
+    }
+    return html;
+  }
+  tryProcessQuestionGroup(questions, index, responses) {
+    const question = questions[index];
+    const getResponse = (q) => responses?.find((r) => r.questionId === q.id) || { answer: null };
+    const commonPairs = [
+      ["member-id", "group-number"],
+      ["first-name", "last-name"],
+      ["email", "phone"]
+    ];
+    for (const pair of commonPairs) {
+      if (question.id === pair[0] && questions[index + 1]?.id === pair[1]) {
+        return {
+          html: this.renderFormFieldPair(question, questions[index + 1], getResponse(question), getResponse(questions[index + 1])),
+          skip: 2
+        };
+      }
+    }
+    if (question.type === "date-part" && question.part === "month") {
+      const [dayQ, yearQ] = [questions[index + 1], questions[index + 2]];
+      if (dayQ?.type === "date-part" && dayQ.part === "day" && yearQ?.type === "date-part" && yearQ.part === "year") {
+        return {
+          html: this.renderDateGroup(question, dayQ, yearQ, responses),
+          skip: 3
+        };
+      }
+    }
+    return { html: null, skip: 0 };
+  }
+  renderSingleFormQuestion(question, responses, validationErrors) {
+    const response = responses?.find((r) => r.questionId === question.id) || { answer: null };
+    const hasError = validationErrors?.some((error) => error.questionId === question.id);
+    const errorClass = hasError ? "quiz-field-error" : "";
+    return `
+			<div class="quiz-question-section ${errorClass}">
+				<label class="quiz-label" for="question-${question.id}">
+					${question.text}${this.renderHelpIcon(question.id)}
 				</label>
-				${e.helpText?`<p class="quiz-text-sm">${e.helpText}</p>`:""}
-				${this.renderQuestionInput(e,r)}
-				${s?`<div class="quiz-error-message">${i.find(a=>a.questionId===e.id)?.message||"Invalid input"}</div>`:""}
+				${question.helpText ? `<p class="quiz-text-sm">${question.helpText}</p>` : ""}
+				${this.renderQuestionInput(question, response)}
+				${hasError ? `<div class="quiz-error-message">${validationErrors.find((e) => e.questionId === question.id)?.message || "Invalid input"}</div>` : ""}
 			</div>
-		`}renderFormFieldPair(e,t,i,r){const s=(n,g)=>({input:this.renderQuestionInput(n,g),helpIcon:this.renderHelpIcon(n.id),label:n.text,id:n.id}),[o,a]=[s(e,i),s(t,r)];return`
+		`;
+  }
+  renderFormFieldPair(leftQuestion, rightQuestion, leftResponse, rightResponse) {
+    const generateField = (question, response) => ({
+      input: this.renderQuestionInput(question, response),
+      helpIcon: this.renderHelpIcon(question.id),
+      label: question.text,
+      id: question.id
+    });
+    const [left, right] = [generateField(leftQuestion, leftResponse), generateField(rightQuestion, rightResponse)];
+    return `
 			<div class="quiz-grid-2-form">
-				${[o,a].map(n=>`
+				${[left, right].map(
+      (field) => `
 					<div>
-						<label class="quiz-label" for="question-${n.id}">
-							${n.label}${n.helpIcon}
+						<label class="quiz-label" for="question-${field.id}">
+							${field.label}${field.helpIcon}
 						</label>
-						${n.input}
+						${field.input}
 					</div>
-				`).join("")}
+				`
+    ).join("")}
 			</div>
-		`}renderDateGroup(e,t,i,r){const s=r?.find(n=>n.questionId===e.id)||{answer:null},o=r?.find(n=>n.questionId===t.id)||{answer:null},a=r?.find(n=>n.questionId===i.id)||{answer:null};return`
+		`;
+  }
+  renderDateGroup(monthQ, dayQ, yearQ, responses) {
+    const monthResponse = responses?.find((r) => r.questionId === monthQ.id) || { answer: null };
+    const dayResponse = responses?.find((r) => r.questionId === dayQ.id) || { answer: null };
+    const yearResponse = responses?.find((r) => r.questionId === yearQ.id) || { answer: null };
+    return `
 			<div class="quiz-question-section">
-				<label class="quiz-label">${e.text}</label>
+				<label class="quiz-label">${monthQ.text}</label>
 				<div class="quiz-grid-3">
-					${this.renderDatePart(e,s)}
-					${this.renderDatePart(t,o)}
-					${this.renderDatePart(i,a)}
+					${this.renderDatePart(monthQ, monthResponse)}
+					${this.renderDatePart(dayQ, dayResponse)}
+					${this.renderDatePart(yearQ, yearResponse)}
 				</div>
 			</div>
-		`}renderQuestionInput(e,t){const i=t?.answer||"";switch(e.type){case"text":case"email":case"phone":return`<input type="${e.type}" id="question-${e.id}" class="quiz-input" value="${i}" ${e.required?"required":""}>`;case"textarea":return`<textarea id="question-${e.id}" class="quiz-textarea" ${e.required?"required":""}>${i}</textarea>`;case"dropdown":return this.renderDropdownOptions(e,i);default:return`<input type="text" id="question-${e.id}" class="quiz-input" value="${i}">`}}renderDropdownOptions(e,t){return e.options?`
-			<select id="question-${e.id}" class="quiz-dropdown">
-				<option value="">${e.placeholder||"Select an option"}</option>
-				${e.options.map(i=>`
-					<option value="${i.value}" ${t===i.value?"selected":""}>
-						${i.text}
+		`;
+  }
+  renderQuestionInput(question, response) {
+    const value = response?.answer || "";
+    switch (question.type) {
+      case "text":
+      case "email":
+      case "phone":
+        return `<input type="${question.type}" id="question-${question.id}" class="quiz-input" value="${value}" ${question.required ? "required" : ""}>`;
+      case "textarea":
+        return `<textarea id="question-${question.id}" class="quiz-textarea" ${question.required ? "required" : ""}>${value}</textarea>`;
+      case "dropdown":
+        return this.renderDropdownOptions(question, value);
+      default:
+        return `<input type="text" id="question-${question.id}" class="quiz-input" value="${value}">`;
+    }
+  }
+  renderDropdownOptions(question, selectedValue) {
+    if (!question.options) return "";
+    return `
+			<select id="question-${question.id}" class="quiz-dropdown">
+				<option value="">${question.placeholder || "Select an option"}</option>
+				${question.options.map(
+      (option) => `
+					<option value="${option.value}" ${selectedValue === option.value ? "selected" : ""}>
+						${option.text}
 					</option>
-				`).join("")}
+				`
+    ).join("")}
 			</select>
-		`:""}renderDatePart(e,t){const i=t?.answer||"",r=this.getDatePartOptions(e.part);return`
-			<select id="question-${e.id}" class="quiz-dropdown">
-				<option value="">${e.placeholder||e.part}</option>
-				${r.map(s=>`
-					<option value="${s.value}" ${i===s.value?"selected":""}>
-						${s.text}
+		`;
+  }
+  renderDatePart(question, response) {
+    const value = response?.answer || "";
+    const options = this.getDatePartOptions(question.part);
+    return `
+			<select id="question-${question.id}" class="quiz-dropdown">
+				<option value="">${question.placeholder || question.part}</option>
+				${options.map(
+      (option) => `
+					<option value="${option.value}" ${value === option.value ? "selected" : ""}>
+						${option.text}
 					</option>
-				`).join("")}
+				`
+    ).join("")}
 			</select>
-		`}getDatePartOptions(e){switch(e){case"month":return Array.from({length:12},(i,r)=>({value:String(r+1).padStart(2,"0"),text:new Date(2e3,r).toLocaleString("default",{month:"long"})}));case"day":return Array.from({length:31},(i,r)=>({value:String(r+1).padStart(2,"0"),text:String(r+1)}));case"year":const t=new Date().getFullYear();return Array.from({length:100},(i,r)=>({value:String(t-r),text:String(t-r)}));default:return[]}}renderHelpIcon(e){return`<span class="quiz-help-icon-container">
+		`;
+  }
+  getDatePartOptions(part) {
+    switch (part) {
+      case "month":
+        return Array.from({ length: 12 }, (_, i) => ({
+          value: String(i + 1).padStart(2, "0"),
+          text: new Date(2e3, i).toLocaleString("default", { month: "long" })
+        }));
+      case "day":
+        return Array.from({ length: 31 }, (_, i) => ({
+          value: String(i + 1).padStart(2, "0"),
+          text: String(i + 1)
+        }));
+      case "year":
+        const currentYear = (/* @__PURE__ */ new Date()).getFullYear();
+        return Array.from({ length: 100 }, (_, i) => ({
+          value: String(currentYear - i),
+          text: String(currentYear - i)
+        }));
+      default:
+        return [];
+    }
+  }
+  renderHelpIcon(questionId) {
+    return `<span class="quiz-help-icon-container">
 			<svg class="quiz-help-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
 				<path d="M14.6668 8.00004C14.6668 4.31814 11.682 1.33337 8.00016 1.33337C4.31826 1.33337 1.3335 4.31814 1.3335 8.00004C1.3335 11.6819 4.31826 14.6667 8.00016 14.6667C11.682 14.6667 14.6668 11.6819 14.6668 8.00004Z" stroke="#121212"/>
 				<path d="M8.1613 11.3334V8.00004C8.1613 7.68577 8.1613 7.52864 8.06363 7.43097C7.96603 7.33337 7.8089 7.33337 7.49463 7.33337" stroke="#121212" stroke-linecap="round" stroke-linejoin="round"/>
 				<path d="M7.99463 5.33337H8.00063" stroke="#121212" stroke-linecap="round" stroke-linejoin="round"/>
 			</svg>
-		</span>`}getStepData(){try{const e=this.getAttribute("step-data");return e?JSON.parse(e):null}catch(e){return console.error("Error parsing step data:",e),null}}getResponses(){try{const e=this.getAttribute("responses");return e?JSON.parse(e):[]}catch(e){return console.error("Error parsing responses:",e),[]}}getValidationErrors(){try{const e=this.getAttribute("validation-errors");return e?JSON.parse(e):[]}catch(e){return console.error("Error parsing validation errors:",e),[]}}handleAttributeChange(e,t,i){["step-data","responses","validation-errors","is-last-step"].includes(e)&&this.render()}}customElements.define("quiz-form-step",D);class L extends u{static get observedAttributes(){return["step-data","responses","current-question-index","is-form-step","validation-errors"]}getTemplate(){const e=this.getStepData(),t=this.getResponses(),i=parseInt(this.getAttribute("current-question-index")||"0"),r=this.getAttribute("is-form-step")==="true",s=this.getValidationErrors();return e?`
+		</span>`;
+  }
+  // Utility methods
+  getStepData() {
+    try {
+      const stepDataAttr = this.getAttribute("step-data");
+      return stepDataAttr ? JSON.parse(stepDataAttr) : null;
+    } catch (error) {
+      console.error("Error parsing step data:", error);
+      return null;
+    }
+  }
+  getResponses() {
+    try {
+      const responsesAttr = this.getAttribute("responses");
+      return responsesAttr ? JSON.parse(responsesAttr) : [];
+    } catch (error) {
+      console.error("Error parsing responses:", error);
+      return [];
+    }
+  }
+  getValidationErrors() {
+    try {
+      const errorsAttr = this.getAttribute("validation-errors");
+      return errorsAttr ? JSON.parse(errorsAttr) : [];
+    } catch (error) {
+      console.error("Error parsing validation errors:", error);
+      return [];
+    }
+  }
+  handleAttributeChange(name, oldValue, newValue) {
+    if (["step-data", "responses", "validation-errors", "is-last-step"].includes(name)) {
+      this.render();
+    }
+  }
+}
+customElements.define("quiz-form-step", QuizFormStep);
+class QuizStepContainer extends QuizBaseComponent {
+  static get observedAttributes() {
+    return ["step-data", "responses", "current-question-index", "is-form-step", "validation-errors"];
+  }
+  getTemplate() {
+    const stepData = this.getStepData();
+    const responses = this.getResponses();
+    const currentQuestionIndex = parseInt(this.getAttribute("current-question-index") || "0");
+    const isFormStep = this.getAttribute("is-form-step") === "true";
+    const validationErrors = this.getValidationErrors();
+    if (!stepData) {
+      return '<p class="quiz-error-text">Step configuration error. Please contact support.</p>';
+    }
+    return `
 			<div class="animate-fade-in">
-				${this.renderStepInfo(e)}
-				${e.questions?.length>0?r?this.renderFormStep(e,t,s):this.renderWizardStep(e,t,i):e.info?"":'<p class="quiz-error-text">Step configuration error. Please contact support.</p>'}
+				${this.renderStepInfo(stepData)}
+				${stepData.questions?.length > 0 ? isFormStep ? this.renderFormStep(stepData, responses, validationErrors) : this.renderWizardStep(stepData, responses, currentQuestionIndex) : !stepData.info ? '<p class="quiz-error-text">Step configuration error. Please contact support.</p>' : ""}
 			</div>
-		`:'<p class="quiz-error-text">Step configuration error. Please contact support.</p>'}getStyles(){return`
+		`;
+  }
+  getStyles() {
+    return `
 			${super.getStyles()}
 
 			.animate-fade-in {
@@ -1786,89 +3329,264 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 					font-size: 18px;
 				}
 			}
-		`}render(){this.renderTemplate(),this.attachEventListeners()}attachEventListeners(){this.addEventListener("form-submit",e=>{this.dispatchEvent(new CustomEvent("step-form-submit",{detail:e.detail,bubbles:!0}))}),this.addEventListener("question-answer",e=>{this.dispatchEvent(new CustomEvent("step-question-answer",{detail:e.detail,bubbles:!0}))})}renderStepInfo(e){return e.info?`
+		`;
+  }
+  render() {
+    this.renderTemplate();
+    this.attachEventListeners();
+  }
+  attachEventListeners() {
+    this.addEventListener("form-submit", (e) => {
+      this.dispatchEvent(
+        new CustomEvent("step-form-submit", {
+          detail: e.detail,
+          bubbles: true
+        })
+      );
+    });
+    this.addEventListener("question-answer", (e) => {
+      this.dispatchEvent(
+        new CustomEvent("step-question-answer", {
+          detail: e.detail,
+          bubbles: true
+        })
+      );
+    });
+  }
+  renderStepInfo(stepData) {
+    if (!stepData.info) return "";
+    return `
 			<div class="quiz-step-info">
-				<h3 class="quiz-title">${e.info.heading}</h3>
-				<p class="quiz-text">${e.info.text}</p>
-				${e.info.subtext?`<p class="quiz-subtext">${e.info.subtext}</p>`:""}
+				<h3 class="quiz-title">${stepData.info.heading}</h3>
+				<p class="quiz-text">${stepData.info.text}</p>
+				${stepData.info.subtext ? `<p class="quiz-subtext">${stepData.info.subtext}</p>` : ""}
 			</div>
-		`:""}renderFormStep(e,t,i){const r=document.createElement("quiz-form-step");return r.setAttribute("step-data",JSON.stringify(e)),r.setAttribute("responses",JSON.stringify(t)),r.setAttribute("validation-errors",JSON.stringify(i)),this.getAttribute("is-last-step")==="true"&&r.setAttribute("is-last-step","true"),r.outerHTML}renderWizardStep(e,t,i){const r=e.questions[i],s=t?.find(a=>a.questionId===r?.id)||{answer:null};if(!r)return'<p class="quiz-error-text">Question not found. Please try again.</p>';let o="";return e.info?o+=`
-				<div class="quiz-divider">
-					<h4 class="quiz-heading">${r.text}</h4>
-					${r.helpText?`<p class="quiz-text-sm">${r.helpText}</p>`:""}
-				</div>
-			`:o+=`
+		`;
+  }
+  renderFormStep(stepData, responses, validationErrors) {
+    const formStep = document.createElement("quiz-form-step");
+    formStep.setAttribute("step-data", JSON.stringify(stepData));
+    formStep.setAttribute("responses", JSON.stringify(responses));
+    formStep.setAttribute("validation-errors", JSON.stringify(validationErrors));
+    const isLastStep = this.getAttribute("is-last-step") === "true";
+    if (isLastStep) {
+      formStep.setAttribute("is-last-step", "true");
+    }
+    return formStep.outerHTML;
+  }
+  renderWizardStep(stepData, responses, currentQuestionIndex) {
+    const question = stepData.questions[currentQuestionIndex];
+    const response = responses?.find((r) => r.questionId === question?.id) || { answer: null };
+    if (!question) {
+      return '<p class="quiz-error-text">Question not found. Please try again.</p>';
+    }
+    let html = "";
+    if (!stepData.info) {
+      html += `
 				<div class="quiz-question-header">
-					<h3 class="quiz-title">${r.text}</h3>
-					${r.helpText?`<p class="quiz-text">${r.helpText}</p>`:""}
+					<h3 class="quiz-title">${question.text}</h3>
+					${question.helpText ? `<p class="quiz-text">${question.helpText}</p>` : ""}
 				</div>
-			`,o+=this.renderQuestionByType(r,s),o}renderQuestionByType(e,t){const i=t?.answer||"";switch(e.type){case"multiple-choice":return this.renderMultipleChoice(e,i);case"checkbox":return this.renderCheckbox(e,i);case"dropdown":return this.renderDropdown(e,i);case"text":case"email":case"phone":return this.renderTextInput(e,i);case"textarea":return this.renderTextarea(e,i);case"rating":return this.renderRating(e,i);case"date":return this.renderDateInput(e,i);case"payer-search":return this.renderPayerSearch(e,i);default:return`<p class="quiz-error-text">Unsupported question type: ${e.type}</p>`}}renderMultipleChoice(e,t){return e.options?`
+			`;
+    } else {
+      html += `
+				<div class="quiz-divider">
+					<h4 class="quiz-heading">${question.text}</h4>
+					${question.helpText ? `<p class="quiz-text-sm">${question.helpText}</p>` : ""}
+				</div>
+			`;
+    }
+    html += this.renderQuestionByType(question, response);
+    return html;
+  }
+  renderQuestionByType(question, response) {
+    const value = response?.answer || "";
+    switch (question.type) {
+      case "multiple-choice":
+        return this.renderMultipleChoice(question, value);
+      case "checkbox":
+        return this.renderCheckbox(question, value);
+      case "dropdown":
+        return this.renderDropdown(question, value);
+      case "text":
+      case "email":
+      case "phone":
+        return this.renderTextInput(question, value);
+      case "textarea":
+        return this.renderTextarea(question, value);
+      case "rating":
+        return this.renderRating(question, value);
+      case "date":
+        return this.renderDateInput(question, value);
+      case "payer-search":
+        return this.renderPayerSearch(question, value);
+      default:
+        return `<p class="quiz-error-text">Unsupported question type: ${question.type}</p>`;
+    }
+  }
+  renderMultipleChoice(question, selectedValue) {
+    if (!question.options) return "";
+    return `
 			<div class="quiz-multiple-choice">
-				${e.options.map(i=>`
-					<label class="quiz-option-card ${t===i.value?"selected":""}">
-						<input type="radio" name="question-${e.id}" value="${i.value}"
-							   ${t===i.value?"checked":""} class="quiz-radio-input">
+				${question.options.map(
+      (option) => `
+					<label class="quiz-option-card ${selectedValue === option.value ? "selected" : ""}">
+						<input type="radio" name="question-${question.id}" value="${option.value}"
+							   ${selectedValue === option.value ? "checked" : ""} class="quiz-radio-input">
 						<div class="quiz-option-content">
-							<span class="quiz-option-text">${i.text}</span>
-							${i.description?`<span class="quiz-option-description">${i.description}</span>`:""}
+							<span class="quiz-option-text">${option.text}</span>
+							${option.description ? `<span class="quiz-option-description">${option.description}</span>` : ""}
 						</div>
 					</label>
-				`).join("")}
+				`
+    ).join("")}
 			</div>
-		`:""}renderCheckbox(e,t){if(!e.options)return"";const i=Array.isArray(t)?t:t?[t]:[];return`
+		`;
+  }
+  renderCheckbox(question, selectedValues) {
+    if (!question.options) return "";
+    const selected = Array.isArray(selectedValues) ? selectedValues : selectedValues ? [selectedValues] : [];
+    return `
 			<div class="quiz-checkbox-group">
-				${e.options.map(r=>`
-					<label class="quiz-option-card ${i.includes(r.value)?"selected":""}">
-						<input type="checkbox" name="question-${e.id}" value="${r.value}"
-							   ${i.includes(r.value)?"checked":""} class="quiz-checkbox-input">
+				${question.options.map(
+      (option) => `
+					<label class="quiz-option-card ${selected.includes(option.value) ? "selected" : ""}">
+						<input type="checkbox" name="question-${question.id}" value="${option.value}"
+							   ${selected.includes(option.value) ? "checked" : ""} class="quiz-checkbox-input">
 						<div class="quiz-option-content">
-							<span class="quiz-option-text">${r.text}</span>
-							${r.description?`<span class="quiz-option-description">${r.description}</span>`:""}
+							<span class="quiz-option-text">${option.text}</span>
+							${option.description ? `<span class="quiz-option-description">${option.description}</span>` : ""}
 						</div>
 					</label>
-				`).join("")}
+				`
+    ).join("")}
 			</div>
-		`}renderDropdown(e,t){return e.options?`
-			<select id="question-${e.id}" class="quiz-dropdown">
-				<option value="">${e.placeholder||"Select an option"}</option>
-				${e.options.map(i=>`
-					<option value="${i.value}" ${t===i.value?"selected":""}>
-						${i.text}
+		`;
+  }
+  renderDropdown(question, selectedValue) {
+    if (!question.options) return "";
+    return `
+			<select id="question-${question.id}" class="quiz-dropdown">
+				<option value="">${question.placeholder || "Select an option"}</option>
+				${question.options.map(
+      (option) => `
+					<option value="${option.value}" ${selectedValue === option.value ? "selected" : ""}>
+						${option.text}
 					</option>
-				`).join("")}
+				`
+    ).join("")}
 			</select>
-		`:""}renderTextInput(e,t){return`
-			<input type="${e.type||"text"}"
-				   id="question-${e.id}"
+		`;
+  }
+  renderTextInput(question, value) {
+    return `
+			<input type="${question.type || "text"}"
+				   id="question-${question.id}"
 				   class="quiz-input"
-				   value="${t}"
-				   placeholder="${e.placeholder||""}"
-				   ${e.required?"required":""}>
-		`}renderTextarea(e,t){return`
-			<textarea id="question-${e.id}"
+				   value="${value}"
+				   placeholder="${question.placeholder || ""}"
+				   ${question.required ? "required" : ""}>
+		`;
+  }
+  renderTextarea(question, value) {
+    return `
+			<textarea id="question-${question.id}"
 					  class="quiz-textarea"
-					  placeholder="${e.placeholder||""}"
-					  ${e.required?"required":""}>${t}</textarea>
-		`}renderRating(e,t){const i=e.maxRating||5,r=parseInt(t)||0;return`
+					  placeholder="${question.placeholder || ""}"
+					  ${question.required ? "required" : ""}>${value}</textarea>
+		`;
+  }
+  renderRating(question, value) {
+    const maxRating = question.maxRating || 5;
+    const currentRating = parseInt(value) || 0;
+    return `
 			<div class="quiz-rating">
-				${Array.from({length:i},(s,o)=>o+1).map(s=>`
-					<button type="button" class="quiz-rating-star ${s<=r?"selected":""}"
-							data-rating="${s}">
+				${Array.from({ length: maxRating }, (_, i) => i + 1).map(
+      (rating) => `
+					<button type="button" class="quiz-rating-star ${rating <= currentRating ? "selected" : ""}"
+							data-rating="${rating}">
 						<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
 							<path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
-								  fill="${s<=r?"#fbbf24":"#e5e7eb"}"
+								  fill="${rating <= currentRating ? "#fbbf24" : "#e5e7eb"}"
 								  stroke="#d1d5db" stroke-width="1"/>
 						</svg>
 					</button>
-				`).join("")}
+				`
+    ).join("")}
 			</div>
-		`}renderDateInput(e,t){return`
+		`;
+  }
+  renderDateInput(question, value) {
+    return `
 			<input type="date"
-				   id="question-${e.id}"
+				   id="question-${question.id}"
 				   class="quiz-input"
-				   value="${t}"
-				   ${e.required?"required":""}>
-		`}renderPayerSearch(e,t){const i=document.createElement("quiz-payer-search");return i.setAttribute("question-id",e.id),e.commonPayers&&i.setAttribute("common-payers",JSON.stringify(e.commonPayers)),t&&i.setAttribute("selected-payer",t),i.outerHTML}getStepData(){try{const e=this.getAttribute("step-data");return e?JSON.parse(e):null}catch(e){return console.error("Error parsing step data:",e),null}}getResponses(){try{const e=this.getAttribute("responses");return e?JSON.parse(e):[]}catch(e){return console.error("Error parsing responses:",e),[]}}getValidationErrors(){try{const e=this.getAttribute("validation-errors");return e?JSON.parse(e):[]}catch(e){return console.error("Error parsing validation errors:",e),[]}}handleAttributeChange(e,t,i){["step-data","responses","current-question-index","is-form-step","validation-errors"].includes(e)&&this.render()}}customElements.define("quiz-step-container",L);class M extends u{static get observedAttributes(){return["result-type","scheduling-data","error-message"]}getTemplate(){const e=this.getAttribute("result-type")||"success",t=this.getSchedulingData(),i=this.getAttribute("error-message")||"";return e==="success"?this.renderSuccessResult(t):this.renderErrorResult(i,t)}getStyles(){return`
+				   value="${value}"
+				   ${question.required ? "required" : ""}>
+		`;
+  }
+  renderPayerSearch(question, value) {
+    const payerSearch = document.createElement("quiz-payer-search");
+    payerSearch.setAttribute("question-id", question.id);
+    if (question.commonPayers) {
+      payerSearch.setAttribute("common-payers", JSON.stringify(question.commonPayers));
+    }
+    if (value) {
+      payerSearch.setAttribute("selected-payer", value);
+    }
+    return payerSearch.outerHTML;
+  }
+  // Utility methods
+  getStepData() {
+    try {
+      const stepDataAttr = this.getAttribute("step-data");
+      return stepDataAttr ? JSON.parse(stepDataAttr) : null;
+    } catch (error) {
+      console.error("Error parsing step data:", error);
+      return null;
+    }
+  }
+  getResponses() {
+    try {
+      const responsesAttr = this.getAttribute("responses");
+      return responsesAttr ? JSON.parse(responsesAttr) : [];
+    } catch (error) {
+      console.error("Error parsing responses:", error);
+      return [];
+    }
+  }
+  getValidationErrors() {
+    try {
+      const errorsAttr = this.getAttribute("validation-errors");
+      return errorsAttr ? JSON.parse(errorsAttr) : [];
+    } catch (error) {
+      console.error("Error parsing validation errors:", error);
+      return [];
+    }
+  }
+  handleAttributeChange(name, oldValue, newValue) {
+    if (["step-data", "responses", "current-question-index", "is-form-step", "validation-errors"].includes(name)) {
+      this.render();
+    }
+  }
+}
+customElements.define("quiz-step-container", QuizStepContainer);
+class QuizSchedulingResult extends QuizBaseComponent {
+  static get observedAttributes() {
+    return ["result-type", "scheduling-data", "error-message"];
+  }
+  getTemplate() {
+    const resultType = this.getAttribute("result-type") || "success";
+    const schedulingData = this.getSchedulingData();
+    const errorMessage = this.getAttribute("error-message") || "";
+    if (resultType === "success") {
+      return this.renderSuccessResult(schedulingData);
+    } else {
+      return this.renderErrorResult(errorMessage, schedulingData);
+    }
+  }
+  getStyles() {
+    return `
 			${super.getStyles()}
 
 			.quiz-scheduling-container {
@@ -2124,7 +3842,35 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 					flex-direction: column;
 				}
 			}
-		`}render(){this.renderTemplate(),this.attachEventListeners()}attachEventListeners(){this.root.querySelectorAll(".quiz-button").forEach(t=>{t.addEventListener("click",i=>{const r=t.getAttribute("data-action");r&&this.dispatchEvent(new CustomEvent("scheduling-action",{detail:{action:r,target:i.target},bubbles:!0}))})})}renderSuccessResult(e){if(!e)return this.renderGenericSuccess();const t=e.appointment||{},i=e.dietitian||{};return`
+		`;
+  }
+  render() {
+    this.renderTemplate();
+    this.attachEventListeners();
+  }
+  attachEventListeners() {
+    const buttons = this.root.querySelectorAll(".quiz-button");
+    buttons.forEach((button) => {
+      button.addEventListener("click", (e) => {
+        const action = button.getAttribute("data-action");
+        if (action) {
+          this.dispatchEvent(
+            new CustomEvent("scheduling-action", {
+              detail: { action, target: e.target },
+              bubbles: true
+            })
+          );
+        }
+      });
+    });
+  }
+  renderSuccessResult(schedulingData) {
+    if (!schedulingData) {
+      return this.renderGenericSuccess();
+    }
+    const appointment = schedulingData.appointment || {};
+    const dietitian = schedulingData.dietitian || {};
+    return `
 			<div class="quiz-scheduling-container">
 				<div class="quiz-scheduling-header">
 					<h2 class="quiz-scheduling-title">🎉 Appointment Confirmed!</h2>
@@ -2142,41 +3888,41 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 					</div>
 
 					<div class="quiz-appointment-details">
-						${t.date?`
+						${appointment.date ? `
 							<div class="quiz-appointment-detail">
 								<svg class="quiz-appointment-detail-icon" viewBox="0 0 20 20" fill="currentColor">
 									<path d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zM4 9h12v8H4V9z"/>
 								</svg>
-								<span class="quiz-appointment-detail-text">Date: <span class="quiz-appointment-detail-value">${t.date}</span></span>
+								<span class="quiz-appointment-detail-text">Date: <span class="quiz-appointment-detail-value">${appointment.date}</span></span>
 							</div>
-						`:""}
+						` : ""}
 
-						${t.time?`
+						${appointment.time ? `
 							<div class="quiz-appointment-detail">
 								<svg class="quiz-appointment-detail-icon" viewBox="0 0 20 20" fill="currentColor">
 									<path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V5z"/>
 								</svg>
-								<span class="quiz-appointment-detail-text">Time: <span class="quiz-appointment-detail-value">${t.time}</span></span>
+								<span class="quiz-appointment-detail-text">Time: <span class="quiz-appointment-detail-value">${appointment.time}</span></span>
 							</div>
-						`:""}
+						` : ""}
 
-						${i.name?`
+						${dietitian.name ? `
 							<div class="quiz-appointment-detail">
 								<svg class="quiz-appointment-detail-icon" viewBox="0 0 20 20" fill="currentColor">
 									<path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
 								</svg>
-								<span class="quiz-appointment-detail-text">Dietitian: <span class="quiz-appointment-detail-value">${i.name}</span></span>
+								<span class="quiz-appointment-detail-text">Dietitian: <span class="quiz-appointment-detail-value">${dietitian.name}</span></span>
 							</div>
-						`:""}
+						` : ""}
 
-						${t.type?`
+						${appointment.type ? `
 							<div class="quiz-appointment-detail">
 								<svg class="quiz-appointment-detail-icon" viewBox="0 0 20 20" fill="currentColor">
 									<path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
 								</svg>
-								<span class="quiz-appointment-detail-text">Type: <span class="quiz-appointment-detail-value">${t.type}</span></span>
+								<span class="quiz-appointment-detail-text">Type: <span class="quiz-appointment-detail-value">${appointment.type}</span></span>
 							</div>
-						`:""}
+						` : ""}
 					</div>
 				</div>
 
@@ -2207,7 +3953,10 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 					</button>
 				</div>
 			</div>
-		`}renderGenericSuccess(){return`
+		`;
+  }
+  renderGenericSuccess() {
+    return `
 			<div class="quiz-scheduling-container">
 				<div class="quiz-scheduling-header">
 					<h2 class="quiz-scheduling-title">🎉 Success!</h2>
@@ -2232,7 +3981,10 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 					</button>
 				</div>
 			</div>
-		`}renderErrorResult(e,t){return`
+		`;
+  }
+  renderErrorResult(errorMessage, schedulingData) {
+    return `
 			<div class="quiz-scheduling-container">
 				<div class="quiz-scheduling-header">
 					<h2 class="quiz-scheduling-title">⚠️ Scheduling Issue</h2>
@@ -2250,7 +4002,7 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 					</div>
 
 					<p class="quiz-error-message">
-						${e||"There was an unexpected error while trying to schedule your appointment. Please try again or contact our support team for assistance."}
+						${errorMessage || "There was an unexpected error while trying to schedule your appointment. Please try again or contact our support team for assistance."}
 					</p>
 
 					<div class="quiz-support-info">
@@ -2271,39 +4023,116 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 					</button>
 				</div>
 			</div>
-		`}getSchedulingData(){try{const e=this.getAttribute("scheduling-data");return e?JSON.parse(e):null}catch(e){return console.error("Error parsing scheduling data:",e),null}}handleAttributeChange(e,t,i){["result-type","scheduling-data","error-message"].includes(e)&&this.render()}}customElements.define("quiz-scheduling-result",M);class T extends u{static get observedAttributes(){return["question-data","selected-value","disabled"]}constructor(){super(),this.questionData=null,this.selectedValue=null,this.isDisabled=!1}initialize(){this.parseAttributes()}parseAttributes(){const e=this.getAttribute("question-data");if(e)try{this.questionData=JSON.parse(e)}catch(t){console.error("Quiz Multiple Choice: Invalid question-data JSON:",t),this.questionData=null}this.selectedValue=this.getAttribute("selected-value")||null,this.isDisabled=this.getBooleanAttribute("disabled",!1)}handleAttributeChange(e,t,i){switch(e){case"question-data":this.parseAttributes();break;case"selected-value":this.selectedValue=i,this.updateSelectedState();break;case"disabled":this.isDisabled=this.getBooleanAttribute("disabled",!1),this.updateDisabledState();break}}getTemplate(){if(!this.questionData||!this.questionData.options)return`
+		`;
+  }
+  // Utility methods
+  getSchedulingData() {
+    try {
+      const dataAttr = this.getAttribute("scheduling-data");
+      return dataAttr ? JSON.parse(dataAttr) : null;
+    } catch (error) {
+      console.error("Error parsing scheduling data:", error);
+      return null;
+    }
+  }
+  handleAttributeChange(name, oldValue, newValue) {
+    if (["result-type", "scheduling-data", "error-message"].includes(name)) {
+      this.render();
+    }
+  }
+}
+customElements.define("quiz-scheduling-result", QuizSchedulingResult);
+class QuizMultipleChoiceComponent extends QuizBaseComponent {
+  static get observedAttributes() {
+    return ["question-data", "selected-value", "disabled"];
+  }
+  constructor() {
+    super();
+    this.questionData = null;
+    this.selectedValue = null;
+    this.isDisabled = false;
+  }
+  initialize() {
+    this.parseAttributes();
+  }
+  parseAttributes() {
+    const questionDataAttr = this.getAttribute("question-data");
+    if (questionDataAttr) {
+      try {
+        this.questionData = JSON.parse(questionDataAttr);
+      } catch (error) {
+        console.error("Quiz Multiple Choice: Invalid question-data JSON:", error);
+        this.questionData = null;
+      }
+    }
+    this.selectedValue = this.getAttribute("selected-value") || null;
+    this.isDisabled = this.getBooleanAttribute("disabled", false);
+  }
+  handleAttributeChange(name, oldValue, newValue) {
+    switch (name) {
+      case "question-data":
+        this.parseAttributes();
+        break;
+      case "selected-value":
+        this.selectedValue = newValue;
+        this.updateSelectedState();
+        break;
+      case "disabled":
+        this.isDisabled = this.getBooleanAttribute("disabled", false);
+        this.updateDisabledState();
+        break;
+    }
+  }
+  getTemplate() {
+    if (!this.questionData || !this.questionData.options) {
+      return `
 				<div class="quiz-error-container">
 					<p class="quiz-error-text">Invalid question configuration</p>
 				</div>
-			`;const e=this.questionData.options,t=this.questionData.id,i=e.map(r=>`
-			<label for="${r.id}" class="quiz-option-card" data-option-id="${r.id}">
+			`;
+    }
+    const options = this.questionData.options;
+    const questionId = this.questionData.id;
+    const optionsHTML = options.map(
+      (option) => `
+			<label for="${option.id}" class="quiz-option-card" data-option-id="${option.id}">
 				<input
 					type="radio"
-					id="${r.id}"
-					name="question-${t}"
-					value="${r.id}"
+					id="${option.id}"
+					name="question-${questionId}"
+					value="${option.id}"
 					class="quiz-sr-only"
-					${this.selectedValue===r.id?"checked":""}
-					${this.isDisabled?"disabled":""}
+					${this.selectedValue === option.id ? "checked" : ""}
+					${this.isDisabled ? "disabled" : ""}
 				>
-				<div class="quiz-option-button ${this.selectedValue===r.id?"selected":""}">
+				<div class="quiz-option-button ${this.selectedValue === option.id ? "selected" : ""}">
 					<div class="quiz-option-text">
-						<div class="quiz-option-text-content">${r.text}</div>
+						<div class="quiz-option-text-content">${option.text}</div>
 					</div>
-					${this.selectedValue===r.id?this.getCheckmarkSVG():""}
+					${this.selectedValue === option.id ? this.getCheckmarkSVG() : ""}
 				</div>
 			</label>
-		`).join("");return`
-			<div class="quiz-grid-2" ${this.isDisabled?'aria-disabled="true"':""}>
-				${i}
+		`
+    ).join("");
+    return `
+			<div class="quiz-grid-2" ${this.isDisabled ? 'aria-disabled="true"' : ""}>
+				${optionsHTML}
 			</div>
-		`}getCheckmarkSVG(){return`
+		`;
+  }
+  getCheckmarkSVG() {
+    return `
 			<svg class="quiz-checkmark" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 				<path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 			</svg>
-		`}async getStyles(){const e=super.getStyles(),t=await d.getQuizStyles();return`
-			${e}
-			${t}
+		`;
+  }
+  async getStyles() {
+    const baseStyles = super.getStyles();
+    const quizStyles = await sharedStyles.getQuizStyles();
+    return `
+			${baseStyles}
+			${quizStyles}
 
 			/* Component-specific styles */
 			.quiz-grid-2 {
@@ -2404,56 +4233,263 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 				outline: 2px solid var(--quiz-primary-color);
 				outline-offset: 2px;
 			}
-		`}setupEventListeners(){this.root.addEventListener("change",this.handleOptionChange.bind(this)),this.root.addEventListener("click",this.handleOptionClick.bind(this))}handleOptionChange(e){if(this.isDisabled)return;const t=e.target;if(t.type==="radio"){const i=t.value;this.selectedValue=i,this.updateSelectedState(),this.dispatchAnswerSelected(i)}}handleOptionClick(e){if(this.isDisabled)return;const t=e.target.closest(".quiz-option-card");if(t){const i=t.getAttribute("data-option-id"),r=t.querySelector("input[type='radio']");r&&!r.checked&&(r.checked=!0,this.selectedValue=i,this.updateSelectedState(),this.dispatchAnswerSelected(i))}}updateSelectedState(){this.root.querySelectorAll(".quiz-option-card").forEach(t=>{const i=t.getAttribute("data-option-id"),r=t.querySelector(".quiz-option-button"),s=t.querySelector("input[type='radio']");if(i===this.selectedValue)r.classList.add("selected"),s.checked=!0,r.querySelector(".quiz-checkmark")||r.querySelector(".quiz-option-text").insertAdjacentHTML("afterend",this.getCheckmarkSVG());else{r.classList.remove("selected"),s.checked=!1;const o=r.querySelector(".quiz-checkmark");o&&o.remove()}})}updateDisabledState(){this.root.querySelectorAll("input[type='radio']").forEach(i=>{i.disabled=this.isDisabled});const t=this.root.querySelector(".quiz-grid-2");t&&(this.isDisabled?t.setAttribute("aria-disabled","true"):t.removeAttribute("aria-disabled"))}dispatchAnswerSelected(e){const t=new CustomEvent("answer-selected",{detail:{questionId:this.questionData?.id,value:e,questionType:"multiple-choice"},bubbles:!0});this.dispatchEvent(t)}getSelectedValue(){return this.selectedValue}setSelectedValue(e){this.selectedValue=e,this.setAttribute("selected-value",e)}setDisabled(e){this.isDisabled=e,e?this.setAttribute("disabled",""):this.removeAttribute("disabled")}getQuestionData(){return this.questionData}setQuestionData(e){this.questionData=e,this.setAttribute("question-data",JSON.stringify(e))}}customElements.define("quiz-multiple-choice",T);class V extends u{static get observedAttributes(){return["question-data","selected-values","disabled","layout"]}constructor(){super(),this.questionData=null,this.selectedValues=[],this.isDisabled=!1,this.layout="cards"}initialize(){this.parseAttributes()}parseAttributes(){const e=this.getAttribute("question-data");if(e)try{this.questionData=JSON.parse(e)}catch(i){console.error("Quiz Checkbox Group: Invalid question-data JSON:",i),this.questionData=null}const t=this.getAttribute("selected-values");if(t)try{this.selectedValues=JSON.parse(t)}catch(i){console.error("Quiz Checkbox Group: Invalid selected-values JSON:",i),this.selectedValues=[]}else this.selectedValues=[];this.isDisabled=this.getBooleanAttribute("disabled",!1),this.layout=this.getAttribute("layout")||"cards",this.questionData?.id==="consent"&&(this.layout="simple")}handleAttributeChange(e,t,i){switch(e){case"question-data":this.parseAttributes();break;case"selected-values":this.parseSelectedValues(),this.updateSelectedState();break;case"disabled":this.isDisabled=this.getBooleanAttribute("disabled",!1),this.updateDisabledState();break;case"layout":this.layout=i||"cards";break}}parseSelectedValues(){const e=this.getAttribute("selected-values");if(e)try{this.selectedValues=JSON.parse(e)}catch(t){console.error("Quiz Checkbox Group: Invalid selected-values JSON:",t),this.selectedValues=[]}else this.selectedValues=[]}getTemplate(){return!this.questionData||!this.questionData.options?`
+		`;
+  }
+  setupEventListeners() {
+    this.root.addEventListener("change", this.handleOptionChange.bind(this));
+    this.root.addEventListener("click", this.handleOptionClick.bind(this));
+  }
+  handleOptionChange(event) {
+    if (this.isDisabled) return;
+    const input = event.target;
+    if (input.type === "radio") {
+      const selectedValue = input.value;
+      this.selectedValue = selectedValue;
+      this.updateSelectedState();
+      this.dispatchAnswerSelected(selectedValue);
+    }
+  }
+  handleOptionClick(event) {
+    if (this.isDisabled) return;
+    const label = event.target.closest(".quiz-option-card");
+    if (label) {
+      const optionId = label.getAttribute("data-option-id");
+      const input = label.querySelector("input[type='radio']");
+      if (input && !input.checked) {
+        input.checked = true;
+        this.selectedValue = optionId;
+        this.updateSelectedState();
+        this.dispatchAnswerSelected(optionId);
+      }
+    }
+  }
+  updateSelectedState() {
+    const labels = this.root.querySelectorAll(".quiz-option-card");
+    labels.forEach((label) => {
+      const optionId = label.getAttribute("data-option-id");
+      const button = label.querySelector(".quiz-option-button");
+      const input = label.querySelector("input[type='radio']");
+      if (optionId === this.selectedValue) {
+        button.classList.add("selected");
+        input.checked = true;
+        if (!button.querySelector(".quiz-checkmark")) {
+          const textDiv = button.querySelector(".quiz-option-text");
+          textDiv.insertAdjacentHTML("afterend", this.getCheckmarkSVG());
+        }
+      } else {
+        button.classList.remove("selected");
+        input.checked = false;
+        const checkmark = button.querySelector(".quiz-checkmark");
+        if (checkmark) {
+          checkmark.remove();
+        }
+      }
+    });
+  }
+  updateDisabledState() {
+    const inputs = this.root.querySelectorAll("input[type='radio']");
+    inputs.forEach((input) => {
+      input.disabled = this.isDisabled;
+    });
+    const container = this.root.querySelector(".quiz-grid-2");
+    if (container) {
+      if (this.isDisabled) {
+        container.setAttribute("aria-disabled", "true");
+      } else {
+        container.removeAttribute("aria-disabled");
+      }
+    }
+  }
+  dispatchAnswerSelected(value) {
+    const event = new CustomEvent("answer-selected", {
+      detail: {
+        questionId: this.questionData?.id,
+        value,
+        questionType: "multiple-choice"
+      },
+      bubbles: true
+    });
+    this.dispatchEvent(event);
+  }
+  // Public API methods
+  getSelectedValue() {
+    return this.selectedValue;
+  }
+  setSelectedValue(value) {
+    this.selectedValue = value;
+    this.setAttribute("selected-value", value);
+  }
+  setDisabled(disabled) {
+    this.isDisabled = disabled;
+    if (disabled) {
+      this.setAttribute("disabled", "");
+    } else {
+      this.removeAttribute("disabled");
+    }
+  }
+  getQuestionData() {
+    return this.questionData;
+  }
+  setQuestionData(data) {
+    this.questionData = data;
+    this.setAttribute("question-data", JSON.stringify(data));
+  }
+}
+customElements.define("quiz-multiple-choice", QuizMultipleChoiceComponent);
+class QuizCheckboxGroupComponent extends QuizBaseComponent {
+  static get observedAttributes() {
+    return ["question-data", "selected-values", "disabled", "layout"];
+  }
+  constructor() {
+    super();
+    this.questionData = null;
+    this.selectedValues = [];
+    this.isDisabled = false;
+    this.layout = "cards";
+  }
+  initialize() {
+    this.parseAttributes();
+  }
+  parseAttributes() {
+    const questionDataAttr = this.getAttribute("question-data");
+    if (questionDataAttr) {
+      try {
+        this.questionData = JSON.parse(questionDataAttr);
+      } catch (error) {
+        console.error("Quiz Checkbox Group: Invalid question-data JSON:", error);
+        this.questionData = null;
+      }
+    }
+    const selectedValuesAttr = this.getAttribute("selected-values");
+    if (selectedValuesAttr) {
+      try {
+        this.selectedValues = JSON.parse(selectedValuesAttr);
+      } catch (error) {
+        console.error("Quiz Checkbox Group: Invalid selected-values JSON:", error);
+        this.selectedValues = [];
+      }
+    } else {
+      this.selectedValues = [];
+    }
+    this.isDisabled = this.getBooleanAttribute("disabled", false);
+    this.layout = this.getAttribute("layout") || "cards";
+    if (this.questionData?.id === "consent") {
+      this.layout = "simple";
+    }
+  }
+  handleAttributeChange(name, oldValue, newValue) {
+    switch (name) {
+      case "question-data":
+        this.parseAttributes();
+        break;
+      case "selected-values":
+        this.parseSelectedValues();
+        this.updateSelectedState();
+        break;
+      case "disabled":
+        this.isDisabled = this.getBooleanAttribute("disabled", false);
+        this.updateDisabledState();
+        break;
+      case "layout":
+        this.layout = newValue || "cards";
+        break;
+    }
+  }
+  parseSelectedValues() {
+    const selectedValuesAttr = this.getAttribute("selected-values");
+    if (selectedValuesAttr) {
+      try {
+        this.selectedValues = JSON.parse(selectedValuesAttr);
+      } catch (error) {
+        console.error("Quiz Checkbox Group: Invalid selected-values JSON:", error);
+        this.selectedValues = [];
+      }
+    } else {
+      this.selectedValues = [];
+    }
+  }
+  getTemplate() {
+    if (!this.questionData || !this.questionData.options) {
+      return `
 				<div class="quiz-error-container">
 					<p class="quiz-error-text">Invalid question configuration</p>
 				</div>
-			`:this.layout==="simple"?this.getSimpleTemplate():this.getCardTemplate()}getCardTemplate(){const e=this.questionData.options,t=this.questionData.id,i=e.map(r=>`
-			<label for="${r.id}" class="quiz-option-card" data-option-id="${r.id}">
+			`;
+    }
+    if (this.layout === "simple") {
+      return this.getSimpleTemplate();
+    } else {
+      return this.getCardTemplate();
+    }
+  }
+  getCardTemplate() {
+    const options = this.questionData.options;
+    const questionId = this.questionData.id;
+    const optionsHTML = options.map(
+      (option) => `
+			<label for="${option.id}" class="quiz-option-card" data-option-id="${option.id}">
 				<input
 					type="checkbox"
-					id="${r.id}"
-					name="question-${t}"
-					value="${r.id}"
+					id="${option.id}"
+					name="question-${questionId}"
+					value="${option.id}"
 					class="quiz-sr-only"
-					${this.selectedValues.includes(r.id)?"checked":""}
-					${this.isDisabled?"disabled":""}
+					${this.selectedValues.includes(option.id) ? "checked" : ""}
+					${this.isDisabled ? "disabled" : ""}
 				>
-				<div class="quiz-option-button ${this.selectedValues.includes(r.id)?"selected":""}">
+				<div class="quiz-option-button ${this.selectedValues.includes(option.id) ? "selected" : ""}">
 					<div class="quiz-option-text">
-						<div class="quiz-option-text-content">${r.text}</div>
+						<div class="quiz-option-text-content">${option.text}</div>
 					</div>
-					${this.selectedValues.includes(r.id)?this.getCheckmarkSVG():""}
+					${this.selectedValues.includes(option.id) ? this.getCheckmarkSVG() : ""}
 				</div>
 			</label>
-		`).join("");return`
-			<div class="quiz-grid-2" ${this.isDisabled?'aria-disabled="true"':""}>
-				${i}
+		`
+    ).join("");
+    return `
+			<div class="quiz-grid-2" ${this.isDisabled ? 'aria-disabled="true"' : ""}>
+				${optionsHTML}
 			</div>
-		`}getSimpleTemplate(){const e=this.questionData.options,t=this.questionData.id,i=e.map(r=>`
+		`;
+  }
+  getSimpleTemplate() {
+    const options = this.questionData.options;
+    const questionId = this.questionData.id;
+    const optionsHTML = options.map(
+      (option) => `
 			<div class="quiz-checkbox-container">
 				<input
 					type="checkbox"
-					id="${r.id}"
-					name="question-${t}"
-					value="${r.id}"
+					id="${option.id}"
+					name="question-${questionId}"
+					value="${option.id}"
 					class="quiz-checkbox-input"
-					${this.selectedValues.includes(r.id)?"checked":""}
-					${this.isDisabled?"disabled":""}
+					${this.selectedValues.includes(option.id) ? "checked" : ""}
+					${this.isDisabled ? "disabled" : ""}
 				>
-				<label class="quiz-checkbox-label" for="${r.id}">${r.text}</label>
+				<label class="quiz-checkbox-label" for="${option.id}">${option.text}</label>
 			</div>
-		`).join("");return`
-			<div class="quiz-space-y-3 quiz-spacing-container" ${this.isDisabled?'aria-disabled="true"':""}>
-				${i}
+		`
+    ).join("");
+    return `
+			<div class="quiz-space-y-3 quiz-spacing-container" ${this.isDisabled ? 'aria-disabled="true"' : ""}>
+				${optionsHTML}
 			</div>
-		`}getCheckmarkSVG(){return`
+		`;
+  }
+  getCheckmarkSVG() {
+    return `
 			<svg class="quiz-checkmark" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 				<path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 			</svg>
-		`}async getStyles(){const e=super.getStyles(),t=await d.getQuizStyles();return`
-			${e}
-			${t}
+		`;
+  }
+  async getStyles() {
+    const baseStyles = super.getStyles();
+    const quizStyles = await sharedStyles.getQuizStyles();
+    return `
+			${baseStyles}
+			${quizStyles}
 
 			/* Card layout styles */
 			.quiz-grid-2 {
@@ -2610,35 +4646,238 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 				outline: 2px solid var(--quiz-primary-color);
 				outline-offset: 2px;
 			}
-		`}setupEventListeners(){this.root.addEventListener("change",this.handleOptionChange.bind(this)),this.root.addEventListener("click",this.handleOptionClick.bind(this))}handleOptionChange(e){if(this.isDisabled)return;const t=e.target;if(t.type==="checkbox"){const i=t.value;t.checked?this.selectedValues.includes(i)||this.selectedValues.push(i):this.selectedValues=this.selectedValues.filter(r=>r!==i),this.updateSelectedState(),this.dispatchAnswerSelected(this.selectedValues)}}handleOptionClick(e){if(!this.isDisabled&&this.layout==="cards"){const t=e.target.closest(".quiz-option-card");if(t){const i=t.getAttribute("data-option-id"),r=t.querySelector("input[type='checkbox']");r&&(r.checked=!r.checked,r.checked?this.selectedValues.includes(i)||this.selectedValues.push(i):this.selectedValues=this.selectedValues.filter(s=>s!==i),this.updateSelectedState(),this.dispatchAnswerSelected(this.selectedValues))}}}updateSelectedState(){this.layout==="cards"?this.updateCardSelectedState():this.updateSimpleSelectedState()}updateCardSelectedState(){this.root.querySelectorAll(".quiz-option-card").forEach(t=>{const i=t.getAttribute("data-option-id"),r=t.querySelector(".quiz-option-button"),s=t.querySelector("input[type='checkbox']");if(this.selectedValues.includes(i))r.classList.add("selected"),s.checked=!0,r.querySelector(".quiz-checkmark")||r.querySelector(".quiz-option-text").insertAdjacentHTML("afterend",this.getCheckmarkSVG());else{r.classList.remove("selected"),s.checked=!1;const o=r.querySelector(".quiz-checkmark");o&&o.remove()}})}updateSimpleSelectedState(){this.root.querySelectorAll("input[type='checkbox']").forEach(t=>{const i=t.value;t.checked=this.selectedValues.includes(i)})}updateDisabledState(){this.root.querySelectorAll("input[type='checkbox']").forEach(i=>{i.disabled=this.isDisabled});const t=this.root.querySelector(".quiz-grid-2, .quiz-space-y-3");t&&(this.isDisabled?t.setAttribute("aria-disabled","true"):t.removeAttribute("aria-disabled"))}dispatchAnswerSelected(e){const t=new CustomEvent("answer-selected",{detail:{questionId:this.questionData?.id,value:e,questionType:"checkbox"},bubbles:!0});this.dispatchEvent(t)}getSelectedValues(){return[...this.selectedValues]}setSelectedValues(e){this.selectedValues=Array.isArray(e)?[...e]:[],this.setAttribute("selected-values",JSON.stringify(this.selectedValues))}setDisabled(e){this.isDisabled=e,e?this.setAttribute("disabled",""):this.removeAttribute("disabled")}getQuestionData(){return this.questionData}setQuestionData(e){this.questionData=e,this.setAttribute("question-data",JSON.stringify(e))}setLayout(e){this.layout=e,this.setAttribute("layout",e)}}customElements.define("quiz-checkbox-group",V);class I extends u{static get observedAttributes(){return["question-data","selected-value","disabled","show-error","error-message"]}constructor(){super(),this.questionData=null,this.selectedValue=null,this.isDisabled=!1,this.showError=!1,this.errorMessage=""}initialize(){this.parseAttributes()}parseAttributes(){const e=this.getAttribute("question-data");if(e)try{this.questionData=JSON.parse(e)}catch(t){console.error("Quiz Dropdown: Invalid question-data JSON:",t),this.questionData=null}this.selectedValue=this.getAttribute("selected-value")||null,this.isDisabled=this.getBooleanAttribute("disabled",!1),this.showError=this.getBooleanAttribute("show-error",!1),this.errorMessage=this.getAttribute("error-message")||""}handleAttributeChange(e,t,i){switch(e){case"question-data":this.parseAttributes();break;case"selected-value":this.selectedValue=i,this.updateSelectedState();break;case"disabled":this.isDisabled=this.getBooleanAttribute("disabled",!1),this.updateDisabledState();break;case"show-error":this.showError=this.getBooleanAttribute("show-error",!1),this.updateErrorState();break;case"error-message":this.errorMessage=i||"",this.updateErrorMessage();break}}getTemplate(){if(!this.questionData)return`
+		`;
+  }
+  setupEventListeners() {
+    this.root.addEventListener("change", this.handleOptionChange.bind(this));
+    this.root.addEventListener("click", this.handleOptionClick.bind(this));
+  }
+  handleOptionChange(event) {
+    if (this.isDisabled) return;
+    const input = event.target;
+    if (input.type === "checkbox") {
+      const optionId = input.value;
+      if (input.checked) {
+        if (!this.selectedValues.includes(optionId)) {
+          this.selectedValues.push(optionId);
+        }
+      } else {
+        this.selectedValues = this.selectedValues.filter((id) => id !== optionId);
+      }
+      this.updateSelectedState();
+      this.dispatchAnswerSelected(this.selectedValues);
+    }
+  }
+  handleOptionClick(event) {
+    if (this.isDisabled) return;
+    if (this.layout === "cards") {
+      const label = event.target.closest(".quiz-option-card");
+      if (label) {
+        const optionId = label.getAttribute("data-option-id");
+        const input = label.querySelector("input[type='checkbox']");
+        if (input) {
+          input.checked = !input.checked;
+          if (input.checked) {
+            if (!this.selectedValues.includes(optionId)) {
+              this.selectedValues.push(optionId);
+            }
+          } else {
+            this.selectedValues = this.selectedValues.filter((id) => id !== optionId);
+          }
+          this.updateSelectedState();
+          this.dispatchAnswerSelected(this.selectedValues);
+        }
+      }
+    }
+  }
+  updateSelectedState() {
+    if (this.layout === "cards") {
+      this.updateCardSelectedState();
+    } else {
+      this.updateSimpleSelectedState();
+    }
+  }
+  updateCardSelectedState() {
+    const labels = this.root.querySelectorAll(".quiz-option-card");
+    labels.forEach((label) => {
+      const optionId = label.getAttribute("data-option-id");
+      const button = label.querySelector(".quiz-option-button");
+      const input = label.querySelector("input[type='checkbox']");
+      if (this.selectedValues.includes(optionId)) {
+        button.classList.add("selected");
+        input.checked = true;
+        if (!button.querySelector(".quiz-checkmark")) {
+          const textDiv = button.querySelector(".quiz-option-text");
+          textDiv.insertAdjacentHTML("afterend", this.getCheckmarkSVG());
+        }
+      } else {
+        button.classList.remove("selected");
+        input.checked = false;
+        const checkmark = button.querySelector(".quiz-checkmark");
+        if (checkmark) {
+          checkmark.remove();
+        }
+      }
+    });
+  }
+  updateSimpleSelectedState() {
+    const inputs = this.root.querySelectorAll("input[type='checkbox']");
+    inputs.forEach((input) => {
+      const optionId = input.value;
+      input.checked = this.selectedValues.includes(optionId);
+    });
+  }
+  updateDisabledState() {
+    const inputs = this.root.querySelectorAll("input[type='checkbox']");
+    inputs.forEach((input) => {
+      input.disabled = this.isDisabled;
+    });
+    const container = this.root.querySelector(".quiz-grid-2, .quiz-space-y-3");
+    if (container) {
+      if (this.isDisabled) {
+        container.setAttribute("aria-disabled", "true");
+      } else {
+        container.removeAttribute("aria-disabled");
+      }
+    }
+  }
+  dispatchAnswerSelected(values) {
+    const event = new CustomEvent("answer-selected", {
+      detail: {
+        questionId: this.questionData?.id,
+        value: values,
+        questionType: "checkbox"
+      },
+      bubbles: true
+    });
+    this.dispatchEvent(event);
+  }
+  // Public API methods
+  getSelectedValues() {
+    return [...this.selectedValues];
+  }
+  setSelectedValues(values) {
+    this.selectedValues = Array.isArray(values) ? [...values] : [];
+    this.setAttribute("selected-values", JSON.stringify(this.selectedValues));
+  }
+  setDisabled(disabled) {
+    this.isDisabled = disabled;
+    if (disabled) {
+      this.setAttribute("disabled", "");
+    } else {
+      this.removeAttribute("disabled");
+    }
+  }
+  getQuestionData() {
+    return this.questionData;
+  }
+  setQuestionData(data) {
+    this.questionData = data;
+    this.setAttribute("question-data", JSON.stringify(data));
+  }
+  setLayout(layout) {
+    this.layout = layout;
+    this.setAttribute("layout", layout);
+  }
+}
+customElements.define("quiz-checkbox-group", QuizCheckboxGroupComponent);
+class QuizDropdownComponent extends QuizBaseComponent {
+  static get observedAttributes() {
+    return ["question-data", "selected-value", "disabled", "show-error", "error-message"];
+  }
+  constructor() {
+    super();
+    this.questionData = null;
+    this.selectedValue = null;
+    this.isDisabled = false;
+    this.showError = false;
+    this.errorMessage = "";
+  }
+  initialize() {
+    this.parseAttributes();
+  }
+  parseAttributes() {
+    const questionDataAttr = this.getAttribute("question-data");
+    if (questionDataAttr) {
+      try {
+        this.questionData = JSON.parse(questionDataAttr);
+      } catch (error) {
+        console.error("Quiz Dropdown: Invalid question-data JSON:", error);
+        this.questionData = null;
+      }
+    }
+    this.selectedValue = this.getAttribute("selected-value") || null;
+    this.isDisabled = this.getBooleanAttribute("disabled", false);
+    this.showError = this.getBooleanAttribute("show-error", false);
+    this.errorMessage = this.getAttribute("error-message") || "";
+  }
+  handleAttributeChange(name, oldValue, newValue) {
+    switch (name) {
+      case "question-data":
+        this.parseAttributes();
+        break;
+      case "selected-value":
+        this.selectedValue = newValue;
+        this.updateSelectedState();
+        break;
+      case "disabled":
+        this.isDisabled = this.getBooleanAttribute("disabled", false);
+        this.updateDisabledState();
+        break;
+      case "show-error":
+        this.showError = this.getBooleanAttribute("show-error", false);
+        this.updateErrorState();
+        break;
+      case "error-message":
+        this.errorMessage = newValue || "";
+        this.updateErrorMessage();
+        break;
+    }
+  }
+  getTemplate() {
+    if (!this.questionData) {
+      return `
 				<div class="quiz-error-container">
 					<p class="quiz-error-text">Invalid question configuration</p>
 				</div>
-			`;const e=this.questionData.options||[],t=this.questionData.id,i=this.questionData.placeholder||"Select an option",r=e.map(s=>`
-			<option value="${s.id}" ${this.selectedValue===s.id?"selected":""}>
-				${s.text}
+			`;
+    }
+    const options = this.questionData.options || [];
+    const questionId = this.questionData.id;
+    const placeholder = this.questionData.placeholder || "Select an option";
+    const optionsHTML = options.map(
+      (option) => `
+			<option value="${option.id}" ${this.selectedValue === option.id ? "selected" : ""}>
+				${option.text}
 			</option>
-		`).join("");return`
+		`
+    ).join("");
+    return `
 			<div class="quiz-dropdown-container">
 				<select
-					id="question-${t}"
-					class="quiz-select ${this.showError?"quiz-select-error":""}"
-					${this.isDisabled?"disabled":""}
-					aria-describedby="error-${t}"
+					id="question-${questionId}"
+					class="quiz-select ${this.showError ? "quiz-select-error" : ""}"
+					${this.isDisabled ? "disabled" : ""}
+					aria-describedby="error-${questionId}"
 				>
-					<option value="">${i}</option>
-					${r}
+					<option value="">${placeholder}</option>
+					${optionsHTML}
 				</select>
-				<div class="quiz-error-element ${this.showError?"quiz-error-visible":"quiz-error-hidden"}"
-					 id="error-${t}"
+				<div class="quiz-error-element ${this.showError ? "quiz-error-visible" : "quiz-error-hidden"}"
+					 id="error-${questionId}"
 					 role="alert"
 					 aria-live="polite">
 					${this.errorMessage}
 				</div>
 			</div>
-		`}async getStyles(){const e=super.getStyles(),t=await d.getQuizStyles();return`
-			${e}
-			${t}
+		`;
+  }
+  async getStyles() {
+    const baseStyles = super.getStyles();
+    const quizStyles = await sharedStyles.getQuizStyles();
+    return `
+			${baseStyles}
+			${quizStyles}
 
 			/* Component-specific styles */
 			.quiz-dropdown-container {
@@ -2735,31 +4974,215 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 					font-size: 16px; /* Prevents zoom on iOS */
 				}
 			}
-		`}setupEventListeners(){this.root.addEventListener("change",this.handleSelectionChange.bind(this))}handleSelectionChange(e){if(this.isDisabled)return;const t=e.target;if(t.classList.contains("quiz-select")){const i=t.value;this.selectedValue=i,this.dispatchAnswerSelected(i),this.showError&&i&&this.clearError()}}updateSelectedState(){const e=this.root.querySelector(".quiz-select");e&&(e.value=this.selectedValue||"")}updateDisabledState(){const e=this.root.querySelector(".quiz-select");e&&(e.disabled=this.isDisabled)}updateErrorState(){const e=this.root.querySelector(".quiz-select"),t=this.root.querySelector(".quiz-error-element");e&&(this.showError?e.classList.add("quiz-select-error"):e.classList.remove("quiz-select-error")),t&&(this.showError?(t.classList.remove("quiz-error-hidden"),t.classList.add("quiz-error-visible")):(t.classList.remove("quiz-error-visible"),t.classList.add("quiz-error-hidden")))}updateErrorMessage(){const e=this.root.querySelector(".quiz-error-element");e&&(e.textContent=this.errorMessage)}dispatchAnswerSelected(e){const t=new CustomEvent("answer-selected",{detail:{questionId:this.questionData?.id,value:e,questionType:"dropdown"},bubbles:!0});this.dispatchEvent(t)}getSelectedValue(){return this.selectedValue}setSelectedValue(e){this.selectedValue=e,this.setAttribute("selected-value",e||"")}setDisabled(e){this.isDisabled=e,e?this.setAttribute("disabled",""):this.removeAttribute("disabled")}showValidationError(e){this.errorMessage=e,this.showError=!0,this.setAttribute("error-message",e),this.setAttribute("show-error","")}clearError(){this.showError=!1,this.errorMessage="",this.removeAttribute("show-error"),this.removeAttribute("error-message")}getQuestionData(){return this.questionData}setQuestionData(e){this.questionData=e,this.setAttribute("question-data",JSON.stringify(e))}isValid(){return this.selectedValue&&this.selectedValue.trim()!==""}focus(){const e=this.root.querySelector(".quiz-select");e&&e.focus()}}customElements.define("quiz-dropdown",I);class P extends u{static get observedAttributes(){return["question-data","value","disabled","show-error","error-message","input-type"]}constructor(){super(),this.questionData=null,this.inputValue="",this.isDisabled=!1,this.showError=!1,this.errorMessage="",this.inputType="text"}initialize(){this.parseAttributes()}parseAttributes(){const e=this.getAttribute("question-data");if(e)try{this.questionData=JSON.parse(e)}catch(t){console.error("Quiz Text Input: Invalid question-data JSON:",t),this.questionData=null}this.inputValue=this.getAttribute("value")||"",this.isDisabled=this.getBooleanAttribute("disabled",!1),this.showError=this.getBooleanAttribute("show-error",!1),this.errorMessage=this.getAttribute("error-message")||"",this.inputType=this.getAttribute("input-type")||"text"}handleAttributeChange(e,t,i){switch(e){case"question-data":this.parseAttributes();break;case"value":this.inputValue=i||"",this.updateInputValue();break;case"disabled":this.isDisabled=this.getBooleanAttribute("disabled",!1),this.updateDisabledState();break;case"show-error":this.showError=this.getBooleanAttribute("show-error",!1),this.updateErrorState();break;case"error-message":this.errorMessage=i||"",this.updateErrorMessage();break;case"input-type":this.inputType=i||"text",this.updateInputType();break}}getTemplate(){if(!this.questionData)return`
+		`;
+  }
+  setupEventListeners() {
+    this.root.addEventListener("change", this.handleSelectionChange.bind(this));
+  }
+  handleSelectionChange(event) {
+    if (this.isDisabled) return;
+    const select = event.target;
+    if (select.classList.contains("quiz-select")) {
+      const selectedValue = select.value;
+      this.selectedValue = selectedValue;
+      this.dispatchAnswerSelected(selectedValue);
+      if (this.showError && selectedValue) {
+        this.clearError();
+      }
+    }
+  }
+  updateSelectedState() {
+    const select = this.root.querySelector(".quiz-select");
+    if (select) {
+      select.value = this.selectedValue || "";
+    }
+  }
+  updateDisabledState() {
+    const select = this.root.querySelector(".quiz-select");
+    if (select) {
+      select.disabled = this.isDisabled;
+    }
+  }
+  updateErrorState() {
+    const select = this.root.querySelector(".quiz-select");
+    const errorElement = this.root.querySelector(".quiz-error-element");
+    if (select) {
+      if (this.showError) {
+        select.classList.add("quiz-select-error");
+      } else {
+        select.classList.remove("quiz-select-error");
+      }
+    }
+    if (errorElement) {
+      if (this.showError) {
+        errorElement.classList.remove("quiz-error-hidden");
+        errorElement.classList.add("quiz-error-visible");
+      } else {
+        errorElement.classList.remove("quiz-error-visible");
+        errorElement.classList.add("quiz-error-hidden");
+      }
+    }
+  }
+  updateErrorMessage() {
+    const errorElement = this.root.querySelector(".quiz-error-element");
+    if (errorElement) {
+      errorElement.textContent = this.errorMessage;
+    }
+  }
+  dispatchAnswerSelected(value) {
+    const event = new CustomEvent("answer-selected", {
+      detail: {
+        questionId: this.questionData?.id,
+        value,
+        questionType: "dropdown"
+      },
+      bubbles: true
+    });
+    this.dispatchEvent(event);
+  }
+  // Public API methods
+  getSelectedValue() {
+    return this.selectedValue;
+  }
+  setSelectedValue(value) {
+    this.selectedValue = value;
+    this.setAttribute("selected-value", value || "");
+  }
+  setDisabled(disabled) {
+    this.isDisabled = disabled;
+    if (disabled) {
+      this.setAttribute("disabled", "");
+    } else {
+      this.removeAttribute("disabled");
+    }
+  }
+  showValidationError(message) {
+    this.errorMessage = message;
+    this.showError = true;
+    this.setAttribute("error-message", message);
+    this.setAttribute("show-error", "");
+  }
+  clearError() {
+    this.showError = false;
+    this.errorMessage = "";
+    this.removeAttribute("show-error");
+    this.removeAttribute("error-message");
+  }
+  getQuestionData() {
+    return this.questionData;
+  }
+  setQuestionData(data) {
+    this.questionData = data;
+    this.setAttribute("question-data", JSON.stringify(data));
+  }
+  // Validation helper
+  isValid() {
+    return this.selectedValue && this.selectedValue.trim() !== "";
+  }
+  // Focus management
+  focus() {
+    const select = this.root.querySelector(".quiz-select");
+    if (select) {
+      select.focus();
+    }
+  }
+}
+customElements.define("quiz-dropdown", QuizDropdownComponent);
+class QuizTextInputComponent extends QuizBaseComponent {
+  static get observedAttributes() {
+    return ["question-data", "value", "disabled", "show-error", "error-message", "input-type"];
+  }
+  constructor() {
+    super();
+    this.questionData = null;
+    this.inputValue = "";
+    this.isDisabled = false;
+    this.showError = false;
+    this.errorMessage = "";
+    this.inputType = "text";
+  }
+  initialize() {
+    this.parseAttributes();
+  }
+  parseAttributes() {
+    const questionDataAttr = this.getAttribute("question-data");
+    if (questionDataAttr) {
+      try {
+        this.questionData = JSON.parse(questionDataAttr);
+      } catch (error) {
+        console.error("Quiz Text Input: Invalid question-data JSON:", error);
+        this.questionData = null;
+      }
+    }
+    this.inputValue = this.getAttribute("value") || "";
+    this.isDisabled = this.getBooleanAttribute("disabled", false);
+    this.showError = this.getBooleanAttribute("show-error", false);
+    this.errorMessage = this.getAttribute("error-message") || "";
+    this.inputType = this.getAttribute("input-type") || "text";
+  }
+  handleAttributeChange(name, oldValue, newValue) {
+    switch (name) {
+      case "question-data":
+        this.parseAttributes();
+        break;
+      case "value":
+        this.inputValue = newValue || "";
+        this.updateInputValue();
+        break;
+      case "disabled":
+        this.isDisabled = this.getBooleanAttribute("disabled", false);
+        this.updateDisabledState();
+        break;
+      case "show-error":
+        this.showError = this.getBooleanAttribute("show-error", false);
+        this.updateErrorState();
+        break;
+      case "error-message":
+        this.errorMessage = newValue || "";
+        this.updateErrorMessage();
+        break;
+      case "input-type":
+        this.inputType = newValue || "text";
+        this.updateInputType();
+        break;
+    }
+  }
+  getTemplate() {
+    if (!this.questionData) {
+      return `
 				<div class="quiz-error-container">
 					<p class="quiz-error-text">Invalid question configuration</p>
 				</div>
-			`;const e=this.questionData.id,t=this.questionData.placeholder||"Type your answer here...";return`
+			`;
+    }
+    const questionId = this.questionData.id;
+    const placeholder = this.questionData.placeholder || "Type your answer here...";
+    return `
 			<div class="quiz-text-input-container">
 				<input
 					type="${this.inputType}"
-					id="question-${e}"
-					class="quiz-input ${this.showError?"quiz-input-error":""}"
-					placeholder="${t}"
+					id="question-${questionId}"
+					class="quiz-input ${this.showError ? "quiz-input-error" : ""}"
+					placeholder="${placeholder}"
 					value="${this.inputValue}"
-					${this.isDisabled?"disabled":""}
-					aria-describedby="error-${e}"
+					${this.isDisabled ? "disabled" : ""}
+					aria-describedby="error-${questionId}"
 				>
-				<div class="quiz-error-element ${this.showError?"quiz-error-visible":"quiz-error-hidden"}"
-					 id="error-${e}"
+				<div class="quiz-error-element ${this.showError ? "quiz-error-visible" : "quiz-error-hidden"}"
+					 id="error-${questionId}"
 					 role="alert"
 					 aria-live="polite">
 					${this.errorMessage}
 				</div>
 			</div>
-		`}async getStyles(){const e=super.getStyles(),t=await d.getQuizStyles();return`
-			${e}
-			${t}
+		`;
+  }
+  async getStyles() {
+    const baseStyles = super.getStyles();
+    const quizStyles = await sharedStyles.getQuizStyles();
+    return `
+			${baseStyles}
+			${quizStyles}
 
 			/* Component-specific styles */
 			.quiz-text-input-container {
@@ -2861,18 +5284,253 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 					font-size: 16px; /* Prevents zoom on iOS */
 				}
 			}
-		`}setupEventListeners(){this.root.addEventListener("input",this.handleInputChange.bind(this)),this.root.addEventListener("blur",this.handleInputBlur.bind(this)),this.root.addEventListener("focus",this.handleInputFocus.bind(this))}handleInputChange(e){if(this.isDisabled)return;const t=e.target;if(t.classList.contains("quiz-input")){const i=t.value;this.inputValue=i,this.dispatchAnswerChanged(i),this.showError&&i.trim()&&this.clearError()}}handleInputBlur(e){if(this.isDisabled)return;e.target.classList.contains("quiz-input")&&this.dispatchAnswerSelected(this.inputValue)}handleInputFocus(e){this.showError&&this.clearError()}updateInputValue(){const e=this.root.querySelector(".quiz-input");e&&(e.value=this.inputValue)}updateDisabledState(){const e=this.root.querySelector(".quiz-input");e&&(e.disabled=this.isDisabled)}updateErrorState(){const e=this.root.querySelector(".quiz-input"),t=this.root.querySelector(".quiz-error-element");e&&(this.showError?(e.classList.add("quiz-input-error"),e.classList.remove("quiz-input-valid")):e.classList.remove("quiz-input-error")),t&&(this.showError?(t.classList.remove("quiz-error-hidden"),t.classList.add("quiz-error-visible")):(t.classList.remove("quiz-error-visible"),t.classList.add("quiz-error-hidden")))}updateErrorMessage(){const e=this.root.querySelector(".quiz-error-element");e&&(e.textContent=this.errorMessage)}updateInputType(){const e=this.root.querySelector(".quiz-input");e&&(e.type=this.inputType)}dispatchAnswerChanged(e){const t=new CustomEvent("answer-changed",{detail:{questionId:this.questionData?.id,value:e,questionType:"text"},bubbles:!0});this.dispatchEvent(t)}dispatchAnswerSelected(e){const t=new CustomEvent("answer-selected",{detail:{questionId:this.questionData?.id,value:e,questionType:"text"},bubbles:!0});this.dispatchEvent(t)}getValue(){return this.inputValue}setValue(e){this.inputValue=e||"",this.setAttribute("value",this.inputValue)}setDisabled(e){this.isDisabled=e,e?this.setAttribute("disabled",""):this.removeAttribute("disabled")}showValidationError(e){this.errorMessage=e,this.showError=!0,this.setAttribute("error-message",e),this.setAttribute("show-error","")}clearError(){this.showError=!1,this.errorMessage="",this.removeAttribute("show-error"),this.removeAttribute("error-message")}showValidState(){const e=this.root.querySelector(".quiz-input");e&&(e.classList.add("quiz-input-valid"),e.classList.remove("quiz-input-error"))}clearValidState(){const e=this.root.querySelector(".quiz-input");e&&e.classList.remove("quiz-input-valid")}getQuestionData(){return this.questionData}setQuestionData(e){this.questionData=e,this.setAttribute("question-data",JSON.stringify(e))}setInputType(e){this.inputType=e,this.setAttribute("input-type",e)}isValid(){return this.inputValue&&this.inputValue.trim()!==""}isEmpty(){return!this.inputValue||this.inputValue.trim()===""}focus(){const e=this.root.querySelector(".quiz-input");e&&e.focus()}select(){const e=this.root.querySelector(".quiz-input");e&&e.select()}}customElements.define("quiz-text-input",P);class _ extends u{static get observedAttributes(){return["question-data","value","disabled","min-value","max-value","step"]}constructor(){super(),this.questionData=null,this.ratingValue=5,this.isDisabled=!1,this.minValue=1,this.maxValue=10,this.step=1}initialize(){this.parseAttributes()}parseAttributes(){const e=this.getAttribute("question-data");if(e)try{this.questionData=JSON.parse(e)}catch(t){console.error("Quiz Rating: Invalid question-data JSON:",t),this.questionData=null}this.ratingValue=this.getNumberAttribute("value",5),this.isDisabled=this.getBooleanAttribute("disabled",!1),this.minValue=this.getNumberAttribute("min-value",1),this.maxValue=this.getNumberAttribute("max-value",10),this.step=this.getNumberAttribute("step",1),this.ratingValue=Math.max(this.minValue,Math.min(this.maxValue,this.ratingValue))}handleAttributeChange(e,t,i){switch(e){case"question-data":this.parseAttributes();break;case"value":this.ratingValue=this.getNumberAttribute("value",5),this.ratingValue=Math.max(this.minValue,Math.min(this.maxValue,this.ratingValue)),this.updateRatingValue();break;case"disabled":this.isDisabled=this.getBooleanAttribute("disabled",!1),this.updateDisabledState();break;case"min-value":case"max-value":case"step":this.parseAttributes();break}}getTemplate(){return this.questionData?`
+		`;
+  }
+  setupEventListeners() {
+    this.root.addEventListener("input", this.handleInputChange.bind(this));
+    this.root.addEventListener("blur", this.handleInputBlur.bind(this));
+    this.root.addEventListener("focus", this.handleInputFocus.bind(this));
+  }
+  handleInputChange(event) {
+    if (this.isDisabled) return;
+    const input = event.target;
+    if (input.classList.contains("quiz-input")) {
+      const newValue = input.value;
+      this.inputValue = newValue;
+      this.dispatchAnswerChanged(newValue);
+      if (this.showError && newValue.trim()) {
+        this.clearError();
+      }
+    }
+  }
+  handleInputBlur(event) {
+    if (this.isDisabled) return;
+    const input = event.target;
+    if (input.classList.contains("quiz-input")) {
+      this.dispatchAnswerSelected(this.inputValue);
+    }
+  }
+  handleInputFocus(event) {
+    if (this.showError) {
+      this.clearError();
+    }
+  }
+  updateInputValue() {
+    const input = this.root.querySelector(".quiz-input");
+    if (input) {
+      input.value = this.inputValue;
+    }
+  }
+  updateDisabledState() {
+    const input = this.root.querySelector(".quiz-input");
+    if (input) {
+      input.disabled = this.isDisabled;
+    }
+  }
+  updateErrorState() {
+    const input = this.root.querySelector(".quiz-input");
+    const errorElement = this.root.querySelector(".quiz-error-element");
+    if (input) {
+      if (this.showError) {
+        input.classList.add("quiz-input-error");
+        input.classList.remove("quiz-input-valid");
+      } else {
+        input.classList.remove("quiz-input-error");
+      }
+    }
+    if (errorElement) {
+      if (this.showError) {
+        errorElement.classList.remove("quiz-error-hidden");
+        errorElement.classList.add("quiz-error-visible");
+      } else {
+        errorElement.classList.remove("quiz-error-visible");
+        errorElement.classList.add("quiz-error-hidden");
+      }
+    }
+  }
+  updateErrorMessage() {
+    const errorElement = this.root.querySelector(".quiz-error-element");
+    if (errorElement) {
+      errorElement.textContent = this.errorMessage;
+    }
+  }
+  updateInputType() {
+    const input = this.root.querySelector(".quiz-input");
+    if (input) {
+      input.type = this.inputType;
+    }
+  }
+  dispatchAnswerChanged(value) {
+    const event = new CustomEvent("answer-changed", {
+      detail: {
+        questionId: this.questionData?.id,
+        value,
+        questionType: "text"
+      },
+      bubbles: true
+    });
+    this.dispatchEvent(event);
+  }
+  dispatchAnswerSelected(value) {
+    const event = new CustomEvent("answer-selected", {
+      detail: {
+        questionId: this.questionData?.id,
+        value,
+        questionType: "text"
+      },
+      bubbles: true
+    });
+    this.dispatchEvent(event);
+  }
+  // Public API methods
+  getValue() {
+    return this.inputValue;
+  }
+  setValue(value) {
+    this.inputValue = value || "";
+    this.setAttribute("value", this.inputValue);
+  }
+  setDisabled(disabled) {
+    this.isDisabled = disabled;
+    if (disabled) {
+      this.setAttribute("disabled", "");
+    } else {
+      this.removeAttribute("disabled");
+    }
+  }
+  showValidationError(message) {
+    this.errorMessage = message;
+    this.showError = true;
+    this.setAttribute("error-message", message);
+    this.setAttribute("show-error", "");
+  }
+  clearError() {
+    this.showError = false;
+    this.errorMessage = "";
+    this.removeAttribute("show-error");
+    this.removeAttribute("error-message");
+  }
+  showValidState() {
+    const input = this.root.querySelector(".quiz-input");
+    if (input) {
+      input.classList.add("quiz-input-valid");
+      input.classList.remove("quiz-input-error");
+    }
+  }
+  clearValidState() {
+    const input = this.root.querySelector(".quiz-input");
+    if (input) {
+      input.classList.remove("quiz-input-valid");
+    }
+  }
+  getQuestionData() {
+    return this.questionData;
+  }
+  setQuestionData(data) {
+    this.questionData = data;
+    this.setAttribute("question-data", JSON.stringify(data));
+  }
+  setInputType(type) {
+    this.inputType = type;
+    this.setAttribute("input-type", type);
+  }
+  // Validation helpers
+  isValid() {
+    return this.inputValue && this.inputValue.trim() !== "";
+  }
+  isEmpty() {
+    return !this.inputValue || this.inputValue.trim() === "";
+  }
+  // Focus management
+  focus() {
+    const input = this.root.querySelector(".quiz-input");
+    if (input) {
+      input.focus();
+    }
+  }
+  select() {
+    const input = this.root.querySelector(".quiz-input");
+    if (input) {
+      input.select();
+    }
+  }
+}
+customElements.define("quiz-text-input", QuizTextInputComponent);
+class QuizRatingComponent extends QuizBaseComponent {
+  static get observedAttributes() {
+    return ["question-data", "value", "disabled", "min-value", "max-value", "step"];
+  }
+  constructor() {
+    super();
+    this.questionData = null;
+    this.ratingValue = 5;
+    this.isDisabled = false;
+    this.minValue = 1;
+    this.maxValue = 10;
+    this.step = 1;
+  }
+  initialize() {
+    this.parseAttributes();
+  }
+  parseAttributes() {
+    const questionDataAttr = this.getAttribute("question-data");
+    if (questionDataAttr) {
+      try {
+        this.questionData = JSON.parse(questionDataAttr);
+      } catch (error) {
+        console.error("Quiz Rating: Invalid question-data JSON:", error);
+        this.questionData = null;
+      }
+    }
+    this.ratingValue = this.getNumberAttribute("value", 5);
+    this.isDisabled = this.getBooleanAttribute("disabled", false);
+    this.minValue = this.getNumberAttribute("min-value", 1);
+    this.maxValue = this.getNumberAttribute("max-value", 10);
+    this.step = this.getNumberAttribute("step", 1);
+    this.ratingValue = Math.max(this.minValue, Math.min(this.maxValue, this.ratingValue));
+  }
+  handleAttributeChange(name, oldValue, newValue) {
+    switch (name) {
+      case "question-data":
+        this.parseAttributes();
+        break;
+      case "value":
+        this.ratingValue = this.getNumberAttribute("value", 5);
+        this.ratingValue = Math.max(this.minValue, Math.min(this.maxValue, this.ratingValue));
+        this.updateRatingValue();
+        break;
+      case "disabled":
+        this.isDisabled = this.getBooleanAttribute("disabled", false);
+        this.updateDisabledState();
+        break;
+      case "min-value":
+      case "max-value":
+      case "step":
+        this.parseAttributes();
+        break;
+    }
+  }
+  getTemplate() {
+    if (!this.questionData) {
+      return `
+				<div class="quiz-error-container">
+					<p class="quiz-error-text">Invalid question configuration</p>
+				</div>
+			`;
+    }
+    const questionId = this.questionData.id;
+    return `
 			<div class="quiz-rating-container">
 				<div class="quiz-rating-input-wrapper">
 					<input
 						type="range"
-						id="question-${this.questionData.id}"
+						id="question-${questionId}"
 						class="quiz-range"
 						min="${this.minValue}"
 						max="${this.maxValue}"
 						step="${this.step}"
 						value="${this.ratingValue}"
-						${this.isDisabled?"disabled":""}
+						${this.isDisabled ? "disabled" : ""}
 					>
 					<div class="quiz-rating-value" aria-live="polite">
 						<span class="quiz-rating-current">${this.ratingValue}</span>
@@ -2880,17 +5538,18 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 				</div>
 				<div class="quiz-range-labels">
 					<span class="quiz-range-label-min">${this.minValue}</span>
-					<span class="quiz-range-label-mid">${Math.floor((this.minValue+this.maxValue)/2)}</span>
+					<span class="quiz-range-label-mid">${Math.floor((this.minValue + this.maxValue) / 2)}</span>
 					<span class="quiz-range-label-max">${this.maxValue}</span>
 				</div>
 			</div>
-		`:`
-				<div class="quiz-error-container">
-					<p class="quiz-error-text">Invalid question configuration</p>
-				</div>
-			`}async getStyles(){const e=super.getStyles(),t=await d.getQuizStyles();return`
-			${e}
-			${t}
+		`;
+  }
+  async getStyles() {
+    const baseStyles = super.getStyles();
+    const quizStyles = await sharedStyles.getQuizStyles();
+    return `
+			${baseStyles}
+			${quizStyles}
 
 			/* Component-specific styles */
 			.quiz-rating-container {
@@ -3078,4 +5737,352 @@ const H="modulepreload",j=function(l){return"/"+l},k={},h=function(e,t,i){let r=
 			.quiz-rating-value.updating {
 				transform: translateX(-50%) scale(1.1);
 			}
-		`}setupEventListeners(){this.root.addEventListener("input",this.handleRatingChange.bind(this)),this.root.addEventListener("change",this.handleRatingSet.bind(this))}handleRatingChange(e){if(this.isDisabled)return;const t=e.target;if(t.classList.contains("quiz-range")){const i=parseInt(t.value,10);this.ratingValue=i,this.updateRatingDisplay(),this.dispatchAnswerChanged(i)}}handleRatingSet(e){if(this.isDisabled)return;const t=e.target;if(t.classList.contains("quiz-range")){const i=parseInt(t.value,10);this.ratingValue=i,this.dispatchAnswerSelected(i)}}updateRatingValue(){const e=this.root.querySelector(".quiz-range");e&&(e.value=this.ratingValue),this.updateRatingDisplay()}updateRatingDisplay(){const e=this.root.querySelector(".quiz-rating-current");if(e){e.textContent=this.ratingValue;const t=this.root.querySelector(".quiz-rating-value");t&&(t.classList.add("updating"),setTimeout(()=>{t.classList.remove("updating")},200))}}updateDisabledState(){const e=this.root.querySelector(".quiz-range");e&&(e.disabled=this.isDisabled)}dispatchAnswerChanged(e){const t=new CustomEvent("answer-changed",{detail:{questionId:this.questionData?.id,value:e,questionType:"rating"},bubbles:!0});this.dispatchEvent(t)}dispatchAnswerSelected(e){const t=new CustomEvent("answer-selected",{detail:{questionId:this.questionData?.id,value:e,questionType:"rating"},bubbles:!0});this.dispatchEvent(t)}getValue(){return this.ratingValue}setValue(e){const t=parseInt(e,10);isNaN(t)||(this.ratingValue=Math.max(this.minValue,Math.min(this.maxValue,t)),this.setAttribute("value",this.ratingValue.toString()))}setDisabled(e){this.isDisabled=e,e?this.setAttribute("disabled",""):this.removeAttribute("disabled")}getQuestionData(){return this.questionData}setQuestionData(e){this.questionData=e,this.setAttribute("question-data",JSON.stringify(e))}setRange(e,t,i=1){this.minValue=e,this.maxValue=t,this.step=i,this.setAttribute("min-value",e.toString()),this.setAttribute("max-value",t.toString()),this.setAttribute("step",i.toString()),this.ratingValue=Math.max(this.minValue,Math.min(this.maxValue,this.ratingValue)),this.setAttribute("value",this.ratingValue.toString())}focus(){const e=this.root.querySelector(".quiz-range");e&&e.focus()}}customElements.define("quiz-rating",_);class X{constructor(){this.initialized=!1,this.config=null}async init(e={}){if(this.initialized){console.warn("Quiz components already initialized");return}this.config={cssUrl:e.cssUrl||window.QUIZ_CSS_URL||window.QUIZ_CONFIG?.cssUrl,debug:e.debug||window.QUIZ_CONFIG?.debug||!1,fallbackCssUrl:e.fallbackCssUrl||"/assets/quiz.css",...e},this.config.cssUrl&&d.setQuizCssUrl(this.config.cssUrl),this.config.debug&&(console.log("🎯 Quiz Web Components Initialization:",this.config),await this.validateConfiguration()),this.initialized=!0}async validateConfiguration(){const e=this.config.cssUrl||this.config.fallbackCssUrl;console.log("🔍 Validating quiz components configuration..."),console.log("📍 CSS URL:",e);try{const i=await d.getQuizStyles(e);i&&i.length>0?console.log("✅ Quiz CSS loaded successfully:",`${i.length} characters`):console.warn("⚠️ Quiz CSS loaded but appears empty")}catch(i){console.error("❌ Failed to load quiz CSS:",i),console.log("🔄 Will attempt fallback loading when components render")}[{name:"QUIZ_CSS_URL",value:window.QUIZ_CSS_URL},{name:"QUIZ_CONFIG",value:window.QUIZ_CONFIG}].forEach(i=>{i.value?console.log(`✅ ${i.name}:`,i.value):console.warn(`⚠️ ${i.name} not found`)})}getConfig(){return this.config}isInitialized(){return this.initialized}areComponentsAvailable(){return["quiz-multiple-choice","quiz-checkbox-group","quiz-dropdown","quiz-text-input","quiz-rating"].every(t=>customElements.get(t)!==void 0)}setCssUrl(e){this.config&&(this.config.cssUrl=e),d.setQuizCssUrl(e),this.config?.debug&&console.log("🎨 CSS URL updated to:",e)}}const S=new X;typeof window<"u"&&(document.readyState==="loading"?document.addEventListener("DOMContentLoaded",()=>{(window.QUIZ_CONFIG||window.QUIZ_CSS_URL)&&S.init()}):(window.QUIZ_CONFIG||window.QUIZ_CSS_URL)&&S.init());const C={"quiz-calendar-icon":{module:f,category:"icons",description:"Calendar icon for date-related benefits"},"quiz-clock-icon":{module:m,category:"icons",description:"Clock icon for time-related benefits"},"quiz-checkmark-icon":{module:q,category:"icons",description:"Checkmark icon for success states"},"quiz-coverage-card":{module:v,category:"content",description:"Insurance coverage information card"},"quiz-benefit-item":{module:z,category:"content",description:"Individual benefit item with icon and text"},"quiz-action-section":{module:y,category:"content",description:"Call-to-action section with buttons and info"},"quiz-error-display":{module:x,category:"content",description:"Error display with different severity levels"},"quiz-loading-display":{module:w,category:"content",description:"Loading display with progress and step indicators"},"quiz-faq-section":{module:$,category:"content",description:"FAQ section with collapsible questions"},"quiz-payer-search":{module:A,category:"content",description:"Insurance payer search with autocomplete"},"quiz-result-card":{module:E,category:"content",description:"Result card for quiz outcomes"},"quiz-form-step":{module:D,category:"content",description:"Complete form step with questions and validation"},"quiz-step-container":{module:L,category:"content",description:"Container for quiz steps with navigation"},"quiz-scheduling-result":{module:M,category:"content",description:"Scheduling result display with success/error states"},"quiz-multiple-choice":{module:T,category:"questions",description:"Multiple choice question with card-style options"},"quiz-checkbox-group":{module:V,category:"questions",description:"Checkbox group with multiple selection support"},"quiz-dropdown":{module:I,category:"questions",description:"Dropdown selection with validation"},"quiz-text-input":{module:P,category:"questions",description:"Text input with validation and error display"},"quiz-rating":{module:_,category:"questions",description:"Rating input with range slider (1-10 scale)"}};function K(){const l=performance.now();let e=0;console.log("🚀 Loading Quiz Web Components..."),Object.entries(C).forEach(([i,r])=>{if(c.isRegistered(i))console.log(`  ~ ${i} already registered`);else try{e++,console.log(`  ✓ ${i} (${r.category})`)}catch(s){console.error(`  ✗ Failed to load ${i}:`,s)}});const t=performance.now();return console.log(`🎉 Quiz Components loaded: ${e} components in ${(t-l).toFixed(2)}ms`),{loaded:e,total:Object.keys(C).length,loadTime:t-l}}K();
+		`;
+  }
+  setupEventListeners() {
+    this.root.addEventListener("input", this.handleRatingChange.bind(this));
+    this.root.addEventListener("change", this.handleRatingSet.bind(this));
+  }
+  handleRatingChange(event) {
+    if (this.isDisabled) return;
+    const range = event.target;
+    if (range.classList.contains("quiz-range")) {
+      const newValue = parseInt(range.value, 10);
+      this.ratingValue = newValue;
+      this.updateRatingDisplay();
+      this.dispatchAnswerChanged(newValue);
+    }
+  }
+  handleRatingSet(event) {
+    if (this.isDisabled) return;
+    const range = event.target;
+    if (range.classList.contains("quiz-range")) {
+      const newValue = parseInt(range.value, 10);
+      this.ratingValue = newValue;
+      this.dispatchAnswerSelected(newValue);
+    }
+  }
+  updateRatingValue() {
+    const range = this.root.querySelector(".quiz-range");
+    if (range) {
+      range.value = this.ratingValue;
+    }
+    this.updateRatingDisplay();
+  }
+  updateRatingDisplay() {
+    const valueDisplay = this.root.querySelector(".quiz-rating-current");
+    if (valueDisplay) {
+      valueDisplay.textContent = this.ratingValue;
+      const valueContainer = this.root.querySelector(".quiz-rating-value");
+      if (valueContainer) {
+        valueContainer.classList.add("updating");
+        setTimeout(() => {
+          valueContainer.classList.remove("updating");
+        }, 200);
+      }
+    }
+  }
+  updateDisabledState() {
+    const range = this.root.querySelector(".quiz-range");
+    if (range) {
+      range.disabled = this.isDisabled;
+    }
+  }
+  dispatchAnswerChanged(value) {
+    const event = new CustomEvent("answer-changed", {
+      detail: {
+        questionId: this.questionData?.id,
+        value,
+        questionType: "rating"
+      },
+      bubbles: true
+    });
+    this.dispatchEvent(event);
+  }
+  dispatchAnswerSelected(value) {
+    const event = new CustomEvent("answer-selected", {
+      detail: {
+        questionId: this.questionData?.id,
+        value,
+        questionType: "rating"
+      },
+      bubbles: true
+    });
+    this.dispatchEvent(event);
+  }
+  // Public API methods
+  getValue() {
+    return this.ratingValue;
+  }
+  setValue(value) {
+    const numValue = parseInt(value, 10);
+    if (!isNaN(numValue)) {
+      this.ratingValue = Math.max(this.minValue, Math.min(this.maxValue, numValue));
+      this.setAttribute("value", this.ratingValue.toString());
+    }
+  }
+  setDisabled(disabled) {
+    this.isDisabled = disabled;
+    if (disabled) {
+      this.setAttribute("disabled", "");
+    } else {
+      this.removeAttribute("disabled");
+    }
+  }
+  getQuestionData() {
+    return this.questionData;
+  }
+  setQuestionData(data) {
+    this.questionData = data;
+    this.setAttribute("question-data", JSON.stringify(data));
+  }
+  setRange(min, max, step = 1) {
+    this.minValue = min;
+    this.maxValue = max;
+    this.step = step;
+    this.setAttribute("min-value", min.toString());
+    this.setAttribute("max-value", max.toString());
+    this.setAttribute("step", step.toString());
+    this.ratingValue = Math.max(this.minValue, Math.min(this.maxValue, this.ratingValue));
+    this.setAttribute("value", this.ratingValue.toString());
+  }
+  // Focus management
+  focus() {
+    const range = this.root.querySelector(".quiz-range");
+    if (range) {
+      range.focus();
+    }
+  }
+}
+customElements.define("quiz-rating", QuizRatingComponent);
+class QuizComponentsInit {
+  constructor() {
+    this.initialized = false;
+    this.config = null;
+  }
+  /**
+   * Initialize quiz components with configuration
+   */
+  async init(config = {}) {
+    if (this.initialized) {
+      console.warn("Quiz components already initialized");
+      return;
+    }
+    this.config = {
+      cssUrl: config.cssUrl || window.QUIZ_CSS_URL || window.QUIZ_CONFIG?.cssUrl,
+      debug: config.debug || window.QUIZ_CONFIG?.debug || false,
+      fallbackCssUrl: config.fallbackCssUrl || "/assets/quiz.css",
+      ...config
+    };
+    if (this.config.cssUrl) {
+      sharedStyles.setQuizCssUrl(this.config.cssUrl);
+    }
+    if (this.config.debug) {
+      console.log("🎯 Quiz Web Components Initialization:", this.config);
+      await this.validateConfiguration();
+    }
+    this.initialized = true;
+  }
+  /**
+   * Validate configuration and CSS accessibility
+   */
+  async validateConfiguration() {
+    const cssUrl = this.config.cssUrl || this.config.fallbackCssUrl;
+    console.log("🔍 Validating quiz components configuration...");
+    console.log("📍 CSS URL:", cssUrl);
+    try {
+      const styles = await sharedStyles.getQuizStyles(cssUrl);
+      if (styles && styles.length > 0) {
+        console.log("✅ Quiz CSS loaded successfully:", `${styles.length} characters`);
+      } else {
+        console.warn("⚠️ Quiz CSS loaded but appears empty");
+      }
+    } catch (error) {
+      console.error("❌ Failed to load quiz CSS:", error);
+      console.log("🔄 Will attempt fallback loading when components render");
+    }
+    const checks = [
+      { name: "QUIZ_CSS_URL", value: window.QUIZ_CSS_URL },
+      { name: "QUIZ_CONFIG", value: window.QUIZ_CONFIG }
+    ];
+    checks.forEach((check) => {
+      if (check.value) {
+        console.log(`✅ ${check.name}:`, check.value);
+      } else {
+        console.warn(`⚠️ ${check.name} not found`);
+      }
+    });
+  }
+  /**
+   * Get current configuration
+   */
+  getConfig() {
+    return this.config;
+  }
+  /**
+   * Check if components are initialized
+   */
+  isInitialized() {
+    return this.initialized;
+  }
+  /**
+   * Check if Web Components are available in the browser
+   */
+  areComponentsAvailable() {
+    const requiredComponents = ["quiz-multiple-choice", "quiz-checkbox-group", "quiz-dropdown", "quiz-text-input", "quiz-rating"];
+    return requiredComponents.every((componentName) => {
+      return customElements.get(componentName) !== void 0;
+    });
+  }
+  /**
+   * Manually set CSS URL (useful for testing)
+   */
+  setCssUrl(url) {
+    if (this.config) {
+      this.config.cssUrl = url;
+    }
+    sharedStyles.setQuizCssUrl(url);
+    if (this.config?.debug) {
+      console.log("🎨 CSS URL updated to:", url);
+    }
+  }
+}
+const quizComponentsInit = new QuizComponentsInit();
+if (typeof window !== "undefined") {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      if (window.QUIZ_CONFIG || window.QUIZ_CSS_URL) {
+        quizComponentsInit.init();
+      }
+    });
+  } else {
+    if (window.QUIZ_CONFIG || window.QUIZ_CSS_URL) {
+      quizComponentsInit.init();
+    }
+  }
+}
+const COMPONENT_CONFIG = {
+  // Core icons
+  "quiz-calendar-icon": {
+    module: QuizCalendarIcon,
+    category: "icons",
+    description: "Calendar icon for date-related benefits"
+  },
+  "quiz-clock-icon": {
+    module: QuizClockIcon,
+    category: "icons",
+    description: "Clock icon for time-related benefits"
+  },
+  "quiz-checkmark-icon": {
+    module: QuizCheckmarkIcon,
+    category: "icons",
+    description: "Checkmark icon for success states"
+  },
+  // Content components
+  "quiz-coverage-card": {
+    module: QuizCoverageCard,
+    category: "content",
+    description: "Insurance coverage information card"
+  },
+  "quiz-benefit-item": {
+    module: QuizBenefitItem,
+    category: "content",
+    description: "Individual benefit item with icon and text"
+  },
+  "quiz-action-section": {
+    module: QuizActionSection,
+    category: "content",
+    description: "Call-to-action section with buttons and info"
+  },
+  "quiz-error-display": {
+    module: QuizErrorDisplay,
+    category: "content",
+    description: "Error display with different severity levels"
+  },
+  "quiz-loading-display": {
+    module: QuizLoadingDisplay,
+    category: "content",
+    description: "Loading display with progress and step indicators"
+  },
+  "quiz-faq-section": {
+    module: QuizFAQSection,
+    category: "content",
+    description: "FAQ section with collapsible questions"
+  },
+  "quiz-payer-search": {
+    module: QuizPayerSearch,
+    category: "content",
+    description: "Insurance payer search with autocomplete"
+  },
+  "quiz-result-card": {
+    module: QuizResultCard,
+    category: "content",
+    description: "Result card for quiz outcomes"
+  },
+  "quiz-form-step": {
+    module: QuizFormStep,
+    category: "content",
+    description: "Complete form step with questions and validation"
+  },
+  "quiz-step-container": {
+    module: QuizStepContainer,
+    category: "content",
+    description: "Container for quiz steps with navigation"
+  },
+  "quiz-scheduling-result": {
+    module: QuizSchedulingResult,
+    category: "content",
+    description: "Scheduling result display with success/error states"
+  },
+  // Question Input Components
+  "quiz-multiple-choice": {
+    module: QuizMultipleChoiceComponent,
+    category: "questions",
+    description: "Multiple choice question with card-style options"
+  },
+  "quiz-checkbox-group": {
+    module: QuizCheckboxGroupComponent,
+    category: "questions",
+    description: "Checkbox group with multiple selection support"
+  },
+  "quiz-dropdown": {
+    module: QuizDropdownComponent,
+    category: "questions",
+    description: "Dropdown selection with validation"
+  },
+  "quiz-text-input": {
+    module: QuizTextInputComponent,
+    category: "questions",
+    description: "Text input with validation and error display"
+  },
+  "quiz-rating": {
+    module: QuizRatingComponent,
+    category: "questions",
+    description: "Rating input with range slider (1-10 scale)"
+  }
+};
+function loadQuizComponents() {
+  const startTime = performance.now();
+  let loadedCount = 0;
+  console.log("🚀 Loading Quiz Web Components...");
+  Object.entries(COMPONENT_CONFIG).forEach(([tagName, config]) => {
+    if (!quizComponentRegistry.isRegistered(tagName)) {
+      try {
+        loadedCount++;
+        console.log(`  ✓ ${tagName} (${config.category})`);
+      } catch (error) {
+        console.error(`  ✗ Failed to load ${tagName}:`, error);
+      }
+    } else {
+      console.log(`  ~ ${tagName} already registered`);
+    }
+  });
+  const endTime = performance.now();
+  console.log(`🎉 Quiz Components loaded: ${loadedCount} components in ${(endTime - startTime).toFixed(2)}ms`);
+  return {
+    loaded: loadedCount,
+    total: Object.keys(COMPONENT_CONFIG).length,
+    loadTime: endTime - startTime
+  };
+}
+loadQuizComponents();
