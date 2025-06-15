@@ -241,6 +241,7 @@ export class QuizDropdownComponent extends QuizBaseComponent {
 		const select = event.target;
 		if (select.classList.contains("quiz-select")) {
 			const selectedValue = select.value;
+			console.log(`Dropdown ${this.questionData?.id}: Selection changed to "${selectedValue}", showError: ${this.showError}`);
 			this.selectedValue = selectedValue;
 			this.dispatchAnswerSelected(selectedValue);
 
@@ -256,8 +257,10 @@ export class QuizDropdownComponent extends QuizBaseComponent {
 
 		const select = event.target;
 		if (select.classList.contains("quiz-select")) {
-			// Dispatch validation event for blur validation
-			this.dispatchValidationRequested(this.selectedValue);
+			// Small delay to ensure change event processing is complete
+			setTimeout(() => {
+				this.dispatchValidationRequested(this.selectedValue);
+			}, 10);
 		}
 	}
 
@@ -356,10 +359,15 @@ export class QuizDropdownComponent extends QuizBaseComponent {
 	}
 
 	clearError() {
+		console.log(`Dropdown ${this.questionData?.id}: Clearing error`);
 		this.showError = false;
 		this.errorMessage = "";
 		this.removeAttribute("show-error");
 		this.removeAttribute("error-message");
+
+		// Immediately update the UI
+		this.updateErrorState();
+		this.updateErrorMessage();
 	}
 
 	getQuestionData() {

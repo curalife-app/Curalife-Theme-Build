@@ -2029,9 +2029,20 @@ class ModularQuiz {
 		const webComponent = this.questionContainer.querySelector(componentTag);
 		if (webComponent) {
 			webComponent.addEventListener("validation-requested", event => {
-				const { questionId, value } = event.detail;
+				const { questionId } = event.detail;
 				if (questionId === question.id) {
-					this._validateAndUpdateField(question, value);
+					// Get the current value directly from the Web Component to ensure accuracy
+					let currentValue;
+					if (webComponent.getValue) {
+						currentValue = webComponent.getValue();
+					} else if (webComponent.getSelectedValue) {
+						currentValue = webComponent.getSelectedValue();
+					} else {
+						// Fallback to event value
+						currentValue = event.detail.value;
+					}
+
+					this._validateAndUpdateField(question, currentValue);
 				}
 			});
 		}
@@ -2309,6 +2320,14 @@ class ModularQuiz {
 	_validateAndUpdateField(question, value) {
 		const validationResult = this._validateFieldValue(question, value);
 		const webComponent = this.questionContainer.querySelector(`[question-id="${question.id}"]`);
+
+		// Debug logging
+		console.log(`Validation for ${question.id}:`, {
+			value,
+			isValid: validationResult.isValid,
+			errorMessage: validationResult.errorMessage,
+			hasWebComponent: !!webComponent
+		});
 
 		if (webComponent) {
 			// Update Web Component validation state

@@ -239,6 +239,7 @@ export class QuizTextInputComponent extends QuizBaseComponent {
 		const input = event.target;
 		if (input.classList.contains("quiz-input")) {
 			const newValue = input.value;
+			console.log(`Text input ${this.questionData?.id}: Input changed to "${newValue}", showError: ${this.showError}`);
 			this.inputValue = newValue;
 			this.dispatchAnswerChanged(newValue);
 
@@ -257,8 +258,10 @@ export class QuizTextInputComponent extends QuizBaseComponent {
 			// Dispatch answer-selected for compatibility with existing quiz logic
 			this.dispatchAnswerSelected(this.inputValue);
 
-			// Dispatch validation event for blur validation
-			this.dispatchValidationRequested(this.inputValue);
+			// Small delay to ensure input change processing is complete
+			setTimeout(() => {
+				this.dispatchValidationRequested(this.inputValue);
+			}, 10);
 		}
 	}
 
@@ -384,10 +387,15 @@ export class QuizTextInputComponent extends QuizBaseComponent {
 	}
 
 	clearError() {
+		console.log(`Text input ${this.questionData?.id}: Clearing error`);
 		this.showError = false;
 		this.errorMessage = "";
 		this.removeAttribute("show-error");
 		this.removeAttribute("error-message");
+
+		// Immediately update the UI
+		this.updateErrorState();
+		this.updateErrorMessage();
 	}
 
 	showValidState() {

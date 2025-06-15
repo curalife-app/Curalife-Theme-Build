@@ -2737,6 +2737,7 @@ const _QuizPayerSearch = class _QuizPayerSearch extends QuizBaseComponent {
     this.dispatchEvent(event);
   }
   clearError() {
+    console.log(`Payer search ${this.questionId}: Clearing error`);
     this.showError = false;
     this.errorMessage = "";
     this.removeAttribute("show-error");
@@ -5170,6 +5171,7 @@ const _QuizDropdownComponent = class _QuizDropdownComponent extends QuizBaseComp
     const select = event.target;
     if (select.classList.contains("quiz-select")) {
       const selectedValue = select.value;
+      console.log(`Dropdown ${this.questionData?.id}: Selection changed to "${selectedValue}", showError: ${this.showError}`);
       this.selectedValue = selectedValue;
       this.dispatchAnswerSelected(selectedValue);
       if (this.showError && selectedValue) {
@@ -5181,7 +5183,9 @@ const _QuizDropdownComponent = class _QuizDropdownComponent extends QuizBaseComp
     if (this.isDisabled) return;
     const select = event.target;
     if (select.classList.contains("quiz-select")) {
-      this.dispatchValidationRequested(this.selectedValue);
+      setTimeout(() => {
+        this.dispatchValidationRequested(this.selectedValue);
+      }, 10);
     }
   }
   updateSelectedState() {
@@ -5267,10 +5271,13 @@ const _QuizDropdownComponent = class _QuizDropdownComponent extends QuizBaseComp
     this.setAttribute("show-error", "");
   }
   clearError() {
+    console.log(`Dropdown ${this.questionData?.id}: Clearing error`);
     this.showError = false;
     this.errorMessage = "";
     this.removeAttribute("show-error");
     this.removeAttribute("error-message");
+    this.updateErrorState();
+    this.updateErrorMessage();
   }
   getQuestionData() {
     return this.questionData;
@@ -5485,6 +5492,7 @@ const _QuizTextInputComponent = class _QuizTextInputComponent extends QuizBaseCo
     const input = event.target;
     if (input.classList.contains("quiz-input")) {
       const newValue = input.value;
+      console.log(`Text input ${this.questionData?.id}: Input changed to "${newValue}", showError: ${this.showError}`);
       this.inputValue = newValue;
       this.dispatchAnswerChanged(newValue);
       if (this.showError && newValue.trim()) {
@@ -5497,7 +5505,9 @@ const _QuizTextInputComponent = class _QuizTextInputComponent extends QuizBaseCo
     const input = event.target;
     if (input.classList.contains("quiz-input")) {
       this.dispatchAnswerSelected(this.inputValue);
-      this.dispatchValidationRequested(this.inputValue);
+      setTimeout(() => {
+        this.dispatchValidationRequested(this.inputValue);
+      }, 10);
     }
   }
   handleInputFocus(event) {
@@ -5606,10 +5616,13 @@ const _QuizTextInputComponent = class _QuizTextInputComponent extends QuizBaseCo
     this.setAttribute("show-error", "");
   }
   clearError() {
+    console.log(`Text input ${this.questionData?.id}: Clearing error`);
     this.showError = false;
     this.errorMessage = "";
     this.removeAttribute("show-error");
     this.removeAttribute("error-message");
+    this.updateErrorState();
+    this.updateErrorMessage();
   }
   showValidState() {
     const input = this.root.querySelector(".quiz-input");

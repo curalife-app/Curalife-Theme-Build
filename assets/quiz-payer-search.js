@@ -334,6 +334,7 @@ export class QuizPayerSearch extends QuizBaseComponent {
 	}
 
 	clearError() {
+		console.log(`Payer search ${this.questionId}: Clearing error`);
 		this.showError = false;
 		this.errorMessage = "";
 		this.removeAttribute("show-error");
