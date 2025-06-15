@@ -38,7 +38,7 @@ class ModularQuiz {
 		this._lastStatusMessage = ""; // To prevent duplicate notifications for same status
 
 		// Initialize the modular notification system and Stedi error mappings asynchronously
-		Promise.all([this._initializeNotificationManager(), this._initializeStediErrorMappings()]).then(() => {
+		Promise.all([this._initializeNotificationManager(), this._initializeStediErrorMappings(), this._initializeWebComponents()]).then(() => {
 			this.init();
 		});
 	}
@@ -115,6 +115,41 @@ class ModularQuiz {
 		} catch (error) {
 			console.error("❌ Failed to load Stedi error mappings:", error);
 			this.stediErrorMappings = null;
+			return false;
+		}
+	}
+
+	async _initializeWebComponents() {
+		try {
+			// Get the quiz components URL from the data attribute set by Liquid
+			const quizComponentsUrl = this.container.getAttribute("data-quiz-components-url");
+
+			if (!quizComponentsUrl) {
+				console.warn("Quiz components URL not found, Web Components will not be available");
+				return false;
+			}
+
+			console.log("🔗 Loading Quiz Web Components from:", quizComponentsUrl);
+
+			// Dynamic import of the Quiz Components system
+			const { QuizComponentsInit } = await import(quizComponentsUrl);
+
+			// Initialize the Web Components system
+			this.webComponentsInit = new QuizComponentsInit();
+
+			// Get CSS URL from container data attribute
+			const cssUrl = this.container.getAttribute("data-quiz-css-url");
+
+			await this.webComponentsInit.init({
+				cssUrl: cssUrl,
+				debug: this.isTestMode
+			});
+
+			console.log("✅ Quiz Web Components loaded successfully");
+			return true;
+		} catch (error) {
+			console.error("❌ Failed to load Quiz Web Components:", error);
+			this.webComponentsInit = null;
 			return false;
 		}
 	}
@@ -1864,6 +1899,28 @@ class ModularQuiz {
 	}
 
 	renderPayerSearch(question, response) {
+		// Use Web Component if available, otherwise fallback to legacy HTML
+		if (this.webComponentsInit && this.webComponentsInit.isInitialized()) {
+			const commonPayers = this.quizData.commonPayers || [];
+			const selectedPayer = response.answer;
+
+			// Create the Web Component
+			const payerSearchComponent = document.createElement("quiz-payer-search");
+			payerSearchComponent.setAttribute("question-id", question.id);
+			payerSearchComponent.setAttribute("placeholder", question.placeholder || "Start typing to search for your insurance plan...");
+			payerSearchComponent.setAttribute("common-payers", JSON.stringify(commonPayers));
+
+			// Set selected value if exists
+			if (selectedPayer && typeof selectedPayer === "string") {
+				const selectedDisplayName = this._resolvePayerDisplayName(selectedPayer) || "";
+				payerSearchComponent.setAttribute("selected-payer", selectedPayer);
+				payerSearchComponent.setAttribute("selected-display-name", selectedDisplayName);
+			}
+
+			return payerSearchComponent.outerHTML;
+		}
+
+		// Legacy fallback HTML (original implementation)
 		const selectedPayer = response.answer;
 		const placeholder = question.placeholder || "Start typing to search for your insurance plan...";
 		let selectedDisplayName = "";
@@ -2335,26 +2392,55 @@ class ModularQuiz {
 	}
 
 	_attachPayerSearchListeners(question) {
-		const searchInput = this.questionContainer.querySelector(`#question-${question.id}`);
-		const dropdown = this.questionContainer.querySelector(`#search-dropdown-${question.id}`);
+		// Check if Web Component is being used
+		const webComponent = this.questionContainer.querySelector(`quiz-payer-search[question-id="${question.id}"]`);
 
-		if (searchInput && dropdown) {
-			this._setupPayerSearchBehavior(question, searchInput, dropdown, selectedPayer => {
-				this.handleAnswer(selectedPayer);
+		if (webComponent) {
+			// Handle Web Component events
+			webComponent.addEventListener("payer-selected", event => {
+				const { questionId, payer } = event.detail;
+				if (questionId === question.id) {
+					this.handleAnswer(payer.stediId || payer.id);
+				}
 			});
-		}
-	}
-
-	_attachPayerSearchFormListeners(question) {
-		setTimeout(() => {
+		} else {
+			// Legacy HTML handling
 			const searchInput = this.questionContainer.querySelector(`#question-${question.id}`);
 			const dropdown = this.questionContainer.querySelector(`#search-dropdown-${question.id}`);
 
 			if (searchInput && dropdown) {
 				this._setupPayerSearchBehavior(question, searchInput, dropdown, selectedPayer => {
-					this.handleFormAnswer(question.id, selectedPayer);
-					this.updateNavigation();
+					this.handleAnswer(selectedPayer);
 				});
+			}
+		}
+	}
+
+	_attachPayerSearchFormListeners(question) {
+		setTimeout(() => {
+			// Check if Web Component is being used
+			const webComponent = this.questionContainer.querySelector(`quiz-payer-search[question-id="${question.id}"]`);
+
+			if (webComponent) {
+				// Handle Web Component events
+				webComponent.addEventListener("payer-selected", event => {
+					const { questionId, payer } = event.detail;
+					if (questionId === question.id) {
+						this.handleFormAnswer(question.id, payer.stediId || payer.id);
+						this.updateNavigation();
+					}
+				});
+			} else {
+				// Legacy HTML handling
+				const searchInput = this.questionContainer.querySelector(`#question-${question.id}`);
+				const dropdown = this.questionContainer.querySelector(`#search-dropdown-${question.id}`);
+
+				if (searchInput && dropdown) {
+					this._setupPayerSearchBehavior(question, searchInput, dropdown, selectedPayer => {
+						this.handleFormAnswer(question.id, selectedPayer);
+						this.updateNavigation();
+					});
+				}
 			}
 		}, 100);
 	}
@@ -3640,6 +3726,16 @@ class ModularQuiz {
 	}
 
 	_generateGenericResultsHTML(resultData, resultUrl) {
+		// Use Web Component if available, otherwise fallback to legacy HTML
+		if (this.webComponentsInit && this.webComponentsInit.isInitialized()) {
+			const resultCard = document.createElement("quiz-result-card");
+			resultCard.setAttribute("result-type", "generic");
+			resultCard.setAttribute("result-data", JSON.stringify(resultData || {}));
+			resultCard.setAttribute("result-url", resultUrl);
+			return resultCard.outerHTML;
+		}
+
+		// Legacy fallback HTML (original implementation)
 		return `
 			<div class="quiz-results-container">
 				<div class="quiz-results-header">
@@ -3674,6 +3770,16 @@ class ModularQuiz {
 	}
 
 	_generateErrorResultsHTML(resultUrl, errorMessage) {
+		// Use Web Component if available, otherwise fallback to legacy HTML
+		if (this.webComponentsInit && this.webComponentsInit.isInitialized()) {
+			const resultCard = document.createElement("quiz-result-card");
+			resultCard.setAttribute("result-type", "error");
+			resultCard.setAttribute("result-data", JSON.stringify({ error: errorMessage }));
+			resultCard.setAttribute("result-url", resultUrl);
+			return resultCard.outerHTML;
+		}
+
+		// Legacy fallback HTML (original implementation)
 		return `
 			<div class="quiz-results-container">
 				<div class="quiz-results-header">
@@ -3718,6 +3824,16 @@ class ModularQuiz {
 	}
 
 	_generateEligibleInsuranceResultsHTML(resultData, resultUrl) {
+		// Use Web Component if available, otherwise fallback to legacy HTML
+		if (this.webComponentsInit && this.webComponentsInit.isInitialized()) {
+			const resultCard = document.createElement("quiz-result-card");
+			resultCard.setAttribute("result-type", "eligible");
+			resultCard.setAttribute("result-data", JSON.stringify(resultData));
+			resultCard.setAttribute("result-url", resultUrl);
+			return resultCard.outerHTML;
+		}
+
+		// Legacy fallback HTML (original implementation)
 		const sessionsCovered = resultData.sessionsCovered || 5;
 		const planEnd = resultData.planEnd || "Dec 31, 2025";
 
@@ -3751,6 +3867,16 @@ class ModularQuiz {
 	}
 
 	_generateNotCoveredInsuranceResultsHTML(resultData, resultUrl) {
+		// Use Web Component if available, otherwise fallback to legacy HTML
+		if (this.webComponentsInit && this.webComponentsInit.isInitialized()) {
+			const resultCard = document.createElement("quiz-result-card");
+			resultCard.setAttribute("result-type", "not-covered");
+			resultCard.setAttribute("result-data", JSON.stringify(resultData));
+			resultCard.setAttribute("result-url", resultUrl);
+			return resultCard.outerHTML;
+		}
+
+		// Legacy fallback HTML (original implementation)
 		const messages = this.quizData.ui?.resultMessages?.notCovered || {};
 		const userMessage = resultData.userMessage || "Your insurance plan doesn't cover nutrition counseling, but we have affordable options available.";
 
@@ -3798,6 +3924,16 @@ class ModularQuiz {
 	}
 
 	_generateAAAErrorResultsHTML(resultData, resultUrl) {
+		// Use Web Component if available, otherwise fallback to legacy HTML
+		if (this.webComponentsInit && this.webComponentsInit.isInitialized()) {
+			const resultCard = document.createElement("quiz-result-card");
+			resultCard.setAttribute("result-type", "aaa-error");
+			resultCard.setAttribute("result-data", JSON.stringify(resultData));
+			resultCard.setAttribute("result-url", resultUrl);
+			return resultCard.outerHTML;
+		}
+
+		// Legacy fallback HTML (original implementation)
 		const messages = this.quizData.ui?.resultMessages?.aaaError || {};
 		const error = resultData.error || {};
 		const errorCode = error.code || resultData.aaaErrorCode || "Unknown";
@@ -3849,6 +3985,16 @@ class ModularQuiz {
 	}
 
 	_generateTestDataErrorResultsHTML(resultData, resultUrl) {
+		// Use Web Component if available, otherwise fallback to legacy HTML
+		if (this.webComponentsInit && this.webComponentsInit.isInitialized()) {
+			const resultCard = document.createElement("quiz-result-card");
+			resultCard.setAttribute("result-type", "test-data-error");
+			resultCard.setAttribute("result-data", JSON.stringify(resultData));
+			resultCard.setAttribute("result-url", resultUrl);
+			return resultCard.outerHTML;
+		}
+
+		// Legacy fallback HTML (original implementation)
 		const messages = this.quizData.ui?.resultMessages?.testDataError || {};
 		const userMessage = resultData.userMessage || "Test data was detected in your submission. Please use real insurance information for accurate verification.";
 
@@ -3896,6 +4042,16 @@ class ModularQuiz {
 	}
 
 	_generateTechnicalProblemResultsHTML(resultData, resultUrl) {
+		// Use Web Component if available, otherwise fallback to legacy HTML
+		if (this.webComponentsInit && this.webComponentsInit.isInitialized()) {
+			const resultCard = document.createElement("quiz-result-card");
+			resultCard.setAttribute("result-type", "technical-problem");
+			resultCard.setAttribute("result-data", JSON.stringify(resultData));
+			resultCard.setAttribute("result-url", resultUrl);
+			return resultCard.outerHTML;
+		}
+
+		// Legacy fallback HTML (original implementation)
 		const messages = this.quizData.ui?.resultMessages?.technicalProblem || {};
 		const error = resultData.error || {};
 		const errorCode = error.code || resultData.stediErrorCode || "Unknown";
@@ -3988,6 +4144,16 @@ class ModularQuiz {
 	}
 
 	_generateProcessingInsuranceResultsHTML(resultData, resultUrl) {
+		// Use Web Component if available, otherwise fallback to legacy HTML
+		if (this.webComponentsInit && this.webComponentsInit.isInitialized()) {
+			const resultCard = document.createElement("quiz-result-card");
+			resultCard.setAttribute("result-type", "processing");
+			resultCard.setAttribute("result-data", JSON.stringify(resultData));
+			resultCard.setAttribute("result-url", resultUrl);
+			return resultCard.outerHTML;
+		}
+
+		// Legacy fallback HTML (original implementation)
 		const messages = this.quizData.ui?.resultMessages?.processing || {};
 		const userMessage =
 			resultData.userMessage ||
@@ -4037,6 +4203,16 @@ class ModularQuiz {
 	}
 
 	_generateIneligibleInsuranceResultsHTML(eligibilityData, resultUrl) {
+		// Use Web Component if available, otherwise fallback to legacy HTML
+		if (this.webComponentsInit && this.webComponentsInit.isInitialized()) {
+			const resultCard = document.createElement("quiz-result-card");
+			resultCard.setAttribute("result-type", "ineligible");
+			resultCard.setAttribute("result-data", JSON.stringify(eligibilityData));
+			resultCard.setAttribute("result-url", resultUrl);
+			return resultCard.outerHTML;
+		}
+
+		// Legacy fallback HTML (original implementation)
 		const messages = this.quizData.ui?.resultMessages?.notEligible || {};
 		const userMessage = eligibilityData.userMessage || "Your eligibility check is complete.";
 		const error = eligibilityData.error || {};
@@ -4196,6 +4372,14 @@ class ModularQuiz {
 		const faqData = this.quizData.ui?.faq || defaultFAQData;
 		if (faqData.length === 0) return "";
 
+		// Use Web Component if available, otherwise fallback to legacy HTML
+		if (this.webComponentsInit && this.webComponentsInit.isInitialized()) {
+			const faqComponent = document.createElement("quiz-faq-section");
+			faqComponent.setAttribute("faq-data", JSON.stringify(faqData));
+			return faqComponent.outerHTML;
+		}
+
+		// Legacy fallback HTML (original implementation)
 		return `
 			<div class="quiz-faq-section">
 				<div class="quiz-faq-divider"></div>
@@ -4223,23 +4407,32 @@ class ModularQuiz {
 	}
 
 	_attachFAQListeners() {
-		const faqItems = this.questionContainer.querySelectorAll(".quiz-faq-item");
-		faqItems.forEach(item => {
-			item.addEventListener("click", () => {
-				const isExpanded = item.classList.contains("expanded");
+		// Check if Web Component is being used
+		const webComponent = this.questionContainer.querySelector("quiz-faq-section");
 
-				// Toggle expanded state immediately for smooth animation
-				if (!isExpanded) {
-					item.classList.add("expanded");
-					const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
-					if (question) question.className = "quiz-faq-question";
-				} else {
-					item.classList.remove("expanded");
-					const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
-					if (question) question.className = "quiz-faq-question-collapsed";
-				}
+		if (webComponent) {
+			// Web Component handles its own events, no additional listeners needed
+			console.log("FAQ Web Component detected, using built-in event handling");
+		} else {
+			// Legacy HTML handling
+			const faqItems = this.questionContainer.querySelectorAll(".quiz-faq-item");
+			faqItems.forEach(item => {
+				item.addEventListener("click", () => {
+					const isExpanded = item.classList.contains("expanded");
+
+					// Toggle expanded state immediately for smooth animation
+					if (!isExpanded) {
+						item.classList.add("expanded");
+						const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
+						if (question) question.className = "quiz-faq-question";
+					} else {
+						item.classList.remove("expanded");
+						const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
+						if (question) question.className = "quiz-faq-question-collapsed";
+					}
+				});
 			});
-		});
+		}
 	}
 
 	_attachBookingButtonListeners() {

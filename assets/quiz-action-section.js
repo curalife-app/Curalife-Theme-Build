@@ -72,21 +72,20 @@ class QuizActionSection extends QuizBaseComponent {
 
       :host {
         display: block;
-        margin-bottom: 72px;
-        align-self: stretch;
       }
 
       .quiz-action-section {
         background-color: #f1f8f4;
         border-radius: 20px;
         padding: 32px;
+        margin-bottom: 72px;
         align-self: stretch;
       }
 
       .quiz-action-content {
         display: flex;
         flex-direction: column;
-        gap: 28px;
+        gap: 0;
         align-self: stretch;
       }
 
@@ -102,7 +101,6 @@ class QuizActionSection extends QuizBaseComponent {
         font-weight: 700;
         line-height: 1.3333333333333333em;
         color: #121212;
-				margin: 0;
       }
 
       .quiz-action-details {
@@ -110,6 +108,7 @@ class QuizActionSection extends QuizBaseComponent {
         flex-direction: column;
         gap: 12px;
         align-self: stretch;
+        margin-top: 12px;
         max-width: 550px;
       }
 
@@ -158,7 +157,7 @@ class QuizActionSection extends QuizBaseComponent {
         color: white;
         border: none;
         border-radius: 300px;
-        padding: 14px 40px;
+        padding: 12px 40px;
         font-family: "DM Sans", sans-serif;
         font-size: 18px;
         font-weight: 600;
@@ -170,8 +169,9 @@ class QuizActionSection extends QuizBaseComponent {
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        height: 52px;
         width: fit-content;
-        margin-top: 0;
+        margin-top: 32px;
       }
 
       .quiz-booking-button:hover {
@@ -180,22 +180,20 @@ class QuizActionSection extends QuizBaseComponent {
       }
 
       .quiz-booking-button:disabled {
-        background-color: #6c757d;
-        cursor: not-allowed;
-        transform: none;
+        background-color: #ccc !important;
+        cursor: not-allowed !important;
+        transform: none !important;
+        box-shadow: none !important;
       }
 
       .quiz-booking-button:disabled:hover {
-        background-color: #6c757d;
-        transform: none;
+        background-color: #ccc !important;
+        transform: none !important;
+        box-shadow: none !important;
       }
 
       /* Mobile responsive styles */
       @media (max-width: 768px) {
-        :host {
-          margin-bottom: 72px;
-        }
-
         .quiz-action-section {
           padding: 32px;
         }
@@ -209,9 +207,9 @@ class QuizActionSection extends QuizBaseComponent {
         }
 
         .quiz-booking-button {
-          padding: 14px 40px;
+          padding: 12px 40px;
           font-size: 18px;
-          margin-top: 0;
+          margin-top: 32px;
         }
       }
     `;

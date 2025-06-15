@@ -7,6 +7,14 @@
 
 import sharedStyles from "./shared-styles.js";
 
+// Import all quiz Web Components
+import "../content/quiz-coverage-card.js";
+import "../content/quiz-action-section.js";
+import "../content/quiz-loading-display.js";
+import "../content/quiz-faq-section.js";
+import "../content/quiz-payer-search.js";
+import "../content/quiz-result-card.js";
+
 class QuizComponentsInit {
 	constructor() {
 		this.initialized = false;

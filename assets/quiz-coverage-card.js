@@ -71,9 +71,6 @@ class QuizCoverageCard extends QuizBaseComponent {
 		return `
 				:host {
 					display: block;
-					margin-bottom: 36px;
-					margin-top: 52px;
-					align-self: stretch;
 				}
 
 				.quiz-coverage-card {
@@ -81,6 +78,7 @@ class QuizCoverageCard extends QuizBaseComponent {
 					border-radius: 20px;
 					padding: 32px;
 					background-color: white;
+					margin-bottom: 36px;
 					align-self: stretch;
 				}
 
@@ -175,14 +173,9 @@ class QuizCoverageCard extends QuizBaseComponent {
 				}
 
 				@media (max-width: 768px) {
-					:host {
-						margin-bottom: 28px;
-						margin-top: 32px;
-						width: 100%;
-					}
-
 					.quiz-coverage-card {
 						padding: 20px;
+						margin-bottom: 28px;
 						align-self: stretch;
 						width: 100%;
 					}
