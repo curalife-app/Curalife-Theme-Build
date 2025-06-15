@@ -119,6 +119,24 @@ class ModularQuiz {
 		}
 	}
 
+	_loadScript(url) {
+		return new Promise((resolve, reject) => {
+			// Check if script is already loaded
+			const existingScript = document.querySelector(`script[src="${url}"]`);
+			if (existingScript) {
+				resolve();
+				return;
+			}
+
+			const script = document.createElement("script");
+			script.src = url;
+			script.type = "text/javascript";
+			script.onload = () => resolve();
+			script.onerror = () => reject(new Error(`Failed to load script: ${url}`));
+			document.head.appendChild(script);
+		});
+	}
+
 	async _initializeWebComponents() {
 		try {
 			// Get the quiz components URL from the data attribute set by Liquid
@@ -131,20 +149,27 @@ class ModularQuiz {
 
 			console.log("🔗 Loading Quiz Web Components from:", quizComponentsUrl);
 
-			// Dynamic import of the Quiz Components system
-			const quizComponentsModule = await import(quizComponentsUrl);
+			// Load the script and wait for it to be available
+			await this._loadScript(quizComponentsUrl);
 
-			// Debug: Log what's available in the module
-			console.log("📦 Available exports:", Object.keys(quizComponentsModule));
-			console.log("🎯 QuizComponentsInit:", quizComponentsModule.QuizComponentsInit);
-			console.log("🎯 Default export:", quizComponentsModule.default);
+			// Wait for the global QuizComponentsInit to be available
+			let attempts = 0;
+			const maxAttempts = 50; // 5 seconds max wait
+			while (!window.QuizComponentsInit && attempts < maxAttempts) {
+				await new Promise(resolve => setTimeout(resolve, 100));
+				attempts++;
+			}
 
-			// Initialize the Web Components system (try both named and default exports)
-			this.webComponentsInit = quizComponentsModule.QuizComponentsInit || quizComponentsModule.default;
+			if (!window.QuizComponentsInit) {
+				throw new Error("QuizComponentsInit not available after loading script");
+			}
+
+			// Use the global QuizComponentsInit
+			this.webComponentsInit = window.QuizComponentsInit;
 
 			// Validate that we have a valid initialization object
 			if (!this.webComponentsInit || typeof this.webComponentsInit.init !== "function") {
-				throw new Error(`Invalid QuizComponentsInit object. Available: ${Object.keys(quizComponentsModule).join(", ")}`);
+				throw new Error("Invalid QuizComponentsInit object");
 			}
 
 			// Get CSS URL from container data attribute
