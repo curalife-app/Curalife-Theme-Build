@@ -2467,10 +2467,9 @@ let QuizFAQSection = _QuizFAQSection;
 if (!customElements.get("quiz-faq-section")) {
   customElements.define("quiz-faq-section", QuizFAQSection);
 }
-const _QuizPayerSearch = class _QuizPayerSearch extends HTMLElement {
+const _QuizPayerSearch = class _QuizPayerSearch extends QuizBaseComponent {
   constructor() {
     super();
-    this.attachShadow({ mode: "open" });
     this.selectedPayer = "";
     this.placeholder = "Start typing to search for your insurance plan...";
     this.commonPayers = [];
@@ -2480,45 +2479,34 @@ const _QuizPayerSearch = class _QuizPayerSearch extends HTMLElement {
   static get observedAttributes() {
     return ["question-id", "placeholder", "selected-payer", "common-payers"];
   }
-  attributeChangedCallback(name, oldValue, newValue) {
+  initialize() {
+    this.parseAttributes();
+  }
+  parseAttributes() {
+    this.questionId = this.getAttribute("question-id") || "";
+    this.placeholder = this.getAttribute("placeholder") || "Start typing to search for your insurance plan...";
+    this.selectedPayer = this.getAttribute("selected-payer") || "";
+    try {
+      const commonPayersAttr = this.getAttribute("common-payers");
+      this.commonPayers = commonPayersAttr ? JSON.parse(commonPayersAttr) : [];
+    } catch (error) {
+      console.error("Invalid common payers data:", error);
+      this.commonPayers = [];
+    }
+  }
+  handleAttributeChange(name, oldValue, newValue) {
     switch (name) {
       case "question-id":
-        this.questionId = newValue || "";
-        break;
       case "placeholder":
-        this.placeholder = newValue || "Start typing to search for your insurance plan...";
-        break;
       case "selected-payer":
-        this.selectedPayer = newValue || "";
-        break;
       case "common-payers":
-        try {
-          this.commonPayers = newValue ? JSON.parse(newValue) : [];
-        } catch (error) {
-          console.error("Invalid common payers data:", error);
-          this.commonPayers = [];
-        }
+        this.parseAttributes();
         break;
     }
-    if (this.shadowRoot.innerHTML) {
-      this.render();
-    }
-  }
-  connectedCallback() {
-    this.render();
   }
   async render() {
-    const sharedStyles2 = await SharedStyles.getQuizStyles();
-    const template = this.getTemplate();
-    const styles = this.getStyles();
-    this.shadowRoot.innerHTML = `
-			<style>
-				${sharedStyles2}
-				${styles}
-			</style>
-			${template}
-		`;
-    this.attachEventListeners();
+    await this.renderTemplate();
+    this.setupEventListeners();
   }
   getTemplate() {
     const selectedDisplayName = this.resolvePayerDisplayName(this.selectedPayer);
@@ -2554,17 +2542,13 @@ const _QuizPayerSearch = class _QuizPayerSearch extends HTMLElement {
 		`;
   }
   getStyles() {
-    return `
-			:host {
-				display: block;
-			}
-		`;
+    return "";
   }
-  attachEventListeners() {
-    const searchInput = this.shadowRoot.querySelector(".quiz-payer-search-input");
-    const dropdown = this.shadowRoot.querySelector(".quiz-payer-search-dropdown");
-    const closeBtn = this.shadowRoot.querySelector(".quiz-payer-search-close-btn");
-    const container = this.shadowRoot.querySelector(".quiz-payer-search-container");
+  setupEventListeners() {
+    const searchInput = this.root.querySelector(".quiz-payer-search-input");
+    const dropdown = this.root.querySelector(".quiz-payer-search-dropdown");
+    const closeBtn = this.root.querySelector(".quiz-payer-search-close-btn");
+    const container = this.root.querySelector(".quiz-payer-search-container");
     searchInput.addEventListener("input", (e) => {
       const query = e.target.value.trim();
       this.handleSearch(query, dropdown);
@@ -2666,9 +2650,9 @@ const _QuizPayerSearch = class _QuizPayerSearch extends HTMLElement {
     });
   }
   selectPayer(payer) {
-    const searchInput = this.shadowRoot.querySelector(".quiz-payer-search-input");
-    const dropdown = this.shadowRoot.querySelector(".quiz-payer-search-dropdown");
-    const container = this.shadowRoot.querySelector(".quiz-payer-search-container");
+    const searchInput = this.root.querySelector(".quiz-payer-search-input");
+    const dropdown = this.root.querySelector(".quiz-payer-search-dropdown");
+    const container = this.root.querySelector(".quiz-payer-search-container");
     searchInput.value = payer.displayName;
     this.selectedPayer = payer.stediId;
     this.closeDropdown(dropdown, container, searchInput);
@@ -2713,7 +2697,8 @@ const _QuizPayerSearch = class _QuizPayerSearch extends HTMLElement {
   // Public API
   setValue(value) {
     this.selectedPayer = value;
-    const searchInput = this.shadowRoot.querySelector(".quiz-payer-search-input");
+    this.setAttribute("selected-payer", value);
+    const searchInput = this.root?.querySelector(".quiz-payer-search-input");
     if (searchInput) {
       searchInput.value = this.resolvePayerDisplayName(value);
     }
@@ -3456,7 +3441,12 @@ const _QuizFormStep = class _QuizFormStep extends QuizBaseComponent {
     }
   }
   renderHelpIcon(questionId) {
-    return `<span class="quiz-help-icon-container">
+    const stepData = this.getStepData();
+    if (!stepData || !stepData.questions) return "";
+    const question = stepData.questions.find((q) => q.id === questionId);
+    if (!question || !question.tooltip && !question.helpText) return "";
+    const tooltipText = question.tooltip || question.helpText || "";
+    return `<span class="quiz-help-icon-container" data-tooltip="${tooltipText}">
 			<svg class="quiz-help-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
 				<path d="M14.6668 8.00004C14.6668 4.31814 11.682 1.33337 8.00016 1.33337C4.31826 1.33337 1.3335 4.31814 1.3335 8.00004C1.3335 11.6819 4.31826 14.6667 8.00016 14.6667C11.682 14.6667 14.6668 11.6819 14.6668 8.00004Z" stroke="#121212"/>
 				<path d="M8.1613 11.3334V8.00004C8.1613 7.68577 8.1613 7.52864 8.06363 7.43097C7.96603 7.33337 7.8089 7.33337 7.49463 7.33337" stroke="#121212" stroke-linecap="round" stroke-linejoin="round"/>

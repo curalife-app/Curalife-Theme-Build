@@ -662,16 +662,6 @@ body {
 	margin-top: 24px;
 }
 
-/* Ensure Web Component styles work - exact Figma specs */
-quiz-multiple-choice .quiz-grid-2 {
-	display: flex;
-	flex-direction: row;
-	justify-content: flex-end;
-	align-self: stretch;
-	gap: 20px;
-	flex-wrap: wrap;
-}
-
 .quiz-grid-2-form {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -682,6 +672,170 @@ quiz-multiple-choice .quiz-grid-2 {
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
 	gap: 1.25rem;
+}
+
+/* Web Component specific styles */
+quiz-multiple-choice .quiz-grid-2 {
+	display: grid;
+	grid-template-columns: repeat(2, 348px);
+	gap: 20px;
+	justify-content: flex-end;
+	margin-top: 24px;
+}
+
+quiz-multiple-choice .quiz-option-card {
+	display: block;
+	cursor: pointer;
+}
+
+quiz-multiple-choice .quiz-option-button {
+	border: 1px solid #d1d1d1;
+	border-radius: 10px;
+	padding: 16px 24px;
+	background-color: var(--quiz-bg-white);
+	position: relative;
+	transform: translateY(0);
+	opacity: 1;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	width: 348px;
+	height: 52px;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+quiz-multiple-choice .quiz-option-button.selected {
+	background-color: #f1f8f4;
+	transform: translateY(0);
+	box-shadow: 0 0 0 1px #306e51;
+	border-color: #306e51;
+}
+
+quiz-multiple-choice .quiz-option-button:hover {
+	background-color: #f1f8f4;
+	transform: translateY(0);
+	box-shadow: 0 0 0 1px #306e51;
+	border-color: #306e51;
+}
+
+quiz-multiple-choice .quiz-option-text {
+	text-align: center;
+}
+
+quiz-multiple-choice .quiz-option-text-content {
+	font-family: "DM Sans", sans-serif;
+	font-size: 18px;
+	font-weight: 400;
+	line-height: 1.4444444444444444em;
+	color: #121212;
+	text-align: center;
+}
+
+quiz-multiple-choice .quiz-checkmark {
+	position: absolute;
+	top: 50%;
+	right: 24px;
+	width: 19px;
+	height: 19px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transform: translateY(-50%);
+	animation: checkmarkAppear 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+quiz-multiple-choice .quiz-checkmark svg {
+	width: 19px;
+	height: 19px;
+}
+
+quiz-multiple-choice .quiz-checkmark svg path {
+	fill: #418865;
+}
+
+/* Dropdown Web Component styles */
+quiz-dropdown .quiz-select {
+	width: 100%;
+	padding: var(--quiz-space-xxs);
+	border: 1px solid var(--color-brand-100);
+	border-radius: var(--quiz-border-radius);
+	font-size: 18px;
+	background-color: white;
+	color: #b0b0b0;
+	appearance: none;
+	cursor: pointer;
+	background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg width='12' height='7' viewBox='0 0 12 7' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1.03888 0.294581C1.42815 -0.0946914 2.05918 -0.0950353 2.44888 0.293813L5.62716 3.46517C6.01751 3.85467 6.64948 3.85467 7.03983 3.46517L10.2181 0.293812C10.6078 -0.0950355 11.2388 -0.0946913 11.6281 0.294581C12.0177 0.684154 12.0177 1.31578 11.6281 1.70535L7.0406 6.29286C6.65008 6.68338 6.01691 6.68338 5.62639 6.29286L1.03888 1.70535C0.649308 1.31578 0.649307 0.684154 1.03888 0.294581Z' fill='%23B0B0B0'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right var(--quiz-space-xxs) center;
+	background-size: 12px 7px;
+	padding-right: 2.5rem;
+}
+
+quiz-dropdown .quiz-select:focus,
+quiz-dropdown .quiz-select:valid {
+	color: var(--quiz-text-primary);
+	outline: none;
+	box-shadow: 0 0 0 2px var(--quiz-primary);
+}
+
+/* Text Input Web Component styles */
+quiz-text-input .quiz-input {
+	width: 100%;
+	padding: var(--quiz-space-xxs);
+	border: 1px solid var(--color-brand-100);
+	border-radius: var(--quiz-border-radius);
+	font-size: 18px;
+	background-color: white;
+}
+
+quiz-text-input .quiz-input:focus {
+	outline: none;
+	box-shadow: 0 0 0 2px var(--quiz-primary);
+}
+
+quiz-text-input .quiz-input.quiz-input-error {
+	border-color: #ad0000;
+}
+
+quiz-text-input .quiz-input.quiz-input-error:focus {
+	box-shadow: 0 0 0 2px #ad0000;
+}
+
+/* Checkbox Group Web Component styles */
+quiz-checkbox-group .quiz-checkbox-container {
+	display: flex;
+	align-items: center;
+}
+
+quiz-checkbox-group .quiz-checkbox-input {
+	margin-right: var(--quiz-space-sm);
+	height: 1.25rem;
+	width: 1.25rem;
+	cursor: pointer;
+}
+
+quiz-checkbox-group .quiz-checkbox-label {
+	cursor: pointer;
+	font-size: 18px;
+}
+
+/* Payer Search Web Component styles */
+quiz-payer-search .quiz-payer-search-container {
+	position: relative;
+}
+
+quiz-payer-search .quiz-payer-search-input {
+	width: 100%;
+	padding: var(--quiz-space-xxs);
+	border: 1px solid var(--color-brand-100);
+	border-radius: var(--quiz-border-radius);
+	font-size: 18px;
+	background-color: white;
+}
+
+quiz-payer-search .quiz-payer-search-input:focus {
+	outline: none;
+	box-shadow: 0 0 0 2px var(--quiz-primary);
 }
 
 .quiz-question-section {
@@ -872,59 +1026,58 @@ quiz-multiple-choice .quiz-grid-2 {
 	padding: var(--quiz-space-xl);
 }
 
-.quiz-option-card,
-quiz-multiple-choice .quiz-option-card {
+.quiz-option-card {
 	display: block;
 	cursor: pointer;
 
 	.quiz-option-button {
-		/* Figma design specs */
 		border: 1px solid #d1d1d1;
 		border-radius: 10px;
-		padding: 13px 24px;
-		background-color: #ffffff;
+		padding: 16px 24px;
+		background-color: var(--quiz-bg-white);
 		position: relative;
+		transform: translateY(0);
+		opacity: 1;
 		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 		width: 348px;
+		height: 52px;
 		display: flex;
-		align-items: stretch;
-		justify-content: stretch;
+		align-items: center;
 		gap: 10px;
-		min-height: auto;
 
 		&.selected {
 			background-color: #f1f8f4;
-			border: 2px solid #306e51;
-			/* Adjust padding to account for thicker border */
-			padding: 12px 23px;
+			transform: translateY(0);
+			box-shadow: 0 0 0 1px #306e51;
+			border-color: #306e51;
 
 			&:hover {
 				background-color: #f1f8f4;
-				border: 2px solid #306e51;
+				transform: translateY(0);
+				box-shadow: 0 0 0 1px #306e51;
+				border-color: #306e51;
 			}
 		}
 
 		&.auto-advance-feedback {
-			transition: all 0.3s ease-out;
-			transform: translateY(-2px) scale(0.98);
-			opacity: 0.9;
+			animation: pulse 0.6s ease-in-out;
 		}
 
 		&.processing {
-			pointer-events: none;
+			opacity: 0.7;
 		}
 
 		@media (min-width: 768px) {
-			&:hover:not(.selected) {
-				background-color: #f9f9f9;
-				border-color: #999;
+			&:hover {
+				background-color: #f1f8f4;
+				transform: translateY(0);
+				box-shadow: 0 0 0 1px #306e51;
+				border-color: #306e51;
 			}
 		}
 
 		.quiz-option-text {
-			flex: 1;
-			display: flex;
-			align-items: center;
+			text-align: center;
 
 			.quiz-option-text-content {
 				font-family: "DM Sans", sans-serif;
@@ -932,27 +1085,28 @@ quiz-multiple-choice .quiz-option-card {
 				font-weight: 400;
 				line-height: 1.4444444444444444em;
 				color: #121212;
-				text-align: left;
-				width: 100%;
+				text-align: center;
 			}
 		}
 
 		.quiz-checkmark {
-			width: 20px;
-			height: 20px;
+			position: absolute;
+			top: 50%;
+			right: 24px;
+			width: 19px;
+			height: 19px;
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			flex-shrink: 0;
+			transform: translateY(-50%);
 			animation: checkmarkAppear 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
 			svg {
-				width: 17.92px;
-				height: 17.92px;
+				width: 19px;
+				height: 19px;
 
 				path {
 					fill: #418865;
-					stroke: #418865;
 				}
 			}
 		}
@@ -1594,24 +1748,17 @@ quiz-multiple-choice .quiz-option-card {
 		margin-top: 16px;
 	}
 
-	/* Web Component mobile styles */
-	quiz-multiple-choice .quiz-grid-2 {
-		flex-direction: column;
-		align-items: center;
-		gap: 12px;
-	}
-
-	/* Mobile styles for actual rendered HTML structure */
-	.quiz-multiple-choice {
-		flex-direction: column;
-		align-items: center;
+	.quiz-grid-2 {
+		grid-template-columns: 1fr;
 		gap: 12px;
 		margin-top: 16px;
 	}
 
-	.quiz-multiple-choice .quiz-option-card {
-		width: 100%;
-		max-width: 348px;
+	/* Web Component mobile styles */
+	quiz-multiple-choice .quiz-grid-2 {
+		grid-template-columns: 1fr;
+		gap: 12px;
+		margin-top: 16px;
 	}
 
 	.quiz-grid-2-form,
@@ -1647,15 +1794,15 @@ quiz-multiple-choice .quiz-option-card {
 		min-height: 60px;
 	}
 
+	.quiz-option-button {
+		width: 100%;
+		max-width: 348px;
+	}
+
 	/* Web Component mobile option button styles */
 	quiz-multiple-choice .quiz-option-button {
 		width: 100%;
 		max-width: 348px;
-		padding: 13px 24px;
-
-		&.selected {
-			padding: 12px 23px;
-		}
 	}
 
 	.quiz-results-card {
