@@ -1032,7 +1032,7 @@ class QuizActionSection extends QuizBaseComponent {
       .quiz-action-content {
         display: flex;
         flex-direction: column;
-        gap: 0;
+        gap: 28px;
         align-self: stretch;
       }
 
@@ -1055,7 +1055,6 @@ class QuizActionSection extends QuizBaseComponent {
         flex-direction: column;
         gap: 12px;
         align-self: stretch;
-        margin-top: 12px;
         max-width: 550px;
       }
 
@@ -1104,7 +1103,7 @@ class QuizActionSection extends QuizBaseComponent {
         color: white;
         border: none;
         border-radius: 300px;
-        padding: 12px 40px;
+        padding: 14px 40px;
         font-family: "DM Sans", sans-serif;
         font-size: 18px;
         font-weight: 600;
@@ -1116,9 +1115,8 @@ class QuizActionSection extends QuizBaseComponent {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        height: 52px;
         width: fit-content;
-        margin-top: 32px;
+        margin-top: 0;
       }
 
       .quiz-booking-button:hover {
@@ -1153,14 +1151,12 @@ class QuizActionSection extends QuizBaseComponent {
 
         .quiz-action-details {
           gap: 12px;
-          margin-top: 12px;
         }
 
         .quiz-booking-button {
-          padding: 12px 40px;
+          padding: 14px 40px;
           font-size: 18px;
-          height: 52px;
-          margin-top: 32px;
+          margin-top: 0;
         }
       }
     `;
