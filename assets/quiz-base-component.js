@@ -51,9 +51,17 @@ export class QuizBaseComponent extends HTMLElement {
 		}
 
 		if (this.config.autoRender) {
-			this.render().catch(error => {
+			try {
+				const renderResult = this.render();
+				// Handle both sync and async render methods
+				if (renderResult && typeof renderResult.catch === "function") {
+					renderResult.catch(error => {
+						console.error("Error rendering component:", error);
+					});
+				}
+			} catch (error) {
 				console.error("Error rendering component:", error);
-			});
+			}
 		}
 
 		this.setupEventListeners();
@@ -78,9 +86,17 @@ export class QuizBaseComponent extends HTMLElement {
 		this.handleAttributeChange(name, oldValue, newValue);
 
 		if (this._isComponentConnected && this.config.autoRender) {
-			this.render().catch(error => {
+			try {
+				const renderResult = this.render();
+				// Handle both sync and async render methods
+				if (renderResult && typeof renderResult.catch === "function") {
+					renderResult.catch(error => {
+						console.error("Error rendering component on attribute change:", error);
+					});
+				}
+			} catch (error) {
 				console.error("Error rendering component on attribute change:", error);
-			});
+			}
 		}
 	}
 

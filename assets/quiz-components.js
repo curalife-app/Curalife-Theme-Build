@@ -172,9 +172,16 @@ const _QuizBaseComponent = class _QuizBaseComponent extends HTMLElement {
       this.isInitialized = true;
     }
     if (this.config.autoRender) {
-      this.render().catch((error) => {
+      try {
+        const renderResult = this.render();
+        if (renderResult && typeof renderResult.catch === "function") {
+          renderResult.catch((error) => {
+            console.error("Error rendering component:", error);
+          });
+        }
+      } catch (error) {
         console.error("Error rendering component:", error);
-      });
+      }
     }
     this.setupEventListeners();
     this.onConnected();
@@ -194,9 +201,16 @@ const _QuizBaseComponent = class _QuizBaseComponent extends HTMLElement {
     if (oldValue === newValue) return;
     this.handleAttributeChange(name, oldValue, newValue);
     if (this._isComponentConnected && this.config.autoRender) {
-      this.render().catch((error) => {
+      try {
+        const renderResult = this.render();
+        if (renderResult && typeof renderResult.catch === "function") {
+          renderResult.catch((error) => {
+            console.error("Error rendering component on attribute change:", error);
+          });
+        }
+      } catch (error) {
         console.error("Error rendering component on attribute change:", error);
-      });
+      }
     }
   }
   /**
