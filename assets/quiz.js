@@ -2025,6 +2025,18 @@ class ModularQuiz {
 		}
 	}
 
+	_attachWebComponentValidationListener(question, componentTag) {
+		const webComponent = this.questionContainer.querySelector(componentTag);
+		if (webComponent) {
+			webComponent.addEventListener("validation-requested", event => {
+				const { questionId, value } = event.detail;
+				if (questionId === question.id) {
+					this._validateAndUpdateField(question, value);
+				}
+			});
+		}
+	}
+
 	_attachLegacyDropdownListener(question) {
 		const dropdown = this.questionContainer.querySelector(`#question-${question.id}`);
 		if (dropdown) {
@@ -2067,31 +2079,40 @@ class ModularQuiz {
 	_attachFormQuestionListener(question) {
 		const formHandlers = {
 			// Web Components
-			dropdown: () =>
+			dropdown: () => {
 				this._attachWebComponentListener(question, "quiz-dropdown", "answer-selected", event => {
 					const { questionId, value } = event.detail;
 					if (questionId === question.id) {
 						this.handleFormAnswer(question.id, value);
 						this.updateNavigation();
 					}
-				}),
-			text: () =>
+				});
+				this._attachWebComponentValidationListener(question, "quiz-dropdown");
+			},
+			text: () => {
 				this._attachWebComponentListener(question, "quiz-text-input", "answer-selected", event => {
 					const { questionId, value } = event.detail;
 					if (questionId === question.id) {
 						this.handleFormAnswer(question.id, value);
 						this.updateNavigation();
 					}
-				}),
-			checkbox: () =>
+				});
+				this._attachWebComponentValidationListener(question, "quiz-text-input");
+			},
+			checkbox: () => {
 				this._attachWebComponentListener(question, "quiz-checkbox-group", "answer-selected", event => {
 					const { questionId, value } = event.detail;
 					if (questionId === question.id) {
 						this.handleFormAnswer(question.id, value);
 						this.updateNavigation();
 					}
-				}),
-			"payer-search": () => this._attachPayerSearchFormListeners(question),
+				});
+				this._attachWebComponentValidationListener(question, "quiz-checkbox-group");
+			},
+			"payer-search": () => {
+				this._attachPayerSearchFormListeners(question);
+				this._attachWebComponentValidationListener(question, "quiz-payer-search");
+			},
 			// Legacy components
 			"date-part": () => this._attachLegacyDropdownListener(question),
 			date: () => this._attachLegacyTextInputListener(question)
@@ -2145,18 +2166,32 @@ class ModularQuiz {
 		let firstInvalidField = null;
 
 		validationErrors.forEach((error, index) => {
-			const { input, errorEl } = this._getValidationElements(error.questionId);
+			// Try Web Component first
+			const webComponent = this.questionContainer.querySelector(`[question-id="${error.questionId}"]`);
 
-			if (input) {
-				input.classList.add("quiz-input-error");
-				input.classList.remove("quiz-input-valid");
-				if (index === 0) firstInvalidField = input;
-			}
+			if (webComponent) {
+				// Update Web Component validation state
+				webComponent.setAttribute("show-error", "true");
+				webComponent.setAttribute("error-message", error.message);
 
-			if (errorEl) {
-				errorEl.textContent = error.message;
-				errorEl.classList.remove("quiz-error-hidden");
-				errorEl.classList.add("quiz-error-visible");
+				// Find the actual input element for scrolling
+				const input = webComponent.querySelector("input, select");
+				if (input && index === 0) firstInvalidField = input;
+			} else {
+				// Fallback to legacy elements
+				const { input, errorEl } = this._getValidationElements(error.questionId);
+
+				if (input) {
+					input.classList.add("quiz-input-error");
+					input.classList.remove("quiz-input-valid");
+					if (index === 0) firstInvalidField = input;
+				}
+
+				if (errorEl) {
+					errorEl.textContent = error.message;
+					errorEl.classList.remove("quiz-error-hidden");
+					errorEl.classList.add("quiz-error-visible");
+				}
 			}
 		});
 
@@ -2247,6 +2282,24 @@ class ModularQuiz {
 		];
 
 		return patterns.some(pattern => pattern.test(cleanPhone)) || patterns.some(pattern => pattern.test(phone));
+	}
+
+	_validateAndUpdateField(question, value) {
+		const validationResult = this._validateFieldValue(question, value);
+		const webComponent = this.questionContainer.querySelector(`[question-id="${question.id}"]`);
+
+		if (webComponent) {
+			// Update Web Component validation state
+			if (validationResult.isValid) {
+				webComponent.setAttribute("show-error", "false");
+				webComponent.removeAttribute("error-message");
+			} else {
+				webComponent.setAttribute("show-error", "true");
+				webComponent.setAttribute("error-message", validationResult.errorMessage);
+			}
+		}
+
+		return validationResult.isValid;
 	}
 
 	_updateFieldValidationState(input, question, validationResult) {

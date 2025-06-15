@@ -2565,6 +2565,13 @@ const _QuizPayerSearch = class _QuizPayerSearch extends QuizBaseComponent {
       }
       this.openDropdown(dropdown, container, searchInput);
     });
+    searchInput.addEventListener("blur", (e) => {
+      setTimeout(() => {
+        if (!container.contains(document.activeElement)) {
+          this.dispatchValidationRequested(this.selectedPayer);
+        }
+      }, 150);
+    });
     closeBtn.addEventListener("click", () => {
       this.closeDropdown(dropdown, container, searchInput);
     });
@@ -2711,6 +2718,17 @@ const _QuizPayerSearch = class _QuizPayerSearch extends QuizBaseComponent {
   }
   getValue() {
     return this.selectedPayer;
+  }
+  dispatchValidationRequested(value) {
+    const event = new CustomEvent("validation-requested", {
+      detail: {
+        questionId: this.questionId,
+        value,
+        questionType: "payer-search"
+      },
+      bubbles: true
+    });
+    this.dispatchEvent(event);
   }
 };
 __name(_QuizPayerSearch, "QuizPayerSearch");
@@ -5124,6 +5142,7 @@ const _QuizDropdownComponent = class _QuizDropdownComponent extends QuizBaseComp
   }
   setupEventListeners() {
     this.root.addEventListener("change", this.handleSelectionChange.bind(this));
+    this.root.addEventListener("blur", this.handleSelectionBlur.bind(this));
   }
   handleSelectionChange(event) {
     if (this.isDisabled) return;
@@ -5135,6 +5154,13 @@ const _QuizDropdownComponent = class _QuizDropdownComponent extends QuizBaseComp
       if (this.showError && selectedValue) {
         this.clearError();
       }
+    }
+  }
+  handleSelectionBlur(event) {
+    if (this.isDisabled) return;
+    const select = event.target;
+    if (select.classList.contains("quiz-select")) {
+      this.dispatchValidationRequested(this.selectedValue);
     }
   }
   updateSelectedState() {
@@ -5177,6 +5203,17 @@ const _QuizDropdownComponent = class _QuizDropdownComponent extends QuizBaseComp
   }
   dispatchAnswerSelected(value) {
     const event = new CustomEvent("answer-selected", {
+      detail: {
+        questionId: this.questionData?.id,
+        value,
+        questionType: "dropdown"
+      },
+      bubbles: true
+    });
+    this.dispatchEvent(event);
+  }
+  dispatchValidationRequested(value) {
+    const event = new CustomEvent("validation-requested", {
       detail: {
         questionId: this.questionData?.id,
         value,
@@ -5439,6 +5476,7 @@ const _QuizTextInputComponent = class _QuizTextInputComponent extends QuizBaseCo
     const input = event.target;
     if (input.classList.contains("quiz-input")) {
       this.dispatchAnswerSelected(this.inputValue);
+      this.dispatchValidationRequested(this.inputValue);
     }
   }
   handleInputFocus(event) {
@@ -5504,6 +5542,17 @@ const _QuizTextInputComponent = class _QuizTextInputComponent extends QuizBaseCo
   }
   dispatchAnswerSelected(value) {
     const event = new CustomEvent("answer-selected", {
+      detail: {
+        questionId: this.questionData?.id,
+        value,
+        questionType: "text"
+      },
+      bubbles: true
+    });
+    this.dispatchEvent(event);
+  }
+  dispatchValidationRequested(value) {
+    const event = new CustomEvent("validation-requested", {
       detail: {
         questionId: this.questionData?.id,
         value,

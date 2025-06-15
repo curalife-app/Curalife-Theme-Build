@@ -113,6 +113,16 @@ export class QuizPayerSearch extends QuizBaseComponent {
 			this.openDropdown(dropdown, container, searchInput);
 		});
 
+		searchInput.addEventListener("blur", e => {
+			// Dispatch validation event for blur validation
+			setTimeout(() => {
+				// Use timeout to allow click events on dropdown items to fire first
+				if (!container.contains(document.activeElement)) {
+					this.dispatchValidationRequested(this.selectedPayer);
+				}
+			}, 150);
+		});
+
 		// Close button
 		closeBtn.addEventListener("click", () => {
 			this.closeDropdown(dropdown, container, searchInput);
@@ -299,6 +309,18 @@ export class QuizPayerSearch extends QuizBaseComponent {
 
 	getValue() {
 		return this.selectedPayer;
+	}
+
+	dispatchValidationRequested(value) {
+		const event = new CustomEvent("validation-requested", {
+			detail: {
+				questionId: this.questionId,
+				value: value,
+				questionType: "payer-search"
+			},
+			bubbles: true
+		});
+		this.dispatchEvent(event);
 	}
 }
 

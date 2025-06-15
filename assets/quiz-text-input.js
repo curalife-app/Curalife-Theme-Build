@@ -256,6 +256,9 @@ export class QuizTextInputComponent extends QuizBaseComponent {
 		if (input.classList.contains("quiz-input")) {
 			// Dispatch answer-selected for compatibility with existing quiz logic
 			this.dispatchAnswerSelected(this.inputValue);
+
+			// Dispatch validation event for blur validation
+			this.dispatchValidationRequested(this.inputValue);
 		}
 	}
 
@@ -332,6 +335,18 @@ export class QuizTextInputComponent extends QuizBaseComponent {
 
 	dispatchAnswerSelected(value) {
 		const event = new CustomEvent("answer-selected", {
+			detail: {
+				questionId: this.questionData?.id,
+				value: value,
+				questionType: "text"
+			},
+			bubbles: true
+		});
+		this.dispatchEvent(event);
+	}
+
+	dispatchValidationRequested(value) {
+		const event = new CustomEvent("validation-requested", {
 			detail: {
 				questionId: this.questionData?.id,
 				value: value,

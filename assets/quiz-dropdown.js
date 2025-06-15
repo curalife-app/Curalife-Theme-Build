@@ -232,6 +232,7 @@ export class QuizDropdownComponent extends QuizBaseComponent {
 	setupEventListeners() {
 		// Handle option selection
 		this.root.addEventListener("change", this.handleSelectionChange.bind(this));
+		this.root.addEventListener("blur", this.handleSelectionBlur.bind(this));
 	}
 
 	handleSelectionChange(event) {
@@ -247,6 +248,16 @@ export class QuizDropdownComponent extends QuizBaseComponent {
 			if (this.showError && selectedValue) {
 				this.clearError();
 			}
+		}
+	}
+
+	handleSelectionBlur(event) {
+		if (this.isDisabled) return;
+
+		const select = event.target;
+		if (select.classList.contains("quiz-select")) {
+			// Dispatch validation event for blur validation
+			this.dispatchValidationRequested(this.selectedValue);
 		}
 	}
 
@@ -296,6 +307,18 @@ export class QuizDropdownComponent extends QuizBaseComponent {
 
 	dispatchAnswerSelected(value) {
 		const event = new CustomEvent("answer-selected", {
+			detail: {
+				questionId: this.questionData?.id,
+				value: value,
+				questionType: "dropdown"
+			},
+			bubbles: true
+		});
+		this.dispatchEvent(event);
+	}
+
+	dispatchValidationRequested(value) {
+		const event = new CustomEvent("validation-requested", {
 			detail: {
 				questionId: this.questionData?.id,
 				value: value,
