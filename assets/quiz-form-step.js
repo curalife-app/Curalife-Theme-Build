@@ -250,53 +250,46 @@ export class QuizFormStep extends QuizBaseComponent {
 			case "text":
 			case "email":
 			case "phone":
-				return `<input type="${question.type}" id="question-${question.id}" class="quiz-input" value="${value}" ${question.required ? "required" : ""}>`;
+				return `<quiz-text-input
+					question-data='${JSON.stringify(question)}'
+					value="${value || ""}"
+				></quiz-text-input>`;
 			case "textarea":
 				return `<textarea id="question-${question.id}" class="quiz-textarea" ${question.required ? "required" : ""}>${value}</textarea>`;
 			case "dropdown":
-				return this.renderDropdownOptions(question, value);
+				return `<quiz-dropdown
+					question-data='${JSON.stringify(question)}'
+					selected-value="${value || ""}"
+				></quiz-dropdown>`;
+			case "payer-search":
+				const quizData = this.getQuizData();
+				return `<quiz-payer-search
+					question-id="${question.id}"
+					placeholder="${question.placeholder || "Start typing to search for your insurance plan..."}"
+					common-payers='${JSON.stringify(quizData?.commonPayers || [])}'
+					${value ? `selected-payer="${value}"` : ""}
+				></quiz-payer-search>`;
 			default:
 				return `<input type="text" id="question-${question.id}" class="quiz-input" value="${value}">`;
 		}
-	}
-
-	renderDropdownOptions(question, selectedValue) {
-		if (!question.options) return "";
-
-		return `
-			<select id="question-${question.id}" class="quiz-dropdown">
-				<option value="">${question.placeholder || "Select an option"}</option>
-				${question.options
-					.map(
-						option => `
-					<option value="${option.value}" ${selectedValue === option.value ? "selected" : ""}>
-						${option.text}
-					</option>
-				`
-					)
-					.join("")}
-			</select>
-		`;
 	}
 
 	renderDatePart(question, response) {
 		const value = response?.answer || "";
 		const options = this.getDatePartOptions(question.part);
 
-		return `
-			<select id="question-${question.id}" class="quiz-dropdown">
-				<option value="">${question.placeholder || question.part}</option>
-				${options
-					.map(
-						option => `
-					<option value="${option.value}" ${value === option.value ? "selected" : ""}>
-						${option.text}
-					</option>
-				`
-					)
-					.join("")}
-			</select>
-		`;
+		// Create a dropdown question with the date options
+		const dropdownQuestion = {
+			...question,
+			type: "dropdown",
+			options: options.map(opt => ({ id: opt.value, text: opt.text })),
+			placeholder: question.placeholder || `Select ${question.part}`
+		};
+
+		return `<quiz-dropdown
+			question-data='${JSON.stringify(dropdownQuestion)}'
+			selected-value="${value || ""}"
+		></quiz-dropdown>`;
 	}
 
 	getDatePartOptions(part) {

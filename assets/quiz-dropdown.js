@@ -153,34 +153,40 @@ export class QuizDropdownComponent extends QuizBaseComponent {
 
 			.quiz-select {
 				width: 100%;
-				padding: 0.75rem 1rem;
-				border: 2px solid #e2e8f0;
-				border-radius: var(--quiz-border-radius);
+				padding: 13px 16px;
+				border: 1px solid #DDEEE2;
+				border-radius: 10px;
 				background: white;
-				font-size: 1rem;
-				color: #374151;
+				font-size: 18px;
+				color: #b0b0b0;
 				transition: var(--quiz-transition);
 				appearance: none;
-				background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
-				background-position: right 0.5rem center;
+				cursor: pointer;
+				background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg width='12' height='7' viewBox='0 0 12 7' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1.03888 0.294581C1.42815 -0.0946914 2.05918 -0.0950353 2.44888 0.293813L5.62716 3.46517C6.01751 3.85467 6.64948 3.85467 7.03983 3.46517L10.2181 0.293812C10.6078 -0.0950355 11.2388 -0.0946913 11.6281 0.294581C12.0177 0.684154 12.0177 1.31578 11.6281 1.70535L7.0406 6.29286C6.65008 6.68338 6.01691 6.68338 5.62639 6.29286L1.03888 1.70535C0.649308 1.31578 0.649307 0.684154 1.03888 0.294581Z' fill='%23B0B0B0'/%3E%3C/svg%3E");
+				background-position: right 16px center;
 				background-repeat: no-repeat;
-				background-size: 1.5em 1.5em;
+				background-size: 12px 7px;
 				padding-right: 2.5rem;
 			}
 
-			.quiz-select:focus {
+			.quiz-select:focus,
+			.quiz-select:valid {
 				outline: none;
-				border-color: var(--quiz-primary-color);
-				box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+				color: var(--quiz-text-primary);
+				box-shadow: 0 0 0 2px var(--quiz-primary);
 			}
 
 			.quiz-select:hover:not(:disabled) {
-				border-color: #cbd5e1;
+				border-color: #DDEEE2;
 			}
 
 			/* Placeholder styling */
 			.quiz-select option[value=""] {
-				color: #9ca3af;
+				color: #b0b0b0;
+			}
+
+			.quiz-select option:not([value=""]) {
+				color: #121212;
 			}
 
 			/* Error state */
