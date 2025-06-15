@@ -9,6 +9,8 @@
  * - Integration with existing quiz CSS classes
  */
 
+import sharedStyles from "../utils/shared-styles.js";
+
 export class QuizBaseComponent extends HTMLElement {
 	constructor() {
 		super();
@@ -310,10 +312,20 @@ export class QuizBaseComponent extends HTMLElement {
 			return;
 		}
 
-		this.root.innerHTML = `
-      <style>${this.getStyles()}</style>
-      ${this.getTemplate()}
-    `;
+		// Clear existing content
+		this.root.innerHTML = "";
+
+		// Add shared styles + component styles
+		const styleElement = sharedStyles.createStyleElement(this.getStyles());
+		this.root.appendChild(styleElement);
+
+		// Add template content
+		const template = this.getTemplate();
+		if (template) {
+			const templateElement = document.createElement("template");
+			templateElement.innerHTML = template;
+			this.root.appendChild(templateElement.content.cloneNode(true));
+		}
 
 		// Setup slot change listeners
 		const slots = this.root.querySelectorAll("slot");
