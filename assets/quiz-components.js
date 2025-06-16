@@ -4409,12 +4409,6 @@ const _QuizStepContainer = class _QuizStepContainer extends QuizBaseComponent {
   }
   renderQuestionByType(question, response) {
     const value = response?.answer || "";
-    console.log("🔧 Step Container - Rendering question:", {
-      questionId: question?.id,
-      questionType: question?.type,
-      hasQuestion: !!question,
-      questionKeys: question ? Object.keys(question) : []
-    });
     switch (question.type) {
       case "multiple-choice":
         return this.renderMultipleChoice(question, value);
@@ -4501,25 +4495,16 @@ const _QuizStepContainer = class _QuizStepContainer extends QuizBaseComponent {
     const selectedPayerAttr = value ? `selected-payer="${value}"` : "";
     const placeholderAttr = question.placeholder ? `placeholder="${question.placeholder}"` : "";
     const quizData = this.getQuizData();
-    console.log("🔧 Step Container - renderPayerSearch quiz data:", {
-      hasQuizData: !!quizData,
-      hasConfig: !!quizData?.config,
-      hasApiConfig: !!quizData?.config?.apiConfig,
-      quizDataRaw: quizData ? "present" : "missing",
-      attributeValue: this.getAttribute("quiz-data") ? "present" : "missing"
-    });
     const commonPayers = question.commonPayers || quizData?.commonPayers || [];
     const commonPayersAttrFinal = commonPayers.length > 0 ? `common-payers='${JSON.stringify(commonPayers)}'` : "";
     const quizDataAttr = quizData ? `quiz-data='${JSON.stringify({ config: quizData.config, commonPayers: quizData.commonPayers })}'` : "";
-    const html = `<quiz-payer-search
+    return `<quiz-payer-search
 			question-id="${question.id}"
 			${placeholderAttr}
 			${commonPayersAttrFinal}
 			${selectedPayerAttr}
 			${quizDataAttr}
 		></quiz-payer-search>`;
-    console.log("🔧 Step Container - Generated payer search HTML:", html.substring(0, 200) + "...");
-    return html;
   }
   // Utility methods
   getStepData() {
