@@ -1,19 +1,20 @@
-import { QuizBaseComponent } from "../base/quiz-base-component.js";
+import { QuizFormFieldBase } from "../base/quiz-form-field-base.js";
 
-export class QuizPayerSearch extends QuizBaseComponent {
+/**
+ * Quiz Payer Search Component - Refactored
+ * Extends QuizFormFieldBase for common form field functionality
+ */
+export class QuizPayerSearch extends QuizFormFieldBase {
 	constructor() {
 		super();
 		this.selectedPayer = "";
 		this.placeholder = "Start typing to search for your insurance plan...";
 		this.commonPayers = [];
-		this.questionId = "";
 		this.searchTimeout = null;
-		this.showError = false;
-		this.errorMessage = "";
 	}
 
 	static get observedAttributes() {
-		return ["question-id", "placeholder", "selected-payer", "common-payers", "show-error", "error-message"];
+		return [...super.observedAttributes, "question-id", "placeholder", "selected-payer", "common-payers"];
 	}
 
 	initialize() {
@@ -21,11 +22,11 @@ export class QuizPayerSearch extends QuizBaseComponent {
 	}
 
 	parseAttributes() {
+		this.parseCommonAttributes();
 		this.questionId = this.getAttribute("question-id") || "";
 		this.placeholder = this.getAttribute("placeholder") || "Start typing to search for your insurance plan...";
 		this.selectedPayer = this.getAttribute("selected-payer") || "";
-		this.showError = this.getBooleanAttribute("show-error", false);
-		this.errorMessage = this.getAttribute("error-message") || "";
+		this.currentValue = this.selectedPayer;
 
 		try {
 			const commonPayersAttr = this.getAttribute("common-payers");
@@ -37,21 +38,45 @@ export class QuizPayerSearch extends QuizBaseComponent {
 	}
 
 	handleAttributeChange(name, oldValue, newValue) {
+		// Handle common attributes
+		this.handleCommonAttributeChange(name, oldValue, newValue);
+
+		// Handle component-specific attributes
 		switch (name) {
 			case "question-id":
 			case "placeholder":
 			case "selected-payer":
 			case "common-payers":
-			case "show-error":
-			case "error-message":
 				this.parseAttributes();
 				break;
 		}
 	}
 
-	async render() {
-		await this.renderTemplate();
-		this.setupEventListeners();
+	getFieldType() {
+		return "payer-search";
+	}
+
+	getValue() {
+		return this.selectedPayer;
+	}
+
+	setValue(value) {
+		this.selectedPayer = value || "";
+		this.currentValue = this.selectedPayer;
+		this.setAttribute("selected-payer", this.selectedPayer);
+
+		const searchInput = this.getInputElement();
+		if (searchInput) {
+			searchInput.value = this.resolvePayerDisplayName(this.selectedPayer);
+		}
+	}
+
+	getInputElement() {
+		return this.root.querySelector(".quiz-payer-search-input");
+	}
+
+	hasValidValue() {
+		return this.selectedPayer && this.selectedPayer.trim() !== "";
 	}
 
 	getTemplate() {
@@ -84,33 +109,36 @@ export class QuizPayerSearch extends QuizBaseComponent {
 					</div>
 					<div class="quiz-payer-search-results"></div>
 				</div>
-				<p id="error-${this.questionId}" class="quiz-error-text ${this.showError ? "quiz-error-visible" : "quiz-error-hidden"}">${this.errorMessage}</p>
+				${this.getErrorElementHTML(this.questionId)}
 			</div>
 		`;
 	}
 
 	getStyles() {
-		// Styles are now handled globally by quiz.css since we're using light DOM
+		// Styles are handled globally by quiz.css since we're using light DOM
 		return "";
 	}
 
+	async render() {
+		await this.renderTemplate();
+		this.setupEventListeners();
+	}
+
 	setupEventListeners() {
-		const searchInput = this.root.querySelector(".quiz-payer-search-input");
+		const searchInput = this.getInputElement();
 		const dropdown = this.root.querySelector(".quiz-payer-search-dropdown");
 		const closeBtn = this.root.querySelector(".quiz-payer-search-close-btn");
 		const container = this.root.querySelector(".quiz-payer-search-container");
+
+		if (!searchInput || !dropdown || !closeBtn || !container) return;
 
 		// Search input events
 		searchInput.addEventListener("input", e => {
 			const query = e.target.value.trim();
 			this.handleSearch(query, dropdown);
 
-			// Clear error state when user starts typing (check both internal state and DOM state)
-			const input = this.root.querySelector(".quiz-payer-search-input");
-			const errorElement = this.root.querySelector(".quiz-error-text");
-			const hasVisualError = input?.classList.contains("quiz-input-error") || errorElement?.classList.contains("quiz-error-visible");
-
-			if ((this.showError || hasVisualError) && query.length > 0) {
+			// Clear error if user starts typing
+			if ((this.showError || this.hasVisualError()) && query.length > 0) {
 				this.clearError();
 			}
 		});
@@ -123,11 +151,10 @@ export class QuizPayerSearch extends QuizBaseComponent {
 		});
 
 		searchInput.addEventListener("blur", e => {
-			// Dispatch validation event for blur validation
+			// Use timeout to allow click events on dropdown items to fire first
 			setTimeout(() => {
-				// Use timeout to allow click events on dropdown items to fire first
 				if (!container.contains(document.activeElement)) {
-					this.dispatchValidationRequested(this.selectedPayer);
+					this.handleInputBlur();
 				}
 			}, 150);
 		});
@@ -252,20 +279,17 @@ export class QuizPayerSearch extends QuizBaseComponent {
 	}
 
 	selectPayer(payer) {
-		const searchInput = this.root.querySelector(".quiz-payer-search-input");
+		const searchInput = this.getInputElement();
 		const dropdown = this.root.querySelector(".quiz-payer-search-dropdown");
 		const container = this.root.querySelector(".quiz-payer-search-container");
 
 		searchInput.value = payer.displayName;
 		this.selectedPayer = payer.stediId;
+		this.currentValue = this.selectedPayer;
 		this.closeDropdown(dropdown, container, searchInput);
 
-		// Clear error state when user makes a valid selection (check both internal state and DOM state)
-		const input = this.root.querySelector(".quiz-payer-search-input");
-		const errorElement = this.root.querySelector(".quiz-error-text");
-		const hasVisualError = input?.classList.contains("quiz-input-error") || errorElement?.classList.contains("quiz-error-visible");
-
-		if ((this.showError || hasVisualError) && this.selectedPayer) {
+		// Clear error state when user makes a valid selection
+		if ((this.showError || this.hasVisualError()) && this.selectedPayer) {
 			this.clearError();
 		}
 
@@ -279,6 +303,9 @@ export class QuizPayerSearch extends QuizBaseComponent {
 				bubbles: true
 			})
 		);
+
+		// Also dispatch standard answer selected event
+		this.dispatchAnswerSelected(this.selectedPayer);
 	}
 
 	openDropdown(dropdown, container, searchInput) {
@@ -314,51 +341,23 @@ export class QuizPayerSearch extends QuizBaseComponent {
 		return payer ? payer.displayName : payerId;
 	}
 
-	// Public API
-	setValue(value) {
-		this.selectedPayer = value;
-		this.setAttribute("selected-payer", value);
-
-		const searchInput = this.root?.querySelector(".quiz-payer-search-input");
-		if (searchInput) {
-			searchInput.value = this.resolvePayerDisplayName(value);
+	updateFieldErrorStyling() {
+		const input = this.getInputElement();
+		if (input) {
+			if (this.showError) {
+				input.classList.add("quiz-input-error");
+			} else {
+				input.classList.remove("quiz-input-error");
+			}
 		}
 	}
 
-	getValue() {
-		return this.selectedPayer;
-	}
+	clearVisualErrorState() {
+		super.clearVisualErrorState();
 
-	dispatchValidationRequested(value) {
-		const event = new CustomEvent("validation-requested", {
-			detail: {
-				questionId: this.questionId,
-				value: value,
-				questionType: "payer-search"
-			},
-			bubbles: true
-		});
-		this.dispatchEvent(event);
-	}
-
-	clearError() {
-		this.showError = false;
-		this.errorMessage = "";
-		this.removeAttribute("show-error");
-		this.removeAttribute("error-message");
-
-		// Update the UI immediately - force clear all error states
-		const input = this.root.querySelector(".quiz-payer-search-input");
-		const errorElement = this.root.querySelector(".quiz-error-text");
-
+		const input = this.getInputElement();
 		if (input) {
 			input.classList.remove("quiz-input-error");
-		}
-
-		if (errorElement) {
-			errorElement.classList.remove("quiz-error-visible");
-			errorElement.classList.add("quiz-error-hidden");
-			errorElement.textContent = ""; // Clear the error message text
 		}
 	}
 }

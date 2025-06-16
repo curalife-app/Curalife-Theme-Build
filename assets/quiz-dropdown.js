@@ -1,42 +1,18 @@
 /**
- * Quiz Dropdown Component
- *
- * A Web Component for rendering dropdown/select questions.
- * Replaces the renderDropdown method from quiz.js.
- *
- * Features:
- * - Standard HTML select element
- * - Placeholder support
- * - Validation error display
- * - Accessible keyboard navigation
- * - Custom events for answer selection
- *
- * Attributes:
- * - question-data: JSON string containing question configuration
- * - selected-value: Currently selected option ID
- * - disabled: Whether the component is disabled
- * - show-error: Whether to show validation error
- * - error-message: Custom error message to display
- *
- * Events:
- * - answer-selected: Fired when an option is selected
+ * Quiz Dropdown Component - Refactored
+ * Extends QuizFormFieldBase for common form field functionality
  */
+import { QuizFormFieldBase } from "../base/quiz-form-field-base.js";
+import { sharedStyles } from "../utils/shared-styles.js";
 
-import { QuizBaseComponent } from "../base/quiz-base-component.js";
-import sharedStyles from "../utils/shared-styles.js";
-
-export class QuizDropdownComponent extends QuizBaseComponent {
-	static get observedAttributes() {
-		return ["question-data", "selected-value", "disabled", "show-error", "error-message"];
-	}
-
+export class QuizDropdownComponent extends QuizFormFieldBase {
 	constructor() {
 		super();
-		this.questionData = null;
-		this.selectedValue = null;
-		this.isDisabled = false;
-		this.showError = false;
-		this.errorMessage = "";
+		this.selectedValue = "";
+	}
+
+	static get observedAttributes() {
+		return [...super.observedAttributes, "selected-value"];
 	}
 
 	initialize() {
@@ -44,50 +20,46 @@ export class QuizDropdownComponent extends QuizBaseComponent {
 	}
 
 	parseAttributes() {
-		// Parse question data
-		const questionDataAttr = this.getAttribute("question-data");
-		if (questionDataAttr) {
-			try {
-				this.questionData = JSON.parse(questionDataAttr);
-			} catch (error) {
-				console.error("Quiz Dropdown: Invalid question-data JSON:", error);
-				this.questionData = null;
-			}
-		}
-
-		// Parse selected value
-		this.selectedValue = this.getAttribute("selected-value") || null;
-
-		// Parse disabled state
-		this.isDisabled = this.getBooleanAttribute("disabled", false);
-
-		// Parse error state
-		this.showError = this.getBooleanAttribute("show-error", false);
-		this.errorMessage = this.getAttribute("error-message") || "";
+		this.parseCommonAttributes();
+		this.selectedValue = this.getAttribute("selected-value") || "";
+		this.currentValue = this.selectedValue;
 	}
 
 	handleAttributeChange(name, oldValue, newValue) {
+		// Handle common attributes
+		this.handleCommonAttributeChange(name, oldValue, newValue);
+
+		// Handle component-specific attributes
 		switch (name) {
-			case "question-data":
-				this.parseAttributes();
-				break;
 			case "selected-value":
-				this.selectedValue = newValue;
+				this.selectedValue = newValue || "";
+				this.currentValue = this.selectedValue;
 				this.updateSelectedState();
 				break;
-			case "disabled":
-				this.isDisabled = this.getBooleanAttribute("disabled", false);
-				this.updateDisabledState();
-				break;
-			case "show-error":
-				this.showError = this.getBooleanAttribute("show-error", false);
-				this.updateErrorState();
-				break;
-			case "error-message":
-				this.errorMessage = newValue || "";
-				this.updateErrorMessage();
-				break;
 		}
+	}
+
+	getFieldType() {
+		return "dropdown";
+	}
+
+	getValue() {
+		return this.selectedValue;
+	}
+
+	setValue(value) {
+		this.selectedValue = value || "";
+		this.currentValue = this.selectedValue;
+		this.setAttribute("selected-value", this.selectedValue);
+		this.updateSelectedState();
+	}
+
+	getInputElement() {
+		return this.root.querySelector(".quiz-select");
+	}
+
+	hasValidValue() {
+		return this.selectedValue && this.selectedValue.trim() !== "";
 	}
 
 	getTemplate() {
@@ -124,13 +96,14 @@ export class QuizDropdownComponent extends QuizBaseComponent {
 					<option value="">${placeholder}</option>
 					${optionsHTML}
 				</select>
-				<p id="error-${questionId}" class="quiz-error-text ${this.showError ? "quiz-error-visible" : "quiz-error-hidden"}">${this.errorMessage}</p>
+				${this.getErrorElementHTML(questionId)}
 			</div>
 		`;
 	}
 
 	async render() {
 		await this.renderTemplate();
+		this.setupEventListeners();
 	}
 
 	async getStyles() {
@@ -193,11 +166,6 @@ export class QuizDropdownComponent extends QuizBaseComponent {
 				box-shadow: 0 0 0 2px #ad0000;
 			}
 
-			/* Error message - using global styling */
-			.quiz-error-element {
-				/* Styling handled by global .quiz-error-text class */
-			}
-
 			/* Disabled state */
 			.quiz-select:disabled {
 				background-color: #f9fafb;
@@ -230,60 +198,41 @@ export class QuizDropdownComponent extends QuizBaseComponent {
 	}
 
 	setupEventListeners() {
-		// Handle option selection
-		this.root.addEventListener("change", this.handleSelectionChange.bind(this));
-		this.root.addEventListener("blur", this.handleSelectionBlur.bind(this));
-	}
-
-	handleSelectionChange(event) {
-		if (this.isDisabled) return;
-
-		const select = event.target;
-		if (select.classList.contains("quiz-select")) {
-			const selectedValue = select.value;
-			this.selectedValue = selectedValue;
-			this.dispatchAnswerSelected(selectedValue);
-
-			// Clear error state when user makes a selection (check both internal state and DOM state)
-			const errorElement = this.root.querySelector(".quiz-error-text");
-			const hasVisualError = select.classList.contains("quiz-select-error") || errorElement?.classList.contains("quiz-error-visible");
-
-			if ((this.showError || hasVisualError) && selectedValue) {
-				this.clearError();
-			}
+		const select = this.getInputElement();
+		if (select) {
+			select.addEventListener("change", this.handleSelectionEvent.bind(this));
+			select.addEventListener("blur", this.handleBlurEvent.bind(this));
 		}
 	}
 
-	handleSelectionBlur(event) {
+	handleSelectionEvent(event) {
 		if (this.isDisabled) return;
 
-		const select = event.target;
-		if (select.classList.contains("quiz-select")) {
-			// Small delay to ensure change event processing is complete
-			setTimeout(() => {
-				this.dispatchValidationRequested(this.selectedValue);
-			}, 10);
-		}
+		const selectedValue = event.target.value;
+		this.handleInputChange(selectedValue);
+	}
+
+	handleBlurEvent(event) {
+		if (this.isDisabled) return;
+		this.handleInputBlur();
 	}
 
 	updateSelectedState() {
-		const select = this.root.querySelector(".quiz-select");
+		const select = this.getInputElement();
 		if (select) {
 			select.value = this.selectedValue || "";
 		}
 	}
 
 	updateDisabledState() {
-		const select = this.root.querySelector(".quiz-select");
+		const select = this.getInputElement();
 		if (select) {
 			select.disabled = this.isDisabled;
 		}
 	}
 
-	updateErrorState() {
-		const select = this.root.querySelector(".quiz-select");
-		const errorElement = this.root.querySelector(".quiz-error-text");
-
+	updateFieldErrorStyling() {
+		const select = this.getInputElement();
 		if (select) {
 			if (this.showError) {
 				select.classList.add("quiz-select-error");
@@ -291,116 +240,24 @@ export class QuizDropdownComponent extends QuizBaseComponent {
 				select.classList.remove("quiz-select-error");
 			}
 		}
+	}
 
-		if (errorElement) {
-			if (this.showError) {
-				errorElement.classList.remove("quiz-error-hidden");
-				errorElement.classList.add("quiz-error-visible");
-			} else {
-				errorElement.classList.remove("quiz-error-visible");
-				errorElement.classList.add("quiz-error-hidden");
-			}
+	clearVisualErrorState() {
+		super.clearVisualErrorState();
+
+		const select = this.getInputElement();
+		if (select) {
+			select.classList.remove("quiz-select-error");
 		}
 	}
 
-	updateErrorMessage() {
-		const errorElement = this.root.querySelector(".quiz-error-text");
-		if (errorElement) {
-			errorElement.textContent = this.errorMessage;
-		}
-	}
-
-	dispatchAnswerSelected(value) {
-		const event = new CustomEvent("answer-selected", {
-			detail: {
-				questionId: this.questionData?.id,
-				value: value,
-				questionType: "dropdown"
-			},
-			bubbles: true
-		});
-		this.dispatchEvent(event);
-	}
-
-	dispatchValidationRequested(value) {
-		const event = new CustomEvent("validation-requested", {
-			detail: {
-				questionId: this.questionData?.id,
-				value: value,
-				questionType: "dropdown"
-			},
-			bubbles: true
-		});
-		this.dispatchEvent(event);
-	}
-
-	// Public API methods
+	// Compatibility methods
 	getSelectedValue() {
 		return this.selectedValue;
 	}
 
 	setSelectedValue(value) {
-		this.selectedValue = value;
-		this.setAttribute("selected-value", value || "");
-	}
-
-	setDisabled(disabled) {
-		this.isDisabled = disabled;
-		if (disabled) {
-			this.setAttribute("disabled", "");
-		} else {
-			this.removeAttribute("disabled");
-		}
-	}
-
-	showValidationError(message) {
-		this.errorMessage = message;
-		this.showError = true;
-		this.setAttribute("error-message", message);
-		this.setAttribute("show-error", "");
-	}
-
-	clearError() {
-		this.showError = false;
-		this.errorMessage = "";
-		this.removeAttribute("show-error");
-		this.removeAttribute("error-message");
-
-		// Immediately update the UI - force clear all error states
-		const select = this.root.querySelector(".quiz-select");
-		const errorElement = this.root.querySelector(".quiz-error-text");
-
-		if (select) {
-			select.classList.remove("quiz-select-error");
-		}
-
-		if (errorElement) {
-			errorElement.classList.remove("quiz-error-visible");
-			errorElement.classList.add("quiz-error-hidden");
-			errorElement.textContent = ""; // Clear the error message text
-		}
-	}
-
-	getQuestionData() {
-		return this.questionData;
-	}
-
-	setQuestionData(data) {
-		this.questionData = data;
-		this.setAttribute("question-data", JSON.stringify(data));
-	}
-
-	// Validation helper
-	isValid() {
-		return this.selectedValue && this.selectedValue.trim() !== "";
-	}
-
-	// Focus management
-	focus() {
-		const select = this.root.querySelector(".quiz-select");
-		if (select) {
-			select.focus();
-		}
+		this.setValue(value);
 	}
 }
 
