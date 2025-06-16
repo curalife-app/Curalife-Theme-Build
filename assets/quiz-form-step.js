@@ -230,13 +230,19 @@ export class QuizFormStep extends QuizBaseComponent {
 		const dayResponse = responses?.find(r => r.questionId === dayQ.id) || { answer: null };
 		const yearResponse = responses?.find(r => r.questionId === yearQ.id) || { answer: null };
 
+		// Check for validation errors for each date part
+		const validationErrors = this.getValidationErrors();
+		const monthHasError = validationErrors.some(e => e.questionId === monthQ.id);
+		const dayHasError = validationErrors.some(e => e.questionId === dayQ.id);
+		const yearHasError = validationErrors.some(e => e.questionId === yearQ.id);
+
 		return `
 			<div class="quiz-question-section">
 				<label class="quiz-label">${monthQ.text}</label>
 				<div class="quiz-grid-3">
-					${this.renderDatePart(monthQ, monthResponse)}
-					${this.renderDatePart(dayQ, dayResponse)}
-					${this.renderDatePart(yearQ, yearResponse)}
+					${this.renderDatePart(monthQ, monthResponse, monthHasError)}
+					${this.renderDatePart(dayQ, dayResponse, dayHasError)}
+					${this.renderDatePart(yearQ, yearResponse, yearHasError)}
 				</div>
 			</div>
 		`;
@@ -278,9 +284,10 @@ export class QuizFormStep extends QuizBaseComponent {
 		}
 	}
 
-	renderDatePart(question, response) {
+	renderDatePart(question, response, hasError = false) {
 		const value = response?.answer || "";
 		const options = this.getDatePartOptions(question.part);
+		const errorAttr = hasError ? 'show-error="true"' : "";
 
 		// Create a dropdown question with the date options
 		const dropdownQuestion = {
@@ -293,6 +300,7 @@ export class QuizFormStep extends QuizBaseComponent {
 		return `<quiz-dropdown
 			question-data='${JSON.stringify(dropdownQuestion)}'
 			selected-value="${value || ""}"
+			${errorAttr}
 		></quiz-dropdown>`;
 	}
 
