@@ -1502,6 +1502,12 @@ class ModularQuiz {
 		const stepHTML = this._generateStepHTML(step);
 		this.questionContainer.innerHTML = stepHTML;
 
+		// Ensure step container gets quiz data after DOM insertion
+		const stepContainer = this.questionContainer.querySelector("quiz-step-container");
+		if (stepContainer && this.quizData) {
+			stepContainer.setAttribute("quiz-data", JSON.stringify(this.quizData));
+		}
+
 		this._handleStepAcknowledgment(step);
 		this._attachStepEventListeners(step);
 		this.updateNavigation();
@@ -1539,15 +1545,6 @@ class ModularQuiz {
 		stepContainer.setAttribute("responses", JSON.stringify(this.responses));
 		stepContainer.setAttribute("current-question-index", this.currentQuestionIndex.toString());
 		stepContainer.setAttribute("is-form-step", this.isFormStep(step.id).toString());
-
-		// Debug quiz data before passing it
-		console.log("🔧 Main Quiz - Passing quiz data to step container:", {
-			hasQuizData: !!this.quizData,
-			hasConfig: !!this.quizData?.config,
-			hasCommonPayers: !!this.quizData?.commonPayers,
-			commonPayersCount: this.quizData?.commonPayers?.length || 0,
-			stepId: step.id
-		});
 
 		stepContainer.setAttribute("quiz-data", JSON.stringify(this.quizData));
 
