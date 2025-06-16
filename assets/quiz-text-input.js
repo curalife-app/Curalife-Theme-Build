@@ -239,12 +239,15 @@ export class QuizTextInputComponent extends QuizBaseComponent {
 		const input = event.target;
 		if (input.classList.contains("quiz-input")) {
 			const newValue = input.value;
-			console.log(`Text input ${this.questionData?.id}: Input changed to "${newValue}", showError: ${this.showError}`);
+			const errorElement = this.root.querySelector(".quiz-error-text");
+
 			this.inputValue = newValue;
 			this.dispatchAnswerChanged(newValue);
 
-			// Clear error state when user starts typing
-			if (this.showError && newValue.trim()) {
+			// Clear error state when user starts typing (check both internal state and DOM state)
+			const hasVisualError = input.classList.contains("quiz-input-error") || errorElement?.classList.contains("quiz-error-visible");
+
+			if ((this.showError || hasVisualError) && newValue.trim()) {
 				this.clearError();
 			}
 		}
@@ -387,15 +390,25 @@ export class QuizTextInputComponent extends QuizBaseComponent {
 	}
 
 	clearError() {
-		console.log(`Text input ${this.questionData?.id}: Clearing error`);
 		this.showError = false;
 		this.errorMessage = "";
 		this.removeAttribute("show-error");
 		this.removeAttribute("error-message");
 
-		// Immediately update the UI
-		this.updateErrorState();
-		this.updateErrorMessage();
+		// Immediately update the UI - force clear all error states
+		const input = this.root.querySelector(".quiz-input");
+		const errorElement = this.root.querySelector(".quiz-error-text");
+
+		if (input) {
+			input.classList.remove("quiz-input-error");
+			input.classList.remove("quiz-input-valid"); // Also remove valid state for clean slate
+		}
+
+		if (errorElement) {
+			errorElement.classList.remove("quiz-error-visible");
+			errorElement.classList.add("quiz-error-hidden");
+			errorElement.textContent = ""; // Clear the error message text
+		}
 	}
 
 	showValidState() {

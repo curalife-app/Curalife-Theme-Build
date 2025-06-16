@@ -241,12 +241,14 @@ export class QuizDropdownComponent extends QuizBaseComponent {
 		const select = event.target;
 		if (select.classList.contains("quiz-select")) {
 			const selectedValue = select.value;
-			console.log(`Dropdown ${this.questionData?.id}: Selection changed to "${selectedValue}", showError: ${this.showError}`);
 			this.selectedValue = selectedValue;
 			this.dispatchAnswerSelected(selectedValue);
 
-			// Clear error state when user makes a selection
-			if (this.showError && selectedValue) {
+			// Clear error state when user makes a selection (check both internal state and DOM state)
+			const errorElement = this.root.querySelector(".quiz-error-text");
+			const hasVisualError = select.classList.contains("quiz-select-error") || errorElement?.classList.contains("quiz-error-visible");
+
+			if ((this.showError || hasVisualError) && selectedValue) {
 				this.clearError();
 			}
 		}
@@ -359,15 +361,24 @@ export class QuizDropdownComponent extends QuizBaseComponent {
 	}
 
 	clearError() {
-		console.log(`Dropdown ${this.questionData?.id}: Clearing error`);
 		this.showError = false;
 		this.errorMessage = "";
 		this.removeAttribute("show-error");
 		this.removeAttribute("error-message");
 
-		// Immediately update the UI
-		this.updateErrorState();
-		this.updateErrorMessage();
+		// Immediately update the UI - force clear all error states
+		const select = this.root.querySelector(".quiz-select");
+		const errorElement = this.root.querySelector(".quiz-error-text");
+
+		if (select) {
+			select.classList.remove("quiz-select-error");
+		}
+
+		if (errorElement) {
+			errorElement.classList.remove("quiz-error-visible");
+			errorElement.classList.add("quiz-error-hidden");
+			errorElement.textContent = ""; // Clear the error message text
+		}
 	}
 
 	getQuestionData() {

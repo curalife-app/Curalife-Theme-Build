@@ -2558,7 +2558,10 @@ const _QuizPayerSearch = class _QuizPayerSearch extends QuizBaseComponent {
     searchInput.addEventListener("input", (e) => {
       const query = e.target.value.trim();
       this.handleSearch(query, dropdown);
-      if (this.showError && query.length > 0) {
+      const input = this.root.querySelector(".quiz-payer-search-input");
+      const errorElement = this.root.querySelector(".quiz-error-text");
+      const hasVisualError = input?.classList.contains("quiz-input-error") || errorElement?.classList.contains("quiz-error-visible");
+      if ((this.showError || hasVisualError) && query.length > 0) {
         this.clearError();
       }
     });
@@ -2672,7 +2675,10 @@ const _QuizPayerSearch = class _QuizPayerSearch extends QuizBaseComponent {
     searchInput.value = payer.displayName;
     this.selectedPayer = payer.stediId;
     this.closeDropdown(dropdown, container, searchInput);
-    if (this.showError && this.selectedPayer) {
+    const input = this.root.querySelector(".quiz-payer-search-input");
+    const errorElement = this.root.querySelector(".quiz-error-text");
+    const hasVisualError = input?.classList.contains("quiz-input-error") || errorElement?.classList.contains("quiz-error-visible");
+    if ((this.showError || hasVisualError) && this.selectedPayer) {
       this.clearError();
     }
     this.dispatchEvent(
@@ -2737,7 +2743,6 @@ const _QuizPayerSearch = class _QuizPayerSearch extends QuizBaseComponent {
     this.dispatchEvent(event);
   }
   clearError() {
-    console.log(`Payer search ${this.questionId}: Clearing error`);
     this.showError = false;
     this.errorMessage = "";
     this.removeAttribute("show-error");
@@ -2750,6 +2755,7 @@ const _QuizPayerSearch = class _QuizPayerSearch extends QuizBaseComponent {
     if (errorElement) {
       errorElement.classList.remove("quiz-error-visible");
       errorElement.classList.add("quiz-error-hidden");
+      errorElement.textContent = "";
     }
   }
 };
@@ -5171,10 +5177,11 @@ const _QuizDropdownComponent = class _QuizDropdownComponent extends QuizBaseComp
     const select = event.target;
     if (select.classList.contains("quiz-select")) {
       const selectedValue = select.value;
-      console.log(`Dropdown ${this.questionData?.id}: Selection changed to "${selectedValue}", showError: ${this.showError}`);
       this.selectedValue = selectedValue;
       this.dispatchAnswerSelected(selectedValue);
-      if (this.showError && selectedValue) {
+      const errorElement = this.root.querySelector(".quiz-error-text");
+      const hasVisualError = select.classList.contains("quiz-select-error") || errorElement?.classList.contains("quiz-error-visible");
+      if ((this.showError || hasVisualError) && selectedValue) {
         this.clearError();
       }
     }
@@ -5271,13 +5278,20 @@ const _QuizDropdownComponent = class _QuizDropdownComponent extends QuizBaseComp
     this.setAttribute("show-error", "");
   }
   clearError() {
-    console.log(`Dropdown ${this.questionData?.id}: Clearing error`);
     this.showError = false;
     this.errorMessage = "";
     this.removeAttribute("show-error");
     this.removeAttribute("error-message");
-    this.updateErrorState();
-    this.updateErrorMessage();
+    const select = this.root.querySelector(".quiz-select");
+    const errorElement = this.root.querySelector(".quiz-error-text");
+    if (select) {
+      select.classList.remove("quiz-select-error");
+    }
+    if (errorElement) {
+      errorElement.classList.remove("quiz-error-visible");
+      errorElement.classList.add("quiz-error-hidden");
+      errorElement.textContent = "";
+    }
   }
   getQuestionData() {
     return this.questionData;
@@ -5492,10 +5506,11 @@ const _QuizTextInputComponent = class _QuizTextInputComponent extends QuizBaseCo
     const input = event.target;
     if (input.classList.contains("quiz-input")) {
       const newValue = input.value;
-      console.log(`Text input ${this.questionData?.id}: Input changed to "${newValue}", showError: ${this.showError}`);
+      const errorElement = this.root.querySelector(".quiz-error-text");
       this.inputValue = newValue;
       this.dispatchAnswerChanged(newValue);
-      if (this.showError && newValue.trim()) {
+      const hasVisualError = input.classList.contains("quiz-input-error") || errorElement?.classList.contains("quiz-error-visible");
+      if ((this.showError || hasVisualError) && newValue.trim()) {
         this.clearError();
       }
     }
@@ -5616,13 +5631,21 @@ const _QuizTextInputComponent = class _QuizTextInputComponent extends QuizBaseCo
     this.setAttribute("show-error", "");
   }
   clearError() {
-    console.log(`Text input ${this.questionData?.id}: Clearing error`);
     this.showError = false;
     this.errorMessage = "";
     this.removeAttribute("show-error");
     this.removeAttribute("error-message");
-    this.updateErrorState();
-    this.updateErrorMessage();
+    const input = this.root.querySelector(".quiz-input");
+    const errorElement = this.root.querySelector(".quiz-error-text");
+    if (input) {
+      input.classList.remove("quiz-input-error");
+      input.classList.remove("quiz-input-valid");
+    }
+    if (errorElement) {
+      errorElement.classList.remove("quiz-error-visible");
+      errorElement.classList.add("quiz-error-hidden");
+      errorElement.textContent = "";
+    }
   }
   showValidState() {
     const input = this.root.querySelector(".quiz-input");

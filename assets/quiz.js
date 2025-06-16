@@ -2321,14 +2321,6 @@ class ModularQuiz {
 		const validationResult = this._validateFieldValue(question, value);
 		const webComponent = this.questionContainer.querySelector(`[question-id="${question.id}"]`);
 
-		// Debug logging
-		console.log(`Validation for ${question.id}:`, {
-			value,
-			isValid: validationResult.isValid,
-			errorMessage: validationResult.errorMessage,
-			hasWebComponent: !!webComponent
-		});
-
 		if (webComponent) {
 			// Update Web Component validation state
 			if (validationResult.isValid) {

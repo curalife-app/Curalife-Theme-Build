@@ -105,8 +105,12 @@ export class QuizPayerSearch extends QuizBaseComponent {
 			const query = e.target.value.trim();
 			this.handleSearch(query, dropdown);
 
-			// Clear error state when user starts typing
-			if (this.showError && query.length > 0) {
+			// Clear error state when user starts typing (check both internal state and DOM state)
+			const input = this.root.querySelector(".quiz-payer-search-input");
+			const errorElement = this.root.querySelector(".quiz-error-text");
+			const hasVisualError = input?.classList.contains("quiz-input-error") || errorElement?.classList.contains("quiz-error-visible");
+
+			if ((this.showError || hasVisualError) && query.length > 0) {
 				this.clearError();
 			}
 		});
@@ -256,8 +260,12 @@ export class QuizPayerSearch extends QuizBaseComponent {
 		this.selectedPayer = payer.stediId;
 		this.closeDropdown(dropdown, container, searchInput);
 
-		// Clear error state when user makes a valid selection
-		if (this.showError && this.selectedPayer) {
+		// Clear error state when user makes a valid selection (check both internal state and DOM state)
+		const input = this.root.querySelector(".quiz-payer-search-input");
+		const errorElement = this.root.querySelector(".quiz-error-text");
+		const hasVisualError = input?.classList.contains("quiz-input-error") || errorElement?.classList.contains("quiz-error-visible");
+
+		if ((this.showError || hasVisualError) && this.selectedPayer) {
 			this.clearError();
 		}
 
@@ -334,13 +342,12 @@ export class QuizPayerSearch extends QuizBaseComponent {
 	}
 
 	clearError() {
-		console.log(`Payer search ${this.questionId}: Clearing error`);
 		this.showError = false;
 		this.errorMessage = "";
 		this.removeAttribute("show-error");
 		this.removeAttribute("error-message");
 
-		// Update the UI immediately
+		// Update the UI immediately - force clear all error states
 		const input = this.root.querySelector(".quiz-payer-search-input");
 		const errorElement = this.root.querySelector(".quiz-error-text");
 
@@ -351,6 +358,7 @@ export class QuizPayerSearch extends QuizBaseComponent {
 		if (errorElement) {
 			errorElement.classList.remove("quiz-error-visible");
 			errorElement.classList.add("quiz-error-hidden");
+			errorElement.textContent = ""; // Clear the error message text
 		}
 	}
 }
