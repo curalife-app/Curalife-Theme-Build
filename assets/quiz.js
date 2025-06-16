@@ -197,6 +197,9 @@ class ModularQuiz {
 			return;
 		}
 
+		// Store quiz instance on container for web components access
+		this.container._quizInstance = this;
+
 		this.dataUrl = this.container.getAttribute("data-quiz-url") || "/apps/quiz/data.json";
 
 		Object.keys(ELEMENT_SELECTORS).forEach(key => {
@@ -1616,6 +1619,7 @@ class ModularQuiz {
 					question-id="${question.id}"
 					placeholder="${question.placeholder || "Start typing to search for your insurance plan..."}"
 					common-payers='${JSON.stringify(this.quizData.commonPayers || [])}'
+					quiz-data='${JSON.stringify({ config: this.quizData.config, commonPayers: this.quizData.commonPayers })}'
 					${response.answer ? `selected-payer="${response.answer}"` : ""}
 					${response.answer ? `selected-display-name="${this._resolvePayerDisplayName(response.answer) || ""}"` : ""}
 				></quiz-payer-search>`;
@@ -2095,7 +2099,7 @@ class ModularQuiz {
 				webComponent.addEventListener("payer-selected", event => {
 					const { questionId, payer } = event.detail;
 					if (questionId === question.id) {
-						this.handleFormAnswer(question.id, payer.stediId || payer.id);
+						this.handleFormAnswer(question.id, payer.primaryPayerId || payer.stediId);
 						this.updateNavigation();
 					}
 				});

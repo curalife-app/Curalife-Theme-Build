@@ -11,14 +11,28 @@ export class QuizPayerSearch extends QuizFormFieldBase {
 		this.placeholder = "Start typing to search for your insurance plan...";
 		this.commonPayers = [];
 		this.searchTimeout = null;
+		this.quizData = null;
 	}
 
 	static get observedAttributes() {
-		return [...super.observedAttributes, "question-id", "placeholder", "selected-payer", "common-payers"];
+		return [...super.observedAttributes, "question-id", "placeholder", "selected-payer", "common-payers", "quiz-data"];
 	}
 
 	initialize() {
 		this.parseAttributes();
+		this.getQuizDataFromParent();
+	}
+
+	getQuizDataFromParent() {
+		// Try to get quiz data from the parent quiz component
+		const quizContainer = document.querySelector("#quiz-container");
+		if (quizContainer && window.ModularQuiz) {
+			// Access the quiz instance if available
+			const quizInstance = quizContainer._quizInstance;
+			if (quizInstance && quizInstance.quizData) {
+				this.quizData = quizInstance.quizData;
+			}
+		}
 	}
 
 	parseAttributes() {
@@ -35,6 +49,15 @@ export class QuizPayerSearch extends QuizFormFieldBase {
 			console.error("Invalid common payers data:", error);
 			this.commonPayers = [];
 		}
+
+		try {
+			const quizDataAttr = this.getAttribute("quiz-data");
+			if (quizDataAttr) {
+				this.quizData = JSON.parse(quizDataAttr);
+			}
+		} catch (error) {
+			console.error("Invalid quiz data:", error);
+		}
 	}
 
 	handleAttributeChange(name, oldValue, newValue) {
@@ -47,6 +70,7 @@ export class QuizPayerSearch extends QuizFormFieldBase {
 			case "placeholder":
 			case "selected-payer":
 			case "common-payers":
+			case "quiz-data":
 				this.parseAttributes();
 				break;
 		}
@@ -193,24 +217,25 @@ export class QuizPayerSearch extends QuizFormFieldBase {
 	}
 
 	async searchPayers(query) {
-		// First try common payers
-		const commonResults = this.filterCommonPayers(query);
-
-		// If we have good common results, return them
-		if (commonResults.length > 0) {
-			return commonResults;
-		}
-
-		// Otherwise, try API search
+		// First try API search if available
 		try {
-			return await this.searchPayersAPI(query);
+			const apiResults = await this.searchPayersAPI(query);
+			if (apiResults && apiResults.length > 0) {
+				return apiResults.map(item => item.payer);
+			}
 		} catch (error) {
-			console.error("API search failed:", error);
-			return commonResults; // Fallback to common payers even if empty
+			console.warn("API search failed, falling back to local search:", error);
 		}
+
+		// Fallback to common payers
+		return this.filterCommonPayers(query);
 	}
 
 	filterCommonPayers(query) {
+		if (!query || query.length === 0) {
+			return this.commonPayers;
+		}
+
 		const queryLower = query.toLowerCase();
 		return this.commonPayers.filter(payer => {
 			const nameMatch = payer.displayName.toLowerCase().includes(queryLower);
@@ -220,62 +245,100 @@ export class QuizPayerSearch extends QuizFormFieldBase {
 	}
 
 	async searchPayersAPI(query) {
-		// This would integrate with the actual API
-		// For now, return empty array as fallback
-		return [];
+		// Get API configuration from quiz data
+		if (!this.quizData) {
+			this.getQuizDataFromParent();
+		}
+
+		const config = this.quizData?.config?.apiConfig || {};
+		const apiKey = config.stediApiKey;
+
+		if (!apiKey || apiKey.trim() === "") {
+			console.warn("Stedi API key not configured or empty, using local search only");
+			return null;
+		}
+
+		const baseUrl = "https://healthcare.us.stedi.com/2024-04-01/payers/search";
+		const params = new URLSearchParams({
+			query: query,
+			pageSize: "10",
+			eligibilityCheck: "SUPPORTED"
+		});
+
+		const url = `${baseUrl}?${params}`;
+
+		const response = await fetch(url, {
+			method: "GET",
+			headers: {
+				Authorization: apiKey,
+				Accept: "application/json"
+			}
+		});
+
+		if (!response.ok) {
+			const errorText = await response.text();
+			throw new Error(`API request failed: ${response.status} - ${errorText}`);
+		}
+
+		const data = await response.json();
+
+		const transformedResults =
+			data.items?.map(item => ({
+				payer: {
+					stediId: item.payer.stediId,
+					displayName: item.payer.displayName,
+					primaryPayerId: item.payer.primaryPayerId,
+					aliases: item.payer.aliases || [],
+					score: item.score
+				}
+			})) || [];
+
+		return transformedResults;
 	}
 
 	showInitialPayerList(dropdown) {
-		const resultsContainer = dropdown.querySelector(".quiz-payer-search-results");
-		resultsContainer.innerHTML = this.commonPayers
-			.map(
-				payer => `
-			<div class="quiz-payer-search-item" data-payer-id="${payer.stediId}" data-payer-name="${payer.displayName}">
-				<div class="quiz-payer-search-item-name">${payer.displayName}</div>
-				<div class="quiz-payer-search-item-details">ID: ${payer.primaryPayerId}</div>
-			</div>
-		`
-			)
-			.join("");
-
-		this.attachResultListeners(dropdown);
+		const results = this.commonPayers;
+		this.renderSearchResults(results, "", dropdown);
 	}
 
 	renderSearchResults(results, query, dropdown) {
 		const resultsContainer = dropdown.querySelector(".quiz-payer-search-results");
 
 		if (results.length === 0) {
-			resultsContainer.innerHTML = `
-				<div class="quiz-payer-search-no-results">
-					No insurance plans found for "${query}"
-				</div>
-			`;
-			return;
+			resultsContainer.innerHTML = `<div class="quiz-payer-search-no-results">No insurance plans found. Try a different search term.</div>`;
+		} else {
+			const resultsHTML = results
+				.map((payer, index) => {
+					const highlightedName = this.highlightSearchTerm(payer.displayName, query);
+					const isApiResult = payer.score !== undefined;
+
+					return `
+					<div class="quiz-payer-search-item" data-index="${index}">
+						<div class="quiz-payer-search-item-name">
+							${highlightedName}
+						</div>
+						<div class="quiz-payer-search-item-details">
+							<span class="quiz-payer-search-item-id">${payer.stediId}</span>
+							${payer.aliases?.length > 0 ? `• ${payer.aliases.slice(0, 2).join(", ")}` : ""}
+							${isApiResult && payer.score ? `• Score: ${payer.score.toFixed(1)}` : ""}
+						</div>
+					</div>
+				`;
+				})
+				.join("");
+
+			resultsContainer.innerHTML = resultsHTML;
+
+			const resultItems = resultsContainer.querySelectorAll(".quiz-payer-search-item");
+			resultItems.forEach((item, index) => {
+				item.addEventListener("click", () => {
+					this.selectPayer(results[index]);
+				});
+			});
 		}
 
-		resultsContainer.innerHTML = results
-			.map(
-				payer => `
-			<div class="quiz-payer-search-item" data-payer-id="${payer.stediId}" data-payer-name="${payer.displayName}">
-				<div class="quiz-payer-search-item-name">${this.highlightSearchTerm(payer.displayName, query)}</div>
-				<div class="quiz-payer-search-item-details">ID: ${payer.primaryPayerId}</div>
-			</div>
-		`
-			)
-			.join("");
-
-		this.attachResultListeners(dropdown);
-	}
-
-	attachResultListeners(dropdown) {
-		const items = dropdown.querySelectorAll(".quiz-payer-search-item");
-		items.forEach(item => {
-			item.addEventListener("click", () => {
-				const payerId = item.dataset.payerId;
-				const payerName = item.dataset.payerName;
-				this.selectPayer({ stediId: payerId, displayName: payerName });
-			});
-		});
+		dropdown.classList.add("visible");
+		dropdown.style.display = "block";
 	}
 
 	selectPayer(payer) {
@@ -283,8 +346,12 @@ export class QuizPayerSearch extends QuizFormFieldBase {
 		const dropdown = this.root.querySelector(".quiz-payer-search-dropdown");
 		const container = this.root.querySelector(".quiz-payer-search-container");
 
+		// Update the search input with the selected payer name
 		searchInput.value = payer.displayName;
-		this.selectedPayer = payer.stediId;
+		searchInput.classList.add("quiz-input-valid");
+
+		// Use primaryPayerId if available, otherwise fall back to stediId
+		this.selectedPayer = payer.primaryPayerId || payer.stediId;
 		this.currentValue = this.selectedPayer;
 		this.closeDropdown(dropdown, container, searchInput);
 
@@ -298,7 +365,12 @@ export class QuizPayerSearch extends QuizFormFieldBase {
 			new CustomEvent("payer-selected", {
 				detail: {
 					questionId: this.questionId,
-					payer: payer
+					payer: {
+						...payer,
+						// Ensure we have both IDs for compatibility
+						stediId: payer.stediId || payer.primaryPayerId,
+						primaryPayerId: payer.primaryPayerId || payer.stediId
+					}
 				},
 				bubbles: true
 			})
@@ -309,29 +381,41 @@ export class QuizPayerSearch extends QuizFormFieldBase {
 	}
 
 	openDropdown(dropdown, container, searchInput) {
+		dropdown.classList.add("visible");
 		dropdown.style.display = "block";
-		container.classList.add("dropdown-open");
-		searchInput.classList.add("dropdown-open");
+		container.classList.add("open");
+
+		// Mobile scroll behavior
+		const isMobile = window.innerWidth <= 768;
+		if (isMobile) {
+			setTimeout(() => {
+				const inputRect = searchInput.getBoundingClientRect();
+				const offset = 20;
+				const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
+				const targetScrollY = currentScrollY + inputRect.top - offset;
+
+				window.scrollTo({
+					top: Math.max(0, targetScrollY),
+					behavior: "smooth"
+				});
+			}, 100);
+		}
 	}
 
 	closeDropdown(dropdown, container, searchInput) {
+		dropdown.classList.remove("visible");
 		dropdown.style.display = "none";
-		container.classList.remove("dropdown-open");
-		searchInput.classList.remove("dropdown-open");
+		container.classList.remove("open");
 	}
 
 	showSearchError(dropdown) {
 		const resultsContainer = dropdown.querySelector(".quiz-payer-search-results");
-		resultsContainer.innerHTML = `
-			<div class="quiz-payer-search-error">
-				Unable to search at this time. Please try again.
-			</div>
-		`;
+		resultsContainer.innerHTML = `<div class="quiz-payer-search-error">Error searching. Please try again.</div>`;
 	}
 
 	highlightSearchTerm(text, searchTerm) {
-		if (!searchTerm) return text;
-		const regex = new RegExp(`(${searchTerm})`, "gi");
+		if (!searchTerm || !text) return text;
+		const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
 		return text.replace(regex, '<span class="quiz-payer-search-highlight">$1</span>');
 	}
 
