@@ -102,6 +102,9 @@ export class QuizFormFieldBase extends QuizBaseComponent {
 			errorElement.classList.add("quiz-error-hidden");
 			errorElement.textContent = "";
 		}
+
+		// Also clear field-specific error styling
+		this.updateFieldErrorStyling();
 	}
 
 	/**
@@ -109,7 +112,13 @@ export class QuizFormFieldBase extends QuizBaseComponent {
 	 */
 	hasVisualError() {
 		const errorElement = this.root.querySelector(".quiz-error-text");
-		return errorElement?.classList.contains("quiz-error-visible") || false;
+		const hasErrorMessage = errorElement?.classList.contains("quiz-error-visible") || false;
+
+		// Also check for field-specific error styling
+		const input = this.getInputElement();
+		const hasFieldError = input?.classList.contains("quiz-input-error") || input?.classList.contains("quiz-select-error") || false;
+
+		return hasErrorMessage || hasFieldError;
 	}
 
 	/**
