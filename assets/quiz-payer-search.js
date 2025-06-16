@@ -7,6 +7,7 @@ import { QuizFormFieldBase } from "../base/quiz-form-field-base.js";
 export class QuizPayerSearch extends QuizFormFieldBase {
 	constructor() {
 		super();
+		console.log("🔍 QuizPayerSearch constructor called");
 		this.selectedPayer = "";
 		this.placeholder = "Start typing to search for your insurance plan...";
 		this.commonPayers = [];
@@ -19,6 +20,7 @@ export class QuizPayerSearch extends QuizFormFieldBase {
 	}
 
 	initialize() {
+		console.log("🔍 QuizPayerSearch initialize called");
 		this.parseAttributes();
 		this.getQuizDataFromParent();
 	}
@@ -146,6 +148,7 @@ export class QuizPayerSearch extends QuizFormFieldBase {
 	}
 
 	async render() {
+		console.log("🔍 QuizPayerSearch render called");
 		await this.renderTemplate();
 		this.setupEventListeners();
 	}
@@ -464,7 +467,11 @@ export class QuizPayerSearch extends QuizFormFieldBase {
 }
 
 if (!customElements.get("quiz-payer-search")) {
+	console.log("🔍 Registering quiz-payer-search component");
 	customElements.define("quiz-payer-search", QuizPayerSearch);
+	console.log("🔍 quiz-payer-search component registered successfully");
+} else {
+	console.log("🔍 quiz-payer-search component already registered");
 }
 
 export default QuizPayerSearch;
