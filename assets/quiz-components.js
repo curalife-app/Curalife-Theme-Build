@@ -1907,11 +1907,12 @@ var __defProp=Object.defineProperty;var __defNormalProp=(obj,key,value)=>key in 
 				   class="quiz-input"
 				   value="${value}"
 				   ${question.required?"required":""}>
-		`}renderPayerSearch(question,value){const commonPayersAttr=question.commonPayers?`common-payers='${JSON.stringify(question.commonPayers)}'`:"",selectedPayerAttr=value?`selected-payer="${value}"`:"",placeholderAttr=question.placeholder?`placeholder="${question.placeholder}"`:"";return`<quiz-payer-search
+		`}renderPayerSearch(question,value){const commonPayersAttr=question.commonPayers?`common-payers='${JSON.stringify(question.commonPayers)}'`:"",selectedPayerAttr=value?`selected-payer="${value}"`:"",placeholderAttr=question.placeholder?`placeholder="${question.placeholder}"`:"",quizData=this.getQuizData(),quizDataAttr=quizData?`quiz-data='${JSON.stringify({config:quizData.config,commonPayers:quizData.commonPayers})}'`:"";return`<quiz-payer-search
 			question-id="${question.id}"
 			${placeholderAttr}
 			${commonPayersAttr}
 			${selectedPayerAttr}
+			${quizDataAttr}
 		></quiz-payer-search>`}getStepData(){try{const stepDataAttr=this.getAttribute("step-data");return stepDataAttr?JSON.parse(stepDataAttr):null}catch(error){return console.error("Error parsing step data:",error),null}}getResponses(){try{const responsesAttr=this.getAttribute("responses");return responsesAttr?JSON.parse(responsesAttr):[]}catch(error){return console.error("Error parsing responses:",error),[]}}getValidationErrors(){try{const errorsAttr=this.getAttribute("validation-errors");return errorsAttr?JSON.parse(errorsAttr):[]}catch(error){return console.error("Error parsing validation errors:",error),[]}}getQuizData(){try{const quizDataAttr=this.getAttribute("quiz-data");return quizDataAttr?JSON.parse(quizDataAttr):null}catch(error){return console.error("Error parsing quiz data:",error),null}}handleAttributeChange(name,oldValue,newValue){["step-data","responses","current-question-index","is-form-step","validation-errors","quiz-data"].includes(name)&&this.render()}};__name(_QuizStepContainer,"QuizStepContainer");let QuizStepContainer=_QuizStepContainer;customElements.get("quiz-step-container")||customElements.define("quiz-step-container",QuizStepContainer);const _QuizSchedulingResult=class _QuizSchedulingResult extends QuizBaseComponent{static get observedAttributes(){return["result-type","scheduling-data","error-message"]}getTemplate(){const resultType=this.getAttribute("result-type")||"success",schedulingData=this.getSchedulingData(),errorMessage=this.getAttribute("error-message")||"";return resultType==="success"?this.renderSuccessResult(schedulingData):this.renderErrorResult(errorMessage,schedulingData)}getStyles(){return`
 			${super.getStyles()}
 
