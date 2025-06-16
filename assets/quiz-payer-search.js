@@ -6,6 +6,7 @@ import { QuizFormFieldBase } from "../base/quiz-form-field-base.js";
  */
 export class QuizPayerSearch extends QuizFormFieldBase {
 	constructor() {
+		console.log("🚨 PAYER SEARCH CONSTRUCTOR CALLED - COMPONENT IS BEING CREATED!");
 		super();
 		console.log("🔍 QuizPayerSearch constructor called");
 		this.selectedPayer = "";
