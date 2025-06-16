@@ -1,245 +1,5 @@
-var __defProp = Object.defineProperty;
-var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
-const scriptRel = "modulepreload";
-const assetsURL = /* @__PURE__ */ __name(function(dep) {
-  return "/" + dep;
-}, "assetsURL");
-const seen = {};
-const __vitePreload = /* @__PURE__ */ __name(function preload(baseModule, deps, importerUrl) {
-  let promise = Promise.resolve();
-  if (deps && deps.length > 0) {
-    document.getElementsByTagName("link");
-    const cspNonceMeta = document.querySelector(
-      "meta[property=csp-nonce]"
-    );
-    const cspNonce = cspNonceMeta?.nonce || cspNonceMeta?.getAttribute("nonce");
-    promise = Promise.allSettled(
-      deps.map((dep) => {
-        dep = assetsURL(dep);
-        if (dep in seen) return;
-        seen[dep] = true;
-        const isCss = dep.endsWith(".css");
-        const cssSelector = isCss ? '[rel="stylesheet"]' : "";
-        if (document.querySelector(`link[href="${dep}"]${cssSelector}`)) {
-          return;
-        }
-        const link = document.createElement("link");
-        link.rel = isCss ? "stylesheet" : scriptRel;
-        if (!isCss) {
-          link.as = "script";
-        }
-        link.crossOrigin = "";
-        link.href = dep;
-        if (cspNonce) {
-          link.setAttribute("nonce", cspNonce);
-        }
-        document.head.appendChild(link);
-        if (isCss) {
-          return new Promise((res, rej) => {
-            link.addEventListener("load", res);
-            link.addEventListener(
-              "error",
-              () => rej(new Error(`Unable to preload CSS for ${dep}`))
-            );
-          });
-        }
-      })
-    );
-  }
-  function handlePreloadError(err) {
-    const e = new Event("vite:preloadError", {
-      cancelable: true
-    });
-    e.payload = err;
-    window.dispatchEvent(e);
-    if (!e.defaultPrevented) {
-      throw err;
-    }
-  }
-  __name(handlePreloadError, "handlePreloadError");
-  return promise.then((res) => {
-    for (const item of res || []) {
-      if (item.status !== "rejected") continue;
-      handlePreloadError(item.reason);
-    }
-    return baseModule().catch(handlePreloadError);
-  });
-}, "preload");
-const _SharedStyles = class _SharedStyles {
-  constructor() {
-    this.stylesCache = /* @__PURE__ */ new Map();
-    this.loadingPromises = /* @__PURE__ */ new Map();
-  }
-  async loadStyles(cssPath) {
-    if (this.stylesCache.has(cssPath)) {
-      return this.stylesCache.get(cssPath);
-    }
-    if (this.loadingPromises.has(cssPath)) {
-      return this.loadingPromises.get(cssPath);
-    }
-    const loadingPromise = this.fetchStyles(cssPath);
-    this.loadingPromises.set(cssPath, loadingPromise);
-    try {
-      const styles = await loadingPromise;
-      this.stylesCache.set(cssPath, styles);
-      this.loadingPromises.delete(cssPath);
-      return styles;
-    } catch (error) {
-      this.loadingPromises.delete(cssPath);
-      throw error;
-    }
-  }
-  async fetchStyles(cssPath) {
-    try {
-      const response = await fetch(cssPath);
-      if (!response.ok) {
-        throw new Error(`Failed to load CSS: ${response.status}`);
-      }
-      return await response.text();
-    } catch (error) {
-      console.warn(`Could not load shared styles from ${cssPath}:`, error);
-      if (cssPath.includes("/assets/quiz.css")) {
-        const alternatives = [cssPath.replace("/assets/", "/assets/"), "./assets/quiz.css", "../assets/quiz.css"];
-        for (const altPath of alternatives) {
-          if (altPath !== cssPath) {
-            try {
-              const altResponse = await fetch(altPath);
-              if (altResponse.ok) {
-                console.log(`✓ Loaded styles from alternative path: ${altPath}`);
-                return await altResponse.text();
-              }
-            } catch (altError) {
-            }
-          }
-        }
-      }
-      return "";
-    }
-  }
-  // Get quiz-specific styles with configurable URL
-  async getQuizStyles(cssUrl = null) {
-    const url = cssUrl || window.QUIZ_CSS_URL || "/assets/quiz.css";
-    if (window.QUIZ_CONFIG?.debug) {
-      console.log(`🎨 Loading quiz styles from: ${url}`);
-    }
-    return this.loadStyles(url);
-  }
-  // Create a style element with the shared styles
-  createStyleElement(additionalCSS = "", cssUrl = null) {
-    const styleElement = document.createElement("style");
-    this.getQuizStyles(cssUrl).then((sharedCSS) => {
-      styleElement.textContent = sharedCSS + "\n" + additionalCSS;
-    }).catch(() => {
-      styleElement.textContent = additionalCSS;
-    });
-    styleElement.textContent = additionalCSS;
-    return styleElement;
-  }
-  // Set global CSS URL for all components
-  setQuizCssUrl(url) {
-    window.QUIZ_CSS_URL = url;
-  }
-};
-__name(_SharedStyles, "SharedStyles");
-let SharedStyles = _SharedStyles;
-const sharedStyles = new SharedStyles();
-const _QuizBaseComponent = class _QuizBaseComponent extends HTMLElement {
-  constructor() {
-    super();
-    this.config = {
-      useShadowDOM: false,
-      // Disable for now - quiz.css designed for light DOM
-      inheritStyles: true,
-      autoRender: true
-    };
-    this.isInitialized = false;
-    this._isComponentConnected = false;
-    if (this.config.useShadowDOM) {
-      this.attachShadow({ mode: "open" });
-      this.root = this.shadowRoot;
-    } else {
-      this.root = this;
-    }
-    this.handleAttributeChange = this.handleAttributeChange.bind(this);
-    this.handleSlotChange = this.handleSlotChange.bind(this);
-  }
-  /**
-   * Lifecycle: Component connected to DOM
-   */
-  connectedCallback() {
-    this._isComponentConnected = true;
-    if (!this.isInitialized) {
-      this.initialize();
-      this.isInitialized = true;
-    }
-    if (this.config.autoRender) {
-      try {
-        const renderResult = this.render();
-        if (renderResult && typeof renderResult.catch === "function") {
-          renderResult.catch((error) => {
-            console.error("Error rendering component:", error);
-          });
-        }
-      } catch (error) {
-        console.error("Error rendering component:", error);
-      }
-    }
-    this.setupEventListeners();
-    this.onConnected();
-  }
-  /**
-   * Lifecycle: Component disconnected from DOM
-   */
-  disconnectedCallback() {
-    this._isComponentConnected = false;
-    this.cleanup();
-    this.onDisconnected();
-  }
-  /**
-   * Lifecycle: Attribute changed
-   */
-  attributeChangedCallback(name, oldValue, newValue) {
-    if (oldValue === newValue) return;
-    this.handleAttributeChange(name, oldValue, newValue);
-    if (this._isComponentConnected && this.config.autoRender) {
-      try {
-        const renderResult = this.render();
-        if (renderResult && typeof renderResult.catch === "function") {
-          renderResult.catch((error) => {
-            console.error("Error rendering component on attribute change:", error);
-          });
-        }
-      } catch (error) {
-        console.error("Error rendering component on attribute change:", error);
-      }
-    }
-  }
-  /**
-   * Initialize component
-   * Override in subclasses for custom initialization
-   */
-  initialize() {
-  }
-  /**
-   * Render component
-   * Must be implemented by subclasses
-   */
-  async render() {
-    throw new Error("render() must be implemented by subclass");
-  }
-  /**
-   * Get component template
-   * Must be implemented by subclasses
-   */
-  getTemplate() {
-    throw new Error("getTemplate() must be implemented by subclass");
-  }
-  /**
-   * Get component styles
-   * Override in subclasses to add custom styles
-   */
-  getStyles() {
-    return `
+var __defProp=Object.defineProperty;var __defNormalProp=(obj,key,value)=>key in obj?__defProp(obj,key,{enumerable:!0,configurable:!0,writable:!0,value}):obj[key]=value;var __name=(target,value)=>__defProp(target,"name",{value,configurable:!0});var __publicField=(obj,key,value)=>__defNormalProp(obj,typeof key!="symbol"?key+"":key,value);const scriptRel="modulepreload",assetsURL=__name(function(dep){return"/"+dep},"assetsURL"),seen={},__vitePreload=__name(function(baseModule,deps,importerUrl){let promise=Promise.resolve();if(deps&&deps.length>0){document.getElementsByTagName("link");const cspNonceMeta=document.querySelector("meta[property=csp-nonce]"),cspNonce=cspNonceMeta?.nonce||cspNonceMeta?.getAttribute("nonce");promise=Promise.allSettled(deps.map(dep=>{if(dep=assetsURL(dep),dep in seen)return;seen[dep]=!0;const isCss=dep.endsWith(".css"),cssSelector=isCss?'[rel="stylesheet"]':"";if(document.querySelector(`link[href="${dep}"]${cssSelector}`))return;const link=document.createElement("link");if(link.rel=isCss?"stylesheet":scriptRel,isCss||(link.as="script"),link.crossOrigin="",link.href=dep,cspNonce&&link.setAttribute("nonce",cspNonce),document.head.appendChild(link),isCss)return new Promise((res,rej)=>{link.addEventListener("load",res),link.addEventListener("error",()=>rej(new Error(`Unable to preload CSS for ${dep}`)))})}))}function handlePreloadError(err){const e=new Event("vite:preloadError",{cancelable:!0});if(e.payload=err,window.dispatchEvent(e),!e.defaultPrevented)throw err}return __name(handlePreloadError,"handlePreloadError"),promise.then(res=>{for(const item of res||[])item.status==="rejected"&&handlePreloadError(item.reason);return baseModule().catch(handlePreloadError)})},"preload"),_SharedStyles=class _SharedStyles{constructor(){this.stylesCache=new Map,this.loadingPromises=new Map}async loadStyles(cssPath){if(this.stylesCache.has(cssPath))return this.stylesCache.get(cssPath);if(this.loadingPromises.has(cssPath))return this.loadingPromises.get(cssPath);const loadingPromise=this.fetchStyles(cssPath);this.loadingPromises.set(cssPath,loadingPromise);try{const styles=await loadingPromise;return this.stylesCache.set(cssPath,styles),this.loadingPromises.delete(cssPath),styles}catch(error){throw this.loadingPromises.delete(cssPath),error}}async fetchStyles(cssPath){try{const response=await fetch(cssPath);if(!response.ok)throw new Error(`Failed to load CSS: ${response.status}`);return await response.text()}catch(error){if(console.warn(`Could not load shared styles from ${cssPath}:`,error),cssPath.includes("/assets/quiz.css")){const alternatives=[cssPath.replace("/assets/","/assets/"),"./assets/quiz.css","../assets/quiz.css"];for(const altPath of alternatives)if(altPath!==cssPath)try{const altResponse=await fetch(altPath);if(altResponse.ok)return console.log(`✓ Loaded styles from alternative path: ${altPath}`),await altResponse.text()}catch{}}return""}}async getQuizStyles(cssUrl=null){const url=cssUrl||window.QUIZ_CSS_URL||"/assets/quiz.css";return window.QUIZ_CONFIG?.debug&&console.log(`🎨 Loading quiz styles from: ${url}`),this.loadStyles(url)}createStyleElement(additionalCSS="",cssUrl=null){const styleElement=document.createElement("style");return this.getQuizStyles(cssUrl).then(sharedCSS=>{styleElement.textContent=sharedCSS+`
+`+additionalCSS}).catch(()=>{styleElement.textContent=additionalCSS}),styleElement.textContent=additionalCSS,styleElement}setQuizCssUrl(url){window.QUIZ_CSS_URL=url}};__name(_SharedStyles,"SharedStyles");let SharedStyles=_SharedStyles;const sharedStyles=new SharedStyles,_QuizBaseComponent=class _QuizBaseComponent extends HTMLElement{constructor(){super(),this.config={useShadowDOM:!1,inheritStyles:!0,autoRender:!0},this.isInitialized=!1,this._isComponentConnected=!1,this.config.useShadowDOM?(this.attachShadow({mode:"open"}),this.root=this.shadowRoot):this.root=this,this.handleAttributeChange=this.handleAttributeChange.bind(this),this.handleSlotChange=this.handleSlotChange.bind(this)}connectedCallback(){if(this._isComponentConnected=!0,this.isInitialized||(this.initialize(),this.isInitialized=!0),this.config.autoRender)try{const renderResult=this.render();renderResult&&typeof renderResult.catch=="function"&&renderResult.catch(error=>{console.error("Error rendering component:",error)})}catch(error){console.error("Error rendering component:",error)}this.setupEventListeners(),this.onConnected()}disconnectedCallback(){this._isComponentConnected=!1,this.cleanup(),this.onDisconnected()}attributeChangedCallback(name,oldValue,newValue){if(oldValue!==newValue&&(this.handleAttributeChange(name,oldValue,newValue),this._isComponentConnected&&this.config.autoRender))try{const renderResult=this.render();renderResult&&typeof renderResult.catch=="function"&&renderResult.catch(error=>{console.error("Error rendering component on attribute change:",error)})}catch(error){console.error("Error rendering component on attribute change:",error)}}initialize(){}async render(){throw new Error("render() must be implemented by subclass")}getTemplate(){throw new Error("getTemplate() must be implemented by subclass")}getStyles(){return`
       :host {
         display: block;
         box-sizing: border-box;
@@ -259,278 +19,7 @@ const _QuizBaseComponent = class _QuizBaseComponent extends HTMLElement {
 				--quiz-transition-fast: var(--quiz-transition-fast, 0.2s ease);
 				--quiz-transition-slow: var(--quiz-transition-slow, 0.5s ease-out);
 			}
-    `;
-  }
-  /**
-   * Handle attribute changes
-   * Override in subclasses for custom attribute handling
-   */
-  handleAttributeChange(name, oldValue, newValue) {
-  }
-  /**
-   * Handle slot changes
-   */
-  handleSlotChange(event) {
-  }
-  /**
-   * Setup event listeners
-   * Override in subclasses
-   */
-  setupEventListeners() {
-  }
-  /**
-   * Cleanup resources
-   * Override in subclasses
-   */
-  cleanup() {
-  }
-  /**
-   * Called when component is connected
-   * Override in subclasses
-   */
-  onConnected() {
-  }
-  /**
-   * Called when component is disconnected
-   * Override in subclasses
-   */
-  onDisconnected() {
-  }
-  /**
-   * Check if component is connected (use native isConnected for DOM connection status)
-   */
-  get isComponentConnected() {
-    return this._isComponentConnected;
-  }
-  /**
-   * Utility: Get attribute as boolean
-   */
-  getBooleanAttribute(name, defaultValue = false) {
-    const value = this.getAttribute(name);
-    if (value === null) return defaultValue;
-    return value === "" || value === "true" || value === name;
-  }
-  /**
-   * Utility: Get attribute as number
-   */
-  getNumberAttribute(name, defaultValue = 0) {
-    const value = this.getAttribute(name);
-    if (value === null) return defaultValue;
-    const parsed = parseFloat(value);
-    return isNaN(parsed) ? defaultValue : parsed;
-  }
-  /**
-   * Utility: Set multiple attributes
-   */
-  setAttributes(attributes) {
-    Object.entries(attributes).forEach(([name, value]) => {
-      if (value === null || value === void 0) {
-        this.removeAttribute(name);
-      } else {
-        this.setAttribute(name, String(value));
-      }
-    });
-  }
-  /**
-   * Utility: Dispatch custom event
-   */
-  dispatchCustomEvent(eventName, detail = {}, options = {}) {
-    const event = new CustomEvent(eventName, {
-      detail,
-      bubbles: true,
-      cancelable: true,
-      ...options
-    });
-    this.dispatchEvent(event);
-    return event;
-  }
-  /**
-   * Utility: Query element in component root
-   */
-  querySelector(selector) {
-    if (this.config.useShadowDOM) {
-      return this.shadowRoot.querySelector(selector);
-    } else {
-      return HTMLElement.prototype.querySelector.call(this, selector);
-    }
-  }
-  /**
-   * Utility: Query all elements in component root
-   */
-  querySelectorAll(selector) {
-    if (this.config.useShadowDOM) {
-      return this.shadowRoot.querySelectorAll(selector);
-    } else {
-      return HTMLElement.prototype.querySelectorAll.call(this, selector);
-    }
-  }
-  /**
-   * Utility: Create element with attributes and content
-   */
-  createElement(tagName, attributes = {}, content = "") {
-    const element = document.createElement(tagName);
-    Object.entries(attributes).forEach(([name, value]) => {
-      element.setAttribute(name, String(value));
-    });
-    if (content) {
-      element.innerHTML = content;
-    }
-    return element;
-  }
-  /**
-   * Utility: Sanitize HTML content
-   */
-  sanitizeHTML(html) {
-    const div = document.createElement("div");
-    div.textContent = html;
-    return div.innerHTML;
-  }
-  /**
-   * Utility: Debounce function calls
-   */
-  debounce(func, wait) {
-    let timeout;
-    return /* @__PURE__ */ __name(function executedFunction(...args) {
-      const later = /* @__PURE__ */ __name(() => {
-        clearTimeout(timeout);
-        func(...args);
-      }, "later");
-      clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
-    }, "executedFunction");
-  }
-  /**
-   * Utility: Throttle function calls
-   */
-  throttle(func, limit) {
-    let inThrottle;
-    return /* @__PURE__ */ __name(function executedFunction(...args) {
-      if (!inThrottle) {
-        func.apply(this, args);
-        inThrottle = true;
-        setTimeout(() => inThrottle = false, limit);
-      }
-    }, "executedFunction");
-  }
-  /**
-   * Render complete template with styles
-   */
-  async renderTemplate() {
-    this.innerHTML = this.getTemplate();
-  }
-};
-__name(_QuizBaseComponent, "QuizBaseComponent");
-let QuizBaseComponent = _QuizBaseComponent;
-const _QuizComponentRegistry = class _QuizComponentRegistry {
-  constructor() {
-    this.components = /* @__PURE__ */ new Map();
-    this.loadedComponents = /* @__PURE__ */ new Set();
-  }
-  /**
-   * Register a component
-   */
-  register(tagName, componentClass, options = {}) {
-    if (customElements.get(tagName)) {
-      console.warn(`Component ${tagName} already registered`);
-      return;
-    }
-    if (!(componentClass.prototype instanceof QuizBaseComponent)) {
-      console.warn(`Component ${tagName} should extend QuizBaseComponent`);
-    }
-    customElements.define(tagName, componentClass);
-    this.components.set(tagName, { componentClass, options });
-    this.loadedComponents.add(tagName);
-    console.log(`✓ Registered quiz component: ${tagName}`);
-  }
-  /**
-   * Check if component is registered
-   */
-  isRegistered(tagName) {
-    return this.loadedComponents.has(tagName);
-  }
-  /**
-   * Get all registered components
-   */
-  getRegistered() {
-    return Array.from(this.loadedComponents);
-  }
-  /**
-   * Load component dynamically
-   */
-  async loadComponent(componentName) {
-    if (this.isRegistered(componentName)) {
-      return;
-    }
-    try {
-      const componentMap = {
-        "quiz-calendar-icon": /* @__PURE__ */ __name(() => __vitePreload(() => Promise.resolve().then(() => quizCalendarIcon), true ? void 0 : void 0), "quiz-calendar-icon"),
-        "quiz-clock-icon": /* @__PURE__ */ __name(() => __vitePreload(() => Promise.resolve().then(() => quizClockIcon), true ? void 0 : void 0), "quiz-clock-icon"),
-        "quiz-checkmark-icon": /* @__PURE__ */ __name(() => __vitePreload(() => Promise.resolve().then(() => quizCheckmarkIcon), true ? void 0 : void 0), "quiz-checkmark-icon"),
-        "quiz-coverage-card": /* @__PURE__ */ __name(() => __vitePreload(() => Promise.resolve().then(() => quizCoverageCard), true ? void 0 : void 0), "quiz-coverage-card"),
-        "quiz-benefit-item": /* @__PURE__ */ __name(() => __vitePreload(() => Promise.resolve().then(() => quizBenefitItem), true ? void 0 : void 0), "quiz-benefit-item"),
-        "quiz-action-section": /* @__PURE__ */ __name(() => __vitePreload(() => Promise.resolve().then(() => quizActionSection), true ? void 0 : void 0), "quiz-action-section"),
-        "quiz-error-display": /* @__PURE__ */ __name(() => __vitePreload(() => Promise.resolve().then(() => quizErrorDisplay), true ? void 0 : void 0), "quiz-error-display"),
-        "quiz-loading-display": /* @__PURE__ */ __name(() => __vitePreload(() => Promise.resolve().then(() => quizLoadingDisplay), true ? void 0 : void 0), "quiz-loading-display")
-      };
-      const importFn = componentMap[componentName];
-      if (!importFn) {
-        throw new Error(`Unknown component: ${componentName}`);
-      }
-      const module = await importFn();
-      if (module.default && !this.isRegistered(componentName)) {
-        console.log(`✓ Loaded quiz component: ${componentName}`);
-      }
-    } catch (error) {
-      console.error(`Failed to load component ${componentName}:`, error);
-    }
-  }
-  /**
-   * Get component file path
-   */
-  getComponentPath(componentName) {
-    const parts = componentName.split("-");
-    if (parts[0] === "quiz") {
-      const category = this.getCategoryFromName(parts[1]);
-      return `${category}/${componentName}.js`;
-    }
-    return `${componentName}.js`;
-  }
-  /**
-   * Determine component category from name
-   */
-  getCategoryFromName(type) {
-    const categoryMap = {
-      calendar: "icons",
-      clock: "icons",
-      checkmark: "icons",
-      error: "icons",
-      results: "layout",
-      step: "layout",
-      form: "forms",
-      coverage: "content",
-      action: "content",
-      benefit: "content",
-      faq: "content"
-    };
-    return categoryMap[type] || "content";
-  }
-};
-__name(_QuizComponentRegistry, "QuizComponentRegistry");
-let QuizComponentRegistry = _QuizComponentRegistry;
-const quizComponentRegistry = new QuizComponentRegistry();
-const _QuizCalendarIcon = class _QuizCalendarIcon extends QuizBaseComponent {
-  constructor() {
-    super();
-    this.config.useShadowDOM = false;
-  }
-  static get observedAttributes() {
-    return ["size", "color", "stroke-width"];
-  }
-  getTemplate() {
-    const size = this.getAttribute("size") || "20";
-    const color = this.getAttribute("color") || "currentColor";
-    const strokeWidth = this.getAttribute("stroke-width") || "1.5";
-    return `
+    `}handleAttributeChange(name,oldValue,newValue){}handleSlotChange(event){}setupEventListeners(){}cleanup(){}onConnected(){}onDisconnected(){}get isComponentConnected(){return this._isComponentConnected}getBooleanAttribute(name,defaultValue=!1){const value=this.getAttribute(name);return value===null?defaultValue:value===""||value==="true"||value===name}getNumberAttribute(name,defaultValue=0){const value=this.getAttribute(name);if(value===null)return defaultValue;const parsed=parseFloat(value);return isNaN(parsed)?defaultValue:parsed}setAttributes(attributes){Object.entries(attributes).forEach(([name,value])=>{value==null?this.removeAttribute(name):this.setAttribute(name,String(value))})}dispatchCustomEvent(eventName,detail={},options={}){const event=new CustomEvent(eventName,{detail,bubbles:!0,cancelable:!0,...options});return this.dispatchEvent(event),event}querySelector(selector){return this.config.useShadowDOM?this.shadowRoot.querySelector(selector):HTMLElement.prototype.querySelector.call(this,selector)}querySelectorAll(selector){return this.config.useShadowDOM?this.shadowRoot.querySelectorAll(selector):HTMLElement.prototype.querySelectorAll.call(this,selector)}createElement(tagName,attributes={},content=""){const element=document.createElement(tagName);return Object.entries(attributes).forEach(([name,value])=>{element.setAttribute(name,String(value))}),content&&(element.innerHTML=content),element}sanitizeHTML(html){const div=document.createElement("div");return div.textContent=html,div.innerHTML}debounce(func,wait){let timeout;return __name(function(...args){const later=__name(()=>{clearTimeout(timeout),func(...args)},"later");clearTimeout(timeout),timeout=setTimeout(later,wait)},"executedFunction")}throttle(func,limit){let inThrottle;return __name(function(...args){inThrottle||(func.apply(this,args),inThrottle=!0,setTimeout(()=>inThrottle=!1,limit))},"executedFunction")}async renderTemplate(){this.innerHTML=this.getTemplate()}};__name(_QuizBaseComponent,"QuizBaseComponent");let QuizBaseComponent=_QuizBaseComponent;const _QuizComponentRegistry=class _QuizComponentRegistry{constructor(){this.components=new Map,this.loadedComponents=new Set}register(tagName,componentClass,options={}){if(customElements.get(tagName)){console.warn(`Component ${tagName} already registered`);return}componentClass.prototype instanceof QuizBaseComponent||console.warn(`Component ${tagName} should extend QuizBaseComponent`),customElements.define(tagName,componentClass),this.components.set(tagName,{componentClass,options}),this.loadedComponents.add(tagName),console.log(`✓ Registered quiz component: ${tagName}`)}isRegistered(tagName){return this.loadedComponents.has(tagName)}getRegistered(){return Array.from(this.loadedComponents)}async loadComponent(componentName){if(!this.isRegistered(componentName))try{const importFn={"quiz-calendar-icon":__name(()=>__vitePreload(()=>Promise.resolve().then(()=>quizCalendarIcon),void 0),"quiz-calendar-icon"),"quiz-clock-icon":__name(()=>__vitePreload(()=>Promise.resolve().then(()=>quizClockIcon),void 0),"quiz-clock-icon"),"quiz-checkmark-icon":__name(()=>__vitePreload(()=>Promise.resolve().then(()=>quizCheckmarkIcon),void 0),"quiz-checkmark-icon"),"quiz-coverage-card":__name(()=>__vitePreload(()=>Promise.resolve().then(()=>quizCoverageCard),void 0),"quiz-coverage-card"),"quiz-benefit-item":__name(()=>__vitePreload(()=>Promise.resolve().then(()=>quizBenefitItem),void 0),"quiz-benefit-item"),"quiz-action-section":__name(()=>__vitePreload(()=>Promise.resolve().then(()=>quizActionSection),void 0),"quiz-action-section"),"quiz-error-display":__name(()=>__vitePreload(()=>Promise.resolve().then(()=>quizErrorDisplay),void 0),"quiz-error-display"),"quiz-loading-display":__name(()=>__vitePreload(()=>Promise.resolve().then(()=>quizLoadingDisplay),void 0),"quiz-loading-display")}[componentName];if(!importFn)throw new Error(`Unknown component: ${componentName}`);(await importFn()).default&&!this.isRegistered(componentName)&&console.log(`✓ Loaded quiz component: ${componentName}`)}catch(error){console.error(`Failed to load component ${componentName}:`,error)}}getComponentPath(componentName){const parts=componentName.split("-");return parts[0]==="quiz"?`${this.getCategoryFromName(parts[1])}/${componentName}.js`:`${componentName}.js`}getCategoryFromName(type){return{calendar:"icons",clock:"icons",checkmark:"icons",error:"icons",results:"layout",step:"layout",form:"forms",coverage:"content",action:"content",benefit:"content",faq:"content"}[type]||"content"}};__name(_QuizComponentRegistry,"QuizComponentRegistry");let QuizComponentRegistry=_QuizComponentRegistry;const quizComponentRegistry=new QuizComponentRegistry,_QuizCalendarIcon=class _QuizCalendarIcon extends QuizBaseComponent{constructor(){super(),this.config.useShadowDOM=!1}static get observedAttributes(){return["size","color","stroke-width"]}getTemplate(){const size=this.getAttribute("size")||"20",color=this.getAttribute("color")||"currentColor",strokeWidth=this.getAttribute("stroke-width")||"1.5";return`
       <svg
         width="${size}"
         height="${size}"
@@ -548,34 +37,7 @@ const _QuizCalendarIcon = class _QuizCalendarIcon extends QuizBaseComponent {
           stroke-linejoin="round"
         />
       </svg>
-    `;
-  }
-  render() {
-    this.innerHTML = this.getTemplate();
-  }
-};
-__name(_QuizCalendarIcon, "QuizCalendarIcon");
-let QuizCalendarIcon = _QuizCalendarIcon;
-if (!customElements.get("quiz-calendar-icon")) {
-  quizComponentRegistry.register("quiz-calendar-icon", QuizCalendarIcon);
-}
-const quizCalendarIcon = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
-  __proto__: null,
-  default: QuizCalendarIcon
-}, Symbol.toStringTag, { value: "Module" }));
-const _QuizClockIcon = class _QuizClockIcon extends QuizBaseComponent {
-  constructor() {
-    super();
-    this.config.useShadowDOM = false;
-  }
-  static get observedAttributes() {
-    return ["size", "color", "stroke-width"];
-  }
-  getTemplate() {
-    const size = this.getAttribute("size") || "24";
-    const color = this.getAttribute("color") || "#306E51";
-    const strokeWidth = this.getAttribute("stroke-width") || "2";
-    return `
+    `}render(){this.innerHTML=this.getTemplate()}};__name(_QuizCalendarIcon,"QuizCalendarIcon");let QuizCalendarIcon=_QuizCalendarIcon;customElements.get("quiz-calendar-icon")||quizComponentRegistry.register("quiz-calendar-icon",QuizCalendarIcon);const quizCalendarIcon=Object.freeze(Object.defineProperty({__proto__:null,default:QuizCalendarIcon},Symbol.toStringTag,{value:"Module"})),_QuizClockIcon=class _QuizClockIcon extends QuizBaseComponent{constructor(){super(),this.config.useShadowDOM=!1}static get observedAttributes(){return["size","color","stroke-width"]}getTemplate(){const size=this.getAttribute("size")||"24",color=this.getAttribute("color")||"#306E51",strokeWidth=this.getAttribute("stroke-width")||"2";return`
       <svg
         width="${size}"
         height="${size}"
@@ -600,36 +62,7 @@ const _QuizClockIcon = class _QuizClockIcon extends QuizBaseComponent {
           stroke-width="${strokeWidth}"
         />
       </svg>
-    `;
-  }
-  render() {
-    this.innerHTML = this.getTemplate();
-  }
-};
-__name(_QuizClockIcon, "QuizClockIcon");
-let QuizClockIcon = _QuizClockIcon;
-if (!customElements.get("quiz-clock-icon")) {
-  quizComponentRegistry.register("quiz-clock-icon", QuizClockIcon);
-}
-const quizClockIcon = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
-  __proto__: null,
-  default: QuizClockIcon
-}, Symbol.toStringTag, { value: "Module" }));
-const _QuizCheckmarkIcon = class _QuizCheckmarkIcon extends QuizBaseComponent {
-  constructor() {
-    super();
-    this.config.useShadowDOM = false;
-  }
-  static get observedAttributes() {
-    return ["size", "color", "stroke-width", "type"];
-  }
-  getTemplate() {
-    const size = this.getAttribute("size") || "20";
-    const color = this.getAttribute("color") || "#306E51";
-    const strokeWidth = this.getAttribute("stroke-width") || "1.5";
-    const type = this.getAttribute("type") || "simple";
-    if (type === "circle") {
-      return `
+    `}render(){this.innerHTML=this.getTemplate()}};__name(_QuizClockIcon,"QuizClockIcon");let QuizClockIcon=_QuizClockIcon;customElements.get("quiz-clock-icon")||quizComponentRegistry.register("quiz-clock-icon",QuizClockIcon);const quizClockIcon=Object.freeze(Object.defineProperty({__proto__:null,default:QuizClockIcon},Symbol.toStringTag,{value:"Module"})),_QuizCheckmarkIcon=class _QuizCheckmarkIcon extends QuizBaseComponent{constructor(){super(),this.config.useShadowDOM=!1}static get observedAttributes(){return["size","color","stroke-width","type"]}getTemplate(){const size=this.getAttribute("size")||"20",color=this.getAttribute("color")||"#306E51",strokeWidth=this.getAttribute("stroke-width")||"1.5";return(this.getAttribute("type")||"simple")==="circle"?`
         <svg
           width="${size}"
           height="${size}"
@@ -654,9 +87,7 @@ const _QuizCheckmarkIcon = class _QuizCheckmarkIcon extends QuizBaseComponent {
             stroke-linejoin="round"
           />
         </svg>
-      `;
-    }
-    return `
+      `:`
       <svg
         width="${size}"
         height="${size}"
@@ -674,264 +105,103 @@ const _QuizCheckmarkIcon = class _QuizCheckmarkIcon extends QuizBaseComponent {
           stroke-linejoin="round"
         />
       </svg>
-    `;
-  }
-  render() {
-    this.innerHTML = this.getTemplate();
-  }
-};
-__name(_QuizCheckmarkIcon, "QuizCheckmarkIcon");
-let QuizCheckmarkIcon = _QuizCheckmarkIcon;
-if (!customElements.get("quiz-checkmark-icon")) {
-  quizComponentRegistry.register("quiz-checkmark-icon", QuizCheckmarkIcon);
-}
-const quizCheckmarkIcon = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
-  __proto__: null,
-  default: QuizCheckmarkIcon
-}, Symbol.toStringTag, { value: "Module" }));
-const _QuizCheckmarkComponent = class _QuizCheckmarkComponent extends HTMLElement {
-  static get observedAttributes() {
-    return ["animation", "size"];
-  }
-  constructor() {
-    super();
-    this.animationType = "bounce";
-    this.size = "normal";
-  }
-  connectedCallback() {
-    this.render();
-    this.setupAttributes();
-  }
-  attributeChangedCallback(name, oldValue, newValue) {
-    if (oldValue !== newValue) {
-      this.handleAttributeChange(name, newValue);
-    }
-  }
-  setupAttributes() {
-    this.animationType = this.getAttribute("animation") || "bounce";
-    this.size = this.getAttribute("size") || "normal";
-  }
-  handleAttributeChange(name, newValue) {
-    switch (name) {
-      case "animation":
-        this.animationType = newValue || "bounce";
-        break;
-      case "size":
-        this.size = newValue || "normal";
-        break;
-    }
-    this.updateStyles();
-  }
-  render() {
-    this.innerHTML = `
-			<div class="quiz-checkmark-container">
-				<svg class="quiz-checkmark-svg" viewBox="0 0 19 19" fill="none" xmlns="http://www.w3.org/2000/svg">
-					<path fill-rule="evenodd" clip-rule="evenodd" d="M9.79158 18.75C4.84404 18.75 0.833252 14.7393 0.833252 9.79168C0.833252 4.84413 4.84404 0.833344 9.79158 0.833344C14.7392 0.833344 18.7499 4.84413 18.7499 9.79168C18.7499 14.7393 14.7392 18.75 9.79158 18.75ZM13.7651 7.82516C14.0598 7.47159 14.012 6.94613 13.6584 6.65148C13.3048 6.35685 12.7793 6.40462 12.4848 6.75818L8.90225 11.0572L7.04751 9.20243C6.72207 8.87701 6.19444 8.87701 5.86899 9.20243C5.54356 9.52784 5.54356 10.0555 5.86899 10.3809L8.369 12.8809C8.53458 13.0465 8.76208 13.1348 8.996 13.1242C9.22992 13.1135 9.44858 13.005 9.59842 12.8252L13.7651 7.82516Z" fill="#418865"/>
-				</svg>
-			</div>
-		`;
-    this.addStyles();
-    this.updateStyles();
-  }
-  addStyles() {
-    if (!document.getElementById("quiz-checkmark-styles")) {
-      const style = document.createElement("style");
-      style.id = "quiz-checkmark-styles";
-      style.textContent = `
-				quiz-checkmark {
+    `}render(){this.innerHTML=this.getTemplate()}};__name(_QuizCheckmarkIcon,"QuizCheckmarkIcon");let QuizCheckmarkIcon=_QuizCheckmarkIcon;customElements.get("quiz-checkmark-icon")||quizComponentRegistry.register("quiz-checkmark-icon",QuizCheckmarkIcon);const quizCheckmarkIcon=Object.freeze(Object.defineProperty({__proto__:null,default:QuizCheckmarkIcon},Symbol.toStringTag,{value:"Module"})),_QuizCheckmarkComponent=class _QuizCheckmarkComponent extends HTMLElement{static get observedAttributes(){return["animation","size","color"]}constructor(){super(),this.attachShadow({mode:"open"}),this._container=null,this._svg=null,this._isAnimating=!1,this._animationTimeout=null,this._initializeComponent()}connectedCallback(){this._updateDisplay()}disconnectedCallback(){this._animationTimeout&&(clearTimeout(this._animationTimeout),this._animationTimeout=null)}attributeChangedCallback(name,oldValue,newValue){oldValue!==newValue&&this._container&&this._updateDisplay()}_initializeComponent(){this.shadowRoot.innerHTML=`
+			<style>
+				:host {
 					display: inline-block;
 					flex-shrink: 0;
+					--checkmark-size: ${_QuizCheckmarkComponent.SIZES.normal};
+					--checkmark-color: #418865;
+					--animation-duration: 300ms;
+					--animation-easing: cubic-bezier(0.68, -0.55, 0.265, 1.55);
 				}
 
-				.quiz-checkmark-container {
+				:host([hidden]) {
+					display: none !important;
+				}
+
+				.container {
 					display: flex;
 					align-items: center;
 					justify-content: center;
+					width: var(--checkmark-size);
+					height: var(--checkmark-size);
 				}
 
-				.quiz-checkmark-svg {
+				.checkmark-svg {
+					width: 100%;
+					height: 100%;
 					display: block;
 				}
 
-				/* Size variants */
-				quiz-checkmark[size="small"] .quiz-checkmark-svg {
-					width: 16px;
-					height: 16px;
+				.checkmark-path {
+					fill: var(--checkmark-color);
 				}
 
-				quiz-checkmark[size="normal"] .quiz-checkmark-svg {
-					width: 19px;
-					height: 19px;
+				/* Animation classes */
+				.animate-bounce {
+					animation: bounce var(--animation-duration) var(--animation-easing);
 				}
 
-				quiz-checkmark[size="large"] .quiz-checkmark-svg {
-					width: 24px;
-					height: 24px;
+				.animate-fade {
+					animation: fade var(--animation-duration) ease-out;
 				}
 
-				/* Animation variants */
-				quiz-checkmark[animation="bounce"] {
-					animation: checkmarkBounce 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+				.animate-scale {
+					animation: scale var(--animation-duration) ease-out;
 				}
 
-				quiz-checkmark[animation="fade"] {
-					animation: checkmarkFade 0.3s ease-out;
+				.animate-bounce-out {
+					animation: bounceOut calc(var(--animation-duration) * 0.67) ease-out forwards;
 				}
 
-				quiz-checkmark[animation="scale"] {
-					animation: checkmarkScale 0.3s ease-out;
+				.animate-fade-out {
+					animation: fadeOut calc(var(--animation-duration) * 0.67) ease-out forwards;
 				}
 
-				quiz-checkmark[animation="none"] {
-					animation: none;
+				.animate-scale-out {
+					animation: scaleOut calc(var(--animation-duration) * 0.67) ease-out forwards;
 				}
 
-				/* Keyframe animations */
-				@keyframes checkmarkBounce {
-					0% {
-						opacity: 0;
-						transform: scale(0.3);
-					}
-					50% {
-						opacity: 1;
-						transform: scale(1.1);
-					}
-					100% {
-						opacity: 1;
-						transform: scale(1);
-					}
+				/* Keyframes */
+				@keyframes bounce {
+					0% { opacity: 0; transform: scale(0.3); }
+					50% { opacity: 1; transform: scale(1.1); }
+					100% { opacity: 1; transform: scale(1); }
 				}
 
-				@keyframes checkmarkFade {
-					0% {
-						opacity: 0;
-					}
-					100% {
-						opacity: 1;
-					}
+				@keyframes fade {
+					0% { opacity: 0; }
+					100% { opacity: 1; }
 				}
 
-				@keyframes checkmarkScale {
-					0% {
-						opacity: 0;
-						transform: scale(0.8);
-					}
-					100% {
-						opacity: 1;
-						transform: scale(1);
-					}
+				@keyframes scale {
+					0% { opacity: 0; transform: scale(0.8); }
+					100% { opacity: 1; transform: scale(1); }
 				}
 
-				/* Disappear animations */
-				quiz-checkmark.disappearing[animation="bounce"] {
-					animation: checkmarkBounceOut 0.2s ease-out forwards;
+				@keyframes bounceOut {
+					0% { opacity: 1; transform: scale(1); }
+					100% { opacity: 0; transform: scale(0.3); }
 				}
 
-				quiz-checkmark.disappearing[animation="fade"] {
-					animation: checkmarkFadeOut 0.2s ease-out forwards;
+				@keyframes fadeOut {
+					0% { opacity: 1; }
+					100% { opacity: 0; }
 				}
 
-				quiz-checkmark.disappearing[animation="scale"] {
-					animation: checkmarkScaleOut 0.2s ease-out forwards;
+				@keyframes scaleOut {
+					0% { opacity: 1; transform: scale(1); }
+					100% { opacity: 0; transform: scale(0.8); }
 				}
-
-				@keyframes checkmarkBounceOut {
-					0% {
-						opacity: 1;
-						transform: scale(1);
-					}
-					100% {
-						opacity: 0;
-						transform: scale(0.3);
-					}
-				}
-
-				@keyframes checkmarkFadeOut {
-					0% {
-						opacity: 1;
-					}
-					100% {
-						opacity: 0;
-					}
-				}
-
-				@keyframes checkmarkScaleOut {
-					0% {
-						opacity: 1;
-						transform: scale(1);
-					}
-					100% {
-						opacity: 0;
-						transform: scale(0.8);
-					}
-				}
-			`;
-      document.head.appendChild(style);
-    }
-  }
-  updateStyles() {
-    this.setAttribute("animation", this.animationType);
-    this.setAttribute("size", this.size);
-  }
-  // Public API methods
-  show(animationType = null) {
-    if (animationType) {
-      this.animationType = animationType;
-    }
-    this.classList.remove("disappearing");
-    this.updateStyles();
-    this.style.display = "inline-block";
-  }
-  hide(animationType = null, callback = null) {
-    if (animationType) {
-      this.animationType = animationType;
-    }
-    this.classList.add("disappearing");
-    this.updateStyles();
-    const duration = 200;
-    setTimeout(() => {
-      this.style.display = "none";
-      this.classList.remove("disappearing");
-      if (callback) callback();
-    }, duration);
-  }
-  setSize(size) {
-    this.size = size;
-    this.updateStyles();
-  }
-  setAnimation(animationType) {
-    this.animationType = animationType;
-    this.updateStyles();
-  }
-};
-__name(_QuizCheckmarkComponent, "QuizCheckmarkComponent");
-let QuizCheckmarkComponent = _QuizCheckmarkComponent;
-if (!customElements.get("quiz-checkmark")) {
-  customElements.define("quiz-checkmark", QuizCheckmarkComponent);
-}
-const _QuizCoverageCard = class _QuizCoverageCard extends QuizBaseComponent {
-  static get observedAttributes() {
-    return ["title", "sessions-covered", "plan-end"];
-  }
-  connectedCallback() {
-    this.render();
-  }
-  attributeChangedCallback() {
-    if (this.isConnected) {
-      this.render();
-    }
-  }
-  render() {
-    this.getAttribute("title") || "Here's Your Offer";
-    this.getAttribute("sessions-covered") || "5";
-    this.getAttribute("plan-end") || "Dec 31, 2025";
-    this.renderTemplate();
-  }
-  getTemplate() {
-    const title = this.getAttribute("title") || "Here's Your Offer";
-    const sessionsCovered = this.getAttribute("sessions-covered") || "5";
-    const planEnd = this.getAttribute("plan-end") || "Dec 31, 2025";
-    return `
+			</style>
+			<div class="container">
+				<svg class="checkmark-svg" viewBox="0 0 19 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+					<path class="checkmark-path" fill-rule="evenodd" clip-rule="evenodd"
+						d="M9.79158 18.75C4.84404 18.75 0.833252 14.7393 0.833252 9.79168C0.833252 4.84413 4.84404 0.833344 9.79158 0.833344C14.7392 0.833344 18.7499 4.84413 18.7499 9.79168C18.7499 14.7393 14.7392 18.75 9.79158 18.75ZM13.7651 7.82516C14.0598 7.47159 14.012 6.94613 13.6584 6.65148C13.3048 6.35685 12.7793 6.40462 12.4848 6.75818L8.90225 11.0572L7.04751 9.20243C6.72207 8.87701 6.19444 8.87701 5.86899 9.20243C5.54356 9.52784 5.54356 10.0555 5.86899 10.3809L8.369 12.8809C8.53458 13.0465 8.76208 13.1348 8.996 13.1242C9.22992 13.1135 9.44858 13.005 9.59842 12.8252L13.7651 7.82516Z"/>
+				</svg>
+			</div>
+		`,this._container=this.shadowRoot.querySelector(".container"),this._svg=this.shadowRoot.querySelector(".checkmark-svg")}_updateDisplay(){const size=this.getAttribute("size")||"normal",color=this.getAttribute("color"),animation=this.getAttribute("animation")||"bounce";_QuizCheckmarkComponent.SIZES[size]&&this.style.setProperty("--checkmark-size",_QuizCheckmarkComponent.SIZES[size]),color&&this.style.setProperty("--checkmark-color",color);const animConfig=_QuizCheckmarkComponent.ANIMATIONS[animation];animConfig&&(this.style.setProperty("--animation-duration",`${animConfig.duration}ms`),this.style.setProperty("--animation-easing",animConfig.easing))}_clearAnimationClasses(){this._container.className="container"}_playAnimation(animationType,direction="in"){return this._isAnimating?Promise.resolve():new Promise(resolve=>{if(this._clearAnimationClasses(),animationType==="none"){resolve();return}this._isAnimating=!0;const suffix=direction==="out"?"-out":"";this._container.classList.add(`animate-${animationType}${suffix}`);const config=_QuizCheckmarkComponent.ANIMATIONS[animationType],duration=direction==="out"?config.duration*.67:config.duration;this._animationTimeout=setTimeout(()=>{this._clearAnimationClasses(),this._isAnimating=!1,this._animationTimeout=null,resolve()},duration)})}async show(animationType=null){const animation=animationType||this.getAttribute("animation")||"bounce";return this.hidden=!1,await this._playAnimation(animation,"in"),this}async hide(animationType=null){const animation=animationType||this.getAttribute("animation")||"bounce";return await this._playAnimation(animation,"out"),this.hidden=!0,this}setSize(size){return this.setAttribute("size",size),this}setAnimation(animationType){return this.setAttribute("animation",animationType),this}setColor(color){return this.setAttribute("color",color),this}isVisible(){return!this.hidden}isAnimating(){return this._isAnimating}static async showAll(checkmarks,animationType="bounce",staggerDelay=50){const promises=checkmarks.map((checkmark,index)=>new Promise(resolve=>{setTimeout(()=>{checkmark.show(animationType).then(resolve)},index*staggerDelay)}));return Promise.all(promises)}static async hideAll(checkmarks,animationType="fade",staggerDelay=30){const promises=checkmarks.map((checkmark,index)=>new Promise(resolve=>{setTimeout(()=>{checkmark.hide(animationType).then(resolve)},index*staggerDelay)}));return Promise.all(promises)}};__name(_QuizCheckmarkComponent,"QuizCheckmarkComponent"),__publicField(_QuizCheckmarkComponent,"ANIMATIONS",{bounce:{duration:300,easing:"cubic-bezier(0.68, -0.55, 0.265, 1.55)"},fade:{duration:300,easing:"ease-out"},scale:{duration:300,easing:"ease-out"},none:{duration:0,easing:"linear"}}),__publicField(_QuizCheckmarkComponent,"SIZES",{small:"16px",normal:"19px",large:"24px"});let QuizCheckmarkComponent=_QuizCheckmarkComponent;customElements.get("quiz-checkmark")||customElements.define("quiz-checkmark",QuizCheckmarkComponent);const _QuizCoverageCard=class _QuizCoverageCard extends QuizBaseComponent{static get observedAttributes(){return["title","sessions-covered","plan-end"]}connectedCallback(){this.render()}attributeChangedCallback(){this.isConnected&&this.render()}render(){this.getAttribute("title"),this.getAttribute("sessions-covered"),this.getAttribute("plan-end"),this.renderTemplate()}getTemplate(){const title=this.getAttribute("title")||"Here's Your Offer",sessionsCovered=this.getAttribute("sessions-covered")||"5",planEnd=this.getAttribute("plan-end")||"Dec 31, 2025";return`
 			<div class="quiz-coverage-card">
 				<div class="quiz-coverage-card-title">${title}</div>
 				<div class="quiz-coverage-pricing">
@@ -955,10 +225,7 @@ const _QuizCoverageCard = class _QuizCoverageCard extends QuizBaseComponent {
 					</div>
 				</div>
 			</div>
-		`;
-  }
-  getStyles() {
-    return `
+		`}getStyles(){return`
 				:host {
 					display: block;
 				}
@@ -1127,66 +394,30 @@ const _QuizCoverageCard = class _QuizCoverageCard extends QuizBaseComponent {
 						margin: 16px 0;
 					}
 				}
-		`;
-  }
-};
-__name(_QuizCoverageCard, "QuizCoverageCard");
-let QuizCoverageCard = _QuizCoverageCard;
-if (!customElements.get("quiz-coverage-card")) {
-  quizComponentRegistry.register("quiz-coverage-card", QuizCoverageCard);
-}
-const quizCoverageCard = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
-  __proto__: null,
-  default: QuizCoverageCard
-}, Symbol.toStringTag, { value: "Module" }));
-const _QuizBenefitItem = class _QuizBenefitItem extends QuizBaseComponent {
-  static get observedAttributes() {
-    return ["icon", "text", "icon-color", "icon-size"];
-  }
-  getTemplate() {
-    const iconType = this.getAttribute("icon") || "checkmark";
-    const text = this.getAttribute("text") || "";
-    const iconColor = this.getAttribute("icon-color") || "#306E51";
-    const iconSize = this.getAttribute("icon-size") || "20";
-    return `
+		`}};__name(_QuizCoverageCard,"QuizCoverageCard");let QuizCoverageCard=_QuizCoverageCard;customElements.get("quiz-coverage-card")||quizComponentRegistry.register("quiz-coverage-card",QuizCoverageCard);const quizCoverageCard=Object.freeze(Object.defineProperty({__proto__:null,default:QuizCoverageCard},Symbol.toStringTag,{value:"Module"})),_QuizBenefitItem=class _QuizBenefitItem extends QuizBaseComponent{static get observedAttributes(){return["icon","text","icon-color","icon-size"]}getTemplate(){const iconType=this.getAttribute("icon")||"checkmark",text=this.getAttribute("text")||"",iconColor=this.getAttribute("icon-color")||"#306E51",iconSize=this.getAttribute("icon-size")||"20";return`
       <div class="quiz-benefit-item">
         <div class="quiz-benefit-icon">
-          ${this.getIconHTML(iconType, iconColor, iconSize)}
+          ${this.getIconHTML(iconType,iconColor,iconSize)}
         </div>
         <div class="quiz-benefit-text">
           ${this.sanitizeHTML(text)}
         </div>
       </div>
-    `;
-  }
-  getIconHTML(type, color, size) {
-    const commonAttrs = `width="${size}" height="${size}" role="img"`;
-    switch (type) {
-      case "calendar":
-        return `
+    `}getIconHTML(type,color,size){const commonAttrs=`width="${size}" height="${size}" role="img"`;switch(type){case"calendar":return`
           <svg ${commonAttrs} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Calendar">
             <path d="M6.66666 2.5V5.83333M13.3333 2.5V5.83333M2.5 9.16667H17.5M4.16666 3.33333H15.8333C16.7538 3.33333 17.5 4.07952 17.5 5V16.6667C17.5 17.5871 16.7538 18.3333 15.8333 18.3333H4.16666C3.24619 18.3333 2.5 17.5871 2.5 16.6667V5C2.5 4.07952 3.24619 3.33333 4.16666 3.33333Z" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-        `;
-      case "clock":
-        return `
+        `;case"clock":return`
           <svg ${commonAttrs} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Clock">
             <path d="M12 8V12L15 15" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             <circle cx="12" cy="12" r="9" stroke="${color}" stroke-width="2"/>
           </svg>
-        `;
-      case "checkmark":
-      default:
-        return `
+        `;case"checkmark":default:return`
           <svg ${commonAttrs} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Checkmark">
             <path d="M10 18.3333C14.6023 18.3333 18.3333 14.6023 18.3333 9.99996C18.3333 5.39759 14.6023 1.66663 10 1.66663C5.39762 1.66663 1.66666 5.39759 1.66666 9.99996C1.66666 14.6023 5.39762 18.3333 10 18.3333Z" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
             <path d="M7.5 9.99996L9.16667 11.6666L12.5 8.33329" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-        `;
-    }
-  }
-  getStyles() {
-    return `
+        `}}getStyles(){return`
       ${super.getStyles()}
 
       :host {
@@ -1244,57 +475,7 @@ const _QuizBenefitItem = class _QuizBenefitItem extends QuizBaseComponent {
           font-size: 13px;
         }
       }
-    `;
-  }
-  render() {
-    this.renderTemplate();
-  }
-  handleAttributeChange(name, oldValue, newValue) {
-    if (this.isConnected) {
-      this.render();
-    }
-  }
-  /**
-   * Utility method to set benefit data programmatically
-   */
-  setBenefit(icon, text, iconColor = "#306E51") {
-    this.setAttributes({
-      icon,
-      text,
-      "icon-color": iconColor
-    });
-  }
-  /**
-   * Get benefit data
-   */
-  getBenefit() {
-    return {
-      icon: this.getAttribute("icon"),
-      text: this.getAttribute("text"),
-      iconColor: this.getAttribute("icon-color"),
-      iconSize: this.getAttribute("icon-size")
-    };
-  }
-};
-__name(_QuizBenefitItem, "QuizBenefitItem");
-let QuizBenefitItem = _QuizBenefitItem;
-if (!customElements.get("quiz-benefit-item")) {
-  quizComponentRegistry.register("quiz-benefit-item", QuizBenefitItem);
-}
-const quizBenefitItem = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
-  __proto__: null,
-  default: QuizBenefitItem
-}, Symbol.toStringTag, { value: "Module" }));
-const _QuizActionSection = class _QuizActionSection extends QuizBaseComponent {
-  static get observedAttributes() {
-    return ["title", "type", "background-color", "result-url"];
-  }
-  getTemplate() {
-    const title = this.getAttribute("title") || "Schedule your initial online consultation now";
-    const type = this.getAttribute("type") || "default";
-    const backgroundColor = this.getAttribute("background-color") || "#F1F8F4";
-    const resultUrl = this.getAttribute("result-url") || "#";
-    return `
+    `}render(){this.renderTemplate()}handleAttributeChange(name,oldValue,newValue){this.isConnected&&this.render()}setBenefit(icon,text,iconColor="#306E51"){this.setAttributes({icon,text,"icon-color":iconColor})}getBenefit(){return{icon:this.getAttribute("icon"),text:this.getAttribute("text"),iconColor:this.getAttribute("icon-color"),iconSize:this.getAttribute("icon-size")}}};__name(_QuizBenefitItem,"QuizBenefitItem");let QuizBenefitItem=_QuizBenefitItem;customElements.get("quiz-benefit-item")||quizComponentRegistry.register("quiz-benefit-item",QuizBenefitItem);const quizBenefitItem=Object.freeze(Object.defineProperty({__proto__:null,default:QuizBenefitItem},Symbol.toStringTag,{value:"Module"})),_QuizActionSection=class _QuizActionSection extends QuizBaseComponent{static get observedAttributes(){return["title","type","background-color","result-url"]}getTemplate(){const title=this.getAttribute("title")||"Schedule your initial online consultation now",type=this.getAttribute("type")||"default",backgroundColor=this.getAttribute("background-color")||"#F1F8F4",resultUrl=this.getAttribute("result-url")||"#";return`
       <div class="quiz-action-section" data-type="${type}" style="background-color: ${backgroundColor};">
         <div class="quiz-action-content">
           <div class="quiz-action-header">
@@ -1330,10 +511,7 @@ const _QuizActionSection = class _QuizActionSection extends QuizBaseComponent {
           <slot></slot>
         </div>
       </div>
-    `;
-  }
-  getStyles() {
-    return `
+    `}getStyles(){return`
       ${super.getStyles()}
 
       :host {
@@ -1478,73 +656,7 @@ const _QuizActionSection = class _QuizActionSection extends QuizBaseComponent {
           margin-top: 32px;
         }
       }
-    `;
-  }
-  render() {
-    this.renderTemplate();
-    this.updateBackgroundColor();
-  }
-  handleAttributeChange(name, oldValue, newValue) {
-    if (name === "background-color") {
-      this.updateBackgroundColor();
-    }
-  }
-  updateBackgroundColor() {
-    const backgroundColor = this.getAttribute("background-color");
-    if (backgroundColor) {
-      const section = this.querySelector(".quiz-action-section");
-      if (section) {
-        section.style.background = backgroundColor;
-      }
-    }
-  }
-  onConnected() {
-    this.dispatchCustomEvent("quiz-action-section-ready", {
-      title: this.getAttribute("title"),
-      type: this.getAttribute("type")
-    });
-  }
-  /**
-   * Utility method to set action data programmatically
-   */
-  setAction(title, type = "default", backgroundColor = null) {
-    this.setAttributes({
-      title,
-      type,
-      "background-color": backgroundColor
-    });
-  }
-  /**
-   * Get action data
-   */
-  getAction() {
-    return {
-      title: this.getAttribute("title"),
-      type: this.getAttribute("type"),
-      backgroundColor: this.getAttribute("background-color")
-    };
-  }
-};
-__name(_QuizActionSection, "QuizActionSection");
-let QuizActionSection = _QuizActionSection;
-if (!customElements.get("quiz-action-section")) {
-  quizComponentRegistry.register("quiz-action-section", QuizActionSection);
-}
-const quizActionSection = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
-  __proto__: null,
-  default: QuizActionSection
-}, Symbol.toStringTag, { value: "Module" }));
-const _QuizErrorDisplay = class _QuizErrorDisplay extends QuizBaseComponent {
-  static get observedAttributes() {
-    return ["type", "title", "message", "error-code", "show-details"];
-  }
-  getTemplate() {
-    const type = this.getAttribute("type") || "general";
-    const title = this.getAttribute("title") || "Error";
-    const message = this.getAttribute("message") || "An error occurred. Please try again.";
-    const errorCode = this.getAttribute("error-code") || "";
-    const showDetails = this.getBooleanAttribute("show-details", false);
-    return `
+    `}render(){this.renderTemplate(),this.updateBackgroundColor()}handleAttributeChange(name,oldValue,newValue){name==="background-color"&&this.updateBackgroundColor()}updateBackgroundColor(){const backgroundColor=this.getAttribute("background-color");if(backgroundColor){const section=this.querySelector(".quiz-action-section");section&&(section.style.background=backgroundColor)}}onConnected(){this.dispatchCustomEvent("quiz-action-section-ready",{title:this.getAttribute("title"),type:this.getAttribute("type")})}setAction(title,type="default",backgroundColor=null){this.setAttributes({title,type,"background-color":backgroundColor})}getAction(){return{title:this.getAttribute("title"),type:this.getAttribute("type"),backgroundColor:this.getAttribute("background-color")}}};__name(_QuizActionSection,"QuizActionSection");let QuizActionSection=_QuizActionSection;customElements.get("quiz-action-section")||quizComponentRegistry.register("quiz-action-section",QuizActionSection);const quizActionSection=Object.freeze(Object.defineProperty({__proto__:null,default:QuizActionSection},Symbol.toStringTag,{value:"Module"})),_QuizErrorDisplay=class _QuizErrorDisplay extends QuizBaseComponent{static get observedAttributes(){return["type","title","message","error-code","show-details"]}getTemplate(){const type=this.getAttribute("type")||"general",title=this.getAttribute("title")||"Error",message=this.getAttribute("message")||"An error occurred. Please try again.",errorCode=this.getAttribute("error-code")||"",showDetails=this.getBooleanAttribute("show-details",!1);return`
       <div class="quiz-error-display" data-type="${type}">
         <div class="quiz-error-content">
           <div class="quiz-error-header">
@@ -1557,14 +669,14 @@ const _QuizErrorDisplay = class _QuizErrorDisplay extends QuizBaseComponent {
             </div>
           </div>
 
-          ${errorCode ? `
+          ${errorCode?`
             <div class="quiz-error-code">
               <span class="quiz-error-code-label">Error Code:</span>
               <span class="quiz-error-code-value">${this.sanitizeHTML(errorCode)}</span>
             </div>
-          ` : ""}
+          `:""}
 
-          ${showDetails ? `
+          ${showDetails?`
             <div class="quiz-error-details">
               <details class="quiz-error-details-toggle">
                 <summary class="quiz-error-details-summary">Technical Details</summary>
@@ -1573,7 +685,7 @@ const _QuizErrorDisplay = class _QuizErrorDisplay extends QuizBaseComponent {
                 </div>
               </details>
             </div>
-          ` : ""}
+          `:""}
 
           <div class="quiz-error-actions">
             <slot name="actions"></slot>
@@ -1583,56 +695,26 @@ const _QuizErrorDisplay = class _QuizErrorDisplay extends QuizBaseComponent {
           <slot></slot>
         </div>
       </div>
-    `;
-  }
-  getErrorIcon(type) {
-    const iconColor = this.getIconColor(type);
-    switch (type) {
-      case "warning":
-        return `
+    `}getErrorIcon(type){const iconColor=this.getIconColor(type);switch(type){case"warning":return`
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Warning">
             <path d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="${iconColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-        `;
-      case "technical":
-        return `
+        `;case"technical":return`
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Technical Error">
             <path d="M12 8V12M12 16H12.01M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="${iconColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             <path d="M8 12L16 12" stroke="${iconColor}" stroke-width="1" stroke-linecap="round"/>
           </svg>
-        `;
-      case "network":
-        return `
+        `;case"network":return`
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Network Error">
             <path d="M3 12H21M12 3L12 21" stroke="${iconColor}" stroke-width="2" stroke-linecap="round"/>
             <path d="M8.5 8.5L15.5 15.5M15.5 8.5L8.5 15.5" stroke="${iconColor}" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
-        `;
-      case "general":
-      default:
-        return `
+        `;case"general":default:return`
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Error">
             <circle cx="12" cy="12" r="9" stroke="${iconColor}" stroke-width="2"/>
             <path d="M15 9L9 15M9 9L15 15" stroke="${iconColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-        `;
-    }
-  }
-  getIconColor(type) {
-    switch (type) {
-      case "warning":
-        return "#ed8936";
-      case "technical":
-        return "#e53e3e";
-      case "network":
-        return "#3182ce";
-      case "general":
-      default:
-        return "#e53e3e";
-    }
-  }
-  getStyles() {
-    return `
+        `}}getIconColor(type){switch(type){case"warning":return"#ed8936";case"technical":return"#e53e3e";case"network":return"#3182ce";case"general":default:return"#e53e3e"}}getStyles(){return`
       ${super.getStyles()}
 
       :host {
@@ -1841,127 +923,43 @@ const _QuizErrorDisplay = class _QuizErrorDisplay extends QuizBaseComponent {
           max-width: 200px;
         }
       }
-    `;
-  }
-  render() {
-    this.renderTemplate();
-  }
-  handleAttributeChange(name, oldValue, newValue) {
-    if (this.isConnected) {
-      this.render();
-    }
-  }
-  onConnected() {
-    this.dispatchCustomEvent("quiz-error-display-ready", {
-      type: this.getAttribute("type"),
-      title: this.getAttribute("title"),
-      errorCode: this.getAttribute("error-code")
-    });
-  }
-  /**
-   * Utility method to set error data programmatically
-   */
-  setError(type, title, message, errorCode = null, showDetails = false) {
-    this.setAttributes({
-      type,
-      title,
-      message,
-      "error-code": errorCode,
-      "show-details": showDetails
-    });
-  }
-  /**
-   * Get error data
-   */
-  getError() {
-    return {
-      type: this.getAttribute("type"),
-      title: this.getAttribute("title"),
-      message: this.getAttribute("message"),
-      errorCode: this.getAttribute("error-code"),
-      showDetails: this.getBooleanAttribute("show-details")
-    };
-  }
-  /**
-   * Show/hide technical details
-   */
-  toggleDetails(show = null) {
-    const currentShow = this.getBooleanAttribute("show-details");
-    const newShow = show !== null ? show : !currentShow;
-    this.setAttribute("show-details", newShow);
-  }
-};
-__name(_QuizErrorDisplay, "QuizErrorDisplay");
-let QuizErrorDisplay = _QuizErrorDisplay;
-if (!customElements.get("quiz-error-display")) {
-  quizComponentRegistry.register("quiz-error-display", QuizErrorDisplay);
-}
-const quizErrorDisplay = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
-  __proto__: null,
-  default: QuizErrorDisplay
-}, Symbol.toStringTag, { value: "Module" }));
-const _QuizLoadingDisplay = class _QuizLoadingDisplay extends QuizBaseComponent {
-  static get observedAttributes() {
-    return ["type", "title", "message", "progress", "current-step", "total-steps", "show-spinner"];
-  }
-  getTemplate() {
-    const type = this.getAttribute("type") || "simple";
-    const title = this.getAttribute("title") || "Loading...";
-    const message = this.getAttribute("message") || "";
-    const progress = this.getAttribute("progress") || "0";
-    const currentStep = this.getAttribute("current-step") || "1";
-    const totalSteps = this.getAttribute("total-steps") || "1";
-    const showSpinner = this.getBooleanAttribute("show-spinner", true);
-    if (type === "comprehensive") {
-      return this.getComprehensiveTemplate(title, message, progress, currentStep, totalSteps, showSpinner);
-    } else {
-      return this.getSimpleTemplate(title, message, showSpinner);
-    }
-  }
-  getSimpleTemplate(title, message, showSpinner) {
-    return `
+    `}render(){this.renderTemplate()}handleAttributeChange(name,oldValue,newValue){this.isConnected&&this.render()}onConnected(){this.dispatchCustomEvent("quiz-error-display-ready",{type:this.getAttribute("type"),title:this.getAttribute("title"),errorCode:this.getAttribute("error-code")})}setError(type,title,message,errorCode=null,showDetails=!1){this.setAttributes({type,title,message,"error-code":errorCode,"show-details":showDetails})}getError(){return{type:this.getAttribute("type"),title:this.getAttribute("title"),message:this.getAttribute("message"),errorCode:this.getAttribute("error-code"),showDetails:this.getBooleanAttribute("show-details")}}toggleDetails(show=null){const currentShow=this.getBooleanAttribute("show-details"),newShow=show!==null?show:!currentShow;this.setAttribute("show-details",newShow)}};__name(_QuizErrorDisplay,"QuizErrorDisplay");let QuizErrorDisplay=_QuizErrorDisplay;customElements.get("quiz-error-display")||quizComponentRegistry.register("quiz-error-display",QuizErrorDisplay);const quizErrorDisplay=Object.freeze(Object.defineProperty({__proto__:null,default:QuizErrorDisplay},Symbol.toStringTag,{value:"Module"})),_QuizLoadingDisplay=class _QuizLoadingDisplay extends QuizBaseComponent{static get observedAttributes(){return["type","title","message","progress","current-step","total-steps","show-spinner"]}getTemplate(){const type=this.getAttribute("type")||"simple",title=this.getAttribute("title")||"Loading...",message=this.getAttribute("message")||"",progress=this.getAttribute("progress")||"0",currentStep=this.getAttribute("current-step")||"1",totalSteps=this.getAttribute("total-steps")||"1",showSpinner=this.getBooleanAttribute("show-spinner",!0);return type==="comprehensive"?this.getComprehensiveTemplate(title,message,progress,currentStep,totalSteps,showSpinner):this.getSimpleTemplate(title,message,showSpinner)}getSimpleTemplate(title,message,showSpinner){return`
       <div class="quiz-loading-display simple">
         <div class="quiz-loading-content">
-          ${showSpinner ? `
+          ${showSpinner?`
             <div class="quiz-loading-icon">
               <div class="quiz-loading-spinner"></div>
             </div>
-          ` : ""}
+          `:""}
 
           <div class="quiz-loading-text">
             <h3 class="quiz-loading-title">${this.sanitizeHTML(title)}</h3>
-            ${message ? `<p class="quiz-loading-message">${this.sanitizeHTML(message)}</p>` : ""}
+            ${message?`<p class="quiz-loading-message">${this.sanitizeHTML(message)}</p>`:""}
           </div>
 
           <!-- Default slot for additional content -->
           <slot></slot>
         </div>
       </div>
-    `;
-  }
-  getComprehensiveTemplate(title, message, progress, currentStep, totalSteps, showSpinner) {
-    return `
+    `}getComprehensiveTemplate(title,message,progress,currentStep,totalSteps,showSpinner){return`
       <div class="quiz-comprehensive-loading">
         <div class="quiz-loading-content">
-          ${showSpinner ? `
+          ${showSpinner?`
             <div class="quiz-loading-icon">
               <div class="quiz-loading-spinner-large"></div>
             </div>
-          ` : ""}
+          `:""}
 
           <div class="quiz-loading-step">
             <h3 class="quiz-loading-step-title">${this.sanitizeHTML(title)}</h3>
-            ${message ? `<p class="quiz-loading-step-description">${this.sanitizeHTML(message)}</p>` : ""}
+            ${message?`<p class="quiz-loading-step-description">${this.sanitizeHTML(message)}</p>`:""}
           </div>
 
           <!-- Default slot for additional content -->
           <slot></slot>
         </div>
       </div>
-    `;
-  }
-  getStyles() {
-    return `
+    `}getStyles(){return`
       ${super.getStyles()}
 
       :host {
@@ -2276,136 +1274,16 @@ const _QuizLoadingDisplay = class _QuizLoadingDisplay extends QuizBaseComponent 
           font-size: 12px;
         }
       }
-    `;
-  }
-  render() {
-    this.renderTemplate();
-  }
-  handleAttributeChange(name, oldValue, newValue) {
-    if (this.isConnected) {
-      if (name === "progress") {
-        this.updateProgress(newValue);
-      } else {
-        this.render();
-      }
-    }
-  }
-  updateProgress(progress) {
-    const progressFill = this.querySelector(".quiz-loading-progress-fill");
-    const progressText = this.querySelector(".quiz-loading-progress-text");
-    if (progressFill) {
-      progressFill.style.width = `${progress}%`;
-    }
-    if (progressText) {
-      const currentStep = this.getAttribute("current-step") || "1";
-      const totalSteps = this.getAttribute("total-steps") || "1";
-      progressText.textContent = `${progress}% complete (${currentStep}/${totalSteps})`;
-    }
-  }
-  onConnected() {
-    this.dispatchCustomEvent("quiz-loading-display-ready", {
-      type: this.getAttribute("type"),
-      title: this.getAttribute("title"),
-      progress: this.getAttribute("progress")
-    });
-  }
-  /**
-   * Utility method to set loading data programmatically
-   */
-  setLoading(type, title, message = "", progress = 0, currentStep = 1, totalSteps = 1) {
-    this.setAttributes({
-      type,
-      title,
-      message,
-      progress: progress.toString(),
-      "current-step": currentStep.toString(),
-      "total-steps": totalSteps.toString()
-    });
-  }
-  /**
-   * Update progress programmatically
-   */
-  setProgress(progress, currentStep = null) {
-    this.setAttribute("progress", progress.toString());
-    if (currentStep !== null) {
-      this.setAttribute("current-step", currentStep.toString());
-    }
-  }
-  /**
-   * Get loading data
-   */
-  getLoading() {
-    return {
-      type: this.getAttribute("type"),
-      title: this.getAttribute("title"),
-      message: this.getAttribute("message"),
-      progress: parseInt(this.getAttribute("progress") || "0"),
-      currentStep: parseInt(this.getAttribute("current-step") || "1"),
-      totalSteps: parseInt(this.getAttribute("total-steps") || "1")
-    };
-  }
-  /**
-   * Show/hide spinner
-   */
-  toggleSpinner(show = null) {
-    const currentShow = this.getBooleanAttribute("show-spinner", true);
-    const newShow = show !== null ? show : !currentShow;
-    this.setAttribute("show-spinner", newShow);
-  }
-};
-__name(_QuizLoadingDisplay, "QuizLoadingDisplay");
-let QuizLoadingDisplay = _QuizLoadingDisplay;
-if (!customElements.get("quiz-loading-display")) {
-  quizComponentRegistry.register("quiz-loading-display", QuizLoadingDisplay);
-}
-const quizLoadingDisplay = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
-  __proto__: null,
-  default: QuizLoadingDisplay
-}, Symbol.toStringTag, { value: "Module" }));
-const _QuizFAQSection = class _QuizFAQSection extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: "open" });
-    this.faqData = [];
-  }
-  static get observedAttributes() {
-    return ["faq-data"];
-  }
-  attributeChangedCallback(name, oldValue, newValue) {
-    if (name === "faq-data" && newValue) {
-      try {
-        this.faqData = JSON.parse(newValue);
-        this.render();
-      } catch (error) {
-        console.error("Invalid FAQ data:", error);
-      }
-    }
-  }
-  connectedCallback() {
-    this.render();
-  }
-  async render() {
-    const sharedStyles2 = await SharedStyles.getQuizStyles();
-    const template = this.getTemplate();
-    const styles = this.getStyles();
-    this.shadowRoot.innerHTML = `
+    `}render(){this.renderTemplate()}handleAttributeChange(name,oldValue,newValue){this.isConnected&&(name==="progress"?this.updateProgress(newValue):this.render())}updateProgress(progress){const progressFill=this.querySelector(".quiz-loading-progress-fill"),progressText=this.querySelector(".quiz-loading-progress-text");if(progressFill&&(progressFill.style.width=`${progress}%`),progressText){const currentStep=this.getAttribute("current-step")||"1",totalSteps=this.getAttribute("total-steps")||"1";progressText.textContent=`${progress}% complete (${currentStep}/${totalSteps})`}}onConnected(){this.dispatchCustomEvent("quiz-loading-display-ready",{type:this.getAttribute("type"),title:this.getAttribute("title"),progress:this.getAttribute("progress")})}setLoading(type,title,message="",progress=0,currentStep=1,totalSteps=1){this.setAttributes({type,title,message,progress:progress.toString(),"current-step":currentStep.toString(),"total-steps":totalSteps.toString()})}setProgress(progress,currentStep=null){this.setAttribute("progress",progress.toString()),currentStep!==null&&this.setAttribute("current-step",currentStep.toString())}getLoading(){return{type:this.getAttribute("type"),title:this.getAttribute("title"),message:this.getAttribute("message"),progress:parseInt(this.getAttribute("progress")||"0"),currentStep:parseInt(this.getAttribute("current-step")||"1"),totalSteps:parseInt(this.getAttribute("total-steps")||"1")}}toggleSpinner(show=null){const currentShow=this.getBooleanAttribute("show-spinner",!0),newShow=show!==null?show:!currentShow;this.setAttribute("show-spinner",newShow)}};__name(_QuizLoadingDisplay,"QuizLoadingDisplay");let QuizLoadingDisplay=_QuizLoadingDisplay;customElements.get("quiz-loading-display")||quizComponentRegistry.register("quiz-loading-display",QuizLoadingDisplay);const quizLoadingDisplay=Object.freeze(Object.defineProperty({__proto__:null,default:QuizLoadingDisplay},Symbol.toStringTag,{value:"Module"})),_QuizFAQSection=class _QuizFAQSection extends HTMLElement{constructor(){super(),this.attachShadow({mode:"open"}),this.faqData=[]}static get observedAttributes(){return["faq-data"]}attributeChangedCallback(name,oldValue,newValue){if(name==="faq-data"&&newValue)try{this.faqData=JSON.parse(newValue),this.render()}catch(error){console.error("Invalid FAQ data:",error)}}connectedCallback(){this.render()}async render(){const sharedStylesCSS=await sharedStyles.getQuizStyles(),template=this.getTemplate(),styles=this.getStyles();this.shadowRoot.innerHTML=`
 			<style>
-				${sharedStyles2}
+				${sharedStylesCSS}
 				${styles}
 			</style>
 			${template}
-		`;
-    this.attachEventListeners();
-  }
-  getTemplate() {
-    if (!this.faqData || this.faqData.length === 0) {
-      return "<div></div>";
-    }
-    return `
+		`,this.attachEventListeners()}getTemplate(){return!this.faqData||this.faqData.length===0?"<div></div>":`
 			<div class="quiz-faq-section">
 				<div class="quiz-faq-divider"></div>
-				${this.faqData.map(
-      (faq) => `
+				${this.faqData.map(faq=>`
 					<div class="quiz-faq-item" data-faq="${faq.id}" tabindex="0" role="button" aria-expanded="false">
 						<div class="quiz-faq-content">
 							<div class="quiz-faq-question-collapsed">${faq.question}</div>
@@ -2419,110 +1297,19 @@ const _QuizFAQSection = class _QuizFAQSection extends HTMLElement {
 						</div>
 					</div>
 					<div class="quiz-faq-divider"></div>
-				`
-    ).join("")}
+				`).join("")}
 			</div>
-		`;
-  }
-  getStyles() {
-    return `
+		`}getStyles(){return`
 			:host {
 				display: block;
 			}
-		`;
-  }
-  attachEventListeners() {
-    const faqItems = this.shadowRoot.querySelectorAll(".quiz-faq-item");
-    faqItems.forEach((item) => {
-      item.addEventListener("click", () => {
-        const isExpanded = item.classList.contains("expanded");
-        if (!isExpanded) {
-          item.classList.add("expanded");
-          item.setAttribute("aria-expanded", "true");
-          const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
-          if (question) question.className = "quiz-faq-question";
-        } else {
-          item.classList.remove("expanded");
-          item.setAttribute("aria-expanded", "false");
-          const question = item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");
-          if (question) question.className = "quiz-faq-question-collapsed";
-        }
-      });
-      item.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          item.click();
-        }
-      });
-    });
-  }
-  // Public API for setting FAQ data
-  setFAQData(faqData) {
-    this.faqData = faqData;
-    this.render();
-  }
-};
-__name(_QuizFAQSection, "QuizFAQSection");
-let QuizFAQSection = _QuizFAQSection;
-if (!customElements.get("quiz-faq-section")) {
-  customElements.define("quiz-faq-section", QuizFAQSection);
-}
-const _QuizPayerSearch = class _QuizPayerSearch extends QuizBaseComponent {
-  constructor() {
-    super();
-    this.selectedPayer = "";
-    this.placeholder = "Start typing to search for your insurance plan...";
-    this.commonPayers = [];
-    this.questionId = "";
-    this.searchTimeout = null;
-    this.showError = false;
-    this.errorMessage = "";
-  }
-  static get observedAttributes() {
-    return ["question-id", "placeholder", "selected-payer", "common-payers", "show-error", "error-message"];
-  }
-  initialize() {
-    this.parseAttributes();
-  }
-  parseAttributes() {
-    this.questionId = this.getAttribute("question-id") || "";
-    this.placeholder = this.getAttribute("placeholder") || "Start typing to search for your insurance plan...";
-    this.selectedPayer = this.getAttribute("selected-payer") || "";
-    this.showError = this.getBooleanAttribute("show-error", false);
-    this.errorMessage = this.getAttribute("error-message") || "";
-    try {
-      const commonPayersAttr = this.getAttribute("common-payers");
-      this.commonPayers = commonPayersAttr ? JSON.parse(commonPayersAttr) : [];
-    } catch (error) {
-      console.error("Invalid common payers data:", error);
-      this.commonPayers = [];
-    }
-  }
-  handleAttributeChange(name, oldValue, newValue) {
-    switch (name) {
-      case "question-id":
-      case "placeholder":
-      case "selected-payer":
-      case "common-payers":
-      case "show-error":
-      case "error-message":
-        this.parseAttributes();
-        break;
-    }
-  }
-  async render() {
-    await this.renderTemplate();
-    this.setupEventListeners();
-  }
-  getTemplate() {
-    const selectedDisplayName = this.resolvePayerDisplayName(this.selectedPayer);
-    return `
+		`}attachEventListeners(){this.shadowRoot.querySelectorAll(".quiz-faq-item").forEach(item=>{item.addEventListener("click",()=>{if(item.classList.contains("expanded")){item.classList.remove("expanded"),item.setAttribute("aria-expanded","false");const question=item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");question&&(question.className="quiz-faq-question-collapsed")}else{item.classList.add("expanded"),item.setAttribute("aria-expanded","true");const question=item.querySelector(".quiz-faq-question, .quiz-faq-question-collapsed");question&&(question.className="quiz-faq-question")}}),item.addEventListener("keydown",e=>{(e.key==="Enter"||e.key===" ")&&(e.preventDefault(),item.click())})})}setFAQData(faqData){this.faqData=faqData,this.render()}};__name(_QuizFAQSection,"QuizFAQSection");let QuizFAQSection=_QuizFAQSection;customElements.get("quiz-faq-section")||customElements.define("quiz-faq-section",QuizFAQSection);const elementCache=new WeakMap,validationCache=new WeakMap,debounceTimers=new WeakMap,_QuizFormFieldBase=class _QuizFormFieldBase extends QuizBaseComponent{constructor(){console.log("🔧 QuizFormFieldBase constructor called"),super(),this._state={showError:!1,errorMessage:"",isDisabled:!1,questionData:null,currentValue:"",isValidating:!1,hasBeenBlurred:!1},this._cachedElements=new Map,this._updateQueue=new Set,this._isUpdating=!1,this._debouncedValidate=this._createDebouncedFunction(this._performValidation.bind(this),_QuizFormFieldBase.VALIDATION_DEBOUNCE_MS),this._debouncedDispatchChanged=this._createDebouncedFunction(this._dispatchAnswerChanged.bind(this),100),this._initializeCSSProperties()}static get observedAttributes(){return[...super.observedAttributes,"question-data","show-error","error-message","disabled","value","validation-mode"]}connectedCallback(){super.connectedCallback(),this._parseAllAttributes(),this._setupEventListeners(),this._initializeValidationMode()}disconnectedCallback(){super.disconnectedCallback(),this._cleanup()}attributeChangedCallback(name,oldValue,newValue){super.attributeChangedCallback?.(name,oldValue,newValue),oldValue!==newValue&&this._queueUpdate(()=>{this._handleAttributeChange(name,oldValue,newValue)})}getValue(){return this._state.currentValue}setValue(value,options={}){const normalizedValue=this._normalizeValue(value),oldValue=this._state.currentValue;return oldValue===normalizedValue&&!options.force?Promise.resolve():(this._state.currentValue=normalizedValue,this._updateInputValue(normalizedValue),options.skipValidation!==!0?this._handleValueChange(normalizedValue,oldValue):Promise.resolve())}async isValid(){return this._state.isValidating&&await this._waitForValidation(),this.hasValidValue()&&!this._state.showError}hasValidValue(){const value=this._state.currentValue,cacheKey=`${this.getFieldType()}-${value}`,cached=validationCache.get(this);if(cached&&cached.key===cacheKey)return cached.isValid;const isValid=this._validateValue(value);return validationCache.set(this,{key:cacheKey,isValid}),isValid}async clearError(animated=!0){return!this._state.showError&&!this._hasVisualError()?Promise.resolve():(this._state.showError=!1,this._state.errorMessage="",this.removeAttribute("show-error"),this.removeAttribute("error-message"),animated?this._animateErrorClear():(this._clearVisualErrorState(),Promise.resolve()))}async showValidationError(message,options={}){const{animated=!0,focus=!1,temporary=!1,duration=5e3}=options;this._state.errorMessage=message,this._state.showError=!0,this.setAttribute("error-message",message),this.setAttribute("show-error","");const promise=animated?this._animateErrorShow():Promise.resolve(this._updateErrorState());return focus&&promise.then(()=>this.focus()),temporary&&setTimeout(()=>this.clearError(animated),duration),promise}async validate(immediate=!1){return immediate?this._performValidation():new Promise(resolve=>{this._debouncedValidate().then(resolve)})}handleInputChange(newValue,options={}){const{immediate=!1,skipEvents=!1}=options,promise=this.setValue(newValue,{skipValidation:this._getValidationMode()==="manual"});return skipEvents||(immediate?this._dispatchAnswerChanged(newValue):this._debouncedDispatchChanged(newValue)),promise}async handleInputBlur(){this._state.hasBeenBlurred=!0;const currentValue=this.getValue();this._dispatchAnswerSelected(currentValue);const validationMode=this._getValidationMode();return validationMode==="blur"||validationMode==="immediate"&&!this._state.showError?(await new Promise(resolve=>setTimeout(resolve,_QuizFormFieldBase.BLUR_VALIDATION_DELAY_MS)),this.validate(!0)):Promise.resolve()}_queueUpdate(updateFunction){this._updateQueue.add(updateFunction),this._isUpdating||(this._isUpdating=!0,requestAnimationFrame(()=>{this._processBatchedUpdates()}))}_processBatchedUpdates(){for(const updateFn of this._updateQueue)try{updateFn()}catch(error){console.error("Error in batched update:",error)}this._updateQueue.clear(),this._isUpdating=!1}_getElement(selector,useCache=!0){return useCache?(this._cachedElements.has(selector)||this._cachedElements.set(selector,this.root.querySelector(selector)),this._cachedElements.get(selector)):this.root.querySelector(selector)}_invalidateElementCache(){this._cachedElements.clear()}_createDebouncedFunction(func,delay){return(...args)=>new Promise(resolve=>{const existingTimer=debounceTimers.get(func);existingTimer&&clearTimeout(existingTimer);const timer=setTimeout(async()=>{debounceTimers.delete(func);try{const result=await func(...args);resolve(result)}catch(error){console.error("Debounced function error:",error),resolve(null)}},delay);debounceTimers.set(func,timer)})}_parseAllAttributes(){this._state.showError=this.getBooleanAttribute("show-error",!1),this._state.errorMessage=this.getAttribute("error-message")||"",this._state.isDisabled=this.getBooleanAttribute("disabled",!1),this._state.currentValue=this.getAttribute("value")||"",this._parseQuestionData()}_parseQuestionData(){try{const questionDataAttr=this.getAttribute("question-data");this._state.questionData=questionDataAttr?JSON.parse(questionDataAttr):null}catch(error){console.error("Invalid question data:",error),this._state.questionData=null}}_handleAttributeChange(name,oldValue,newValue){switch(name){case"question-data":this._parseQuestionData();break;case"show-error":this._state.showError=this.getBooleanAttribute("show-error",!1),this._updateErrorState();break;case"error-message":this._state.errorMessage=newValue||"",this._updateErrorState();break;case"disabled":this._state.isDisabled=this.getBooleanAttribute("disabled",!1),this._updateDisabledState();break;case"value":this.setValue(newValue,{skipValidation:!0});break;case"validation-mode":this._initializeValidationMode();break}}_normalizeValue(value){return value==null?"":String(value)}_validateValue(value){return value&&(typeof value!="string"||value.trim()!=="")}async _handleValueChange(newValue,oldValue){(this._state.showError||this._hasVisualError())&&this.hasValidValue()&&await this.clearError();const validationMode=this._getValidationMode();return validationMode==="immediate"||validationMode==="blur"&&this._state.hasBeenBlurred?this._debouncedValidate():Promise.resolve()}_getValidationMode(){return this.getAttribute("validation-mode")||"blur"}_initializeValidationMode(){const mode=this._getValidationMode();this.style.setProperty("--validation-mode",mode)}async _performValidation(){this._state.isValidating=!0;try{const value=this.getValue(),validationResult=await this._customValidation(value);return validationResult!==!0&&await this.showValidationError(validationResult||"Invalid value"),validationResult===!0}finally{this._state.isValidating=!1}}_waitForValidation(){return new Promise(resolve=>{const checkValidation=__name(()=>{this._state.isValidating?setTimeout(checkValidation,10):resolve()},"checkValidation");checkValidation()})}_initializeCSSProperties(){const style=this.style;style.setProperty(_QuizFormFieldBase.CSS_VARS.errorColor,"#dc3545"),style.setProperty(_QuizFormFieldBase.CSS_VARS.errorBackground,"#f8d7da"),style.setProperty(_QuizFormFieldBase.CSS_VARS.errorBorder,"#f5c6cb"),style.setProperty(_QuizFormFieldBase.CSS_VARS.transitionDuration,`${_QuizFormFieldBase.ERROR_TRANSITION_MS}ms`)}_setupEventListeners(){}_cleanup(){const timers=debounceTimers.get(this);timers&&(Object.values(timers).forEach(clearTimeout),debounceTimers.delete(this)),elementCache.delete(this),validationCache.delete(this),this._cachedElements.clear(),this._updateQueue.clear()}async _animateErrorShow(){const errorElement=this._getElement(".quiz-error-text");if(errorElement)return errorElement.textContent=this._state.errorMessage,errorElement.classList.remove("quiz-error-hidden"),errorElement.classList.add("quiz-error-visible"),this._updateFieldErrorStyling(),new Promise(resolve=>{setTimeout(resolve,_QuizFormFieldBase.ERROR_TRANSITION_MS)})}async _animateErrorClear(){const errorElement=this._getElement(".quiz-error-text");if(errorElement)return errorElement.classList.remove("quiz-error-visible"),errorElement.classList.add("quiz-error-hidden"),this._updateFieldErrorStyling(),new Promise(resolve=>{setTimeout(()=>{errorElement.textContent="",resolve()},_QuizFormFieldBase.ERROR_TRANSITION_MS)})}async _customValidation(value){return!0}_updateInputValue(value){const input=this.getInputElement();input&&input.value!==value&&(input.value=value)}_updateFieldErrorStyling(){}_updateDisabledState(){}getFieldType(){return"unknown"}getInputElement(){return null}parseCommonAttributes(){this._parseAllAttributes()}handleCommonAttributeChange(name,oldValue,newValue){this._handleAttributeChange(name,oldValue,newValue)}clearVisualErrorState(){this._clearVisualErrorState()}hasVisualError(){return this._hasVisualError()}updateErrorState(){this._updateErrorState()}updateFieldErrorStyling(){this._updateFieldErrorStyling()}updateDisabledState(){this._updateDisabledState()}getQuestionData(){return this._state.questionData}setQuestionData(data){this._state.questionData=data,this.setAttribute("question-data",JSON.stringify(data))}setDisabled(disabled){this._state.isDisabled=disabled,disabled?this.setAttribute("disabled",""):this.removeAttribute("disabled"),this._updateDisabledState()}focus(){const input=this.getInputElement();input&&input.focus&&input.focus()}getErrorElementHTML(questionId){return`<p id="error-${questionId}" class="quiz-error-text ${this._state.showError?"quiz-error-visible":"quiz-error-hidden"}">${this._state.errorMessage}</p>`}_dispatchAnswerChanged(value){const event=new CustomEvent("answer-changed",{detail:{questionId:this._state.questionData?.id,value,questionType:this.getFieldType(),timestamp:Date.now()},bubbles:!0});this.dispatchEvent(event)}_dispatchAnswerSelected(value){const event=new CustomEvent("answer-selected",{detail:{questionId:this._state.questionData?.id,value,questionType:this.getFieldType(),timestamp:Date.now()},bubbles:!0});this.dispatchEvent(event)}dispatchValidationRequested(value){const event=new CustomEvent("validation-requested",{detail:{questionId:this._state.questionData?.id,value:value||this.getValue(),questionType:this.getFieldType(),timestamp:Date.now()},bubbles:!0});this.dispatchEvent(event)}dispatchAnswerChanged(value){this._dispatchAnswerChanged(value)}dispatchAnswerSelected(value){this._dispatchAnswerSelected(value)}_hasVisualError(){const hasErrorMessage=this._getElement(".quiz-error-text")?.classList.contains("quiz-error-visible")||!1,input=this.getInputElement(),hasFieldError=input?.classList.contains("quiz-input-error")||input?.classList.contains("quiz-select-error")||!1;return hasErrorMessage||hasFieldError}_clearVisualErrorState(){const errorElement=this._getElement(".quiz-error-text");errorElement&&(errorElement.classList.remove("quiz-error-visible"),errorElement.classList.add("quiz-error-hidden"),errorElement.textContent=""),this._updateFieldErrorStyling()}_updateErrorState(){this._queueUpdate(()=>{const errorElement=this._getElement(".quiz-error-text");errorElement&&(this._state.showError?(errorElement.classList.remove("quiz-error-hidden"),errorElement.classList.add("quiz-error-visible"),errorElement.textContent=this._state.errorMessage):(errorElement.classList.remove("quiz-error-visible"),errorElement.classList.add("quiz-error-hidden"),errorElement.textContent="")),this._updateFieldErrorStyling()})}};__name(_QuizFormFieldBase,"QuizFormFieldBase"),__publicField(_QuizFormFieldBase,"VALIDATION_DEBOUNCE_MS",300),__publicField(_QuizFormFieldBase,"ERROR_TRANSITION_MS",200),__publicField(_QuizFormFieldBase,"BLUR_VALIDATION_DELAY_MS",50),__publicField(_QuizFormFieldBase,"CSS_VARS",{errorColor:"--quiz-error-color",errorBackground:"--quiz-error-background",errorBorder:"--quiz-error-border",transitionDuration:"--quiz-transition-duration"});let QuizFormFieldBase=_QuizFormFieldBase;const _QuizPayerSearch=class _QuizPayerSearch extends QuizFormFieldBase{constructor(){console.log("🚨 PAYER SEARCH CONSTRUCTOR CALLED - COMPONENT IS BEING CREATED!"),super(),console.log("🔍 QuizPayerSearch constructor called"),this.selectedPayer="",this.placeholder="Start typing to search for your insurance plan...",this.commonPayers=[],this.searchTimeout=null,this.quizData=null}static get observedAttributes(){return[...super.observedAttributes,"question-id","placeholder","selected-payer","common-payers","quiz-data"]}initialize(){console.log("🔍 QuizPayerSearch initialize called"),this.parseAttributes(),this.getQuizDataFromParent()}getQuizDataFromParent(){const quizContainer=document.querySelector("#quiz-container");if(quizContainer&&window.ModularQuiz){const quizInstance=quizContainer._quizInstance;quizInstance&&quizInstance.quizData&&(this.quizData=quizInstance.quizData)}}parseAttributes(){this.parseCommonAttributes(),this.questionId=this.getAttribute("question-id")||"",this.placeholder=this.getAttribute("placeholder")||"Start typing to search for your insurance plan...",this.selectedPayer=this.getAttribute("selected-payer")||"",this.currentValue=this.selectedPayer;try{const commonPayersAttr=this.getAttribute("common-payers");this.commonPayers=commonPayersAttr?JSON.parse(commonPayersAttr):[],console.log("🔍 Common payers loaded:",this.commonPayers.length,this.commonPayers.slice(0,2))}catch(error){console.error("Invalid common payers data:",error),this.commonPayers=[]}try{const quizDataAttr=this.getAttribute("quiz-data");quizDataAttr&&(this.quizData=JSON.parse(quizDataAttr),console.log("🔍 Quiz data loaded:",!!this.quizData,!!this.quizData?.config))}catch(error){console.error("Invalid quiz data:",error)}}handleAttributeChange(name,oldValue,newValue){switch(this.handleCommonAttributeChange(name,oldValue,newValue),name){case"question-id":case"placeholder":case"selected-payer":case"common-payers":case"quiz-data":this.parseAttributes();break}}getFieldType(){return"payer-search"}getValue(){return this.selectedPayer}setValue(value){this.selectedPayer=value||"",this.currentValue=this.selectedPayer,this.setAttribute("selected-payer",this.selectedPayer);const searchInput=this.getInputElement();searchInput&&(searchInput.value=this.resolvePayerDisplayName(this.selectedPayer))}getInputElement(){return this.root.querySelector(".quiz-payer-search-input")}hasValidValue(){return this.selectedPayer&&this.selectedPayer.trim()!==""}getTemplate(){const selectedDisplayName=this.resolvePayerDisplayName(this.selectedPayer);return`
 			<div class="quiz-payer-search-container">
 				<div class="quiz-payer-search-input-wrapper">
 					<input
 						type="text"
 						id="question-${this.questionId}"
-						class="quiz-payer-search-input ${this.showError ? "quiz-input-error" : ""}"
+						class="quiz-payer-search-input ${this.showError?"quiz-input-error":""}"
 						placeholder="${this.placeholder}"
 						value="${selectedDisplayName}"
 						autocomplete="off"
@@ -2543,297 +1330,26 @@ const _QuizPayerSearch = class _QuizPayerSearch extends QuizBaseComponent {
 					</div>
 					<div class="quiz-payer-search-results"></div>
 				</div>
-				<p id="error-${this.questionId}" class="quiz-error-text ${this.showError ? "quiz-error-visible" : "quiz-error-hidden"}">${this.errorMessage}</p>
+				${this.getErrorElementHTML(this.questionId)}
 			</div>
-		`;
-  }
-  getStyles() {
-    return "";
-  }
-  setupEventListeners() {
-    const searchInput = this.root.querySelector(".quiz-payer-search-input");
-    const dropdown = this.root.querySelector(".quiz-payer-search-dropdown");
-    const closeBtn = this.root.querySelector(".quiz-payer-search-close-btn");
-    const container = this.root.querySelector(".quiz-payer-search-container");
-    searchInput.addEventListener("input", (e) => {
-      const query = e.target.value.trim();
-      this.handleSearch(query, dropdown);
-      const input = this.root.querySelector(".quiz-payer-search-input");
-      const errorElement = this.root.querySelector(".quiz-error-text");
-      const hasVisualError = input?.classList.contains("quiz-input-error") || errorElement?.classList.contains("quiz-error-visible");
-      if ((this.showError || hasVisualError) && query.length > 0) {
-        this.clearError();
-      }
-    });
-    searchInput.addEventListener("focus", () => {
-      if (searchInput.value.trim() === "") {
-        this.showInitialPayerList(dropdown);
-      }
-      this.openDropdown(dropdown, container, searchInput);
-    });
-    searchInput.addEventListener("blur", (e) => {
-      setTimeout(() => {
-        if (!container.contains(document.activeElement)) {
-          this.dispatchValidationRequested(this.selectedPayer);
-        }
-      }, 150);
-    });
-    closeBtn.addEventListener("click", () => {
-      this.closeDropdown(dropdown, container, searchInput);
-    });
-    document.addEventListener("click", (e) => {
-      if (!container.contains(e.target)) {
-        this.closeDropdown(dropdown, container, searchInput);
-      }
-    });
-  }
-  handleSearch(query, dropdown) {
-    clearTimeout(this.searchTimeout);
-    if (query.length === 0) {
-      this.showInitialPayerList(dropdown);
-      return;
-    }
-    this.searchTimeout = setTimeout(async () => {
-      try {
-        const results = await this.searchPayers(query);
-        this.renderSearchResults(results, query, dropdown);
-      } catch (error) {
-        console.error("Search error:", error);
-        this.showSearchError(dropdown);
-      }
-    }, 300);
-  }
-  async searchPayers(query) {
-    const commonResults = this.filterCommonPayers(query);
-    if (commonResults.length > 0) {
-      return commonResults;
-    }
-    try {
-      return await this.searchPayersAPI(query);
-    } catch (error) {
-      console.error("API search failed:", error);
-      return commonResults;
-    }
-  }
-  filterCommonPayers(query) {
-    const queryLower = query.toLowerCase();
-    return this.commonPayers.filter((payer) => {
-      const nameMatch = payer.displayName.toLowerCase().includes(queryLower);
-      const aliasMatch = payer.aliases?.some((alias) => alias.toLowerCase().includes(queryLower));
-      return nameMatch || aliasMatch;
-    });
-  }
-  async searchPayersAPI(query) {
-    return [];
-  }
-  showInitialPayerList(dropdown) {
-    const resultsContainer = dropdown.querySelector(".quiz-payer-search-results");
-    resultsContainer.innerHTML = this.commonPayers.map(
-      (payer) => `
-			<div class="quiz-payer-search-item" data-payer-id="${payer.stediId}" data-payer-name="${payer.displayName}">
-				<div class="quiz-payer-search-item-name">${payer.displayName}</div>
-				<div class="quiz-payer-search-item-details">ID: ${payer.primaryPayerId}</div>
-			</div>
-		`
-    ).join("");
-    this.attachResultListeners(dropdown);
-  }
-  renderSearchResults(results, query, dropdown) {
-    const resultsContainer = dropdown.querySelector(".quiz-payer-search-results");
-    if (results.length === 0) {
-      resultsContainer.innerHTML = `
-				<div class="quiz-payer-search-no-results">
-					No insurance plans found for "${query}"
-				</div>
-			`;
-      return;
-    }
-    resultsContainer.innerHTML = results.map(
-      (payer) => `
-			<div class="quiz-payer-search-item" data-payer-id="${payer.stediId}" data-payer-name="${payer.displayName}">
-				<div class="quiz-payer-search-item-name">${this.highlightSearchTerm(payer.displayName, query)}</div>
-				<div class="quiz-payer-search-item-details">ID: ${payer.primaryPayerId}</div>
-			</div>
-		`
-    ).join("");
-    this.attachResultListeners(dropdown);
-  }
-  attachResultListeners(dropdown) {
-    const items = dropdown.querySelectorAll(".quiz-payer-search-item");
-    items.forEach((item) => {
-      item.addEventListener("click", () => {
-        const payerId = item.dataset.payerId;
-        const payerName = item.dataset.payerName;
-        this.selectPayer({ stediId: payerId, displayName: payerName });
-      });
-    });
-  }
-  selectPayer(payer) {
-    const searchInput = this.root.querySelector(".quiz-payer-search-input");
-    const dropdown = this.root.querySelector(".quiz-payer-search-dropdown");
-    const container = this.root.querySelector(".quiz-payer-search-container");
-    searchInput.value = payer.displayName;
-    this.selectedPayer = payer.stediId;
-    this.closeDropdown(dropdown, container, searchInput);
-    const input = this.root.querySelector(".quiz-payer-search-input");
-    const errorElement = this.root.querySelector(".quiz-error-text");
-    const hasVisualError = input?.classList.contains("quiz-input-error") || errorElement?.classList.contains("quiz-error-visible");
-    if ((this.showError || hasVisualError) && this.selectedPayer) {
-      this.clearError();
-    }
-    this.dispatchEvent(
-      new CustomEvent("payer-selected", {
-        detail: {
-          questionId: this.questionId,
-          payer
-        },
-        bubbles: true
-      })
-    );
-  }
-  openDropdown(dropdown, container, searchInput) {
-    dropdown.style.display = "block";
-    container.classList.add("dropdown-open");
-    searchInput.classList.add("dropdown-open");
-  }
-  closeDropdown(dropdown, container, searchInput) {
-    dropdown.style.display = "none";
-    container.classList.remove("dropdown-open");
-    searchInput.classList.remove("dropdown-open");
-  }
-  showSearchError(dropdown) {
-    const resultsContainer = dropdown.querySelector(".quiz-payer-search-results");
-    resultsContainer.innerHTML = `
-			<div class="quiz-payer-search-error">
-				Unable to search at this time. Please try again.
-			</div>
-		`;
-  }
-  highlightSearchTerm(text, searchTerm) {
-    if (!searchTerm) return text;
-    const regex = new RegExp(`(${searchTerm})`, "gi");
-    return text.replace(regex, '<span class="quiz-payer-search-highlight">$1</span>');
-  }
-  resolvePayerDisplayName(payerId) {
-    if (!payerId) return "";
-    const payer = this.commonPayers.find((p) => p.stediId === payerId || p.primaryPayerId === payerId);
-    return payer ? payer.displayName : payerId;
-  }
-  // Public API
-  setValue(value) {
-    this.selectedPayer = value;
-    this.setAttribute("selected-payer", value);
-    const searchInput = this.root?.querySelector(".quiz-payer-search-input");
-    if (searchInput) {
-      searchInput.value = this.resolvePayerDisplayName(value);
-    }
-  }
-  getValue() {
-    return this.selectedPayer;
-  }
-  dispatchValidationRequested(value) {
-    const event = new CustomEvent("validation-requested", {
-      detail: {
-        questionId: this.questionId,
-        value,
-        questionType: "payer-search"
-      },
-      bubbles: true
-    });
-    this.dispatchEvent(event);
-  }
-  clearError() {
-    this.showError = false;
-    this.errorMessage = "";
-    this.removeAttribute("show-error");
-    this.removeAttribute("error-message");
-    const input = this.root.querySelector(".quiz-payer-search-input");
-    const errorElement = this.root.querySelector(".quiz-error-text");
-    if (input) {
-      input.classList.remove("quiz-input-error");
-    }
-    if (errorElement) {
-      errorElement.classList.remove("quiz-error-visible");
-      errorElement.classList.add("quiz-error-hidden");
-      errorElement.textContent = "";
-    }
-  }
-};
-__name(_QuizPayerSearch, "QuizPayerSearch");
-let QuizPayerSearch = _QuizPayerSearch;
-if (!customElements.get("quiz-payer-search")) {
-  customElements.define("quiz-payer-search", QuizPayerSearch);
-}
-const _QuizResultCard = class _QuizResultCard extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: "open" });
-    this.resultType = "generic";
-    this.resultData = {};
-    this.resultUrl = "";
-  }
-  static get observedAttributes() {
-    return ["result-type", "result-data", "result-url"];
-  }
-  attributeChangedCallback(name, oldValue, newValue) {
-    switch (name) {
-      case "result-type":
-        this.resultType = newValue || "generic";
-        break;
-      case "result-data":
-        try {
-          this.resultData = newValue ? JSON.parse(newValue) : {};
-        } catch (error) {
-          console.error("Invalid result data:", error);
-          this.resultData = {};
-        }
-        break;
-      case "result-url":
-        this.resultUrl = newValue || "";
-        break;
-    }
-    if (this.shadowRoot.innerHTML) {
-      this.render();
-    }
-  }
-  connectedCallback() {
-    this.render();
-  }
-  async render() {
-    const sharedStyles2 = await SharedStyles.getQuizStyles();
-    const template = this.getTemplate();
-    const styles = this.getStyles();
-    this.shadowRoot.innerHTML = `
+		`}getStyles(){return""}async render(){console.log("🔍 QuizPayerSearch render called"),await this.renderTemplate(),this.setupEventListeners(),console.log("🔍 QuizPayerSearch render completed, setting up event listeners")}setupEventListeners(){const searchInput=this.getInputElement(),dropdown=this.root.querySelector(".quiz-payer-search-dropdown"),closeBtn=this.root.querySelector(".quiz-payer-search-close-btn"),container=this.root.querySelector(".quiz-payer-search-container");if(console.log("🔍 Payer search setup:",{searchInput:!!searchInput,dropdown:!!dropdown,closeBtn:!!closeBtn,container:!!container,commonPayers:this.commonPayers.length}),!searchInput||!dropdown||!closeBtn||!container){console.error("🔍 Missing required elements for payer search setup");return}searchInput.addEventListener("input",e=>{const query=e.target.value.trim();console.log("🔍 Search input:",query),this.handleInputChange(e),this.handleSearch(query,dropdown)}),searchInput.addEventListener("focus",e=>{console.log("🔍 Search input focused"),this.handleInputFocus(e),e.target.value.trim()||this.showInitialPayerList(dropdown),this.openDropdown(dropdown,container,searchInput)}),searchInput.addEventListener("blur",e=>{console.log("🔍 Search input blurred"),this.handleInputBlur(e),setTimeout(()=>{dropdown.matches(":hover")||this.closeDropdown(dropdown,container,searchInput)},150)}),closeBtn.addEventListener("click",()=>{console.log("🔍 Close button clicked"),searchInput.value="",this.selectedPayer="",this.currentValue="",this.closeDropdown(dropdown,container,searchInput),this.clearError()}),dropdown.addEventListener("mousedown",e=>{e.preventDefault()}),console.log("🔍 Event listeners set up successfully")}handleSearch(query,dropdown){console.log("🔍 handleSearch called with query:",query),this.searchTimeout&&clearTimeout(this.searchTimeout);const resultsContainer=dropdown.querySelector(".quiz-payer-search-results");resultsContainer&&(resultsContainer.innerHTML='<div class="quiz-payer-search-loading">Searching...</div>',console.log("🔍 Loading state shown")),this.searchTimeout=setTimeout(async()=>{console.log("🔍 Executing search for:",query);try{const results=await this.searchPayers(query);console.log("🔍 Search results:",results.length),this.renderSearchResults(results,query,dropdown)}catch(error){console.error("🔍 Search error:",error),this.showSearchError(dropdown)}},300)}async searchPayers(query){console.log("🔍 searchPayers called with:",query);try{const apiResults=await this.searchPayersAPI(query);if(apiResults&&apiResults.length>0)return console.log("🔍 API results found:",apiResults.length),apiResults.map(item=>item.payer)}catch(error){console.warn("API search failed, falling back to local search:",error)}const localResults=this.filterCommonPayers(query);return console.log("🔍 Local results found:",localResults.length),localResults}filterCommonPayers(query){if(console.log("🔍 filterCommonPayers:",{query,commonPayersCount:this.commonPayers.length}),!query||query.length===0)return this.commonPayers;const queryLower=query.toLowerCase();return this.commonPayers.filter(payer=>{const nameMatch=payer.displayName.toLowerCase().includes(queryLower),aliasMatch=payer.aliases?.some(alias=>alias.toLowerCase().includes(queryLower));return nameMatch||aliasMatch})}async searchPayersAPI(query){this.quizData||this.getQuizDataFromParent();const apiKey=(this.quizData?.config?.apiConfig||{}).stediApiKey;if(!apiKey||apiKey.trim()==="")return console.warn("Stedi API key not configured or empty, using local search only"),null;const baseUrl="https://healthcare.us.stedi.com/2024-04-01/payers/search",params=new URLSearchParams({query,pageSize:"10",eligibilityCheck:"SUPPORTED"}),url=`${baseUrl}?${params}`,response=await fetch(url,{method:"GET",headers:{Authorization:apiKey,Accept:"application/json"}});if(!response.ok){const errorText=await response.text();throw new Error(`API request failed: ${response.status} - ${errorText}`)}return(await response.json()).items?.map(item=>({payer:{stediId:item.payer.stediId,displayName:item.payer.displayName,primaryPayerId:item.payer.primaryPayerId,aliases:item.payer.aliases||[],score:item.score}}))||[]}showInitialPayerList(dropdown){console.log("🔍 showInitialPayerList:",this.commonPayers.length);const results=this.commonPayers;this.renderSearchResults(results,"",dropdown)}renderSearchResults(results,query,dropdown){console.log("🔍 renderSearchResults:",{resultsCount:results.length,query});const resultsContainer=dropdown.querySelector(".quiz-payer-search-results");if(results.length===0)resultsContainer.innerHTML='<div class="quiz-payer-search-no-results">No insurance plans found. Try a different search term.</div>';else{const resultsHTML=results.map((payer,index)=>{const highlightedName=this.highlightSearchTerm(payer.displayName,query),isApiResult=payer.score!==void 0;return`
+					<div class="quiz-payer-search-item" data-index="${index}">
+						<div class="quiz-payer-search-item-name">
+							${highlightedName}
+						</div>
+						<div class="quiz-payer-search-item-details">
+							<span class="quiz-payer-search-item-id">${payer.stediId}</span>
+							${payer.aliases?.length>0?`• ${payer.aliases.slice(0,2).join(", ")}`:""}
+							${isApiResult&&payer.score?`• Score: ${payer.score.toFixed(1)}`:""}
+						</div>
+					</div>
+				`}).join("");resultsContainer.innerHTML=resultsHTML,resultsContainer.querySelectorAll(".quiz-payer-search-item").forEach((item,index)=>{item.addEventListener("click",()=>{this.selectPayer(results[index])})})}dropdown.classList.add("visible"),dropdown.style.display="block",console.log("🔍 Dropdown should be visible now")}selectPayer(payer){const searchInput=this.getInputElement(),dropdown=this.root.querySelector(".quiz-payer-search-dropdown"),container=this.root.querySelector(".quiz-payer-search-container");searchInput.value=payer.displayName,searchInput.classList.add("quiz-input-valid"),this.selectedPayer=payer.primaryPayerId||payer.stediId,this.currentValue=this.selectedPayer,this.closeDropdown(dropdown,container,searchInput),(this.showError||this.hasVisualError())&&this.selectedPayer&&this.clearError(),this.dispatchEvent(new CustomEvent("payer-selected",{detail:{questionId:this.questionId,payer:{...payer,stediId:payer.stediId||payer.primaryPayerId,primaryPayerId:payer.primaryPayerId||payer.stediId}},bubbles:!0})),this.dispatchAnswerSelected(this.selectedPayer)}openDropdown(dropdown,container,searchInput){dropdown.classList.add("visible"),dropdown.style.display="block",container.classList.add("open"),window.innerWidth<=768&&setTimeout(()=>{const inputRect=searchInput.getBoundingClientRect(),targetScrollY=(window.pageYOffset||document.documentElement.scrollTop)+inputRect.top-20;window.scrollTo({top:Math.max(0,targetScrollY),behavior:"smooth"})},100)}closeDropdown(dropdown,container,searchInput){dropdown.classList.remove("visible"),dropdown.style.display="none",container.classList.remove("open")}showSearchError(dropdown){const resultsContainer=dropdown.querySelector(".quiz-payer-search-results");resultsContainer.innerHTML='<div class="quiz-payer-search-error">Error searching. Please try again.</div>'}highlightSearchTerm(text,searchTerm){if(!searchTerm||!text)return text;const regex=new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")})`,"gi");return text.replace(regex,'<span class="quiz-payer-search-highlight">$1</span>')}resolvePayerDisplayName(payerId){if(!payerId)return"";const payer=this.commonPayers.find(p=>p.stediId===payerId||p.primaryPayerId===payerId);return payer?payer.displayName:payerId}updateFieldErrorStyling(){const input=this.getInputElement();input&&(this.showError?input.classList.add("quiz-input-error"):input.classList.remove("quiz-input-error"))}clearVisualErrorState(){super.clearVisualErrorState();const input=this.getInputElement();input&&input.classList.remove("quiz-input-error")}};__name(_QuizPayerSearch,"QuizPayerSearch");let QuizPayerSearch=_QuizPayerSearch;customElements.get("quiz-payer-search")?console.log("🔍 quiz-payer-search component already registered"):(console.log("🔍 Registering quiz-payer-search component"),customElements.define("quiz-payer-search",QuizPayerSearch),console.log("🔍 quiz-payer-search component registered successfully"));const _QuizResultCard=class _QuizResultCard extends HTMLElement{constructor(){super(),this.attachShadow({mode:"open"}),this.resultType="generic",this.resultData={},this.resultUrl=""}static get observedAttributes(){return["result-type","result-data","result-url"]}attributeChangedCallback(name,oldValue,newValue){switch(name){case"result-type":this.resultType=newValue||"generic";break;case"result-data":try{this.resultData=newValue?JSON.parse(newValue):{}}catch(error){console.error("Invalid result data:",error),this.resultData={}}break;case"result-url":this.resultUrl=newValue||"";break}this.shadowRoot.innerHTML&&this.render()}connectedCallback(){this.render()}async render(){const sharedStylesCSS=await sharedStyles.getQuizStyles(),template=this.getTemplate(),styles=this.getStyles();this.shadowRoot.innerHTML=`
 			<style>
-				${sharedStyles2}
+				${sharedStylesCSS}
 				${styles}
 			</style>
 			${template}
-		`;
-    this.attachEventListeners();
-  }
-  getTemplate() {
-    switch (this.resultType) {
-      case "eligible":
-        return this.getEligibleTemplate();
-      case "not-covered":
-        return this.getNotCoveredTemplate();
-      case "aaa-error":
-        return this.getAAAErrorTemplate();
-      case "test-data-error":
-        return this.getTestDataErrorTemplate();
-      case "technical-problem":
-        return this.getTechnicalProblemTemplate();
-      case "processing":
-        return this.getProcessingTemplate();
-      case "ineligible":
-        return this.getIneligibleTemplate();
-      default:
-        return this.getGenericTemplate();
-    }
-  }
-  getStyles() {
-    return `
+		`,this.attachEventListeners()}getTemplate(){switch(this.resultType){case"eligible":return this.getEligibleTemplate();case"not-covered":return this.getNotCoveredTemplate();case"aaa-error":return this.getAAAErrorTemplate();case"test-data-error":return this.getTestDataErrorTemplate();case"technical-problem":return this.getTechnicalProblemTemplate();case"processing":return this.getProcessingTemplate();case"ineligible":return this.getIneligibleTemplate();default:return this.getGenericTemplate()}}getStyles(){return`
 			:host {
 				display: block;
 			}
@@ -2949,12 +1465,7 @@ const _QuizResultCard = class _QuizResultCard extends HTMLElement {
 				font-size: 14px;
 				color: #666;
 			}
-		`;
-  }
-  getEligibleTemplate() {
-    const sessionsCovered = this.resultData.sessionsCovered || 5;
-    const planEnd = this.resultData.planEnd || "Dec 31, 2025";
-    return `
+		`}getEligibleTemplate(){const sessionsCovered=this.resultData.sessionsCovered||5,planEnd=this.resultData.planEnd||"Dec 31, 2025";return`
 			<div class="result-card success-card">
 				<div class="result-header">
 					<h2 class="result-title">Great news! You're covered</h2>
@@ -2989,11 +1500,7 @@ const _QuizResultCard = class _QuizResultCard extends HTMLElement {
 					<a href="${this.resultUrl}" class="result-button">Schedule Your Consultation</a>
 				</div>
 			</div>
-		`;
-  }
-  getNotCoveredTemplate() {
-    const userMessage = this.resultData.userMessage || "Your insurance plan doesn't cover nutrition counseling, but we have affordable options available.";
-    return `
+		`}getNotCoveredTemplate(){return`
 			<div class="result-card warning-card">
 				<div class="result-header">
 					<h2 class="result-title">Thanks for completing the quiz!</h2>
@@ -3001,7 +1508,7 @@ const _QuizResultCard = class _QuizResultCard extends HTMLElement {
 				</div>
 				<div class="result-content">
 					<p><strong>💡 Coverage Information:</strong></p>
-					<p>${userMessage}</p>
+					<p>${this.resultData.userMessage||"Your insurance plan doesn't cover nutrition counseling, but we have affordable options available."}</p>
 					<ul class="feature-list">
 						<li class="feature-item">
 							<svg class="feature-icon" viewBox="0 0 20 20" fill="none">
@@ -3028,23 +1535,16 @@ const _QuizResultCard = class _QuizResultCard extends HTMLElement {
 					<a href="${this.resultUrl}" class="result-button">Explore Options</a>
 				</div>
 			</div>
-		`;
-  }
-  getAAAErrorTemplate() {
-    const error = this.resultData.error || {};
-    const errorCode = error.code || this.resultData.aaaErrorCode || "Unknown";
-    const userMessage = this.resultData.userMessage || error.message || "There was an issue verifying your insurance coverage automatically.";
-    const errorTitle = error.title || this.getErrorTitle(errorCode);
-    return `
+		`}getAAAErrorTemplate(){const error=this.resultData.error||{},errorCode=error.code||this.resultData.aaaErrorCode||"Unknown",userMessage=this.resultData.userMessage||error.message||"There was an issue verifying your insurance coverage automatically.";return`
 			<div class="result-card error-card">
 				<div class="result-header">
 					<h2 class="result-title">Thanks for completing the quiz!</h2>
 					<p class="result-subtitle">We're here to help.</p>
 				</div>
 				<div class="result-content">
-					<p><strong>⚠️ ${errorTitle}:</strong></p>
+					<p><strong>⚠️ ${error.title||this.getErrorTitle(errorCode)}:</strong></p>
 					<p>${userMessage}</p>
-					${errorCode !== "Unknown" ? `<div class="error-details">Error Code: ${errorCode}</div>` : ""}
+					${errorCode!=="Unknown"?`<div class="error-details">Error Code: ${errorCode}</div>`:""}
 					<ul class="feature-list">
 						<li class="feature-item">
 							<svg class="feature-icon" viewBox="0 0 20 20" fill="none">
@@ -3071,11 +1571,7 @@ const _QuizResultCard = class _QuizResultCard extends HTMLElement {
 					<a href="${this.resultUrl}" class="result-button">Continue with Support</a>
 				</div>
 			</div>
-		`;
-  }
-  getTestDataErrorTemplate() {
-    const userMessage = this.resultData.userMessage || "Test data was detected in your submission. Please use real insurance information for accurate verification.";
-    return `
+		`}getTestDataErrorTemplate(){return`
 			<div class="result-card warning-card">
 				<div class="result-header">
 					<h2 class="result-title">Please use real information</h2>
@@ -3083,7 +1579,7 @@ const _QuizResultCard = class _QuizResultCard extends HTMLElement {
 				</div>
 				<div class="result-content">
 					<p><strong>⚠️ Test Data Detected:</strong></p>
-					<p>${userMessage}</p>
+					<p>${this.resultData.userMessage||"Test data was detected in your submission. Please use real insurance information for accurate verification."}</p>
 					<ul class="feature-list">
 						<li class="feature-item">
 							<svg class="feature-icon" viewBox="0 0 20 20" fill="none">
@@ -3110,30 +1606,21 @@ const _QuizResultCard = class _QuizResultCard extends HTMLElement {
 					<a href="${this.resultUrl}" class="result-button">Continue</a>
 				</div>
 			</div>
-		`;
-  }
-  getTechnicalProblemTemplate() {
-    const error = this.resultData.error || {};
-    const errorCode = error.code || this.resultData.stediErrorCode || "Unknown";
-    const userMessage = this.resultData.userMessage || error.message || "There was a technical issue processing your insurance verification.";
-    return `
+		`}getTechnicalProblemTemplate(){const error=this.resultData.error||{},errorCode=error.code||this.resultData.stediErrorCode||"Unknown";return`
 			<div class="result-card error-card">
 				<div class="result-header">
 					<h2 class="result-title">Technical Issue</h2>
 					<p class="result-subtitle">We're working to resolve this quickly.</p>
 				</div>
 				<div class="result-content">
-					<p>${userMessage}</p>
-					${errorCode !== "Unknown" ? `<div class="error-details">Error Code: ${errorCode}</div>` : ""}
+					<p>${this.resultData.userMessage||error.message||"There was a technical issue processing your insurance verification."}</p>
+					${errorCode!=="Unknown"?`<div class="error-details">Error Code: ${errorCode}</div>`:""}
 				</div>
 				<div class="result-actions">
 					<a href="${this.resultUrl}" class="result-button">Continue with Support</a>
 				</div>
 			</div>
-		`;
-  }
-  getProcessingTemplate() {
-    return `
+		`}getProcessingTemplate(){return`
 			<div class="result-card info-card">
 				<div class="result-header">
 					<h2 class="result-title">Thanks for completing the quiz!</h2>
@@ -3146,10 +1633,7 @@ const _QuizResultCard = class _QuizResultCard extends HTMLElement {
 					<a href="${this.resultUrl}" class="result-button">Continue to Booking</a>
 				</div>
 			</div>
-		`;
-  }
-  getIneligibleTemplate() {
-    return `
+		`}getIneligibleTemplate(){return`
 			<div class="result-card warning-card">
 				<div class="result-header">
 					<h2 class="result-title">Thanks for completing the quiz!</h2>
@@ -3162,10 +1646,7 @@ const _QuizResultCard = class _QuizResultCard extends HTMLElement {
 					<a href="${this.resultUrl}" class="result-button">Explore Options</a>
 				</div>
 			</div>
-		`;
-  }
-  getGenericTemplate() {
-    return `
+		`}getGenericTemplate(){return`
 			<div class="result-card">
 				<div class="result-header">
 					<h2 class="result-title">Thanks for completing the quiz!</h2>
@@ -3175,77 +1656,19 @@ const _QuizResultCard = class _QuizResultCard extends HTMLElement {
 					<a href="${this.resultUrl}" class="result-button">Continue</a>
 				</div>
 			</div>
-		`;
-  }
-  getErrorTitle(errorCode) {
-    const errorTitles = {
-      42: "Insurance Information Issue",
-      43: "Coverage Verification Problem",
-      72: "Plan Details Unavailable",
-      73: "Eligibility Check Failed",
-      75: "Coverage Status Unknown",
-      79: "Verification Timeout"
-    };
-    return errorTitles[errorCode] || "Verification Issue";
-  }
-  attachEventListeners() {
-    const buttons = this.shadowRoot.querySelectorAll(".result-button");
-    buttons.forEach((button) => {
-      button.addEventListener("click", (e) => {
-        this.dispatchEvent(
-          new CustomEvent("result-action", {
-            detail: {
-              resultType: this.resultType,
-              action: "button-click",
-              url: button.href
-            },
-            bubbles: true
-          })
-        );
-      });
-    });
-  }
-  setResultData(type, data, url) {
-    this.resultType = type;
-    this.resultData = data;
-    this.resultUrl = url;
-    this.render();
-  }
-};
-__name(_QuizResultCard, "QuizResultCard");
-let QuizResultCard = _QuizResultCard;
-if (!customElements.get("quiz-result-card")) {
-  customElements.define("quiz-result-card", QuizResultCard);
-}
-const _QuizFormStep = class _QuizFormStep extends QuizBaseComponent {
-  static get observedAttributes() {
-    return ["step-data", "responses", "is-last-step", "validation-errors", "quiz-data"];
-  }
-  getTemplate() {
-    const stepData = this.getStepData();
-    const responses = this.getResponses();
-    const isLastStep = this.getAttribute("is-last-step") === "true";
-    const validationErrors = this.getValidationErrors();
-    if (!stepData) {
-      return '<p class="quiz-error-text">Step configuration error. Please contact support.</p>';
-    }
-    const buttonText = isLastStep ? stepData.ctaText || "Finish Quiz" : stepData.ctaText || "Continue";
-    return `
-			${stepData.info?.formSubHeading ? `<h4 class="quiz-heading quiz-heading-mobile-outside">${stepData.info.formSubHeading}</h4>` : ""}
+		`}getErrorTitle(errorCode){return{42:"Insurance Information Issue",43:"Coverage Verification Problem",72:"Plan Details Unavailable",73:"Eligibility Check Failed",75:"Coverage Status Unknown",79:"Verification Timeout"}[errorCode]||"Verification Issue"}attachEventListeners(){this.shadowRoot.querySelectorAll(".result-button").forEach(button=>{button.addEventListener("click",e=>{this.dispatchEvent(new CustomEvent("result-action",{detail:{resultType:this.resultType,action:"button-click",url:button.href},bubbles:!0}))})})}setResultData(type,data,url){this.resultType=type,this.resultData=data,this.resultUrl=url,this.render()}};__name(_QuizResultCard,"QuizResultCard");let QuizResultCard=_QuizResultCard;customElements.get("quiz-result-card")||customElements.define("quiz-result-card",QuizResultCard);const _QuizFormStep=class _QuizFormStep extends QuizBaseComponent{static get observedAttributes(){return["step-data","responses","is-last-step","validation-errors","quiz-data"]}getTemplate(){const stepData=this.getStepData(),responses=this.getResponses(),isLastStep=this.getAttribute("is-last-step")==="true",validationErrors=this.getValidationErrors();if(!stepData)return'<p class="quiz-error-text">Step configuration error. Please contact support.</p>';const buttonText=isLastStep?stepData.ctaText||"Finish Quiz":stepData.ctaText||"Continue";return`
+			${stepData.info?.formSubHeading?`<h4 class="quiz-heading quiz-heading-mobile-outside">${stepData.info.formSubHeading}</h4>`:""}
 			<div class="quiz-form-container">
-				${stepData.info?.formSubHeading ? `<h4 class="quiz-heading quiz-heading-desktop-inside">${stepData.info.formSubHeading}</h4>` : ""}
+				${stepData.info?.formSubHeading?`<h4 class="quiz-heading quiz-heading-desktop-inside">${stepData.info.formSubHeading}</h4>`:""}
 				<div class="quiz-space-y-6">
-					${this.renderFormQuestions(stepData.questions, responses, validationErrors)}
+					${this.renderFormQuestions(stepData.questions,responses,validationErrors)}
 				</div>
 				<button class="quiz-nav-button quiz-nav-button--primary quiz-form-button" id="quiz-form-next-button">
 					${buttonText}
 				</button>
-				${stepData.legal ? `<p class="quiz-legal-form">${stepData.legal}</p>` : ""}
+				${stepData.legal?`<p class="quiz-legal-form">${stepData.legal}</p>`:""}
 			</div>
-		`;
-  }
-  getStyles() {
-    return `
+		`}getStyles(){return`
 			${super.getStyles()}
 
 			.quiz-form-container {
@@ -3308,273 +1731,65 @@ const _QuizFormStep = class _QuizFormStep extends QuizBaseComponent {
 				text-align: center;
 				padding: 16px;
 			}
-		`;
-  }
-  render() {
-    this.renderTemplate();
-    this.attachEventListeners();
-  }
-  attachEventListeners() {
-    const submitButton = this.root.querySelector("#quiz-form-next-button");
-    if (submitButton) {
-      submitButton.addEventListener("click", (e) => {
-        e.preventDefault();
-        this.dispatchEvent(
-          new CustomEvent("form-submit", {
-            detail: { stepData: this.getStepData() },
-            bubbles: true
-          })
-        );
-      });
-    }
-  }
-  renderFormQuestions(questions, responses, validationErrors) {
-    if (!questions || !Array.isArray(questions)) return "";
-    let html = "";
-    let i = 0;
-    while (i < questions.length) {
-      const processed = this.tryProcessQuestionGroup(questions, i, responses);
-      if (processed.html) {
-        html += processed.html;
-        i += processed.skip;
-      } else {
-        html += this.renderSingleFormQuestion(questions[i], responses, validationErrors);
-        i++;
-      }
-    }
-    return html;
-  }
-  tryProcessQuestionGroup(questions, index, responses) {
-    const question = questions[index];
-    const getResponse = /* @__PURE__ */ __name((q) => responses?.find((r) => r.questionId === q.id) || { answer: null }, "getResponse");
-    const commonPairs = [
-      ["q4", "q4_group"],
-      ["q7", "q8"],
-      ["q9", "q10"]
-    ];
-    for (const pair of commonPairs) {
-      if (question.id === pair[0] && questions[index + 1]?.id === pair[1]) {
-        return {
-          html: this.renderFormFieldPair(question, questions[index + 1], getResponse(question), getResponse(questions[index + 1])),
-          skip: 2
-        };
-      }
-    }
-    if (question.type === "date-part" && question.part === "month") {
-      const [dayQ, yearQ] = [questions[index + 1], questions[index + 2]];
-      if (dayQ?.type === "date-part" && dayQ.part === "day" && yearQ?.type === "date-part" && yearQ.part === "year") {
-        return {
-          html: this.renderDateGroup(question, dayQ, yearQ, responses),
-          skip: 3
-        };
-      }
-    }
-    return { html: null, skip: 0 };
-  }
-  renderSingleFormQuestion(question, responses, validationErrors) {
-    const response = responses?.find((r) => r.questionId === question.id) || { answer: null };
-    const hasError = validationErrors?.some((error) => error.questionId === question.id);
-    const errorClass = hasError ? "quiz-field-error" : "";
-    return `
-			<div class="quiz-question-section ${errorClass}">
+		`}render(){this.renderTemplate(),this.attachEventListeners()}attachEventListeners(){const submitButton=this.root.querySelector("#quiz-form-next-button");submitButton&&submitButton.addEventListener("click",e=>{e.preventDefault(),this.dispatchEvent(new CustomEvent("form-submit",{detail:{stepData:this.getStepData()},bubbles:!0}))})}renderFormQuestions(questions,responses,validationErrors){if(!questions||!Array.isArray(questions))return"";let html="",i=0;for(;i<questions.length;){const processed=this.tryProcessQuestionGroup(questions,i,responses);processed.html?(html+=processed.html,i+=processed.skip):(html+=this.renderSingleFormQuestion(questions[i],responses,validationErrors),i++)}return html}tryProcessQuestionGroup(questions,index,responses){const question=questions[index],getResponse=__name(q=>responses?.find(r=>r.questionId===q.id)||{answer:null},"getResponse"),commonPairs=[["q4","q4_group"],["q7","q8"],["q9","q10"]];for(const pair of commonPairs)if(question.id===pair[0]&&questions[index+1]?.id===pair[1])return{html:this.renderFormFieldPair(question,questions[index+1],getResponse(question),getResponse(questions[index+1])),skip:2};if(question.type==="date-part"&&question.part==="month"){const[dayQ,yearQ]=[questions[index+1],questions[index+2]];if(dayQ?.type==="date-part"&&dayQ.part==="day"&&yearQ?.type==="date-part"&&yearQ.part==="year")return{html:this.renderDateGroup(question,dayQ,yearQ,responses),skip:3}}return{html:null,skip:0}}renderSingleFormQuestion(question,responses,validationErrors){const response=responses?.find(r=>r.questionId===question.id)||{answer:null},hasError=validationErrors?.some(error=>error.questionId===question.id);return`
+			<div class="quiz-question-section ${hasError?"quiz-field-error":""}">
 				<label class="quiz-label" for="question-${question.id}">
 					${question.text}${this.renderHelpIcon(question.id)}
 				</label>
-				${question.helpText ? `<p class="quiz-text-sm">${question.helpText}</p>` : ""}
-				${this.renderQuestionInput(question, response, hasError)}
-				${hasError ? `<div class="quiz-error-message">${validationErrors.find((e) => e.questionId === question.id)?.message || "Invalid input"}</div>` : ""}
+				${question.helpText?`<p class="quiz-text-sm">${question.helpText}</p>`:""}
+				${this.renderQuestionInput(question,response,hasError)}
+				${hasError?`<div class="quiz-error-message">${validationErrors.find(e=>e.questionId===question.id)?.message||"Invalid input"}</div>`:""}
 			</div>
-		`;
-  }
-  renderFormFieldPair(leftQuestion, rightQuestion, leftResponse, rightResponse) {
-    const generateField = /* @__PURE__ */ __name((question, response) => ({
-      input: this.renderQuestionInput(question, response),
-      helpIcon: this.renderHelpIcon(question.id),
-      label: question.text,
-      id: question.id
-    }), "generateField");
-    const [left, right] = [generateField(leftQuestion, leftResponse), generateField(rightQuestion, rightResponse)];
-    return `
+		`}renderFormFieldPair(leftQuestion,rightQuestion,leftResponse,rightResponse){const generateField=__name((question,response)=>({input:this.renderQuestionInput(question,response),helpIcon:this.renderHelpIcon(question.id),label:question.text,id:question.id}),"generateField"),[left,right]=[generateField(leftQuestion,leftResponse),generateField(rightQuestion,rightResponse)];return`
 			<div class="quiz-grid-2-form">
-				${[left, right].map(
-      (field) => `
+				${[left,right].map(field=>`
 					<div>
 						<label class="quiz-label" for="question-${field.id}">
 							${field.label}${field.helpIcon}
 						</label>
 						${field.input}
 					</div>
-				`
-    ).join("")}
+				`).join("")}
 			</div>
-		`;
-  }
-  renderDateGroup(monthQ, dayQ, yearQ, responses) {
-    const monthResponse = responses?.find((r) => r.questionId === monthQ.id) || { answer: null };
-    const dayResponse = responses?.find((r) => r.questionId === dayQ.id) || { answer: null };
-    const yearResponse = responses?.find((r) => r.questionId === yearQ.id) || { answer: null };
-    return `
+		`}renderDateGroup(monthQ,dayQ,yearQ,responses){const monthResponse=responses?.find(r=>r.questionId===monthQ.id)||{answer:null},dayResponse=responses?.find(r=>r.questionId===dayQ.id)||{answer:null},yearResponse=responses?.find(r=>r.questionId===yearQ.id)||{answer:null},validationErrors=this.getValidationErrors(),monthHasError=validationErrors.some(e=>e.questionId===monthQ.id),dayHasError=validationErrors.some(e=>e.questionId===dayQ.id),yearHasError=validationErrors.some(e=>e.questionId===yearQ.id);return`
 			<div class="quiz-question-section">
 				<label class="quiz-label">${monthQ.text}</label>
 				<div class="quiz-grid-3">
-					${this.renderDatePart(monthQ, monthResponse)}
-					${this.renderDatePart(dayQ, dayResponse)}
-					${this.renderDatePart(yearQ, yearResponse)}
+					${this.renderDatePart(monthQ,monthResponse,monthHasError)}
+					${this.renderDatePart(dayQ,dayResponse,dayHasError)}
+					${this.renderDatePart(yearQ,yearResponse,yearHasError)}
 				</div>
 			</div>
-		`;
-  }
-  renderQuestionInput(question, response, hasError = false) {
-    const value = response?.answer || "";
-    const errorAttr = hasError ? 'show-error="true"' : "";
-    switch (question.type) {
-      case "text":
-      case "email":
-      case "phone":
-        return `<quiz-text-input
+		`}renderQuestionInput(question,response,hasError=!1){const value=response?.answer||"",errorAttr=hasError?'show-error="true"':"";switch(question.type){case"text":case"email":case"phone":return`<quiz-text-input
 					question-data='${JSON.stringify(question)}'
-					value="${value || ""}"
+					value="${value||""}"
 					${errorAttr}
-				></quiz-text-input>`;
-      case "textarea":
-        return `<textarea id="question-${question.id}" class="quiz-textarea ${hasError ? "quiz-input-error" : ""}" ${question.required ? "required" : ""}>${value}</textarea>`;
-      case "dropdown":
-        return `<quiz-dropdown
+				></quiz-text-input>`;case"textarea":return`<textarea id="question-${question.id}" class="quiz-textarea ${hasError?"quiz-input-error":""}" ${question.required?"required":""}>${value}</textarea>`;case"dropdown":return`<quiz-dropdown
 					question-data='${JSON.stringify(question)}'
-					selected-value="${value || ""}"
+					selected-value="${value||""}"
 					${errorAttr}
-				></quiz-dropdown>`;
-      case "payer-search":
-        const quizData = this.getQuizData();
-        return `<quiz-payer-search
+				></quiz-dropdown>`;case"payer-search":const quizData=this.getQuizData();return`<quiz-payer-search
 					question-id="${question.id}"
-					placeholder="${question.placeholder || "Start typing to search for your insurance plan..."}"
-					common-payers='${JSON.stringify(quizData?.commonPayers || [])}'
-					${value ? `selected-payer="${value}"` : ""}
+					placeholder="${question.placeholder||"Start typing to search for your insurance plan..."}"
+					common-payers='${JSON.stringify(quizData?.commonPayers||[])}'
+					${value?`selected-payer="${value}"`:""}
 					${errorAttr}
-				></quiz-payer-search>`;
-      default:
-        return `<input type="text" id="question-${question.id}" class="quiz-input ${hasError ? "quiz-input-error" : ""}" value="${value}">`;
-    }
-  }
-  renderDatePart(question, response) {
-    const value = response?.answer || "";
-    const options = this.getDatePartOptions(question.part);
-    const dropdownQuestion = {
-      ...question,
-      type: "dropdown",
-      options: options.map((opt) => ({ id: opt.value, text: opt.text })),
-      placeholder: question.placeholder || `Select ${question.part}`
-    };
-    return `<quiz-dropdown
+				></quiz-payer-search>`;default:return`<input type="text" id="question-${question.id}" class="quiz-input ${hasError?"quiz-input-error":""}" value="${value}">`}}renderDatePart(question,response,hasError=!1){const value=response?.answer||"",options=this.getDatePartOptions(question.part),errorAttr=hasError?'show-error="true"':"",dropdownQuestion={...question,type:"dropdown",options:options.map(opt=>({id:opt.value,text:opt.text})),placeholder:question.placeholder||`Select ${question.part}`};return`<quiz-dropdown
 			question-data='${JSON.stringify(dropdownQuestion)}'
-			selected-value="${value || ""}"
-		></quiz-dropdown>`;
-  }
-  getDatePartOptions(part) {
-    switch (part) {
-      case "month":
-        return Array.from({ length: 12 }, (_, i) => ({
-          value: String(i + 1).padStart(2, "0"),
-          text: new Date(2e3, i).toLocaleString("default", { month: "long" })
-        }));
-      case "day":
-        return Array.from({ length: 31 }, (_, i) => ({
-          value: String(i + 1).padStart(2, "0"),
-          text: String(i + 1)
-        }));
-      case "year":
-        const currentYear = (/* @__PURE__ */ new Date()).getFullYear();
-        return Array.from({ length: 100 }, (_, i) => ({
-          value: String(currentYear - i),
-          text: String(currentYear - i)
-        }));
-      default:
-        return [];
-    }
-  }
-  renderHelpIcon(questionId) {
-    const quizData = this.getQuizData();
-    const tooltip = quizData?.validation?.tooltips?.[questionId];
-    if (!tooltip) return "";
-    return `<span class="quiz-help-icon-container" data-tooltip="${tooltip}">
+			selected-value="${value||""}"
+			${errorAttr}
+		></quiz-dropdown>`}getDatePartOptions(part){switch(part){case"month":return Array.from({length:12},(_,i)=>({value:String(i+1).padStart(2,"0"),text:new Date(2e3,i).toLocaleString("default",{month:"long"})}));case"day":return Array.from({length:31},(_,i)=>({value:String(i+1).padStart(2,"0"),text:String(i+1)}));case"year":const currentYear=new Date().getFullYear();return Array.from({length:100},(_,i)=>({value:String(currentYear-i),text:String(currentYear-i)}));default:return[]}}renderHelpIcon(questionId){const tooltip=this.getQuizData()?.validation?.tooltips?.[questionId];return tooltip?`<span class="quiz-help-icon-container" data-tooltip="${tooltip}">
 			<svg class="quiz-help-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
 				<path d="M14.6668 8.00004C14.6668 4.31814 11.682 1.33337 8.00016 1.33337C4.31826 1.33337 1.3335 4.31814 1.3335 8.00004C1.3335 11.6819 4.31826 14.6667 8.00016 14.6667C11.682 14.6667 14.6668 11.6819 14.6668 8.00004Z" stroke="#121212"/>
 				<path d="M8.1613 11.3334V8.00004C8.1613 7.68577 8.1613 7.52864 8.06363 7.43097C7.96603 7.33337 7.8089 7.33337 7.49463 7.33337" stroke="#121212" stroke-linecap="round" stroke-linejoin="round"/>
 				<path d="M7.99463 5.33337H8.00063" stroke="#121212" stroke-linecap="round" stroke-linejoin="round"/>
 			</svg>
-		</span>`;
-  }
-  // Utility methods
-  getStepData() {
-    try {
-      const stepDataAttr = this.getAttribute("step-data");
-      return stepDataAttr ? JSON.parse(stepDataAttr) : null;
-    } catch (error) {
-      console.error("Error parsing step data:", error);
-      return null;
-    }
-  }
-  getQuizData() {
-    try {
-      const quizDataAttr = this.getAttribute("quiz-data");
-      return quizDataAttr ? JSON.parse(quizDataAttr) : null;
-    } catch (error) {
-      console.error("Error parsing quiz data:", error);
-      return null;
-    }
-  }
-  getResponses() {
-    try {
-      const responsesAttr = this.getAttribute("responses");
-      return responsesAttr ? JSON.parse(responsesAttr) : [];
-    } catch (error) {
-      console.error("Error parsing responses:", error);
-      return [];
-    }
-  }
-  getValidationErrors() {
-    try {
-      const errorsAttr = this.getAttribute("validation-errors");
-      return errorsAttr ? JSON.parse(errorsAttr) : [];
-    } catch (error) {
-      console.error("Error parsing validation errors:", error);
-      return [];
-    }
-  }
-  handleAttributeChange(name, oldValue, newValue) {
-    if (["step-data", "responses", "validation-errors", "is-last-step", "quiz-data"].includes(name)) {
-      this.render();
-    }
-  }
-};
-__name(_QuizFormStep, "QuizFormStep");
-let QuizFormStep = _QuizFormStep;
-if (!customElements.get("quiz-form-step")) {
-  customElements.define("quiz-form-step", QuizFormStep);
-}
-const _QuizStepContainer = class _QuizStepContainer extends QuizBaseComponent {
-  static get observedAttributes() {
-    return ["step-data", "responses", "current-question-index", "is-form-step", "validation-errors", "quiz-data"];
-  }
-  getTemplate() {
-    const stepData = this.getStepData();
-    const responses = this.getResponses();
-    const currentQuestionIndex = parseInt(this.getAttribute("current-question-index") || "0");
-    const isFormStep = this.getAttribute("is-form-step") === "true";
-    const validationErrors = this.getValidationErrors();
-    if (!stepData) {
-      return '<p class="quiz-error-text">Step configuration error. Please contact support.</p>';
-    }
-    return `
+		</span>`:""}getStepData(){try{const stepDataAttr=this.getAttribute("step-data");return stepDataAttr?JSON.parse(stepDataAttr):null}catch(error){return console.error("Error parsing step data:",error),null}}getQuizData(){try{const quizDataAttr=this.getAttribute("quiz-data");return quizDataAttr?JSON.parse(quizDataAttr):null}catch(error){return console.error("Error parsing quiz data:",error),null}}getResponses(){try{const responsesAttr=this.getAttribute("responses");return responsesAttr?JSON.parse(responsesAttr):[]}catch(error){return console.error("Error parsing responses:",error),[]}}getValidationErrors(){try{const errorsAttr=this.getAttribute("validation-errors");return errorsAttr?JSON.parse(errorsAttr):[]}catch(error){return console.error("Error parsing validation errors:",error),[]}}handleAttributeChange(name,oldValue,newValue){["step-data","responses","validation-errors","is-last-step","quiz-data"].includes(name)&&this.render()}};__name(_QuizFormStep,"QuizFormStep");let QuizFormStep=_QuizFormStep;customElements.get("quiz-form-step")||customElements.define("quiz-form-step",QuizFormStep);const _QuizStepContainer=class _QuizStepContainer extends QuizBaseComponent{static get observedAttributes(){return["step-data","responses","current-question-index","is-form-step","validation-errors","quiz-data"]}getTemplate(){const stepData=this.getStepData(),responses=this.getResponses(),currentQuestionIndex=parseInt(this.getAttribute("current-question-index")||"0"),isFormStep=this.getAttribute("is-form-step")==="true",validationErrors=this.getValidationErrors();return stepData?`
 			<div class="animate-fade-in">
 				${this.renderStepInfo(stepData)}
-				${stepData.questions?.length > 0 ? isFormStep ? this.renderFormStep(stepData, responses, validationErrors) : this.renderWizardStep(stepData, responses, currentQuestionIndex) : !stepData.info ? '<p class="quiz-error-text">Step configuration error. Please contact support.</p>' : ""}
+				${stepData.questions?.length>0?isFormStep?this.renderFormStep(stepData,responses,validationErrors):this.renderWizardStep(stepData,responses,currentQuestionIndex):stepData.info?"":'<p class="quiz-error-text">Step configuration error. Please contact support.</p>'}
 			</div>
-		`;
-  }
-  getStyles() {
-    return `
+		`:'<p class="quiz-error-text">Step configuration error. Please contact support.</p>'}getStyles(){return`
 			${super.getStyles()}
 
 			.animate-fade-in {
@@ -3649,238 +1864,50 @@ const _QuizStepContainer = class _QuizStepContainer extends QuizBaseComponent {
 					font-size: 18px;
 				}
 			}
-		`;
-  }
-  render() {
-    this.renderTemplate();
-    this.attachEventListeners();
-  }
-  attachEventListeners() {
-    this.addEventListener("form-submit", (e) => {
-      this.dispatchEvent(
-        new CustomEvent("step-form-submit", {
-          detail: e.detail,
-          bubbles: true
-        })
-      );
-    });
-    this.addEventListener("question-answer", (e) => {
-      this.dispatchEvent(
-        new CustomEvent("step-question-answer", {
-          detail: e.detail,
-          bubbles: true
-        })
-      );
-    });
-  }
-  renderStepInfo(stepData) {
-    if (!stepData.info) return "";
-    return `
+		`}render(){this.renderTemplate(),this.attachEventListeners()}attachEventListeners(){this.addEventListener("form-submit",e=>{this.dispatchEvent(new CustomEvent("step-form-submit",{detail:e.detail,bubbles:!0}))}),this.addEventListener("question-answer",e=>{this.dispatchEvent(new CustomEvent("step-question-answer",{detail:e.detail,bubbles:!0}))})}renderStepInfo(stepData){return stepData.info?`
 			<div class="quiz-step-info">
 				<h3 class="quiz-title">${stepData.info.heading}</h3>
 				<p class="quiz-text">${stepData.info.text}</p>
-				${stepData.info.subtext ? `<p class="quiz-subtext">${stepData.info.subtext}</p>` : ""}
+				${stepData.info.subtext?`<p class="quiz-subtext">${stepData.info.subtext}</p>`:""}
 			</div>
-		`;
-  }
-  renderFormStep(stepData, responses, validationErrors) {
-    const formStep = document.createElement("quiz-form-step");
-    formStep.setAttribute("step-data", JSON.stringify(stepData));
-    formStep.setAttribute("responses", JSON.stringify(responses));
-    formStep.setAttribute("validation-errors", JSON.stringify(validationErrors));
-    const quizData = this.getQuizData();
-    if (quizData) {
-      formStep.setAttribute("quiz-data", JSON.stringify(quizData));
-    }
-    const isLastStep = this.getAttribute("is-last-step") === "true";
-    if (isLastStep) {
-      formStep.setAttribute("is-last-step", "true");
-    }
-    return formStep.outerHTML;
-  }
-  renderWizardStep(stepData, responses, currentQuestionIndex) {
-    const question = stepData.questions[currentQuestionIndex];
-    const response = responses?.find((r) => r.questionId === question?.id) || { answer: null };
-    if (!question) {
-      return '<p class="quiz-error-text">Question not found. Please try again.</p>';
-    }
-    let html = "";
-    if (!stepData.info) {
-      html += `
-				<div class="quiz-question-header">
-					<h3 class="quiz-title">${question.text}</h3>
-					${question.helpText ? `<p class="quiz-text">${question.helpText}</p>` : ""}
-				</div>
-			`;
-    } else {
-      html += `
+		`:""}renderFormStep(stepData,responses,validationErrors){const formStep=document.createElement("quiz-form-step");formStep.setAttribute("step-data",JSON.stringify(stepData)),formStep.setAttribute("responses",JSON.stringify(responses)),formStep.setAttribute("validation-errors",JSON.stringify(validationErrors));const quizData=this.getQuizData();return quizData&&formStep.setAttribute("quiz-data",JSON.stringify(quizData)),this.getAttribute("is-last-step")==="true"&&formStep.setAttribute("is-last-step","true"),formStep.outerHTML}renderWizardStep(stepData,responses,currentQuestionIndex){const question=stepData.questions[currentQuestionIndex],response=responses?.find(r=>r.questionId===question?.id)||{answer:null};if(!question)return'<p class="quiz-error-text">Question not found. Please try again.</p>';let html="";return stepData.info?html+=`
 				<div class="quiz-divider">
 					<h4 class="quiz-heading">${question.text}</h4>
-					${question.helpText ? `<p class="quiz-text-sm">${question.helpText}</p>` : ""}
+					${question.helpText?`<p class="quiz-text-sm">${question.helpText}</p>`:""}
 				</div>
-			`;
-    }
-    html += this.renderQuestionByType(question, response);
-    return html;
-  }
-  renderQuestionByType(question, response) {
-    const value = response?.answer || "";
-    switch (question.type) {
-      case "multiple-choice":
-        return this.renderMultipleChoice(question, value);
-      case "checkbox":
-        return this.renderCheckbox(question, value);
-      case "dropdown":
-        return this.renderDropdown(question, value);
-      case "text":
-      case "email":
-      case "phone":
-        return this.renderTextInput(question, value);
-      case "textarea":
-        return this.renderTextarea(question, value);
-      case "rating":
-        return this.renderRating(question, value);
-      case "date":
-        return this.renderDateInput(question, value);
-      case "payer-search":
-        return this.renderPayerSearch(question, value);
-      default:
-        return `<p class="quiz-error-text">Unsupported question type: ${question.type}</p>`;
-    }
-  }
-  renderMultipleChoice(question, selectedValue) {
-    if (!question.options) return "";
-    const questionData = JSON.stringify(question);
-    return `<quiz-multiple-choice
-			question-data='${questionData}'
-			selected-value="${selectedValue || ""}"
-		></quiz-multiple-choice>`;
-  }
-  renderCheckbox(question, selectedValues) {
-    if (!question.options) return "";
-    const selected = Array.isArray(selectedValues) ? selectedValues : selectedValues ? [selectedValues] : [];
-    const questionData = JSON.stringify(question);
-    const layout = question.id === "consent" ? "simple" : "cards";
-    return `<quiz-checkbox-group
+			`:html+=`
+				<div class="quiz-question-header">
+					<h3 class="quiz-title">${question.text}</h3>
+					${question.helpText?`<p class="quiz-text">${question.helpText}</p>`:""}
+				</div>
+			`,html+=this.renderQuestionByType(question,response),html}renderQuestionByType(question,response){const value=response?.answer||"";switch(question.type){case"multiple-choice":return this.renderMultipleChoice(question,value);case"checkbox":return this.renderCheckbox(question,value);case"dropdown":return this.renderDropdown(question,value);case"text":case"email":case"phone":return this.renderTextInput(question,value);case"textarea":return this.renderTextarea(question,value);case"rating":return this.renderRating(question,value);case"date":return this.renderDateInput(question,value);case"payer-search":return this.renderPayerSearch(question,value);default:return`<p class="quiz-error-text">Unsupported question type: ${question.type}</p>`}}renderMultipleChoice(question,selectedValue){return question.options?`<quiz-multiple-choice
+			question-data='${JSON.stringify(question)}'
+			selected-value="${selectedValue||""}"
+		></quiz-multiple-choice>`:""}renderCheckbox(question,selectedValues){if(!question.options)return"";const selected=Array.isArray(selectedValues)?selectedValues:selectedValues?[selectedValues]:[],questionData=JSON.stringify(question),layout=question.id==="consent"?"simple":"cards";return`<quiz-checkbox-group
 			question-data='${questionData}'
 			selected-values='${JSON.stringify(selected)}'
 			layout="${layout}"
-		></quiz-checkbox-group>`;
-  }
-  renderDropdown(question, selectedValue) {
-    if (!question.options) return "";
-    const questionData = JSON.stringify(question);
-    return `<quiz-dropdown
-			question-data='${questionData}'
-			selected-value="${selectedValue || ""}"
-		></quiz-dropdown>`;
-  }
-  renderTextInput(question, value) {
-    const questionData = JSON.stringify(question);
-    return `<quiz-text-input
-			question-data='${questionData}'
-			value="${value || ""}"
-		></quiz-text-input>`;
-  }
-  renderTextarea(question, value) {
-    return `
+		></quiz-checkbox-group>`}renderDropdown(question,selectedValue){return question.options?`<quiz-dropdown
+			question-data='${JSON.stringify(question)}'
+			selected-value="${selectedValue||""}"
+		></quiz-dropdown>`:""}renderTextInput(question,value){return`<quiz-text-input
+			question-data='${JSON.stringify(question)}'
+			value="${value||""}"
+		></quiz-text-input>`}renderTextarea(question,value){return`
 			<textarea id="question-${question.id}"
 					  class="quiz-textarea"
-					  placeholder="${question.placeholder || ""}"
-					  ${question.required ? "required" : ""}>${value}</textarea>
-		`;
-  }
-  renderRating(question, value) {
-    const questionData = JSON.stringify(question);
-    return `<quiz-rating
-			question-data='${questionData}'
-			value="${value || 5}"
-		></quiz-rating>`;
-  }
-  renderDateInput(question, value) {
-    return `
+					  placeholder="${question.placeholder||""}"
+					  ${question.required?"required":""}>${value}</textarea>
+		`}renderRating(question,value){return`<quiz-rating
+			question-data='${JSON.stringify(question)}'
+			value="${value||5}"
+		></quiz-rating>`}renderDateInput(question,value){return`
 			<input type="date"
 				   id="question-${question.id}"
 				   class="quiz-input"
 				   value="${value}"
-				   ${question.required ? "required" : ""}>
-		`;
-  }
-  renderPayerSearch(question, value) {
-    const payerSearch = document.createElement("quiz-payer-search");
-    payerSearch.setAttribute("question-id", question.id);
-    if (question.commonPayers) {
-      payerSearch.setAttribute("common-payers", JSON.stringify(question.commonPayers));
-    }
-    if (value) {
-      payerSearch.setAttribute("selected-payer", value);
-    }
-    return payerSearch.outerHTML;
-  }
-  // Utility methods
-  getStepData() {
-    try {
-      const stepDataAttr = this.getAttribute("step-data");
-      return stepDataAttr ? JSON.parse(stepDataAttr) : null;
-    } catch (error) {
-      console.error("Error parsing step data:", error);
-      return null;
-    }
-  }
-  getResponses() {
-    try {
-      const responsesAttr = this.getAttribute("responses");
-      return responsesAttr ? JSON.parse(responsesAttr) : [];
-    } catch (error) {
-      console.error("Error parsing responses:", error);
-      return [];
-    }
-  }
-  getValidationErrors() {
-    try {
-      const errorsAttr = this.getAttribute("validation-errors");
-      return errorsAttr ? JSON.parse(errorsAttr) : [];
-    } catch (error) {
-      console.error("Error parsing validation errors:", error);
-      return [];
-    }
-  }
-  getQuizData() {
-    try {
-      const quizDataAttr = this.getAttribute("quiz-data");
-      return quizDataAttr ? JSON.parse(quizDataAttr) : null;
-    } catch (error) {
-      console.error("Error parsing quiz data:", error);
-      return null;
-    }
-  }
-  handleAttributeChange(name, oldValue, newValue) {
-    if (["step-data", "responses", "current-question-index", "is-form-step", "validation-errors", "quiz-data"].includes(name)) {
-      this.render();
-    }
-  }
-};
-__name(_QuizStepContainer, "QuizStepContainer");
-let QuizStepContainer = _QuizStepContainer;
-if (!customElements.get("quiz-step-container")) {
-  customElements.define("quiz-step-container", QuizStepContainer);
-}
-const _QuizSchedulingResult = class _QuizSchedulingResult extends QuizBaseComponent {
-  static get observedAttributes() {
-    return ["result-type", "scheduling-data", "error-message"];
-  }
-  getTemplate() {
-    const resultType = this.getAttribute("result-type") || "success";
-    const schedulingData = this.getSchedulingData();
-    const errorMessage = this.getAttribute("error-message") || "";
-    if (resultType === "success") {
-      return this.renderSuccessResult(schedulingData);
-    } else {
-      return this.renderErrorResult(errorMessage, schedulingData);
-    }
-  }
-  getStyles() {
-    return `
+				   ${question.required?"required":""}>
+		`}renderPayerSearch(question,value){const payerSearch=document.createElement("quiz-payer-search");return payerSearch.setAttribute("question-id",question.id),question.commonPayers&&payerSearch.setAttribute("common-payers",JSON.stringify(question.commonPayers)),value&&payerSearch.setAttribute("selected-payer",value),payerSearch.outerHTML}getStepData(){try{const stepDataAttr=this.getAttribute("step-data");return stepDataAttr?JSON.parse(stepDataAttr):null}catch(error){return console.error("Error parsing step data:",error),null}}getResponses(){try{const responsesAttr=this.getAttribute("responses");return responsesAttr?JSON.parse(responsesAttr):[]}catch(error){return console.error("Error parsing responses:",error),[]}}getValidationErrors(){try{const errorsAttr=this.getAttribute("validation-errors");return errorsAttr?JSON.parse(errorsAttr):[]}catch(error){return console.error("Error parsing validation errors:",error),[]}}getQuizData(){try{const quizDataAttr=this.getAttribute("quiz-data");return quizDataAttr?JSON.parse(quizDataAttr):null}catch(error){return console.error("Error parsing quiz data:",error),null}}handleAttributeChange(name,oldValue,newValue){["step-data","responses","current-question-index","is-form-step","validation-errors","quiz-data"].includes(name)&&this.render()}};__name(_QuizStepContainer,"QuizStepContainer");let QuizStepContainer=_QuizStepContainer;customElements.get("quiz-step-container")||customElements.define("quiz-step-container",QuizStepContainer);const _QuizSchedulingResult=class _QuizSchedulingResult extends QuizBaseComponent{static get observedAttributes(){return["result-type","scheduling-data","error-message"]}getTemplate(){const resultType=this.getAttribute("result-type")||"success",schedulingData=this.getSchedulingData(),errorMessage=this.getAttribute("error-message")||"";return resultType==="success"?this.renderSuccessResult(schedulingData):this.renderErrorResult(errorMessage,schedulingData)}getStyles(){return`
 			${super.getStyles()}
 
 			.quiz-scheduling-container {
@@ -4136,35 +2163,7 @@ const _QuizSchedulingResult = class _QuizSchedulingResult extends QuizBaseCompon
 					flex-direction: column;
 				}
 			}
-		`;
-  }
-  render() {
-    this.renderTemplate();
-    this.attachEventListeners();
-  }
-  attachEventListeners() {
-    const buttons = this.root.querySelectorAll(".quiz-button");
-    buttons.forEach((button) => {
-      button.addEventListener("click", (e) => {
-        const action = button.getAttribute("data-action");
-        if (action) {
-          this.dispatchEvent(
-            new CustomEvent("scheduling-action", {
-              detail: { action, target: e.target },
-              bubbles: true
-            })
-          );
-        }
-      });
-    });
-  }
-  renderSuccessResult(schedulingData) {
-    if (!schedulingData) {
-      return this.renderGenericSuccess();
-    }
-    const appointment = schedulingData.appointment || {};
-    const dietitian = schedulingData.dietitian || {};
-    return `
+		`}render(){this.renderTemplate(),this.attachEventListeners()}attachEventListeners(){this.root.querySelectorAll(".quiz-button").forEach(button=>{button.addEventListener("click",e=>{const action=button.getAttribute("data-action");action&&this.dispatchEvent(new CustomEvent("scheduling-action",{detail:{action,target:e.target},bubbles:!0}))})})}renderSuccessResult(schedulingData){if(!schedulingData)return this.renderGenericSuccess();const appointment=schedulingData.appointment||{},dietitian=schedulingData.dietitian||{};return`
 			<div class="quiz-scheduling-container">
 				<div class="quiz-scheduling-header">
 					<h2 class="quiz-scheduling-title">🎉 Appointment Confirmed!</h2>
@@ -4182,41 +2181,41 @@ const _QuizSchedulingResult = class _QuizSchedulingResult extends QuizBaseCompon
 					</div>
 
 					<div class="quiz-appointment-details">
-						${appointment.date ? `
+						${appointment.date?`
 							<div class="quiz-appointment-detail">
 								<svg class="quiz-appointment-detail-icon" viewBox="0 0 20 20" fill="currentColor">
 									<path d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zM4 9h12v8H4V9z"/>
 								</svg>
 								<span class="quiz-appointment-detail-text">Date: <span class="quiz-appointment-detail-value">${appointment.date}</span></span>
 							</div>
-						` : ""}
+						`:""}
 
-						${appointment.time ? `
+						${appointment.time?`
 							<div class="quiz-appointment-detail">
 								<svg class="quiz-appointment-detail-icon" viewBox="0 0 20 20" fill="currentColor">
 									<path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V5z"/>
 								</svg>
 								<span class="quiz-appointment-detail-text">Time: <span class="quiz-appointment-detail-value">${appointment.time}</span></span>
 							</div>
-						` : ""}
+						`:""}
 
-						${dietitian.name ? `
+						${dietitian.name?`
 							<div class="quiz-appointment-detail">
 								<svg class="quiz-appointment-detail-icon" viewBox="0 0 20 20" fill="currentColor">
 									<path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
 								</svg>
 								<span class="quiz-appointment-detail-text">Dietitian: <span class="quiz-appointment-detail-value">${dietitian.name}</span></span>
 							</div>
-						` : ""}
+						`:""}
 
-						${appointment.type ? `
+						${appointment.type?`
 							<div class="quiz-appointment-detail">
 								<svg class="quiz-appointment-detail-icon" viewBox="0 0 20 20" fill="currentColor">
 									<path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
 								</svg>
 								<span class="quiz-appointment-detail-text">Type: <span class="quiz-appointment-detail-value">${appointment.type}</span></span>
 							</div>
-						` : ""}
+						`:""}
 					</div>
 				</div>
 
@@ -4247,10 +2246,7 @@ const _QuizSchedulingResult = class _QuizSchedulingResult extends QuizBaseCompon
 					</button>
 				</div>
 			</div>
-		`;
-  }
-  renderGenericSuccess() {
-    return `
+		`}renderGenericSuccess(){return`
 			<div class="quiz-scheduling-container">
 				<div class="quiz-scheduling-header">
 					<h2 class="quiz-scheduling-title">🎉 Success!</h2>
@@ -4275,10 +2271,7 @@ const _QuizSchedulingResult = class _QuizSchedulingResult extends QuizBaseCompon
 					</button>
 				</div>
 			</div>
-		`;
-  }
-  renderErrorResult(errorMessage, schedulingData) {
-    return `
+		`}renderErrorResult(errorMessage,schedulingData){return`
 			<div class="quiz-scheduling-container">
 				<div class="quiz-scheduling-header">
 					<h2 class="quiz-scheduling-title">⚠️ Scheduling Issue</h2>
@@ -4296,7 +2289,7 @@ const _QuizSchedulingResult = class _QuizSchedulingResult extends QuizBaseCompon
 					</div>
 
 					<p class="quiz-error-message">
-						${errorMessage || "There was an unexpected error while trying to schedule your appointment. Please try again or contact our support team for assistance."}
+						${errorMessage||"There was an unexpected error while trying to schedule your appointment. Please try again or contact our support team for assistance."}
 					</p>
 
 					<div class="quiz-support-info">
@@ -4317,82 +2310,11 @@ const _QuizSchedulingResult = class _QuizSchedulingResult extends QuizBaseCompon
 					</button>
 				</div>
 			</div>
-		`;
-  }
-  // Utility methods
-  getSchedulingData() {
-    try {
-      const dataAttr = this.getAttribute("scheduling-data");
-      return dataAttr ? JSON.parse(dataAttr) : null;
-    } catch (error) {
-      console.error("Error parsing scheduling data:", error);
-      return null;
-    }
-  }
-  handleAttributeChange(name, oldValue, newValue) {
-    if (["result-type", "scheduling-data", "error-message"].includes(name)) {
-      this.render();
-    }
-  }
-};
-__name(_QuizSchedulingResult, "QuizSchedulingResult");
-let QuizSchedulingResult = _QuizSchedulingResult;
-if (!customElements.get("quiz-scheduling-result")) {
-  customElements.define("quiz-scheduling-result", QuizSchedulingResult);
-}
-const _QuizMultipleChoiceComponent = class _QuizMultipleChoiceComponent extends QuizBaseComponent {
-  static get observedAttributes() {
-    return ["question-data", "selected-value", "disabled"];
-  }
-  constructor() {
-    super();
-    this.questionData = null;
-    this.selectedValue = null;
-    this.isDisabled = false;
-  }
-  initialize() {
-    this.parseAttributes();
-  }
-  parseAttributes() {
-    const questionDataAttr = this.getAttribute("question-data");
-    if (questionDataAttr) {
-      try {
-        this.questionData = JSON.parse(questionDataAttr);
-      } catch (error) {
-        console.error("Quiz Multiple Choice: Invalid question-data JSON:", error);
-        this.questionData = null;
-      }
-    }
-    this.selectedValue = this.getAttribute("selected-value") || null;
-    this.isDisabled = this.getBooleanAttribute("disabled", false);
-  }
-  handleAttributeChange(name, oldValue, newValue) {
-    switch (name) {
-      case "question-data":
-        this.parseAttributes();
-        break;
-      case "selected-value":
-        this.selectedValue = newValue;
-        this.updateSelectedState();
-        break;
-      case "disabled":
-        this.isDisabled = this.getBooleanAttribute("disabled", false);
-        this.updateDisabledState();
-        break;
-    }
-  }
-  getTemplate() {
-    if (!this.questionData || !this.questionData.options) {
-      return `
+		`}getSchedulingData(){try{const dataAttr=this.getAttribute("scheduling-data");return dataAttr?JSON.parse(dataAttr):null}catch(error){return console.error("Error parsing scheduling data:",error),null}}handleAttributeChange(name,oldValue,newValue){["result-type","scheduling-data","error-message"].includes(name)&&this.render()}};__name(_QuizSchedulingResult,"QuizSchedulingResult");let QuizSchedulingResult=_QuizSchedulingResult;customElements.get("quiz-scheduling-result")||customElements.define("quiz-scheduling-result",QuizSchedulingResult);const _QuizMultipleChoiceComponent=class _QuizMultipleChoiceComponent extends QuizBaseComponent{static get observedAttributes(){return["question-data","selected-value","disabled"]}constructor(){super(),this.questionData=null,this.selectedValue=null,this.isDisabled=!1}initialize(){this.parseAttributes()}parseAttributes(){const questionDataAttr=this.getAttribute("question-data");if(questionDataAttr)try{this.questionData=JSON.parse(questionDataAttr)}catch(error){console.error("Quiz Multiple Choice: Invalid question-data JSON:",error),this.questionData=null}this.selectedValue=this.getAttribute("selected-value")||null,this.isDisabled=this.getBooleanAttribute("disabled",!1)}handleAttributeChange(name,oldValue,newValue){switch(name){case"question-data":this.parseAttributes();break;case"selected-value":this.selectedValue=newValue,this.updateSelectedState();break;case"disabled":this.isDisabled=this.getBooleanAttribute("disabled",!1),this.updateDisabledState();break}}getTemplate(){if(!this.questionData||!this.questionData.options)return`
 				<div class="quiz-error-container">
 					<p class="quiz-error-text">Invalid question configuration</p>
 				</div>
-			`;
-    }
-    const options = this.questionData.options;
-    const questionId = this.questionData.id;
-    const optionsHTML = options.map(
-      (option) => `
+			`;const options=this.questionData.options,questionId=this.questionData.id,optionsHTML=options.map(option=>`
 			<label for="${option.id}" class="quiz-option-card" data-option-id="${option.id}">
 				<input
 					type="radio"
@@ -4400,232 +2322,25 @@ const _QuizMultipleChoiceComponent = class _QuizMultipleChoiceComponent extends 
 					name="question-${questionId}"
 					value="${option.id}"
 					class="quiz-sr-only"
-					${this.selectedValue === option.id ? "checked" : ""}
-					${this.isDisabled ? "disabled" : ""}
+					${this.selectedValue===option.id?"checked":""}
+					${this.isDisabled?"disabled":""}
 				>
-				<div class="quiz-option-button ${this.selectedValue === option.id ? "selected" : ""}">
+				<div class="quiz-option-button ${this.selectedValue===option.id?"selected":""}">
 					<div class="quiz-option-text">
 						<div class="quiz-option-text-content">${option.text}</div>
 					</div>
-					${this.selectedValue === option.id ? '<quiz-checkmark animation="bounce"></quiz-checkmark>' : ""}
+					${this.selectedValue===option.id?'<quiz-checkmark animation="bounce"></quiz-checkmark>':""}
 				</div>
 			</label>
-		`
-    ).join("");
-    return `
-			<div class="quiz-grid-2" ${this.isDisabled ? 'aria-disabled="true"' : ""}>
+		`).join("");return`
+			<div class="quiz-grid-2" ${this.isDisabled?'aria-disabled="true"':""}>
 				${optionsHTML}
 			</div>
-		`;
-  }
-  async render() {
-    await this.renderTemplate();
-  }
-  getStyles() {
-    return "";
-  }
-  setupEventListeners() {
-    this.root.addEventListener("change", this.handleOptionChange.bind(this));
-    this.root.addEventListener("click", this.handleOptionClick.bind(this));
-  }
-  handleOptionChange(event) {
-    if (this.isDisabled) return;
-    const input = event.target;
-    if (input.type === "radio") {
-      const selectedValue = input.value;
-      this.selectedValue = selectedValue;
-      this.updateSelectedState();
-      this.dispatchAnswerSelected(selectedValue);
-    }
-  }
-  handleOptionClick(event) {
-    if (this.isDisabled) return;
-    const label = event.target.closest(".quiz-option-card");
-    if (label) {
-      const optionId = label.getAttribute("data-option-id");
-      const input = label.querySelector("input[type='radio']");
-      if (input && !input.checked) {
-        input.checked = true;
-        this.selectedValue = optionId;
-        this.updateSelectedState();
-        this.dispatchAnswerSelected(optionId);
-      }
-    }
-  }
-  updateSelectedState() {
-    const labels = this.root.querySelectorAll(".quiz-option-card");
-    labels.forEach((label) => {
-      const optionId = label.getAttribute("data-option-id");
-      const button = label.querySelector(".quiz-option-button");
-      const input = label.querySelector("input[type='radio']");
-      if (optionId === this.selectedValue) {
-        button.classList.add("selected");
-        input.checked = true;
-        if (!button.querySelector("quiz-checkmark")) {
-          const textDiv = button.querySelector(".quiz-option-text");
-          const checkmark = document.createElement("quiz-checkmark");
-          checkmark.setAttribute("animation", "bounce");
-          textDiv.insertAdjacentElement("afterend", checkmark);
-        }
-      } else {
-        button.classList.remove("selected");
-        input.checked = false;
-        const checkmark = button.querySelector("quiz-checkmark");
-        if (checkmark) {
-          checkmark.hide("bounce", () => {
-            if (checkmark.parentNode) {
-              checkmark.remove();
-            }
-          });
-        }
-      }
-    });
-  }
-  updateDisabledState() {
-    const inputs = this.root.querySelectorAll("input[type='radio']");
-    inputs.forEach((input) => {
-      input.disabled = this.isDisabled;
-    });
-    const container = this.root.querySelector(".quiz-grid-2");
-    if (container) {
-      if (this.isDisabled) {
-        container.setAttribute("aria-disabled", "true");
-      } else {
-        container.removeAttribute("aria-disabled");
-      }
-    }
-  }
-  dispatchAnswerSelected(value) {
-    const event = new CustomEvent("answer-selected", {
-      detail: {
-        questionId: this.questionData?.id,
-        value,
-        questionType: "multiple-choice"
-      },
-      bubbles: true
-    });
-    this.dispatchEvent(event);
-  }
-  // Public API methods
-  getSelectedValue() {
-    return this.selectedValue;
-  }
-  setSelectedValue(value) {
-    this.selectedValue = value;
-    this.setAttribute("selected-value", value);
-  }
-  setDisabled(disabled) {
-    this.isDisabled = disabled;
-    if (disabled) {
-      this.setAttribute("disabled", "");
-    } else {
-      this.removeAttribute("disabled");
-    }
-  }
-  getQuestionData() {
-    return this.questionData;
-  }
-  setQuestionData(data) {
-    this.questionData = data;
-    this.setAttribute("question-data", JSON.stringify(data));
-  }
-};
-__name(_QuizMultipleChoiceComponent, "QuizMultipleChoiceComponent");
-let QuizMultipleChoiceComponent = _QuizMultipleChoiceComponent;
-if (!customElements.get("quiz-multiple-choice")) {
-  customElements.define("quiz-multiple-choice", QuizMultipleChoiceComponent);
-}
-const _QuizCheckboxGroupComponent = class _QuizCheckboxGroupComponent extends QuizBaseComponent {
-  static get observedAttributes() {
-    return ["question-data", "selected-values", "disabled", "layout"];
-  }
-  constructor() {
-    super();
-    this.questionData = null;
-    this.selectedValues = [];
-    this.isDisabled = false;
-    this.layout = "cards";
-  }
-  initialize() {
-    this.parseAttributes();
-  }
-  parseAttributes() {
-    const questionDataAttr = this.getAttribute("question-data");
-    if (questionDataAttr) {
-      try {
-        this.questionData = JSON.parse(questionDataAttr);
-      } catch (error) {
-        console.error("Quiz Checkbox Group: Invalid question-data JSON:", error);
-        this.questionData = null;
-      }
-    }
-    const selectedValuesAttr = this.getAttribute("selected-values");
-    if (selectedValuesAttr) {
-      try {
-        this.selectedValues = JSON.parse(selectedValuesAttr);
-      } catch (error) {
-        console.error("Quiz Checkbox Group: Invalid selected-values JSON:", error);
-        this.selectedValues = [];
-      }
-    } else {
-      this.selectedValues = [];
-    }
-    this.isDisabled = this.getBooleanAttribute("disabled", false);
-    this.layout = this.getAttribute("layout") || "cards";
-    if (this.questionData?.id === "consent") {
-      this.layout = "simple";
-    }
-  }
-  handleAttributeChange(name, oldValue, newValue) {
-    switch (name) {
-      case "question-data":
-        this.parseAttributes();
-        break;
-      case "selected-values":
-        this.parseSelectedValues();
-        this.updateSelectedState();
-        break;
-      case "disabled":
-        this.isDisabled = this.getBooleanAttribute("disabled", false);
-        this.updateDisabledState();
-        break;
-      case "layout":
-        this.layout = newValue || "cards";
-        break;
-    }
-  }
-  parseSelectedValues() {
-    const selectedValuesAttr = this.getAttribute("selected-values");
-    if (selectedValuesAttr) {
-      try {
-        this.selectedValues = JSON.parse(selectedValuesAttr);
-      } catch (error) {
-        console.error("Quiz Checkbox Group: Invalid selected-values JSON:", error);
-        this.selectedValues = [];
-      }
-    } else {
-      this.selectedValues = [];
-    }
-  }
-  getTemplate() {
-    if (!this.questionData || !this.questionData.options) {
-      return `
+		`}async render(){await this.renderTemplate()}getStyles(){return""}setupEventListeners(){this.root.addEventListener("change",this.handleOptionChange.bind(this)),this.root.addEventListener("click",this.handleOptionClick.bind(this))}handleOptionChange(event){if(this.isDisabled)return;const input=event.target;if(input.type==="radio"){const selectedValue=input.value;this.selectedValue=selectedValue,this.updateSelectedState(),this.dispatchAnswerSelected(selectedValue)}}handleOptionClick(event){if(this.isDisabled)return;const label=event.target.closest(".quiz-option-card");if(label){const optionId=label.getAttribute("data-option-id"),input=label.querySelector("input[type='radio']");input&&!input.checked&&(input.checked=!0,this.selectedValue=optionId,this.updateSelectedState(),this.dispatchAnswerSelected(optionId))}}updateSelectedState(){this.root.querySelectorAll(".quiz-option-card").forEach(label=>{const optionId=label.getAttribute("data-option-id"),button=label.querySelector(".quiz-option-button"),input=label.querySelector("input[type='radio']");if(optionId===this.selectedValue){if(button.classList.add("selected"),input.checked=!0,!button.querySelector("quiz-checkmark")){const textDiv=button.querySelector(".quiz-option-text"),checkmark=document.createElement("quiz-checkmark");checkmark.setAttribute("animation","bounce"),textDiv.insertAdjacentElement("afterend",checkmark)}}else{button.classList.remove("selected"),input.checked=!1;const checkmark=button.querySelector("quiz-checkmark");checkmark&&checkmark.hide("bounce",()=>{checkmark.parentNode&&checkmark.remove()})}})}updateDisabledState(){this.root.querySelectorAll("input[type='radio']").forEach(input=>{input.disabled=this.isDisabled});const container=this.root.querySelector(".quiz-grid-2");container&&(this.isDisabled?container.setAttribute("aria-disabled","true"):container.removeAttribute("aria-disabled"))}dispatchAnswerSelected(value){const event=new CustomEvent("answer-selected",{detail:{questionId:this.questionData?.id,value,questionType:"multiple-choice"},bubbles:!0});this.dispatchEvent(event)}getSelectedValue(){return this.selectedValue}setSelectedValue(value){this.selectedValue=value,this.setAttribute("selected-value",value)}setDisabled(disabled){this.isDisabled=disabled,disabled?this.setAttribute("disabled",""):this.removeAttribute("disabled")}getQuestionData(){return this.questionData}setQuestionData(data){this.questionData=data,this.setAttribute("question-data",JSON.stringify(data))}};__name(_QuizMultipleChoiceComponent,"QuizMultipleChoiceComponent");let QuizMultipleChoiceComponent=_QuizMultipleChoiceComponent;customElements.get("quiz-multiple-choice")||customElements.define("quiz-multiple-choice",QuizMultipleChoiceComponent);const _QuizCheckboxGroupComponent=class _QuizCheckboxGroupComponent extends QuizBaseComponent{static get observedAttributes(){return["question-data","selected-values","disabled","layout"]}constructor(){super(),this.questionData=null,this.selectedValues=[],this.isDisabled=!1,this.layout="cards"}initialize(){this.parseAttributes()}parseAttributes(){const questionDataAttr=this.getAttribute("question-data");if(questionDataAttr)try{this.questionData=JSON.parse(questionDataAttr)}catch(error){console.error("Quiz Checkbox Group: Invalid question-data JSON:",error),this.questionData=null}const selectedValuesAttr=this.getAttribute("selected-values");if(selectedValuesAttr)try{this.selectedValues=JSON.parse(selectedValuesAttr)}catch(error){console.error("Quiz Checkbox Group: Invalid selected-values JSON:",error),this.selectedValues=[]}else this.selectedValues=[];this.isDisabled=this.getBooleanAttribute("disabled",!1),this.layout=this.getAttribute("layout")||"cards",this.questionData?.id==="consent"&&(this.layout="simple")}handleAttributeChange(name,oldValue,newValue){switch(name){case"question-data":this.parseAttributes();break;case"selected-values":this.parseSelectedValues(),this.updateSelectedState();break;case"disabled":this.isDisabled=this.getBooleanAttribute("disabled",!1),this.updateDisabledState();break;case"layout":this.layout=newValue||"cards";break}}parseSelectedValues(){const selectedValuesAttr=this.getAttribute("selected-values");if(selectedValuesAttr)try{this.selectedValues=JSON.parse(selectedValuesAttr)}catch(error){console.error("Quiz Checkbox Group: Invalid selected-values JSON:",error),this.selectedValues=[]}else this.selectedValues=[]}getTemplate(){return!this.questionData||!this.questionData.options?`
 				<div class="quiz-error-container">
 					<p class="quiz-error-text">Invalid question configuration</p>
 				</div>
-			`;
-    }
-    if (this.layout === "simple") {
-      return this.getSimpleTemplate();
-    } else {
-      return this.getCardTemplate();
-    }
-  }
-  getCardTemplate() {
-    const options = this.questionData.options;
-    const questionId = this.questionData.id;
-    const optionsHTML = options.map(
-      (option) => `
+			`:this.layout==="simple"?this.getSimpleTemplate():this.getCardTemplate()}getCardTemplate(){const options=this.questionData.options,questionId=this.questionData.id,optionsHTML=options.map(option=>`
 			<label for="${option.id}" class="quiz-option-card" data-option-id="${option.id}">
 				<input
 					type="checkbox"
@@ -4633,29 +2348,21 @@ const _QuizCheckboxGroupComponent = class _QuizCheckboxGroupComponent extends Qu
 					name="question-${questionId}"
 					value="${option.id}"
 					class="quiz-sr-only"
-					${this.selectedValues.includes(option.id) ? "checked" : ""}
-					${this.isDisabled ? "disabled" : ""}
+					${this.selectedValues.includes(option.id)?"checked":""}
+					${this.isDisabled?"disabled":""}
 				>
-				<div class="quiz-option-button ${this.selectedValues.includes(option.id) ? "selected" : ""}">
+				<div class="quiz-option-button ${this.selectedValues.includes(option.id)?"selected":""}">
 					<div class="quiz-option-text">
 						<div class="quiz-option-text-content">${option.text}</div>
 					</div>
-					${this.selectedValues.includes(option.id) ? '<quiz-checkmark animation="bounce"></quiz-checkmark>' : ""}
+					${this.selectedValues.includes(option.id)?'<quiz-checkmark animation="bounce"></quiz-checkmark>':""}
 				</div>
 			</label>
-		`
-    ).join("");
-    return `
-			<div class="quiz-grid-2" ${this.isDisabled ? 'aria-disabled="true"' : ""}>
+		`).join("");return`
+			<div class="quiz-grid-2" ${this.isDisabled?'aria-disabled="true"':""}>
 				${optionsHTML}
 			</div>
-		`;
-  }
-  getSimpleTemplate() {
-    const options = this.questionData.options;
-    const questionId = this.questionData.id;
-    const optionsHTML = options.map(
-      (option) => `
+		`}getSimpleTemplate(){const options=this.questionData.options,questionId=this.questionData.id,optionsHTML=options.map(option=>`
 			<div class="quiz-checkbox-container">
 				<input
 					type="checkbox"
@@ -4663,26 +2370,16 @@ const _QuizCheckboxGroupComponent = class _QuizCheckboxGroupComponent extends Qu
 					name="question-${questionId}"
 					value="${option.id}"
 					class="quiz-checkbox-input"
-					${this.selectedValues.includes(option.id) ? "checked" : ""}
-					${this.isDisabled ? "disabled" : ""}
+					${this.selectedValues.includes(option.id)?"checked":""}
+					${this.isDisabled?"disabled":""}
 				>
 				<label class="quiz-checkbox-label" for="${option.id}">${option.text}</label>
 			</div>
-		`
-    ).join("");
-    return `
-			<div class="quiz-space-y-3 quiz-spacing-container" ${this.isDisabled ? 'aria-disabled="true"' : ""}>
+		`).join("");return`
+			<div class="quiz-space-y-3 quiz-spacing-container" ${this.isDisabled?'aria-disabled="true"':""}>
 				${optionsHTML}
 			</div>
-		`;
-  }
-  async render() {
-    await this.renderTemplate();
-  }
-  async getStyles() {
-    const baseStyles = super.getStyles();
-    const quizStyles = await sharedStyles.getQuizStyles();
-    return `
+		`}async render(){await this.renderTemplate()}async getStyles(){const baseStyles=super.getStyles(),quizStyles=await sharedStyles.getQuizStyles();return`
 			${baseStyles}
 			${quizStyles}
 
@@ -4840,244 +2537,28 @@ const _QuizCheckboxGroupComponent = class _QuizCheckboxGroupComponent extends Qu
 				outline: 2px solid var(--quiz-primary-color);
 				outline-offset: 2px;
 			}
-		`;
-  }
-  setupEventListeners() {
-    this.root.addEventListener("change", this.handleOptionChange.bind(this));
-    this.root.addEventListener("click", this.handleOptionClick.bind(this));
-  }
-  handleOptionChange(event) {
-    if (this.isDisabled) return;
-    const input = event.target;
-    if (input.type === "checkbox") {
-      const optionId = input.value;
-      if (input.checked) {
-        if (!this.selectedValues.includes(optionId)) {
-          this.selectedValues.push(optionId);
-        }
-      } else {
-        this.selectedValues = this.selectedValues.filter((id) => id !== optionId);
-      }
-      this.updateSelectedState();
-      this.dispatchAnswerSelected(this.selectedValues);
-    }
-  }
-  handleOptionClick(event) {
-    if (this.isDisabled) return;
-    if (this.layout === "cards") {
-      const label = event.target.closest(".quiz-option-card");
-      if (label) {
-        const optionId = label.getAttribute("data-option-id");
-        const input = label.querySelector("input[type='checkbox']");
-        if (input) {
-          input.checked = !input.checked;
-          if (input.checked) {
-            if (!this.selectedValues.includes(optionId)) {
-              this.selectedValues.push(optionId);
-            }
-          } else {
-            this.selectedValues = this.selectedValues.filter((id) => id !== optionId);
-          }
-          this.updateSelectedState();
-          this.dispatchAnswerSelected(this.selectedValues);
-        }
-      }
-    }
-  }
-  updateSelectedState() {
-    if (this.layout === "cards") {
-      this.updateCardSelectedState();
-    } else {
-      this.updateSimpleSelectedState();
-    }
-  }
-  updateCardSelectedState() {
-    const labels = this.root.querySelectorAll(".quiz-option-card");
-    labels.forEach((label) => {
-      const optionId = label.getAttribute("data-option-id");
-      const button = label.querySelector(".quiz-option-button");
-      const input = label.querySelector("input[type='checkbox']");
-      if (this.selectedValues.includes(optionId)) {
-        button.classList.add("selected");
-        input.checked = true;
-        if (!button.querySelector("quiz-checkmark")) {
-          const textDiv = button.querySelector(".quiz-option-text");
-          const checkmark = document.createElement("quiz-checkmark");
-          checkmark.setAttribute("animation", "bounce");
-          textDiv.insertAdjacentElement("afterend", checkmark);
-        }
-      } else {
-        button.classList.remove("selected");
-        input.checked = false;
-        const checkmark = button.querySelector("quiz-checkmark");
-        if (checkmark) {
-          checkmark.hide("bounce", () => {
-            if (checkmark.parentNode) {
-              checkmark.remove();
-            }
-          });
-        }
-      }
-    });
-  }
-  updateSimpleSelectedState() {
-    const inputs = this.root.querySelectorAll("input[type='checkbox']");
-    inputs.forEach((input) => {
-      const optionId = input.value;
-      input.checked = this.selectedValues.includes(optionId);
-    });
-  }
-  updateDisabledState() {
-    const inputs = this.root.querySelectorAll("input[type='checkbox']");
-    inputs.forEach((input) => {
-      input.disabled = this.isDisabled;
-    });
-    const container = this.root.querySelector(".quiz-grid-2, .quiz-space-y-3");
-    if (container) {
-      if (this.isDisabled) {
-        container.setAttribute("aria-disabled", "true");
-      } else {
-        container.removeAttribute("aria-disabled");
-      }
-    }
-  }
-  dispatchAnswerSelected(values) {
-    const event = new CustomEvent("answer-selected", {
-      detail: {
-        questionId: this.questionData?.id,
-        value: values,
-        questionType: "checkbox"
-      },
-      bubbles: true
-    });
-    this.dispatchEvent(event);
-  }
-  // Public API methods
-  getSelectedValues() {
-    return [...this.selectedValues];
-  }
-  setSelectedValues(values) {
-    this.selectedValues = Array.isArray(values) ? [...values] : [];
-    this.setAttribute("selected-values", JSON.stringify(this.selectedValues));
-  }
-  setDisabled(disabled) {
-    this.isDisabled = disabled;
-    if (disabled) {
-      this.setAttribute("disabled", "");
-    } else {
-      this.removeAttribute("disabled");
-    }
-  }
-  getQuestionData() {
-    return this.questionData;
-  }
-  setQuestionData(data) {
-    this.questionData = data;
-    this.setAttribute("question-data", JSON.stringify(data));
-  }
-  setLayout(layout) {
-    this.layout = layout;
-    this.setAttribute("layout", layout);
-  }
-};
-__name(_QuizCheckboxGroupComponent, "QuizCheckboxGroupComponent");
-let QuizCheckboxGroupComponent = _QuizCheckboxGroupComponent;
-if (!customElements.get("quiz-checkbox-group")) {
-  customElements.define("quiz-checkbox-group", QuizCheckboxGroupComponent);
-}
-const _QuizDropdownComponent = class _QuizDropdownComponent extends QuizBaseComponent {
-  static get observedAttributes() {
-    return ["question-data", "selected-value", "disabled", "show-error", "error-message"];
-  }
-  constructor() {
-    super();
-    this.questionData = null;
-    this.selectedValue = null;
-    this.isDisabled = false;
-    this.showError = false;
-    this.errorMessage = "";
-  }
-  initialize() {
-    this.parseAttributes();
-  }
-  parseAttributes() {
-    const questionDataAttr = this.getAttribute("question-data");
-    if (questionDataAttr) {
-      try {
-        this.questionData = JSON.parse(questionDataAttr);
-      } catch (error) {
-        console.error("Quiz Dropdown: Invalid question-data JSON:", error);
-        this.questionData = null;
-      }
-    }
-    this.selectedValue = this.getAttribute("selected-value") || null;
-    this.isDisabled = this.getBooleanAttribute("disabled", false);
-    this.showError = this.getBooleanAttribute("show-error", false);
-    this.errorMessage = this.getAttribute("error-message") || "";
-  }
-  handleAttributeChange(name, oldValue, newValue) {
-    switch (name) {
-      case "question-data":
-        this.parseAttributes();
-        break;
-      case "selected-value":
-        this.selectedValue = newValue;
-        this.updateSelectedState();
-        break;
-      case "disabled":
-        this.isDisabled = this.getBooleanAttribute("disabled", false);
-        this.updateDisabledState();
-        break;
-      case "show-error":
-        this.showError = this.getBooleanAttribute("show-error", false);
-        this.updateErrorState();
-        break;
-      case "error-message":
-        this.errorMessage = newValue || "";
-        this.updateErrorMessage();
-        break;
-    }
-  }
-  getTemplate() {
-    if (!this.questionData) {
-      return `
+		`}setupEventListeners(){this.root.addEventListener("change",this.handleOptionChange.bind(this)),this.root.addEventListener("click",this.handleOptionClick.bind(this))}handleOptionChange(event){if(this.isDisabled)return;const input=event.target;if(input.type==="checkbox"){const optionId=input.value;input.checked?this.selectedValues.includes(optionId)||this.selectedValues.push(optionId):this.selectedValues=this.selectedValues.filter(id=>id!==optionId),this.updateSelectedState(),this.dispatchAnswerSelected(this.selectedValues)}}handleOptionClick(event){if(!this.isDisabled&&this.layout==="cards"){const label=event.target.closest(".quiz-option-card");if(label){const optionId=label.getAttribute("data-option-id"),input=label.querySelector("input[type='checkbox']");input&&(input.checked=!input.checked,input.checked?this.selectedValues.includes(optionId)||this.selectedValues.push(optionId):this.selectedValues=this.selectedValues.filter(id=>id!==optionId),this.updateSelectedState(),this.dispatchAnswerSelected(this.selectedValues))}}}updateSelectedState(){this.layout==="cards"?this.updateCardSelectedState():this.updateSimpleSelectedState()}updateCardSelectedState(){this.root.querySelectorAll(".quiz-option-card").forEach(label=>{const optionId=label.getAttribute("data-option-id"),button=label.querySelector(".quiz-option-button"),input=label.querySelector("input[type='checkbox']");if(this.selectedValues.includes(optionId)){if(button.classList.add("selected"),input.checked=!0,!button.querySelector("quiz-checkmark")){const textDiv=button.querySelector(".quiz-option-text"),checkmark=document.createElement("quiz-checkmark");checkmark.setAttribute("animation","bounce"),textDiv.insertAdjacentElement("afterend",checkmark)}}else{button.classList.remove("selected"),input.checked=!1;const checkmark=button.querySelector("quiz-checkmark");checkmark&&checkmark.hide("bounce",()=>{checkmark.parentNode&&checkmark.remove()})}})}updateSimpleSelectedState(){this.root.querySelectorAll("input[type='checkbox']").forEach(input=>{const optionId=input.value;input.checked=this.selectedValues.includes(optionId)})}updateDisabledState(){this.root.querySelectorAll("input[type='checkbox']").forEach(input=>{input.disabled=this.isDisabled});const container=this.root.querySelector(".quiz-grid-2, .quiz-space-y-3");container&&(this.isDisabled?container.setAttribute("aria-disabled","true"):container.removeAttribute("aria-disabled"))}dispatchAnswerSelected(values){const event=new CustomEvent("answer-selected",{detail:{questionId:this.questionData?.id,value:values,questionType:"checkbox"},bubbles:!0});this.dispatchEvent(event)}getSelectedValues(){return[...this.selectedValues]}setSelectedValues(values){this.selectedValues=Array.isArray(values)?[...values]:[],this.setAttribute("selected-values",JSON.stringify(this.selectedValues))}setDisabled(disabled){this.isDisabled=disabled,disabled?this.setAttribute("disabled",""):this.removeAttribute("disabled")}getQuestionData(){return this.questionData}setQuestionData(data){this.questionData=data,this.setAttribute("question-data",JSON.stringify(data))}setLayout(layout){this.layout=layout,this.setAttribute("layout",layout)}};__name(_QuizCheckboxGroupComponent,"QuizCheckboxGroupComponent");let QuizCheckboxGroupComponent=_QuizCheckboxGroupComponent;customElements.get("quiz-checkbox-group")||customElements.define("quiz-checkbox-group",QuizCheckboxGroupComponent);const _QuizDropdownComponent=class _QuizDropdownComponent extends QuizFormFieldBase{constructor(){super(),this.selectedValue=""}static get observedAttributes(){return[...super.observedAttributes,"selected-value"]}initialize(){this.parseAttributes()}parseAttributes(){this.parseCommonAttributes(),this.selectedValue=this.getAttribute("selected-value")||"",this.currentValue=this.selectedValue}handleAttributeChange(name,oldValue,newValue){switch(this.handleCommonAttributeChange(name,oldValue,newValue),name){case"selected-value":this.selectedValue=newValue||"",this.currentValue=this.selectedValue,this.updateSelectedState();break}}getFieldType(){return"dropdown"}getValue(){return this.selectedValue}setValue(value){this.selectedValue=value||"",this.currentValue=this.selectedValue,this.setAttribute("selected-value",this.selectedValue),this.updateSelectedState()}getInputElement(){return this.root.querySelector(".quiz-select")}hasValidValue(){return this.selectedValue&&this.selectedValue.trim()!==""}getTemplate(){if(!this.questionData)return`
 				<div class="quiz-error-container">
 					<p class="quiz-error-text">Invalid question configuration</p>
 				</div>
-			`;
-    }
-    const options = this.questionData.options || [];
-    const questionId = this.questionData.id;
-    const placeholder = this.questionData.placeholder || "Select an option";
-    const optionsHTML = options.map(
-      (option) => `
-			<option value="${option.id}" ${this.selectedValue === option.id ? "selected" : ""}>
+			`;const options=this.questionData.options||[],questionId=this.questionData.id,placeholder=this.questionData.placeholder||"Select an option",optionsHTML=options.map(option=>`
+			<option value="${option.id}" ${this.selectedValue===option.id?"selected":""}>
 				${option.text}
 			</option>
-		`
-    ).join("");
-    return `
+		`).join("");return`
 			<div class="quiz-dropdown-container">
 				<select
 					id="question-${questionId}"
-					class="quiz-select ${this.showError ? "quiz-select-error" : ""}"
-					${this.isDisabled ? "disabled" : ""}
+					class="quiz-select ${this.showError?"quiz-select-error":""}"
+					${this.isDisabled?"disabled":""}
 					aria-describedby="error-${questionId}"
 				>
 					<option value="">${placeholder}</option>
 					${optionsHTML}
 				</select>
-				<p id="error-${questionId}" class="quiz-error-text ${this.showError ? "quiz-error-visible" : "quiz-error-hidden"}">${this.errorMessage}</p>
+				${this.getErrorElementHTML(questionId)}
 			</div>
-		`;
-  }
-  async render() {
-    await this.renderTemplate();
-  }
-  async getStyles() {
-    const baseStyles = super.getStyles();
-    const quizStyles = await sharedStyles.getQuizStyles();
-    return `
+		`}async render(){await this.renderTemplate(),this.setupEventListeners()}async getStyles(){const baseStyles=super.getStyles(),quizStyles=await sharedStyles.getQuizStyles();return`
 			${baseStyles}
 			${quizStyles}
 
@@ -5133,11 +2614,6 @@ const _QuizDropdownComponent = class _QuizDropdownComponent extends QuizBaseComp
 				box-shadow: 0 0 0 2px #ad0000;
 			}
 
-			/* Error message - using global styling */
-			.quiz-error-element {
-				/* Styling handled by global .quiz-error-text class */
-			}
-
 			/* Disabled state */
 			.quiz-select:disabled {
 				background-color: #f9fafb;
@@ -5166,248 +2642,24 @@ const _QuizDropdownComponent = class _QuizDropdownComponent extends QuizBaseComp
 					font-size: 16px; /* Prevents zoom on iOS */
 				}
 			}
-		`;
-  }
-  setupEventListeners() {
-    this.root.addEventListener("change", this.handleSelectionChange.bind(this));
-    this.root.addEventListener("blur", this.handleSelectionBlur.bind(this));
-  }
-  handleSelectionChange(event) {
-    if (this.isDisabled) return;
-    const select = event.target;
-    if (select.classList.contains("quiz-select")) {
-      const selectedValue = select.value;
-      this.selectedValue = selectedValue;
-      this.dispatchAnswerSelected(selectedValue);
-      const errorElement = this.root.querySelector(".quiz-error-text");
-      const hasVisualError = select.classList.contains("quiz-select-error") || errorElement?.classList.contains("quiz-error-visible");
-      if ((this.showError || hasVisualError) && selectedValue) {
-        this.clearError();
-      }
-    }
-  }
-  handleSelectionBlur(event) {
-    if (this.isDisabled) return;
-    const select = event.target;
-    if (select.classList.contains("quiz-select")) {
-      setTimeout(() => {
-        this.dispatchValidationRequested(this.selectedValue);
-      }, 10);
-    }
-  }
-  updateSelectedState() {
-    const select = this.root.querySelector(".quiz-select");
-    if (select) {
-      select.value = this.selectedValue || "";
-    }
-  }
-  updateDisabledState() {
-    const select = this.root.querySelector(".quiz-select");
-    if (select) {
-      select.disabled = this.isDisabled;
-    }
-  }
-  updateErrorState() {
-    const select = this.root.querySelector(".quiz-select");
-    const errorElement = this.root.querySelector(".quiz-error-text");
-    if (select) {
-      if (this.showError) {
-        select.classList.add("quiz-select-error");
-      } else {
-        select.classList.remove("quiz-select-error");
-      }
-    }
-    if (errorElement) {
-      if (this.showError) {
-        errorElement.classList.remove("quiz-error-hidden");
-        errorElement.classList.add("quiz-error-visible");
-      } else {
-        errorElement.classList.remove("quiz-error-visible");
-        errorElement.classList.add("quiz-error-hidden");
-      }
-    }
-  }
-  updateErrorMessage() {
-    const errorElement = this.root.querySelector(".quiz-error-text");
-    if (errorElement) {
-      errorElement.textContent = this.errorMessage;
-    }
-  }
-  dispatchAnswerSelected(value) {
-    const event = new CustomEvent("answer-selected", {
-      detail: {
-        questionId: this.questionData?.id,
-        value,
-        questionType: "dropdown"
-      },
-      bubbles: true
-    });
-    this.dispatchEvent(event);
-  }
-  dispatchValidationRequested(value) {
-    const event = new CustomEvent("validation-requested", {
-      detail: {
-        questionId: this.questionData?.id,
-        value,
-        questionType: "dropdown"
-      },
-      bubbles: true
-    });
-    this.dispatchEvent(event);
-  }
-  // Public API methods
-  getSelectedValue() {
-    return this.selectedValue;
-  }
-  setSelectedValue(value) {
-    this.selectedValue = value;
-    this.setAttribute("selected-value", value || "");
-  }
-  setDisabled(disabled) {
-    this.isDisabled = disabled;
-    if (disabled) {
-      this.setAttribute("disabled", "");
-    } else {
-      this.removeAttribute("disabled");
-    }
-  }
-  showValidationError(message) {
-    this.errorMessage = message;
-    this.showError = true;
-    this.setAttribute("error-message", message);
-    this.setAttribute("show-error", "");
-  }
-  clearError() {
-    this.showError = false;
-    this.errorMessage = "";
-    this.removeAttribute("show-error");
-    this.removeAttribute("error-message");
-    const select = this.root.querySelector(".quiz-select");
-    const errorElement = this.root.querySelector(".quiz-error-text");
-    if (select) {
-      select.classList.remove("quiz-select-error");
-    }
-    if (errorElement) {
-      errorElement.classList.remove("quiz-error-visible");
-      errorElement.classList.add("quiz-error-hidden");
-      errorElement.textContent = "";
-    }
-  }
-  getQuestionData() {
-    return this.questionData;
-  }
-  setQuestionData(data) {
-    this.questionData = data;
-    this.setAttribute("question-data", JSON.stringify(data));
-  }
-  // Validation helper
-  isValid() {
-    return this.selectedValue && this.selectedValue.trim() !== "";
-  }
-  // Focus management
-  focus() {
-    const select = this.root.querySelector(".quiz-select");
-    if (select) {
-      select.focus();
-    }
-  }
-};
-__name(_QuizDropdownComponent, "QuizDropdownComponent");
-let QuizDropdownComponent = _QuizDropdownComponent;
-if (!customElements.get("quiz-dropdown")) {
-  customElements.define("quiz-dropdown", QuizDropdownComponent);
-}
-const _QuizTextInputComponent = class _QuizTextInputComponent extends QuizBaseComponent {
-  static get observedAttributes() {
-    return ["question-data", "value", "disabled", "show-error", "error-message", "input-type"];
-  }
-  constructor() {
-    super();
-    this.questionData = null;
-    this.inputValue = "";
-    this.isDisabled = false;
-    this.showError = false;
-    this.errorMessage = "";
-    this.inputType = "text";
-  }
-  initialize() {
-    this.parseAttributes();
-  }
-  parseAttributes() {
-    const questionDataAttr = this.getAttribute("question-data");
-    if (questionDataAttr) {
-      try {
-        this.questionData = JSON.parse(questionDataAttr);
-      } catch (error) {
-        console.error("Quiz Text Input: Invalid question-data JSON:", error);
-        this.questionData = null;
-      }
-    }
-    this.inputValue = this.getAttribute("value") || "";
-    this.isDisabled = this.getBooleanAttribute("disabled", false);
-    this.showError = this.getBooleanAttribute("show-error", false);
-    this.errorMessage = this.getAttribute("error-message") || "";
-    this.inputType = this.getAttribute("input-type") || "text";
-  }
-  handleAttributeChange(name, oldValue, newValue) {
-    switch (name) {
-      case "question-data":
-        this.parseAttributes();
-        break;
-      case "value":
-        this.inputValue = newValue || "";
-        this.updateInputValue();
-        break;
-      case "disabled":
-        this.isDisabled = this.getBooleanAttribute("disabled", false);
-        this.updateDisabledState();
-        break;
-      case "show-error":
-        this.showError = this.getBooleanAttribute("show-error", false);
-        this.updateErrorState();
-        break;
-      case "error-message":
-        this.errorMessage = newValue || "";
-        this.updateErrorMessage();
-        break;
-      case "input-type":
-        this.inputType = newValue || "text";
-        this.updateInputType();
-        break;
-    }
-  }
-  getTemplate() {
-    if (!this.questionData) {
-      return `
+		`}setupEventListeners(){const select=this.getInputElement();select&&(select.addEventListener("change",this.handleSelectionEvent.bind(this)),select.addEventListener("blur",this.handleBlurEvent.bind(this)))}handleSelectionEvent(event){if(this.isDisabled)return;const selectedValue=event.target.value;this.handleInputChange(selectedValue)}handleBlurEvent(event){this.isDisabled||this.handleInputBlur()}updateSelectedState(){const select=this.getInputElement();select&&(select.value=this.selectedValue||"")}updateDisabledState(){const select=this.getInputElement();select&&(select.disabled=this.isDisabled)}updateFieldErrorStyling(){const select=this.getInputElement();select&&(this.showError?select.classList.add("quiz-select-error"):select.classList.remove("quiz-select-error"))}clearVisualErrorState(){super.clearVisualErrorState();const select=this.getInputElement();select&&select.classList.remove("quiz-select-error")}getSelectedValue(){return this.selectedValue}setSelectedValue(value){this.setValue(value)}};__name(_QuizDropdownComponent,"QuizDropdownComponent");let QuizDropdownComponent=_QuizDropdownComponent;customElements.get("quiz-dropdown")||customElements.define("quiz-dropdown",QuizDropdownComponent);const _QuizTextInputComponent=class _QuizTextInputComponent extends QuizFormFieldBase{constructor(){super(),this.inputType="text"}static get observedAttributes(){return[...super.observedAttributes,"input-type"]}initialize(){this.parseAttributes()}parseAttributes(){this.parseCommonAttributes(),this.inputType=this.getAttribute("input-type")||"text"}handleAttributeChange(name,oldValue,newValue){switch(this.handleCommonAttributeChange(name,oldValue,newValue),name){case"input-type":this.inputType=newValue||"text",this.updateInputType();break}}getFieldType(){return"text"}getValue(){return this.currentValue}setValue(value){this.currentValue=value||"",this.setAttribute("value",this.currentValue),this.updateInputValue()}getInputElement(){return this.root.querySelector(".quiz-input")}getTemplate(){if(!this.questionData)return`
 				<div class="quiz-error-container">
 					<p class="quiz-error-text">Invalid question configuration</p>
 				</div>
-			`;
-    }
-    const questionId = this.questionData.id;
-    const placeholder = this.questionData.placeholder || "Type your answer here...";
-    return `
+			`;const questionId=this.questionData.id,placeholder=this.questionData.placeholder||"Enter your answer";return`
 			<div class="quiz-text-input-container">
 				<input
 					type="${this.inputType}"
 					id="question-${questionId}"
-					class="quiz-input ${this.showError ? "quiz-input-error" : ""}"
+					class="quiz-input ${this.showError?"quiz-input-error":""}"
 					placeholder="${placeholder}"
-					value="${this.inputValue}"
-					${this.isDisabled ? "disabled" : ""}
+					value="${this.currentValue}"
+					${this.isDisabled?"disabled":""}
 					aria-describedby="error-${questionId}"
 				>
-				<p id="error-${questionId}" class="quiz-error-text ${this.showError ? "quiz-error-visible" : "quiz-error-hidden"}">${this.errorMessage}</p>
+				${this.getErrorElementHTML(questionId)}
 			</div>
-		`;
-  }
-  async render() {
-    await this.renderTemplate();
-  }
-  async getStyles() {
-    const baseStyles = super.getStyles();
-    const quizStyles = await sharedStyles.getQuizStyles();
-    return `
+		`}async render(){await this.renderTemplate(),this.setupEventListeners()}async getStyles(){const baseStyles=super.getStyles(),quizStyles=await sharedStyles.getQuizStyles();return`
 			${baseStyles}
 			${quizStyles}
 
@@ -5419,13 +2671,12 @@ const _QuizTextInputComponent = class _QuizTextInputComponent extends QuizBaseCo
 			.quiz-input {
 				width: 100%;
 				padding: 13px 16px;
-				border: 1px solid #ddeee2;
+				border: 1px solid #DDEEE2;
 				border-radius: 10px;
 				background: white;
 				font-size: 18px;
-				color: #374151;
+				color: var(--quiz-text-primary);
 				transition: var(--quiz-transition);
-				box-sizing: border-box;
 			}
 
 			.quiz-input:focus {
@@ -5434,11 +2685,11 @@ const _QuizTextInputComponent = class _QuizTextInputComponent extends QuizBaseCo
 			}
 
 			.quiz-input:hover:not(:disabled) {
-				border-color: #ddeee2;
+				border-color: #DDEEE2;
 			}
 
 			.quiz-input::placeholder {
-				color: #9ca3af;
+				color: #b0b0b0;
 			}
 
 			/* Error state */
@@ -5450,9 +2701,9 @@ const _QuizTextInputComponent = class _QuizTextInputComponent extends QuizBaseCo
 				box-shadow: 0 0 0 2px #ad0000;
 			}
 
-			/* Error message - using global styling */
-			.quiz-error-element {
-				/* Styling handled by global .quiz-error-text class */
+			/* Valid state */
+			.quiz-input-valid {
+				border-color: var(--quiz-success);
 			}
 
 			/* Disabled state */
@@ -5477,301 +2728,24 @@ const _QuizTextInputComponent = class _QuizTextInputComponent extends QuizBaseCo
 				font-size: 0.875rem;
 			}
 
-			/* Valid state (optional) */
-			.quiz-input-valid {
-				border-color: var(--quiz-success-color);
-				background-color: #f0fdf4;
-			}
-
-			.quiz-input-valid:focus {
-				border-color: var(--quiz-success-color);
-				box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
-			}
-
 			/* Mobile responsiveness */
 			@media (max-width: 768px) {
 				.quiz-input {
 					font-size: 16px; /* Prevents zoom on iOS */
 				}
 			}
-		`;
-  }
-  setupEventListeners() {
-    this.root.addEventListener("input", this.handleInputChange.bind(this));
-    this.root.addEventListener("blur", this.handleInputBlur.bind(this));
-    this.root.addEventListener("focus", this.handleInputFocus.bind(this));
-  }
-  handleInputChange(event) {
-    if (this.isDisabled) return;
-    const input = event.target;
-    if (input.classList.contains("quiz-input")) {
-      const newValue = input.value;
-      const errorElement = this.root.querySelector(".quiz-error-text");
-      this.inputValue = newValue;
-      this.dispatchAnswerChanged(newValue);
-      const hasVisualError = input.classList.contains("quiz-input-error") || errorElement?.classList.contains("quiz-error-visible");
-      if ((this.showError || hasVisualError) && newValue.trim()) {
-        this.clearError();
-      }
-    }
-  }
-  handleInputBlur(event) {
-    if (this.isDisabled) return;
-    const input = event.target;
-    if (input.classList.contains("quiz-input")) {
-      this.dispatchAnswerSelected(this.inputValue);
-      setTimeout(() => {
-        this.dispatchValidationRequested(this.inputValue);
-      }, 10);
-    }
-  }
-  handleInputFocus(event) {
-    if (this.showError) {
-      this.clearError();
-    }
-  }
-  updateInputValue() {
-    const input = this.root.querySelector(".quiz-input");
-    if (input) {
-      input.value = this.inputValue;
-    }
-  }
-  updateDisabledState() {
-    const input = this.root.querySelector(".quiz-input");
-    if (input) {
-      input.disabled = this.isDisabled;
-    }
-  }
-  updateErrorState() {
-    const input = this.root.querySelector(".quiz-input");
-    const errorElement = this.root.querySelector(".quiz-error-text");
-    if (input) {
-      if (this.showError) {
-        input.classList.add("quiz-input-error");
-        input.classList.remove("quiz-input-valid");
-      } else {
-        input.classList.remove("quiz-input-error");
-      }
-    }
-    if (errorElement) {
-      if (this.showError) {
-        errorElement.classList.remove("quiz-error-hidden");
-        errorElement.classList.add("quiz-error-visible");
-      } else {
-        errorElement.classList.remove("quiz-error-visible");
-        errorElement.classList.add("quiz-error-hidden");
-      }
-    }
-  }
-  updateErrorMessage() {
-    const errorElement = this.root.querySelector(".quiz-error-text");
-    if (errorElement) {
-      errorElement.textContent = this.errorMessage;
-    }
-  }
-  updateInputType() {
-    const input = this.root.querySelector(".quiz-input");
-    if (input) {
-      input.type = this.inputType;
-    }
-  }
-  dispatchAnswerChanged(value) {
-    const event = new CustomEvent("answer-changed", {
-      detail: {
-        questionId: this.questionData?.id,
-        value,
-        questionType: "text"
-      },
-      bubbles: true
-    });
-    this.dispatchEvent(event);
-  }
-  dispatchAnswerSelected(value) {
-    const event = new CustomEvent("answer-selected", {
-      detail: {
-        questionId: this.questionData?.id,
-        value,
-        questionType: "text"
-      },
-      bubbles: true
-    });
-    this.dispatchEvent(event);
-  }
-  dispatchValidationRequested(value) {
-    const event = new CustomEvent("validation-requested", {
-      detail: {
-        questionId: this.questionData?.id,
-        value,
-        questionType: "text"
-      },
-      bubbles: true
-    });
-    this.dispatchEvent(event);
-  }
-  // Public API methods
-  getValue() {
-    return this.inputValue;
-  }
-  setValue(value) {
-    this.inputValue = value || "";
-    this.setAttribute("value", this.inputValue);
-  }
-  setDisabled(disabled) {
-    this.isDisabled = disabled;
-    if (disabled) {
-      this.setAttribute("disabled", "");
-    } else {
-      this.removeAttribute("disabled");
-    }
-  }
-  showValidationError(message) {
-    this.errorMessage = message;
-    this.showError = true;
-    this.setAttribute("error-message", message);
-    this.setAttribute("show-error", "");
-  }
-  clearError() {
-    this.showError = false;
-    this.errorMessage = "";
-    this.removeAttribute("show-error");
-    this.removeAttribute("error-message");
-    const input = this.root.querySelector(".quiz-input");
-    const errorElement = this.root.querySelector(".quiz-error-text");
-    if (input) {
-      input.classList.remove("quiz-input-error");
-      input.classList.remove("quiz-input-valid");
-    }
-    if (errorElement) {
-      errorElement.classList.remove("quiz-error-visible");
-      errorElement.classList.add("quiz-error-hidden");
-      errorElement.textContent = "";
-    }
-  }
-  showValidState() {
-    const input = this.root.querySelector(".quiz-input");
-    if (input) {
-      input.classList.add("quiz-input-valid");
-      input.classList.remove("quiz-input-error");
-    }
-  }
-  clearValidState() {
-    const input = this.root.querySelector(".quiz-input");
-    if (input) {
-      input.classList.remove("quiz-input-valid");
-    }
-  }
-  getQuestionData() {
-    return this.questionData;
-  }
-  setQuestionData(data) {
-    this.questionData = data;
-    this.setAttribute("question-data", JSON.stringify(data));
-  }
-  setInputType(type) {
-    this.inputType = type;
-    this.setAttribute("input-type", type);
-  }
-  // Validation helpers
-  isValid() {
-    return this.inputValue && this.inputValue.trim() !== "";
-  }
-  isEmpty() {
-    return !this.inputValue || this.inputValue.trim() === "";
-  }
-  // Focus management
-  focus() {
-    const input = this.root.querySelector(".quiz-input");
-    if (input) {
-      input.focus();
-    }
-  }
-  select() {
-    const input = this.root.querySelector(".quiz-input");
-    if (input) {
-      input.select();
-    }
-  }
-};
-__name(_QuizTextInputComponent, "QuizTextInputComponent");
-let QuizTextInputComponent = _QuizTextInputComponent;
-if (!customElements.get("quiz-text-input")) {
-  customElements.define("quiz-text-input", QuizTextInputComponent);
-}
-const _QuizRatingComponent = class _QuizRatingComponent extends QuizBaseComponent {
-  static get observedAttributes() {
-    return ["question-data", "value", "disabled", "min-value", "max-value", "step"];
-  }
-  constructor() {
-    super();
-    this.questionData = null;
-    this.ratingValue = 5;
-    this.isDisabled = false;
-    this.minValue = 1;
-    this.maxValue = 10;
-    this.step = 1;
-  }
-  initialize() {
-    this.parseAttributes();
-  }
-  parseAttributes() {
-    const questionDataAttr = this.getAttribute("question-data");
-    if (questionDataAttr) {
-      try {
-        this.questionData = JSON.parse(questionDataAttr);
-      } catch (error) {
-        console.error("Quiz Rating: Invalid question-data JSON:", error);
-        this.questionData = null;
-      }
-    }
-    this.ratingValue = this.getNumberAttribute("value", 5);
-    this.isDisabled = this.getBooleanAttribute("disabled", false);
-    this.minValue = this.getNumberAttribute("min-value", 1);
-    this.maxValue = this.getNumberAttribute("max-value", 10);
-    this.step = this.getNumberAttribute("step", 1);
-    this.ratingValue = Math.max(this.minValue, Math.min(this.maxValue, this.ratingValue));
-  }
-  handleAttributeChange(name, oldValue, newValue) {
-    switch (name) {
-      case "question-data":
-        this.parseAttributes();
-        break;
-      case "value":
-        this.ratingValue = this.getNumberAttribute("value", 5);
-        this.ratingValue = Math.max(this.minValue, Math.min(this.maxValue, this.ratingValue));
-        this.updateRatingValue();
-        break;
-      case "disabled":
-        this.isDisabled = this.getBooleanAttribute("disabled", false);
-        this.updateDisabledState();
-        break;
-      case "min-value":
-      case "max-value":
-      case "step":
-        this.parseAttributes();
-        break;
-    }
-  }
-  getTemplate() {
-    if (!this.questionData) {
-      return `
-				<div class="quiz-error-container">
-					<p class="quiz-error-text">Invalid question configuration</p>
-				</div>
-			`;
-    }
-    const questionId = this.questionData.id;
-    return `
+		`}setupEventListeners(){const input=this.getInputElement();input&&(input.addEventListener("input",this.handleInputEvent.bind(this)),input.addEventListener("blur",this.handleBlurEvent.bind(this)),input.addEventListener("focus",this.handleFocusEvent.bind(this)))}handleInputEvent(event){if(this.isDisabled)return;const newValue=event.target.value;this.handleInputChange(newValue)}handleBlurEvent(event){this.isDisabled||this.handleInputBlur()}handleFocusEvent(event){(this.showError||this.hasVisualError())&&this.clearError()}updateInputValue(){const input=this.getInputElement();input&&(input.value=this.currentValue)}updateInputType(){const input=this.getInputElement();input&&(input.type=this.inputType)}updateDisabledState(){const input=this.getInputElement();input&&(input.disabled=this.isDisabled)}updateFieldErrorStyling(){const input=this.getInputElement();input&&(this.showError?(input.classList.add("quiz-input-error"),input.classList.remove("quiz-input-valid")):input.classList.remove("quiz-input-error"))}clearVisualErrorState(){super.clearVisualErrorState();const input=this.getInputElement();input&&(input.classList.remove("quiz-input-error"),input.classList.remove("quiz-input-valid"))}setInputType(type){this.inputType=type,this.setAttribute("input-type",type)}isEmpty(){return!this.currentValue||this.currentValue.trim()===""}showValidState(){const input=this.getInputElement();input&&(input.classList.add("quiz-input-valid"),input.classList.remove("quiz-input-error"))}clearValidState(){const input=this.getInputElement();input&&input.classList.remove("quiz-input-valid")}select(){const input=this.getInputElement();input&&input.select&&input.select()}};__name(_QuizTextInputComponent,"QuizTextInputComponent");let QuizTextInputComponent=_QuizTextInputComponent;customElements.get("quiz-text-input")||customElements.define("quiz-text-input",QuizTextInputComponent);const _QuizRatingComponent=class _QuizRatingComponent extends QuizBaseComponent{static get observedAttributes(){return["question-data","value","disabled","min-value","max-value","step"]}constructor(){super(),this.questionData=null,this.ratingValue=5,this.isDisabled=!1,this.minValue=1,this.maxValue=10,this.step=1}initialize(){this.parseAttributes()}parseAttributes(){const questionDataAttr=this.getAttribute("question-data");if(questionDataAttr)try{this.questionData=JSON.parse(questionDataAttr)}catch(error){console.error("Quiz Rating: Invalid question-data JSON:",error),this.questionData=null}this.ratingValue=this.getNumberAttribute("value",5),this.isDisabled=this.getBooleanAttribute("disabled",!1),this.minValue=this.getNumberAttribute("min-value",1),this.maxValue=this.getNumberAttribute("max-value",10),this.step=this.getNumberAttribute("step",1),this.ratingValue=Math.max(this.minValue,Math.min(this.maxValue,this.ratingValue))}handleAttributeChange(name,oldValue,newValue){switch(name){case"question-data":this.parseAttributes();break;case"value":this.ratingValue=this.getNumberAttribute("value",5),this.ratingValue=Math.max(this.minValue,Math.min(this.maxValue,this.ratingValue)),this.updateRatingValue();break;case"disabled":this.isDisabled=this.getBooleanAttribute("disabled",!1),this.updateDisabledState();break;case"min-value":case"max-value":case"step":this.parseAttributes();break}}getTemplate(){return this.questionData?`
 			<div class="quiz-rating-container">
 				<div class="quiz-rating-input-wrapper">
 					<input
 						type="range"
-						id="question-${questionId}"
+						id="question-${this.questionData.id}"
 						class="quiz-range"
 						min="${this.minValue}"
 						max="${this.maxValue}"
 						step="${this.step}"
 						value="${this.ratingValue}"
-						${this.isDisabled ? "disabled" : ""}
+						${this.isDisabled?"disabled":""}
 					>
 					<div class="quiz-rating-value" aria-live="polite">
 						<span class="quiz-rating-current">${this.ratingValue}</span>
@@ -5779,19 +2753,15 @@ const _QuizRatingComponent = class _QuizRatingComponent extends QuizBaseComponen
 				</div>
 				<div class="quiz-range-labels">
 					<span class="quiz-range-label-min">${this.minValue}</span>
-					<span class="quiz-range-label-mid">${Math.floor((this.minValue + this.maxValue) / 2)}</span>
+					<span class="quiz-range-label-mid">${Math.floor((this.minValue+this.maxValue)/2)}</span>
 					<span class="quiz-range-label-max">${this.maxValue}</span>
 				</div>
 			</div>
-		`;
-  }
-  async render() {
-    await this.renderTemplate();
-  }
-  async getStyles() {
-    const baseStyles = super.getStyles();
-    const quizStyles = await sharedStyles.getQuizStyles();
-    return `
+		`:`
+				<div class="quiz-error-container">
+					<p class="quiz-error-text">Invalid question configuration</p>
+				</div>
+			`}async render(){await this.renderTemplate()}async getStyles(){const baseStyles=super.getStyles(),quizStyles=await sharedStyles.getQuizStyles();return`
 			${baseStyles}
 			${quizStyles}
 
@@ -5981,367 +2951,4 @@ const _QuizRatingComponent = class _QuizRatingComponent extends QuizBaseComponen
 			.quiz-rating-value.updating {
 				transform: translateX(-50%) scale(1.1);
 			}
-		`;
-  }
-  setupEventListeners() {
-    this.root.addEventListener("input", this.handleRatingChange.bind(this));
-    this.root.addEventListener("change", this.handleRatingSet.bind(this));
-  }
-  handleRatingChange(event) {
-    if (this.isDisabled) return;
-    const range = event.target;
-    if (range.classList.contains("quiz-range")) {
-      const newValue = parseInt(range.value, 10);
-      this.ratingValue = newValue;
-      this.updateRatingDisplay();
-      this.dispatchAnswerChanged(newValue);
-    }
-  }
-  handleRatingSet(event) {
-    if (this.isDisabled) return;
-    const range = event.target;
-    if (range.classList.contains("quiz-range")) {
-      const newValue = parseInt(range.value, 10);
-      this.ratingValue = newValue;
-      this.dispatchAnswerSelected(newValue);
-    }
-  }
-  updateRatingValue() {
-    const range = this.root.querySelector(".quiz-range");
-    if (range) {
-      range.value = this.ratingValue;
-    }
-    this.updateRatingDisplay();
-  }
-  updateRatingDisplay() {
-    const valueDisplay = this.root.querySelector(".quiz-rating-current");
-    if (valueDisplay) {
-      valueDisplay.textContent = this.ratingValue;
-      const valueContainer = this.root.querySelector(".quiz-rating-value");
-      if (valueContainer) {
-        valueContainer.classList.add("updating");
-        setTimeout(() => {
-          valueContainer.classList.remove("updating");
-        }, 200);
-      }
-    }
-  }
-  updateDisabledState() {
-    const range = this.root.querySelector(".quiz-range");
-    if (range) {
-      range.disabled = this.isDisabled;
-    }
-  }
-  dispatchAnswerChanged(value) {
-    const event = new CustomEvent("answer-changed", {
-      detail: {
-        questionId: this.questionData?.id,
-        value,
-        questionType: "rating"
-      },
-      bubbles: true
-    });
-    this.dispatchEvent(event);
-  }
-  dispatchAnswerSelected(value) {
-    const event = new CustomEvent("answer-selected", {
-      detail: {
-        questionId: this.questionData?.id,
-        value,
-        questionType: "rating"
-      },
-      bubbles: true
-    });
-    this.dispatchEvent(event);
-  }
-  // Public API methods
-  getValue() {
-    return this.ratingValue;
-  }
-  setValue(value) {
-    const numValue = parseInt(value, 10);
-    if (!isNaN(numValue)) {
-      this.ratingValue = Math.max(this.minValue, Math.min(this.maxValue, numValue));
-      this.setAttribute("value", this.ratingValue.toString());
-    }
-  }
-  setDisabled(disabled) {
-    this.isDisabled = disabled;
-    if (disabled) {
-      this.setAttribute("disabled", "");
-    } else {
-      this.removeAttribute("disabled");
-    }
-  }
-  getQuestionData() {
-    return this.questionData;
-  }
-  setQuestionData(data) {
-    this.questionData = data;
-    this.setAttribute("question-data", JSON.stringify(data));
-  }
-  setRange(min, max, step = 1) {
-    this.minValue = min;
-    this.maxValue = max;
-    this.step = step;
-    this.setAttribute("min-value", min.toString());
-    this.setAttribute("max-value", max.toString());
-    this.setAttribute("step", step.toString());
-    this.ratingValue = Math.max(this.minValue, Math.min(this.maxValue, this.ratingValue));
-    this.setAttribute("value", this.ratingValue.toString());
-  }
-  // Focus management
-  focus() {
-    const range = this.root.querySelector(".quiz-range");
-    if (range) {
-      range.focus();
-    }
-  }
-};
-__name(_QuizRatingComponent, "QuizRatingComponent");
-let QuizRatingComponent = _QuizRatingComponent;
-if (!customElements.get("quiz-rating")) {
-  customElements.define("quiz-rating", QuizRatingComponent);
-}
-const _QuizComponentsInit = class _QuizComponentsInit {
-  constructor() {
-    this.initialized = false;
-    this.config = null;
-  }
-  /**
-   * Initialize quiz components with configuration
-   */
-  async init(config = {}) {
-    if (this.initialized) {
-      console.warn("Quiz components already initialized");
-      return;
-    }
-    this.config = {
-      cssUrl: config.cssUrl || window.QUIZ_CSS_URL || window.QUIZ_CONFIG?.cssUrl,
-      debug: config.debug || window.QUIZ_CONFIG?.debug || false,
-      fallbackCssUrl: config.fallbackCssUrl || "/assets/quiz.css",
-      ...config
-    };
-    if (this.config.cssUrl) {
-      sharedStyles.setQuizCssUrl(this.config.cssUrl);
-    }
-    if (this.config.debug) {
-      console.log("🎯 Quiz Web Components Initialization:", this.config);
-      await this.validateConfiguration();
-    }
-    this.initialized = true;
-  }
-  /**
-   * Validate configuration and CSS accessibility
-   */
-  async validateConfiguration() {
-    const cssUrl = this.config.cssUrl || this.config.fallbackCssUrl;
-    console.log("🔍 Validating quiz components configuration...");
-    console.log("📍 CSS URL:", cssUrl);
-    try {
-      const styles = await sharedStyles.getQuizStyles(cssUrl);
-      if (styles && styles.length > 0) {
-        console.log("✅ Quiz CSS loaded successfully:", `${styles.length} characters`);
-      } else {
-        console.warn("⚠️ Quiz CSS loaded but appears empty");
-      }
-    } catch (error) {
-      console.error("❌ Failed to load quiz CSS:", error);
-      console.log("🔄 Will attempt fallback loading when components render");
-    }
-    const checks = [
-      { name: "QUIZ_CSS_URL", value: window.QUIZ_CSS_URL },
-      { name: "QUIZ_CONFIG", value: window.QUIZ_CONFIG }
-    ];
-    checks.forEach((check) => {
-      if (check.value) {
-        console.log(`✅ ${check.name}:`, check.value);
-      } else {
-        console.warn(`⚠️ ${check.name} not found`);
-      }
-    });
-  }
-  /**
-   * Get current configuration
-   */
-  getConfig() {
-    return this.config;
-  }
-  /**
-   * Check if components are initialized
-   */
-  isInitialized() {
-    return this.initialized;
-  }
-  /**
-   * Check if Web Components are available in the browser
-   */
-  areComponentsAvailable() {
-    const requiredComponents = ["quiz-multiple-choice", "quiz-checkbox-group", "quiz-dropdown", "quiz-text-input", "quiz-rating"];
-    return requiredComponents.every((componentName) => {
-      return customElements.get(componentName) !== void 0;
-    });
-  }
-  /**
-   * Manually set CSS URL (useful for testing)
-   */
-  setCssUrl(url) {
-    if (this.config) {
-      this.config.cssUrl = url;
-    }
-    sharedStyles.setQuizCssUrl(url);
-    if (this.config?.debug) {
-      console.log("🎨 CSS URL updated to:", url);
-    }
-  }
-};
-__name(_QuizComponentsInit, "QuizComponentsInit");
-let QuizComponentsInit = _QuizComponentsInit;
-const quizComponentsInit = new QuizComponentsInit();
-if (typeof window !== "undefined") {
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => {
-      if (window.QUIZ_CONFIG || window.QUIZ_CSS_URL) {
-        quizComponentsInit.init();
-      }
-    });
-  } else {
-    if (window.QUIZ_CONFIG || window.QUIZ_CSS_URL) {
-      quizComponentsInit.init();
-    }
-  }
-}
-const COMPONENT_CONFIG = {
-  // Core icons
-  "quiz-calendar-icon": {
-    module: QuizCalendarIcon,
-    category: "icons",
-    description: "Calendar icon for date-related benefits"
-  },
-  "quiz-clock-icon": {
-    module: QuizClockIcon,
-    category: "icons",
-    description: "Clock icon for time-related benefits"
-  },
-  "quiz-checkmark-icon": {
-    module: QuizCheckmarkIcon,
-    category: "icons",
-    description: "Checkmark icon for success states"
-  },
-  "quiz-checkmark": {
-    module: QuizCheckmarkComponent,
-    category: "utils",
-    description: "Reusable animated checkmark component"
-  },
-  // Content components
-  "quiz-coverage-card": {
-    module: QuizCoverageCard,
-    category: "content",
-    description: "Insurance coverage information card"
-  },
-  "quiz-benefit-item": {
-    module: QuizBenefitItem,
-    category: "content",
-    description: "Individual benefit item with icon and text"
-  },
-  "quiz-action-section": {
-    module: QuizActionSection,
-    category: "content",
-    description: "Call-to-action section with buttons and info"
-  },
-  "quiz-error-display": {
-    module: QuizErrorDisplay,
-    category: "content",
-    description: "Error display with different severity levels"
-  },
-  "quiz-loading-display": {
-    module: QuizLoadingDisplay,
-    category: "content",
-    description: "Loading display with progress and step indicators"
-  },
-  "quiz-faq-section": {
-    module: QuizFAQSection,
-    category: "content",
-    description: "FAQ section with collapsible questions"
-  },
-  "quiz-payer-search": {
-    module: QuizPayerSearch,
-    category: "content",
-    description: "Insurance payer search with autocomplete"
-  },
-  "quiz-result-card": {
-    module: QuizResultCard,
-    category: "content",
-    description: "Result card for quiz outcomes"
-  },
-  "quiz-form-step": {
-    module: QuizFormStep,
-    category: "content",
-    description: "Complete form step with questions and validation"
-  },
-  "quiz-step-container": {
-    module: QuizStepContainer,
-    category: "content",
-    description: "Container for quiz steps with navigation"
-  },
-  "quiz-scheduling-result": {
-    module: QuizSchedulingResult,
-    category: "content",
-    description: "Scheduling result display with success/error states"
-  },
-  // Question Input Components
-  "quiz-multiple-choice": {
-    module: QuizMultipleChoiceComponent,
-    category: "questions",
-    description: "Multiple choice question with card-style options"
-  },
-  "quiz-checkbox-group": {
-    module: QuizCheckboxGroupComponent,
-    category: "questions",
-    description: "Checkbox group with multiple selection support"
-  },
-  "quiz-dropdown": {
-    module: QuizDropdownComponent,
-    category: "questions",
-    description: "Dropdown selection with validation"
-  },
-  "quiz-text-input": {
-    module: QuizTextInputComponent,
-    category: "questions",
-    description: "Text input with validation and error display"
-  },
-  "quiz-rating": {
-    module: QuizRatingComponent,
-    category: "questions",
-    description: "Rating input with range slider (1-10 scale)"
-  }
-};
-function loadQuizComponents() {
-  const startTime = performance.now();
-  let loadedCount = 0;
-  console.log("🚀 Loading Quiz Web Components...");
-  Object.entries(COMPONENT_CONFIG).forEach(([tagName, config]) => {
-    if (!quizComponentRegistry.isRegistered(tagName)) {
-      try {
-        loadedCount++;
-        console.log(`  ✓ ${tagName} (${config.category})`);
-      } catch (error) {
-        console.error(`  ✗ Failed to load ${tagName}:`, error);
-      }
-    } else {
-      console.log(`  ~ ${tagName} already registered`);
-    }
-  });
-  const endTime = performance.now();
-  console.log(`🎉 Quiz Components loaded: ${loadedCount} components in ${(endTime - startTime).toFixed(2)}ms`);
-  return {
-    loaded: loadedCount,
-    total: Object.keys(COMPONENT_CONFIG).length,
-    loadTime: endTime - startTime
-  };
-}
-__name(loadQuizComponents, "loadQuizComponents");
-loadQuizComponents();
-if (typeof window !== "undefined") {
-  window.QuizComponentsInit = quizComponentsInit;
-}
+		`}setupEventListeners(){this.root.addEventListener("input",this.handleRatingChange.bind(this)),this.root.addEventListener("change",this.handleRatingSet.bind(this))}handleRatingChange(event){if(this.isDisabled)return;const range=event.target;if(range.classList.contains("quiz-range")){const newValue=parseInt(range.value,10);this.ratingValue=newValue,this.updateRatingDisplay(),this.dispatchAnswerChanged(newValue)}}handleRatingSet(event){if(this.isDisabled)return;const range=event.target;if(range.classList.contains("quiz-range")){const newValue=parseInt(range.value,10);this.ratingValue=newValue,this.dispatchAnswerSelected(newValue)}}updateRatingValue(){const range=this.root.querySelector(".quiz-range");range&&(range.value=this.ratingValue),this.updateRatingDisplay()}updateRatingDisplay(){const valueDisplay=this.root.querySelector(".quiz-rating-current");if(valueDisplay){valueDisplay.textContent=this.ratingValue;const valueContainer=this.root.querySelector(".quiz-rating-value");valueContainer&&(valueContainer.classList.add("updating"),setTimeout(()=>{valueContainer.classList.remove("updating")},200))}}updateDisabledState(){const range=this.root.querySelector(".quiz-range");range&&(range.disabled=this.isDisabled)}dispatchAnswerChanged(value){const event=new CustomEvent("answer-changed",{detail:{questionId:this.questionData?.id,value,questionType:"rating"},bubbles:!0});this.dispatchEvent(event)}dispatchAnswerSelected(value){const event=new CustomEvent("answer-selected",{detail:{questionId:this.questionData?.id,value,questionType:"rating"},bubbles:!0});this.dispatchEvent(event)}getValue(){return this.ratingValue}setValue(value){const numValue=parseInt(value,10);isNaN(numValue)||(this.ratingValue=Math.max(this.minValue,Math.min(this.maxValue,numValue)),this.setAttribute("value",this.ratingValue.toString()))}setDisabled(disabled){this.isDisabled=disabled,disabled?this.setAttribute("disabled",""):this.removeAttribute("disabled")}getQuestionData(){return this.questionData}setQuestionData(data){this.questionData=data,this.setAttribute("question-data",JSON.stringify(data))}setRange(min,max,step=1){this.minValue=min,this.maxValue=max,this.step=step,this.setAttribute("min-value",min.toString()),this.setAttribute("max-value",max.toString()),this.setAttribute("step",step.toString()),this.ratingValue=Math.max(this.minValue,Math.min(this.maxValue,this.ratingValue)),this.setAttribute("value",this.ratingValue.toString())}focus(){const range=this.root.querySelector(".quiz-range");range&&range.focus()}};__name(_QuizRatingComponent,"QuizRatingComponent");let QuizRatingComponent=_QuizRatingComponent;customElements.get("quiz-rating")||customElements.define("quiz-rating",QuizRatingComponent);const _QuizComponentsInit=class _QuizComponentsInit{constructor(){this.initialized=!1,this.config=null}async init(config={}){if(this.initialized){console.warn("Quiz components already initialized");return}this.config={cssUrl:config.cssUrl||window.QUIZ_CSS_URL||window.QUIZ_CONFIG?.cssUrl,debug:config.debug||window.QUIZ_CONFIG?.debug||!1,fallbackCssUrl:config.fallbackCssUrl||"/assets/quiz.css",...config},this.config.cssUrl&&sharedStyles.setQuizCssUrl(this.config.cssUrl),this.config.debug&&(console.log("🎯 Quiz Web Components Initialization:",this.config),await this.validateConfiguration()),this.initialized=!0}async validateConfiguration(){const cssUrl=this.config.cssUrl||this.config.fallbackCssUrl;console.log("🔍 Validating quiz components configuration..."),console.log("📍 CSS URL:",cssUrl);try{const styles=await sharedStyles.getQuizStyles(cssUrl);styles&&styles.length>0?console.log("✅ Quiz CSS loaded successfully:",`${styles.length} characters`):console.warn("⚠️ Quiz CSS loaded but appears empty")}catch(error){console.error("❌ Failed to load quiz CSS:",error),console.log("🔄 Will attempt fallback loading when components render")}[{name:"QUIZ_CSS_URL",value:window.QUIZ_CSS_URL},{name:"QUIZ_CONFIG",value:window.QUIZ_CONFIG}].forEach(check=>{check.value?console.log(`✅ ${check.name}:`,check.value):console.warn(`⚠️ ${check.name} not found`)})}getConfig(){return this.config}isInitialized(){return this.initialized}areComponentsAvailable(){return["quiz-multiple-choice","quiz-checkbox-group","quiz-dropdown","quiz-text-input","quiz-rating"].every(componentName=>customElements.get(componentName)!==void 0)}setCssUrl(url){this.config&&(this.config.cssUrl=url),sharedStyles.setQuizCssUrl(url),this.config?.debug&&console.log("🎨 CSS URL updated to:",url)}};__name(_QuizComponentsInit,"QuizComponentsInit");let QuizComponentsInit=_QuizComponentsInit;const quizComponentsInit=new QuizComponentsInit;typeof window<"u"&&(document.readyState==="loading"?document.addEventListener("DOMContentLoaded",()=>{(window.QUIZ_CONFIG||window.QUIZ_CSS_URL)&&quizComponentsInit.init()}):(window.QUIZ_CONFIG||window.QUIZ_CSS_URL)&&quizComponentsInit.init());const COMPONENT_CONFIG={"quiz-calendar-icon":{module:QuizCalendarIcon,category:"icons",description:"Calendar icon for date-related benefits"},"quiz-clock-icon":{module:QuizClockIcon,category:"icons",description:"Clock icon for time-related benefits"},"quiz-checkmark-icon":{module:QuizCheckmarkIcon,category:"icons",description:"Checkmark icon for success states"},"quiz-checkmark":{module:QuizCheckmarkComponent,category:"utils",description:"Reusable animated checkmark component"},"quiz-coverage-card":{module:QuizCoverageCard,category:"content",description:"Insurance coverage information card"},"quiz-benefit-item":{module:QuizBenefitItem,category:"content",description:"Individual benefit item with icon and text"},"quiz-action-section":{module:QuizActionSection,category:"content",description:"Call-to-action section with buttons and info"},"quiz-error-display":{module:QuizErrorDisplay,category:"content",description:"Error display with different severity levels"},"quiz-loading-display":{module:QuizLoadingDisplay,category:"content",description:"Loading display with progress and step indicators"},"quiz-faq-section":{module:QuizFAQSection,category:"content",description:"FAQ section with collapsible questions"},"quiz-payer-search":{module:QuizPayerSearch,category:"content",description:"Insurance payer search with autocomplete"},"quiz-result-card":{module:QuizResultCard,category:"content",description:"Result card for quiz outcomes"},"quiz-form-step":{module:QuizFormStep,category:"content",description:"Complete form step with questions and validation"},"quiz-step-container":{module:QuizStepContainer,category:"content",description:"Container for quiz steps with navigation"},"quiz-scheduling-result":{module:QuizSchedulingResult,category:"content",description:"Scheduling result display with success/error states"},"quiz-multiple-choice":{module:QuizMultipleChoiceComponent,category:"questions",description:"Multiple choice question with card-style options"},"quiz-checkbox-group":{module:QuizCheckboxGroupComponent,category:"questions",description:"Checkbox group with multiple selection support"},"quiz-dropdown":{module:QuizDropdownComponent,category:"questions",description:"Dropdown selection with validation"},"quiz-text-input":{module:QuizTextInputComponent,category:"questions",description:"Text input with validation and error display"},"quiz-rating":{module:QuizRatingComponent,category:"questions",description:"Rating input with range slider (1-10 scale)"}};function loadQuizComponents(){const startTime=performance.now();let loadedCount=0;console.log("🚀 Loading Quiz Web Components..."),Object.entries(COMPONENT_CONFIG).forEach(([tagName,config])=>{if(quizComponentRegistry.isRegistered(tagName))console.log(`  ~ ${tagName} already registered`);else try{loadedCount++,console.log(`  ✓ ${tagName} (${config.category})`)}catch(error){console.error(`  ✗ Failed to load ${tagName}:`,error)}});const endTime=performance.now();return console.log(`🎉 Quiz Components loaded: ${loadedCount} components in ${(endTime-startTime).toFixed(2)}ms`),{loaded:loadedCount,total:Object.keys(COMPONENT_CONFIG).length,loadTime:endTime-startTime}}__name(loadQuizComponents,"loadQuizComponents");loadQuizComponents();typeof window<"u"&&(window.QuizComponentsInit=quizComponentsInit);
