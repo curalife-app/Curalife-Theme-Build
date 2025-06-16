@@ -33,6 +33,7 @@ export class QuizFormFieldBase extends QuizBaseComponent {
 	};
 
 	constructor() {
+		console.log("🔧 QuizFormFieldBase constructor called");
 		super();
 
 		// Internal state
