@@ -152,6 +152,7 @@ export class QuizPayerSearch extends QuizFormFieldBase {
 		console.log("🔍 QuizPayerSearch render called");
 		await this.renderTemplate();
 		this.setupEventListeners();
+		console.log("🔍 QuizPayerSearch render completed, setting up event listeners");
 	}
 
 	setupEventListeners() {
@@ -162,68 +163,81 @@ export class QuizPayerSearch extends QuizFormFieldBase {
 
 		console.log("🔍 Payer search setup:", { searchInput: !!searchInput, dropdown: !!dropdown, closeBtn: !!closeBtn, container: !!container, commonPayers: this.commonPayers.length });
 
-		if (!searchInput || !dropdown || !closeBtn || !container) return;
+		if (!searchInput || !dropdown || !closeBtn || !container) {
+			console.error("🔍 Missing required elements for payer search setup");
+			return;
+		}
 
 		// Search input events
 		searchInput.addEventListener("input", e => {
 			const query = e.target.value.trim();
 			console.log("🔍 Search input:", query);
+			this.handleInputChange(e);
 			this.handleSearch(query, dropdown);
-
-			// Clear error if user starts typing
-			if ((this.showError || this.hasVisualError()) && query.length > 0) {
-				this.clearError();
-			}
 		});
 
-		searchInput.addEventListener("focus", () => {
-			console.log("🔍 Search focus, value:", searchInput.value.trim());
-			if (searchInput.value.trim() === "") {
+		searchInput.addEventListener("focus", e => {
+			console.log("🔍 Search input focused");
+			this.handleInputFocus(e);
+			if (!e.target.value.trim()) {
 				this.showInitialPayerList(dropdown);
 			}
 			this.openDropdown(dropdown, container, searchInput);
 		});
 
 		searchInput.addEventListener("blur", e => {
-			// Use timeout to allow click events on dropdown items to fire first
+			console.log("🔍 Search input blurred");
+			this.handleInputBlur(e);
+			// Delay closing to allow for clicks on dropdown items
 			setTimeout(() => {
-				if (!container.contains(document.activeElement)) {
-					this.handleInputBlur();
+				if (!dropdown.matches(":hover")) {
+					this.closeDropdown(dropdown, container, searchInput);
 				}
 			}, 150);
 		});
 
 		// Close button
 		closeBtn.addEventListener("click", () => {
+			console.log("🔍 Close button clicked");
+			searchInput.value = "";
+			this.selectedPayer = "";
+			this.currentValue = "";
 			this.closeDropdown(dropdown, container, searchInput);
+			this.clearError();
 		});
 
-		// Click outside to close
-		document.addEventListener("click", e => {
-			if (!container.contains(e.target)) {
-				this.closeDropdown(dropdown, container, searchInput);
-			}
+		// Prevent dropdown from closing when clicking inside it
+		dropdown.addEventListener("mousedown", e => {
+			e.preventDefault();
 		});
+
+		console.log("🔍 Event listeners set up successfully");
 	}
 
 	handleSearch(query, dropdown) {
-		console.log("🔍 Handle search:", query);
-		clearTimeout(this.searchTimeout);
+		console.log("🔍 handleSearch called with query:", query);
 
-		if (query.length === 0) {
-			this.showInitialPayerList(dropdown);
-			return;
+		// Clear any existing timeout
+		if (this.searchTimeout) {
+			clearTimeout(this.searchTimeout);
 		}
 
-		// Debounce search
+		// Show loading state immediately
+		const resultsContainer = dropdown.querySelector(".quiz-payer-search-results");
+		if (resultsContainer) {
+			resultsContainer.innerHTML = `<div class="quiz-payer-search-loading">Searching...</div>`;
+			console.log("🔍 Loading state shown");
+		}
+
+		// Debounce the search
 		this.searchTimeout = setTimeout(async () => {
+			console.log("🔍 Executing search for:", query);
 			try {
-				console.log("🔍 Searching for:", query);
 				const results = await this.searchPayers(query);
 				console.log("🔍 Search results:", results.length);
 				this.renderSearchResults(results, query, dropdown);
 			} catch (error) {
-				console.error("Search error:", error);
+				console.error("🔍 Search error:", error);
 				this.showSearchError(dropdown);
 			}
 		}, 300);
