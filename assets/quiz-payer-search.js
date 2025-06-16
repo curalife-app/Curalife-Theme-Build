@@ -45,6 +45,7 @@ export class QuizPayerSearch extends QuizFormFieldBase {
 		try {
 			const commonPayersAttr = this.getAttribute("common-payers");
 			this.commonPayers = commonPayersAttr ? JSON.parse(commonPayersAttr) : [];
+			console.log("🔍 Common payers loaded:", this.commonPayers.length, this.commonPayers.slice(0, 2));
 		} catch (error) {
 			console.error("Invalid common payers data:", error);
 			this.commonPayers = [];
@@ -54,6 +55,7 @@ export class QuizPayerSearch extends QuizFormFieldBase {
 			const quizDataAttr = this.getAttribute("quiz-data");
 			if (quizDataAttr) {
 				this.quizData = JSON.parse(quizDataAttr);
+				console.log("🔍 Quiz data loaded:", !!this.quizData, !!this.quizData?.config);
 			}
 		} catch (error) {
 			console.error("Invalid quiz data:", error);
@@ -154,11 +156,14 @@ export class QuizPayerSearch extends QuizFormFieldBase {
 		const closeBtn = this.root.querySelector(".quiz-payer-search-close-btn");
 		const container = this.root.querySelector(".quiz-payer-search-container");
 
+		console.log("🔍 Payer search setup:", { searchInput: !!searchInput, dropdown: !!dropdown, closeBtn: !!closeBtn, container: !!container, commonPayers: this.commonPayers.length });
+
 		if (!searchInput || !dropdown || !closeBtn || !container) return;
 
 		// Search input events
 		searchInput.addEventListener("input", e => {
 			const query = e.target.value.trim();
+			console.log("🔍 Search input:", query);
 			this.handleSearch(query, dropdown);
 
 			// Clear error if user starts typing
@@ -168,6 +173,7 @@ export class QuizPayerSearch extends QuizFormFieldBase {
 		});
 
 		searchInput.addEventListener("focus", () => {
+			console.log("🔍 Search focus, value:", searchInput.value.trim());
 			if (searchInput.value.trim() === "") {
 				this.showInitialPayerList(dropdown);
 			}
@@ -197,6 +203,7 @@ export class QuizPayerSearch extends QuizFormFieldBase {
 	}
 
 	handleSearch(query, dropdown) {
+		console.log("🔍 Handle search:", query);
 		clearTimeout(this.searchTimeout);
 
 		if (query.length === 0) {
@@ -207,7 +214,9 @@ export class QuizPayerSearch extends QuizFormFieldBase {
 		// Debounce search
 		this.searchTimeout = setTimeout(async () => {
 			try {
+				console.log("🔍 Searching for:", query);
 				const results = await this.searchPayers(query);
+				console.log("🔍 Search results:", results.length);
 				this.renderSearchResults(results, query, dropdown);
 			} catch (error) {
 				console.error("Search error:", error);
@@ -217,10 +226,12 @@ export class QuizPayerSearch extends QuizFormFieldBase {
 	}
 
 	async searchPayers(query) {
+		console.log("🔍 searchPayers called with:", query);
 		// First try API search if available
 		try {
 			const apiResults = await this.searchPayersAPI(query);
 			if (apiResults && apiResults.length > 0) {
+				console.log("🔍 API results found:", apiResults.length);
 				return apiResults.map(item => item.payer);
 			}
 		} catch (error) {
@@ -228,10 +239,13 @@ export class QuizPayerSearch extends QuizFormFieldBase {
 		}
 
 		// Fallback to common payers
-		return this.filterCommonPayers(query);
+		const localResults = this.filterCommonPayers(query);
+		console.log("🔍 Local results found:", localResults.length);
+		return localResults;
 	}
 
 	filterCommonPayers(query) {
+		console.log("🔍 filterCommonPayers:", { query, commonPayersCount: this.commonPayers.length });
 		if (!query || query.length === 0) {
 			return this.commonPayers;
 		}
@@ -297,11 +311,13 @@ export class QuizPayerSearch extends QuizFormFieldBase {
 	}
 
 	showInitialPayerList(dropdown) {
+		console.log("🔍 showInitialPayerList:", this.commonPayers.length);
 		const results = this.commonPayers;
 		this.renderSearchResults(results, "", dropdown);
 	}
 
 	renderSearchResults(results, query, dropdown) {
+		console.log("🔍 renderSearchResults:", { resultsCount: results.length, query });
 		const resultsContainer = dropdown.querySelector(".quiz-payer-search-results");
 
 		if (results.length === 0) {
@@ -339,6 +355,7 @@ export class QuizPayerSearch extends QuizFormFieldBase {
 
 		dropdown.classList.add("visible");
 		dropdown.style.display = "block";
+		console.log("🔍 Dropdown should be visible now");
 	}
 
 	selectPayer(payer) {
