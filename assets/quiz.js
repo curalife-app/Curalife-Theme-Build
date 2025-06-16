@@ -1539,6 +1539,16 @@ class ModularQuiz {
 		stepContainer.setAttribute("responses", JSON.stringify(this.responses));
 		stepContainer.setAttribute("current-question-index", this.currentQuestionIndex.toString());
 		stepContainer.setAttribute("is-form-step", this.isFormStep(step.id).toString());
+
+		// Debug quiz data before passing it
+		console.log("🔧 Main Quiz - Passing quiz data to step container:", {
+			hasQuizData: !!this.quizData,
+			hasConfig: !!this.quizData?.config,
+			hasCommonPayers: !!this.quizData?.commonPayers,
+			commonPayersCount: this.quizData?.commonPayers?.length || 0,
+			stepId: step.id
+		});
+
 		stepContainer.setAttribute("quiz-data", JSON.stringify(this.quizData));
 
 		// Add validation errors if any
